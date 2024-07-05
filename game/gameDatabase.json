@@ -1,0 +1,63 @@
+{
+    "resources": [
+      {
+        "name": "Regolith",
+        "basePrice": 10,
+        "baseDemand": 1000,
+        "elasticity": 0.8
+      },
+      {
+        "name": "Ice",
+        "basePrice": 50,
+        "baseDemand": 500,
+        "elasticity": 0.7
+      },
+      {
+        "name": "Helium-3",
+        "basePrice": 1000,
+        "baseDemand": 100,
+        "elasticity": 1.2
+      }
+    ],
+    "buildings": [
+      {
+        "name": "Regolith Harvester",
+        "baseCost": {
+            "credits" : 100
+        },
+        "production": {
+          "regolith": 1
+        }
+      },
+      {
+        "name": "Ice Extractor",
+        "baseCost": {
+            "credits" : 100
+        },
+        "production": {
+          "water_ice": 0.5
+        }
+      },
+      {
+        "name": "Gas Miner",
+        "baseCost": {
+            "credits" : 100
+        },
+        "production": {
+          "helium_3": 0.1
+        }
+      },
+      {
+        "name": "Storage Facility",
+        "baseCost": {
+            "credits" : 100
+        },
+        "storage": {
+          "regolith": 1000,
+          "water_ice": 500,
+          "helium_3": 100,
+          "rare_earth_elements": 200
+        }
+      }
+    ]
+  }
