@@ -162,3 +162,5 @@ cython_debug/
 #.idea/
 /game/gameDatabaseEcho.json
 /.vs
+/game/.vs/game/v17
+/game/.vs/game/FileContentIndex

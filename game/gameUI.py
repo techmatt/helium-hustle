@@ -15,77 +15,86 @@ class GameUI(QMainWindow):
         self.state = state
         
         self.cookies = 0
+        self.cookiesPerClick = 1
+        self.cookiesPerSecond = 1
         
-        self.init_ui()
+        self.initUI()
 
-    def init_ui(self):
-        central_widget = QWidget()
-        self.setCentralWidget(central_widget)
-        main_layout = QHBoxLayout(central_widget)
+    def initUI(self):
+        centralWidget = QWidget()
+        self.setCentralWidget(centralWidget)
+        mainLayout = QHBoxLayout(centralWidget)
 
         # Left frame (menu)
-        left_frame = QWidget()
-        left_layout = QVBoxLayout(left_frame)
-        main_game_btn = QPushButton("Main Game")
-        upgrades_btn = QPushButton("Upgrades")
-        left_layout.addWidget(main_game_btn)
-        left_layout.addWidget(upgrades_btn)
-        left_layout.addStretch()
+        leftFrame = QWidget()
+        leftLayout = QVBoxLayout(leftFrame)
+        mainGameBtn = QPushButton("Main Game")
+        upgradesBtn = QPushButton("Upgrades")
+        leftLayout.addWidget(mainGameBtn)
+        leftLayout.addWidget(upgradesBtn)
+        
+        self.resourceLabels = []
+        for r in self.state.resources.values():
+            print('resource: ', r.info.name)
+            l = QLabel(f"{r.info.name}: {r.count} / {r.storage} (+{r.income} / sec)")
+            leftLayout.addWidget(l)
+
+        leftLayout.addStretch()
 
         # Right frame (content)
-        self.right_frame = QWidget()
-        self.right_layout = QVBoxLayout(self.right_frame)
-        self.cookies_label = QLabel(f"Cookies: {self.cookies}")
-        self.click_button = QPushButton("Click me!")
-        self.right_layout.addWidget(self.cookies_label)
-        self.right_layout.addWidget(self.click_button)
+        self.rightFrame = QWidget()
+        self.rightLayout = QVBoxLayout(self.rightFrame)
+        self.cookiesLabel = QLabel(f"Cookies: {self.cookies}")
+        self.clickButton = QPushButton("Click me!")
+        self.rightLayout.addWidget(self.cookiesLabel)
+        self.rightLayout.addWidget(self.clickButton)
 
-        main_layout.addWidget(left_frame, 1)
-        main_layout.addWidget(self.right_frame, 3)
+        mainLayout.addWidget(leftFrame, 1)
+        mainLayout.addWidget(self.rightFrame, 3)
 
         # Connect signals
-        self.click_button.clicked.connect(self.click_cookie)
-        main_game_btn.clicked.connect(self.show_main_game)
-        upgrades_btn.clicked.connect(self.show_upgrades)
+        self.clickButton.clicked.connect(self.clickCookie)
+        mainGameBtn.clicked.connect(self.showMainGame)
+        upgradesBtn.clicked.connect(self.showUpgrades)
 
-    def click_cookie(self):
-        self.cookies += self.cookies_per_click
-        self.update_cookies_label()
+    def clickCookie(self):
+        self.cookies += self.cookiesPerClick
+        self.updateCookiesLabel()
 
-    def update_cookies_label(self):
-        self.cookies_label.setText(f"Cookies: {self.cookies}\nPer click: {self.cookies_per_click}\nPer second: {self.cookies_per_second}")
+    def updateCookiesLabel(self):
+        self.cookiesLabel.setText(f"Cookies: {self.cookies}\nPer click: {self.cookiesPerClick}\nPer second: {self.cookiesPerSecond}")
 
-    def show_main_game(self):
+    def showMainGame(self):
         # Clear right layout and add main game widgets
-        self.clear_right_layout()
-        self.right_layout.addWidget(self.cookies_label)
-        self.right_layout.addWidget(self.click_button)
+        self.clearRightLayout()
+        self.rightLayout.addWidget(self.cookiesLabel)
+        self.rightLayout.addWidget(self.clickButton)
 
-    def show_upgrades(self):
+    def showUpgrades(self):
         # Clear right layout and add upgrade widgets
-        self.clear_right_layout()
-        upgrade_click_btn = QPushButton("Upgrade Click (+1)")
-        upgrade_passive_btn = QPushButton("Upgrade Passive (+1/s)")
-        self.right_layout.addWidget(upgrade_click_btn)
-        self.right_layout.addWidget(upgrade_passive_btn)
-        upgrade_click_btn.clicked.connect(lambda: self.upgrade("click"))
-        upgrade_passive_btn.clicked.connect(lambda: self.upgrade("passive"))
+        self.clearRightLayout()
+        upgradeClickBtn = QPushButton("Upgrade Click (+1)")
+        upgradePassiveBtn = QPushButton("Upgrade Passive (+1/s)")
+        self.rightLayout.addWidget(upgradeClickBtn)
+        self.rightLayout.addWidget(upgradePassiveBtn)
+        upgradeClickBtn.clicked.connect(lambda: self.upgrade("click"))
+        upgradePassiveBtn.clicked.connect(lambda: self.upgrade("passive"))
 
-    def clear_right_layout(self):
-        while self.right_layout.count():
-            item = self.right_layout.takeAt(0)
+    def clearRightLayout(self):
+        while self.rightLayout.count():
+            item = self.rightLayout.takeAt(0)
             widget = item.widget()
             if widget:
                 widget.setParent(None)
 
-    def upgrade(self, upgrade_type):
-        if upgrade_type == "click" and self.cookies >= 10:
+    def upgrade(self, upgradeType):
+        if upgradeType == "click" and self.cookies >= 10:
             self.cookies -= 10
-            self.cookies_per_click += 1
-        elif upgrade_type == "passive" and self.cookies >= 20:
+            self.cookiesPerClick += 1
+        elif upgradeType == "passive" and self.cookies >= 20:
             self.cookies -= 20
-            self.cookies_per_second += 1
-        self.update_cookies_label()
+            self.cookiesPerSecond += 1
+        self.updateCookiesLabel()
 
 if __name__ == '__main__':
     print('starting UI')
