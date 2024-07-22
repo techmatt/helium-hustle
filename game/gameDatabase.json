@@ -1,63 +1,72 @@
 {
-    "resources": [
-      {
-        "name": "Regolith",
-        "basePrice": 10,
-        "baseDemand": 1000,
-        "elasticity": 0.8
-      },
-      {
-        "name": "Ice",
-        "basePrice": 50,
-        "baseDemand": 500,
-        "elasticity": 0.7
-      },
-      {
-        "name": "Helium-3",
-        "basePrice": 1000,
-        "baseDemand": 100,
-        "elasticity": 1.2
-      }
-    ],
+  "resources": [
+    {
+      "name": "Credits",
+      "basePrice": 1,
+      "baseDemand": 1,
+      "elasticity": 1.0
+    },
+    {
+      "name": "Regolith",
+      "basePrice": 10,
+      "baseDemand": 1000,
+      "elasticity": 0.8
+    },
+    {
+      "name": "Ice",
+      "basePrice": 50,
+      "baseDemand": 500,
+      "elasticity": 0.7
+    },
+    {
+      "name": "Helium-3",
+      "basePrice": 1000,
+      "baseDemand": 100,
+      "elasticity": 1.2
+    }
+  ],
     "buildings": [
       {
         "name": "Regolith Harvester",
         "baseCost": {
-            "credits" : 100
+            "Credits" : 100
         },
         "production": {
-          "regolith": 1
-        }
+          "Regolith": 1
+        },
+        "costScaling" : 1.25
       },
       {
         "name": "Ice Extractor",
         "baseCost": {
-            "credits" : 100
+          "Credits": 100
         },
         "production": {
-          "water_ice": 0.5
-        }
+          "Ice": 0.5
+        },
+        "costScaling": 1.25
       },
       {
         "name": "Gas Miner",
         "baseCost": {
-            "credits" : 100
+          "Credits": 100
         },
         "production": {
-          "helium_3": 0.1
-        }
+          "Helium-3": 0.1
+        },
+        "costScaling": 1.25
       },
       {
         "name": "Storage Facility",
         "baseCost": {
-            "credits" : 100
+          "Credits": 100
         },
         "storage": {
-          "regolith": 1000,
-          "water_ice": 500,
-          "helium_3": 100,
-          "rare_earth_elements": 200
-        }
+          "Regolith": 1000,
+          "Ice": 500,
+          "Helium-3": 100
+        },
+        "costScaling": 1.25
       }
     ]
   }

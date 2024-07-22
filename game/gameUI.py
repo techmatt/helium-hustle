@@ -7,12 +7,13 @@ from gameDatabase import GameDatabase
 from gameState import GameState
 
 class GameUI(QMainWindow):
-    def __init__(self, state):
+    def __init__(self, state : GameState, database : GameDatabase):
         super().__init__()
         self.setWindowTitle("Helium Hustle")
         self.setGeometry(100, 100, 600, 400)
 
         self.state = state
+        self.database = database
         
         self.cookies = 0
         self.cookiesPerClick = 1
@@ -50,7 +51,7 @@ class GameUI(QMainWindow):
         self.rightLayout.addWidget(self.clickButton)
 
         mainLayout.addWidget(leftFrame, 1)
-        mainLayout.addWidget(self.rightFrame, 3)
+        mainLayout.addWidget(self.rightFrame, 2)
 
         # Connect signals
         self.clickButton.clicked.connect(self.clickCookie)
@@ -73,6 +74,17 @@ class GameUI(QMainWindow):
     def showUpgrades(self):
         # Clear right layout and add upgrade widgets
         self.clearRightLayout()
+        
+        for b in self.database.buildings.values():
+            buildingCost = self.state.getBuildingCost(b.name)
+            
+            buildBtn = QPushButton(f"{b.name}")
+            self.rightLayout.addWidget(buildBtn)
+            
+            for rName, cost in buildingCost.costs.items():
+                costLabel = QLabel(f"{rName} {cost}")
+                self.rightLayout.addWidget(costLabel)
+
         upgradeClickBtn = QPushButton("Upgrade Click (+1)")
         upgradePassiveBtn = QPushButton("Upgrade Passive (+1/s)")
         self.rightLayout.addWidget(upgradeClickBtn)
@@ -104,6 +116,6 @@ if __name__ == '__main__':
     state = GameState(database)
     
     app = QApplication(sys.argv)
-    game = GameUI(state)
+    game = GameUI(state, database)
     game.show()
     sys.exit(app.exec())

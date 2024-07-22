@@ -11,6 +11,7 @@ class ResourceInfo(NamedTuple):
 
 class BuildingInfo(NamedTuple):
     name: str
+    costScaling: float
     baseCost: Dict[str, float]
     production: Dict[str, float]
     storage: Dict[str, float]
@@ -36,7 +37,8 @@ class GameDatabase:
                 name = b['name'],
                 baseCost = b.get('baseCost', {}),
                 production = b.get('production', {}),
-                storage = b.get('storage', {}))
+                storage = b.get('storage', {}),
+                costScaling = b['costScaling'])
             self.buildings[curBuilding.name] = curBuilding
 
     def saveToJSON(self, filePath: str):
