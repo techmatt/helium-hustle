@@ -49,7 +49,8 @@
       {
         "name": "Gas Miner",
         "baseCost": {
-          "Credits": 100
+          "Credits": 100,
+          "Regolith" : 10
         },
         "production": {
           "Helium-3": 0.1

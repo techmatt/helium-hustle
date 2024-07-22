@@ -3,14 +3,19 @@ import sys
 import os
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QGridLayout
 from PyQt6.QtGui import QPixmap, QFont
+from PyQt6.QtCore import pyqtSignal
 
 from gameDatabase import GameDatabase
 from gameState import GameState
 
 class BuildingWidget(QWidget):
+    clicked = pyqtSignal(str)
+    
     def __init__(self, state : GameState, name : str):
         super().__init__()
         
+        self.name = name
+    
         layout = QVBoxLayout()
         
         bState = state.buildings[name]
@@ -31,6 +36,9 @@ class BuildingWidget(QWidget):
             
         self.setLayout(layout)
         self.setStyleSheet("background-color: #D2B48C; border-radius: 10px; padding: 10px;")
+        
+    def mousePressEvent(self, event):
+        self.clicked.emit(self.name)
 
 class GameUI(QMainWindow):
     def __init__(self, state : GameState, database : GameDatabase):
@@ -107,16 +115,8 @@ class GameUI(QMainWindow):
         for bName in self.database.buildings.keys():
             bWidget = BuildingWidget(self.state, bName)
             buildingGridLayout.addWidget(bWidget)
+            bWidget.clicked.connect(self.buildBuilding)
             
-            """buildingCost = self.state.getBuildingCost(b.name)
-            
-            buildBtn = QPushButton(f"{b.name}")
-            self.rightLayout.addWidget(buildBtn)
-            
-            for rName, cost in buildingCost.costs.items():
-                costLabel = QLabel(f"{rName} {cost}")
-                self.rightLayout.addWidget(costLabel)"""
-
         self.rightLayout.addWidget(buildingGridWidget)
         
         upgradeClickBtn = QPushButton("Upgrade Click (+1)")
@@ -133,6 +133,9 @@ class GameUI(QMainWindow):
             if widget:
                 widget.setParent(None)
 
+    def buildBuilding(self, name : str):
+        print('building ' + name)
+        
     def upgrade(self, upgradeType):
         if upgradeType == "click" and self.cookies >= 10:
             self.cookies -= 10
