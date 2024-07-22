@@ -1,4 +1,6 @@
 
+from __future__ import annotations
+
 import json
 import os
 from typing import Dict, List, NamedTuple
@@ -15,6 +17,15 @@ class BuildingInfo(NamedTuple):
     baseCost: Dict[str, float]
     production: Dict[str, float]
     storage: Dict[str, float]
+
+class GameParams:
+    def __init__(self, database : GameDatabase):
+        
+        self.baseStorage: Dict[str, float] = {}
+        for rName in database.resources.keys():
+            self.baseStorage[rName] = 0.0
+            
+        self.baseStorage["Credits"] = 1000.0
 
 class GameDatabase:
     def __init__(self, filePath):
@@ -40,6 +51,8 @@ class GameDatabase:
                 storage = b.get('storage', {}),
                 costScaling = b['costScaling'])
             self.buildings[curBuilding.name] = curBuilding
+            
+        self.params: GameParams = GameParams(self)
 
     def saveToJSON(self, filePath: str):
         data = {

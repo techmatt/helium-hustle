@@ -34,11 +34,13 @@ class GameState:
         self.resources: Dict[str, ResourceState] = {}
         for r in database.resources.values():
             self.resources[r.name] = ResourceState(r)
+            
+        self.updateAttributes()
 
     def updateAttributes(self):
         for r in self.resources.values():
             r.income = 0
-            r.storage = 0
+            r.storage = self.database.params.baseStorage[r.info.name]
 
         for b in self.buildings.values():
             for rName, prod in b.info.production.items():

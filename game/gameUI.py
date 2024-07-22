@@ -1,10 +1,36 @@
 
 import sys
 import os
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel
+from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QGridLayout
+from PyQt6.QtGui import QPixmap, QFont
 
 from gameDatabase import GameDatabase
 from gameState import GameState
+
+class BuildingWidget(QWidget):
+    def __init__(self, state : GameState, name : str):
+        super().__init__()
+        
+        layout = QVBoxLayout()
+        
+        bState = state.buildings[name]
+        buildingCost = state.getBuildingCost(name)
+            
+        #buildBtn = QPushButton(f"{b.name}")
+        #self.rightLayout.addWidget(buildBtn)
+                
+        # Name
+        nameLabel = QLabel(f"{name} ({bState.count})")
+        nameLabel.setFont(QFont("Arial", 12, QFont.Weight.Bold))
+        layout.addWidget(nameLabel)
+        
+        # Cost
+        for rName, cost in buildingCost.costs.items():
+            costLabel = QLabel(f"{rName} {cost}")
+            layout.addWidget(costLabel)
+            
+        self.setLayout(layout)
+        self.setStyleSheet("background-color: #D2B48C; border-radius: 10px; padding: 10px;")
 
 class GameUI(QMainWindow):
     def __init__(self, state : GameState, database : GameDatabase):
@@ -75,16 +101,24 @@ class GameUI(QMainWindow):
         # Clear right layout and add upgrade widgets
         self.clearRightLayout()
         
-        for b in self.database.buildings.values():
-            buildingCost = self.state.getBuildingCost(b.name)
+        buildingGridWidget = QWidget()
+        buildingGridLayout = QGridLayout(buildingGridWidget)
+        
+        for bName in self.database.buildings.keys():
+            bWidget = BuildingWidget(self.state, bName)
+            buildingGridLayout.addWidget(bWidget)
+            
+            """buildingCost = self.state.getBuildingCost(b.name)
             
             buildBtn = QPushButton(f"{b.name}")
             self.rightLayout.addWidget(buildBtn)
             
             for rName, cost in buildingCost.costs.items():
                 costLabel = QLabel(f"{rName} {cost}")
-                self.rightLayout.addWidget(costLabel)
+                self.rightLayout.addWidget(costLabel)"""
 
+        self.rightLayout.addWidget(buildingGridWidget)
+        
         upgradeClickBtn = QPushButton("Upgrade Click (+1)")
         upgradePassiveBtn = QPushButton("Upgrade Passive (+1/s)")
         self.rightLayout.addWidget(upgradeClickBtn)
