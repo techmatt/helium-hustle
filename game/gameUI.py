@@ -3,7 +3,7 @@ import sys
 import os
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QGridLayout
 from PyQt6.QtGui import QPixmap, QFont
-from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtCore import pyqtSignal, QTimer
 
 from gameDatabase import GameDatabase
 from gameState import GameState
@@ -33,9 +33,14 @@ class BuildingWidget(QWidget):
         for rName, cost in buildingCost.costs.items():
             costLabel = QLabel(f"{rName} {cost}")
             layout.addWidget(costLabel)
+
+        canAfford = state.canAffordCost(buildingCost)
+        color = "#90EE90"
+        if not canAfford:
+            color = "#F08080"
             
         self.setLayout(layout)
-        self.setStyleSheet("background-color: #D2B48C; border-radius: 10px; padding: 10px;")
+        self.setStyleSheet(f"background-color: {color}; border-radius: 10px; padding: 10px;")
         
     def mousePressEvent(self, event):
         self.clicked.emit(self.name)
@@ -48,6 +53,7 @@ class GameUI(QMainWindow):
 
         self.state = state
         self.database = database
+        self.params = self.database.params
         
         self.cookies = 0
         self.cookiesPerClick = 1
@@ -91,7 +97,14 @@ class GameUI(QMainWindow):
         self.clickButton.clicked.connect(self.clickCookie)
         mainGameBtn.clicked.connect(self.showMainGame)
         upgradesBtn.clicked.connect(self.showUpgrades)
+        
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.timerTick)
+        self.timer.start(self.params.timerInterval)
 
+    def timerTick(self):
+        self.state.step()
+        
     def clickCookie(self):
         self.cookies += self.cookiesPerClick
         self.updateCookiesLabel()

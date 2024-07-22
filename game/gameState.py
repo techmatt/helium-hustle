@@ -32,8 +32,10 @@ class GameState:
             self.buildings[b.name] = BuildingState(b)
 
         self.resources: Dict[str, ResourceState] = {}
-        for r in database.resources.values():
-            self.resources[r.name] = ResourceState(r)
+        for rName, rInfo in database.resources.items():
+            rState = ResourceState(rInfo)
+            rState.count = database.params.startingResources[rName]
+            self.resources[rName] = rState
             
         self.updateAttributes()
 
@@ -67,7 +69,7 @@ class GameState:
     
     def canAffordCost(self, costTotal : CostTotal) -> bool:
         for r, v in costTotal.costs.items():
-            if v > state.resources[r].count:
+            if v > self.resources[r].count:
                 return False
         return True
 

@@ -26,6 +26,14 @@ class GameParams:
             self.baseStorage[rName] = 0.0
             
         self.baseStorage["Credits"] = 1000.0
+        
+        self.startingResources: Dict[str, float] = {}
+        for rName in database.resources.keys():
+            self.startingResources[rName] = 0.0
+            
+        self.startingResources["Credits"] = 500.0
+        
+        self.timerInterval = 500 # timer interval in milliseconds
 
 class GameDatabase:
     def __init__(self, filePath):
