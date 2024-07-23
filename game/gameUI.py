@@ -20,10 +20,7 @@ class BuildingWidget(QWidget):
         
         bState = state.buildings[name]
         buildingCost = state.getBuildingCost(name)
-            
-        #buildBtn = QPushButton(f"{b.name}")
-        #self.rightLayout.addWidget(buildBtn)
-                
+
         # Name
         nameLabel = QLabel(f"{name} ({bState.count})")
         nameLabel.setFont(QFont("Arial", 12, QFont.Weight.Bold))
@@ -104,6 +101,7 @@ class GameUI(QMainWindow):
 
     def timerTick(self):
         self.state.step()
+        #self.updateLabels()
         
     def clickCookie(self):
         self.cookies += self.cookiesPerClick
