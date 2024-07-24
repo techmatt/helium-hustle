@@ -59,25 +59,25 @@ class GameUI(QMainWindow):
         self.initUI()
 
     def initUI(self):
-        centralWidget = QWidget()
-        self.setCentralWidget(centralWidget)
-        mainLayout = QHBoxLayout(centralWidget)
+        self.centralWidget = QWidget()
+        self.setCentralWidget(self.centralWidget)
+        self.mainLayout = QHBoxLayout(self.centralWidget)
 
         # Left frame (menu)
-        leftFrame = QWidget()
-        leftLayout = QVBoxLayout(leftFrame)
+        self.leftFrame = QWidget()
+        self.leftLayout = QVBoxLayout(self.leftFrame)
         mainGameBtn = QPushButton("Main Game")
         upgradesBtn = QPushButton("Upgrades")
-        leftLayout.addWidget(mainGameBtn)
-        leftLayout.addWidget(upgradesBtn)
+        self.leftLayout.addWidget(mainGameBtn)
+        self.leftLayout.addWidget(upgradesBtn)
         
         self.resourceLabels = []
         for r in self.state.resources.values():
             print('resource: ', r.info.name)
             l = QLabel(f"{r.info.name}: {r.count} / {r.storage} (+{r.income} / sec)")
-            leftLayout.addWidget(l)
+            self.leftLayout.addWidget(l)
 
-        leftLayout.addStretch()
+        self.leftLayout.addStretch()
 
         # Right frame (content)
         self.rightFrame = QWidget()
@@ -87,8 +87,8 @@ class GameUI(QMainWindow):
         self.rightLayout.addWidget(self.cookiesLabel)
         self.rightLayout.addWidget(self.clickButton)
 
-        mainLayout.addWidget(leftFrame, 1)
-        mainLayout.addWidget(self.rightFrame, 2)
+        self.mainLayout.addWidget(self.leftFrame, 1)
+        self.mainLayout.addWidget(self.rightFrame, 2)
 
         # Connect signals
         self.clickButton.clicked.connect(self.clickCookie)
