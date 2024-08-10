@@ -2,8 +2,8 @@
 import sys
 import os
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QGridLayout
-from PyQt6.QtGui import QPixmap, QFont
-from PyQt6.QtCore import pyqtSignal, QTimer
+from PyQt6.QtGui import QPixmap, QFont, QIcon
+from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize
 
 from gameDatabase import GameDatabase
 from gameState import GameState
@@ -14,8 +14,8 @@ class IconGrid(QWidget):
         self.initUI()
 
     def initUI(self):
-        grid = QGridLayout()
-        self.setLayout(grid)
+        self.grid = QGridLayout()
+        self.setLayout(self.grid)
 
         icons = [
             ("Home", "a.png"),
@@ -23,12 +23,30 @@ class IconGrid(QWidget):
         ]
 
         for index, (name, iconPath) in enumerate(icons):
-            button = QPushButton(name)
-            button.setIcon(QIcon(iconPath))
-            button.setIconSize(QSize(32, 32))
+            
+            buttonContainer = QWidget()
+            
+            buttonLayout = QVBoxLayout(buttonContainer)
+            # Create icon
+            iconLabel = QLabel()
+            pixmap = QPixmap(iconPath).scaled(64, 64, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            iconLabel.setPixmap(pixmap)
+            iconLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            # Create text label
+            textLabel = QLabel(name)
+            textLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+            # Add icon and text to layout
+            buttonLayout.addWidget(iconLabel)
+            buttonLayout.addWidget(textLabel)
+
+            #button = QPushButton(name)
+            #button.setIcon(QIcon(iconPath))
+            #button.setIconSize(QSize(64, 64))
             row = index // 3
             col = index % 3
-            grid.addWidget(button, row, col)
+            self.grid.addWidget(buttonContainer, row, col)
 
 class BuildingWidget(QWidget):
     clicked = pyqtSignal(str)
@@ -92,8 +110,10 @@ class GameUI(QMainWindow):
         self.rightFrame = QWidget()
         self.rightLayout = QVBoxLayout(self.rightFrame)
         
+        actionGrid = IconGrid()
         mainGameBtn = QPushButton("Main Game")
         upgradesBtn = QPushButton("Upgrades")
+        self.leftLayout.addWidget(actionGrid)
         self.leftLayout.addWidget(mainGameBtn)
         self.leftLayout.addWidget(upgradesBtn)
         
@@ -114,6 +134,7 @@ class GameUI(QMainWindow):
         #self.rightLayout.addWidget(self.clickButton)
 
         self.mainLayout.addWidget(self.leftFrame, 1)
+        self.mainLayout.addWidget(self.middleFrame, 2)
         self.mainLayout.addWidget(self.rightFrame, 3)
 
         # Connect signals
