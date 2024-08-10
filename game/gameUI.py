@@ -2,11 +2,62 @@
 import sys
 import os
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QGridLayout
-from PyQt6.QtGui import QPixmap, QFont, QIcon
+from PyQt6.QtGui import QPixmap, QFont, QIcon, QPainter, QColor
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize
 
 from gameDatabase import GameDatabase
 from gameState import GameState
+
+class IconButton(QPushButton):
+    clicked = pyqtSignal(str)  # Custom signal to emit the button's name
+
+    def __init__(self, name, icon_path, parent=None):
+        super().__init__(parent)
+        self.name = name
+        self.setFixedSize(100, 100)  # Adjust size as needed
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(5)
+        layout.setContentsMargins(5, 5, 5, 5)
+
+        # Icon
+        icon_label = QLabel()
+        pixmap = QPixmap(icon_path).scaled(
+            64, 64, 
+            Qt.AspectRatioMode.KeepAspectRatio, 
+            Qt.TransformationMode.SmoothTransformation
+        )
+        icon_label.setPixmap(pixmap)
+        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        # Text
+        text_label = QLabel(name)
+        text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        layout.addWidget(icon_label)
+        layout.addWidget(text_label)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        if self.underMouse():
+            painter.setBrush(QColor(200, 200, 200, 100))
+        else:
+            painter.setBrush(QColor(230, 230, 230, 100))
+
+        painter.setPen(QColor(180, 180, 180))
+        painter.drawRoundedRect(self.rect(), 10, 10)
+
+    def enterEvent(self, event):
+        self.update()
+
+    def leaveEvent(self, event):
+        self.update()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked.emit(self.name)
 
 class IconGrid(QWidget):
     def __init__(self):
@@ -24,29 +75,34 @@ class IconGrid(QWidget):
 
         for index, (name, iconPath) in enumerate(icons):
             
-            buttonContainer = QWidget()
-            
-            buttonLayout = QVBoxLayout(buttonContainer)
+            button = IconButton(name, iconPath)
+            button.clicked.connect(self.onButtonClicked)
+            #buttonContainer = QWidget()
+            #buttonLayout = QVBoxLayout(buttonContainer)
             # Create icon
-            iconLabel = QLabel()
-            pixmap = QPixmap(iconPath).scaled(64, 64, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-            iconLabel.setPixmap(pixmap)
-            iconLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            #iconLabel = QLabel()
+            #pixmap = QPixmap(iconPath).scaled(64, 64, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
+            #iconLabel.setPixmap(pixmap)
+            #iconLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             # Create text label
-            textLabel = QLabel(name)
-            textLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            #textLabel = QLabel(name)
+            #textLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
             # Add icon and text to layout
-            buttonLayout.addWidget(iconLabel)
-            buttonLayout.addWidget(textLabel)
+            #buttonLayout.addWidget(iconLabel)
+            #buttonLayout.addWidget(textLabel)
 
             #button = QPushButton(name)
             #button.setIcon(QIcon(iconPath))
             #button.setIconSize(QSize(64, 64))
+            
             row = index // 3
             col = index % 3
-            self.grid.addWidget(buttonContainer, row, col)
+            self.grid.addWidget(button, row, col)
+            
+    def onButtonClicked(self, name):
+        print(f"Clicked on {name}")
 
 class BuildingWidget(QWidget):
     clicked = pyqtSignal(str)
