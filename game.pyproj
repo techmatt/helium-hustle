@@ -22,6 +22,7 @@
     <Compile Include="gameDatabase.py" />
     <Compile Include="gameState.py" />
     <Compile Include="gameUI.py" />
+    <Compile Include="gridTest.py" />
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|3.10" />

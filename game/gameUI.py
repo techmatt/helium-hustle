@@ -8,6 +8,28 @@ from PyQt6.QtCore import pyqtSignal, QTimer
 from gameDatabase import GameDatabase
 from gameState import GameState
 
+class IconGrid(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        grid = QGridLayout()
+        self.setLayout(grid)
+
+        icons = [
+            ("Home", "a.png"),
+            ("Study", "b.png")
+        ]
+
+        for index, (name, iconPath) in enumerate(icons):
+            button = QPushButton(name)
+            button.setIcon(QIcon(iconPath))
+            button.setIconSize(QSize(32, 32))
+            row = index // 3
+            col = index % 3
+            grid.addWidget(button, row, col)
+
 class BuildingWidget(QWidget):
     clicked = pyqtSignal(str)
     
