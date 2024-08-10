@@ -52,20 +52,24 @@ class GameUI(QMainWindow):
         self.database = database
         self.params = self.database.params
         
-        self.cookies = 0
-        self.cookiesPerClick = 1
-        self.cookiesPerSecond = 1
-        
         self.initUI()
 
     def initUI(self):
         self.centralWidget = QWidget()
         self.setCentralWidget(self.centralWidget)
         self.mainLayout = QHBoxLayout(self.centralWidget)
+        
+        # UI has left, middle, and right frames
 
-        # Left frame (menu)
         self.leftFrame = QWidget()
         self.leftLayout = QVBoxLayout(self.leftFrame)
+        
+        self.middleFrame = QWidget()
+        self.middleLayout = QVBoxLayout(self.middleFrame)
+        
+        self.rightFrame = QWidget()
+        self.rightLayout = QVBoxLayout(self.rightFrame)
+        
         mainGameBtn = QPushButton("Main Game")
         upgradesBtn = QPushButton("Upgrades")
         self.leftLayout.addWidget(mainGameBtn)
@@ -82,16 +86,16 @@ class GameUI(QMainWindow):
         # Right frame (content)
         self.rightFrame = QWidget()
         self.rightLayout = QVBoxLayout(self.rightFrame)
-        self.cookiesLabel = QLabel(f"Cookies: {self.cookies}")
-        self.clickButton = QPushButton("Click me!")
-        self.rightLayout.addWidget(self.cookiesLabel)
-        self.rightLayout.addWidget(self.clickButton)
+        #self.cookiesLabel = QLabel(f"Cookies: {self.cookies}")
+        #self.clickButton = QPushButton("Click me!")
+        #self.rightLayout.addWidget(self.cookiesLabel)
+        #self.rightLayout.addWidget(self.clickButton)
 
         self.mainLayout.addWidget(self.leftFrame, 1)
-        self.mainLayout.addWidget(self.rightFrame, 2)
+        self.mainLayout.addWidget(self.rightFrame, 3)
 
         # Connect signals
-        self.clickButton.clicked.connect(self.clickCookie)
+        #self.clickButton.clicked.connect(self.clickCookie)
         mainGameBtn.clicked.connect(self.showMainGame)
         upgradesBtn.clicked.connect(self.showUpgrades)
         
@@ -103,18 +107,18 @@ class GameUI(QMainWindow):
         self.state.step()
         #self.updateLabels()
         
-    def clickCookie(self):
-        self.cookies += self.cookiesPerClick
-        self.updateCookiesLabel()
+    #def clickCookie(self):
+    #    self.cookies += self.cookiesPerClick
+    #    self.updateCookiesLabel()
 
-    def updateCookiesLabel(self):
-        self.cookiesLabel.setText(f"Cookies: {self.cookies}\nPer click: {self.cookiesPerClick}\nPer second: {self.cookiesPerSecond}")
+    #def updateCookiesLabel(self):
+    #    self.cookiesLabel.setText(f"Cookies: {self.cookies}\nPer click: {self.cookiesPerClick}\nPer second: {self.cookiesPerSecond}")
 
     def showMainGame(self):
         # Clear right layout and add main game widgets
         self.clearRightLayout()
-        self.rightLayout.addWidget(self.cookiesLabel)
-        self.rightLayout.addWidget(self.clickButton)
+        #self.rightLayout.addWidget(self.cookiesLabel)
+        #self.rightLayout.addWidget(self.clickButton)
 
     def showUpgrades(self):
         # Clear right layout and add upgrade widgets
@@ -130,12 +134,12 @@ class GameUI(QMainWindow):
             
         self.rightLayout.addWidget(buildingGridWidget)
         
-        upgradeClickBtn = QPushButton("Upgrade Click (+1)")
-        upgradePassiveBtn = QPushButton("Upgrade Passive (+1/s)")
-        self.rightLayout.addWidget(upgradeClickBtn)
-        self.rightLayout.addWidget(upgradePassiveBtn)
-        upgradeClickBtn.clicked.connect(lambda: self.upgrade("click"))
-        upgradePassiveBtn.clicked.connect(lambda: self.upgrade("passive"))
+        #upgradeClickBtn = QPushButton("Upgrade Click (+1)")
+        #upgradePassiveBtn = QPushButton("Upgrade Passive (+1/s)")
+        #self.rightLayout.addWidget(upgradeClickBtn)
+        #self.rightLayout.addWidget(upgradePassiveBtn)
+        #upgradeClickBtn.clicked.connect(lambda: self.upgrade("click"))
+        #upgradePassiveBtn.clicked.connect(lambda: self.upgrade("passive"))
 
     def clearRightLayout(self):
         while self.rightLayout.count():
