@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import sys
 import os
+
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QGridLayout
 from PyQt6.QtGui import QPixmap, QFont, QIcon, QPainter, QColor
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QCoreApplication
@@ -10,89 +11,9 @@ from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QCoreApplication
 from gameDatabase import GameDatabase
 from gameState import GameState
 
-class IconButton(QPushButton):
-    clicked = pyqtSignal(str)  # Custom signal to emit the button's name
-
-    def __init__(self, name, icon_path, parent=None):
-        super().__init__(parent)
-        self.name = name
-        self.setFixedSize(100, 100)  # Adjust size as needed
-
-        layout = QVBoxLayout(self)
-        layout.setSpacing(5)
-        layout.setContentsMargins(5, 5, 5, 5)
-
-        # Icon
-        icon_label = QLabel()
-        pixmap = QPixmap(icon_path).scaled(
-            64, 64, 
-            Qt.AspectRatioMode.KeepAspectRatio, 
-            Qt.TransformationMode.SmoothTransformation
-        )
-        icon_label.setPixmap(pixmap)
-        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        # Text
-        text_label = QLabel(name)
-        text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-        layout.addWidget(icon_label)
-        layout.addWidget(text_label)
-
-    def paintEvent(self, event):
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-
-        if self.underMouse():
-            painter.setBrush(QColor(200, 200, 200, 100))
-        else:
-            painter.setBrush(QColor(230, 230, 230, 100))
-
-        painter.setPen(QColor(180, 180, 180))
-        painter.drawRoundedRect(self.rect(), 10, 10)
-
-    def enterEvent(self, event):
-        self.update()
-
-    def leaveEvent(self, event):
-        self.update()
-
-    def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.clicked.emit(self.name)
-
-class IconGrid(QWidget):
-    def __init__(self, gameUI : GameUI):
-        super().__init__()
-        self.gameUI = gameUI
-        self.initUI()
-
-    def initUI(self):
-        self.grid = QGridLayout()
-        self.setLayout(self.grid)
-
-        icons = [
-            ("Commands", "commands.png"),
-            ("Buildings", "buildings.png"),
-            ("Research", "research.png"),
-            ("Achievements", "achievements.png"),
-            ("Options", "options.png"),
-            ("Exit", "exit.png")
-        ]
-
-        for index, (name, iconPath) in enumerate(icons):
-            
-            button = IconButton(name, 'icons/' + iconPath)
-            button.clicked.connect(self.onButtonClicked)
-            
-            row = index // 3
-            col = index % 3
-            self.grid.addWidget(button, row, col)
-            
-    def onButtonClicked(self, name):
-        if name == 'Exit':
-            self.gameUI.triggerExit()
-        print(f"Clicked on {name}")
+from enums import GameWindowMode
+from iconGrid import IconGrid
+from resourceDisplay import ResourceDisplay
 
 class BuildingWidget(QWidget):
     clicked = pyqtSignal(str)
@@ -137,6 +58,7 @@ class GameUI(QMainWindow):
         self.state = state
         self.database = database
         self.params = self.database.params
+        self.mode : GameWindowMode = GameWindowMode.BUILDINGS
         
         self.initUI()
 
@@ -145,7 +67,8 @@ class GameUI(QMainWindow):
         self.setCentralWidget(self.centralWidget)
         self.mainLayout = QHBoxLayout(self.centralWidget)
         
-        # UI has left, middle, and right frames
+        # UI has left, middle, and right frames.
+        # See design.pptx for the latest design.
 
         self.leftFrame = QWidget()
         self.leftLayout = QVBoxLayout(self.leftFrame)
@@ -156,41 +79,57 @@ class GameUI(QMainWindow):
         self.rightFrame = QWidget()
         self.rightLayout = QVBoxLayout(self.rightFrame)
         
-        actionGrid = IconGrid(self)
-        mainGameBtn = QPushButton("Main Game")
-        upgradesBtn = QPushButton("Upgrades")
-        self.leftLayout.addWidget(actionGrid)
-        self.leftLayout.addWidget(mainGameBtn)
-        self.leftLayout.addWidget(upgradesBtn)
+        self.makeLeftFrame()
+        self.makeMiddleFrame()
+        self.makeRightFrame()
         
-        self.resourceLabels = []
-        for r in self.state.resources.values():
-            print('resource: ', r.info.name)
-            l = QLabel(f"{r.info.name}: {r.count} / {r.storage} (+{r.income} / sec)")
-            self.leftLayout.addWidget(l)
-
-        self.leftLayout.addStretch()
-
-        # Right frame (content)
-        self.rightFrame = QWidget()
-        self.rightLayout = QVBoxLayout(self.rightFrame)
-        #self.cookiesLabel = QLabel(f"Cookies: {self.cookies}")
-        #self.clickButton = QPushButton("Click me!")
-        #self.rightLayout.addWidget(self.cookiesLabel)
-        #self.rightLayout.addWidget(self.clickButton)
-
         self.mainLayout.addWidget(self.leftFrame, 1)
         self.mainLayout.addWidget(self.middleFrame, 2)
         self.mainLayout.addWidget(self.rightFrame, 3)
-
-        # Connect signals
-        #self.clickButton.clicked.connect(self.clickCookie)
-        mainGameBtn.clicked.connect(self.showMainGame)
-        upgradesBtn.clicked.connect(self.showUpgrades)
         
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.timerTick)
         self.timer.start(self.params.timerInterval)
+        
+    def clearLayout(self, layout):
+        while layout.count():
+            item = layout.takeAt(0)
+            widget = item.widget()
+            if widget:
+                widget.setParent(None)
+
+    def makeLeftFrame(self):
+        self.clearLayout(self.leftLayout)
+        
+        self.titleLabel = QLabel("Helium Hustle")
+        self.iconGrid = IconGrid(self)
+        self.resourceDisplay = ResourceDisplay(self)
+        
+        self.leftLayout.addWidget(self.titleLabel)
+        self.leftLayout.addWidget(self.iconGrid)
+        self.leftLayout.addWidget(self.resourceDisplay)
+        
+        self.leftLayout.addStretch()
+
+    def makeRightFrame(self):
+        self.clearLayout(self.rightLayout)
+        
+        self.programLabel = QLabel("Program")
+
+        self.rightLayout.addWidget(self.programLabel)
+
+    def makeMiddleFrame(self):
+        self.clearLayout(self.middleLayout)
+        if self.mode == GameWindowMode.BUILDINGS:
+            buildingGridWidget = QWidget()
+            buildingGridLayout = QGridLayout(buildingGridWidget)
+        
+            for bName in self.database.buildings.keys():
+                bWidget = BuildingWidget(self.state, bName)
+                buildingGridLayout.addWidget(bWidget)
+                bWidget.clicked.connect(self.buildBuilding)
+            
+            self.middleLayout.addWidget(buildingGridWidget)
 
     def timerTick(self):
         self.state.step()
@@ -229,13 +168,6 @@ class GameUI(QMainWindow):
         #self.rightLayout.addWidget(upgradePassiveBtn)
         #upgradeClickBtn.clicked.connect(lambda: self.upgrade("click"))
         #upgradePassiveBtn.clicked.connect(lambda: self.upgrade("passive"))
-
-    def clearRightLayout(self):
-        while self.rightLayout.count():
-            item = self.rightLayout.takeAt(0)
-            widget = item.widget()
-            if widget:
-                widget.setParent(None)
 
     def buildBuilding(self, name : str):
         print('building ' + name)
