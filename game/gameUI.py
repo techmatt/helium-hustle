@@ -100,7 +100,7 @@ class GameUI(QMainWindow):
                 commandListLayout.addWidget(cWidget)
                 
             self.middleLayout.addWidget(commandListWidget)
-                
+
         if self.mode == GameWindowMode.BUILDINGS:
             buildingGridWidget = QWidget()
             buildingGridLayout = QGridLayout(buildingGridWidget)
@@ -116,16 +116,24 @@ class GameUI(QMainWindow):
 
     def timerTick(self):
         self.state.step()
-        #self.updateLabels()
+        self.updateLabels()
         
     #self.cookiesLabel.setText(f"Cookies: {self.cookies}\nPer click: {self.cookiesPerClick}\nPer second: {self.cookiesPerSecond}")
     #upgradeClickBtn = QPushButton("Upgrade Click (+1)")
     
+    def updateLabels(self):
+        self.resourceDisplay.updateLabels()
+        self.makeMiddleFrame()
+        self.makeRightFrame()
+    
     def runCommand(self, name : str):
-        print('running ' + name)
+        #print('running ' + name)
+        self.state.runCommand(name)
+        self.updateLabels()
         
     def buildBuilding(self, name : str):
-        print('building ' + name)
+        #print('building ' + name)
+        self.updateLabels()
         
     def triggerExit(self):
         QCoreApplication.instance().quit()

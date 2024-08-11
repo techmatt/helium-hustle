@@ -9,17 +9,17 @@ from gameDatabase import GameDatabase, ResourceInfo, BuildingInfo
 
 class CommandState:
     def __init__(self, info : CommandInfo):
-        self.info = info
+        self.info: CommandInfo = info
         self.unlocked: bool = info.startUnlocked
 
 class BuildingState:
     def __init__(self, info : BuildingInfo):
-        self.info = info
+        self.info: BuildingInfo = info
         self.count: int = 0
         
 class ResourceState:
     def __init__(self, info : ResourceInfo):
-        self.info = info
+        self.info: ResourceInfo = info
         self.income: float = 0
         self.storage: float = 0
         self.count: float = 0
@@ -97,6 +97,14 @@ class GameState:
         
         self.spendCost(buildingCost)
         self.buildings[buildingName].count += 1
+        
+    def runCommand(self, commandName):
+        cState : CommandState = self.commands[commandName]
+        cInfo = cState.info
+        
+        for rName, v in cInfo.production.items():
+            r = self.resources[rName]
+            r.count = min(r.count + v, r.storage)
 
 if __name__ == "__main__":
     print('testing game state')

@@ -33,7 +33,7 @@ class CommandWidget(QWidget):
 
         #nameLabel.setFont(QFont("Arial", 12, QFont.Weight.Bold))
         layout.addWidget(nameButton)
-            
+
         self.setLayout(layout)
         
     #def mousePressEvent(self, event):

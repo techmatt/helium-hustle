@@ -99,4 +99,4 @@ class IconGrid(QWidget):
             self.gameUI.makeMiddleFrame()
         if name == 'Exit':
             self.gameUI.triggerExit()
-        print(f"Clicked on {name}")
+        #print(f"Clicked on {name}")
