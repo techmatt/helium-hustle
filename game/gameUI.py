@@ -14,62 +14,9 @@ from gameState import GameState
 from enums import GameWindowMode
 from iconGrid import IconGrid
 from resourceDisplay import ResourceDisplay
+from styleSheets import StyleSheets
 
-class CommandWidget(QWidget):
-    clicked = pyqtSignal(str)
-    
-    def __init__(self, state : GameState, name : str):
-        super().__init__()
-        
-        self.name = name
-    
-        layout = QHBoxLayout()
-        
-        cState = state.commands[name]
-        
-        # Name
-        nameLabel = QLabel(f"{name}")
-        nameLabel.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        layout.addWidget(nameLabel)
-            
-        self.setLayout(layout)
-        
-    def mousePressEvent(self, event):
-        self.clicked.emit(self.name)
-        
-class BuildingWidget(QWidget):
-    clicked = pyqtSignal(str)
-    
-    def __init__(self, state : GameState, name : str):
-        super().__init__()
-        
-        self.name = name
-    
-        layout = QVBoxLayout()
-        
-        bState = state.buildings[name]
-        buildingCost = state.getBuildingCost(name)
-
-        # Name
-        nameLabel = QLabel(f"{name} ({bState.count})")
-        nameLabel.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        layout.addWidget(nameLabel)
-        
-        # Cost
-        for rName, cost in buildingCost.costs.items():
-            costLabel = QLabel(f"{rName} {cost}")
-            layout.addWidget(costLabel)
-
-        canAfford = state.canAffordCost(buildingCost)
-        color = "#90EE90"
-        if not canAfford:
-            color = "#F08080"
-            
-        self.setLayout(layout)
-        self.setStyleSheet(f"background-color: {color}; border-radius: 10px; padding: 10px;")
-        
-    def mousePressEvent(self, event):
-        self.clicked.emit(self.name)
+from UIWidgets import CommandWidget, BuildingWidget
 
 class GameUI(QMainWindow):
     def __init__(self, state : GameState, database : GameDatabase):
@@ -149,10 +96,9 @@ class GameUI(QMainWindow):
             commandListLayout = QVBoxLayout(commandListWidget)
             
             for cName in self.database.commands.keys():
-                cWidget = CommandWidget(self.state, cName)
+                cWidget = CommandWidget(self, cName)
                 commandListLayout.addWidget(cWidget)
-                cWidget.clicked.connect(self.runCommand)
-
+                
             self.middleLayout.addWidget(commandListWidget)
                 
         if self.mode == GameWindowMode.BUILDINGS:
@@ -165,49 +111,21 @@ class GameUI(QMainWindow):
                 bWidget.clicked.connect(self.buildBuilding)
             
             self.middleLayout.addWidget(buildingGridWidget)
+            
+        self.middleLayout.addStretch()
 
     def timerTick(self):
         self.state.step()
         #self.updateLabels()
         
-    #def updateCookiesLabel(self):
-    #    self.cookiesLabel.setText(f"Cookies: {self.cookies}\nPer click: {self.cookiesPerClick}\nPer second: {self.cookiesPerSecond}")
-
-    def showUpgrades(self):
-        # Clear right layout and add upgrade widgets
-        self.clearRightLayout()
-        
-        buildingGridWidget = QWidget()
-        buildingGridLayout = QGridLayout(buildingGridWidget)
-        
-        for bName in self.database.buildings.keys():
-            bWidget = BuildingWidget(self.state, bName)
-            buildingGridLayout.addWidget(bWidget)
-            bWidget.clicked.connect(self.buildBuilding)
-            
-        self.rightLayout.addWidget(buildingGridWidget)
-        
-        #upgradeClickBtn = QPushButton("Upgrade Click (+1)")
-        #upgradePassiveBtn = QPushButton("Upgrade Passive (+1/s)")
-        #self.rightLayout.addWidget(upgradeClickBtn)
-        #self.rightLayout.addWidget(upgradePassiveBtn)
-        #upgradeClickBtn.clicked.connect(lambda: self.upgrade("click"))
-        #upgradePassiveBtn.clicked.connect(lambda: self.upgrade("passive"))
-
+    #self.cookiesLabel.setText(f"Cookies: {self.cookies}\nPer click: {self.cookiesPerClick}\nPer second: {self.cookiesPerSecond}")
+    #upgradeClickBtn = QPushButton("Upgrade Click (+1)")
+    
     def runCommand(self, name : str):
         print('running ' + name)
         
     def buildBuilding(self, name : str):
         print('building ' + name)
-        
-    def upgrade(self, upgradeType):
-        if upgradeType == "click" and self.cookies >= 10:
-            self.cookies -= 10
-            self.cookiesPerClick += 1
-        elif upgradeType == "passive" and self.cookies >= 20:
-            self.cookies -= 20
-            self.cookiesPerSecond += 1
-        self.updateCookiesLabel()
         
     def triggerExit(self):
         QCoreApplication.instance().quit()
