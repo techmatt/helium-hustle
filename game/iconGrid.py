@@ -83,7 +83,7 @@ class IconGrid(QWidget):
 
         for index, (name, iconPath) in enumerate(icons):
             
-            button = IconButton(name, 'icons/' + iconPath)
+            button = IconButton(name, 'icons/actionGrid/' + iconPath)
             button.clicked.connect(self.onButtonClicked)
             
             row = index // 3

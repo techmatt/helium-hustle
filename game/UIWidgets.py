@@ -38,8 +38,73 @@ class CommandWidget(QWidget):
         
     #def mousePressEvent(self, event):
     #    self.clicked.emit(self.name)
+
+class BuildingButton(QPushButton):
+    clicked = pyqtSignal(str)
+
+    def __init__(self, state : GameState, name : str):
+        super().__init__()
+        self.name = name
+        self.setFixedSize(150, 150)  # Adjust size as needed
         
-class BuildingWidget(QWidget):
+        bState = state.buildings[name]
+        buildingCost = state.getBuildingCost(name)
+
+        layout = QVBoxLayout(self)
+        layout.setSpacing(2)
+        layout.setContentsMargins(2, 2, 2, 2)
+
+        # Icon
+        iconLabel = QLabel()
+        iconPath = 'icons/buildings/' + name + '.png'
+        pixmap = QPixmap(iconPath).scaled(
+            64, 64, 
+            Qt.AspectRatioMode.KeepAspectRatio, 
+            Qt.TransformationMode.SmoothTransformation
+        )
+        iconLabel.setPixmap(pixmap)
+        iconLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        
+        # Name and count
+        textLabel = QLabel(f"{name} ({bState.count})")
+        textLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        
+        # Cost
+        #for rName, cost in buildingCost.costs.items():
+        #    costLabel = QLabel(f"{rName} {cost}")
+        #    layout.addWidget(costLabel)
+
+        #canAfford = state.canAffordCost(buildingCost)
+        #color = "#90EE90"
+        #if not canAfford:
+        #    color = "#F08080"
+
+        layout.addWidget(textLabel)
+        layout.addWidget(iconLabel)
+
+    def paintEvent(self, event):
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+
+        if self.underMouse():
+            painter.setBrush(QColor(200, 200, 200, 100))
+        else:
+            painter.setBrush(QColor(230, 230, 230, 100))
+
+        painter.setPen(QColor(180, 180, 180))
+        painter.drawRoundedRect(self.rect(), 10, 10)
+
+    def enterEvent(self, event):
+        self.update()
+
+    def leaveEvent(self, event):
+        self.update()
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.MouseButton.LeftButton:
+            self.clicked.emit(self.name)
+
+"""class BuildingWidget(QWidget):
     clicked = pyqtSignal(str)
     
     def __init__(self, state : GameState, name : str):
@@ -71,4 +136,4 @@ class BuildingWidget(QWidget):
         self.setStyleSheet(f"background-color: {color}; border-radius: 10px; padding: 10px;")
         
     def mousePressEvent(self, event):
-        self.clicked.emit(self.name)
+        self.clicked.emit(self.name)"""

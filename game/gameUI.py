@@ -16,7 +16,7 @@ from iconGrid import IconGrid
 from resourceDisplay import ResourceDisplay
 from styleSheets import StyleSheets
 
-from UIWidgets import CommandWidget, BuildingWidget
+from UIWidgets import CommandWidget, BuildingButton
 
 class GameUI(QMainWindow):
     def __init__(self, state : GameState, database : GameDatabase):
@@ -106,7 +106,7 @@ class GameUI(QMainWindow):
             buildingGridLayout = QGridLayout(buildingGridWidget)
         
             for bName in self.database.buildings.keys():
-                bWidget = BuildingWidget(self.state, bName)
+                bWidget = BuildingButton(self.state, bName)
                 buildingGridLayout.addWidget(bWidget)
                 bWidget.clicked.connect(self.buildBuilding)
             
@@ -118,9 +118,6 @@ class GameUI(QMainWindow):
         self.state.step()
         self.updateLabels()
         
-    #self.cookiesLabel.setText(f"Cookies: {self.cookies}\nPer click: {self.cookiesPerClick}\nPer second: {self.cookiesPerSecond}")
-    #upgradeClickBtn = QPushButton("Upgrade Click (+1)")
-    
     def updateLabels(self):
         self.resourceDisplay.updateLabels()
         self.makeMiddleFrame()

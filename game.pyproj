@@ -19,10 +19,14 @@
     <VisualStudioVersion Condition=" '$(VisualStudioVersion)' == '' ">10.0</VisualStudioVersion>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="enums.py" />
     <Compile Include="gameDatabase.py" />
     <Compile Include="gameState.py" />
     <Compile Include="gameUI.py" />
-    <Compile Include="gridTest.py" />
+    <Compile Include="iconGrid.py" />
+    <Compile Include="resourceDisplay.py" />
+    <Compile Include="stylesheets.py" />
+    <Compile Include="UIWidgets.py" />
   </ItemGroup>
   <ItemGroup>
     <InterpreterReference Include="Global|PythonCore|3.10" />
