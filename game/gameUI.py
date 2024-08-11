@@ -1,9 +1,11 @@
 
+from __future__ import annotations
+
 import sys
 import os
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QGridLayout
 from PyQt6.QtGui import QPixmap, QFont, QIcon, QPainter, QColor
-from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize
+from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QCoreApplication
 
 from gameDatabase import GameDatabase
 from gameState import GameState
@@ -60,8 +62,9 @@ class IconButton(QPushButton):
             self.clicked.emit(self.name)
 
 class IconGrid(QWidget):
-    def __init__(self):
+    def __init__(self, gameUI : GameUI):
         super().__init__()
+        self.gameUI = gameUI
         self.initUI()
 
     def initUI(self):
@@ -69,39 +72,26 @@ class IconGrid(QWidget):
         self.setLayout(self.grid)
 
         icons = [
-            ("Home", "a.png"),
-            ("Study", "b.png")
+            ("Commands", "commands.png"),
+            ("Buildings", "buildings.png"),
+            ("Research", "research.png"),
+            ("Achievements", "achievements.png"),
+            ("Options", "options.png"),
+            ("Exit", "exit.png")
         ]
 
         for index, (name, iconPath) in enumerate(icons):
             
-            button = IconButton(name, iconPath)
+            button = IconButton(name, 'icons/' + iconPath)
             button.clicked.connect(self.onButtonClicked)
-            #buttonContainer = QWidget()
-            #buttonLayout = QVBoxLayout(buttonContainer)
-            # Create icon
-            #iconLabel = QLabel()
-            #pixmap = QPixmap(iconPath).scaled(64, 64, Qt.AspectRatioMode.KeepAspectRatio, Qt.TransformationMode.SmoothTransformation)
-            #iconLabel.setPixmap(pixmap)
-            #iconLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-            # Create text label
-            #textLabel = QLabel(name)
-            #textLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-            # Add icon and text to layout
-            #buttonLayout.addWidget(iconLabel)
-            #buttonLayout.addWidget(textLabel)
-
-            #button = QPushButton(name)
-            #button.setIcon(QIcon(iconPath))
-            #button.setIconSize(QSize(64, 64))
             
             row = index // 3
             col = index % 3
             self.grid.addWidget(button, row, col)
             
     def onButtonClicked(self, name):
+        if name == 'Exit':
+            self.gameUI.triggerExit()
         print(f"Clicked on {name}")
 
 class BuildingWidget(QWidget):
@@ -166,7 +156,7 @@ class GameUI(QMainWindow):
         self.rightFrame = QWidget()
         self.rightLayout = QVBoxLayout(self.rightFrame)
         
-        actionGrid = IconGrid()
+        actionGrid = IconGrid(self)
         mainGameBtn = QPushButton("Main Game")
         upgradesBtn = QPushButton("Upgrades")
         self.leftLayout.addWidget(actionGrid)
@@ -258,6 +248,9 @@ class GameUI(QMainWindow):
             self.cookies -= 20
             self.cookiesPerSecond += 1
         self.updateCookiesLabel()
+        
+    def triggerExit(self):
+        QCoreApplication.instance().quit()
 
 if __name__ == '__main__':
     print('starting UI')
