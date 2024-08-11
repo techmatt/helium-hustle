@@ -4,7 +4,12 @@ from __future__ import annotations
 import json
 import os
 from typing import Dict, List, NamedTuple
-
+    
+class CommandInfo(NamedTuple):
+    name: str
+    production: Dict[str, float]
+    startUnlocked: bool
+    
 class ResourceInfo(NamedTuple):
     name: str
     basePrice: float
@@ -40,6 +45,15 @@ class GameDatabase:
         with open(filePath, 'r') as file:
             data = json.load(file)
 
+        self.commands: Dict[str, CommandInfo] = {}
+        for r in data['commands']:
+            curCommand = CommandInfo(
+                name = r['name'],
+                production = r['production'],
+                startUnlocked = r['startUnlocked']
+            )
+            self.commands[curCommand.name] = curCommand
+            
         self.resources: Dict[str, ResourceInfo] = {}
         for r in data['resources']:
             curResource = ResourceInfo(
@@ -64,6 +78,13 @@ class GameDatabase:
 
     def saveToJSON(self, filePath: str):
         data = {
+            "commands": [
+                {
+                    "name": c.name,
+                    "production": c.production,
+                    "startUnlocked": c.startUnlocked
+                } for c in self.commands.values()
+            ],
             "resources": [
                 {
                     "name": r.name,
@@ -90,4 +111,4 @@ if __name__ == "__main__":
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
     database = GameDatabase('gameDatabase.json')
     database.saveToJSON('gameDatabaseEcho.json')
-    print('game database saved to gameDatabaseEcho.json')
+    print('game database saved to gameDatabaseEcho.json')       

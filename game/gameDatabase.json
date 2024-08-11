@@ -1,4 +1,20 @@
 {
+  "commands": [
+    {
+      "name": "Sell Cloud Compute",
+      "production": {
+        "Credits": 1
+      },
+      "startUnlocked": true
+    },
+    {
+      "name": "Gather Regolith",
+      "production": {
+        "Regolith": 1
+      },
+      "startUnlocked": true
+    }
+  ],
   "resources": [
     {
       "name": "Credits",

@@ -7,11 +7,16 @@ from typing import Dict, List, NamedTuple
 
 from gameDatabase import GameDatabase, ResourceInfo, BuildingInfo
 
+class CommandState:
+    def __init__(self, info : CommandInfo):
+        self.info = info
+        self.unlocked: bool = info.startUnlocked
+
 class BuildingState:
     def __init__(self, info : BuildingInfo):
         self.info = info
         self.count: int = 0
-
+        
 class ResourceState:
     def __init__(self, info : ResourceInfo):
         self.info = info
@@ -27,6 +32,10 @@ class GameState:
     def __init__(self, database : GameDatabase):
         self.database: GameDatabase = database
         
+        self.commands: Dict[str, CommandState] = {}
+        for c in database.commands.values():
+            self.commands[c.name] = CommandState(c)
+            
         self.buildings: Dict[str, BuildingState] = {}
         for b in database.buildings.values():
             self.buildings[b.name] = BuildingState(b)
@@ -36,7 +45,7 @@ class GameState:
             rState = ResourceState(rInfo)
             rState.count = database.params.startingResources[rName]
             self.resources[rName] = rState
-            
+        
         self.updateAttributes()
 
     def updateAttributes(self):

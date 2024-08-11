@@ -91,6 +91,9 @@ class IconGrid(QWidget):
             self.grid.addWidget(button, row, col)
             
     def onButtonClicked(self, name):
+        if name == 'Commands':
+            self.gameUI.mode = GameWindowMode.COMMANDS
+            self.gameUI.makeMiddleFrame()
         if name == 'Buildings':
             self.gameUI.mode = GameWindowMode.BUILDINGS
             self.gameUI.makeMiddleFrame()

@@ -15,6 +15,28 @@ from enums import GameWindowMode
 from iconGrid import IconGrid
 from resourceDisplay import ResourceDisplay
 
+class CommandWidget(QWidget):
+    clicked = pyqtSignal(str)
+    
+    def __init__(self, state : GameState, name : str):
+        super().__init__()
+        
+        self.name = name
+    
+        layout = QHBoxLayout()
+        
+        cState = state.commands[name]
+        
+        # Name
+        nameLabel = QLabel(f"{name}")
+        nameLabel.setFont(QFont("Arial", 12, QFont.Weight.Bold))
+        layout.addWidget(nameLabel)
+            
+        self.setLayout(layout)
+        
+    def mousePressEvent(self, event):
+        self.clicked.emit(self.name)
+        
 class BuildingWidget(QWidget):
     clicked = pyqtSignal(str)
     
@@ -117,9 +139,22 @@ class GameUI(QMainWindow):
         self.programLabel = QLabel("Program")
 
         self.rightLayout.addWidget(self.programLabel)
+        
+        self.rightLayout.addStretch()
 
     def makeMiddleFrame(self):
         self.clearLayout(self.middleLayout)
+        if self.mode == GameWindowMode.COMMANDS:
+            commandListWidget = QWidget()
+            commandListLayout = QVBoxLayout(commandListWidget)
+            
+            for cName in self.database.commands.keys():
+                cWidget = CommandWidget(self.state, cName)
+                commandListLayout.addWidget(cWidget)
+                cWidget.clicked.connect(self.runCommand)
+
+            self.middleLayout.addWidget(commandListWidget)
+                
         if self.mode == GameWindowMode.BUILDINGS:
             buildingGridWidget = QWidget()
             buildingGridLayout = QGridLayout(buildingGridWidget)
@@ -135,18 +170,8 @@ class GameUI(QMainWindow):
         self.state.step()
         #self.updateLabels()
         
-    #def clickCookie(self):
-    #    self.cookies += self.cookiesPerClick
-    #    self.updateCookiesLabel()
-
     #def updateCookiesLabel(self):
     #    self.cookiesLabel.setText(f"Cookies: {self.cookies}\nPer click: {self.cookiesPerClick}\nPer second: {self.cookiesPerSecond}")
-
-    def showMainGame(self):
-        # Clear right layout and add main game widgets
-        self.clearRightLayout()
-        #self.rightLayout.addWidget(self.cookiesLabel)
-        #self.rightLayout.addWidget(self.clickButton)
 
     def showUpgrades(self):
         # Clear right layout and add upgrade widgets
@@ -169,6 +194,9 @@ class GameUI(QMainWindow):
         #upgradeClickBtn.clicked.connect(lambda: self.upgrade("click"))
         #upgradePassiveBtn.clicked.connect(lambda: self.upgrade("passive"))
 
+    def runCommand(self, name : str):
+        print('running ' + name)
+        
     def buildBuilding(self, name : str):
         print('building ' + name)
         
