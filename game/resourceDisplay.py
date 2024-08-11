@@ -17,7 +17,7 @@ class ResourceDisplay(QWidget):
         self.initUI()
 
     def getResourceString(self, rState : ResourceState):
-        return f"{rState.info.name}: {rState.count} / {rState.storage} (+{rState.income} / sec)"
+        return f"{rState.info.name}:  (+)"
     
     def initUI(self):
         self.resourceList = QVBoxLayout()
@@ -25,7 +25,8 @@ class ResourceDisplay(QWidget):
         self.resourceList.setContentsMargins(0, 0, 0, 0)
         self.setLayout(self.resourceList)
 
-        self.rLabels : Dict[str, QLabel] = {}
+        self.rValueLabels : Dict[str, QLabel] = {}
+        self.rIncomeLabels : Dict[str, QLabel] = {}
         for rState in self.gameUI.state.resources.values():
             #print('resource: ', r.info.name)
             rWidget = QWidget()
@@ -42,16 +43,28 @@ class ResourceDisplay(QWidget):
             iconLabel.setPixmap(pixmap)
             iconLabel.setFixedSize(32, 32)
         
-            rLabel = QLabel(self.getResourceString(rState))
-            self.rLabels[rState.info.name] = rLabel
+            rLabelName = QLabel(f"{rState.info.name}:")
+            rLabelValue = QLabel("")
+            rLabelIncome = QLabel("")
+            self.rValueLabels[rState.info.name] = rLabelValue
+            self.rIncomeLabels[rState.info.name] = rLabelIncome
+            
+            rLabelName.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+            rLabelValue.setAlignment(Qt.AlignmentFlag.AlignCenter)
+            rLabelIncome.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
             
             rLayout.addWidget(iconLabel)
-            rLayout.addWidget(rLabel)
+            rLayout.addWidget(rLabelName)
+            rLayout.addWidget(rLabelValue)
+            rLayout.addWidget(rLabelIncome)
             
             self.resourceList.addWidget(rWidget)
             
+        self.updateLabels()
+            
     def updateLabels(self):
         for rState in self.gameUI.state.resources.values():
-            rLabel = self.rLabels[rState.info.name]
-            rText = self.getResourceString(rState)
-            rLabel.setText(rText)
+            rLabelValue = self.rValueLabels[rState.info.name]
+            rLabelIncome = self.rIncomeLabels[rState.info.name]
+            rLabelValue.setText(f"{rState.count} / {rState.storage}")
+            rLabelIncome.setText(f"{rState.income} /s")
