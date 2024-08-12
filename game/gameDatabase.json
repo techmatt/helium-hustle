@@ -59,7 +59,8 @@
           "Credits": 100
         },
         "production": {
-          "Ice": 0.5
+          "Ice": 0.5,
+          "Credits": 1
         },
         "costScaling": 1.25,
         "description": "Extracts ice from the surface."

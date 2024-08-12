@@ -105,14 +105,18 @@ class GameUI(QMainWindow):
             buildingGridWidget = QWidget()
             buildingGridLayout = QGridLayout(buildingGridWidget)
         
-            for bName in self.database.buildings.keys():
+            for index, bName in enumerate(self.database.buildings.keys()):
                 bWidget = BuildingButton(self.state, bName)
-                buildingGridLayout.addWidget(bWidget)
+
+                row = index // 3
+                col = index % 3
+                buildingGridLayout.addWidget(bWidget, row, col)
+                
                 bWidget.clicked.connect(self.buildBuilding)
             
             self.middleLayout.addWidget(buildingGridWidget)
             
-        self.middleLayout.addStretch()
+        self.middleLayout.addStretch(1)
 
     def timerTick(self):
         self.state.step()
@@ -130,6 +134,7 @@ class GameUI(QMainWindow):
         
     def buildBuilding(self, name : str):
         #print('building ' + name)
+        self.state.attemptPurchaseBuilding(name)
         self.updateLabels()
         
     def triggerExit(self):

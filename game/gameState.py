@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import json
 import os
+import math
 from typing import Dict, List, NamedTuple
 
 from gameDatabase import GameDatabase, ResourceInfo, BuildingInfo
@@ -72,7 +73,7 @@ class GameState:
         costs: Dict[str, float] = {}
         costMultiplier = pow(b.info.costScaling, b.count)
         for rName, baseCost in b.info.baseCost.items():
-            costs[rName] = baseCost * costMultiplier
+            costs[rName] = math.floor(baseCost * costMultiplier)
             
         return CostTotal(costs)
     
@@ -84,10 +85,10 @@ class GameState:
 
     def spendCost(self, costTotal : CostTotal):
         for r, v in costTotal.costs.items():
-            if v > state.resources[r].count:
+            if v > self.resources[r].count:
                 print('cannot afford cost')
                 return
-            state.resources[r].count -= v
+            self.resources[r].count -= v
 
     def attemptPurchaseBuilding(self, buildingName):
         buildingCost = self.getBuildingCost(buildingName)
@@ -97,6 +98,7 @@ class GameState:
         
         self.spendCost(buildingCost)
         self.buildings[buildingName].count += 1
+        self.updateAttributes()
         
     def runCommand(self, commandName):
         cState : CommandState = self.commands[commandName]
@@ -105,6 +107,8 @@ class GameState:
         for rName, v in cInfo.production.items():
             r = self.resources[rName]
             r.count = min(r.count + v, r.storage)
+            
+        self.updateAttributes()
 
 if __name__ == "__main__":
     print('testing game state')

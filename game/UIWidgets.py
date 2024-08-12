@@ -16,8 +16,6 @@ from resourceDisplay import ResourceDisplay
 from styleSheets import StyleSheets
 
 class CommandWidget(QWidget):
-    #clicked = pyqtSignal(str)
-    
     def __init__(self, gameUI : GameUI, name : str):
         super().__init__()
         
@@ -27,19 +25,13 @@ class CommandWidget(QWidget):
         
         cState = gameUI.state.commands[name]
         
-        # Name
         nameButton = QPushButton(f"{name}")
         nameButton.setStyleSheet(StyleSheets.MODERN_BUTTON)
-        #nameButton.clicked.connect(self.button_clicked)
         nameButton.clicked.connect(lambda: gameUI.runCommand(name))
 
-        #nameLabel.setFont(QFont("Arial", 12, QFont.Weight.Bold))
         layout.addWidget(nameButton)
 
         self.setLayout(layout)
-        
-    #def mousePressEvent(self, event):
-    #    self.clicked.emit(self.name)
 
 class BuildingButton(QPushButton):
     clicked = pyqtSignal(str)
@@ -47,6 +39,7 @@ class BuildingButton(QPushButton):
     def __init__(self, state : GameState, name : str):
         super().__init__()
         self.name = name
+        self.state = state
         self.setFixedWidth(270)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.MinimumExpanding)
         
@@ -116,15 +109,6 @@ class BuildingButton(QPushButton):
             rNameLabel.setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
             rCostLabel.setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
             
-            #color = QColor(*random.sample(range(255), 3))
-            #iconLabel.setStyleSheet("background-color: {}".format(color.name()))
-            
-            #color = QColor(*random.sample(range(255), 3))
-            #rNameLabel.setStyleSheet("background-color: {}".format(color.name()))
-            
-            #color = QColor(*random.sample(range(255), 3))
-            #rCostLabel.setStyleSheet("background-color: {}".format(color.name()))
-        
             rLayout.addWidget(rIconLabel, 0, 0)
             rLayout.addWidget(rNameLabel, 0, 1)
             rLayout.addWidget(rCostLabel, 0, 2)
@@ -155,22 +139,20 @@ class BuildingButton(QPushButton):
         layout.addWidget(IRWidget)
         layout.addWidget(descWidget)
         
-        # Cost
-        
-
-        #canAfford = state.canAffordCost(buildingCost)
-        #color = "#90EE90"
-        #if not canAfford:
-        #    color = "#F08080"
-
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        if self.underMouse():
-            painter.setBrush(QColor(200, 200, 200, 100))
+        buildingCost = self.state.getBuildingCost(self.name)
+        canAfford = self.state.canAffordCost(buildingCost)
+        
+        if canAfford:
+            if self.underMouse():
+                painter.setBrush(QColor(150, 200, 150, 100))
+            else:
+                painter.setBrush(QColor(180, 230, 180, 100))
         else:
-            painter.setBrush(QColor(230, 230, 230, 100))
+            painter.setBrush(QColor(250, 200, 200, 100))
 
         painter.setPen(QColor(180, 180, 180))
         painter.drawRoundedRect(self.rect(), 10, 10)
@@ -184,40 +166,6 @@ class BuildingButton(QPushButton):
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit(self.name)
-
-"""class BuildingWidget(QWidget):
-    clicked = pyqtSignal(str)
-    
-    def __init__(self, state : GameState, name : str):
-        super().__init__()
-        
-        self.name = name
-    
-        layout = QVBoxLayout()
-        
-        bState = state.buildings[name]
-        buildingCost = state.getBuildingCost(name)
-
-        # Name
-        nameLabel = QLabel(f"{name} ({bState.count})")
-        nameLabel.setFont(QFont("Arial", 12, QFont.Weight.Bold))
-        layout.addWidget(nameLabel)
-        
-        # Cost
-        for rName, cost in buildingCost.costs.items():
-            costLabel = QLabel(f"{rName} {cost}")
-            layout.addWidget(costLabel)
-
-        canAfford = state.canAffordCost(buildingCost)
-        color = "#90EE90"
-        if not canAfford:
-            color = "#F08080"
-            
-        self.setLayout(layout)
-        self.setStyleSheet(f"background-color: {color}; border-radius: 10px; padding: 10px;")
-        
-    def mousePressEvent(self, event):
-        self.clicked.emit(self.name)"""
 
 #rWidget = QLabel("text!")
 #color = QColor(*random.sample(range(255), 3))

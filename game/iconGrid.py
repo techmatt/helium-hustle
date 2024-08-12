@@ -10,11 +10,12 @@ from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QCoreApplication
 from enums import GameWindowMode
 from gameDatabase import GameDatabase
 from gameState import GameState
+from styleSheets import StyleSheets
 
 class IconButton(QPushButton):
     clicked = pyqtSignal(str)  # Custom signal to emit the button's name
 
-    def __init__(self, name, icon_path, parent=None):
+    def __init__(self, name, iconPath, parent=None):
         super().__init__(parent)
         self.name = name
         self.setFixedSize(100, 100)  # Adjust size as needed
@@ -24,21 +25,22 @@ class IconButton(QPushButton):
         layout.setContentsMargins(5, 5, 5, 5)
 
         # Icon
-        icon_label = QLabel()
-        pixmap = QPixmap(icon_path).scaled(
+        iconLabel = QLabel()
+        pixmap = QPixmap(iconPath).scaled(
             64, 64, 
             Qt.AspectRatioMode.KeepAspectRatio, 
             Qt.TransformationMode.SmoothTransformation
         )
-        icon_label.setPixmap(pixmap)
-        icon_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        iconLabel.setPixmap(pixmap)
+        iconLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Text
-        text_label = QLabel(name)
-        text_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        textLabel = QLabel(name)
+        textLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        textLabel.setStyleSheet(StyleSheets.RESOURCE_LIST_TEXT)
 
-        layout.addWidget(icon_label)
-        layout.addWidget(text_label)
+        layout.addWidget(iconLabel)
+        layout.addWidget(textLabel)
 
     def paintEvent(self, event):
         painter = QPainter(self)
