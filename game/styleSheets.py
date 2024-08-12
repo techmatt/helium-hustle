@@ -27,11 +27,51 @@ class StyleSheets:
         }
     """
 
-    # You can add more stylesheets here
-    HEADER_LABEL = """
+    RESOURCE_LIST_TEXT = """
+        QWidget {
+            font-family: 'Roboto', 'Segoe UI', 'Helvetica', sans-serif;
+            font-size: 14pt;
+            color: #2c3e50;
+        }
         QLabel {
-            font-size: 18pt;
-            font-weight: bold;
-            color: #333333;
+            font-weight: 400;
+            line-height: 1.4;
         }
     """
+    
+    BUILDING_TITLE = """
+        QWidget {
+            font-family: 'Roboto', 'Segoe UI', 'Helvetica', sans-serif;
+            font-size: 14pt;
+            color: #2c3e50;
+        }
+        QLabel {
+            font-weight: bold;
+            line-height: 1.4;
+        }
+    """
+    
+    BUILDING_RESOURCE_LIST = """
+        QWidget {
+            font-family: 'Roboto', 'Segoe UI', 'Helvetica', sans-serif;
+            font-size: 12pt;
+            color: #2c3e50;
+        }
+        QLabel {
+            font-weight: bold;
+            line-height: 1.4;
+        }
+    """
+    
+    BUILDING_DESCRIPTION = """
+        QWidget {
+            font-family: 'Roboto', 'Segoe UI', 'Helvetica', sans-serif;
+            font-size: 12pt;
+            color: #2c3e50;
+        }
+        QLabel {
+            font-weight: 400;
+            line-height: 1.4;
+        }
+    """
+

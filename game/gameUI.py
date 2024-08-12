@@ -22,7 +22,7 @@ class GameUI(QMainWindow):
     def __init__(self, state : GameState, database : GameDatabase):
         super().__init__()
         self.setWindowTitle("Helium Hustle")
-        self.setGeometry(100, 100, 600, 400)
+        self.setGeometry(100, 100, 1400, 1000)
 
         self.state = state
         self.database = database

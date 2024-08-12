@@ -45,12 +45,13 @@
       {
         "name": "Regolith Harvester",
         "baseCost": {
-            "Credits" : 100
+          "Credits": 10
         },
         "production": {
           "Regolith": 1
         },
-        "costScaling" : 1.25
+        "costScaling": 1.25,
+        "description": "Mines moon rocks."
       },
       {
         "name": "Ice Extractor",
@@ -60,30 +61,33 @@
         "production": {
           "Ice": 0.5
         },
-        "costScaling": 1.25
+        "costScaling": 1.25,
+        "description": "Extracts ice from the surface."
       },
       {
         "name": "Gas Miner",
         "baseCost": {
-          "Credits": 100,
-          "Regolith" : 10
+          "Credits": 150,
+          "Regolith": 10
         },
         "production": {
           "Helium-3": 0.1
         },
-        "costScaling": 1.25
+        "costScaling": 1.25,
+        "description": "Harvests helium gas."
       },
       {
         "name": "Storage Facility",
         "baseCost": {
-          "Credits": 100
+          "Credits": 200
         },
         "storage": {
           "Regolith": 1000,
           "Ice": 500,
           "Helium-3": 100
         },
-        "costScaling": 1.25
+        "costScaling": 1.25,
+        "description": "Vital resource storage."
       }
     ]
   }

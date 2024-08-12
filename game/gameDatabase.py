@@ -4,7 +4,7 @@ from __future__ import annotations
 import json
 import os
 from typing import Dict, List, NamedTuple
-    
+
 class CommandInfo(NamedTuple):
     name: str
     production: Dict[str, float]
@@ -22,6 +22,7 @@ class BuildingInfo(NamedTuple):
     baseCost: Dict[str, float]
     production: Dict[str, float]
     storage: Dict[str, float]
+    description: str
 
 class GameParams:
     def __init__(self, database : GameDatabase):
@@ -71,7 +72,8 @@ class GameDatabase:
                 baseCost = b.get('baseCost', {}),
                 production = b.get('production', {}),
                 storage = b.get('storage', {}),
-                costScaling = b['costScaling'])
+                costScaling = b['costScaling'],
+                description = b['description'])
             self.buildings[curBuilding.name] = curBuilding
             
         self.params: GameParams = GameParams(self)
@@ -98,7 +100,8 @@ class GameDatabase:
                     "name": b.name,
                     "baseCost": b.baseCost,
                     "production": b.production,
-                    "storage": b.storage
+                    "storage": b.storage,
+                    "description": b.description
                 } for b in self.buildings.values()
             ]
         }

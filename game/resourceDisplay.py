@@ -9,6 +9,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QCoreApplication
 
 from gameDatabase import GameDatabase
 from gameState import GameState
+from styleSheets import StyleSheets
 
 class ResourceDisplay(QWidget):
     def __init__(self, gameUI : GameUI):
@@ -52,6 +53,10 @@ class ResourceDisplay(QWidget):
             rLabelName.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
             rLabelValue.setAlignment(Qt.AlignmentFlag.AlignCenter)
             rLabelIncome.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
+            
+            rLabelName.setStyleSheet(StyleSheets.RESOURCE_LIST_TEXT)
+            rLabelValue.setStyleSheet(StyleSheets.RESOURCE_LIST_TEXT)
+            rLabelIncome.setStyleSheet(StyleSheets.RESOURCE_LIST_TEXT)
             
             rLayout.addWidget(iconLabel)
             rLayout.addWidget(rLabelName)
