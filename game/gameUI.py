@@ -17,13 +17,13 @@ from resourceDisplay import ResourceDisplay
 from styleSheets import StyleSheets
 from programWidget import ProgramWidget
 
-from UIWidgets import CommandWidget, BuildingButton
+from UIWidgets import CommandButton, BuildingButton
 
 class GameUI(QMainWindow):
     def __init__(self, state : GameState, database : GameDatabase):
         super().__init__()
         self.setWindowTitle("Helium Hustle")
-        self.setGeometry(100, 100, 1400, 1000)
+        self.setGeometry(100, 100, 1900, 1100)
 
         self.state = state
         self.database = database
@@ -95,14 +95,27 @@ class GameUI(QMainWindow):
     def makeMiddleFrame(self):
         self.clearLayout(self.middleLayout)
         if self.mode == GameWindowMode.COMMANDS:
-            commandListWidget = QWidget()
+            """commandListWidget = QWidget()
             commandListLayout = QVBoxLayout(commandListWidget)
             
             for cName in self.database.commands.keys():
                 cWidget = CommandWidget(self, cName)
                 commandListLayout.addWidget(cWidget)
                 
-            self.middleLayout.addWidget(commandListWidget)
+            self.middleLayout.addWidget(commandListWidget)"""
+            commandGridWidget = QWidget()
+            commandGridLayout = QGridLayout(commandGridWidget)
+        
+            for index, bName in enumerate(self.database.commands.keys()):
+                cWidget = CommandButton(self.state, bName)
+
+                row = index // 3
+                col = index % 3
+                commandGridLayout.addWidget(cWidget, row, col)
+                
+                cWidget.clicked.connect(self.runCommand)
+            
+            self.middleLayout.addWidget(commandGridWidget)
 
         if self.mode == GameWindowMode.BUILDINGS:
             buildingGridWidget = QWidget()

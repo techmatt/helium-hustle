@@ -6,8 +6,9 @@
         "Credits": 1
       },
       "cost": {
-        "Energy": 1
+        "Electricity": 1
       },
+      "description": "Convert energy into credits.",
       "startUnlocked": true
     },
     {
@@ -16,8 +17,9 @@
         "Regolith": 1
       },
       "cost": {
-        "Energy": 5
+        "Electricity": 10
       },
+      "description": "Manually pilot a rover to gather loose rocks on the surface.",
       "startUnlocked": true
     },
     {
@@ -26,8 +28,9 @@
         "Science": 1
       },
       "cost": {
-        "Energy": 50
+        "Electricity": 50
       },
+      "description": "Do science.",
       "startUnlocked": true
     },
     {
@@ -37,6 +40,7 @@
       },
       "cost": {
       },
+      "description": "Think about nothing in particular.",
       "startUnlocked": true
     }
   ],

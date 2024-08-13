@@ -10,6 +10,7 @@ class CommandInfo(NamedTuple):
     production: Dict[str, float]
     cost: Dict[str, float]
     startUnlocked: bool
+    description: str
     
 class ResourceInfo(NamedTuple):
     name: str
@@ -29,18 +30,24 @@ class BuildingInfo(NamedTuple):
 class GameParams:
     def __init__(self, database : GameDatabase):
         
-        self.baseStorage: Dict[str, float] = {}
+        self.startingStorage: Dict[str, float] = {}
         for rName in database.resources.keys():
-            self.baseStorage[rName] = 0.0
+            self.startingStorage[rName] = 0.0
             
-        self.baseStorage["Credits"] = 1000.0
-        self.baseStorage["Energy"] = 100.0
-        
         self.startingResources: Dict[str, float] = {}
         for rName in database.resources.keys():
             self.startingResources[rName] = 0.0
             
+        self.startingBuildings: Dict[str, int] = {}
+        for bName in database.buildings.keys():
+            self.startingBuildings[bName] = 0
+        
+        self.startingStorage["Credits"] = 1000.0
+        self.startingStorage["Electricity"] = 100.0
+        
         self.startingResources["Credits"] = 500.0
+        
+        self.startingBuildings["Solar Panels"] = 1
         
         self.timerInterval = 500 # timer interval in milliseconds
 
@@ -55,7 +62,8 @@ class GameDatabase:
                 name = r['name'],
                 production = r['production'],
                 cost = r['cost'],
-                startUnlocked = r['startUnlocked']
+                startUnlocked = r['startUnlocked'],
+                description = r['description']
             )
             self.commands[curCommand.name] = curCommand
             
@@ -90,7 +98,8 @@ class GameDatabase:
                     "name": c.name,
                     "production": c.production,
                     "costs": c.costs,
-                    "startUnlocked": c.startUnlocked
+                    "startUnlocked": c.startUnlocked,
+                    "description": c.description
                 } for c in self.commands.values()
             ],
             "resources": [

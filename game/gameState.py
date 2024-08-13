@@ -34,25 +34,27 @@ class GameState:
         self.database: GameDatabase = database
         
         self.commands: Dict[str, CommandState] = {}
-        for c in database.commands.values():
-            self.commands[c.name] = CommandState(c)
+        for cInfp in database.commands.values():
+            self.commands[cInfp.name] = CommandState(cInfp)
             
         self.buildings: Dict[str, BuildingState] = {}
-        for b in database.buildings.values():
-            self.buildings[b.name] = BuildingState(b)
+        for bInfo in database.buildings.values():
+            bState = BuildingState(bInfo)
+            bState.count = database.params.startingBuildings[bInfo.name]
+            self.buildings[bInfo.name] = bState
 
         self.resources: Dict[str, ResourceState] = {}
-        for rName, rInfo in database.resources.items():
+        for rInfo in database.resources.values():
             rState = ResourceState(rInfo)
-            rState.count = database.params.startingResources[rName]
-            self.resources[rName] = rState
+            rState.count = database.params.startingResources[rInfo.name]
+            self.resources[rInfo.name] = rState
         
         self.updateAttributes()
 
     def updateAttributes(self):
         for r in self.resources.values():
             r.income = 0
-            r.storage = self.database.params.baseStorage[r.info.name]
+            r.storage = self.database.params.startingStorage[r.info.name]
 
         for b in self.buildings.values():
             for rName, prod in b.info.production.items():
@@ -74,6 +76,16 @@ class GameState:
         costMultiplier = pow(b.info.costScaling, b.count)
         for rName, baseCost in b.info.baseCost.items():
             costs[rName] = math.floor(baseCost * costMultiplier)
+            
+        return CostTotal(costs)
+    
+    def getCommandCost(self, commandName : str) -> CostTotal:
+        c = self.commands[commandName]
+        
+        costs: Dict[str, float] = {}
+        costMultiplier = 1.0
+        for rName, baseCost in c.info.cost.items():
+            costs[rName] = baseCost * costMultiplier
             
         return CostTotal(costs)
     
