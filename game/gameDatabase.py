@@ -8,6 +8,7 @@ from typing import Dict, List, NamedTuple
 class CommandInfo(NamedTuple):
     name: str
     production: Dict[str, float]
+    cost: Dict[str, float]
     startUnlocked: bool
     
 class ResourceInfo(NamedTuple):
@@ -21,6 +22,7 @@ class BuildingInfo(NamedTuple):
     costScaling: float
     baseCost: Dict[str, float]
     production: Dict[str, float]
+    upkeep: Dict[str, float]
     storage: Dict[str, float]
     description: str
 
@@ -32,6 +34,7 @@ class GameParams:
             self.baseStorage[rName] = 0.0
             
         self.baseStorage["Credits"] = 1000.0
+        self.baseStorage["Energy"] = 100.0
         
         self.startingResources: Dict[str, float] = {}
         for rName in database.resources.keys():
@@ -51,6 +54,7 @@ class GameDatabase:
             curCommand = CommandInfo(
                 name = r['name'],
                 production = r['production'],
+                cost = r['cost'],
                 startUnlocked = r['startUnlocked']
             )
             self.commands[curCommand.name] = curCommand
@@ -71,6 +75,7 @@ class GameDatabase:
                 name = b['name'],
                 baseCost = b.get('baseCost', {}),
                 production = b.get('production', {}),
+                upkeep = b.get('upkeep', {}),
                 storage = b.get('storage', {}),
                 costScaling = b['costScaling'],
                 description = b['description'])
@@ -84,6 +89,7 @@ class GameDatabase:
                 {
                     "name": c.name,
                     "production": c.production,
+                    "costs": c.costs,
                     "startUnlocked": c.startUnlocked
                 } for c in self.commands.values()
             ],
@@ -100,6 +106,7 @@ class GameDatabase:
                     "name": b.name,
                     "baseCost": b.baseCost,
                     "production": b.production,
+                    "upkeep": b.maintenance,
                     "storage": b.storage,
                     "description": b.description
                 } for b in self.buildings.values()

@@ -21,9 +21,11 @@
   <ItemGroup>
     <Compile Include="enums.py" />
     <Compile Include="gameDatabase.py" />
+    <Compile Include="gameProgram.py" />
     <Compile Include="gameState.py" />
     <Compile Include="gameUI.py" />
     <Compile Include="iconGrid.py" />
+    <Compile Include="programWidget.py" />
     <Compile Include="resourceDisplay.py" />
     <Compile Include="stylesheets.py" />
     <Compile Include="UIWidgets.py" />

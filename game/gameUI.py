@@ -15,6 +15,7 @@ from enums import GameWindowMode
 from iconGrid import IconGrid
 from resourceDisplay import ResourceDisplay
 from styleSheets import StyleSheets
+from programWidget import ProgramWidget
 
 from UIWidgets import CommandWidget, BuildingButton
 
@@ -84,8 +85,10 @@ class GameUI(QMainWindow):
         self.clearLayout(self.rightLayout)
         
         self.programLabel = QLabel("Program")
+        self.programWidget = ProgramWidget()
 
         self.rightLayout.addWidget(self.programLabel)
+        self.rightLayout.addWidget(self.programWidget)
         
         self.rightLayout.addStretch()
 
@@ -125,7 +128,7 @@ class GameUI(QMainWindow):
     def updateLabels(self):
         self.resourceDisplay.updateLabels()
         self.makeMiddleFrame()
-        self.makeRightFrame()
+        #self.makeRightFrame()
     
     def runCommand(self, name : str):
         #print('running ' + name)
