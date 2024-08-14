@@ -26,6 +26,18 @@ class StyleSheets:
             color: #666666;
         }
     """
+    
+    ICON_LIST_TEXT = """
+        QWidget {
+            font-family: 'Roboto', 'Segoe UI', 'Helvetica', sans-serif;
+            font-size: 13pt;
+            color: #2c3e50;
+        }
+        QLabel {
+            font-weight: 400;
+            line-height: 1.4;
+        }
+    """
 
     RESOURCE_LIST_TEXT = """
         QWidget {
@@ -35,6 +47,18 @@ class StyleSheets:
         }
         QLabel {
             font-weight: 400;
+            line-height: 1.4;
+        }
+    """
+    
+    GAME_TITLE = """
+        QWidget {
+            font-family: 'Roboto', 'Segoe UI', 'Helvetica', sans-serif;
+            font-size: 16pt;
+            color: #2c3e50;
+        }
+        QLabel {
+            font-weight: bold;
             line-height: 1.4;
         }
     """

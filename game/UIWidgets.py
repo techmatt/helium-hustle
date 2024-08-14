@@ -15,24 +15,6 @@ from iconGrid import IconGrid
 from resourceDisplay import ResourceDisplay
 from styleSheets import StyleSheets
 
-class CommandWidget(QWidget):
-    def __init__(self, gameUI : GameUI, name : str):
-        super().__init__()
-        
-        self.name = name
-    
-        layout = QHBoxLayout()
-        
-        cState = gameUI.state.commands[name]
-        
-        nameButton = QPushButton(f"{name}")
-        nameButton.setStyleSheet(StyleSheets.MODERN_BUTTON)
-        nameButton.clicked.connect(lambda: gameUI.runCommand(name))
-
-        layout.addWidget(nameButton)
-
-        self.setLayout(layout)
-
 class CommandButton(QPushButton):
     clicked = pyqtSignal(str)
 
@@ -173,7 +155,7 @@ class BuildingButton(QPushButton):
 
         # Name and count
         nameLabel = QLabel(f"{name}")
-        countLabel = QLabel(f"({bState.count})")
+        countLabel = QLabel(f"({bState.totalCount})")
         nameLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
         countLabel.setAlignment(Qt.AlignmentFlag.AlignRight)
         nameLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)

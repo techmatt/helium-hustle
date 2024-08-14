@@ -72,6 +72,7 @@ class GameUI(QMainWindow):
         self.clearLayout(self.leftLayout)
         
         self.titleLabel = QLabel("Helium Hustle")
+        self.titleLabel.setStyleSheet(StyleSheets.GAME_TITLE)
         self.iconGrid = IconGrid(self)
         self.resourceDisplay = ResourceDisplay(self)
         
@@ -95,14 +96,6 @@ class GameUI(QMainWindow):
     def makeMiddleFrame(self):
         self.clearLayout(self.middleLayout)
         if self.mode == GameWindowMode.COMMANDS:
-            """commandListWidget = QWidget()
-            commandListLayout = QVBoxLayout(commandListWidget)
-            
-            for cName in self.database.commands.keys():
-                cWidget = CommandWidget(self, cName)
-                commandListLayout.addWidget(cWidget)
-                
-            self.middleLayout.addWidget(commandListWidget)"""
             commandGridWidget = QWidget()
             commandGridLayout = QGridLayout(commandGridWidget)
         

@@ -16,7 +16,8 @@ class CommandState:
 class BuildingState:
     def __init__(self, info : BuildingInfo):
         self.info: BuildingInfo = info
-        self.count: int = 0
+        self.totalCount: int = 0
+        self.activeCount: int = 0
         
 class ResourceState:
     def __init__(self, info : ResourceInfo):
@@ -40,7 +41,8 @@ class GameState:
         self.buildings: Dict[str, BuildingState] = {}
         for bInfo in database.buildings.values():
             bState = BuildingState(bInfo)
-            bState.count = database.params.startingBuildings[bInfo.name]
+            bState.totalCount = database.params.startingBuildings[bInfo.name]
+            bState.activeCount = bState.totalCount
             self.buildings[bInfo.name] = bState
 
         self.resources: Dict[str, ResourceState] = {}
@@ -49,31 +51,82 @@ class GameState:
             rState.count = database.params.startingResources[rInfo.name]
             self.resources[rInfo.name] = rState
         
-        self.updateAttributes()
+        self.updateAllAttributes()
 
-    def updateAttributes(self):
+    def updateStorage(self):
+        for r in self.resources.values():
+            r.storage = self.database.params.startingStorage[r.info.name]
+        
+        # update storage from buildings
+        for bState in self.buildings.values():
+            bInfo = bState.info
+            
+            # buildings with storage should not have upkeep requirements
+            for rName, stor in bInfo.storage.items():
+                rState = self.resources[rName]
+                rState.storage += bState.activeCount * stor
+
+    def updateAllAttributes(self):
+        self.updateStorage()
+        
         for r in self.resources.values():
             r.income = 0
-            r.storage = self.database.params.startingStorage[r.info.name]
+        
+        # update resources from buildings
+        for bState in self.buildings.values():
+            if bState.activeCount == 0:
+                continue
+            
+            bInfo = bState.info
+            bName = bInfo.name
+            
+            bUpkeep = self.getBuildingUpkeep(bName)
+            if len(bUpkeep.costs) == 0:
+                for rName, prod in bInfo.production.items():
+                    rState = self.resources[rName]
+                    rState.income += prod * bState.activeCount
+                    rState.count += prod * bState.activeCount
+            else:
+                # upkeep counts as negative income
+                for rName, cost in bUpkeep.costs.items():
+                    rState = self.resources[rName]
+                    rState.income -= cost * bState.activeCount
+                    
+                # for buildings with upkeep, production is handled one at a time in case
+                # there are not sufficient upkeep resources.
+                for i in range(0, bState.activeCount):
+                    if self.canAffordCost(bUpkeep):
+                        self.spendCost(bUpkeep)
+                    else:
+                        continue
 
-        for b in self.buildings.values():
-            for rName, prod in b.info.production.items():
-                rState = self.resources[rName]
-                rState.income += b.count * prod
-
-            for rName, stor in b.info.storage.items():
-                rState = self.resources[rName]
-                rState.storage += b.count * stor
+                    for rName, prod in bInfo.production.items():
+                        rState = self.resources[rName]
+                        rState.income += prod
+                        rState.count += prod
+                        
+        # cap all resources to their storage capacity
+        for rState in self.resources.values():
+            rState.count = min(rState.count, rState.storage)
 
     def step(self):
-        for r in self.resources.values():
-            r.count = min(r.count + r.income, r.storage)
+        self.updateAllAttributes()
+        
+    def getBuildingUpkeep(self, buildingName : str) -> CostTotal:
+        b = self.buildings[buildingName]
+        
+        costs: Dict[str, float] = {}
+        costMultiplier = 1.0
+        for rName, upkeepCost in b.info.upkeep.items():
+            costs[rName] = upkeepCost * costMultiplier
+            
+        return CostTotal(costs)
     
     def getBuildingCost(self, buildingName : str) -> CostTotal:
         b = self.buildings[buildingName]
         
         costs: Dict[str, float] = {}
-        costMultiplier = pow(b.info.costScaling, b.count)
+        costMultiplier = pow(b.info.costScaling, b.totalCount)
         for rName, baseCost in b.info.baseCost.items():
             costs[rName] = math.floor(baseCost * costMultiplier)
             
@@ -109,18 +162,24 @@ class GameState:
             return
         
         self.spendCost(buildingCost)
-        self.buildings[buildingName].count += 1
-        self.updateAttributes()
+        self.buildings[buildingName].totalCount += 1
+        self.buildings[buildingName].activeCount += 1
+        self.updateAllAttributes()
         
     def runCommand(self, commandName):
         cState : CommandState = self.commands[commandName]
         cInfo = cState.info
         
+        commandCost = self.getCommandCost(commandName)
+        if not self.canAffordCost(commandCost):
+            return
+        self.spendCost(commandCost)
+            
         for rName, v in cInfo.production.items():
             r = self.resources[rName]
             r.count = min(r.count + v, r.storage)
             
-        self.updateAttributes()
+        self.updateAllAttributes()
 
 if __name__ == "__main__":
     print('testing game state')

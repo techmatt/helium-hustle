@@ -18,7 +18,7 @@ class IconButton(QPushButton):
     def __init__(self, name, iconPath, parent=None):
         super().__init__(parent)
         self.name = name
-        self.setFixedSize(100, 100)  # Adjust size as needed
+        self.setFixedSize(120, 100)  # Adjust size as needed
 
         layout = QVBoxLayout(self)
         layout.setSpacing(5)
@@ -27,7 +27,7 @@ class IconButton(QPushButton):
         # Icon
         iconLabel = QLabel()
         pixmap = QPixmap(iconPath).scaled(
-            64, 64, 
+            80, 80, 
             Qt.AspectRatioMode.KeepAspectRatio, 
             Qt.TransformationMode.SmoothTransformation
         )
@@ -37,7 +37,7 @@ class IconButton(QPushButton):
         # Text
         textLabel = QLabel(name)
         textLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        textLabel.setStyleSheet(StyleSheets.RESOURCE_LIST_TEXT)
+        textLabel.setStyleSheet(StyleSheets.ICON_LIST_TEXT)
 
         layout.addWidget(iconLabel)
         layout.addWidget(textLabel)
