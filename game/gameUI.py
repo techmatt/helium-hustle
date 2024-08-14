@@ -16,6 +16,7 @@ from iconGrid import IconGrid
 from resourceDisplay import ResourceDisplay
 from styleSheets import StyleSheets
 from programWidget import ProgramWidget
+from pixmapCache import PixmapCache
 
 from UIWidgets import CommandButton, BuildingButton
 
@@ -30,6 +31,8 @@ class GameUI(QMainWindow):
         self.params = self.database.params
         self.mode : GameWindowMode = GameWindowMode.BUILDINGS
         self.visibleProgramIndex = 0
+
+        self.pixmapCache = PixmapCache()
         
         self.initUI()
 
@@ -86,10 +89,19 @@ class GameUI(QMainWindow):
     def makeRightFrame(self):
         self.clearLayout(self.rightLayout)
         
-        self.programLabel = QLabel("Program")
-        self.programWidget = ProgramWidget(self)
-
+        self.programLabel = QLabel("Programs")
+        self.programLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
         self.rightLayout.addWidget(self.programLabel)
+        
+        programSelectWidget = QWidget()
+        programSelectLayout = QHBoxLayout(programSelectWidget)
+        for i in range(0, len(self.state.programs)):
+            programIndexButton = QPushButton(str(i+1))
+            programIndexButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
+            programSelectLayout.addWidget(programIndexButton)
+        self.rightLayout.addWidget(programSelectWidget)
+            
+        self.programWidget = ProgramWidget(self)
         self.rightLayout.addWidget(self.programWidget)
         
         self.rightLayout.addStretch()
@@ -101,7 +113,7 @@ class GameUI(QMainWindow):
             commandGridLayout = QGridLayout(commandGridWidget)
         
             for index, bName in enumerate(self.database.commands.keys()):
-                cWidget = CommandButton(self.state, bName)
+                cWidget = CommandButton(self, bName)
 
                 row = index // 3
                 col = index % 3
@@ -116,7 +128,7 @@ class GameUI(QMainWindow):
             buildingGridLayout = QGridLayout(buildingGridWidget)
         
             for index, bName in enumerate(self.database.buildings.keys()):
-                bWidget = BuildingButton(self.state, bName)
+                bWidget = BuildingButton(self, bName)
 
                 row = index // 3
                 col = index % 3
@@ -147,6 +159,12 @@ class GameUI(QMainWindow):
         #print('building ' + name)
         self.state.attemptPurchaseBuilding(name)
         self.updateLabels()
+        
+    def makeIconLabel(self, iconPath, iconWidth, iconHeight):
+        result = QLabel()
+        result.setPixmap(self.pixmapCache.getPixmap(iconPath, iconWidth, iconHeight))
+        result.setFixedSize(iconWidth, iconHeight)
+        return result
         
     def triggerExit(self):
         QCoreApplication.instance().quit()

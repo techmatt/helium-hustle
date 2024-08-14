@@ -18,16 +18,17 @@ from styleSheets import StyleSheets
 class CommandButton(QPushButton):
     clicked = pyqtSignal(str)
 
-    def __init__(self, state : GameState, name : str):
+    def __init__(self, gameUI : GameUI, name : str):
         super().__init__()
         self.name = name
-        self.state = state
+        self.gameUI = gameUI
+        self.state = gameUI.state
         self.setFixedWidth(270)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.MinimumExpanding)
         
-        cState = state.commands[name]
+        cState = self.state.commands[name]
         cInfo = cState.info
-        commandCost = state.getCommandCost(name)
+        commandCost = self.state.getCommandCost(name)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(2)
@@ -57,11 +58,11 @@ class CommandButton(QPushButton):
         rListLayout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         
         for rName, production in cInfo.production.items():
-            rWidget = self.makeResourceWidget(rName, production)
+            rWidget = self.makeResourceWidget(gameUI, rName, production)
             rListLayout.addWidget(rWidget)
             
         for rName, cost in cInfo.cost.items():
-            rWidget = self.makeResourceWidget(rName, -cost)
+            rWidget = self.makeResourceWidget(gameUI, rName, -cost)
             rListLayout.addWidget(rWidget)
         rListLayout.addStretch()
 
@@ -73,7 +74,7 @@ class CommandButton(QPushButton):
         layout.addWidget(rListWidget)
         layout.addWidget(descWidget)
         
-    def makeResourceWidget(self, rName, value):
+    def makeResourceWidget(self, gameUI, rName, value):
         rWidget = QWidget()
         rLayout = QGridLayout(rWidget)
         rLayout.setSpacing(0)
@@ -82,12 +83,7 @@ class CommandButton(QPushButton):
             
         iconPath = 'icons/resources/' + rName + '.png'
         rIconLabel = QLabel()
-        pixmap = QPixmap(iconPath).scaled(
-            20, 20,
-            Qt.AspectRatioMode.KeepAspectRatio, 
-            Qt.TransformationMode.SmoothTransformation
-        )
-        rIconLabel.setPixmap(pixmap)
+        rIconLabel.setPixmap(gameUI.pixmapCache.getPixmap(iconPath, 20, 20))
         rIconLabel.setFixedSize(20, 20)
         rIconLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
             
@@ -137,16 +133,17 @@ class CommandButton(QPushButton):
 class BuildingButton(QPushButton):
     clicked = pyqtSignal(str)
 
-    def __init__(self, state : GameState, name : str):
+    def __init__(self, gameUI : GameUI, name : str):
         super().__init__()
         self.name = name
-        self.state = state
+        self.gameUI = gameUI
+        self.state = gameUI.state
         self.setFixedWidth(270)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.MinimumExpanding)
         
-        bState = state.buildings[name]
+        bState = self.state.buildings[name]
         bInfo = bState.info
-        buildingCost = state.getBuildingCost(name)
+        buildingCost = self.state.getBuildingCost(name)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(2)
@@ -169,14 +166,7 @@ class BuildingButton(QPushButton):
         # Icon and resource (IR) list
         
         buildingIconSize = 86
-        buildingIconLabel = QLabel()
-        buildingIconPath = 'icons/buildings/' + name + '.png'
-        pixmap = QPixmap(buildingIconPath).scaled(
-            buildingIconSize, buildingIconSize, 
-            Qt.AspectRatioMode.KeepAspectRatio, 
-            Qt.TransformationMode.SmoothTransformation
-        )
-        buildingIconLabel.setPixmap(pixmap)
+        buildingIconLabel = gameUI.makeIconLabel('icons/buildings/' + name + '.png', buildingIconSize, buildingIconSize)
         buildingIconLabel.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         
         rListWidget = QWidget()
@@ -192,15 +182,7 @@ class BuildingButton(QPushButton):
             rLayout.setContentsMargins(0, 0, 0, 0)
             rLayout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
             
-            iconPath = 'icons/resources/' + rName + '.png'
-            rIconLabel = QLabel()
-            pixmap = QPixmap(iconPath).scaled(
-                20, 20,
-                Qt.AspectRatioMode.KeepAspectRatio, 
-                Qt.TransformationMode.SmoothTransformation
-            )
-            rIconLabel.setPixmap(pixmap)
-            rIconLabel.setFixedSize(20, 20)
+            rIconLabel = gameUI.makeIconLabel('icons/resources/' + rName + '.png', 20, 20)
             rIconLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
             
             rNameLabel = QLabel(f"{rName}")

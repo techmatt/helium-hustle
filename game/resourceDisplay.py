@@ -36,12 +36,7 @@ class ResourceDisplay(QWidget):
             
             iconPath = 'icons/resources/' + rState.info.name + '.png'
             iconLabel = QLabel()
-            pixmap = QPixmap(iconPath).scaled(
-                32, 32, 
-                Qt.AspectRatioMode.KeepAspectRatio, 
-                Qt.TransformationMode.SmoothTransformation
-            )
-            iconLabel.setPixmap(pixmap)
+            iconLabel.setPixmap(self.gameUI.pixmapCache.getPixmap(iconPath, 32, 32))
             iconLabel.setFixedSize(32, 32)
         
             rLabelName = QLabel(f"{rState.info.name}:")

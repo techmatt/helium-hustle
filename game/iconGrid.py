@@ -15,8 +15,8 @@ from styleSheets import StyleSheets
 class IconButton(QPushButton):
     clicked = pyqtSignal(str)  # Custom signal to emit the button's name
 
-    def __init__(self, name, iconPath, parent=None):
-        super().__init__(parent)
+    def __init__(self, name : str, iconPath : str, gameUI : GameUI):
+        super().__init__()
         self.name = name
         self.setFixedSize(120, 100)  # Adjust size as needed
 
@@ -26,12 +26,7 @@ class IconButton(QPushButton):
 
         # Icon
         iconLabel = QLabel()
-        pixmap = QPixmap(iconPath).scaled(
-            80, 80, 
-            Qt.AspectRatioMode.KeepAspectRatio, 
-            Qt.TransformationMode.SmoothTransformation
-        )
-        iconLabel.setPixmap(pixmap)
+        iconLabel.setPixmap(gameUI.pixmapCache.getPixmap(iconPath, 80, 80))
         iconLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Text
@@ -85,7 +80,7 @@ class IconGrid(QWidget):
 
         for index, (name, iconPath) in enumerate(icons):
             
-            button = IconButton(name, 'icons/actionGrid/' + iconPath)
+            button = IconButton(name, 'icons/actionGrid/' + iconPath, self.gameUI)
             button.clicked.connect(self.onButtonClicked)
             
             row = index // 3

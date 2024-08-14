@@ -25,6 +25,7 @@
     <Compile Include="gameState.py" />
     <Compile Include="gameUI.py" />
     <Compile Include="iconGrid.py" />
+    <Compile Include="pixmapCache.py" />
     <Compile Include="programWidget.py" />
     <Compile Include="resourceDisplay.py" />
     <Compile Include="stylesheets.py" />

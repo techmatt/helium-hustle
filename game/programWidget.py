@@ -6,9 +6,10 @@ from math import floor
 
 from PyQt6.QtWidgets import (QWidget, QListWidget, QHBoxLayout, QVBoxLayout,
                              QLabel, QProgressBar, QPushButton, QListWidgetItem)
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QSize
 
 from gameProgram import GameProgram, GameCommand
+from styleSheets import StyleSheets
 
 class ProgramItemWidget(QWidget):
     def __init__(self, command : GameCommand):
@@ -17,20 +18,44 @@ class ProgramItemWidget(QWidget):
         self.command = command
         
         layout = QHBoxLayout(self)
-        self.label = QLabel(command.info.name)
+        layout.setContentsMargins(5, 5, 5, 5)  # Reduce margins for a more compact look
+        layout.setSpacing(5)  # Reduce spacing between widgets
+
+        self.nameLabel = QLabel("")
+        self.nameLabel.setStyleSheet(StyleSheets.RESOURCE_LIST_TEXT)
+        #self.nameLabel.setFixedWidth(150)
+        
         self.progressBar = QProgressBar()
         self.progressBar.setRange(0, 1000)
         self.progressBar.setValue(0)
         self.progressBar.setTextVisible(False)
+        self.progressBar.setFixedWidth(100)
+        
+        buttonSize = QSize(25, 25)
+        
         self.subButton = QPushButton("-")
         self.addButton = QPushButton("+")
         self.removeButton = QPushButton("X")
+        
+        self.subButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
+        self.addButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
+        self.removeButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
+        
+        self.subButton.setFixedSize(buttonSize)
+        self.addButton.setFixedSize(buttonSize)
+        self.removeButton.setFixedSize(buttonSize)
 
-        layout.addWidget(self.label)
+        self.updateNameLabel()
+
+        layout.addWidget(self.nameLabel)
+        layout.addStretch(1)
         layout.addWidget(self.progressBar)
         layout.addWidget(self.subButton)
         layout.addWidget(self.addButton)
         layout.addWidget(self.removeButton)
+        
+    def updateNameLabel(self):
+        self.nameLabel.setText(f"{self.command.info.name} (x{self.command.maxCount})")
 
 class ProgramWidget(QWidget):
     def __init__(self, gameUI : GameUI):
@@ -46,7 +71,8 @@ class ProgramWidget(QWidget):
         self.listWidget.setDefaultDropAction(Qt.DropAction.MoveAction)
         self.listWidget.setDragEnabled(True)
         self.listWidget.model().rowsMoved.connect(self.onRowsMoved)
-
+        self.listWidget.setFixedWidth(500)
+        
         state : GameState = gameUI.state
         activeProgram : GameProgram = state.programs[gameUI.visibleProgramIndex]
 
@@ -102,6 +128,9 @@ class ProgramWidget(QWidget):
         activeCommand.maxCount = min(activeCommand.maxCount, 1000)
         activeCommand.maxCount = max(activeCommand.maxCount, 1)
         activeCommand.count = 0
+        
+        widget = self.listWidget.itemWidget(item)
+        widget.updateNameLabel()
         
     def removeItem(self, item):
         self.listWidget.takeItem(self.listWidget.row(item))
