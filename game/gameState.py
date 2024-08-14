@@ -5,7 +5,7 @@ import json
 import os
 import math
 from typing import Dict, List, NamedTuple
-from gameProgram import GameProgram
+from gameProgram import GameProgram, GameCommand
 
 from gameDatabase import GameDatabase, CommandInfo, ResourceInfo, BuildingInfo
 
@@ -57,6 +57,11 @@ class GameState:
             self.programs.append(GameProgram(self))
         self.programs[0].assignedProcessors = 1
         self.freeProcessorCount = 0
+        
+        self.programs[0].commands.append(GameCommand(self.commands["Sell Cloud Compute"].info))
+        self.programs[0].commands.append(GameCommand(self.commands["Gather Regolith"].info))
+        self.programs[0].commands.append(GameCommand(self.commands["Idle"].info))
+        self.programs[0].commands.append(GameCommand(self.commands["Sell Cloud Compute"].info))
         
         self.updateAllAttributes()
 

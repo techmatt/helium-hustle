@@ -87,7 +87,7 @@ class GameUI(QMainWindow):
         self.clearLayout(self.rightLayout)
         
         self.programLabel = QLabel("Program")
-        self.programWidget = ProgramWidget()
+        self.programWidget = ProgramWidget(self)
 
         self.rightLayout.addWidget(self.programLabel)
         self.rightLayout.addWidget(self.programWidget)
