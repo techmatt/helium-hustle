@@ -29,6 +29,7 @@ class GameUI(QMainWindow):
         self.database = database
         self.params = self.database.params
         self.mode : GameWindowMode = GameWindowMode.BUILDINGS
+        self.visibleProgramIndex = 0
         
         self.initUI()
 

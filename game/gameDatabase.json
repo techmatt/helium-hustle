@@ -52,6 +52,12 @@
       "elasticity": 1.0
     },
     {
+      "name": "Processors",
+      "basePrice": 1,
+      "baseDemand": 1,
+      "elasticity": 1.0
+    },
+    {
       "name": "Land",
       "basePrice": 0,
       "baseDemand": 0,
@@ -97,6 +103,18 @@
       },
       "production": {
         "Electricity": 5
+      },
+      "costScaling": 1.25,
+      "description": "Creates energy from sunlight."
+    },
+    {
+      "name": "Server Rack",
+      "baseCost": {
+        "Regolith": 20,
+        "Land": 5
+      },
+      "storage": {
+        "Processors": 1
       },
       "costScaling": 1.25,
       "description": "Creates energy from sunlight."

@@ -6,6 +6,8 @@ import os
 import math
 from typing import Dict, List, NamedTuple
 
+from gameDatabase import GameDatabase, CommandInfo, ResourceInfo, BuildingInfo
+
 class GameCommand:
     def __init__(self, info : CommandInfo):
         self.info: CommandInfo = info
@@ -15,8 +17,9 @@ class GameCommand:
 class GameProgram:
     def __init__(self, state : GameState):
         self.state: GameState = state
-        self.commands = []
-        self.instructionPointer = 0
+        self.commands: List[GameCommand] = []
+        self.instructionPointer: int = 0
+        self.assignedProcessors: int = 0
 
     def step(self):
         if len(self.commands) == 0:

@@ -5,8 +5,9 @@ import json
 import os
 import math
 from typing import Dict, List, NamedTuple
+from gameProgram import GameProgram
 
-from gameDatabase import GameDatabase, ResourceInfo, BuildingInfo
+from gameDatabase import GameDatabase, CommandInfo, ResourceInfo, BuildingInfo
 
 class CommandState:
     def __init__(self, info : CommandInfo):
@@ -50,6 +51,12 @@ class GameState:
             rState = ResourceState(rInfo)
             rState.count = database.params.startingResources[rInfo.name]
             self.resources[rInfo.name] = rState
+
+        self.programs: List[GameProgram] = []
+        for i in range(0, database.params.maxProgramCount):
+            self.programs.append(GameProgram(self))
+        self.programs[0].assignedProcessors = 1
+        self.freeProcessorCount = 0
         
         self.updateAllAttributes()
 
@@ -66,9 +73,7 @@ class GameState:
                 rState = self.resources[rName]
                 rState.storage += bState.activeCount * stor
 
-    def updateAllAttributes(self):
-        self.updateStorage()
-        
+    def updateIncomeAndBuildings(self):
         for r in self.resources.values():
             r.income = 0
         
@@ -104,7 +109,21 @@ class GameState:
                         rState = self.resources[rName]
                         rState.income += prod
                         rState.count += prod
-                        
+        
+    def updateProcessorAllocation(self):
+        self.freeProcessorCount = self.resources['Processors'].storage
+        for program in self.programs:
+            if program.assignedProcessors <= self.freeProcessorCount:
+                self.freeProcessorCount -= program.assignedProcessors
+            else:
+                program.assignedProcessors = self.freeProcessorCount
+                self.freeProcessorCount = 0
+        
+    def updateAllAttributes(self):
+        self.updateStorage()
+        self.updateIncomeAndBuildings()
+        self.updateProcessorAllocation()
+        
         # cap all resources to their storage capacity
         for rState in self.resources.values():
             rState.count = min(rState.count, rState.storage)

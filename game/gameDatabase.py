@@ -44,12 +44,17 @@ class GameParams:
         
         self.startingStorage["Credits"] = 1000.0
         self.startingStorage["Electricity"] = 100.0
+        self.startingStorage["Processors"] = 1
+        self.startingStorage["Land"] = 100
         
         self.startingResources["Credits"] = 500.0
+        self.startingResources["Land"] = self.startingStorage["Land"]
         
         self.startingBuildings["Solar Panels"] = 1
         
-        self.timerInterval = 500 # timer interval in milliseconds
+        self.timerInterval = 250 # timer interval in milliseconds
+        
+        self.maxProgramCount = 5
 
 class GameDatabase:
     def __init__(self, filePath):
