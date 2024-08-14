@@ -63,6 +63,8 @@ class GameState:
         self.programs[0].commands.append(GameCommand(self.commands["Idle"].info))
         self.programs[0].commands.append(GameCommand(self.commands["Sell Cloud Compute"].info))
         
+        self.programs[0].commands[2].maxCount = 5
+        
         self.updateAllAttributes()
 
     def updateStorage(self):
@@ -129,12 +131,18 @@ class GameState:
         self.updateIncomeAndBuildings()
         self.updateProcessorAllocation()
         
-        # cap all resources to their storage capacity
-        for rState in self.resources.values():
-            rState.count = min(rState.count, rState.storage)
+    def runAllPrograms(self):
+        for program in self.programs:
+            if program.assignedProcessors > 0:
+                program.step()
 
     def step(self):
         self.updateAllAttributes()
+        self.runAllPrograms()
+        
+        # cap all resources to their storage capacity
+        for rState in self.resources.values():
+            rState.count = min(rState.count, rState.storage)
         
     def getBuildingUpkeep(self, buildingName : str) -> CostTotal:
         b = self.buildings[buildingName]

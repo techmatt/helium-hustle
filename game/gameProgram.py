@@ -21,15 +21,22 @@ class GameProgram:
         self.instructionPointer: int = 0
         self.assignedProcessors: int = 0
 
+    def resetAllCommands(self):
+        self.instructionPointer = 0
+        for c in self.commands:
+            c.count = 0
+            
     def step(self):
         if len(self.commands) == 0:
             return
         if self.instructionPointer >= len(self.commands):
-            self.instructionPointer = 0
+            self.resetAllCommands()
             
         curCommand = self.commands[self.instructionPointer]
-        self.state.runCommand(curCommand.info.name)
+        
+        for x in range(0, self.assignedProcessors):
+            self.state.runCommand(curCommand.info.name)
+            
         curCommand.count += 1
         if curCommand.count >= curCommand.maxCount:
-           curCommand.count.count = 0
            self.instructionPointer += 1

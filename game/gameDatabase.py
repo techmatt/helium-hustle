@@ -52,7 +52,7 @@ class GameParams:
         
         self.startingBuildings["Solar Panels"] = 1
         
-        self.timerInterval = 250 # timer interval in milliseconds
+        self.timerInterval = 1000 # timer interval in milliseconds
         
         self.maxProgramCount = 5
 
