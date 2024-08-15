@@ -32,8 +32,6 @@ class StyleSheets:
             font-family: 'Roboto', 'Segoe UI', 'Helvetica', sans-serif;
             font-size: 13pt;
             color: #2c3e50;
-        }
-        QLabel {
             font-weight: 400;
             line-height: 1.4;
         }
@@ -44,8 +42,6 @@ class StyleSheets:
             font-family: 'Roboto', 'Segoe UI', 'Helvetica', sans-serif;
             font-size: 14pt;
             color: #2c3e50;
-        }
-        QLabel {
             font-weight: 400;
             line-height: 1.4;
         }
@@ -56,8 +52,6 @@ class StyleSheets:
             font-family: 'Roboto', 'Segoe UI', 'Helvetica', sans-serif;
             font-size: 16pt;
             color: #2c3e50;
-        }
-        QLabel {
             font-weight: bold;
             line-height: 1.4;
         }
@@ -68,8 +62,6 @@ class StyleSheets:
             font-family: 'Roboto', 'Segoe UI', 'Helvetica', sans-serif;
             font-size: 14pt;
             color: #2c3e50;
-        }
-        QLabel {
             font-weight: bold;
             line-height: 1.4;
         }
@@ -81,8 +73,6 @@ class StyleSheets:
             font-size: 14pt;
             color: #2c3e50;
             background-color: #45a049;
-        }
-        QLabel {
             font-weight: bold;
             line-height: 1.4;
         }
@@ -93,8 +83,6 @@ class StyleSheets:
             font-family: 'Roboto', 'Segoe UI', 'Helvetica', sans-serif;
             font-size: 12pt;
             color: #2c3e50;
-        }
-        QLabel {
             font-weight: bold;
             line-height: 1.4;
         }
@@ -105,8 +93,6 @@ class StyleSheets:
             font-family: 'Roboto', 'Segoe UI', 'Helvetica', sans-serif;
             font-size: 12pt;
             color: #2c3e50;
-        }
-        QLabel {
             font-weight: 400;
             line-height: 1.4;
         }

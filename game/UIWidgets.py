@@ -25,18 +25,20 @@ class ProgramUIElements():
         
         self.programSelectWidget = QWidget()
         programSelectLayout = QHBoxLayout(self.programSelectWidget)
+        self.programIndexButtons = []
         for i in range(0, len(gameUI.state.programs)):
-            programIndexButton = QPushButton(str(i+1))
-            programIndexButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
-            programIndexButton.clicked.connect(partial(gameUI.changeVisibleProgramIndex, i))
-            programSelectLayout.addWidget(programIndexButton)
+            button = QPushButton(str(i+1))
+            #button.setStyleSheet(StyleSheets.BUILDING_TITLE)
+            button.clicked.connect(partial(gameUI.changeVisibleProgramIndex, i))
+            programSelectLayout.addWidget(button)
+            self.programIndexButtons.append(button)
 
         self.processorAllocationWidget = QWidget()
         processorAllocationLayout = QHBoxLayout(self.processorAllocationWidget)
         processorIcon = gameUI.makeIconLabel('icons/resources/processors.png', 32, 32)
         
         activeProgram = gameUI.state.programs[gameUI.visibleProgramIndex]
-        self.assignedProcessorsLabel = QLabel(f"{activeProgram.assignedProcessors} processors assigned ({gameUI.state.freeProcessorCount} free)")
+        self.assignedProcessorsLabel = QLabel("")
         
         processorSubButton = QPushButton("-")
         processorAddButton = QPushButton("+")
@@ -54,6 +56,19 @@ class ProgramUIElements():
         processorAllocationLayout.addStretch(1)
         processorAllocationLayout.addWidget(processorSubButton)
         processorAllocationLayout.addWidget(processorAddButton)
+        
+        self.updateVisisbleProgramIndex()
+
+    def updateVisisbleProgramIndex(self):
+        state : GameState = self.gameUI.state
+        for i in range(0, len(state.programs)):
+            if i == self.gameUI.visibleProgramIndex:
+                self.programIndexButtons[i].setStyleSheet(StyleSheets.SELECTED_BUTTON)
+            else:
+                self.programIndexButtons[i].setStyleSheet(StyleSheets.BUILDING_TITLE)
+
+        activeProgram = state.programs[self.gameUI.visibleProgramIndex]
+        self.assignedProcessorsLabel.setText(f"{activeProgram.assignedProcessors} processors assigned ({state.freeProcessorCount} free)")
 
 class CommandButton(QPushButton):
     clicked = pyqtSignal(str)

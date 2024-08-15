@@ -28,43 +28,51 @@ class ResourceDisplay(QWidget):
 
         self.rValueLabels : Dict[str, QLabel] = {}
         self.rIncomeLabels : Dict[str, QLabel] = {}
-        for rState in self.gameUI.state.resources.values():
-            #print('resource: ', r.info.name)
-            rWidget = QWidget()
-            rLayout = QHBoxLayout(rWidget)
-            rLayout.setContentsMargins(0, 0, 0, 0)
-            
-            iconPath = 'icons/resources/' + rState.info.name + '.png'
-            iconLabel = QLabel()
-            iconLabel.setPixmap(self.gameUI.pixmapCache.getPixmap(iconPath, 32, 32))
-            iconLabel.setFixedSize(32, 32)
         
-            rLabelName = QLabel(f"{rState.info.name}:")
-            rLabelValue = QLabel("")
-            rLabelIncome = QLabel("")
-            self.rValueLabels[rState.info.name] = rLabelValue
-            self.rIncomeLabels[rState.info.name] = rLabelIncome
-            
-            rLabelName.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-            rLabelValue.setAlignment(Qt.AlignmentFlag.AlignCenter)
-            rLabelIncome.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
-            
-            rLabelName.setStyleSheet(StyleSheets.RESOURCE_LIST_TEXT)
-            rLabelValue.setStyleSheet(StyleSheets.RESOURCE_LIST_TEXT)
-            rLabelIncome.setStyleSheet(StyleSheets.RESOURCE_LIST_TEXT)
-            
-            rLayout.addWidget(iconLabel)
-            rLayout.addWidget(rLabelName)
-            rLayout.addWidget(rLabelValue)
-            rLayout.addWidget(rLabelIncome)
-            
-            self.resourceList.addWidget(rWidget)
+        self.addResourceWidget(self.gameUI.state.resources["Processors"])
+        for rState in self.gameUI.state.resources.values():
+            if rState.info.name != "Processors":
+                self.addResourceWidget(rState)
             
         self.updateLabels()
+        
+    def addResourceWidget(self, rState):
+        rWidget = QWidget()
+        rLayout = QHBoxLayout(rWidget)
+        rLayout.setContentsMargins(0, 0, 0, 0)
+            
+        iconPath = 'icons/resources/' + rState.info.name + '.png'
+        iconLabel = self.gameUI.makeIconLabel(iconPath, 32, 32)
+        
+        rLabelName = QLabel(f"{rState.info.name}:")
+        rLabelValue = QLabel("")
+        rLabelIncome = QLabel("")
+        self.rValueLabels[rState.info.name] = rLabelValue
+        self.rIncomeLabels[rState.info.name] = rLabelIncome
+            
+        rLabelName.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        rLabelValue.setAlignment(Qt.AlignmentFlag.AlignCenter)
+        rLabelIncome.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
+            
+        rLabelName.setStyleSheet(StyleSheets.RESOURCE_LIST_TEXT)
+        rLabelValue.setStyleSheet(StyleSheets.RESOURCE_LIST_TEXT)
+        rLabelIncome.setStyleSheet(StyleSheets.RESOURCE_LIST_TEXT)
+            
+        rLayout.addWidget(iconLabel)
+        rLayout.addWidget(rLabelName)
+        rLayout.addWidget(rLabelValue)
+        
+        if rState.info.name != "Processors":
+            rLayout.addWidget(rLabelIncome)
+            
+        self.resourceList.addWidget(rWidget)
             
     def updateLabels(self):
         for rState in self.gameUI.state.resources.values():
             rLabelValue = self.rValueLabels[rState.info.name]
-            rLabelIncome = self.rIncomeLabels[rState.info.name]
-            rLabelValue.setText(f"{rState.count} / {rState.storage}")
-            rLabelIncome.setText(f"{rState.income} /s")
+            if rState.info.name == "Processors":
+                rLabelValue.setText(f"{rState.storage} ({self.gameUI.state.freeProcessorCount} unassigned)")
+            else:
+                rLabelIncome = self.rIncomeLabels[rState.info.name]
+                rLabelValue.setText(f"{rState.count} / {rState.storage}")
+                rLabelIncome.setText(f"{rState.income} /s")

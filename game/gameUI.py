@@ -145,6 +145,7 @@ class GameUI(QMainWindow):
         self.makeMiddleFrame()
         self.programWidget.updateProgram()
         self.programWidget.updateProgressBars()
+        self.programUIElements.updateVisisbleProgramIndex()
         #self.makeRightFrame()
     
     def runCommand(self, name : str):

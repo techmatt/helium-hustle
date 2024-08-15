@@ -35,7 +35,7 @@ class ProgramItemWidget(QWidget):
         
         self.subButton = QPushButton("-")
         self.addButton = QPushButton("+")
-        self.removeButton = QPushButton("X")
+        self.removeButton = QPushButton("x")
         
         self.subButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
         self.addButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
@@ -79,7 +79,6 @@ class ProgramWidget(QWidget):
         self.loadVisibleProgramFromList()
         
     def loadListFromVisibleProgram(self):
-        print('loading list from visible program')
         self.listWidget.clear()
         
         state : GameState = self.gameUI.state
@@ -102,9 +101,6 @@ class ProgramWidget(QWidget):
         state : GameState = self.gameUI.state
         activeProgram : GameProgram = state.programs[self.gameUI.visibleProgramIndex]
         
-        print('visibleProgramIndex', self.gameUI.visibleProgramIndex)
-        print('self.listWidget.count()', self.listWidget.count())
-        print('len(activeProgram.commands)', len(activeProgram.commands))
         inconsistencyFound = (self.listWidget.count() != len(activeProgram.commands))
         if not inconsistencyFound:
             for i in range(self.listWidget.count()):
@@ -113,7 +109,6 @@ class ProgramWidget(QWidget):
                 if widget.command != activeProgram.commands[i]:
                     inconsistencyFound = True
         
-        print('inconsistency', inconsistencyFound)
         if inconsistencyFound:
             self.loadListFromVisibleProgram()
             
