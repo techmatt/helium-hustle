@@ -176,6 +176,12 @@ class GameUI(QMainWindow):
             maxAvailableProcessors = min(delta, self.state.freeProcessorCount)
             activeProgram.assignedProcessors += maxAvailableProcessors
         self.updateLabels()
+
+    def restartAllPrograms(self):
+        for program in self.state.programs:
+            program.resetAllCommands()
+        self.updateLabels()
+
         
     def triggerExit(self):
         QCoreApplication.instance().quit()

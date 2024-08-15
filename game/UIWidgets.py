@@ -41,9 +41,11 @@ class ProgramUIElements():
         
         processorSubButton = QPushButton("-")
         processorAddButton = QPushButton("+")
+        processorRestartButton = QPushButton("Restart all")
         
         processorSubButton.clicked.connect(partial(gameUI.changeAssignedProcessors, -1))
         processorAddButton.clicked.connect(partial(gameUI.changeAssignedProcessors, 1))
+        processorRestartButton.clicked.connect(partial(gameUI.restartAllPrograms))
 
         buttonSize = QSize(25, 25)
         processorSubButton.setFixedSize(buttonSize)
@@ -52,12 +54,14 @@ class ProgramUIElements():
         self.assignedProcessorsLabel.setStyleSheet(StyleSheets.RESOURCE_LIST_TEXT)
         processorSubButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
         processorAddButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
+        processorRestartButton.setStyleSheet(StyleSheets.RESOURCE_LIST_TEXT)
 
         processorAllocationLayout.addWidget(processorIcon)
         processorAllocationLayout.addWidget(self.assignedProcessorsLabel)
         processorAllocationLayout.addStretch(1)
         processorAllocationLayout.addWidget(processorSubButton)
         processorAllocationLayout.addWidget(processorAddButton)
+        processorAllocationLayout.addWidget(processorRestartButton)
         
         self.updateVisisbleProgramIndex()
 
