@@ -18,7 +18,7 @@ from styleSheets import StyleSheets
 from programWidget import ProgramWidget
 from pixmapCache import PixmapCache
 
-from UIWidgets import CommandButton, BuildingButton
+from UIWidgets import CommandButton, BuildingButton, ProgramUIElements
 
 class GameUI(QMainWindow):
     def __init__(self, state : GameState, database : GameDatabase):
@@ -44,6 +44,8 @@ class GameUI(QMainWindow):
         # UI has left, middle, and right frames.
         # See design.pptx for the latest design.
 
+        self.programUIElements = ProgramUIElements(self)
+
         self.leftFrame = QWidget()
         self.leftLayout = QVBoxLayout(self.leftFrame)
         
@@ -51,6 +53,7 @@ class GameUI(QMainWindow):
         self.middleLayout = QVBoxLayout(self.middleFrame)
         
         self.rightFrame = QWidget()
+        self.rightFrame.setFixedWidth(532)
         self.rightLayout = QVBoxLayout(self.rightFrame)
         
         self.makeLeftFrame()
@@ -59,6 +62,7 @@ class GameUI(QMainWindow):
         
         self.mainLayout.addWidget(self.leftFrame, 1)
         self.mainLayout.addWidget(self.middleFrame, 2)
+        self.mainLayout.addStretch(1)
         self.mainLayout.addWidget(self.rightFrame, 3)
         
         self.timer = QTimer(self)
@@ -89,18 +93,10 @@ class GameUI(QMainWindow):
     def makeRightFrame(self):
         self.clearLayout(self.rightLayout)
         
-        self.programLabel = QLabel("Programs")
-        self.programLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
-        self.rightLayout.addWidget(self.programLabel)
+        self.rightLayout.addWidget(self.programUIElements.programLabel)
+        self.rightLayout.addWidget(self.programUIElements.programSelectWidget)
+        self.rightLayout.addWidget(self.programUIElements.processorAllocationWidget)
         
-        programSelectWidget = QWidget()
-        programSelectLayout = QHBoxLayout(programSelectWidget)
-        for i in range(0, len(self.state.programs)):
-            programIndexButton = QPushButton(str(i+1))
-            programIndexButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
-            programSelectLayout.addWidget(programIndexButton)
-        self.rightLayout.addWidget(programSelectWidget)
-            
         self.programWidget = ProgramWidget(self)
         self.rightLayout.addWidget(self.programWidget)
         
@@ -147,6 +143,7 @@ class GameUI(QMainWindow):
     def updateLabels(self):
         self.resourceDisplay.updateLabels()
         self.makeMiddleFrame()
+        self.programWidget.updateProgram()
         self.programWidget.updateProgressBars()
         #self.makeRightFrame()
     
@@ -165,6 +162,10 @@ class GameUI(QMainWindow):
         result.setPixmap(self.pixmapCache.getPixmap(iconPath, iconWidth, iconHeight))
         result.setFixedSize(iconWidth, iconHeight)
         return result
+
+    def changeVisibleProgramIndex(self, i):
+        self.visibleProgramIndex = i
+        self.updateLabels()
         
     def triggerExit(self):
         QCoreApplication.instance().quit()

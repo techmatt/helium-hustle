@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import random
+from functools import partial
 
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QGridLayout, QSizePolicy
 from PyQt6.QtGui import QPixmap, QFont, QIcon, QPainter, QColor
@@ -14,6 +15,45 @@ from enums import GameWindowMode
 from iconGrid import IconGrid
 from resourceDisplay import ResourceDisplay
 from styleSheets import StyleSheets
+
+class ProgramUIElements():
+    def __init__(self, gameUI : GameUI):
+        self.gameUI = gameUI
+        
+        self.programLabel = QLabel("Programs")
+        self.programLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
+        
+        self.programSelectWidget = QWidget()
+        programSelectLayout = QHBoxLayout(self.programSelectWidget)
+        for i in range(0, len(gameUI.state.programs)):
+            programIndexButton = QPushButton(str(i+1))
+            programIndexButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
+            programIndexButton.clicked.connect(partial(gameUI.changeVisibleProgramIndex, i))
+            programSelectLayout.addWidget(programIndexButton)
+
+        self.processorAllocationWidget = QWidget()
+        processorAllocationLayout = QHBoxLayout(self.processorAllocationWidget)
+        processorIcon = gameUI.makeIconLabel('icons/resources/processors.png', 32, 32)
+        
+        activeProgram = gameUI.state.programs[gameUI.visibleProgramIndex]
+        self.assignedProcessorsLabel = QLabel(f"{activeProgram.assignedProcessors} processors assigned ({gameUI.state.freeProcessorCount} free)")
+        
+        processorSubButton = QPushButton("-")
+        processorAddButton = QPushButton("+")
+
+        buttonSize = QSize(25, 25)
+        processorSubButton.setFixedSize(buttonSize)
+        processorAddButton.setFixedSize(buttonSize)
+        
+        self.assignedProcessorsLabel.setStyleSheet(StyleSheets.RESOURCE_LIST_TEXT)
+        processorSubButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
+        processorAddButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
+
+        processorAllocationLayout.addWidget(processorIcon)
+        processorAllocationLayout.addWidget(self.assignedProcessorsLabel)
+        processorAllocationLayout.addStretch(1)
+        processorAllocationLayout.addWidget(processorSubButton)
+        processorAllocationLayout.addWidget(processorAddButton)
 
 class CommandButton(QPushButton):
     clicked = pyqtSignal(str)

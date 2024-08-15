@@ -73,14 +73,20 @@ class ProgramWidget(QWidget):
         self.listWidget.model().rowsMoved.connect(self.onRowsMoved)
         self.listWidget.setFixedWidth(500)
         
-        state : GameState = gameUI.state
-        activeProgram : GameProgram = state.programs[gameUI.visibleProgramIndex]
+        self.loadListFromVisibleProgram()
+        
+    def onRowsMoved(self, parent, start, end, destination, row):
+        self.loadVisibleProgramFromList()
+        
+    def loadListFromVisibleProgram(self):
+        print('loading list from visible program')
+        self.listWidget.clear()
+        
+        state : GameState = self.gameUI.state
+        activeProgram : GameProgram = state.programs[self.gameUI.visibleProgramIndex]
 
         for command in activeProgram.commands:
             self.addCommand(command)
-
-    def onRowsMoved(self, parent, start, end, destination, row):
-        self.loadVisibleProgramFromList()
         
     def loadVisibleProgramFromList(self):
         state : GameState = self.gameUI.state
@@ -92,6 +98,25 @@ class ProgramWidget(QWidget):
             activeProgram.commands.append(widget.command)
         activeProgram.resetAllCommands()
         
+    def updateProgram(self):
+        state : GameState = self.gameUI.state
+        activeProgram : GameProgram = state.programs[self.gameUI.visibleProgramIndex]
+        
+        print('visibleProgramIndex', self.gameUI.visibleProgramIndex)
+        print('self.listWidget.count()', self.listWidget.count())
+        print('len(activeProgram.commands)', len(activeProgram.commands))
+        inconsistencyFound = (self.listWidget.count() != len(activeProgram.commands))
+        if not inconsistencyFound:
+            for i in range(self.listWidget.count()):
+                item = self.listWidget.item(i)
+                widget = self.listWidget.itemWidget(item)
+                if widget.command != activeProgram.commands[i]:
+                    inconsistencyFound = True
+        
+        print('inconsistency', inconsistencyFound)
+        if inconsistencyFound:
+            self.loadListFromVisibleProgram()
+            
     def updateProgressBars(self):
         state : GameState = self.gameUI.state
         activeProgram : GameProgram = state.programs[self.gameUI.visibleProgramIndex]

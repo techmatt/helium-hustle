@@ -75,6 +75,19 @@ class StyleSheets:
         }
     """
     
+    SELECTED_BUTTON = """
+        QWidget {
+            font-family: 'Roboto', 'Segoe UI', 'Helvetica', sans-serif;
+            font-size: 14pt;
+            color: #2c3e50;
+            background-color: #45a049;
+        }
+        QLabel {
+            font-weight: bold;
+            line-height: 1.4;
+        }
+    """
+    
     BUILDING_RESOURCE_LIST = """
         QWidget {
             font-family: 'Roboto', 'Segoe UI', 'Helvetica', sans-serif;
