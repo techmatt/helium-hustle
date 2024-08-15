@@ -59,12 +59,16 @@ class ResourceDisplay(QWidget):
         rLabelIncome.setStyleSheet(StyleSheets.RESOURCE_LIST_TEXT)
             
         rLayout.addWidget(iconLabel)
-        rLayout.addWidget(rLabelName)
-        rLayout.addWidget(rLabelValue)
         
-        if rState.info.name != "Processors":
+        if rState.info.name == "Processors":
+            rLayout.addWidget(rLabelName)
+            rLayout.addStretch(1)
+            rLayout.addWidget(rLabelValue)
+            rLayout.addStretch(1)
+        else:
+            rLayout.addWidget(rLabelName)
+            rLayout.addWidget(rLabelValue)
             rLayout.addWidget(rLabelIncome)
-            
         self.resourceList.addWidget(rWidget)
             
     def updateLabels(self):

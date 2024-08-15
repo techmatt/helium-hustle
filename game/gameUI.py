@@ -167,6 +167,15 @@ class GameUI(QMainWindow):
     def changeVisibleProgramIndex(self, i):
         self.visibleProgramIndex = i
         self.updateLabels()
+
+    def changeAssignedProcessors(self, delta):
+        activeProgram : GameProgram = self.state.programs[self.visibleProgramIndex]
+        if delta < 0:
+            activeProgram.assignedProcessors = max(0, activeProgram.assignedProcessors + delta)
+        else:
+            maxAvailableProcessors = min(delta, self.state.freeProcessorCount)
+            activeProgram.assignedProcessors += maxAvailableProcessors
+        self.updateLabels()
         
     def triggerExit(self):
         QCoreApplication.instance().quit()

@@ -28,7 +28,6 @@ class ProgramUIElements():
         self.programIndexButtons = []
         for i in range(0, len(gameUI.state.programs)):
             button = QPushButton(str(i+1))
-            #button.setStyleSheet(StyleSheets.BUILDING_TITLE)
             button.clicked.connect(partial(gameUI.changeVisibleProgramIndex, i))
             programSelectLayout.addWidget(button)
             self.programIndexButtons.append(button)
@@ -42,6 +41,9 @@ class ProgramUIElements():
         
         processorSubButton = QPushButton("-")
         processorAddButton = QPushButton("+")
+        
+        processorSubButton.clicked.connect(partial(gameUI.changeAssignedProcessors, -1))
+        processorAddButton.clicked.connect(partial(gameUI.changeAssignedProcessors, 1))
 
         buttonSize = QSize(25, 25)
         processorSubButton.setFixedSize(buttonSize)
