@@ -27,9 +27,9 @@ class ResourceState:
         self.storage: float = 0
         self.count: float = 0
 
-class CostTotal:
-    def __init__(self, costs : Dict[str, float]):
-        self.costs = costs
+class ResourceList:
+    def __init__(self, r : Dict[str, float]):
+        self.r = r
 
 class GameState:
     def __init__(self, database : GameDatabase):
@@ -96,15 +96,16 @@ class GameState:
             bInfo = bState.info
             bName = bInfo.name
             
+            bProduction = self.getBuildingProduction(bName)
             bUpkeep = self.getBuildingUpkeep(bName)
-            if len(bUpkeep.costs) == 0:
+            if len(bUpkeep.r) == 0:
                 for rName, prod in bInfo.production.items():
                     rState = self.resources[rName]
                     rState.income += prod * bState.activeCount
                     rState.count += prod * bState.activeCount
             else:
                 # upkeep counts as negative income
-                for rName, cost in bUpkeep.costs.items():
+                for rName, cost in bUpkeep.r.items():
                     rState = self.resources[rName]
                     rState.income -= cost * bState.activeCount
                     
@@ -112,7 +113,7 @@ class GameState:
                 # there are not sufficient upkeep resources.
                 for i in range(0, bState.activeCount):
                     if self.canAffordCost(bUpkeep):
-                        self.spendCost(bUpkeep)
+                        self.spendResources(bUpkeep)
                     else:
                         continue
 
@@ -148,7 +149,16 @@ class GameState:
         for rState in self.resources.values():
             rState.count = min(rState.count, rState.storage)
         
-    def getBuildingUpkeep(self, buildingName : str) -> CostTotal:
+    def getBuildingProduction(self, buildingName : str) -> ResourceList:
+        b = self.buildings[buildingName]
+        
+        prod: Dict[str, float] = {}
+        for rName, production in b.info.production.items():
+            prod[rName] = production
+            
+        return ResourceList(prod)
+
+    def getBuildingUpkeep(self, buildingName : str) -> ResourceList:
         b = self.buildings[buildingName]
         
         costs: Dict[str, float] = {}
@@ -156,9 +166,9 @@ class GameState:
         for rName, upkeepCost in b.info.upkeep.items():
             costs[rName] = upkeepCost * costMultiplier
             
-        return CostTotal(costs)
+        return ResourceList(costs)
     
-    def getBuildingCost(self, buildingName : str) -> CostTotal:
+    def getBuildingCost(self, buildingName : str) -> ResourceList:
         b = self.buildings[buildingName]
         
         costs: Dict[str, float] = {}
@@ -166,9 +176,9 @@ class GameState:
         for rName, baseCost in b.info.baseCost.items():
             costs[rName] = math.floor(baseCost * costMultiplier)
             
-        return CostTotal(costs)
+        return ResourceList(costs)
     
-    def getCommandCost(self, commandName : str) -> CostTotal:
+    def getCommandCost(self, commandName : str) -> ResourceList:
         c = self.commands[commandName]
         
         costs: Dict[str, float] = {}
@@ -176,16 +186,16 @@ class GameState:
         for rName, baseCost in c.info.cost.items():
             costs[rName] = baseCost * costMultiplier
             
-        return CostTotal(costs)
+        return ResourceList(costs)
     
-    def canAffordCost(self, costTotal : CostTotal) -> bool:
-        for r, v in costTotal.costs.items():
+    def canAffordCost(self, cost : ResourceList) -> bool:
+        for r, v in cost.r.items():
             if v > self.resources[r].count:
                 return False
         return True
 
-    def spendCost(self, costTotal : CostTotal):
-        for r, v in costTotal.costs.items():
+    def spendResources(self, resourceList : ResourceList):
+        for r, v in resourceList.r.items():
             if v > self.resources[r].count:
                 print('cannot afford cost')
                 return
@@ -197,7 +207,7 @@ class GameState:
             print('cannot afford ' + buildingName)
             return
         
-        self.spendCost(buildingCost)
+        self.spendResources(buildingCost)
         self.buildings[buildingName].totalCount += 1
         self.buildings[buildingName].activeCount += 1
         self.updateStorageAndProcessors()
@@ -209,7 +219,7 @@ class GameState:
         commandCost = self.getCommandCost(commandName)
         if not self.canAffordCost(commandCost):
             return
-        self.spendCost(commandCost)
+        self.spendResources(commandCost)
             
         for rName, v in cInfo.production.items():
             r = self.resources[rName]

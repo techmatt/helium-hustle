@@ -1,3 +1,2 @@
 resources that are limited should be red for buildings + commands
-some buildings can be enabled/disabled/destroyed
 time controls

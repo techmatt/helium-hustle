@@ -95,7 +95,7 @@ class BuildingButtonWidget(QPushButton):
         self.rNameLabels = {}
         self.rCostLabels = {}
         
-        for rName, cost in buildingCost.costs.items():
+        for rName, cost in buildingCost.r.items():
             # TODO: refactor into self.makeResourceWidget
             rWidget = QWidget()
             rLayout = QGridLayout(rWidget)
@@ -176,9 +176,9 @@ class BuildingButtonWidget(QPushButton):
     def updateLabels(self):
         state : GameState = self.gameUI.state
         bState : BuildingState = state.buildings[self.bName]
-        commandCost : CostTotal = self.state.getBuildingCost(self.bName)
+        commandCost : ResourceList = self.state.getBuildingCost(self.bName)
         
-        for rName, v in commandCost.costs.items():
+        for rName, v in commandCost.r.items():
             rValue = state.resources[rName].count
             if rValue < v:
                 self.rNameLabels[rName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST_RED)

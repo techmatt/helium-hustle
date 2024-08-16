@@ -184,7 +184,6 @@ class GameUI(QMainWindow):
         bState.activeCount = bState.activeCount + deltaValue
         bState.activeCount = max(bState.activeCount, 0)
         bState.activeCount = min(bState.activeCount, bState.totalCount)
-        print('modifyBuildingActive', bName, deltaValue, bState.activeCount)
         self.updateLabels()
         
     def removeBuilding(self, bName : str):
