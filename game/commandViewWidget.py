@@ -16,7 +16,7 @@ from iconGrid import IconGrid
 from resourceDisplay import ResourceDisplay
 from styleSheets import StyleSheets
 
-class CommandButton(QPushButton):
+class CommandButtonWidget(QPushButton):
     clicked = pyqtSignal(str)
 
     def __init__(self, gameUI : GameUI, name : str):
@@ -134,6 +134,9 @@ class CommandButton(QPushButton):
 
     def leaveEvent(self, event):
         self.update()
+        
+    def updateLabels(self):
+        self.update()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -146,14 +149,20 @@ class CommandViewWidget(QWidget):
         
         commandGridLayout = QGridLayout(self)
         
-        for index, bName in enumerate(gameUI.database.commands.keys()):
-            cWidget = CommandButton(gameUI, bName)
+        self.commandWidgets : Dict[str, CommandButtonWidget] = {}
+        
+        for index, cName in enumerate(gameUI.database.commands.keys()):
+            cWidget = CommandButtonWidget(gameUI, cName)
 
             row = index // 3
             col = index % 3
             commandGridLayout.addWidget(cWidget, row, col)
-                
+            self.commandWidgets[cName] = cWidget
+            
             cWidget.clicked.connect(gameUI.runCommand)
             
+    def updateLabels(self):
+        for widget in self.commandWidgets.values():
+            widget.updateLabels()
         
     

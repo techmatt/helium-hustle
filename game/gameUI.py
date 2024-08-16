@@ -1,5 +1,6 @@
 
 from __future__ import annotations
+from asyncio.windows_events import NULL
 
 import sys
 import os
@@ -106,9 +107,11 @@ class GameUI(QMainWindow):
 
     def makeMiddleFrame(self):
         self.clearLayout(self.middleLayout)
+        self.commandViewWidget = None
+        
         if self.mode == GameWindowMode.COMMANDS:
-            commandGridWidget = CommandViewWidget(self)
-            self.middleLayout.addWidget(commandGridWidget)
+            self.commandViewWidget = CommandViewWidget(self)
+            self.middleLayout.addWidget(self.commandViewWidget)
 
         if self.mode == GameWindowMode.BUILDINGS:
             buildingGridWidget = QWidget()
@@ -133,7 +136,12 @@ class GameUI(QMainWindow):
         
     def updateLabels(self):
         self.resourceDisplay.updateLabels()
-        self.makeMiddleFrame()
+        
+        if self.mode == GameWindowMode.COMMANDS:
+            self.commandViewWidget.updateLabels()
+        else:
+            self.makeMiddleFrame()
+            
         self.programWidget.updateProgram()
         self.programWidget.updateProgressBars()
         self.programUIElements.updateVisisbleProgramIndex()
