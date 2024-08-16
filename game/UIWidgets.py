@@ -102,6 +102,7 @@ class CommandButton(QPushButton):
         nameLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
         nameLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
         addButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
+        addButton.clicked.connect(partial(gameUI.addCommandToProgram, name))
         
         titleWidget = QWidget()
         titleLayout = QHBoxLayout(titleWidget)
@@ -117,6 +118,9 @@ class CommandButton(QPushButton):
         rListLayout.setSpacing(0)
         rListLayout.setContentsMargins(0, 0, 0, 0)
         rListLayout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        
+        self.rNameLabels = {}
+        self.rCostLabels = {}
         
         for rName, production in cInfo.production.items():
             rWidget = self.makeResourceWidget(gameUI, rName, production)
@@ -149,7 +153,7 @@ class CommandButton(QPushButton):
         rIconLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
             
         rNameLabel = QLabel(f"{rName}")
-        rCostLabel = QLabel(f"{value}")
+        rCostLabel = QLabel(f"{value:+}")
         rNameLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
         rCostLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
         rNameLabel.setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
@@ -161,6 +165,10 @@ class CommandButton(QPushButton):
         rLayout.setColumnStretch(0, 0)
         rLayout.setColumnStretch(1, 3)
         rLayout.setColumnStretch(2, 3)
+
+        self.rNameLabels[rName] = rNameLabel
+        self.rCostLabels[rName] = rCostLabel
+
         return rWidget
     
     def paintEvent(self, event):

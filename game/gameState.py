@@ -58,14 +58,15 @@ class GameState:
         self.programs[0].assignedProcessors = 1
         self.freeProcessorCount = 0
         
-        self.programs[0].commands.append(GameCommand(self.commands["Sell Cloud Compute"].info))
-        self.programs[0].commands.append(GameCommand(self.commands["Gather Regolith"].info))
-        self.programs[0].commands.append(GameCommand(self.commands["Idle"].info))
-        self.programs[0].commands.append(GameCommand(self.commands["Sell Cloud Compute"].info))
+        loadDebugProgram = False
+        if loadDebugProgram:
+            self.programs[0].commands.append(GameCommand(self.commands["Sell Cloud Compute"].info))
+            self.programs[0].commands.append(GameCommand(self.commands["Gather Regolith"].info))
+            self.programs[0].commands.append(GameCommand(self.commands["Idle"].info))
+            self.programs[0].commands.append(GameCommand(self.commands["Sell Cloud Compute"].info))
+            self.programs[0].commands[2].maxCount = 5
         
-        self.programs[0].commands[2].maxCount = 5
-        
-        self.updateAllAttributes()
+        self.step()
 
     def updateStorage(self):
         for r in self.resources.values():
@@ -80,7 +81,10 @@ class GameState:
                 rState = self.resources[rName]
                 rState.storage += bState.activeCount * stor
 
-    def updateIncomeAndBuildings(self):
+    def updateIncomeAndBuildingProduction(self):
+        # because buildings that fail upkeep don't produce resources, we must handle
+        # income and building proudction in the same function.
+    
         for r in self.resources.values():
             r.income = 0
         
@@ -126,9 +130,8 @@ class GameState:
                 program.assignedProcessors = self.freeProcessorCount
                 self.freeProcessorCount = 0
         
-    def updateAllAttributes(self):
+    def updateStorageAndProcessors(self):
         self.updateStorage()
-        self.updateIncomeAndBuildings()
         self.updateProcessorAllocation()
         
     def runAllPrograms(self):
@@ -137,7 +140,8 @@ class GameState:
                 program.step()
 
     def step(self):
-        self.updateAllAttributes()
+        self.updateStorageAndProcessors()
+        self.updateIncomeAndBuildingProduction()
         self.runAllPrograms()
         
         # cap all resources to their storage capacity
@@ -196,7 +200,7 @@ class GameState:
         self.spendCost(buildingCost)
         self.buildings[buildingName].totalCount += 1
         self.buildings[buildingName].activeCount += 1
-        self.updateAllAttributes()
+        self.updateStorageAndProcessors()
         
     def runCommand(self, commandName):
         cState : CommandState = self.commands[commandName]
@@ -210,8 +214,6 @@ class GameState:
         for rName, v in cInfo.production.items():
             r = self.resources[rName]
             r.count = min(r.count + v, r.storage)
-            
-        self.updateAllAttributes()
 
 if __name__ == "__main__":
     print('testing game state')

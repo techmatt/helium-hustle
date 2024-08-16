@@ -10,6 +10,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QCoreApplication
 
 from gameDatabase import GameDatabase
 from gameState import GameState
+from gameProgram import GameProgram, GameCommand
 
 from enums import GameWindowMode
 from iconGrid import IconGrid
@@ -169,7 +170,7 @@ class GameUI(QMainWindow):
         self.updateLabels()
 
     def changeAssignedProcessors(self, delta):
-        activeProgram : GameProgram = self.state.programs[self.visibleProgramIndex]
+        activeProgram = self.getActiveProgram()
         if delta < 0:
             activeProgram.assignedProcessors = max(0, activeProgram.assignedProcessors + delta)
         else:
@@ -182,6 +183,13 @@ class GameUI(QMainWindow):
             program.resetAllCommands()
         self.updateLabels()
 
+    def getActiveProgram(self) -> GameProgram:
+        return self.state.programs[self.visibleProgramIndex]
+    
+    def addCommandToProgram(self, commandName):
+        activeProgram = self.getActiveProgram()
+        activeProgram.commands.append(GameCommand(self.state.commands[commandName].info))
+        self.updateLabels()
         
     def triggerExit(self):
         QCoreApplication.instance().quit()
