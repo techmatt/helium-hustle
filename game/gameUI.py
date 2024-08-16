@@ -18,8 +18,9 @@ from resourceDisplay import ResourceDisplay
 from styleSheets import StyleSheets
 from programWidget import ProgramWidget
 from pixmapCache import PixmapCache
+from commandViewWidget import CommandViewWidget
 
-from UIWidgets import CommandButton, BuildingButton, ProgramUIElements
+from UIWidgets import BuildingButton, ProgramUIElements
 
 class GameUI(QMainWindow):
     def __init__(self, state : GameState, database : GameDatabase):
@@ -106,18 +107,7 @@ class GameUI(QMainWindow):
     def makeMiddleFrame(self):
         self.clearLayout(self.middleLayout)
         if self.mode == GameWindowMode.COMMANDS:
-            commandGridWidget = QWidget()
-            commandGridLayout = QGridLayout(commandGridWidget)
-        
-            for index, bName in enumerate(self.database.commands.keys()):
-                cWidget = CommandButton(self, bName)
-
-                row = index // 3
-                col = index % 3
-                commandGridLayout.addWidget(cWidget, row, col)
-                
-                cWidget.clicked.connect(self.runCommand)
-            
+            commandGridWidget = CommandViewWidget(self)
             self.middleLayout.addWidget(commandGridWidget)
 
         if self.mode == GameWindowMode.BUILDINGS:
