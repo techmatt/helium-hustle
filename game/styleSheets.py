@@ -87,6 +87,16 @@ class StyleSheets:
             line-height: 1.4;
         }
     """
+
+    BUILDING_RESOURCE_LIST_RED = """
+        QWidget {
+            font-family: 'Roboto', 'Segoe UI', 'Helvetica', sans-serif;
+            font-size: 12pt;
+            color: #8B0000;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+    """
     
     BUILDING_DESCRIPTION = """
         QWidget {

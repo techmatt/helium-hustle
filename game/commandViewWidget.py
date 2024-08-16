@@ -136,6 +136,17 @@ class CommandButtonWidget(QPushButton):
         self.update()
         
     def updateLabels(self):
+        
+        state : GameState = self.gameUI.state
+        commandCost : CostTotal = self.state.getCommandCost(self.name)
+        for rName, v in commandCost.costs.items():
+            rValue = state.resources[rName].count
+            if rValue < v:
+                self.rNameLabels[rName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST_RED)
+                self.rCostLabels[rName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST_RED)
+            else:
+                self.rNameLabels[rName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
+                self.rCostLabels[rName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
         self.update()
 
     def mousePressEvent(self, event):
