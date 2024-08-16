@@ -25,6 +25,7 @@ class BuildingInfo(NamedTuple):
     production: Dict[str, float]
     upkeep: Dict[str, float]
     storage: Dict[str, float]
+    canDeactivate: bool
     description: str
 
 class GameParams:
@@ -51,6 +52,7 @@ class GameParams:
         self.startingResources["Land"] = self.startingStorage["Land"]
         
         self.startingBuildings["Solar Panels"] = 1
+        self.startingBuildings["Storage Facility"] = 1
         
         self.timerInterval = 1000 # timer interval in milliseconds
         
@@ -91,6 +93,7 @@ class GameDatabase:
                 upkeep = b.get('upkeep', {}),
                 storage = b.get('storage', {}),
                 costScaling = b['costScaling'],
+                canDeactivate = b['canDeactivate'],
                 description = b['description'])
             self.buildings[curBuilding.name] = curBuilding
             
@@ -122,6 +125,8 @@ class GameDatabase:
                     "production": b.production,
                     "upkeep": b.maintenance,
                     "storage": b.storage,
+                    "costScaling": b.costScaling,
+                    "canDeactivate": b.canDeactivate,
                     "description": b.description
                 } for b in self.buildings.values()
             ]

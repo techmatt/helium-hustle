@@ -105,6 +105,7 @@
         "Electricity": 5
       },
       "costScaling": 1.25,
+      "canDeactivate": false,
       "description": "Creates energy from sunlight."
     },
     {
@@ -117,6 +118,7 @@
         "Processors": 1
       },
       "costScaling": 1.25,
+      "canDeactivate": false,
       "description": "Creates energy from sunlight."
     },
     {
@@ -129,9 +131,10 @@
         "Credits": 10
       },
       "upkeep": {
-        "Electricity": 1
+        "Electricity": 2
       },
       "costScaling": 1.25,
+      "canDeactivate": true,
       "description": "Converts energy into money."
     },
     {
@@ -143,6 +146,7 @@
         "Regolith": 1
       },
       "costScaling": 1.25,
+      "canDeactivate": false,
       "description": "Mines moon rocks."
     },
     {
@@ -155,6 +159,7 @@
         "Credits": 1
       },
       "costScaling": 1.25,
+      "canDeactivate": false,
       "description": "Extracts ice from the surface."
     },
     {
@@ -167,6 +172,7 @@
         "Helium-3": 0.1
       },
       "costScaling": 1.25,
+      "canDeactivate": false,
       "description": "Harvests helium gas."
     },
     {
@@ -180,6 +186,7 @@
         "Helium-3": 100
       },
       "costScaling": 1.25,
+      "canDeactivate": false,
       "description": "Vital resource storage."
     }
   ]

@@ -20,8 +20,9 @@ from styleSheets import StyleSheets
 from programWidget import ProgramWidget
 from pixmapCache import PixmapCache
 from commandViewWidget import CommandViewWidget
+from buildingViewWidget import BuildingViewWidget
 
-from UIWidgets import BuildingButton, ProgramUIElements
+from UIWidgets import ProgramUIElements
 
 class GameUI(QMainWindow):
     def __init__(self, state : GameState, database : GameDatabase):
@@ -108,25 +109,15 @@ class GameUI(QMainWindow):
     def makeMiddleFrame(self):
         self.clearLayout(self.middleLayout)
         self.commandViewWidget = None
+        self.buildingViewWidget = None
         
         if self.mode == GameWindowMode.COMMANDS:
             self.commandViewWidget = CommandViewWidget(self)
             self.middleLayout.addWidget(self.commandViewWidget)
 
         if self.mode == GameWindowMode.BUILDINGS:
-            buildingGridWidget = QWidget()
-            buildingGridLayout = QGridLayout(buildingGridWidget)
-        
-            for index, bName in enumerate(self.database.buildings.keys()):
-                bWidget = BuildingButton(self, bName)
-
-                row = index // 3
-                col = index % 3
-                buildingGridLayout.addWidget(bWidget, row, col)
-                
-                bWidget.clicked.connect(self.buildBuilding)
-            
-            self.middleLayout.addWidget(buildingGridWidget)
+            self.buildingViewWidget = BuildingViewWidget(self)
+            self.middleLayout.addWidget(self.buildingViewWidget)
             
         self.middleLayout.addStretch(1)
 
@@ -139,21 +130,20 @@ class GameUI(QMainWindow):
         
         if self.mode == GameWindowMode.COMMANDS:
             self.commandViewWidget.updateLabels()
-        else:
-            self.makeMiddleFrame()
+        if self.mode == GameWindowMode.BUILDINGS:
+            self.buildingViewWidget.updateLabels()
+        
+        #self.makeMiddleFrame()
             
         self.programWidget.updateProgram()
         self.programWidget.updateProgressBars()
         self.programUIElements.updateVisisbleProgramIndex()
-        #self.makeRightFrame()
     
     def runCommand(self, name : str):
-        #print('running ' + name)
         self.state.runCommand(name)
         self.updateLabels()
         
     def buildBuilding(self, name : str):
-        #print('building ' + name)
         self.state.attemptPurchaseBuilding(name)
         self.updateLabels()
         
@@ -187,6 +177,21 @@ class GameUI(QMainWindow):
     def addCommandToProgram(self, commandName):
         activeProgram = self.getActiveProgram()
         activeProgram.commands.append(GameCommand(self.state.commands[commandName].info))
+        self.updateLabels()
+
+    def modifyBuildingActive(self, bName : str, deltaValue : int):
+        bState : BuildingState = self.state.buildings[bName]
+        bState.activeCount = bState.activeCount + deltaValue
+        bState.activeCount = max(bState.activeCount, 0)
+        bState.activeCount = min(bState.activeCount, bState.totalCount)
+        print('modifyBuildingActive', bName, deltaValue, bState.activeCount)
+        self.updateLabels()
+        
+    def removeBuilding(self, bName : str):
+        bState : BuildingState = self.state.buildings[bName]
+        bState.totalCount -= 1
+        bState.totalCount = max(bState.totalCount, 0)
+        bState.activeCount = min(bState.activeCount, bState.totalCount)
         self.updateLabels()
         
     def triggerExit(self):
