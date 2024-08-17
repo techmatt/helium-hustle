@@ -42,17 +42,7 @@ class BuildingButtonWidget(QPushButton):
         editButtonsWidget : QWidget = self.makeEditButtonsWidget()
 
         # Name and count
-        nameLabel = QLabel(f"{bName}")
-        self.countLabel = QLabel("")
-        nameLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.countLabel.setAlignment(Qt.AlignmentFlag.AlignRight)
-        nameLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
-        self.countLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
-        titleWidget = QWidget()
-        titleLayout = QHBoxLayout(titleWidget)
-        titleLayout.setContentsMargins(0, 0, 0, 0)
-        titleLayout.addWidget(nameLabel)
-        titleLayout.addWidget(self.countLabel)
+        titleWidget = self.makeTitleWidget()
         
         # Icon and resource (IR) list
         
@@ -67,36 +57,10 @@ class BuildingButtonWidget(QPushButton):
         #rListLayout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         
         self.rNameLabels = {}
-        self.rCostLabels = {}
+        self.rValueLabels = {}
         
         for rName, cost in bCost.r.items():
-            # TODO: refactor into self.makeResourceWidget
-            rWidget = QWidget()
-            rLayout = QGridLayout(rWidget)
-            rLayout.setSpacing(0)
-            rLayout.setContentsMargins(0, 0, 0, 0)
-            rLayout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
-            
-            rIconLabel = gameUI.makeIconLabel('icons/resources/' + rName + '.png', 20, 20)
-            rIconLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-            
-            rNameLabel = QLabel(f"{rName}")
-            rCostLabel = QLabel(f"{cost}")
-            rNameLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-            rCostLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
-            rNameLabel.setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
-            rCostLabel.setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
-
-            self.rNameLabels[rName] = rNameLabel
-            self.rCostLabels[rName] = rCostLabel
-            
-            rLayout.addWidget(rIconLabel, 0, 0)
-            rLayout.addWidget(rNameLabel, 0, 1)
-            rLayout.addWidget(rCostLabel, 0, 2)
-            rLayout.setColumnStretch(0, 0)
-            rLayout.setColumnStretch(1, 3)
-            rLayout.setColumnStretch(2, 3)
-        
+            rWidget = self.makeResourceRowWidget(rName, cost, True)
             rListLayout.addWidget(rWidget)
         rListLayout.addStretch()
 
@@ -122,6 +86,50 @@ class BuildingButtonWidget(QPushButton):
         layout.addWidget(descWidget)
         
         self.updateLabels()
+        
+    def makeResourceRowWidget(self, rName : str, rValue, addToDicts : bool):
+        rWidget = QWidget()
+        rLayout = QGridLayout(rWidget)
+        rLayout.setSpacing(0)
+        rLayout.setContentsMargins(0, 0, 0, 0)
+        rLayout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
+            
+        rIconLabel = self.gameUI.makeIconLabel('icons/resources/' + rName + '.png', 20, 20)
+        rIconLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+            
+        rNameLabel  = QLabel(f"{rName}")
+        rValueLabel = QLabel(f"{rValue}")
+        rNameLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        rValueLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
+        rNameLabel.setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
+        rValueLabel.setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
+
+        if addToDicts:
+            self.rNameLabels[rName] = rNameLabel
+            self.rValueLabels[rName] = rValueLabel
+            
+        rLayout.addWidget(rIconLabel, 0, 0)
+        rLayout.addWidget(rNameLabel, 0, 1)
+        rLayout.addWidget(rValueLabel, 0, 2)
+        rLayout.setColumnStretch(0, 0)
+        rLayout.setColumnStretch(1, 3)
+        rLayout.setColumnStretch(2, 3)
+        return rWidget
+        
+    def makeTitleWidget(self):
+        nameLabel = QLabel(f"{self.bName}")
+        self.countLabel = QLabel("")
+        nameLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
+        self.countLabel.setAlignment(Qt.AlignmentFlag.AlignRight)
+        nameLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
+        self.countLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
+        
+        titleWidget = QWidget()
+        titleLayout = QHBoxLayout(titleWidget)
+        titleLayout.setContentsMargins(0, 0, 0, 0)
+        titleLayout.addWidget(nameLabel)
+        titleLayout.addWidget(self.countLabel)
+        return titleWidget
         
     def makeEditButtonsWidget(self):
         state : GameState = self.gameUI.state
@@ -193,10 +201,10 @@ class BuildingButtonWidget(QPushButton):
             rValue = state.resources[rName].count
             if rValue < v:
                 self.rNameLabels[rName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST_RED)
-                self.rCostLabels[rName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST_RED)
+                self.rValueLabels[rName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST_RED)
             else:
                 self.rNameLabels[rName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
-                self.rCostLabels[rName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
+                self.rValueLabels[rName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
                 
         if bState.info.canDeactivate:
             self.countLabel.setText(f"({bState.activeCount}/{bState.totalCount})")

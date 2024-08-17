@@ -1,2 +1,2 @@
-resources that are limited should be red for buildings + commands
 time controls
+show production/upkeep for buildings
