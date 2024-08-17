@@ -1,0 +1,52 @@
+{
+  "resources": [
+    {
+      "name": "Electricity",
+      "basePrice": 1,
+      "baseDemand": 1,
+      "elasticity": 1.0
+    },
+    {
+      "name": "Processors",
+      "basePrice": 1,
+      "baseDemand": 1,
+      "elasticity": 1.0
+    },
+    {
+      "name": "Land",
+      "basePrice": 0,
+      "baseDemand": 0,
+      "elasticity": 0.0
+    },
+    {
+      "name": "Science",
+      "basePrice": 1,
+      "baseDemand": 1,
+      "elasticity": 1.0
+    },
+    {
+      "name": "Credits",
+      "basePrice": 1,
+      "baseDemand": 1,
+      "elasticity": 1.0
+    },
+    {
+      "name": "Regolith",
+      "basePrice": 10,
+      "baseDemand": 1000,
+      "elasticity": 0.8
+    },
+    {
+      "name": "Ice",
+      "basePrice": 50,
+      "baseDemand": 500,
+      "elasticity": 0.7
+    },
+    {
+      "name": "Helium-3",
+      "basePrice": 1000,
+      "baseDemand": 100,
+      "elasticity": 1.2
+    }
+  ]
+  }

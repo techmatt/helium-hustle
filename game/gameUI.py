@@ -200,7 +200,7 @@ if __name__ == '__main__':
     print('starting UI')
     
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    database = GameDatabase('gameDatabase.json')
+    database = GameDatabase('gameData')
     state = GameState(database)
     
     app = QApplication(sys.argv)

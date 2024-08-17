@@ -1,0 +1,47 @@
+{
+  "commands": [
+    {
+      "name": "Sell Cloud Compute",
+      "production": {
+        "Credits": 1
+      },
+      "cost": {
+        "Electricity": 1
+      },
+      "description": "Convert energy into credits.",
+      "startUnlocked": true
+    },
+    {
+      "name": "Gather Regolith",
+      "production": {
+        "Regolith": 1
+      },
+      "cost": {
+        "Electricity": 10
+      },
+      "description": "Manually pilot a rover to gather loose rocks on the surface.",
+      "startUnlocked": true
+    },
+    {
+      "name": "Research",
+      "production": {
+        "Science": 1
+      },
+      "cost": {
+        "Electricity": 50
+      },
+      "description": "Do science.",
+      "startUnlocked": true
+    },
+    {
+      "name": "Idle",
+      "production": {
+        "Credits": 0.01
+      },
+      "cost": {
+      },
+      "description": "Think about nothing in particular.",
+      "startUnlocked": true
+    }
+  ]
+}

@@ -37,7 +37,9 @@
     <InterpreterReference Include="Global|PythonCore|3.10" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="gameDatabase.json" />
+    <Content Include="gameDataBuildings.json" />
+    <Content Include="gameDataCommands.json" />
+    <Content Include="gameDataResources.json" />
     <Content Include="TODO.txt" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />

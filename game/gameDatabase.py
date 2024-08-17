@@ -59,12 +59,19 @@ class GameParams:
         self.maxProgramCount = 5
 
 class GameDatabase:
-    def __init__(self, filePath):
-        with open(filePath, 'r') as file:
-            data = json.load(file)
+    def __init__(self, filePathBase):
+
+        with open(filePathBase + 'Buildings.json', 'r') as file:
+            buildingData = json.load(file)
+
+        with open(filePathBase + 'Commands.json', 'r') as file:
+            commandData = json.load(file)            
+            
+        with open(filePathBase + 'Resources.json', 'r') as file:
+            resourceData = json.load(file)
 
         self.commands: Dict[str, CommandInfo] = {}
-        for r in data['commands']:
+        for r in commandData['commands']:
             curCommand = CommandInfo(
                 name = r['name'],
                 production = r['production'],
@@ -75,7 +82,7 @@ class GameDatabase:
             self.commands[curCommand.name] = curCommand
             
         self.resources: Dict[str, ResourceInfo] = {}
-        for r in data['resources']:
+        for r in resourceData['resources']:
             curResource = ResourceInfo(
                 name = r['name'],
                 basePrice = r['basePrice'],
@@ -85,7 +92,7 @@ class GameDatabase:
             self.resources[curResource.name] = curResource
 
         self.buildings: Dict[str, BuildingInfo] = {}
-        for b in data['buildings']:
+        for b in buildingData['buildings']:
             curBuilding = BuildingInfo(
                 name = b['name'],
                 baseCost = b.get('baseCost', {}),
