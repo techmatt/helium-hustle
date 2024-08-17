@@ -60,7 +60,7 @@ class BuildingButtonWidget(QPushButton):
         self.rValueLabels = {}
         
         for rName, cost in bCost.r.items():
-            rWidget = self.makeResourceRowWidget(rName, cost, True)
+            rWidget = self.makeResourceRowWidget(rName, cost, True, False, False)
             rListLayout.addWidget(rWidget)
         rListLayout.addStretch()
 
@@ -85,9 +85,51 @@ class BuildingButtonWidget(QPushButton):
         layout.addWidget(IRWidget)
         layout.addWidget(descWidget)
         
+        """if len(bInfo.production) > 0:
+            productionWidget = self.makeProductionWidget()
+            layout.addWidget(productionWidget)
+        
+        if len(bInfo.upkeep) > 0:
+            upkeepWidget = self.makeUpkeepWidget()
+            layout.addWidget(upkeepWidget)"""
+        
         self.updateLabels()
         
-    def makeResourceRowWidget(self, rName : str, rValue, addToDicts : bool):
+    def makeProductionWidget(self):
+        productionWidget = QWidget()
+        productionLayout = QVBoxLayout(productionWidget)
+        productionLayout.setSpacing(0)
+        productionLayout.setContentsMargins(0, 0, 0, 0)
+        
+        headerLabel = QLabel("Produces:")
+        headerLabel.setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
+        productionLayout.addWidget(headerLabel)
+
+        bProd = self.gameUI.state.getBuildingProduction(self.bName)
+        for rName, rValue in bProd.r.items():
+            rWidget = self.makeResourceRowWidget(rName, rValue, False, True, True)
+            productionLayout.addWidget(rWidget)
+            
+        return productionWidget
+
+    def makeUpkeepWidget(self):
+        upkeepWidget = QWidget()
+        upkeepLayout = QVBoxLayout(upkeepWidget)
+        upkeepLayout.setSpacing(0)
+        upkeepLayout.setContentsMargins(0, 0, 0, 0)
+        
+        headerLabel = QLabel("Upkeep:")
+        headerLabel.setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
+        upkeepLayout.addWidget(headerLabel)
+
+        bProd = self.gameUI.state.getBuildingUpkeep(self.bName)
+        for rName, rValue in bProd.r.items():
+            rWidget = self.makeResourceRowWidget(rName, -rValue, False, True, True)
+            upkeepLayout.addWidget(rWidget)
+            
+        return upkeepWidget
+    
+    def makeResourceRowWidget(self, rName : str, rValue, addToDicts : bool, prefixSpace : bool, isRate : bool):
         rWidget = QWidget()
         rLayout = QGridLayout(rWidget)
         rLayout.setSpacing(0)
@@ -96,9 +138,14 @@ class BuildingButtonWidget(QPushButton):
             
         rIconLabel = self.gameUI.makeIconLabel('icons/resources/' + rName + '.png', 20, 20)
         rIconLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-            
+        
         rNameLabel  = QLabel(f"{rName}")
-        rValueLabel = QLabel(f"{rValue}")
+        
+        if isRate:
+            valueText = f"{rValue:+} /s"
+        else:
+            valueText = f"{rValue}"
+        rValueLabel = QLabel(valueText)
         rNameLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
         rValueLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
         rNameLabel.setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
@@ -107,6 +154,15 @@ class BuildingButtonWidget(QPushButton):
         if addToDicts:
             self.rNameLabels[rName] = rNameLabel
             self.rValueLabels[rName] = rValueLabel
+        
+        if prefixSpace:
+            rIconLabelOld = rIconLabel
+            rIconLabel = QWidget()
+            rIconLayout = QHBoxLayout(rIconLabel)
+            rIconLayout.setSpacing(0)
+            rIconLayout.setContentsMargins(0, 0, 0, 0)
+            rIconLayout.addSpacing(20)
+            rIconLayout.addWidget(rIconLabelOld)
             
         rLayout.addWidget(rIconLabel, 0, 0)
         rLayout.addWidget(rNameLabel, 0, 1)
