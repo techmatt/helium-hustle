@@ -9,7 +9,7 @@ from PyQt6.QtGui import QPixmap, QFont, QIcon, QPainter, QColor
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QCoreApplication
 
 from gameDatabase import BuildingInfo, GameDatabase
-from gameState import GameState
+from gameState import BuildingState, GameState
 
 from enums import GameWindowMode
 from iconGrid import IconGrid
@@ -23,49 +23,23 @@ class BuildingButtonWidget(QPushButton):
         super().__init__()
         self.bName = bName
         self.gameUI = gameUI
-        self.state = gameUI.state
+        
         self.setFixedWidth(270)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.MinimumExpanding)
         
-        bState = self.state.buildings[bName]
+        state = gameUI.state
+        bState = state.buildings[bName]
         bInfo : BuildingInfo = bState.info
-        buildingCost = self.state.getBuildingCost(bName)
+        bCost = state.getBuildingCost(bName)
+        bProd = state.getBuildingProduction(bName)
+        bUpkeep = state.getBuildingUpkeep(bName)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(2)
         layout.setContentsMargins(2, 2, 2, 2)
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        # disable buttons (optional) and destroy button
-        buttonSize = QSize(25, 25)
-
-        editButtonsWidget = QWidget()
-        editButtonsLayout = QHBoxLayout(editButtonsWidget)
-        editButtonsLayout.setContentsMargins(0, 0, 0, 0)
-        editButtonsLayout.addStretch(1)
-        
-        self.removeButton = QPushButton("x")
-        self.removeButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
-        self.removeButton.setFixedSize(buttonSize)
-        
-        if bInfo.canDeactivate:
-            self.subButton = QPushButton("-")
-            self.addButton = QPushButton("+")
-        
-            self.subButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
-            self.addButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
-        
-            self.subButton.setFixedSize(buttonSize)
-            self.addButton.setFixedSize(buttonSize)
-
-            self.subButton.clicked.connect(partial(gameUI.modifyBuildingActive, bName, -1))
-            self.addButton.clicked.connect(partial(gameUI.modifyBuildingActive, bName, 1))
-            
-            editButtonsLayout.addWidget(self.subButton)
-            editButtonsLayout.addWidget(self.addButton)
-            
-        self.removeButton.clicked.connect(partial(gameUI.removeBuilding, bName))
-        editButtonsLayout.addWidget(self.removeButton)
+        editButtonsWidget : QWidget = self.makeEditButtonsWidget()
 
         # Name and count
         nameLabel = QLabel(f"{bName}")
@@ -95,7 +69,7 @@ class BuildingButtonWidget(QPushButton):
         self.rNameLabels = {}
         self.rCostLabels = {}
         
-        for rName, cost in buildingCost.r.items():
+        for rName, cost in bCost.r.items():
             # TODO: refactor into self.makeResourceWidget
             rWidget = QWidget()
             rLayout = QGridLayout(rWidget)
@@ -149,12 +123,49 @@ class BuildingButtonWidget(QPushButton):
         
         self.updateLabels()
         
+    def makeEditButtonsWidget(self):
+        state : GameState = self.gameUI.state
+        bState : BuildingState = state.buildings[self.bName]
+        bInfo : BuildingInfo = bState.info
+        
+        buttonSize = QSize(25, 25)
+
+        editButtonsWidget = QWidget()
+        editButtonsLayout = QHBoxLayout(editButtonsWidget)
+        editButtonsLayout.setContentsMargins(0, 0, 0, 0)
+        editButtonsLayout.addStretch(1)
+        
+        self.removeButton = QPushButton("x")
+        self.removeButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
+        self.removeButton.setFixedSize(buttonSize)
+        
+        if bInfo.canDeactivate:
+            self.subButton = QPushButton("-")
+            self.addButton = QPushButton("+")
+        
+            self.subButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
+            self.addButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
+        
+            self.subButton.setFixedSize(buttonSize)
+            self.addButton.setFixedSize(buttonSize)
+
+            self.subButton.clicked.connect(partial(self.gameUI.modifyBuildingActive, self.bName, -1))
+            self.addButton.clicked.connect(partial(self.gameUI.modifyBuildingActive, self.bName, 1))
+            
+            editButtonsLayout.addWidget(self.subButton)
+            editButtonsLayout.addWidget(self.addButton)
+            
+        self.removeButton.clicked.connect(partial(self.gameUI.removeBuilding, self.bName))
+        editButtonsLayout.addWidget(self.removeButton)
+        
+        return editButtonsWidget
+        
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        commandCost = self.state.getBuildingCost(self.bName)
-        canAfford = self.state.canAffordCost(commandCost)
+        commandCost = self.gameUI.state.getBuildingCost(self.bName)
+        canAfford = self.gameUI.state.canAffordCost(commandCost)
         
         if canAfford:
             if self.underMouse():
@@ -176,7 +187,7 @@ class BuildingButtonWidget(QPushButton):
     def updateLabels(self):
         state : GameState = self.gameUI.state
         bState : BuildingState = state.buildings[self.bName]
-        commandCost : ResourceList = self.state.getBuildingCost(self.bName)
+        commandCost : ResourceList = state.getBuildingCost(self.bName)
         
         for rName, v in commandCost.r.items():
             rValue = state.resources[rName].count

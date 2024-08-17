@@ -161,12 +161,12 @@ class GameState:
     def getBuildingUpkeep(self, buildingName : str) -> ResourceList:
         b = self.buildings[buildingName]
         
-        costs: Dict[str, float] = {}
+        upkeep: Dict[str, float] = {}
         costMultiplier = 1.0
         for rName, upkeepCost in b.info.upkeep.items():
-            costs[rName] = upkeepCost * costMultiplier
+            upkeep[rName] = upkeepCost * costMultiplier
             
-        return ResourceList(costs)
+        return ResourceList(upkeep)
     
     def getBuildingCost(self, buildingName : str) -> ResourceList:
         b = self.buildings[buildingName]
