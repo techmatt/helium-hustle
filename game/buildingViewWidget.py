@@ -85,13 +85,15 @@ class BuildingButtonWidget(QPushButton):
         layout.addWidget(IRWidget)
         layout.addWidget(descWidget)
         
-        """if len(bInfo.production) > 0:
+        if len(bInfo.production) > 0:
             productionWidget = self.makeProductionWidget()
             layout.addWidget(productionWidget)
         
         if len(bInfo.upkeep) > 0:
             upkeepWidget = self.makeUpkeepWidget()
-            layout.addWidget(upkeepWidget)"""
+            layout.addWidget(upkeepWidget)
+
+        layout.addStretch(0)
         
         self.updateLabels()
         
