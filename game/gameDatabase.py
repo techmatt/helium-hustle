@@ -9,7 +9,6 @@ class CommandInfo(NamedTuple):
     name: str
     production: Dict[str, float]
     cost: Dict[str, float]
-    startUnlocked: bool
     description: str
     
 class ResourceInfo(NamedTuple):
@@ -28,6 +27,14 @@ class BuildingInfo(NamedTuple):
     canDeactivate: bool
     description: str
 
+class EventInfo(NamedTuple):
+    name: str
+    resourcesRequired: Dict[str, float]
+    buildingsRequired: Dict[str, int]
+    ticksRequired: int
+    unlocks: List[str]
+    description: str
+    
 class GameParams:
     def __init__(self, database : GameDatabase):
         
@@ -54,6 +61,15 @@ class GameParams:
         self.startingBuildings["Solar Panels"] = 1
         self.startingBuildings["Storage Facility"] = 1
         
+        self.startingUnlocks: List[str] = [
+            "Solar Panels",
+            "Storage Facility",
+            "Credits",
+            "Land",
+            "Electricity",
+            "Processors"
+            ]
+        
         self.timerInterval = 1000 # timer interval in milliseconds
         
         self.maxProgramCount = 5
@@ -69,15 +85,17 @@ class GameDatabase:
             
         with open(filePathBase + 'Resources.json', 'r') as file:
             resourceData = json.load(file)
+            
+        with open(filePathBase + 'Events.json', 'r') as file:
+            eventData = json.load(file)
 
         self.commands: Dict[str, CommandInfo] = {}
-        for r in commandData['commands']:
+        for c in commandData['commands']:
             curCommand = CommandInfo(
-                name = r['name'],
-                production = r['production'],
-                cost = r['cost'],
-                startUnlocked = r['startUnlocked'],
-                description = r['description']
+                name = c['name'],
+                production = c['production'],
+                cost = c['cost'],
+                description = c['description']
             )
             self.commands[curCommand.name] = curCommand
             
@@ -101,8 +119,21 @@ class GameDatabase:
                 storage = b.get('storage', {}),
                 costScaling = b['costScaling'],
                 canDeactivate = b['canDeactivate'],
-                description = b['description'])
+                description = b['description']
+            )
             self.buildings[curBuilding.name] = curBuilding
+        
+        self.events: Dict[str, EventInfo] = {}
+        for e in eventData['events']:
+            curEvent = EventInfo(
+                name = e['name'],
+                resourcesRequired = e['resourcesRequired'],
+                buildingsRequired = e['buildingsRequired'],
+                ticksRequired = e['ticksRequired'],
+                unlocks = e['unlocks'],
+                description = e['description']
+            )
+            self.events[curEvent.name] = curEvent
             
         self.params: GameParams = GameParams(self)
 
@@ -113,7 +144,6 @@ class GameDatabase:
                     "name": c.name,
                     "production": c.production,
                     "costs": c.costs,
-                    "startUnlocked": c.startUnlocked,
                     "description": c.description
                 } for c in self.commands.values()
             ],
@@ -136,6 +166,14 @@ class GameDatabase:
                     "canDeactivate": b.canDeactivate,
                     "description": b.description
                 } for b in self.buildings.values()
+            ],
+            "events": [
+                {
+                    "name": r.name,
+                    "basePrice": r.basePrice,
+                    "baseDemand": r.baseDemand,
+                    "elasticity": r.elasticity
+                } for r in self.resources.values()
             ]
         }
 

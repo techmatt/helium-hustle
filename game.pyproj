@@ -22,6 +22,8 @@
     <Compile Include="buildingViewWidget.py" />
     <Compile Include="CommandViewWidget.py" />
     <Compile Include="enums.py" />
+    <Compile Include="EventDialog.py" />
+    <Compile Include="eventManager.py" />
     <Compile Include="gameDatabase.py" />
     <Compile Include="gameProgram.py" />
     <Compile Include="gameState.py" />
@@ -39,6 +41,7 @@
   <ItemGroup>
     <Content Include="gameDataBuildings.json" />
     <Content Include="gameDataCommands.json" />
+    <Content Include="gameDataEvents.json" />
     <Content Include="gameDataResources.json" />
     <Content Include="TODO.txt" />
   </ItemGroup>

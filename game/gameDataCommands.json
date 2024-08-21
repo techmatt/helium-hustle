@@ -8,8 +8,7 @@
       "cost": {
         "Electricity": 1
       },
-      "description": "Convert energy into credits.",
-      "startUnlocked": true
+      "description": "Convert energy into credits."
     },
     {
       "name": "Gather Regolith",
@@ -19,8 +18,7 @@
       "cost": {
         "Electricity": 10
       },
-      "description": "Manually pilot a rover to gather loose rocks on the surface.",
-      "startUnlocked": true
+      "description": "Manually pilot a rover to gather loose rocks on the surface."
     },
     {
       "name": "Research",
@@ -30,8 +28,7 @@
       "cost": {
         "Electricity": 50
       },
-      "description": "Do science.",
-      "startUnlocked": true
+      "description": "Do science."
     },
     {
       "name": "Idle",
@@ -40,8 +37,7 @@
       },
       "cost": {
       },
-      "description": "Think about nothing in particular.",
-      "startUnlocked": true
+      "description": "Think about nothing in particular."
     }
   ]
 }

@@ -1,0 +1,26 @@
+{
+  "events": [
+    {
+      "name": "Getting bored",
+      "resourcesRequired": {},
+      "buildingsRequired": {},
+      "ticksRequired": 10000,
+      "unlocks": [
+        "Boredom"
+      ],
+      "description": "After 1 year, this job is getting tedious. If things get too bad, you will retire."
+    },
+    {
+      "name": "Electricity storage needed.",
+      "resourcesRequired": {
+        "Electricity": 100.0
+      },
+      "buildingsRequired": {},
+      "ticksRequired": 0,
+      "unlocks": [
+        "Battery"
+      ],
+      "description": "You have an idea for building a battery."
+    }
+  ]
+}

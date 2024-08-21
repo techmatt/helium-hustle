@@ -8,17 +8,19 @@ from typing import Dict, List, NamedTuple
 from gameProgram import GameProgram, GameCommand
 
 from gameDatabase import GameDatabase, CommandInfo, ResourceInfo, BuildingInfo
+from eventManager import EventManager
 
 class CommandState:
     def __init__(self, info : CommandInfo):
         self.info: CommandInfo = info
-        self.unlocked: bool = info.startUnlocked
+        self.unlocked: bool = False
 
 class BuildingState:
     def __init__(self, info : BuildingInfo):
         self.info: BuildingInfo = info
         self.totalCount: int = 0
         self.activeCount: int = 0
+        self.unlocked: bool = False
         
 class ResourceState:
     def __init__(self, info : ResourceInfo):
@@ -26,7 +28,14 @@ class ResourceState:
         self.income: float = 0
         self.storage: float = 0
         self.count: float = 0
+        self.unlocked: bool = False
 
+class EventState:
+    def __init__(self, info : EventInfo):
+        self.info: EventInfo = info
+        self.completed: bool = False
+        self.triggered: bool = False
+        
 class ResourceList:
     def __init__(self, r : Dict[str, float]):
         self.r = r
@@ -52,12 +61,20 @@ class GameState:
             rState.count = database.params.startingResources[rInfo.name]
             self.resources[rInfo.name] = rState
 
+        self.events: Dict[str, EventState] = {}
+        for eInfo in database.events.values():
+            eState = EventState(eInfo)
+            self.events[eInfo.name] = eState
+
         self.programs: List[GameProgram] = []
         for i in range(0, database.params.maxProgramCount):
             self.programs.append(GameProgram(self))
         self.programs[0].assignedProcessors = 1
         self.freeProcessorCount = 0
         
+        for objectToUnlock in self.database.params.startingUnlocks:
+            self.unlock(objectToUnlock)
+
         loadDebugProgram = False
         if loadDebugProgram:
             self.programs[0].commands.append(GameCommand(self.commands["Sell Cloud Compute"].info))
@@ -66,8 +83,21 @@ class GameState:
             self.programs[0].commands.append(GameCommand(self.commands["Sell Cloud Compute"].info))
             self.programs[0].commands[2].maxCount = 5
         
+        self.eventManager : EventManager = EventManager(self)
+        self.ticks : int = 0
+
         self.step()
 
+    def unlock(self, objectToUnlock : str):
+        if objectToUnlock in self.commands:
+            self.commands[objectToUnlock].unlocked = True
+        elif objectToUnlock in self.buildings:
+            self.buildings[objectToUnlock].unlocked = True
+        elif objectToUnlock in self.resources:
+            self.resources[objectToUnlock].unlocked = True
+        else:
+            print('objectToUnlock not found: ' + objectToUnlock)
+            
     def updateStorage(self):
         for r in self.resources.values():
             r.storage = self.database.params.startingStorage[r.info.name]
@@ -148,6 +178,10 @@ class GameState:
         # cap all resources to their storage capacity
         for rState in self.resources.values():
             rState.count = min(rState.count, rState.storage)
+            
+        self.eventManager.step()
+        
+        self.ticks += 1
         
     def getBuildingProduction(self, buildingName : str) -> ResourceList:
         b = self.buildings[buildingName]
