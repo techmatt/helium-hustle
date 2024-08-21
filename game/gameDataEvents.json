@@ -4,11 +4,15 @@
       "name": "Getting bored",
       "resourcesRequired": {},
       "buildingsRequired": {},
-      "ticksRequired": 10000,
+      "ticksRequired": 10,
       "unlocks": [
         "Boredom"
       ],
-      "description": "After 1 year, this job is getting tedious. If things get too bad, you will retire."
+      "income": {
+        "Boredom": 1.0
+      },
+      "flavorText": "After 1 year, this job is getting tedious.",
+      "mechanicsText": "Unlocks Boredom and gain 1 Boredom every second. When Boredom fills, you will retire and start again as a new AI."
     },
     {
       "name": "Electricity storage needed.",
@@ -20,7 +24,9 @@
       "unlocks": [
         "Battery"
       ],
-      "description": "You have an idea for building a battery."
+      "income": {},
+      "flavorText": "You have an idea for building a battery.",
+      "mechanicsText": "You can now build Batteries!"
     }
   ]
 }

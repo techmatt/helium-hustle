@@ -34,7 +34,9 @@ class EventState:
     def __init__(self, info : EventInfo):
         self.info: EventInfo = info
         self.completed: bool = False
+        self.displayed: bool = False
         self.triggered: bool = False
+        self.ongoing: bool = False
         
 class ResourceList:
     def __init__(self, r : Dict[str, float]):
@@ -83,8 +85,10 @@ class GameState:
             self.programs[0].commands.append(GameCommand(self.commands["Sell Cloud Compute"].info))
             self.programs[0].commands[2].maxCount = 5
         
-        self.eventManager : EventManager = EventManager(self)
-        self.ticks : int = 0
+        self.eventManager: EventManager = EventManager(self)
+        self.activeEvents: List[EventState] = []
+        self.ongoingEvents: List[EventState] = []
+        self.ticks: int = 0
 
         self.step()
 

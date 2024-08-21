@@ -20,6 +20,7 @@ from programWidget import ProgramWidget
 from pixmapCache import PixmapCache
 from commandViewWidget import CommandViewWidget
 from buildingViewWidget import BuildingViewWidget
+from eventDialog import EventDialog
 
 from UIWidgets import ProgramUIElements
 
@@ -40,6 +41,8 @@ class GameUI(QMainWindow):
         self.initUI()
 
     def initUI(self):
+        
+        self.activeDialog = None
         self.centralWidget = QWidget()
         self.setCentralWidget(self.centralWidget)
         self.mainLayout = QHBoxLayout(self.centralWidget)
@@ -121,8 +124,19 @@ class GameUI(QMainWindow):
         self.middleLayout.addStretch(1)
 
     def timerTick(self):
+        
+        if self.activeDialog:
+            # do not tick game while dialog is active.
+            return
+            
         self.state.step()
         self.updateLabels()
+        
+        for eState in self.state.activeEvents:
+            if not eState.displayed:
+                self.activeDialog = EventDialog(self, self, eState)
+                self.activeDialog.show()
+                break
         
     def updateLabels(self):
         self.resourceDisplay.updateLabels()

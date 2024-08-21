@@ -15,9 +15,15 @@ class EventManager():
         eInfo : EventInfo = eState.info
         if self.state.ticks < eInfo.ticksRequired:
             return False
+        return True
         
     def triggerEvent(self, eState : EventState):
+        eInfo: EventInfo = eState.info
+        print('triggering event: ' + eInfo.name)
         eState.triggered = True
+        self.state.activeEvents.insert(0, eState)
+        if len(eInfo.income) > 0:
+            self.state.ongoingEvents.insert(0, eState)
         
     def step(self):
         for eState in self.state.events.values():

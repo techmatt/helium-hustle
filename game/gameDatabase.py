@@ -33,7 +33,9 @@ class EventInfo(NamedTuple):
     buildingsRequired: Dict[str, int]
     ticksRequired: int
     unlocks: List[str]
-    description: str
+    income: Dict[str, float]
+    flavorText: str
+    mechanicsText: str
     
 class GameParams:
     def __init__(self, database : GameDatabase):
@@ -131,7 +133,9 @@ class GameDatabase:
                 buildingsRequired = e['buildingsRequired'],
                 ticksRequired = e['ticksRequired'],
                 unlocks = e['unlocks'],
-                description = e['description']
+                income = e['income'],
+                flavorText = e['flavorText'],
+                mechanicsText = e['mechanicsText']
             )
             self.events[curEvent.name] = curEvent
             
@@ -169,11 +173,15 @@ class GameDatabase:
             ],
             "events": [
                 {
-                    "name": r.name,
-                    "basePrice": r.basePrice,
-                    "baseDemand": r.baseDemand,
-                    "elasticity": r.elasticity
-                } for r in self.resources.values()
+                    "name": e.name,
+                    "resourcesRequired": e.resourcesRequired,
+                    "buildingsRequired": e.buildingsRequired,
+                    "ticksRequired": r.ticksRequired,
+                    "unlocks": r.unlocks,
+                    "income": r.income,
+                    "flavorText": r.flavorText,
+                    "mechanicsText": r.mechanicsText
+                } for e in self.events.values()
             ]
         }
 
