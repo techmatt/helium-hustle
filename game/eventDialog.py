@@ -1,9 +1,7 @@
-
 from __future__ import annotations
-
-from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton, QFrame
+from PyQt6.QtWidgets import QDialog, QHBoxLayout, QVBoxLayout, QLabel, QPushButton, QFrame, QSizePolicy, QLayout
 from PyQt6.QtGui import QPixmap, QFont, QIcon, QPainter, QColor
-from PyQt6.QtCore import Qt
+from PyQt6.QtCore import Qt, QSize
 
 class EventDialog(QDialog):
     def __init__(self, parent, gameUI : GameUI, eState : EventState):
@@ -11,67 +9,114 @@ class EventDialog(QDialog):
         
         self.gameUI = gameUI
         self.eState = eState
-
         eInfo = eState.info
         
-        self.setWindowTitle(eInfo.name)
+        self.setWindowFlag(Qt.WindowType.Window | Qt.WindowType.FramelessWindowHint)
+        #self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
         self.setWindowModality(Qt.WindowModality.ApplicationModal)
+        self.setSizePolicy(QSizePolicy.Policy.Preferred, QSizePolicy.Policy.Minimum)
+        self.minWidth = 600
+        self.setMinimumWidth(self.minWidth)
         
-        layout = QVBoxLayout()
+        mainLayout = QVBoxLayout(self)
+        mainLayout.setSizeConstraint(QLayout.SizeConstraint.SetMinimumSize)
         
-        # Event text
+        titleBar = QFrame()
+        #titleBar.setFixedHeight(60)
+        titleBar.setStyleSheet("""
+            background-color: #3498db;
+            border-top-left-radius: 10px;
+            border-top-right-radius: 10px;
+        """)
+        titleBarLayout = QHBoxLayout(titleBar)
+        
+        # Title label with custom font
+        titleLabel = QLabel(eInfo.name)
+        titleFont = QFont("Segoe UI", 14, QFont.Weight.Bold)
+        titleLabel.setFont(titleFont)
+        titleLabel.setStyleSheet("color: white;")
+        titleBarLayout.addWidget(titleLabel)
+        mainLayout.addWidget(titleBar)
+        
+        contentFrame = QFrame()
+        contentFrame.setStyleSheet("""
+            background-color: white;
+            border-bottom-left-radius: 10px;
+            border-bottom-right-radius: 10px;
+            border: 1px solid #e0e0e0;
+        """)
+        contentLayout = QVBoxLayout(contentFrame)
+        
+        # Flavor Text
         flavorLabel = QLabel(eInfo.flavorText)
         flavorLabel.setWordWrap(True)
-        layout.addWidget(flavorLabel)
-        
         flavorLabel.setStyleSheet("""
             color: #333;
             font-size: 16px;
             margin-bottom: 20px;
         """)
-
-        separator = QFrame()
-        separator.setFrameShape(QFrame.Shape.HLine)
-        separator.setStyleSheet("background-color: #e0e0e0;")
-        layout.addWidget(separator)
+        contentLayout.addWidget(flavorLabel)
         
-        mechanicsLabel = QLabel(eInfo.mechanicsText)
+        # Mechanics Text (now bold and italic)
+        mechanicsLabel = QLabel(f"<b><i>{eInfo.mechanicsText}</i></b>")
         mechanicsLabel.setWordWrap(True)
-        layout.addWidget(mechanicsLabel)
+        mechanicsLabel.setStyleSheet("""
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 20px;
+        """)
+        contentLayout.addWidget(mechanicsLabel)
+        
+        # Separator
+        #separator = QFrame()
+        #separator.setFrameShape(QFrame.Shape.HLine)
+        #separator.setStyleSheet("background-color: #e0e0e0;")
+        #contentLayout.addWidget(separator)
         
         # OK button
+        buttonLayout = QHBoxLayout()
         OKButton = QPushButton("OK")
         OKButton.clicked.connect(self.accept)
-        layout.addWidget(OKButton)
-        
         OKButton.setStyleSheet("""
             QPushButton {
-                background-color: #e74c3c;
+                background-color: #2980b9;
                 color: white;
                 border: none;
                 padding: 10px;
                 font-size: 16px;
                 font-weight: bold;
                 border-radius: 5px;
+                min-width: 100px;
             }
             QPushButton:hover {
-                background-color: #c0392b;
+                background-color: #2c3e50;
             }
         """)
+        buttonLayout.addStretch()
+        buttonLayout.addWidget(OKButton)
+        buttonLayout.addStretch()
+        contentLayout.addLayout(buttonLayout)
+        contentLayout.addStretch()
         
-        self.setLayout(layout)
+        mainLayout.addWidget(contentFrame)
         
+        # Set a custom font for the entire dialog
+        dialogFont = QFont("Segoe UI", 10)
+        self.setFont(dialogFont)
+        
+        # Set frame style for border
         self.setStyleSheet("""
             QDialog {
-                background-color: white;
+                background-color: transparent;
+                border: 2px solid #e0e0e0;
                 border-radius: 10px;
             }
         """)
         
-        # Set a custom font for the entire dialog
-        font = QFont("Segoe UI", 14)
-        self.setFont(font)
+        self.adjustSize()
         
-        # Set a fixed size for the dialog
-        self.setFixedSize(400, 300)
+    def sizeHint(self) -> QSize:
+        # Suggest a size that respects the minimum width but allows for minimum height
+        return QSize(max(self.minWidth, super().sizeHint().width()), 0)
+
 

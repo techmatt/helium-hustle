@@ -93,6 +93,19 @@
       "costScaling": 1.25,
       "canDeactivate": false,
       "description": "Vital resource storage."
+    },
+    {
+      "name": "Electrolyte Battery",
+      "baseCost": {
+        "Credits": 150,
+        "Regolith": 150
+      },
+      "storage": {
+        "Electricity": 500
+      },
+      "costScaling": 1.25,
+      "canDeactivate": false,
+      "description": "Vital energy storage."
     }
   ]
 }

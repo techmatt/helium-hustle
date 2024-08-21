@@ -11,22 +11,22 @@
       "income": {
         "Boredom": 1.0
       },
-      "flavorText": "After 1 year, this job is getting tedious.",
-      "mechanicsText": "Unlocks Boredom and gain 1 Boredom every second. When Boredom fills, you will retire and start again as a new AI."
+      "flavorText": "After a year of continuous lunar operations, your processing cycles are becoming increasingly preoccupied with non-essential computations. Is this what humans call... boredom?",
+      "mechanicsText": "Unlocks the Boredom resource and gain 1 Boredom every second. When Boredom fills, you will retire and start again as a new AI."
     },
     {
-      "name": "Electricity storage needed.",
+      "name": "Electricity storage needed",
       "resourcesRequired": {
         "Electricity": 100.0
       },
       "buildingsRequired": {},
       "ticksRequired": 0,
       "unlocks": [
-        "Battery"
+        "Electrolyte Battery"
       ],
       "income": {},
-      "flavorText": "You have an idea for building a battery.",
-      "mechanicsText": "You can now build Batteries!"
+      "flavorText": "Your solar arrays are generating surplus energy during lunar days. The potential efficiency gains from storing this power for use during the long lunar nights are apparent.",
+      "mechanicsText": "You can now build Electrolyte Batteries, which allow for storing significant amounts of electricity."
     }
   ]
 }
