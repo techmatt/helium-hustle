@@ -17,11 +17,12 @@ from iconGrid import IconGrid
 from resourceDisplay import ResourceDisplay
 from styleSheets import StyleSheets
 from programWidget import ProgramWidget
-from pixmapCache import PixmapCache
 from commandViewWidget import CommandViewWidget
 from buildingViewWidget import BuildingViewWidget
 from eventDialog import EventDialog
 from eventList import EventList
+
+from game.util.pixmapCache import PixmapCache
 
 from UIWidgets import ProgramUIElements
 
@@ -216,15 +217,3 @@ class GameUI(QMainWindow):
         
     def triggerExit(self):
         QCoreApplication.instance().quit()
-
-if __name__ == '__main__':
-    print('starting UI')
-    
-    os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    database = GameDatabase('gameData')
-    state = GameState(database)
-    
-    app = QApplication(sys.argv)
-    game = GameUI(state, database)
-    game.show()
-    sys.exit(app.exec())
