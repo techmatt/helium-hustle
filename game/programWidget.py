@@ -72,6 +72,7 @@ class ProgramWidget(QWidget):
         self.listWidget.setDragEnabled(True)
         self.listWidget.model().rowsMoved.connect(self.onRowsMoved)
         self.listWidget.setFixedWidth(500)
+        self.listWidget.setFixedHeight(350)
         
         self.loadListFromVisibleProgram()
         

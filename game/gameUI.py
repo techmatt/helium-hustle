@@ -21,6 +21,7 @@ from pixmapCache import PixmapCache
 from commandViewWidget import CommandViewWidget
 from buildingViewWidget import BuildingViewWidget
 from eventDialog import EventDialog
+from eventList import EventList
 
 from UIWidgets import ProgramUIElements
 
@@ -105,6 +106,13 @@ class GameUI(QMainWindow):
         
         self.programWidget = ProgramWidget(self)
         self.rightLayout.addWidget(self.programWidget)
+        
+        self.eventLabel = QLabel("Events")
+        self.eventLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
+        self.rightLayout.addWidget(self.eventLabel)
+        
+        self.eventList = EventList()
+        self.rightLayout.addWidget(self.eventList)
         
         self.rightLayout.addStretch()
 

@@ -66,6 +66,16 @@ class StyleSheets:
             line-height: 1.4;
         }
     """
+
+    GENERAL_12PT_BOLD = """
+        QWidget {
+            font-family: 'Roboto', 'Segoe UI', 'Helvetica', sans-serif;
+            font-size: 12pt;
+            color: #2c3e50;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+    """
     
     SELECTED_BUTTON = """
         QWidget {
