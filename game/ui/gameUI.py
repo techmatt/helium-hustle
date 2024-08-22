@@ -9,22 +9,22 @@ from PyQt6.QtGui import QPixmap, QFont, QIcon, QPainter, QColor
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QCoreApplication
 
 from game.database.gameDatabase import GameDatabase
-from gameState import GameState
-from gameProgram import GameProgram, GameCommand
+from game.core.gameState import GameState
+from game.core.gameProgram import GameProgram, GameCommand
 
 from game.util.enums import GameWindowMode
-from iconGrid import IconGrid
-from resourceDisplay import ResourceDisplay
 from game.util.styleSheets import StyleSheets
-from programWidget import ProgramWidget
-from commandViewWidget import CommandViewWidget
-from buildingViewWidget import BuildingViewWidget
-from eventDialog import EventDialog
-from eventList import EventList
+from game.ui.iconGrid import IconGrid
+from game.ui.resourceDisplay import ResourceDisplay
+from game.ui.programWidget import ProgramWidget
+from game.ui.commandViewWidget import CommandViewWidget
+from game.ui.buildingViewWidget import BuildingViewWidget
+from game.ui.eventDialog import EventDialog
+from game.ui.eventList import EventList
 
 from game.util.pixmapCache import PixmapCache
 
-from UIWidgets import ProgramUIElements
+from game.ui.UIWidgets import ProgramUIElements
 
 class GameUI(QMainWindow):
     def __init__(self, state : GameState, database : GameDatabase):

@@ -5,10 +5,10 @@ import json
 import os
 import math
 from typing import Dict, List, NamedTuple
-from gameProgram import GameProgram, GameCommand
+from game.core.gameProgram import GameProgram, GameCommand
 
 from game.database.gameDatabase import GameDatabase, CommandInfo, ResourceInfo, BuildingInfo
-from eventManager import EventManager
+from game.core.eventManager import EventManager
 
 class CommandState:
     def __init__(self, info : CommandInfo):

@@ -11,14 +11,14 @@ sys.path.append(parentDir)
 from PyQt6.QtWidgets import QApplication
 
 from game.database.gameDatabase import GameDatabase
-from gameState import GameState
-from gameUI import GameUI
+from game.core.gameState import GameState
+from ui.gameUI import GameUI
 
 if __name__ == '__main__':
     print('starting game')
     
     os.chdir(os.path.dirname(os.path.abspath(__file__)))
-    database = GameDatabase('gameData')
+    database = GameDatabase('database/gameData')
     state = GameState(database)
     
     app = QApplication(sys.argv)

@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import (QWidget, QListWidget, QHBoxLayout, QVBoxLayout,
                              QLabel, QProgressBar, QPushButton, QListWidgetItem)
 from PyQt6.QtCore import Qt, QSize
 
-from gameProgram import GameProgram, GameCommand
+from game.core.gameProgram import GameProgram, GameCommand
 from game.util.styleSheets import StyleSheets
 
 class ProgramItemWidget(QWidget):

@@ -8,8 +8,8 @@ from PyQt6.QtGui import QPixmap, QFont, QIcon, QPainter, QColor
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QCoreApplication
 
 from game.util.enums import GameWindowMode
-from gameDatabase import GameDatabase
-from gameState import GameState
+from game.database.gameDatabase import GameDatabase
+from game.core.gameState import GameState
 from game.util.styleSheets import StyleSheets
 
 class IconButton(QPushButton):
