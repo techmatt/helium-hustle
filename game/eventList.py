@@ -5,7 +5,7 @@ from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
 from PyQt6.QtCore import Qt, QSize
 from PyQt6.QtGui import QFont
 
-from styleSheets import StyleSheets
+from game.util.styleSheets import StyleSheets
 
 class EventList(QWidget):
     def __init__(self):

@@ -9,7 +9,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QCoreApplication
 
 from gameDatabase import GameDatabase
 from gameState import GameState
-from styleSheets import StyleSheets
+from game.util.styleSheets import StyleSheets
 
 class ResourceDisplay(QWidget):
     def __init__(self, gameUI : GameUI):

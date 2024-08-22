@@ -9,7 +9,7 @@ from PyQt6.QtWidgets import (QWidget, QListWidget, QHBoxLayout, QVBoxLayout,
 from PyQt6.QtCore import Qt, QSize
 
 from gameProgram import GameProgram, GameCommand
-from styleSheets import StyleSheets
+from game.util.styleSheets import StyleSheets
 
 class ProgramItemWidget(QWidget):
     def __init__(self, command : GameCommand):

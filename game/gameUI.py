@@ -12,10 +12,10 @@ from gameDatabase import GameDatabase
 from gameState import GameState
 from gameProgram import GameProgram, GameCommand
 
-from enums import GameWindowMode
+from game.util.enums import GameWindowMode
 from iconGrid import IconGrid
 from resourceDisplay import ResourceDisplay
-from styleSheets import StyleSheets
+from game.util.styleSheets import StyleSheets
 from programWidget import ProgramWidget
 from commandViewWidget import CommandViewWidget
 from buildingViewWidget import BuildingViewWidget

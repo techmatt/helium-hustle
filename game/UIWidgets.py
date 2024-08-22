@@ -11,10 +11,9 @@ from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QCoreApplication
 from gameDatabase import GameDatabase
 from gameState import GameState
 
-from enums import GameWindowMode
 from iconGrid import IconGrid
 from resourceDisplay import ResourceDisplay
-from styleSheets import StyleSheets
+from game.util.styleSheets import StyleSheets
 
 class ProgramUIElements():
     def __init__(self, gameUI : GameUI):
