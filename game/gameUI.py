@@ -8,7 +8,7 @@ from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHB
 from PyQt6.QtGui import QPixmap, QFont, QIcon, QPainter, QColor
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QCoreApplication
 
-from gameDatabase import GameDatabase
+from game.database.gameDatabase import GameDatabase
 from gameState import GameState
 from gameProgram import GameProgram, GameCommand
 

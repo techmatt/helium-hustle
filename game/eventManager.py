@@ -4,7 +4,7 @@ from __future__ import annotations
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton
 from PyQt6.QtCore import Qt
 
-from gameDatabase import EventInfo
+from game.database.gameDatabase import EventInfo
 
 class EventManager():
     def __init__(self, state : GameState):

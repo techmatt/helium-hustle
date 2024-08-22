@@ -7,7 +7,7 @@ import math
 from typing import Dict, List, NamedTuple
 from gameProgram import GameProgram, GameCommand
 
-from gameDatabase import GameDatabase, CommandInfo, ResourceInfo, BuildingInfo
+from game.database.gameDatabase import GameDatabase, CommandInfo, ResourceInfo, BuildingInfo
 from eventManager import EventManager
 
 class CommandState:

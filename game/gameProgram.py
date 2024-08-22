@@ -6,7 +6,7 @@ import os
 import math
 from typing import Dict, List, NamedTuple
 
-from gameDatabase import GameDatabase, CommandInfo, ResourceInfo, BuildingInfo
+from game.database.gameDatabase import GameDatabase, CommandInfo, ResourceInfo, BuildingInfo
 
 class GameCommand:
     def __init__(self, info : CommandInfo):

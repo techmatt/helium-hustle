@@ -10,7 +10,7 @@ sys.path.append(parentDir)
 
 from PyQt6.QtWidgets import QApplication
 
-from game.gameDatabase import GameDatabase
+from game.database.gameDatabase import GameDatabase
 from gameState import GameState
 from gameUI import GameUI
 
