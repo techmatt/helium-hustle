@@ -59,7 +59,7 @@ class IconButton(QPushButton):
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit(self.name)
 
-class IconGrid(QWidget):
+class MainMenuWidget(QWidget):
     def __init__(self, gameUI : GameUI):
         super().__init__()
         self.gameUI = gameUI

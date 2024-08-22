@@ -13,8 +13,6 @@ from game.core.gameState import GameState
 
 from game.util.enums import GameWindowMode
 from game.util.styleSheets import StyleSheets
-from game.ui.iconGrid import IconGrid
-from game.ui.resourceDisplay import ResourceDisplay
 
 class CommandButtonWidget(QPushButton):
     clicked = pyqtSignal(str)

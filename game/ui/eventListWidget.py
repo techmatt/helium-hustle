@@ -7,7 +7,7 @@ from PyQt6.QtGui import QFont
 
 from game.util.styleSheets import StyleSheets
 
-class EventList(QWidget):
+class EventListWidget(QWidget):
     def __init__(self):
         super().__init__()
         self.initUI()

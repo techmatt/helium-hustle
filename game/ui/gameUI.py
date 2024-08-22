@@ -14,13 +14,13 @@ from game.core.gameProgram import GameProgram, GameCommand
 
 from game.util.enums import GameWindowMode
 from game.util.styleSheets import StyleSheets
-from game.ui.iconGrid import IconGrid
-from game.ui.resourceDisplay import ResourceDisplay
+from game.ui.mainMenuWidget import MainMenuWidget
+from game.ui.resourceDisplayWidget import ResourceDisplayWidget
 from game.ui.programWidget import ProgramWidget
 from game.ui.commandViewWidget import CommandViewWidget
 from game.ui.buildingViewWidget import BuildingViewWidget
 from game.ui.eventDialog import EventDialog
-from game.ui.eventList import EventList
+from game.ui.eventListWidget import EventListWidget
 
 from game.util.pixmapCache import PixmapCache
 
@@ -89,11 +89,11 @@ class GameUI(QMainWindow):
         
         self.titleLabel = QLabel("Helium Hustle")
         self.titleLabel.setStyleSheet(StyleSheets.GAME_TITLE)
-        self.iconGrid = IconGrid(self)
-        self.resourceDisplay = ResourceDisplay(self)
+        self.mainMenu = MainMenuWidget(self)
+        self.resourceDisplay = ResourceDisplayWidget(self)
         
         self.leftLayout.addWidget(self.titleLabel)
-        self.leftLayout.addWidget(self.iconGrid)
+        self.leftLayout.addWidget(self.mainMenu)
         self.leftLayout.addWidget(self.resourceDisplay)
         
         self.leftLayout.addStretch()
@@ -112,7 +112,7 @@ class GameUI(QMainWindow):
         self.eventLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
         self.rightLayout.addWidget(self.eventLabel)
         
-        self.eventList = EventList()
+        self.eventList = EventListWidget()
         self.rightLayout.addWidget(self.eventList)
         
         self.rightLayout.addStretch()

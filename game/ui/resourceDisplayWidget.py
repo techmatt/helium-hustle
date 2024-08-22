@@ -11,7 +11,7 @@ from game.database.gameDatabase import GameDatabase
 from game.core.gameState import GameState
 from game.util.styleSheets import StyleSheets
 
-class ResourceDisplay(QWidget):
+class ResourceDisplayWidget(QWidget):
     def __init__(self, gameUI : GameUI):
         super().__init__()
         self.gameUI = gameUI
