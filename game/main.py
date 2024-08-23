@@ -22,6 +22,7 @@ if __name__ == '__main__':
     state = GameState(database)
     
     app = QApplication(sys.argv)
+    app.setStyle("Fusion")
     game = GameUI(state, database)
     game.show()
     sys.exit(app.exec())
