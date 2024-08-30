@@ -73,7 +73,9 @@ class GameParams:
             "Processors"
             ]
         
-        self.timerInterval = 1000 # timer interval in milliseconds
+        self.timerInterval = 250 # timer interval in milliseconds
+        self.gameSecondsPerTick = 60 # each tick is a game minute
+        self.ticksPerProcessorCycle = 4 # the processors operate more slowly than the game clock
         
         self.maxProgramCount = 5
 

@@ -28,12 +28,14 @@
     <Compile Include="ui\commandViewWidget.py" />
     <Compile Include="ui\eventDialog.py" />
     <Compile Include="ui\eventListWidget.py" />
+    <Compile Include="ui\gameSpeedWidget.py" />
     <Compile Include="ui\gameUI.py" />
     <Compile Include="ui\mainMenuWidget.py" />
     <Compile Include="ui\programWidget.py" />
     <Compile Include="ui\resourceDisplayWidget.py" />
     <Compile Include="ui\UIWidgets.py" />
     <Compile Include="util\enums.py" />
+    <Compile Include="util\formatting.py" />
     <Compile Include="util\pixmapCache.py" />
     <Compile Include="util\styleSheets.py" />
     <Compile Include="__init__.py" />

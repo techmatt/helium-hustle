@@ -23,8 +23,10 @@ from game.ui.commandViewWidget import CommandViewWidget
 from game.ui.buildingViewWidget import BuildingViewWidget
 from game.ui.eventDialog import EventDialog
 from game.ui.eventListWidget import EventListWidget
+from game.ui.gameSpeedWidget import GameSpeedWidget
 
 from game.util.pixmapCache import PixmapCache
+from game.util.formatting import formatSystemUptime
 
 from game.ui.UIWidgets import ProgramUIElements
 
@@ -39,6 +41,7 @@ class GameUI(QMainWindow):
         self.params = self.database.params
         self.mode : GameWindowMode = GameWindowMode.BUILDINGS
         self.visibleProgramIndex = 0
+        self.gameSpeed = 0
 
         self.pixmapCache = PixmapCache()
         
@@ -92,10 +95,20 @@ class GameUI(QMainWindow):
         self.titleLabel = QLabel("Helium Hustle")
         self.titleLabel.setStyleSheet(StyleSheets.GAME_TITLE)
         self.mainMenu = MainMenuWidget(self)
+        self.gameSpeedWidget = GameSpeedWidget(self)
         self.resourceDisplay = ResourceDisplayWidget(self)
+        
+        self.gameSpeedLabel = QLabel("Game Speed")
+        self.gameSpeedLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
+        
+        self.gameTimeWidget = QLabel("Uptime: ")
+        self.gameTimeWidget.setStyleSheet(StyleSheets.RESOURCE_LIST_TEXT)
         
         self.leftLayout.addWidget(self.titleLabel)
         self.leftLayout.addWidget(self.mainMenu)
+        self.leftLayout.addWidget(self.gameSpeedLabel)
+        self.leftLayout.addWidget(self.gameSpeedWidget)
+        self.leftLayout.addWidget(self.gameTimeWidget)
         self.leftLayout.addWidget(self.resourceDisplay)
         
         self.leftLayout.addStretch()
@@ -140,7 +153,10 @@ class GameUI(QMainWindow):
             # do not tick game while dialog is active.
             return
             
-        self.state.step()
+        if self.gameSpeed > 0:
+            for i in range(0, self.gameSpeed):
+                self.state.step()
+                
         self.updateLabels()
         
         for eState in chain(self.state.activeEvents, self.state.ongoingEvents):
@@ -148,8 +164,13 @@ class GameUI(QMainWindow):
                 self.displayEvent(eState)
                 break
         
+    def updateGameTime(self):
+        gameSeconds = self.state.ticks * self.database.params.gameSecondsPerTick
+        self.gameTimeWidget.setText('System uptime: ' + formatSystemUptime(gameSeconds))
+    
     def updateLabels(self):
         self.resourceDisplay.updateLabels()
+        self.updateGameTime()
         
         if self.mode == GameWindowMode.COMMANDS:
             self.commandViewWidget.updateLabels()
@@ -190,6 +211,14 @@ class GameUI(QMainWindow):
     def makeIconLabel(self, iconPath, iconWidth, iconHeight):
         result = QLabel()
         result.setPixmap(self.pixmapCache.getPixmap(iconPath, iconWidth, iconHeight))
+        result.setFixedSize(iconWidth, iconHeight)
+        return result
+    
+    def makeIconButton(self, iconPath, iconWidth, iconHeight):
+        result = QPushButton()
+        icon = QIcon(self.pixmapCache.getPixmap(iconPath, iconWidth, iconHeight))
+        result.setIcon(icon)
+        result.setIconSize(QSize(iconWidth, iconHeight))
         result.setFixedSize(iconWidth, iconHeight)
         return result
 

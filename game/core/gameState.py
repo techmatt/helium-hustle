@@ -99,6 +99,7 @@ class GameState:
         self.activeEvents: List[EventState] = []
         self.ongoingEvents: List[EventState] = []
         self.ticks: int = 0
+        self.ticksUntilProcessorCycle: int = 0
         self.dirty: DirtyState = DirtyState()
 
         self.step()
@@ -188,8 +189,13 @@ class GameState:
     def step(self):
         self.updateStorageAndProcessors()
         self.updateIncomeAndBuildingProduction()
-        self.runAllPrograms()
         
+        if self.ticksUntilProcessorCycle > 0:
+            self.ticksUntilProcessorCycle -= 1
+        else:
+            self.runAllPrograms()
+            self.ticksUntilProcessorCycle = self.database.params.ticksPerProcessorCycle
+            
         # cap all resources to their storage capacity
         for rState in self.resources.values():
             rState.count = min(rState.count, rState.storage)
