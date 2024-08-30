@@ -80,7 +80,7 @@ class EventDialog(QDialog):
         buttonLayout = QHBoxLayout()
 
         options = eInfo.options
-        if len(options) == 0:
+        if len(options) == 0 or eState.completed:
             options = ["OK"]
             
         buttonLayout.addStretch()

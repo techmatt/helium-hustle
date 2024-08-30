@@ -277,8 +277,9 @@ class GameState:
     def processEventOption(self, eState : EventState, option : Str):
         eInfo = eState.info
         
-        # ongoing events don't have options
-        if eState in self.ongoingEvents:
+        # ongoing events don't have options.
+        # completed events can't be processed a second time.
+        if eState in self.ongoingEvents or eState.completed:
             return
         
         if not(eState in self.activeEvents):
@@ -294,14 +295,15 @@ class GameState:
         
         if option == 'OK' or option == 'Maybe later':
             pass
-        
-        if option == 'Spend all boredom':
+        elif option == 'Spend all boredom':
             self.resources['Boredom'].count = 0
+        else:
+            print('option not found', option)
             
         self.activeEvents.remove(eState)
         eState.completed = True
         self.dirty.events = True
-        print('option not found', option)
+        
 
 if __name__ == "__main__":
     print('testing game state')

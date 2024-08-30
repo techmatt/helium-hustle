@@ -145,10 +145,7 @@ class GameUI(QMainWindow):
         
         for eState in chain(self.state.activeEvents, self.state.ongoingEvents):
             if not eState.displayed:
-                print('displaying event: ' + eState.info.name)
-                eState.displayed = True
-                self.activeDialog = EventDialog(self, self, eState)
-                self.activeDialog.show()
+                self.displayEvent(eState)
                 break
         
     def updateLabels(self):
@@ -235,6 +232,12 @@ class GameUI(QMainWindow):
         bState.totalCount = max(bState.totalCount, 0)
         bState.activeCount = min(bState.activeCount, bState.totalCount)
         self.updateLabels()
+        
+    def displayEvent(self, eState : EventState):
+        #print('display event: ' + eState.info.name)
+        eState.displayed = True
+        self.activeDialog = EventDialog(self, self, eState)
+        self.activeDialog.show()
         
     def triggerExit(self):
         QCoreApplication.instance().quit()

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from functools import partial
+
 from PyQt6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
                              QScrollArea, QFrame, QPushButton)
 from PyQt6.QtCore import Qt, QSize
@@ -59,6 +61,7 @@ class EventListWidget(QWidget):
 
     def addEvent(self, section, eState : EventState):
         eventWidget = EventWidget(eState)
+        eventWidget.clicked.connect(partial(self.gameUI.displayEvent, eState))
         section.addWidget(eventWidget)
 
 class CollapsibleSection(QWidget):
