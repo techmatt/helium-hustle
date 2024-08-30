@@ -72,11 +72,12 @@ class ResourceDisplayWidget(QWidget):
         self.resourceList.addWidget(rWidget)
             
     def updateLabels(self):
-        for rState in self.gameUI.state.resources.values():
+        state = self.gameUI.state
+        for rState in state.resources.values():
             rLabelValue = self.rValueLabels[rState.info.name]
             if rState.info.name == "Processors":
-                rLabelValue.setText(f"{rState.storage} ({self.gameUI.state.freeProcessorCount} unassigned)")
+                rLabelValue.setText(f"{rState.storage} ({state.freeProcessorCount} unassigned)")
             else:
                 rLabelIncome = self.rIncomeLabels[rState.info.name]
                 rLabelValue.setText(f"{rState.count} / {rState.storage}")
-                rLabelIncome.setText(f"{rState.income} /s")
+                rLabelIncome.setText(f"{rState.income * state.database.params.intervalsPerSecond} /s")

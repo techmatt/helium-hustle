@@ -102,7 +102,7 @@ class GameUI(QMainWindow):
         self.gameSpeedLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
         
         self.gameTimeWidget = QLabel("Uptime: ")
-        self.gameTimeWidget.setStyleSheet(StyleSheets.RESOURCE_LIST_TEXT)
+        self.gameTimeWidget.setStyleSheet(StyleSheets.GENERAL_12PT_BOLD)
         
         self.leftLayout.addWidget(self.titleLabel)
         self.leftLayout.addWidget(self.mainMenu)
