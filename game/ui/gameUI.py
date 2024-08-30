@@ -112,7 +112,7 @@ class GameUI(QMainWindow):
         self.eventLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
         self.rightLayout.addWidget(self.eventLabel)
         
-        self.eventList = EventListWidget()
+        self.eventList = EventListWidget(self)
         self.rightLayout.addWidget(self.eventList)
         
         self.rightLayout.addStretch()
@@ -141,8 +141,11 @@ class GameUI(QMainWindow):
         self.state.step()
         self.updateLabels()
         
+        #print('active event count: ' + str(self.state.activeEvents))
         for eState in self.state.activeEvents:
             if not eState.displayed:
+                print('displaying event: ' + eState.info.name)
+                eState.displayed = True
                 self.activeDialog = EventDialog(self, self, eState)
                 self.activeDialog.show()
                 break
@@ -160,7 +163,24 @@ class GameUI(QMainWindow):
         self.programWidget.updateProgram()
         self.programWidget.updateProgressBars()
         self.programUIElements.updateVisisbleProgramIndex()
+        
+        if self.state.dirty.events:
+            self.updateEventList()
+            
+    def updateEventList(self):
+        # Find and remove the old EventListWidget
+        for i in range(self.rightLayout.count()):
+            widget = self.rightLayout.itemAt(i).widget()
+            if isinstance(widget, EventListWidget):
+                self.rightLayout.removeWidget(widget)
+                widget.deleteLater()
+                break
     
+        # Create and add the new EventListWidget
+        self.eventList = EventListWidget(self)
+        self.rightLayout.insertWidget(self.rightLayout.count() - 1, self.eventList)
+        self.state.dirty.events = False
+
     def runCommand(self, name : str):
         self.state.runCommand(name)
         self.updateLabels()

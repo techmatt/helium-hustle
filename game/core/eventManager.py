@@ -1,6 +1,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from PyQt6.QtWidgets import QDialog, QVBoxLayout, QLabel, QPushButton
 from PyQt6.QtCore import Qt
 
@@ -21,9 +23,12 @@ class EventManager():
         eInfo: EventInfo = eState.info
         print('triggering event: ' + eInfo.name)
         eState.triggered = True
+        eState.timestampStr = datetime.now().strftime("%I:%M %p").lstrip("0")
         self.state.activeEvents.insert(0, eState)
         if len(eInfo.income) > 0:
             self.state.ongoingEvents.insert(0, eState)
+            
+        self.state.dirty.events = True
         
     def step(self):
         for eState in self.state.events.values():

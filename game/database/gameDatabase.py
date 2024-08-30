@@ -36,6 +36,7 @@ class EventInfo(NamedTuple):
     income: Dict[str, float]
     flavorText: str
     mechanicsText: str
+    options: []
     
 class GameParams:
     def __init__(self, database : GameDatabase):
@@ -135,7 +136,8 @@ class GameDatabase:
                 unlocks = e['unlocks'],
                 income = e['income'],
                 flavorText = e['flavorText'],
-                mechanicsText = e['mechanicsText']
+                mechanicsText = e['mechanicsText'],
+                options = e.get('options', [])
             )
             self.events[curEvent.name] = curEvent
             

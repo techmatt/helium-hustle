@@ -117,4 +117,20 @@ class StyleSheets:
             line-height: 1.4;
         }
     """
+    
+    DIALOG_BUTTON = """
+            QPushButton {
+                background-color: #2980b9;
+                color: white;
+                border: none;
+                padding: 10px;
+                font-size: 16px;
+                font-weight: bold;
+                border-radius: 5px;
+                min-width: 100px;
+            }
+            QPushButton:hover {
+                background-color: #2c3e50;
+            }
+        """
 

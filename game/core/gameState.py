@@ -1,5 +1,6 @@
 
 from __future__ import annotations
+from ast import Str
 
 import json
 import os
@@ -33,10 +34,15 @@ class ResourceState:
 class EventState:
     def __init__(self, info : EventInfo):
         self.info: EventInfo = info
+        self.triggered: bool = False
         self.completed: bool = False
         self.displayed: bool = False
-        self.triggered: bool = False
         self.ongoing: bool = False
+        self.timestampStr : str = None
+
+class DirtyState:
+    def __init__(self):
+        self.events: True
         
 class ResourceList:
     def __init__(self, r : Dict[str, float]):
@@ -89,6 +95,7 @@ class GameState:
         self.activeEvents: List[EventState] = []
         self.ongoingEvents: List[EventState] = []
         self.ticks: int = 0
+        self.dirty: DirtyState = DirtyState()
 
         self.step()
 
@@ -262,6 +269,30 @@ class GameState:
         for rName, v in cInfo.production.items():
             r = self.resources[rName]
             r.count = min(r.count + v, r.storage)
+            
+    def processEventOption(self, eState : EventState, option : Str):
+        eInfo = eState.info
+        if not(eState in self.activeEvents):
+            print('event not active', eState.info.name)
+            return
+        
+        if option != 'OK' and option not in eInfo.options:
+            print('invalid option', option)
+            return
+        
+        if option == 'Maybe later':
+            return
+        
+        if option == 'OK' or option == 'Maybe later':
+            pass
+        
+        if option == 'Spend all boredom':
+            self.resources['Boredom'].count = 0
+            
+        self.activeEvents.remove(eState)
+        eState.completed = True
+        self.dirty.events = True
+        print('option not found', option)
 
 if __name__ == "__main__":
     print('testing game state')

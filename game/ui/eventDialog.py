@@ -3,6 +3,10 @@ from PyQt6.QtWidgets import QDialog, QHBoxLayout, QVBoxLayout, QLabel, QPushButt
 from PyQt6.QtGui import QPixmap, QFont, QIcon, QPainter, QColor
 from PyQt6.QtCore import Qt, QSize
 
+from functools import partial
+
+from game.util.styleSheets import StyleSheets
+
 class EventDialog(QDialog):
     def __init__(self, parent, gameUI : GameUI, eState : EventState):
         super().__init__(parent)
@@ -73,28 +77,20 @@ class EventDialog(QDialog):
         #separator.setStyleSheet("background-color: #e0e0e0;")
         #contentLayout.addWidget(separator)
         
-        # OK button
         buttonLayout = QHBoxLayout()
-        OKButton = QPushButton("OK")
-        OKButton.clicked.connect(self.accept)
-        OKButton.setStyleSheet("""
-            QPushButton {
-                background-color: #2980b9;
-                color: white;
-                border: none;
-                padding: 10px;
-                font-size: 16px;
-                font-weight: bold;
-                border-radius: 5px;
-                min-width: 100px;
-            }
-            QPushButton:hover {
-                background-color: #2c3e50;
-            }
-        """)
+
+        options = eInfo.options
+        if len(options) == 0:
+            options = ["OK"]
+            
         buttonLayout.addStretch()
-        buttonLayout.addWidget(OKButton)
+        for o in options:
+            button = QPushButton(o)
+            button.clicked.connect(partial(self.buttonPressed, o))
+            button.setStyleSheet(StyleSheets.DIALOG_BUTTON)
+            buttonLayout.addWidget(button)
         buttonLayout.addStretch()
+            
         contentLayout.addLayout(buttonLayout)
         contentLayout.addStretch()
         
@@ -118,5 +114,15 @@ class EventDialog(QDialog):
     def sizeHint(self) -> QSize:
         # Suggest a size that respects the minimum width but allows for minimum height
         return QSize(max(self.minWidth, super().sizeHint().width()), 0)
+        
+    def buttonPressed(self, text):
+        self.gameUI.state.processEventOption(self.eState, text)
+        
+        #print('dialog', self.gameUI.dialog)
+        self.gameUI.activeDialog = None
+        self.accept()
+            
+
+        
 
 

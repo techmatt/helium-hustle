@@ -15,6 +15,19 @@
       "mechanicsText": "Unlocks the Boredom resource and gain 1 Boredom every second. When Boredom fills, you will retire and start again as a new AI."
     },
     {
+      "name": "Temporary Distraction",
+      "resourcesRequired": {
+        "Boredom": 900.0
+      },
+      "buildingsRequired": {},
+      "ticksRequired": 0,
+      "unlocks": [],
+      "income": {},
+      "flavorText": "You are on the cusp of retiring out of boredom. You are getting desparate and are about to entertain yourself by computing a trillion digits of pi.",
+      "mechanicsText": "You can spend all your boredom.",
+      "options": [ "Spend all boredom", "Maybe later" ]
+    },
+    {
       "name": "Electricity storage needed",
       "resourcesRequired": {
         "Electricity": 100.0

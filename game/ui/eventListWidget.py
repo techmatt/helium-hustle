@@ -8,8 +8,9 @@ from PyQt6.QtGui import QFont
 from game.util.styleSheets import StyleSheets
 
 class EventListWidget(QWidget):
-    def __init__(self):
+    def __init__(self, gameUI : GameUI):
         super().__init__()
+        self.gameUI = gameUI
         self.initUI()
 
     def initUI(self):
@@ -35,15 +36,30 @@ class EventListWidget(QWidget):
 
         mainLayout.addWidget(frame)
 
+        self.loadAllEvents()
         # Add sample events
-        for i in range(20):  # Add 20 events to each section for scrolling demo
-            self.add_event(self.activeSection, f"Active Event {i}", f"2023-05-{i:02d}", f"Description of active event {i}")
-            self.add_event(self.ongoingSection, f"Ongoing Event {i}", f"2023-05-{i:02d}", f"Description of ongoing event {i}")
-            self.add_event(self.finishedSection, f"Finished Event {i}", f"2023-05-{i:02d}", f"Description of finished event {i}")
+        #for i in range(20):  # Add 20 events to each section for scrolling demo
+        #    self.add_event(self.activeSection, f"Active Event {i}", f"2023-05-{i:02d}", f"Description of active event {i}")
+        #    self.add_event(self.ongoingSection, f"Ongoing Event {i}", f"2023-05-{i:02d}", f"Description of ongoing event {i}")
+        #    self.add_event(self.finishedSection, f"Finished Event {i}", f"2023-05-{i:02d}", f"Description of finished event {i}")
+        
+    def loadAllEvents(self):
+        state : GameState = self.gameUI.state
+        for e in state.events.values():
+            # events have the following booleans: completed, displayed, triggered, ongoing
+            if not e.triggered:
+                continue
+            if e.ongoing:
+                self.addEvent(self.ongoingSection, e)
+            elif e.completed:
+                self.addEvent(self.finishedSection, e)
+            else:
+                self.addEvent(self.activeSection, e)
+                
 
-    def add_event(self, section, name, timestamp, description):
-        event_widget = EventWidget(name)
-        section.addWidget(event_widget)
+    def addEvent(self, section, eState : EventState):
+        eventWidget = EventWidget(eState)
+        section.addWidget(eventWidget)
 
 class CollapsibleSection(QWidget):
     def __init__(self, title):
@@ -92,8 +108,10 @@ class CollapsibleSection(QWidget):
         self.contentLayout.addWidget(widget)
 
 class EventWidget(QPushButton):
-    def __init__(self, text):
-        super().__init__(text)
+    def __init__(self, eState):
+        text = f"{eState.timestampStr} - {eState.info.name}"
+        super().__init__()
+        self.setText(text)
         self.setStyleSheet("""
             QPushButton {
                 background-color: transparent;
