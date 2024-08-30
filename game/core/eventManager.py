@@ -24,9 +24,12 @@ class EventManager():
         print('triggering event: ' + eInfo.name)
         eState.triggered = True
         eState.timestampStr = datetime.now().strftime("%I:%M %p").lstrip("0")
-        self.state.activeEvents.insert(0, eState)
+        
         if len(eInfo.income) > 0:
+            eState.ongoing = True
             self.state.ongoingEvents.insert(0, eState)
+        else:
+            self.state.activeEvents.insert(0, eState)
             
         self.state.dirty.events = True
         

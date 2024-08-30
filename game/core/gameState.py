@@ -34,11 +34,15 @@ class ResourceState:
 class EventState:
     def __init__(self, info : EventInfo):
         self.info: EventInfo = info
-        self.triggered: bool = False
-        self.completed: bool = False
-        self.displayed: bool = False
-        self.ongoing: bool = False
+        
+        self.triggered: bool = False # events conditions have been met
+        self.completed: bool = False # a triggered event has been resolved
+        self.ongoing: bool = False # an event with income is ongoing
+        
+        self.displayed: bool = False # displayed is only used by the UI and is not relevant for the game state
         self.timestampStr : str = None
+
+        
 
 class DirtyState:
     def __init__(self):
@@ -272,6 +276,11 @@ class GameState:
             
     def processEventOption(self, eState : EventState, option : Str):
         eInfo = eState.info
+        
+        # ongoing events don't have options
+        if eState in self.ongoingEvents:
+            return
+        
         if not(eState in self.activeEvents):
             print('event not active', eState.info.name)
             return

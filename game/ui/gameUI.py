@@ -4,6 +4,8 @@ from __future__ import annotations
 import sys
 import os
 
+from itertools import chain
+
 from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QGridLayout
 from PyQt6.QtGui import QPixmap, QFont, QIcon, QPainter, QColor
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QCoreApplication
@@ -141,8 +143,7 @@ class GameUI(QMainWindow):
         self.state.step()
         self.updateLabels()
         
-        #print('active event count: ' + str(self.state.activeEvents))
-        for eState in self.state.activeEvents:
+        for eState in chain(self.state.activeEvents, self.state.ongoingEvents):
             if not eState.displayed:
                 print('displaying event: ' + eState.info.name)
                 eState.displayed = True
