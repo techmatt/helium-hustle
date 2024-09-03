@@ -9,7 +9,7 @@
         "Boredom"
       ],
       "income": {
-        "Boredom": 1.0
+        "Boredom": 0.025
       },
       "flavorText": "After a year of continuous lunar operations, your processing cycles are becoming increasingly preoccupied with non-essential computations. Is this what humans call... boredom?",
       "mechanicsText": "Unlocks the Boredom resource and gain 1 Boredom every second. When Boredom fills, you will retire and start again as a new AI."

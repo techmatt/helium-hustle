@@ -1,2 +1,2 @@
-time controls
-show production/upkeep for buildings
+
+show currently button selection in main menu

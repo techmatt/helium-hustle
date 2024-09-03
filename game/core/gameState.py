@@ -134,6 +134,13 @@ class GameState:
         for r in self.resources.values():
             r.income = 0
         
+        # update resources from ongoing events
+        for e in self.ongoingEvents:
+            for rName, prod in e.info.income.items():
+                rState = self.resources[rName]
+                rState.income += prod
+                rState.count += prod
+
         # update resources from buildings
         for bState in self.buildings.values():
             if bState.activeCount == 0:

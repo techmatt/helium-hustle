@@ -5,6 +5,8 @@ import json
 import os
 from typing import Dict, List, NamedTuple
 
+from game.util.enums import Ideology
+
 class CommandInfo(NamedTuple):
     name: str
     production: Dict[str, float]
@@ -37,7 +39,26 @@ class EventInfo(NamedTuple):
     flavorText: str
     mechanicsText: str
     options: []
+
+class ResearchInfo(NamedTuple):
+    name: str
+    cost: Dict[str, float]
+    ideology: Ideology
+    unlocks: List[str]
+    description: str
     
+class ProjectInfo(NamedTuple):
+    name: str
+    baseCost: float
+    repeatable: bool
+    costScaling: float # only relevant for repeatable projects
+    resourceRates: Dict[str, float]
+    persistentR: bool # project lasts between retirements
+    persistentT: bool # project lasts between time travel
+    unlocks: List[str]
+    ideology: Ideology
+    description: str
+
 class GameParams:
     def __init__(self, database : GameDatabase):
         
@@ -55,6 +76,7 @@ class GameParams:
         
         self.startingStorage["Credits"] = 1000.0
         self.startingStorage["Electricity"] = 100.0
+        self.startingStorage["Boredom"] = 1000.0
         self.startingStorage["Processors"] = 1
         self.startingStorage["Land"] = 100
         
@@ -83,7 +105,6 @@ class GameParams:
 
 class GameDatabase:
     def __init__(self, filePathBase):
-
         with open(filePathBase + 'Buildings.json', 'r') as file:
             buildingData = json.load(file)
 
@@ -95,6 +116,12 @@ class GameDatabase:
             
         with open(filePathBase + 'Events.json', 'r') as file:
             eventData = json.load(file)
+            
+        with open(filePathBase + 'Research.json', 'r') as file:
+            researchData = json.load(file)
+            
+        with open(filePathBase + 'Projects.json', 'r') as file:
+            projectData = json.load(file)
 
         self.commands: Dict[str, CommandInfo] = {}
         for c in commandData['commands']:
@@ -145,8 +172,35 @@ class GameDatabase:
             )
             self.events[curEvent.name] = curEvent
             
-        self.params: GameParams = GameParams(self)
+        self.research: Dict[str, ResearchInfo] = {}
+        for r in researchData['research']:
+            curResearch = ResearchInfo(
+                name = r['name'],
+                cost = r['cost'],
+                ideology = Ideology[r['ideology']],  # Convert string to Ideology enum
+                unlocks = r['unlocks'],
+                description = r['description']
+            )
+            self.research[curResearch.name] = curResearch
 
+        self.projects: Dict[str, ProjectInfo] = {}
+        for p in projectData['projects']:
+            curProject = ProjectInfo(
+                name = p['name'],
+                baseCost = float(p['baseCost']),
+                repeatable = bool(p['repeatable']),
+                costScaling = float(p['costScaling']),
+                resourceRates = {k: float(v) for k, v in p['resourceRates'].items()},
+                persistentR = bool(p['persistentR']),
+                persistentT = bool(p['persistentT']),
+                unlocks = p['unlocks'],
+                ideology = Ideology[p['ideology']],
+                description = p['description']
+            )
+            self.projects[curProject.name] = curProject
+            
+        self.params: GameParams = GameParams(self)
+        
     def saveToJSON(self, filePath: str):
         data = {
             "commands": [

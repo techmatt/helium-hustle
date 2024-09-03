@@ -41,7 +41,7 @@ class GameUI(QMainWindow):
         self.params = self.database.params
         self.mode : GameWindowMode = GameWindowMode.BUILDINGS
         self.visibleProgramIndex = 0
-        self.gameSpeed = 0
+        self.gameSpeed = 1
 
         self.pixmapCache = PixmapCache()
         

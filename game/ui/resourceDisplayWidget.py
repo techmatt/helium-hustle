@@ -79,5 +79,12 @@ class ResourceDisplayWidget(QWidget):
                 rLabelValue.setText(f"{rState.storage} ({state.freeProcessorCount} unassigned)")
             else:
                 rLabelIncome = self.rIncomeLabels[rState.info.name]
-                rLabelValue.setText(f"{rState.count} / {rState.storage}")
+
+                c = rState.count
+                if c >= 100000:
+                    cStr = f"{c:.3e}"
+                else:
+                    cStr = f"{c:.1f}".rstrip('0').rstrip('.')
+
+                rLabelValue.setText(f"{cStr} / {round(rState.storage)}")
                 rLabelIncome.setText(f"{rState.income * state.database.params.intervalsPerSecond} /s")

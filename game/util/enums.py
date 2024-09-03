@@ -8,3 +8,7 @@ class GameWindowMode(Enum):
     ACHIEVEMENTS = auto()
     OPTIONS = auto()
     
+class Ideology(Enum):
+    MILITARY = auto()
+    SCIENCE = auto()
+    CULTURE = auto()

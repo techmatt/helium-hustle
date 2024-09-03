@@ -27,19 +27,13 @@ class GameSpeedWidget(QWidget):
         self.iconNames = ['pause', '1x', '3x', '10x', '50x', '200x']
         self.buttons : Dict[int, QPushButton] = {}
 
+        layout.addStretch()
+        
         for speed, icon in zip(self.speeds, self.iconNames):
-            #button = QPushButton()
-            #button.setIcon(QIcon(f'path/to/icons/{icon}.png'))  # Replace with actual icon path
-            #button.setIconSize(QSize(24, 24))  # Adjust size as needed
-            #button.setFixedSize(QSize(32, 32))  # Adjust size as needed
-            #button.setToolTip(f'{speed}x speed')
-            #button.clicked.connect(partial(self.setGameSpeed, speed))
-
             button = self.gameUI.makeIconButton(f'icons/gameSpeed/{icon}.png', 56, 56)
             button.setToolTip(f'{speed}x speed')
             button.clicked.connect(partial(self.setGameSpeed, speed))
             self.buttons[speed] = button
-            
             layout.addWidget(button)
         
         layout.addStretch()

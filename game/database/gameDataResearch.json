@@ -1,0 +1,14 @@
+{
+  "research": [
+    {
+      "name": "Efficient Processors",
+      "cost": {
+        "Science": 100,
+        "Electricity": 100
+      },
+      "ideology": "MILITARY",
+      "unlocks": [],
+      "description": "Decreases the energy consumption of commands by 10%"
+    }
+  ]
+}

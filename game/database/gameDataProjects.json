@@ -1,0 +1,20 @@
+{
+  "projects": [
+    {
+      "name": "Universal Storage",
+      "baseCost": 5000.0,
+      "repeatable": true,
+      "costScaling": 2.0,
+      "resourceRates": {
+        "Regolith": 0.1,
+        "Ice": 0.5,
+        "Helium-3": 1.0
+      },
+      "persistentR": true,
+      "persistentT": false,
+      "unlocks": [],
+      "ideology": "MILITARY",
+      "description": "Persisent storage for all resources."
+    }
+  ]
+}
