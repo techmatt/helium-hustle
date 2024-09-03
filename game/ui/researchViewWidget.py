@@ -29,25 +29,21 @@ class ResearchButtonWidget(QPushButton):
         state = gameUI.state
         rState = state.research[rName]
         rInfo : BuildingInfo = rState.info
-        #bCost = state.getBuildingCost(bName)
-        #bProd = state.getBuildingProduction(bName)
-        #bUpkeep = state.getBuildingUpkeep(bName)
-
+        rCost = state.getResearchCost(rName)
+        
         layout = QVBoxLayout(self)
         layout.setSpacing(2)
         layout.setContentsMargins(2, 2, 2, 2)
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-
-        #editButtonsWidget : QWidget = self.makeEditButtonsWidget()
 
         # Name and count
         titleWidget = self.makeTitleWidget()
         
         # Icon and resource (IR) list
         
-        """buildingIconSize = 86
-        buildingIconLabel = gameUI.makeIconLabel('icons/buildings/' + bName + '.png', buildingIconSize, buildingIconSize)
-        buildingIconLabel.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+        researchIconSize = 86
+        researchIconLabel = gameUI.makeIconLabel('icons/research/' + rName + '.png', researchIconSize, researchIconSize)
+        researchIconLabel.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         
         rListWidget = QWidget()
         rListLayout = QVBoxLayout(rListWidget)
@@ -55,11 +51,11 @@ class ResearchButtonWidget(QPushButton):
         rListLayout.setContentsMargins(0, 0, 0, 0)
         #rListLayout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
         
-        self.rNameLabels = {}
-        self.rValueLabels = {}
+        self.resourceNameLabels = {}
+        self.resourceValueLabels = {}
         
-        for rName, cost in bCost.r.items():
-            rWidget = self.makeResourceRowWidget(rName, cost, True, False, False)
+        for resourceName, resourceCost in rCost.r.items():
+            rWidget = self.makeResourceRowWidget(resourceName, resourceCost, True)
             rListLayout.addWidget(rWidget)
         rListLayout.addStretch()
 
@@ -67,112 +63,56 @@ class ResearchButtonWidget(QPushButton):
         IRLayout = QGridLayout(IRWidget)
         IRLayout.setContentsMargins(0, 0, 0, 0)
         
-        IRLayout.addWidget(buildingIconLabel, 0, 0, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
+        IRLayout.addWidget(researchIconLabel, 0, 0, Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignVCenter)
         
         #rListWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Preferred)
         IRLayout.addWidget(rListWidget, 0, 1)
         IRLayout.setColumnStretch(0, 0)
         IRLayout.setColumnStretch(1, 1)
-        IRWidget.setMinimumHeight(buildingIconSize)
+        IRWidget.setMinimumHeight(researchIconSize)
         
-        descWidget = QLabel(bInfo.description)
+        descWidget = QLabel(rInfo.description)
         descWidget.setStyleSheet(StyleSheets.BUILDING_DESCRIPTION)
         descWidget.setWordWrap(True)
         
-        layout.addWidget(editButtonsWidget)"""
         layout.addWidget(titleWidget)
-        """layout.addWidget(IRWidget)
+        layout.addWidget(IRWidget)
         layout.addWidget(descWidget)
         
-        if len(bInfo.production) > 0:
-            productionWidget = self.makeProductionWidget()
-            layout.addWidget(productionWidget)
-        
-        if len(bInfo.upkeep) > 0:
-            upkeepWidget = self.makeUpkeepWidget()
-            layout.addWidget(upkeepWidget)"""
-
         layout.addStretch(0)
         
         self.updateLabels()
         
-    """def makeProductionWidget(self):
-        productionWidget = QWidget()
-        productionLayout = QVBoxLayout(productionWidget)
-        productionLayout.setSpacing(0)
-        productionLayout.setContentsMargins(0, 0, 0, 0)
-        
-        headerLabel = QLabel("Produces:")
-        headerLabel.setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
-        productionLayout.addWidget(headerLabel)
-
-        bProd = self.gameUI.state.getBuildingProduction(self.bName)
-        for rName, rValue in bProd.r.items():
-            rWidget = self.makeResourceRowWidget(rName, rValue, False, True, True)
-            productionLayout.addWidget(rWidget)
-            
-        return productionWidget
-
-    def makeUpkeepWidget(self):
-        upkeepWidget = QWidget()
-        upkeepLayout = QVBoxLayout(upkeepWidget)
-        upkeepLayout.setSpacing(0)
-        upkeepLayout.setContentsMargins(0, 0, 0, 0)
-        
-        headerLabel = QLabel("Upkeep:")
-        headerLabel.setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
-        upkeepLayout.addWidget(headerLabel)
-
-        bProd = self.gameUI.state.getBuildingUpkeep(self.bName)
-        for rName, rValue in bProd.r.items():
-            rWidget = self.makeResourceRowWidget(rName, -rValue, False, True, True)
-            upkeepLayout.addWidget(rWidget)
-            
-        return upkeepWidget
-    
-    def makeResourceRowWidget(self, rName : str, rValue, addToDicts : bool, prefixSpace : bool, isRate : bool):
+    def makeResourceRowWidget(self, resourceName : str, resourceValue : float, addToDicts : bool):
         rWidget = QWidget()
         rLayout = QGridLayout(rWidget)
         rLayout.setSpacing(0)
         rLayout.setContentsMargins(0, 0, 0, 0)
         rLayout.setAlignment(Qt.AlignmentFlag.AlignTop | Qt.AlignmentFlag.AlignLeft)
             
-        rIconLabel = self.gameUI.makeIconLabel('icons/resources/' + rName + '.png', 20, 20)
-        rIconLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        resourceIconLabel = self.gameUI.makeIconLabel('icons/resources/' + resourceName + '.png', 20, 20)
+        resourceIconLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
         
-        rNameLabel  = QLabel(f"{rName}")
+        resourceNameLabel  = QLabel(f"{resourceName}")
         
-        if isRate:
-            rValue *= self.gameUI.state.database.params.intervalsPerSecond
-            valueText = f"{rValue:+} /s"
-        else:
-            valueText = f"{rValue}"
-        rValueLabel = QLabel(valueText)
-        rNameLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
-        rValueLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
-        rNameLabel.setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
-        rValueLabel.setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
+        valueText = f"{resourceValue}"
+        resourceValueLabel = QLabel(valueText)
+        resourceNameLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        resourceValueLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
+        resourceNameLabel.setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
+        resourceValueLabel.setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
 
         if addToDicts:
-            self.rNameLabels[rName] = rNameLabel
-            self.rValueLabels[rName] = rValueLabel
+            self.resourceNameLabels[resourceName] = resourceNameLabel
+            self.resourceValueLabels[resourceName] = resourceValueLabel
         
-        if prefixSpace:
-            rIconLabelOld = rIconLabel
-            rIconLabel = QWidget()
-            rIconLayout = QHBoxLayout(rIconLabel)
-            rIconLayout.setSpacing(0)
-            rIconLayout.setContentsMargins(0, 0, 0, 0)
-            rIconLayout.addSpacing(20)
-            rIconLayout.addWidget(rIconLabelOld)
-            
-        rLayout.addWidget(rIconLabel, 0, 0)
-        rLayout.addWidget(rNameLabel, 0, 1)
-        rLayout.addWidget(rValueLabel, 0, 2)
+        rLayout.addWidget(resourceIconLabel, 0, 0)
+        rLayout.addWidget(resourceNameLabel, 0, 1)
+        rLayout.addWidget(resourceValueLabel, 0, 2)
         rLayout.setColumnStretch(0, 0)
         rLayout.setColumnStretch(1, 3)
         rLayout.setColumnStretch(2, 3)
-        return rWidget"""
+        return rWidget
         
     def makeTitleWidget(self):
         nameLabel = QLabel(f"{self.rName}")
@@ -188,43 +128,6 @@ class ResearchButtonWidget(QPushButton):
         titleLayout.addWidget(nameLabel)
         #titleLayout.addWidget(self.countLabel)
         return titleWidget
-        
-    """def makeEditButtonsWidget(self):
-        state : GameState = self.gameUI.state
-        bState : BuildingState = state.buildings[self.bName]
-        bInfo : BuildingInfo = bState.info
-        
-        buttonSize = QSize(25, 25)
-
-        editButtonsWidget = QWidget()
-        editButtonsLayout = QHBoxLayout(editButtonsWidget)
-        editButtonsLayout.setContentsMargins(0, 0, 0, 0)
-        editButtonsLayout.addStretch(1)
-        
-        self.removeButton = QPushButton("x")
-        self.removeButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
-        self.removeButton.setFixedSize(buttonSize)
-        
-        if bInfo.canDeactivate:
-            self.subButton = QPushButton("-")
-            self.addButton = QPushButton("+")
-        
-            self.subButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
-            self.addButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
-        
-            self.subButton.setFixedSize(buttonSize)
-            self.addButton.setFixedSize(buttonSize)
-
-            self.subButton.clicked.connect(partial(self.gameUI.modifyBuildingActive, self.bName, -1))
-            self.addButton.clicked.connect(partial(self.gameUI.modifyBuildingActive, self.bName, 1))
-            
-            editButtonsLayout.addWidget(self.subButton)
-            editButtonsLayout.addWidget(self.addButton)
-            
-        self.removeButton.clicked.connect(partial(self.gameUI.removeBuilding, self.bName))
-        editButtonsLayout.addWidget(self.removeButton)
-        
-        return editButtonsWidget"""
         
     def paintEvent(self, event):
         painter = QPainter(self)
@@ -274,7 +177,7 @@ class ResearchButtonWidget(QPushButton):
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
-            self.clicked.emit(self.bName)
+            self.clicked.emit(self.rName)
             
 
 class ResearchCollapsibleSection(QWidget):
@@ -313,15 +216,36 @@ class ResearchCollapsibleSection(QWidget):
         
         self.researchWidgets : Dict[str, ResearchButtonWidget] = {}
         
-        for index, rName in enumerate(self.gameUI.database.research.keys()):
-            rWidget = ResearchButtonWidget(self.gameUI, rName)
+        index = 0
+        for rInfo in self.gameUI.database.research.values():
+            if rInfo.category != self.title:
+                continue
+            
+            rWidget = ResearchButtonWidget(self.gameUI, rInfo.name)
 
             row = index // 3
             col = index % 3
             self.contentLayout.addWidget(rWidget, row, col)
-            self.researchWidgets[rName] = rWidget
+            self.researchWidgets[rInfo.name] = rWidget
             
             rWidget.clicked.connect(self.gameUI.purchaseResearch)
+            
+            index += 1
+
+        for rInfo in self.gameUI.database.research.values():
+            if rInfo.category != self.title:
+                continue
+            
+            rWidget = ResearchButtonWidget(self.gameUI, rInfo.name)
+
+            row = index // 3
+            col = index % 3
+            self.contentLayout.addWidget(rWidget, row, col)
+            self.researchWidgets[rInfo.name] = rWidget
+            
+            rWidget.clicked.connect(self.gameUI.purchaseResearch)
+            
+            index += 1
 
         self.scrollArea.setWidget(self.contentWidget)
 
@@ -348,14 +272,16 @@ class ResearchViewWidget(QWidget):
 
         mainLayout.setContentsMargins(2, 2, 2, 2)
         mainLayout.setSpacing(2)
-
+        
         # Create collapsible sections
         
         self.sections = []
         for rCategory in self.gameUI.state.database.params.researchCategories:
             section = ResearchCollapsibleSection(gameUI, rCategory)
+            section.setMinimumWidth(845)
+
             self.sections.append(section)
-            mainLayout.addWidget(section)        
+            mainLayout.addWidget(section)
         
     def updateLabels(self):
         pass

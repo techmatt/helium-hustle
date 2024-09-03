@@ -51,6 +51,7 @@
     <Content Include="database\gameDataProjects.json" />
     <Content Include="database\gameDataResearch.json" />
     <Content Include="database\gameDataResources.json" />
+    <Content Include="NOTES.txt" />
     <Content Include="TODO.txt" />
   </ItemGroup>
   <ItemGroup>

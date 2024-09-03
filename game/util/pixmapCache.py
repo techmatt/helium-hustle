@@ -1,6 +1,9 @@
+
+import os
+import shutil
+
 from PyQt6.QtGui import QPixmap
 from PyQt6.QtCore import Qt, QSize
-import os
 
 class PixmapCache:
     def __init__(self):
@@ -23,7 +26,16 @@ class PixmapCache:
         
         if not os.path.exists(imagePath):
             print(f"Warning: Image file not found: {imagePath}")
-            return QPixmap()
+            print("loading placeholder")
+            
+            imageDir = os.path.dirname(imagePath)
+            placeholderPath = os.path.join(imageDir, 'placeholder.png')
+    
+            if not os.path.exists(placeholderPath):
+                print(f"Placeholder image not found at {placeholderPath}")
+    
+            shutil.copy2(placeholderPath, imagePath)
+            return self.getPixmap(imagePath, targetWidth, targetHeight)
         
         pixmap = QPixmap(imagePath)
         if pixmap.isNull():

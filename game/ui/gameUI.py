@@ -75,9 +75,9 @@ class GameUI(QMainWindow):
         self.makeRightFrame()
         
         self.mainLayout.addWidget(self.leftFrame, 1)
-        self.mainLayout.addWidget(self.middleFrame, 2)
+        self.mainLayout.addWidget(self.middleFrame, 3)
         self.mainLayout.addStretch(1)
-        self.mainLayout.addWidget(self.rightFrame, 3)
+        self.mainLayout.addWidget(self.rightFrame, 1)
         
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.timerTick)

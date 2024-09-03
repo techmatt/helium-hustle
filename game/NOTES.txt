@@ -2,3 +2,4 @@
 prompts:
 
 a simple game icon of an ideology on a white background
+a simple game icon of mathematics on a white background

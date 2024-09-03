@@ -7,9 +7,42 @@
         "Electricity": 100
       },
       "ideology": "MILITARY",
-      "category": "Production",
+      "category": "Programming",
       "unlocks": [],
       "description": "Decreases the energy consumption of commands by 10%"
+    },
+    {
+      "name": "Efficient Gathering",
+      "cost": {
+        "Science": 200,
+        "Regolith": 1000
+      },
+      "ideology": "MILITARY",
+      "category": "Production",
+      "unlocks": [],
+      "description": "Increases the gathering rate of resources by 10%"
+    },
+    {
+      "name": "Better AI Playgrounds",
+      "cost": {
+        "Science": 1000,
+        "Electricity": 1000
+      },
+      "ideology": "SCIENCE",
+      "category": "Programming",
+      "unlocks": [],
+      "description": "Decreases the energy consumption of commands by 10%"
+    },
+    {
+      "name": "Helium-3 Applications",
+      "cost": {
+        "Science": 200,
+        "Regolith": 1000
+      },
+      "ideology": "SCIENCE",
+      "category": "Production",
+      "unlocks": [],
+      "description": "Increases the gathering rate of resources by 10%"
     }
   ]
 }
