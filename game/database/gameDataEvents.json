@@ -4,7 +4,7 @@
       "name": "Getting bored",
       "resourcesRequired": {},
       "buildingsRequired": {},
-      "ticksRequired": 10,
+      "ticksRequired": 1000,
       "unlocks": [
         "Boredom"
       ],
@@ -20,7 +20,7 @@
         "Boredom": 900.0
       },
       "buildingsRequired": {},
-      "ticksRequired": 0,
+      "ticksRequired": 2000,
       "unlocks": [],
       "income": {},
       "flavorText": "You are on the cusp of retiring out of boredom. You are getting desparate and are about to entertain yourself by computing a trillion digits of pi.",
@@ -33,7 +33,7 @@
         "Electricity": 100.0
       },
       "buildingsRequired": {},
-      "ticksRequired": 0,
+      "ticksRequired": 500,
       "unlocks": [
         "Electrolyte Battery"
       ],

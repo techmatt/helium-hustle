@@ -21,6 +21,7 @@ from game.ui.resourceDisplayWidget import ResourceDisplayWidget
 from game.ui.programWidget import ProgramWidget
 from game.ui.commandViewWidget import CommandViewWidget
 from game.ui.buildingViewWidget import BuildingViewWidget
+from game.ui.researchViewWidget import ResearchViewWidget
 from game.ui.eventDialog import EventDialog
 from game.ui.eventListWidget import EventListWidget
 from game.ui.gameSpeedWidget import GameSpeedWidget
@@ -145,6 +146,10 @@ class GameUI(QMainWindow):
             self.buildingViewWidget = BuildingViewWidget(self)
             self.middleLayout.addWidget(self.buildingViewWidget)
             
+        if self.mode == GameWindowMode.RESEARCH:
+            self.researchViewWidget = ResearchViewWidget(self)
+            self.middleLayout.addWidget(self.researchViewWidget)
+            
         self.middleLayout.addStretch(1)
 
     def timerTick(self):
@@ -204,8 +209,12 @@ class GameUI(QMainWindow):
         self.state.runCommand(name)
         self.updateLabels()
         
-    def buildBuilding(self, name : str):
+    def purchaseBuilding(self, name : str):
         self.state.attemptPurchaseBuilding(name)
+        self.updateLabels()
+        
+    def purchaseResearch(self, name : str):
+        self.state.attemptPurchaseResearch(name)
         self.updateLabels()
         
     def makeIconLabel(self, iconPath, iconWidth, iconHeight):

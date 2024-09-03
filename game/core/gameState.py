@@ -42,11 +42,21 @@ class EventState:
         self.displayed: bool = False # displayed is only used by the UI and is not relevant for the game state
         self.timestampStr : str = None
 
-        
+class ResearchState:
+    def __init__(self, info : ResearchInfo):
+        self.info: ResearchInfo = info
+        self.purchased: bool = False
+        self.unlocked: bool = False
+
+class ProjectState:
+    def __init__(self, info : ProjectInfo):
+        self.info: ProjectInfo = info
+        self.purchaseCount: int = 0
+        self.progress: float = 0.0
 
 class DirtyState:
     def __init__(self):
-        self.events: True
+        self.events: bool = True
         
 class ResourceList:
     def __init__(self, r : Dict[str, float]):
@@ -73,6 +83,16 @@ class GameState:
             rState.count = database.params.startingResources[rInfo.name]
             self.resources[rInfo.name] = rState
 
+        self.research: Dict[str, ResearchState] = {}
+        for rInfo in database.research.values():
+            rState = ResearchState(rInfo)
+            self.research[rInfo.name] = rState
+
+        self.projects: Dict[str, ProjectState] = {}
+        for pInfo in database.projects.values():
+            pState = ProjectState(pInfo)
+            self.projects[pInfo.name] = pState
+            
         self.events: Dict[str, EventState] = {}
         for eInfo in database.events.values():
             eState = EventState(eInfo)
@@ -235,8 +255,18 @@ class GameState:
         
         costs: Dict[str, float] = {}
         costMultiplier = pow(b.info.costScaling, b.totalCount)
-        for rName, baseCost in b.info.baseCost.items():
-            costs[rName] = math.floor(baseCost * costMultiplier)
+        for resourceName, baseCost in b.info.baseCost.items():
+            costs[resourceName] = math.floor(baseCost * costMultiplier)
+            
+        return ResourceList(costs)
+    
+    def getResearchCost(self, researchName : str) -> ResourceList:
+        r = self.research[researchName]
+        
+        costs: Dict[str, float] = {}
+        costMultiplier = 1.0
+        for resourceName, resourceCost in r.info.cost.items():
+            costs[resourceName] = math.floor(resourceCost * costMultiplier)
             
         return ResourceList(costs)
     
@@ -272,6 +302,16 @@ class GameState:
         self.spendResources(buildingCost)
         self.buildings[buildingName].totalCount += 1
         self.buildings[buildingName].activeCount += 1
+        self.updateStorageAndProcessors()
+        
+    def attemptPurchaseResearch(self, researchName):
+        researchCost = self.getResearchCost(researchName)
+        if not self.canAffordCost(researchCost):
+            print('cannot afford ' + researchName)
+            return
+        
+        self.spendResources(researchCost)
+        self.research[researchName].purchased = True
         self.updateStorageAndProcessors()
         
     def runCommand(self, commandName):

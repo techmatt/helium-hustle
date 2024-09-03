@@ -7,6 +7,7 @@
         "Electricity": 100
       },
       "ideology": "MILITARY",
+      "category": "Production",
       "unlocks": [],
       "description": "Decreases the energy consumption of commands by 10%"
     }

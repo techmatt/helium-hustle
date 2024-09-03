@@ -44,6 +44,7 @@ class ResearchInfo(NamedTuple):
     name: str
     cost: Dict[str, float]
     ideology: Ideology
+    category: str
     unlocks: List[str]
     description: str
     
@@ -57,6 +58,7 @@ class ProjectInfo(NamedTuple):
     persistentT: bool # project lasts between time travel
     unlocks: List[str]
     ideology: Ideology
+    category: str
     description: str
 
 class GameParams:
@@ -102,6 +104,9 @@ class GameParams:
         self.ticksPerProcessorCycle = 4 # the processors operate more slowly than the game clock
         
         self.maxProgramCount = 5
+        
+        self.researchCategories = ["Production", "Programming", "Defensive", "Offensive"]
+        self.projectCategories = ["Robot Welfare", "Temporal Constructs"]
 
 class GameDatabase:
     def __init__(self, filePathBase):
@@ -178,6 +183,7 @@ class GameDatabase:
                 name = r['name'],
                 cost = r['cost'],
                 ideology = Ideology[r['ideology']],  # Convert string to Ideology enum
+                category = r['category'],
                 unlocks = r['unlocks'],
                 description = r['description']
             )
@@ -195,11 +201,23 @@ class GameDatabase:
                 persistentT = bool(p['persistentT']),
                 unlocks = p['unlocks'],
                 ideology = Ideology[p['ideology']],
+                category = p['category'],
                 description = p['description']
             )
             self.projects[curProject.name] = curProject
             
         self.params: GameParams = GameParams(self)
+        self.verifyData()
+        
+    def verifyData(self):
+        for r in self.research.values():
+            if not (r.category in self.params.researchCategories):
+                raise ValueError(f"Invalid research category {r.category}")
+            
+        for p in self.projects.values():
+            if not (p.category in self.params.projectCategories):
+                raise ValueError(f"Invalid project category {p.category}")
+        
         
     def saveToJSON(self, filePath: str):
         data = {

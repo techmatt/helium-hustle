@@ -28,9 +28,9 @@ class EventListWidget(QWidget):
         frameLayout = QVBoxLayout(frame)
 
         # Create the three collapsible sections
-        self.activeSection = CollapsibleSection("Active Events")
-        self.ongoingSection = CollapsibleSection("Ongoing Events")
-        self.finishedSection = CollapsibleSection("Finished Events")
+        self.activeSection = EventCollapsibleSection("Active Events")
+        self.ongoingSection = EventCollapsibleSection("Ongoing Events")
+        self.finishedSection = EventCollapsibleSection("Finished Events")
 
         frameLayout.addWidget(self.activeSection)
         frameLayout.addWidget(self.ongoingSection)
@@ -39,12 +39,7 @@ class EventListWidget(QWidget):
         mainLayout.addWidget(frame)
 
         self.loadAllEvents()
-        # Add sample events
-        #for i in range(20):  # Add 20 events to each section for scrolling demo
-        #    self.add_event(self.activeSection, f"Active Event {i}", f"2023-05-{i:02d}", f"Description of active event {i}")
-        #    self.add_event(self.ongoingSection, f"Ongoing Event {i}", f"2023-05-{i:02d}", f"Description of ongoing event {i}")
-        #    self.add_event(self.finishedSection, f"Finished Event {i}", f"2023-05-{i:02d}", f"Description of finished event {i}")
-        
+
     def loadAllEvents(self):
         state : GameState = self.gameUI.state
         for e in state.events.values():
@@ -64,7 +59,7 @@ class EventListWidget(QWidget):
         eventWidget.clicked.connect(partial(self.gameUI.displayEvent, eState))
         section.addWidget(eventWidget)
 
-class CollapsibleSection(QWidget):
+class EventCollapsibleSection(QWidget):
     def __init__(self, title):
         super().__init__()
         self.initUI(title)

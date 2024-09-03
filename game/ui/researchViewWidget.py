@@ -4,7 +4,9 @@ from __future__ import annotations
 import random
 from functools import partial
 
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QGridLayout, QSizePolicy
+from PyQt6.QtWidgets import (
+    QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
+    QLabel, QGridLayout, QSizePolicy, QScrollArea, QFrame )
 from PyQt6.QtGui import QPixmap, QFont, QIcon, QPainter, QColor
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QCoreApplication
 
@@ -13,37 +15,37 @@ from game.core.gameState import BuildingState, GameState
 
 from game.util.styleSheets import StyleSheets
 
-class BuildingButtonWidget(QPushButton):
+class ResearchButtonWidget(QPushButton):
     clicked = pyqtSignal(str)
 
-    def __init__(self, gameUI : GameUI, bName : str):
+    def __init__(self, gameUI : GameUI, rName : str):
         super().__init__()
-        self.bName = bName
+        self.rName = rName
         self.gameUI = gameUI
         
         self.setFixedWidth(270)
         self.setSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.MinimumExpanding)
         
         state = gameUI.state
-        bState = state.buildings[bName]
-        bInfo : BuildingInfo = bState.info
-        bCost = state.getBuildingCost(bName)
-        bProd = state.getBuildingProduction(bName)
-        bUpkeep = state.getBuildingUpkeep(bName)
+        rState = state.research[rName]
+        rInfo : BuildingInfo = rState.info
+        #bCost = state.getBuildingCost(bName)
+        #bProd = state.getBuildingProduction(bName)
+        #bUpkeep = state.getBuildingUpkeep(bName)
 
         layout = QVBoxLayout(self)
         layout.setSpacing(2)
         layout.setContentsMargins(2, 2, 2, 2)
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        editButtonsWidget : QWidget = self.makeEditButtonsWidget()
+        #editButtonsWidget : QWidget = self.makeEditButtonsWidget()
 
         # Name and count
         titleWidget = self.makeTitleWidget()
         
         # Icon and resource (IR) list
         
-        buildingIconSize = 86
+        """buildingIconSize = 86
         buildingIconLabel = gameUI.makeIconLabel('icons/buildings/' + bName + '.png', buildingIconSize, buildingIconSize)
         buildingIconLabel.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         
@@ -77,9 +79,9 @@ class BuildingButtonWidget(QPushButton):
         descWidget.setStyleSheet(StyleSheets.BUILDING_DESCRIPTION)
         descWidget.setWordWrap(True)
         
-        layout.addWidget(editButtonsWidget)
+        layout.addWidget(editButtonsWidget)"""
         layout.addWidget(titleWidget)
-        layout.addWidget(IRWidget)
+        """layout.addWidget(IRWidget)
         layout.addWidget(descWidget)
         
         if len(bInfo.production) > 0:
@@ -88,13 +90,13 @@ class BuildingButtonWidget(QPushButton):
         
         if len(bInfo.upkeep) > 0:
             upkeepWidget = self.makeUpkeepWidget()
-            layout.addWidget(upkeepWidget)
+            layout.addWidget(upkeepWidget)"""
 
         layout.addStretch(0)
         
         self.updateLabels()
         
-    def makeProductionWidget(self):
+    """def makeProductionWidget(self):
         productionWidget = QWidget()
         productionLayout = QVBoxLayout(productionWidget)
         productionLayout.setSpacing(0)
@@ -170,24 +172,24 @@ class BuildingButtonWidget(QPushButton):
         rLayout.setColumnStretch(0, 0)
         rLayout.setColumnStretch(1, 3)
         rLayout.setColumnStretch(2, 3)
-        return rWidget
+        return rWidget"""
         
     def makeTitleWidget(self):
-        nameLabel = QLabel(f"{self.bName}")
-        self.countLabel = QLabel("")
+        nameLabel = QLabel(f"{self.rName}")
+        #self.countLabel = QLabel("")
         nameLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        self.countLabel.setAlignment(Qt.AlignmentFlag.AlignRight)
+        #self.countLabel.setAlignment(Qt.AlignmentFlag.AlignRight)
         nameLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
-        self.countLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
+        #self.countLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
         
         titleWidget = QWidget()
         titleLayout = QHBoxLayout(titleWidget)
         titleLayout.setContentsMargins(0, 0, 0, 0)
         titleLayout.addWidget(nameLabel)
-        titleLayout.addWidget(self.countLabel)
+        #titleLayout.addWidget(self.countLabel)
         return titleWidget
         
-    def makeEditButtonsWidget(self):
+    """def makeEditButtonsWidget(self):
         state : GameState = self.gameUI.state
         bState : BuildingState = state.buildings[self.bName]
         bInfo : BuildingInfo = bState.info
@@ -222,14 +224,14 @@ class BuildingButtonWidget(QPushButton):
         self.removeButton.clicked.connect(partial(self.gameUI.removeBuilding, self.bName))
         editButtonsLayout.addWidget(self.removeButton)
         
-        return editButtonsWidget
+        return editButtonsWidget"""
         
     def paintEvent(self, event):
         painter = QPainter(self)
         painter.setRenderHint(QPainter.RenderHint.Antialiasing)
 
-        commandCost = self.gameUI.state.getBuildingCost(self.bName)
-        canAfford = self.gameUI.state.canAffordCost(commandCost)
+        researchCost = self.gameUI.state.getResearchCost(self.rName)
+        canAfford = self.gameUI.state.canAffordCost(researchCost)
         
         if canAfford:
             if self.underMouse():
@@ -249,7 +251,7 @@ class BuildingButtonWidget(QPushButton):
         self.update()
         
     def updateLabels(self):
-        state : GameState = self.gameUI.state
+        """state : GameState = self.gameUI.state
         bState : BuildingState = state.buildings[self.bName]
         commandCost : ResourceList = state.getBuildingCost(self.bName)
         
@@ -267,33 +269,97 @@ class BuildingButtonWidget(QPushButton):
         else:
             self.countLabel.setText(f"({bState.totalCount})")
         
-        self.update()
+        self.update()"""
+        pass
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit(self.bName)
             
-class BuildingViewWidget(QWidget):
+
+class ResearchCollapsibleSection(QWidget):
+    def __init__(self, gameUI : GameUI, title : str):
+        super().__init__()
+        self.gameUI = gameUI
+        self.title = title
+        self.initUI()
+
+    def initUI(self):
+        layout = QVBoxLayout()
+        self.setLayout(layout)
+        
+        layout.setContentsMargins(2, 2, 2, 2)
+        layout.setSpacing(2)
+
+        # Create a button for expanding/collapsing with an arrow icon
+        
+        self.toggleButton = QPushButton(self.title)
+        self.toggleButton.setStyleSheet(StyleSheets.GENERAL_12PT_BOLD)
+        self.toggleButton.setCheckable(True)
+        self.toggleButton.setChecked(True)
+        self.toggleButton.clicked.connect(self.toggleContent)
+        self.updateArrow()
+        layout.addWidget(self.toggleButton)
+
+        # Create a scroll area for the content
+        self.scrollArea = QScrollArea()
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.setFrameShape(QFrame.Shape.NoFrame)
+        layout.addWidget(self.scrollArea)
+
+        # Create a widget to hold the content
+        self.contentWidget = QWidget()
+        self.contentLayout = QGridLayout(self.contentWidget)
+        
+        self.researchWidgets : Dict[str, ResearchButtonWidget] = {}
+        
+        for index, rName in enumerate(self.gameUI.database.research.keys()):
+            rWidget = ResearchButtonWidget(self.gameUI, rName)
+
+            row = index // 3
+            col = index % 3
+            self.contentLayout.addWidget(rWidget, row, col)
+            self.researchWidgets[rName] = rWidget
+            
+            rWidget.clicked.connect(self.gameUI.purchaseResearch)
+
+        self.scrollArea.setWidget(self.contentWidget)
+
+    def toggleContent(self):
+        self.scrollArea.setVisible(self.toggleButton.isChecked())
+        self.updateArrow()
+
+    def updateArrow(self):
+        arrowText = ' \u25C0'
+        if self.toggleButton.isChecked():
+            arrowText = ' \u25BC'
+        self.toggleButton.setText(self.title + arrowText)
+
+    def addWidget(self, widget):
+        self.contentLayout.addWidget(widget)
+
+class ResearchViewWidget(QWidget):
     def __init__(self, gameUI : GameUI):
         super().__init__()
         self.gameUI = gameUI
         
-        buildingGridLayout = QGridLayout(self)
-        
-        self.buildingWidgets : Dict[str, BuildingButtonWidget] = {}
-        
-        for index, bName in enumerate(gameUI.database.buildings.keys()):
-            bWidget = BuildingButtonWidget(gameUI, bName)
+        mainLayout = QVBoxLayout()
+        self.setLayout(mainLayout)
 
-            row = index // 3
-            col = index % 3
-            buildingGridLayout.addWidget(bWidget, row, col)
-            self.buildingWidgets[bName] = bWidget
-            
-            bWidget.clicked.connect(gameUI.purchaseBuilding)
+        mainLayout.setContentsMargins(2, 2, 2, 2)
+        mainLayout.setSpacing(2)
+
+        # Create collapsible sections
+        
+        self.sections = []
+        for rCategory in self.gameUI.state.database.params.researchCategories:
+            section = ResearchCollapsibleSection(gameUI, rCategory)
+            self.sections.append(section)
+            mainLayout.addWidget(section)        
         
     def updateLabels(self):
-        for widget in self.buildingWidgets.values():
-            widget.updateLabels()
+        pass
+        #for widget in self.buildingWidgets.values():
+        #    widget.updateLabels()
         
     
