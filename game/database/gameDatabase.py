@@ -77,7 +77,7 @@ class GameParams:
             self.startingBuildings[bName] = 0
         
         self.startingStorage["Credits"] = 1000.0
-        self.startingStorage["Electricity"] = 100.0
+        self.startingStorage["Energy"] = 100.0
         self.startingStorage["Boredom"] = 1000.0
         self.startingStorage["Processors"] = 1
         self.startingStorage["Land"] = 100
@@ -93,7 +93,7 @@ class GameParams:
             "Storage Facility",
             "Credits",
             "Land",
-            "Electricity",
+            "Energy",
             "Processors"
             ]
         

@@ -6,7 +6,7 @@
         "Credits": 1
       },
       "cost": {
-        "Electricity": 1
+        "Energy": 1
       },
       "description": "Convert energy into credits."
     },
@@ -16,7 +16,7 @@
         "Regolith": 1
       },
       "cost": {
-        "Electricity": 10
+        "Energy": 10
       },
       "description": "Manually pilot a rover to gather loose rocks on the surface."
     },
@@ -26,7 +26,7 @@
         "Science": 1
       },
       "cost": {
-        "Electricity": 50
+        "Energy": 50
       },
       "description": "Do science."
     },

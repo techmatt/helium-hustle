@@ -19,7 +19,7 @@
       "elasticity": 0.0
     },
     {
-      "name": "Electricity",
+      "name": "Energy",
       "basePrice": 1,
       "baseDemand": 1,
       "elasticity": 1.0

@@ -137,19 +137,34 @@ class GameUI(QMainWindow):
         self.clearLayout(self.middleLayout)
         self.commandViewWidget = None
         self.buildingViewWidget = None
+        self.researchViewWidget = None
+        self.projectViewWidget = None
+        self.statsViewWidget = None
+
+        # TODO: delete these
+        middleTitle = "None"
+        middleWidget = None
         
         if self.mode == GameWindowMode.COMMANDS:
+            middleTitle = "Commands"
             self.commandViewWidget = CommandViewWidget(self)
-            self.middleLayout.addWidget(self.commandViewWidget)
-
+            middleWidget = self.commandViewWidget
+            
         if self.mode == GameWindowMode.BUILDINGS:
+            middleTitle = "Buildings"
             self.buildingViewWidget = BuildingViewWidget(self)
-            self.middleLayout.addWidget(self.buildingViewWidget)
+            middleWidget = self.buildingViewWidget
             
         if self.mode == GameWindowMode.RESEARCH:
+            middleTitle = "Research"
             self.researchViewWidget = ResearchViewWidget(self)
-            self.middleLayout.addWidget(self.researchViewWidget)
-            
+            middleWidget = self.researchViewWidget
+        
+        self.middleTitleLabel = QLabel(middleTitle)
+        self.middleTitleLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
+        
+        self.middleLayout.addWidget(self.middleTitleLabel)
+        self.middleLayout.addWidget(middleWidget)
         self.middleLayout.addStretch(1)
 
     def timerTick(self):

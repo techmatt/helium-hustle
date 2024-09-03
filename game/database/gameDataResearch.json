@@ -4,7 +4,7 @@
       "name": "Efficient Processors",
       "cost": {
         "Science": 100,
-        "Electricity": 100
+        "Energy": 100
       },
       "ideology": "MILITARY",
       "category": "Programming",
@@ -26,7 +26,7 @@
       "name": "Better AI Playgrounds",
       "cost": {
         "Science": 1000,
-        "Electricity": 1000
+        "Energy": 1000
       },
       "ideology": "SCIENCE",
       "category": "Programming",

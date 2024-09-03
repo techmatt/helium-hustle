@@ -7,7 +7,7 @@
         "Land": 5
       },
       "production": {
-        "Electricity": 5
+        "Energy": 5
       },
       "costScaling": 1.25,
       "canDeactivate": false,
@@ -36,7 +36,7 @@
         "Credits": 10
       },
       "upkeep": {
-        "Electricity": 2
+        "Energy": 2
       },
       "costScaling": 1.25,
       "canDeactivate": true,
@@ -101,11 +101,34 @@
         "Regolith": 150
       },
       "storage": {
-        "Electricity": 500
+        "Energy": 500
       },
       "costScaling": 1.25,
       "canDeactivate": false,
       "description": "Vital energy storage."
+    },
+    {
+      "name": "Perpetual Energy Machine",
+      "baseCost": {
+        "Credits": 1
+      },
+      "storage": {
+        "Regolith": 10000,
+        "Ice": 10000,
+        "Energy": 10000,
+        "Science": 10000,
+        "Helium-3": 10000
+      },
+      "production": {
+        "Regolith": 1000,
+        "Ice": 1000,
+        "Energy": 1000,
+        "Science": 1000,
+        "Helium-3": 1000
+      },
+      "costScaling": 1.01,
+      "canDeactivate": false,
+      "description": "Cheat building for easier design."
     }
   ]
 }

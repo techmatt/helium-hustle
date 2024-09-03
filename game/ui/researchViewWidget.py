@@ -232,21 +232,6 @@ class ResearchCollapsibleSection(QWidget):
             
             index += 1
 
-        for rInfo in self.gameUI.database.research.values():
-            if rInfo.category != self.title:
-                continue
-            
-            rWidget = ResearchButtonWidget(self.gameUI, rInfo.name)
-
-            row = index // 3
-            col = index % 3
-            self.contentLayout.addWidget(rWidget, row, col)
-            self.researchWidgets[rInfo.name] = rWidget
-            
-            rWidget.clicked.connect(self.gameUI.purchaseResearch)
-            
-            index += 1
-
         self.scrollArea.setWidget(self.contentWidget)
 
     def toggleContent(self):

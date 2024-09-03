@@ -28,9 +28,9 @@
       "options": [ "Spend all boredom", "Maybe later" ]
     },
     {
-      "name": "Electricity storage needed",
+      "name": "Energy storage needed",
       "resourcesRequired": {
-        "Electricity": 100.0
+        "Energy": 100.0
       },
       "buildingsRequired": {},
       "ticksRequired": 500,
@@ -39,7 +39,7 @@
       ],
       "income": {},
       "flavorText": "Your solar arrays are generating surplus energy during lunar days. The potential efficiency gains from storing this power for use during the long lunar nights are apparent.",
-      "mechanicsText": "You can now build Electrolyte Batteries, which can store significant amounts of electricity."
+      "mechanicsText": "You can now build Electrolyte Batteries, which can store significant amounts of Energy."
     }
   ]
 }
