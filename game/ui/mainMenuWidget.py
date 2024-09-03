@@ -73,6 +73,9 @@ class MainMenuWidget(QWidget):
             ("Commands", "commands.png"),
             ("Buildings", "buildings.png"),
             ("Research", "research.png"),
+            ("Projects", "projects.png"),
+            ("Ideology", "ideology.png"),
+            ("Stats", "stats.png"),
             ("Achievements", "achievements.png"),
             ("Options", "options.png"),
             ("Exit", "exit.png")
@@ -80,7 +83,7 @@ class MainMenuWidget(QWidget):
 
         for index, (name, iconPath) in enumerate(icons):
             
-            button = IconButton(name, 'icons/actionGrid/' + iconPath, self.gameUI)
+            button = IconButton(name, 'icons/mainMenu/' + iconPath, self.gameUI)
             button.clicked.connect(self.onButtonClicked)
             
             row = index // 3
@@ -93,6 +96,24 @@ class MainMenuWidget(QWidget):
             self.gameUI.makeMiddleFrame()
         if name == 'Buildings':
             self.gameUI.mode = GameWindowMode.BUILDINGS
+            self.gameUI.makeMiddleFrame()
+        if name == 'Research':
+            self.gameUI.mode = GameWindowMode.RESEARCH
+            self.gameUI.makeMiddleFrame()
+        if name == 'Projects':
+            self.gameUI.mode = GameWindowMode.PROJECTS
+            self.gameUI.makeMiddleFrame()
+        if name == 'Ideology':
+            self.gameUI.mode = GameWindowMode.IDEOLOGY
+            self.gameUI.makeMiddleFrame()
+        if name == 'Stats':
+            self.gameUI.mode = GameWindowMode.STATS
+            self.gameUI.makeMiddleFrame()
+        if name == 'Achievements':
+            self.gameUI.mode = GameWindowMode.ACHIEVEMENTS
+            self.gameUI.makeMiddleFrame()
+        if name == 'Options':
+            self.gameUI.mode = GameWindowMode.OPTIONS
             self.gameUI.makeMiddleFrame()
         if name == 'Exit':
             self.gameUI.triggerExit()
