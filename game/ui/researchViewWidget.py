@@ -154,26 +154,20 @@ class ResearchButtonWidget(QPushButton):
         self.update()
         
     def updateLabels(self):
-        """state : GameState = self.gameUI.state
-        bState : BuildingState = state.buildings[self.bName]
-        commandCost : ResourceList = state.getBuildingCost(self.bName)
+        state : GameState = self.gameUI.state
+        rState : ResearchState = state.research[self.rName]
+        researchCost : ResourceList = state.getResearchCost(self.rName)
         
-        for rName, v in commandCost.r.items():
-            rValue = state.resources[rName].count
+        for resourceName, v in researchCost.r.items():
+            rValue = state.resources[resourceName].count
             if rValue < v:
-                self.rNameLabels[rName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST_RED)
-                self.rValueLabels[rName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST_RED)
+                self.resourceNameLabels[resourceName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST_RED)
+                self.resourceValueLabels[resourceName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST_RED)
             else:
-                self.rNameLabels[rName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
-                self.rValueLabels[rName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
-                
-        if bState.info.canDeactivate:
-            self.countLabel.setText(f"({bState.activeCount}/{bState.totalCount})")
-        else:
-            self.countLabel.setText(f"({bState.totalCount})")
+                self.resourceNameLabels[resourceName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
+                self.resourceValueLabels[resourceName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
         
-        self.update()"""
-        pass
+        self.update()
 
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
@@ -270,7 +264,7 @@ class ResearchViewWidget(QWidget):
         
     def updateLabels(self):
         pass
-        #for widget in self.buildingWidgets.values():
-        #    widget.updateLabels()
+        for widget in self.buildingWidgets.values():
+            widget.updateLabels()
         
     

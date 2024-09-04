@@ -25,6 +25,7 @@
     <Compile Include="database\gameDatabase.py" />
     <Compile Include="main.py" />
     <Compile Include="ui\buildingViewWidget.py" />
+    <Compile Include="ui\collapsibleMenuWidget.py" />
     <Compile Include="ui\commandViewWidget.py" />
     <Compile Include="ui\eventDialog.py" />
     <Compile Include="ui\eventListWidget.py" />
