@@ -18,19 +18,18 @@ from game.util.styleSheets import StyleSheets
 class CollapsibleSectionEntries:
     def __init__(self, title : str):
         self.title = title
-        self.entries : List[QWidget] = []
+        self.childWidgets : List[QWidget] = []
         
 class CollapsibleSectionWidget(QWidget):
-    def __init__(self, gameUI : GameUI, section : CollapsibleSectionEntries):
+    def __init__(self, gameUI : GameUI, sectionEntry : CollapsibleSectionEntries):
         super().__init__()
         self.gameUI = gameUI
-        self.entries = section.entries
-        self.title = section.title
+        self.childWidgets = sectionEntry.childWidgets
+        self.title = sectionEntry.title
         self.initUI()
 
     def initUI(self):
         layout = QVBoxLayout(self)
-        #self.setLayout(layout)
         
         layout.setContentsMargins(2, 2, 2, 2)
         layout.setSpacing(2)
@@ -55,12 +54,12 @@ class CollapsibleSectionWidget(QWidget):
         self.contentLayout = QGridLayout(self.contentWidget)
         
         index = 0
-        for entry in self.entries:
+        for childWidget in self.childWidgets:
             row = index // 3
             col = index % 3
-            self.contentLayout.addWidget(entry, row, col)
+            self.contentLayout.addWidget(childWidget, row, col)
             
-            entry.clicked.connect(self.gameUI.purchaseResearch)
+            #entry.clicked.connect(self.gameUI.purchaseResearch)
             
             index += 1
 
@@ -76,11 +75,11 @@ class CollapsibleSectionWidget(QWidget):
             arrowText = ' \u25BC'
         self.toggleButton.setText(self.title + arrowText)
 
-    def addWidget(self, widget):
-        self.contentLayout.addWidget(widget)
+    #def addWidget(self, widget):
+    #    self.contentLayout.addWidget(widget)
 
 class CollapsibleMenuWidget(QWidget):
-    def __init__(self, gameUI : GameUI, sections : Dict[str, CollapsibleSectionEntries]):
+    def __init__(self, gameUI : GameUI, sectionEntries : Dict[str, CollapsibleSectionEntries]):
         super().__init__()
         self.gameUI = gameUI
         
@@ -92,16 +91,17 @@ class CollapsibleMenuWidget(QWidget):
         
         # Create collapsible sections
         
-        self.sections : List[CollapsibleSectionWidget] = []
-        for section in sections.values():
-            sectionWidget = CollapsibleSectionWidget(gameUI, section)
+        self.sectionWidgets : List[CollapsibleSectionWidget] = []
+        for sectionEntry in sectionEntries.values():
+            sectionWidget = CollapsibleSectionWidget(gameUI, sectionEntry)
             sectionWidget.setMinimumWidth(845)
 
-            self.sections.append(sectionWidget)
+            self.sectionWidgets.append(sectionWidget)
             mainLayout.addWidget(sectionWidget)
         
     def updateLabels(self):
-        for widget in self.buildingWidgets.values():
-            widget.updateLabels()
+        for sectionWidget in self.sectionWidgets.values():
+            for elementWidget in sectionWidget.entries:
+                elementWidget.updateLabels()
         
     
