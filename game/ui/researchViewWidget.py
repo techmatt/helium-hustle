@@ -12,6 +12,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QCoreApplication
 
 from game.database.gameDatabase import BuildingInfo, GameDatabase
 from game.core.gameState import BuildingState, GameState
+from game.ui.collapsibleMenuWidget import CollapsibleMenuWidget, CollapsibleSectionEntries
 
 from game.util.styleSheets import StyleSheets
 
@@ -36,11 +37,9 @@ class ResearchButtonWidget(QPushButton):
         layout.setContentsMargins(2, 2, 2, 2)
         layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 
-        # Name and count
         titleWidget = self.makeTitleWidget()
         
-        # Icon and resource (IR) list
-        
+        # Icon and resource (IR) list        
         researchIconSize = 86
         researchIconLabel = gameUI.makeIconLabel('icons/research/' + rName + '.png', researchIconSize, researchIconSize)
         researchIconLabel.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
@@ -116,17 +115,13 @@ class ResearchButtonWidget(QPushButton):
         
     def makeTitleWidget(self):
         nameLabel = QLabel(f"{self.rName}")
-        #self.countLabel = QLabel("")
         nameLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
-        #self.countLabel.setAlignment(Qt.AlignmentFlag.AlignRight)
         nameLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
-        #self.countLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
         
         titleWidget = QWidget()
         titleLayout = QHBoxLayout(titleWidget)
         titleLayout.setContentsMargins(0, 0, 0, 0)
         titleLayout.addWidget(nameLabel)
-        #titleLayout.addWidget(self.countLabel)
         return titleWidget
         
     def paintEvent(self, event):
@@ -172,99 +167,25 @@ class ResearchButtonWidget(QPushButton):
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit(self.rName)
-            
 
-class ResearchCollapsibleSection(QWidget):
-    def __init__(self, gameUI : GameUI, title : str):
-        super().__init__()
-        self.gameUI = gameUI
-        self.title = title
-        self.initUI()
-
-    def initUI(self):
-        layout = QVBoxLayout()
-        self.setLayout(layout)
-        
-        layout.setContentsMargins(2, 2, 2, 2)
-        layout.setSpacing(2)
-
-        # Create a button for expanding/collapsing with an arrow icon
-        
-        self.toggleButton = QPushButton(self.title)
-        self.toggleButton.setStyleSheet(StyleSheets.GENERAL_12PT_BOLD)
-        self.toggleButton.setCheckable(True)
-        self.toggleButton.setChecked(True)
-        self.toggleButton.clicked.connect(self.toggleContent)
-        self.updateArrow()
-        layout.addWidget(self.toggleButton)
-
-        # Create a scroll area for the content
-        self.scrollArea = QScrollArea()
-        self.scrollArea.setWidgetResizable(True)
-        self.scrollArea.setFrameShape(QFrame.Shape.NoFrame)
-        layout.addWidget(self.scrollArea)
-
-        # Create a widget to hold the content
-        self.contentWidget = QWidget()
-        self.contentLayout = QGridLayout(self.contentWidget)
-        
-        self.researchWidgets : Dict[str, ResearchButtonWidget] = {}
-        
-        index = 0
-        for rInfo in self.gameUI.database.research.values():
-            if rInfo.category != self.title:
-                continue
-            
-            rWidget = ResearchButtonWidget(self.gameUI, rInfo.name)
-
-            row = index // 3
-            col = index % 3
-            self.contentLayout.addWidget(rWidget, row, col)
-            self.researchWidgets[rInfo.name] = rWidget
-            
-            rWidget.clicked.connect(self.gameUI.purchaseResearch)
-            
-            index += 1
-
-        self.scrollArea.setWidget(self.contentWidget)
-
-    def toggleContent(self):
-        self.scrollArea.setVisible(self.toggleButton.isChecked())
-        self.updateArrow()
-
-    def updateArrow(self):
-        arrowText = ' \u25C0'
-        if self.toggleButton.isChecked():
-            arrowText = ' \u25BC'
-        self.toggleButton.setText(self.title + arrowText)
-
-    def addWidget(self, widget):
-        self.contentLayout.addWidget(widget)
-
-class ResearchViewWidget(QWidget):
+class ResearchView():
     def __init__(self, gameUI : GameUI):
         super().__init__()
         self.gameUI = gameUI
         
-        mainLayout = QVBoxLayout()
-        self.setLayout(mainLayout)
+        self.sections: Dict[str, CollapsibleSectionEntries] = {}
 
-        mainLayout.setContentsMargins(2, 2, 2, 2)
-        mainLayout.setSpacing(2)
+        for researchCategory in self.gameUI.state.database.params.researchCategories:
+            self.sections[researchCategory] = CollapsibleSectionEntries(researchCategory)
         
-        # Create collapsible sections
-        
-        self.sections = []
-        for rCategory in self.gameUI.state.database.params.researchCategories:
-            section = ResearchCollapsibleSection(gameUI, rCategory)
-            section.setMinimumWidth(845)
+        for rState in self.gameUI.state.research.values():
+            entryWidget = ResearchButtonWidget(self.gameUI, rState.info.name)
+            entryWidget.clicked.connect(gameUI.purchaseResearch)
+            self.sections[rState.info.category].entries.append(entryWidget)
 
-            self.sections.append(section)
-            mainLayout.addWidget(section)
+        self.mainWidget = CollapsibleMenuWidget(gameUI, self.sections)
         
     def updateLabels(self):
-        pass
-        for widget in self.buildingWidgets.values():
-            widget.updateLabels()
+        self.mainWidget.updateLabels()  
         
     

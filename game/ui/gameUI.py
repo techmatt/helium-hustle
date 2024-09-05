@@ -21,7 +21,7 @@ from game.ui.resourceDisplayWidget import ResourceDisplayWidget
 from game.ui.programWidget import ProgramWidget
 from game.ui.commandViewWidget import CommandViewWidget
 from game.ui.buildingViewWidget import BuildingViewWidget
-from game.ui.researchViewWidget import ResearchViewWidget
+from game.ui.researchViewWidget import ResearchView
 from game.ui.eventDialog import EventDialog
 from game.ui.eventListWidget import EventListWidget
 from game.ui.gameSpeedWidget import GameSpeedWidget
@@ -157,8 +157,8 @@ class GameUI(QMainWindow):
             
         if self.mode == GameWindowMode.RESEARCH:
             middleTitle = "Research"
-            self.researchViewWidget = ResearchViewWidget(self)
-            middleWidget = self.researchViewWidget
+            self.researchView = ResearchView(self)
+            middleWidget = self.researchView.mainWidget
         
         self.middleTitleLabel = QLabel(middleTitle)
         self.middleTitleLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)

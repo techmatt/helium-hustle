@@ -16,16 +16,16 @@ from game.core.gameState import BuildingState, GameState
 from game.util.styleSheets import StyleSheets
 
 class CollapsibleSectionEntries:
-    def __init__(self, name : str):
-        self.name = name
+    def __init__(self, title : str):
+        self.title = title
         self.entries : List[QWidget] = []
         
 class CollapsibleSectionWidget(QWidget):
-    def __init__(self, gameUI : GameUI, title : str, entries : CollapsibleSectionEntries):
+    def __init__(self, gameUI : GameUI, section : CollapsibleSectionEntries):
         super().__init__()
         self.gameUI = gameUI
-        self.entries = entries
-        self.title = title
+        self.entries = section.entries
+        self.title = section.title
         self.initUI()
 
     def initUI(self):
@@ -80,7 +80,7 @@ class CollapsibleSectionWidget(QWidget):
         self.contentLayout.addWidget(widget)
 
 class CollapsibleMenuWidget(QWidget):
-    def __init__(self, gameUI : GameUI, sections : List[CollapsibleSectionEntries]):
+    def __init__(self, gameUI : GameUI, sections : Dict[str, CollapsibleSectionEntries]):
         super().__init__()
         self.gameUI = gameUI
         
@@ -93,9 +93,9 @@ class CollapsibleMenuWidget(QWidget):
         # Create collapsible sections
         
         self.sections : List[CollapsibleSectionWidget] = []
-        for section in sections:
+        for section in sections.values():
             sectionWidget = CollapsibleSectionWidget(gameUI, section)
-            section.setMinimumWidth(845)
+            sectionWidget.setMinimumWidth(845)
 
             self.sections.append(sectionWidget)
             mainLayout.addWidget(sectionWidget)
