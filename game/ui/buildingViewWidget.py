@@ -251,16 +251,17 @@ class BuildingButtonWidget(QPushButton):
     def updateLabels(self):
         state : GameState = self.gameUI.state
         bState : BuildingState = state.buildings[self.bName]
-        commandCost : ResourceList = state.getBuildingCost(self.bName)
+        bCost : ResourceList = state.getBuildingCost(self.bName)
         
-        for rName, v in commandCost.r.items():
+        for rName, rCost in bCost.r.items():
             rValue = state.resources[rName].count
-            if rValue < v:
+            if rValue < rCost:
                 self.rNameLabels[rName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST_RED)
                 self.rValueLabels[rName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST_RED)
             else:
                 self.rNameLabels[rName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
                 self.rValueLabels[rName].setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
+            self.rValueLabels[rName].setText(f"{rCost}")
                 
         if bState.info.canDeactivate:
             self.countLabel.setText(f"({bState.activeCount}/{bState.totalCount})")
@@ -272,29 +273,6 @@ class BuildingButtonWidget(QPushButton):
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit(self.bName)
-            
-"""class BuildingViewWidget(QWidget):
-    def __init__(self, gameUI : GameUI):
-        super().__init__()
-        self.gameUI = gameUI
-        
-        buildingGridLayout = QGridLayout(self)
-        
-        self.buildingWidgets : Dict[str, BuildingButtonWidget] = {}
-        
-        for index, bName in enumerate(gameUI.database.buildings.keys()):
-            bWidget = BuildingButtonWidget(gameUI, bName)
-
-            row = index // 3
-            col = index % 3
-            buildingGridLayout.addWidget(bWidget, row, col)
-            self.buildingWidgets[bName] = bWidget
-            
-            bWidget.clicked.connect(gameUI.purchaseBuilding)
-        
-    def updateLabels(self):
-        for widget in self.buildingWidgets.values():
-            widget.updateLabels()"""
             
 class BuildingView():
     def __init__(self, gameUI : GameUI):

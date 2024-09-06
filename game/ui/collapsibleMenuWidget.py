@@ -54,8 +54,6 @@ class CollapsibleSectionWidget(QWidget):
             col = index % 3
             self.contentLayout.addWidget(childWidget, row, col)
             
-            #entry.clicked.connect(self.gameUI.purchaseResearch)
-            
             index += 1
             
         layout.addWidget(self.contentWidget)
@@ -86,14 +84,6 @@ class CollapsibleMenuWidget(QWidget):
         self.scrollArea.setWidgetResizable(True)
         self.scrollArea.setFrameShape(QFrame.Shape.NoFrame)
         self.scrollArea.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        #self.scrollArea.setMinimumWidth(600)
-        #self.scrollArea.setMinimumHeight(600)
-        #policy = self.scrollArea.sizePolicy()
-        #policy.setVerticalStretch(1)
-        #policy.setHorizontalStretch(1)
-        #self.scrollArea.setSizePolicy(policy)
-
-
         mainLayout.addWidget(self.scrollArea)
 
         # Create collapsible sections
@@ -106,19 +96,13 @@ class CollapsibleMenuWidget(QWidget):
         for sectionEntry in sectionEntries.values():
             sectionWidget = CollapsibleSectionWidget(gameUI, sectionEntry)
             sectionWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-            #sectionWidget.setMinimumWidth(845)
 
             self.sectionWidgets.append(sectionWidget)
             self.contentLayout.addWidget(sectionWidget)
             
-        #self.contentLayout.addStretch(1)
+        self.contentLayout.addStretch(1)
         self.scrollArea.setWidget(self.contentWidget)
         
-    def sizeHint(self) -> QSize:
-        # Suggest a larger size
-        return QSize(800, 800)  # Adjust these values as needed
-
-
     def updateLabels(self):
         for sectionWidget in self.sectionWidgets:
             for childWidget in sectionWidget.childWidgets:
