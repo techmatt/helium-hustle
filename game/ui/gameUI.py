@@ -20,7 +20,7 @@ from game.ui.mainMenuWidget import MainMenuWidget
 from game.ui.resourceDisplayWidget import ResourceDisplayWidget
 from game.ui.programWidget import ProgramWidget
 from game.ui.commandViewWidget import CommandViewWidget
-from game.ui.buildingViewWidget import BuildingViewWidget
+from game.ui.buildingViewWidget import BuildingView
 from game.ui.researchViewWidget import ResearchView
 from game.ui.eventDialog import EventDialog
 from game.ui.eventListWidget import EventListWidget
@@ -136,8 +136,8 @@ class GameUI(QMainWindow):
     def makeMiddleFrame(self):
         self.clearLayout(self.middleLayout)
         self.commandViewWidget = None
-        self.buildingViewWidget = None
-        self.researchViewWidget = None
+        self.buildingView = None
+        self.researchView = None
         self.projectViewWidget = None
         self.statsViewWidget = None
 
@@ -152,8 +152,8 @@ class GameUI(QMainWindow):
             
         if self.mode == GameWindowMode.BUILDINGS:
             middleTitle = "Buildings"
-            self.buildingViewWidget = BuildingViewWidget(self)
-            middleWidget = self.buildingViewWidget
+            self.buildingView = BuildingView(self)
+            middleWidget = self.buildingView.mainWidget
             
         if self.mode == GameWindowMode.RESEARCH:
             middleTitle = "Research"
@@ -195,7 +195,9 @@ class GameUI(QMainWindow):
         if self.mode == GameWindowMode.COMMANDS:
             self.commandViewWidget.updateLabels()
         if self.mode == GameWindowMode.BUILDINGS:
-            self.buildingViewWidget.updateLabels()
+            self.buildingView.updateLabels()
+        if self.mode == GameWindowMode.RESEARCH:
+            self.researchView.updateLabels()
         
         #self.makeMiddleFrame()
             

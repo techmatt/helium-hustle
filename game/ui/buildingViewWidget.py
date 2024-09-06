@@ -10,7 +10,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QCoreApplication
 
 from game.database.gameDatabase import BuildingInfo, GameDatabase
 from game.core.gameState import BuildingState, GameState
-
+from game.ui.collapsibleMenuWidget import CollapsibleMenuWidget, CollapsibleSectionEntries
 from game.util.styleSheets import StyleSheets
 
 class BuildingButtonWidget(QPushButton):
@@ -273,7 +273,7 @@ class BuildingButtonWidget(QPushButton):
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit(self.bName)
             
-class BuildingViewWidget(QWidget):
+"""class BuildingViewWidget(QWidget):
     def __init__(self, gameUI : GameUI):
         super().__init__()
         self.gameUI = gameUI
@@ -294,6 +294,28 @@ class BuildingViewWidget(QWidget):
         
     def updateLabels(self):
         for widget in self.buildingWidgets.values():
-            widget.updateLabels()
+            widget.updateLabels()"""
+            
+class BuildingView():
+    def __init__(self, gameUI : GameUI):
+        super().__init__()
+        self.gameUI = gameUI
+        
+        self.sections: Dict[str, CollapsibleSectionEntries] = {}
+
+        for buildingCategory in self.gameUI.state.database.params.buildingCategories:
+            self.sections[buildingCategory] = CollapsibleSectionEntries(buildingCategory)
+        
+        for bState in self.gameUI.state.buildings.values():
+            entryWidget = BuildingButtonWidget(self.gameUI, bState.info.name)
+            entryWidget.clicked.connect(gameUI.purchaseBuilding)
+            self.sections[bState.info.category].childWidgets.append(entryWidget)
+
+        self.mainWidget = CollapsibleMenuWidget(gameUI, self.sections)
+        
+    def updateLabels(self):
+        self.mainWidget.updateLabels()
+
+
         
     

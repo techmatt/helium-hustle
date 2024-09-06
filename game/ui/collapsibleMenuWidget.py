@@ -100,8 +100,8 @@ class CollapsibleMenuWidget(QWidget):
             mainLayout.addWidget(sectionWidget)
         
     def updateLabels(self):
-        for sectionWidget in self.sectionWidgets.values():
-            for elementWidget in sectionWidget.entries:
-                elementWidget.updateLabels()
+        for sectionWidget in self.sectionWidgets:
+            for childWidget in sectionWidget.childWidgets:
+                childWidget.updateLabels()
         
     

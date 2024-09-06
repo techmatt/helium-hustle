@@ -10,7 +10,7 @@
         "Energy": 5
       },
       "costScaling": 1.25,
-      "canDeactivate": false,
+      "category": "Power",
       "description": "Creates energy from sunlight."
     },
     {
@@ -23,8 +23,8 @@
         "Processors": 1
       },
       "costScaling": 1.25,
-      "canDeactivate": false,
-      "description": "Creates energy from sunlight."
+      "category": "Processors",
+      "description": "Allows more processors!"
     },
     {
       "name": "Data Center",
@@ -40,6 +40,7 @@
       },
       "costScaling": 1.25,
       "canDeactivate": true,
+      "category": "Economy",
       "description": "Converts energy into money."
     },
     {
@@ -51,7 +52,7 @@
         "Regolith": 1
       },
       "costScaling": 1.25,
-      "canDeactivate": false,
+      "category": "Mining",
       "description": "Mines moon rocks."
     },
     {
@@ -64,7 +65,7 @@
         "Credits": 1
       },
       "costScaling": 1.25,
-      "canDeactivate": false,
+      "category": "Mining",
       "description": "Extracts ice from the surface."
     },
     {
@@ -77,7 +78,7 @@
         "Helium-3": 0.1
       },
       "costScaling": 1.25,
-      "canDeactivate": false,
+      "category": "Mining",
       "description": "Harvests helium gas."
     },
     {
@@ -91,7 +92,7 @@
         "Helium-3": 100
       },
       "costScaling": 1.25,
-      "canDeactivate": false,
+      "category": "Storage",
       "description": "Vital resource storage."
     },
     {
@@ -104,7 +105,7 @@
         "Energy": 500
       },
       "costScaling": 1.25,
-      "canDeactivate": false,
+      "category": "Power",
       "description": "Vital energy storage."
     },
     {
@@ -127,7 +128,8 @@
         "Helium-3": 1000
       },
       "costScaling": 1.01,
-      "canDeactivate": false,
+      "canDeactivate": true,
+      "category": "Power",
       "description": "Cheat building for easier design."
     }
   ]

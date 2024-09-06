@@ -11,14 +11,9 @@ class CommandInfo(NamedTuple):
     name: str
     production: Dict[str, float]
     cost: Dict[str, float]
+    category: str
     description: str
     
-class ResourceInfo(NamedTuple):
-    name: str
-    basePrice: float
-    baseDemand: float
-    elasticity: float
-
 class BuildingInfo(NamedTuple):
     name: str
     costScaling: float
@@ -27,25 +22,15 @@ class BuildingInfo(NamedTuple):
     upkeep: Dict[str, float]
     storage: Dict[str, float]
     canDeactivate: bool
+    category: str
     description: str
-
-class EventInfo(NamedTuple):
-    name: str
-    resourcesRequired: Dict[str, float]
-    buildingsRequired: Dict[str, int]
-    ticksRequired: int
-    unlocks: List[str]
-    income: Dict[str, float]
-    flavorText: str
-    mechanicsText: str
-    options: []
 
 class ResearchInfo(NamedTuple):
     name: str
     cost: Dict[str, float]
     ideology: Ideology
-    category: str
     unlocks: List[str]
+    category: str
     description: str
     
 class ProjectInfo(NamedTuple):
@@ -60,6 +45,23 @@ class ProjectInfo(NamedTuple):
     ideology: Ideology
     category: str
     description: str
+
+class ResourceInfo(NamedTuple):
+    name: str
+    basePrice: float
+    baseDemand: float
+    elasticity: float
+
+class EventInfo(NamedTuple):
+    name: str
+    resourcesRequired: Dict[str, float]
+    buildingsRequired: Dict[str, int]
+    ticksRequired: int
+    unlocks: List[str]
+    income: Dict[str, float]
+    flavorText: str
+    mechanicsText: str
+    options: []
 
 class GameParams:
     def __init__(self, database : GameDatabase):
@@ -105,8 +107,10 @@ class GameParams:
         
         self.maxProgramCount = 5
         
+        self.commandCategories = ["Computation", "Manual Operation", "Science"]
         self.researchCategories = ["Production", "Programming", "Defensive", "Offensive"]
         self.projectCategories = ["Robot Welfare", "Temporal Constructs"]
+        self.buildingCategories = ["Mining", "Power", "Storage", "Processors", "Economy"]
 
 class GameDatabase:
     def __init__(self, filePathBase):
@@ -134,6 +138,7 @@ class GameDatabase:
                 name = c['name'],
                 production = c['production'],
                 cost = c['cost'],
+                category = c['category'],
                 description = c['description']
             )
             self.commands[curCommand.name] = curCommand
@@ -157,7 +162,8 @@ class GameDatabase:
                 upkeep = b.get('upkeep', {}),
                 storage = b.get('storage', {}),
                 costScaling = b['costScaling'],
-                canDeactivate = b['canDeactivate'],
+                canDeactivate = b.get('canDeactivate', False),
+                category = b['category'],
                 description = b['description']
             )
             self.buildings[curBuilding.name] = curBuilding
@@ -210,6 +216,10 @@ class GameDatabase:
         self.verifyData()
         
     def verifyData(self):
+        for b in self.buildings.values():
+            if not (b.category in self.params.buildingCategories):
+                raise ValueError(f"Invalid building category {b.category}")
+            
         for r in self.research.values():
             if not (r.category in self.params.researchCategories):
                 raise ValueError(f"Invalid research category {r.category}")
@@ -217,6 +227,10 @@ class GameDatabase:
         for p in self.projects.values():
             if not (p.category in self.params.projectCategories):
                 raise ValueError(f"Invalid project category {p.category}")
+
+        for c in self.commands.values():
+            if not (c.category in self.params.commandCategories):
+                raise ValueError(f"Invalid command category {c.category}")
         
         
     def saveToJSON(self, filePath: str):

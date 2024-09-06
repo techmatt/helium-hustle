@@ -8,6 +8,7 @@
       "cost": {
         "Energy": 1
       },
+      "category": "Computation",
       "description": "Convert energy into credits."
     },
     {
@@ -18,6 +19,7 @@
       "cost": {
         "Energy": 10
       },
+      "category": "Manual Operation",
       "description": "Manually pilot a rover to gather loose rocks on the surface."
     },
     {
@@ -28,6 +30,7 @@
       "cost": {
         "Energy": 50
       },
+      "category": "Science",
       "description": "Do science."
     },
     {
@@ -37,6 +40,7 @@
       },
       "cost": {
       },
+      "category": "Computation",
       "description": "Think about nothing in particular."
     }
   ]
