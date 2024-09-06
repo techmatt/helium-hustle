@@ -7,6 +7,10 @@ from typing import Dict, List, NamedTuple
 
 from game.util.enums import Ideology
 
+class ResourceList:
+    def __init__(self, r : Dict[str, float]):
+        self.r = r
+
 class CommandInfo(NamedTuple):
     name: str
     production: Dict[str, float]

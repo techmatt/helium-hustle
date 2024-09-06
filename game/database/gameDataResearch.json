@@ -23,7 +23,7 @@
       "description": "Increases the gathering rate of resources by 10%"
     },
     {
-      "name": "Better AI Playgrounds",
+      "name": "Efficient Building Design",
       "cost": {
         "Science": 1000,
         "Energy": 1000
@@ -31,7 +31,7 @@
       "ideology": "SCIENCE",
       "category": "Programming",
       "unlocks": [],
-      "description": "Decreases the energy consumption of commands by 10%"
+      "description": "Decreases the regolith cost of buildings by 10%"
     },
     {
       "name": "Helium-3 Applications",

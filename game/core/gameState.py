@@ -5,11 +5,14 @@ from ast import Str
 import json
 import os
 import math
-from typing import Dict, List, NamedTuple
+from typing import Dict, List, NamedTuple, Set
 from game.core.gameProgram import GameProgram, GameCommand
 
-from game.database.gameDatabase import GameDatabase, CommandInfo, ResourceInfo, BuildingInfo
+from game.database.gameDatabase import (ResourceList, GameDatabase, CommandInfo,
+    ResourceInfo, BuildingInfo, EventInfo, ResearchInfo, ProjectInfo)
+
 from game.core.eventManager import EventManager
+from game.core.modifierManager import ModifierManager
 
 class CommandState:
     def __init__(self, info : CommandInfo):
@@ -58,10 +61,6 @@ class DirtyState:
     def __init__(self):
         self.events: bool = True
         
-class ResourceList:
-    def __init__(self, r : Dict[str, float]):
-        self.r = r
-
 class GameState:
     def __init__(self, database : GameDatabase):
         self.database: GameDatabase = database
@@ -84,6 +83,7 @@ class GameState:
             self.resources[rInfo.name] = rState
 
         self.research: Dict[str, ResearchState] = {}
+        self.purchasedResearch : Set[str] = set()
         for rInfo in database.research.values():
             rState = ResearchState(rInfo)
             self.research[rInfo.name] = rState
@@ -251,14 +251,15 @@ class GameState:
         return ResourceList(upkeep)
     
     def getBuildingCost(self, buildingName : str) -> ResourceList:
-        b = self.buildings[buildingName]
+        return ModifierManager.getBuildingCost(self, buildingName)
+        """b = self.buildings[buildingName]
         
         costs: Dict[str, float] = {}
         costMultiplier = pow(b.info.costScaling, b.totalCount)
         for resourceName, baseCost in b.info.baseCost.items():
             costs[resourceName] = math.floor(baseCost * costMultiplier)
             
-        return ResourceList(costs)
+        return ResourceList(costs)"""
     
     def getResearchCost(self, researchName : str) -> ResourceList:
         r = self.research[researchName]
@@ -312,7 +313,13 @@ class GameState:
         
         self.spendResources(researchCost)
         self.research[researchName].purchased = True
+        self.purchasedResearch.add(researchName)
         self.updateStorageAndProcessors()
+        
+    def checkResearch(self, rName : str) -> bool:
+        if not rName in self.research:
+            print('research not found', rName)
+        return rName in self.purchasedResearch
         
     def runCommand(self, commandName):
         cState : CommandState = self.commands[commandName]

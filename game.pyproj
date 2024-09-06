@@ -22,6 +22,7 @@
     <Compile Include="core\eventManager.py" />
     <Compile Include="core\gameProgram.py" />
     <Compile Include="core\gameState.py" />
+    <Compile Include="core\modifierManager.py" />
     <Compile Include="database\gameDatabase.py" />
     <Compile Include="main.py" />
     <Compile Include="ui\collapsibleMenuWidget.py" />
