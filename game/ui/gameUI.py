@@ -50,6 +50,10 @@ class GameUI(QMainWindow):
         
         self.initUI()
 
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.majorUIUpdate()
+        
     def initUI(self):
         
         self.activeDialog = None

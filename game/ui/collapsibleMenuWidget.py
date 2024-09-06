@@ -6,7 +6,7 @@ from functools import partial
 
 from PyQt6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
-    QLabel, QGridLayout, QSizePolicy, QScrollArea, QFrame )
+    QLabel, QGridLayout, QSizePolicy, QScrollArea, QFrame, QSpacerItem )
 from PyQt6.QtGui import QPixmap, QFont, QIcon, QPainter, QColor
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QCoreApplication
 
@@ -20,7 +20,7 @@ class CollapsibleSectionEntries:
         self.title = title
         self.childWidgets : List[QWidget] = []
         
-class CollapsibleSectionWidget(QWidget):
+"""class CollapsibleSectionWidget(QWidget):
     def __init__(self, gameUI : GameUI, sectionEntry : CollapsibleSectionEntries, layoutType : str):
         super().__init__()
         self.gameUI = gameUI
@@ -75,7 +75,93 @@ class CollapsibleSectionWidget(QWidget):
         arrowText = ' \u25C0'
         if self.toggleButton.isChecked():
             arrowText = ' \u25BC'
+        self.toggleButton.setText(self.title + arrowText)"""
+        
+class CollapsibleSectionWidget(QWidget):
+    def __init__(self, gameUI, sectionEntry, layoutType):
+        super().__init__()
+        self.gameUI = gameUI
+        self.childWidgets = sectionEntry.childWidgets
+        self.title = sectionEntry.title
+        self.layoutType = layoutType
+        self.initUI()
+
+    def initUI(self):
+        layout = QVBoxLayout(self)
+        layout.setContentsMargins(2, 2, 2, 2)
+        layout.setSpacing(2)
+
+        self.toggleButton = QPushButton(self.title)
+        self.toggleButton.setStyleSheet(StyleSheets.GENERAL_12PT_BOLD)
+        self.toggleButton.setCheckable(True)
+        self.toggleButton.setChecked(True)
+        self.toggleButton.clicked.connect(self.toggleContent)
+        self.updateArrow()
+        layout.addWidget(self.toggleButton)
+
+        self.contentWidget = QWidget()
+        self.contentWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        
+        if self.layoutType == 'grid':
+            self.contentLayout = QGridLayout(self.contentWidget)
+            self.contentLayout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
+            self.contentWidget.resizeEvent = self.onResize
+        elif self.layoutType == 'list':
+            self.contentLayout = QVBoxLayout(self.contentWidget)
+            for childWidget in self.childWidgets:
+                self.contentLayout.addWidget(childWidget)
+        else:
+            print(f"Invalid layout type: {self.layoutType}")
+    
+        layout.addWidget(self.contentWidget)
+
+        if self.layoutType == 'grid':
+            self.updateGridLayout()
+
+    def toggleContent(self):
+        self.contentWidget.setVisible(self.toggleButton.isChecked())
+        self.updateArrow()
+
+    def updateArrow(self):
+        arrowText = ' \u25C0' if not self.toggleButton.isChecked() else ' \u25BC'
         self.toggleButton.setText(self.title + arrowText)
+
+    def onResize(self, event):
+        super().resizeEvent(event)
+        self.updateGridLayout()
+
+    def updateGridLayout(self):
+        if self.layoutType != 'grid':
+            return
+
+        width = self.contentWidget.width()
+        columnCount = max(1, width // 275)
+
+        # Remove all widgets and spacer items from the layout
+        for i in reversed(range(self.contentLayout.count())): 
+            item = self.contentLayout.itemAt(i)
+            if item.widget():
+                self.contentLayout.removeWidget(item.widget())
+            elif isinstance(item, QSpacerItem):
+                self.contentLayout.removeItem(item)
+
+        # Add child widgets to the grid
+        for index, childWidget in enumerate(self.childWidgets):
+            row = index // columnCount
+            col = index % columnCount
+            self.contentLayout.addWidget(childWidget, row, col)
+
+        # Add placeholder widgets if needed
+        """totalItems = len(self.childWidgets)
+        if totalItems % columnCount != 0:
+            placeholdersNeeded = columnCount - (totalItems % columnCount)
+            for i in range(placeholdersNeeded):
+                placeholder = QWidget()
+                placeholder.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+                self.contentLayout.addWidget(placeholder, totalItems // columnCount, (totalItems % columnCount) + i)"""
+
+        # Update the layout
+        #self.contentLayout.update()
 
 class CollapsibleMenuWidget(QWidget):
     def __init__(self, gameUI : GameUI, sectionEntries : Dict[str, CollapsibleSectionEntries], layoutType : str):

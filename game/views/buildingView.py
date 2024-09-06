@@ -284,10 +284,11 @@ class BuildingView():
         for buildingCategory in self.gameUI.state.database.params.buildingCategories:
             self.sections[buildingCategory] = CollapsibleSectionEntries(buildingCategory)
         
-        for bState in self.gameUI.state.buildings.values():
-            entryWidget = BuildingButtonWidget(self.gameUI, bState.info.name)
-            entryWidget.clicked.connect(gameUI.purchaseBuilding)
-            self.sections[bState.info.category].childWidgets.append(entryWidget)
+        for x in range(2):
+            for bState in self.gameUI.state.buildings.values():
+                entryWidget = BuildingButtonWidget(self.gameUI, bState.info.name)
+                entryWidget.clicked.connect(gameUI.purchaseBuilding)
+                self.sections[bState.info.category].childWidgets.append(entryWidget)
 
         self.mainWidget = CollapsibleMenuWidget(gameUI, self.sections, "grid")
         
