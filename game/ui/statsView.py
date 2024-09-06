@@ -29,6 +29,8 @@ class StatsView():
             self.sections[statCategory] = CollapsibleSectionEntries(statCategory)
         
         for rState in self.gameUI.state.research.values():
+            if not rState.purchased:
+                continue
             rInfo = rState.info
             text = f"<b>{rInfo.name}</b>: {rInfo.description}"
             entryWidget = QLabel(text)
