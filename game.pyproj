@@ -24,23 +24,23 @@
     <Compile Include="core\gameState.py" />
     <Compile Include="database\gameDatabase.py" />
     <Compile Include="main.py" />
-    <Compile Include="ui\buildingViewWidget.py" />
     <Compile Include="ui\collapsibleMenuWidget.py" />
-    <Compile Include="ui\commandViewWidget.py" />
     <Compile Include="ui\eventDialog.py" />
     <Compile Include="ui\eventListWidget.py" />
     <Compile Include="ui\gameSpeedWidget.py" />
     <Compile Include="ui\gameUI.py" />
     <Compile Include="ui\mainMenuWidget.py" />
     <Compile Include="ui\programWidget.py" />
-    <Compile Include="ui\researchViewWidget.py" />
     <Compile Include="ui\resourceDisplayWidget.py" />
-    <Compile Include="ui\statsView.py" />
     <Compile Include="ui\UIWidgets.py" />
     <Compile Include="util\enums.py" />
     <Compile Include="util\formatting.py" />
     <Compile Include="util\pixmapCache.py" />
     <Compile Include="util\styleSheets.py" />
+    <Compile Include="views\buildingView.py" />
+    <Compile Include="views\commandView.py" />
+    <Compile Include="views\researchView.py" />
+    <Compile Include="views\statsView.py" />
     <Compile Include="__init__.py" />
   </ItemGroup>
   <ItemGroup>
@@ -55,12 +55,18 @@
     <Content Include="database\gameDataResources.json" />
     <Content Include="NOTES.txt" />
     <Content Include="TODO.txt" />
+    <Content Include="views\__pycache__\buildingView.cpython-310.pyc" />
+    <Content Include="views\__pycache__\commandView.cpython-310.pyc" />
+    <Content Include="views\__pycache__\researchView.cpython-310.pyc" />
+    <Content Include="views\__pycache__\statsView.cpython-310.pyc" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="core\" />
     <Folder Include="database\" />
     <Folder Include="ui\" />
     <Folder Include="util\" />
+    <Folder Include="views\" />
+    <Folder Include="views\__pycache__\" />
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\VisualStudio\v$(VisualStudioVersion)\Python Tools\Microsoft.PythonTools.targets" />
 </Project>

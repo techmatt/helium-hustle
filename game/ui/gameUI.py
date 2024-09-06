@@ -19,13 +19,14 @@ from game.util.styleSheets import StyleSheets
 from game.ui.mainMenuWidget import MainMenuWidget
 from game.ui.resourceDisplayWidget import ResourceDisplayWidget
 from game.ui.programWidget import ProgramWidget
-from game.ui.commandViewWidget import CommandView
-from game.ui.buildingViewWidget import BuildingView
-from game.ui.researchViewWidget import ResearchView
-from game.ui.statsView import StatsView
 from game.ui.eventDialog import EventDialog
 from game.ui.eventListWidget import EventListWidget
 from game.ui.gameSpeedWidget import GameSpeedWidget
+
+from game.views.commandView import CommandView
+from game.views.buildingView import BuildingView
+from game.views.researchView import ResearchView
+from game.views.statsView import StatsView
 
 from game.util.pixmapCache import PixmapCache
 from game.util.formatting import formatSystemUptime
