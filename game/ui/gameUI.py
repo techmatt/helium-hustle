@@ -6,7 +6,7 @@ import os
 
 from itertools import chain
 
-from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QGridLayout
+from PyQt6.QtWidgets import QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QLabel, QGridLayout, QSizePolicy
 from PyQt6.QtGui import QPixmap, QFont, QIcon, QPainter, QColor
 from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QCoreApplication
 
@@ -64,6 +64,7 @@ class GameUI(QMainWindow):
         self.leftLayout = QVBoxLayout(self.leftFrame)
         
         self.middleFrame = QWidget()
+        self.middleFrame.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.middleLayout = QVBoxLayout(self.middleFrame)
         
         self.rightFrame = QWidget()
@@ -76,7 +77,6 @@ class GameUI(QMainWindow):
         
         self.mainLayout.addWidget(self.leftFrame, 1)
         self.mainLayout.addWidget(self.middleFrame, 3)
-        self.mainLayout.addStretch(1)
         self.mainLayout.addWidget(self.rightFrame, 1)
         
         self.timer = QTimer(self)
@@ -164,8 +164,9 @@ class GameUI(QMainWindow):
         self.middleTitleLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
         
         self.middleLayout.addWidget(self.middleTitleLabel)
+        middleWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.middleLayout.addWidget(middleWidget)
-        self.middleLayout.addStretch(1)
+        #self.middleLayout.addStretch(1)
 
     def timerTick(self):
         

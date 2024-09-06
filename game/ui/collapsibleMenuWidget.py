@@ -43,14 +43,9 @@ class CollapsibleSectionWidget(QWidget):
         self.updateArrow()
         layout.addWidget(self.toggleButton)
 
-        # Create a scroll area for the content
-        self.scrollArea = QScrollArea()
-        self.scrollArea.setWidgetResizable(True)
-        self.scrollArea.setFrameShape(QFrame.Shape.NoFrame)
-        layout.addWidget(self.scrollArea)
-
         # Create a widget to hold the content
         self.contentWidget = QWidget()
+        self.contentWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         self.contentLayout = QGridLayout(self.contentWidget)
         
         index = 0
@@ -62,11 +57,11 @@ class CollapsibleSectionWidget(QWidget):
             #entry.clicked.connect(self.gameUI.purchaseResearch)
             
             index += 1
-
-        self.scrollArea.setWidget(self.contentWidget)
+            
+        layout.addWidget(self.contentWidget)
 
     def toggleContent(self):
-        self.scrollArea.setVisible(self.toggleButton.isChecked())
+        self.contentWidget.setVisible(self.toggleButton.isChecked())
         self.updateArrow()
 
     def updateArrow(self):
@@ -75,30 +70,55 @@ class CollapsibleSectionWidget(QWidget):
             arrowText = ' \u25BC'
         self.toggleButton.setText(self.title + arrowText)
 
-    #def addWidget(self, widget):
-    #    self.contentLayout.addWidget(widget)
-
 class CollapsibleMenuWidget(QWidget):
     def __init__(self, gameUI : GameUI, sectionEntries : Dict[str, CollapsibleSectionEntries]):
         super().__init__()
         self.gameUI = gameUI
         
-        mainLayout = QVBoxLayout()
-        self.setLayout(mainLayout)
-
+        mainLayout = QVBoxLayout(self)
+        self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        
         mainLayout.setContentsMargins(2, 2, 2, 2)
         mainLayout.setSpacing(2)
         
+        # Create a scroll area for the content
+        self.scrollArea = QScrollArea()
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollArea.setFrameShape(QFrame.Shape.NoFrame)
+        self.scrollArea.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        #self.scrollArea.setMinimumWidth(600)
+        #self.scrollArea.setMinimumHeight(600)
+        #policy = self.scrollArea.sizePolicy()
+        #policy.setVerticalStretch(1)
+        #policy.setHorizontalStretch(1)
+        #self.scrollArea.setSizePolicy(policy)
+
+
+        mainLayout.addWidget(self.scrollArea)
+
         # Create collapsible sections
+        
+        self.contentWidget = QWidget()
+        self.contentLayout = QVBoxLayout(self.contentWidget)
+        self.contentWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         
         self.sectionWidgets : List[CollapsibleSectionWidget] = []
         for sectionEntry in sectionEntries.values():
             sectionWidget = CollapsibleSectionWidget(gameUI, sectionEntry)
-            sectionWidget.setMinimumWidth(845)
+            sectionWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+            #sectionWidget.setMinimumWidth(845)
 
             self.sectionWidgets.append(sectionWidget)
-            mainLayout.addWidget(sectionWidget)
+            self.contentLayout.addWidget(sectionWidget)
+            
+        #self.contentLayout.addStretch(1)
+        self.scrollArea.setWidget(self.contentWidget)
         
+    def sizeHint(self) -> QSize:
+        # Suggest a larger size
+        return QSize(800, 800)  # Adjust these values as needed
+
+
     def updateLabels(self):
         for sectionWidget in self.sectionWidgets:
             for childWidget in sectionWidget.childWidgets:
