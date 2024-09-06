@@ -21,11 +21,12 @@ class CollapsibleSectionEntries:
         self.childWidgets : List[QWidget] = []
         
 class CollapsibleSectionWidget(QWidget):
-    def __init__(self, gameUI : GameUI, sectionEntry : CollapsibleSectionEntries):
+    def __init__(self, gameUI : GameUI, sectionEntry : CollapsibleSectionEntries, layoutType : str):
         super().__init__()
         self.gameUI = gameUI
         self.childWidgets = sectionEntry.childWidgets
         self.title = sectionEntry.title
+        self.layoutType = layoutType
         self.initUI()
 
     def initUI(self):
@@ -46,16 +47,24 @@ class CollapsibleSectionWidget(QWidget):
         # Create a widget to hold the content
         self.contentWidget = QWidget()
         self.contentWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        self.contentLayout = QGridLayout(self.contentWidget)
         
-        index = 0
-        for childWidget in self.childWidgets:
-            row = index // 3
-            col = index % 3
-            self.contentLayout.addWidget(childWidget, row, col)
+        if self.layoutType == 'grid':
+            self.contentLayout = QGridLayout(self.contentWidget)
+        
+            index = 0
+            for childWidget in self.childWidgets:
+                row = index // 3
+                col = index % 3
+                self.contentLayout.addWidget(childWidget, row, col)
             
-            index += 1
-            
+                index += 1
+        elif self.layoutType == 'list':
+            self.contentLayout = QVBoxLayout(self.contentWidget)
+            for childWidget in self.childWidgets:
+                self.contentLayout.addWidget(childWidget)
+        else:
+            print(f"Invalid layout type: {self.layoutType}")
+    
         layout.addWidget(self.contentWidget)
 
     def toggleContent(self):
@@ -69,7 +78,7 @@ class CollapsibleSectionWidget(QWidget):
         self.toggleButton.setText(self.title + arrowText)
 
 class CollapsibleMenuWidget(QWidget):
-    def __init__(self, gameUI : GameUI, sectionEntries : Dict[str, CollapsibleSectionEntries]):
+    def __init__(self, gameUI : GameUI, sectionEntries : Dict[str, CollapsibleSectionEntries], layoutType : str):
         super().__init__()
         self.gameUI = gameUI
         
@@ -94,7 +103,7 @@ class CollapsibleMenuWidget(QWidget):
         
         self.sectionWidgets : List[CollapsibleSectionWidget] = []
         for sectionEntry in sectionEntries.values():
-            sectionWidget = CollapsibleSectionWidget(gameUI, sectionEntry)
+            sectionWidget = CollapsibleSectionWidget(gameUI, sectionEntry, layoutType)
             sectionWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
 
             self.sectionWidgets.append(sectionWidget)

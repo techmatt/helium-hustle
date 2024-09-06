@@ -93,28 +93,28 @@ class MainMenuWidget(QWidget):
     def onButtonClicked(self, name):
         if name == 'Commands':
             self.gameUI.mode = GameWindowMode.COMMANDS
-            self.gameUI.makeMiddleFrame()
+            self.gameUI.majorUIUpdate()
         if name == 'Buildings':
             self.gameUI.mode = GameWindowMode.BUILDINGS
-            self.gameUI.makeMiddleFrame()
+            self.gameUI.majorUIUpdate()
         if name == 'Research':
             self.gameUI.mode = GameWindowMode.RESEARCH
-            self.gameUI.makeMiddleFrame()
+            self.gameUI.majorUIUpdate()
         if name == 'Projects':
             self.gameUI.mode = GameWindowMode.PROJECTS
-            self.gameUI.makeMiddleFrame()
+            self.gameUI.majorUIUpdate()
         if name == 'Ideology':
             self.gameUI.mode = GameWindowMode.IDEOLOGY
-            self.gameUI.makeMiddleFrame()
+            self.gameUI.majorUIUpdate()
         if name == 'Stats':
             self.gameUI.mode = GameWindowMode.STATS
-            self.gameUI.makeMiddleFrame()
+            self.gameUI.majorUIUpdate()
         if name == 'Achievements':
             self.gameUI.mode = GameWindowMode.ACHIEVEMENTS
-            self.gameUI.makeMiddleFrame()
+            self.gameUI.majorUIUpdate()
         if name == 'Options':
             self.gameUI.mode = GameWindowMode.OPTIONS
-            self.gameUI.makeMiddleFrame()
+            self.gameUI.majorUpdate()
         if name == 'Exit':
             self.gameUI.triggerExit()
         #print(f"Clicked on {name}")

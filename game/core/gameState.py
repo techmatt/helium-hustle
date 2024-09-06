@@ -37,7 +37,7 @@ class EventState:
         
         self.triggered: bool = False # events conditions have been met
         self.completed: bool = False # a triggered event has been resolved
-        self.ongoing: bool = False # an event with income is ongoing
+        self.ongoing: bool = False # an event with income or lasting effects is ongoing
         
         self.displayed: bool = False # displayed is only used by the UI and is not relevant for the game state
         self.timestampStr : str = None

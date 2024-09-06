@@ -183,7 +183,7 @@ class ResearchView():
             entryWidget.clicked.connect(gameUI.purchaseResearch)
             self.sections[rState.info.category].childWidgets.append(entryWidget)
 
-        self.mainWidget = CollapsibleMenuWidget(gameUI, self.sections)
+        self.mainWidget = CollapsibleMenuWidget(gameUI, self.sections, "grid")
         
     def updateLabels(self):
         self.mainWidget.updateLabels()

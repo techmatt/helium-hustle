@@ -35,6 +35,7 @@
     <Compile Include="ui\programWidget.py" />
     <Compile Include="ui\researchViewWidget.py" />
     <Compile Include="ui\resourceDisplayWidget.py" />
+    <Compile Include="ui\statsView.py" />
     <Compile Include="ui\UIWidgets.py" />
     <Compile Include="util\enums.py" />
     <Compile Include="util\formatting.py" />

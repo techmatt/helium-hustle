@@ -120,6 +120,7 @@ class EventDialog(QDialog):
         
         #print('dialog', self.gameUI.dialog)
         self.gameUI.activeDialog = None
+        self.gameUI.majorUIUpdate()
         self.accept()
             
 

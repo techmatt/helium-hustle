@@ -19,9 +19,10 @@ from game.util.styleSheets import StyleSheets
 from game.ui.mainMenuWidget import MainMenuWidget
 from game.ui.resourceDisplayWidget import ResourceDisplayWidget
 from game.ui.programWidget import ProgramWidget
-from game.ui.commandViewWidget import CommandViewWidget
+from game.ui.commandViewWidget import CommandView
 from game.ui.buildingViewWidget import BuildingView
 from game.ui.researchViewWidget import ResearchView
+from game.ui.statsView import StatsView
 from game.ui.eventDialog import EventDialog
 from game.ui.eventListWidget import EventListWidget
 from game.ui.gameSpeedWidget import GameSpeedWidget
@@ -90,6 +91,10 @@ class GameUI(QMainWindow):
             if widget:
                 widget.setParent(None)
 
+    def majorUIUpdate(self):
+        # called when a large update is needed, such as a menu change or an event
+        self.makeMiddleFrame()
+        
     def makeLeftFrame(self):
         self.clearLayout(self.leftLayout)
         
@@ -135,11 +140,11 @@ class GameUI(QMainWindow):
 
     def makeMiddleFrame(self):
         self.clearLayout(self.middleLayout)
-        self.commandViewWidget = None
+        self.commandView = None
         self.buildingView = None
         self.researchView = None
-        self.projectViewWidget = None
-        self.statsViewWidget = None
+        self.projectView = None
+        self.statsView = None
 
         # TODO: delete these
         middleTitle = "None"
@@ -147,8 +152,8 @@ class GameUI(QMainWindow):
         
         if self.mode == GameWindowMode.COMMANDS:
             middleTitle = "Commands"
-            self.commandViewWidget = CommandViewWidget(self)
-            middleWidget = self.commandViewWidget
+            self.commandView = CommandView(self)
+            middleWidget = self.commandView.mainWidget
             
         if self.mode == GameWindowMode.BUILDINGS:
             middleTitle = "Buildings"
@@ -159,6 +164,11 @@ class GameUI(QMainWindow):
             middleTitle = "Research"
             self.researchView = ResearchView(self)
             middleWidget = self.researchView.mainWidget
+
+        if self.mode == GameWindowMode.STATS:
+            middleTitle = "Statistics and Buffs"
+            self.statsView = StatsView(self)
+            middleWidget = self.statsView.mainWidget
         
         self.middleTitleLabel = QLabel(middleTitle)
         self.middleTitleLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
@@ -170,8 +180,8 @@ class GameUI(QMainWindow):
 
     def timerTick(self):
         
+        # do not tick game while dialog is active.
         if self.activeDialog:
-            # do not tick game while dialog is active.
             return
             
         if self.gameSpeed > 0:
@@ -194,13 +204,11 @@ class GameUI(QMainWindow):
         self.updateGameTime()
         
         if self.mode == GameWindowMode.COMMANDS:
-            self.commandViewWidget.updateLabels()
+            self.commandView.updateLabels()
         if self.mode == GameWindowMode.BUILDINGS:
             self.buildingView.updateLabels()
         if self.mode == GameWindowMode.RESEARCH:
             self.researchView.updateLabels()
-        
-        #self.makeMiddleFrame()
             
         self.programWidget.updateProgram()
         self.programWidget.updateProgressBars()

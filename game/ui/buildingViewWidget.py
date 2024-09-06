@@ -289,7 +289,7 @@ class BuildingView():
             entryWidget.clicked.connect(gameUI.purchaseBuilding)
             self.sections[bState.info.category].childWidgets.append(entryWidget)
 
-        self.mainWidget = CollapsibleMenuWidget(gameUI, self.sections)
+        self.mainWidget = CollapsibleMenuWidget(gameUI, self.sections, "grid")
         
     def updateLabels(self):
         self.mainWidget.updateLabels()

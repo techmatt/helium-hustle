@@ -10,7 +10,7 @@ from PyQt6.QtCore import Qt, pyqtSignal, QTimer, QSize, QCoreApplication
 
 from game.database.gameDatabase import GameDatabase
 from game.core.gameState import GameState
-
+from game.ui.collapsibleMenuWidget import CollapsibleMenuWidget, CollapsibleSectionEntries
 from game.util.enums import GameWindowMode
 from game.util.styleSheets import StyleSheets
 
@@ -151,7 +151,7 @@ class CommandButtonWidget(QPushButton):
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit(self.name)
             
-class CommandViewWidget(QWidget):
+"""class CommandViewWidget(QWidget):
     def __init__(self, gameUI : GameUI):
         super().__init__()
         self.gameUI = gameUI
@@ -172,6 +172,24 @@ class CommandViewWidget(QWidget):
             
     def updateLabels(self):
         for widget in self.commandWidgets.values():
-            widget.updateLabels()
-        
+            widget.updateLabels()"""
     
+class CommandView():
+    def __init__(self, gameUI : GameUI):
+        super().__init__()
+        self.gameUI = gameUI
+        
+        self.sections: Dict[str, CollapsibleSectionEntries] = {}
+
+        for commandCategory in self.gameUI.state.database.params.commandCategories:
+            self.sections[commandCategory] = CollapsibleSectionEntries(commandCategory)
+        
+        for cState in self.gameUI.state.commands.values():
+            entryWidget = CommandButtonWidget(self.gameUI, cState.info.name)
+            entryWidget.clicked.connect(gameUI.runCommand)
+            self.sections[cState.info.category].childWidgets.append(entryWidget)
+
+        self.mainWidget = CollapsibleMenuWidget(gameUI, self.sections, "grid")
+        
+    def updateLabels(self):
+        self.mainWidget.updateLabels()
