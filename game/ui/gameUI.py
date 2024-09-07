@@ -50,9 +50,16 @@ class GameUI(QMainWindow):
         
         self.initUI()
 
+    def moveEvent(self, event):
+        super().moveEvent(event)
+        self.startResizeTimer()
+
     def resizeEvent(self, event):
         super().resizeEvent(event)
-        self.majorUIUpdate()
+        self.startResizeTimer()
+        
+    def startResizeTimer(self):
+        self.resizeTimer.start(200)  # Wait for 200 ms of inactivity
         
     def initUI(self):
         
@@ -85,9 +92,14 @@ class GameUI(QMainWindow):
         self.mainLayout.addWidget(self.middleFrame, 3)
         self.mainLayout.addWidget(self.rightFrame, 1)
         
-        self.timer = QTimer(self)
-        self.timer.timeout.connect(self.timerTick)
-        self.timer.start(self.params.timerInterval)
+        self.tickTimer = QTimer(self)
+        self.tickTimer.timeout.connect(self.timerTick)
+        self.tickTimer.start(self.params.timerInterval)
+        
+        self.resizeTimer = QTimer(self)
+        self.resizeTimer.setSingleShot(True)
+        self.resizeTimer.timeout.connect(self.majorUIUpdate)
+
         
     def clearLayout(self, layout):
         while layout.count():
