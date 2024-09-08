@@ -40,6 +40,7 @@
     <Compile Include="util\styleSheets.py" />
     <Compile Include="views\buildingView.py" />
     <Compile Include="views\commandView.py" />
+    <Compile Include="views\projectView.py" />
     <Compile Include="views\researchView.py" />
     <Compile Include="views\statsView.py" />
     <Compile Include="__init__.py" />

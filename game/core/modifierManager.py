@@ -28,3 +28,12 @@ class ModifierManager:
             costs[resourceName] = math.floor(baseCost * costMultiplier * rScaleFactor)
             
         return ResourceList(costs)
+    
+    def getProjectCost(state : GameState, projectName : str) -> float:
+        pState = state.projects[projectName]
+        info = pState.info
+        
+        costMultiplier = pow(info.costScaling, pState.purchaseCount)
+        cost = costMultiplier * info.baseCost
+        
+        return math.floor(cost)

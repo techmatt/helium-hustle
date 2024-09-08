@@ -29,7 +29,7 @@ class BuildingState:
 class ResourceState:
     def __init__(self, info : ResourceInfo):
         self.info: ResourceInfo = info
-        self.income: float = 0
+        self.income: float = 0 # will be negative if more of the resource is consumed than produced
         self.storage: float = 0
         self.count: float = 0
         self.unlocked: bool = False
@@ -55,6 +55,7 @@ class ProjectState:
     def __init__(self, info : ProjectInfo):
         self.info: ProjectInfo = info
         self.purchaseCount: int = 0
+        self.resourcePayments: Dict[str, float] = {}
         self.progress: float = 0.0
 
 class DirtyState:
@@ -91,6 +92,8 @@ class GameState:
         self.projects: Dict[str, ProjectState] = {}
         for pInfo in database.projects.values():
             pState = ProjectState(pInfo)
+            for r in pInfo.resourceRates.keys():
+                pState.resourcePayments[r] = 0
             self.projects[pInfo.name] = pState
             
         self.events: Dict[str, EventState] = {}
@@ -134,6 +137,20 @@ class GameState:
         else:
             print('objectToUnlock not found: ' + objectToUnlock)
             
+    def updateProjectPayments(self):
+        for pState in self.projects.values():
+            pInfo = pState.info
+            for rName, rPayment in pState.resourcePayments.items():
+                r = self.resources[rName]
+                r.income -= rPayment
+                totalPayment = max(rPayment, r.count)
+                r.count -= totalPayment
+                pState.progress += totalPayment * pInfo.resourceRates[rName]
+            
+            totalProjectCost = self.getProjectCost(pInfo.name)
+            if pState.progress >= totalProjectCost:
+                self.completeProject(pInfo.name)
+
     def updateStorage(self):
         for r in self.resources.values():
             r.storage = self.database.params.startingStorage[r.info.name]
@@ -222,7 +239,9 @@ class GameState:
         else:
             self.runAllPrograms()
             self.ticksUntilProcessorCycle = self.database.params.ticksPerProcessorCycle
-            
+        
+        self.updateProjectPayments()
+
         # cap all resources to their storage capacity
         for rState in self.resources.values():
             rState.count = min(rState.count, rState.storage)
@@ -230,7 +249,12 @@ class GameState:
         self.eventManager.step()
         
         self.ticks += 1
-        
+    
+    def completeProject(self, projectName : str):
+        pState = self.projects[projectName]
+        pState.purchaseCount += 1
+        pState.progress = 0
+    
     def getBuildingProduction(self, buildingName : str) -> ResourceList:
         b = self.buildings[buildingName]
         
@@ -250,6 +274,9 @@ class GameState:
             
         return ResourceList(upkeep)
     
+    def getProjectCost(self, projectName : str) -> float:
+        return ModifierManager.getProjectCost(self, projectName)
+        
     def getBuildingCost(self, buildingName : str) -> ResourceList:
         return ModifierManager.getBuildingCost(self, buildingName)
         """b = self.buildings[buildingName]

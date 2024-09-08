@@ -26,6 +26,7 @@ from game.ui.gameSpeedWidget import GameSpeedWidget
 from game.views.commandView import CommandView
 from game.views.buildingView import BuildingView
 from game.views.researchView import ResearchView
+from game.views.projectView import ProjectView
 from game.views.statsView import StatsView
 
 from game.util.pixmapCache import PixmapCache
@@ -182,6 +183,11 @@ class GameUI(QMainWindow):
             self.researchView = ResearchView(self)
             middleWidget = self.researchView.mainWidget
 
+        if self.mode == GameWindowMode.PROJECTS:
+            middleTitle = "Projects"
+            self.projectView = ProjectView(self)
+            middleWidget = self.projectView.mainWidget
+
         if self.mode == GameWindowMode.STATS:
             middleTitle = "Statistics and Buffs"
             self.statsView = StatsView(self)
@@ -224,6 +230,8 @@ class GameUI(QMainWindow):
             self.commandView.updateLabels()
         if self.mode == GameWindowMode.BUILDINGS:
             self.buildingView.updateLabels()
+        if self.mode == GameWindowMode.PROJECTS:
+            self.projectView.updateLabels()
         if self.mode == GameWindowMode.RESEARCH:
             self.researchView.updateLabels()
             
@@ -300,6 +308,10 @@ class GameUI(QMainWindow):
         activeProgram.commands.append(GameCommand(self.state.commands[commandName].info))
         self.updateLabels()
 
+    def modifyProjectPayment(self, pName, rName, value):
+        pState : ProjectState = self.state.projects[pName]
+        pState.resourcePayments[rName] = max(0, pState.resourcePayments[rName] + value)
+        
     def modifyBuildingActive(self, bName : str, deltaValue : int):
         bState : BuildingState = self.state.buildings[bName]
         bState.activeCount = bState.activeCount + deltaValue
