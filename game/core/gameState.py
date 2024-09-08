@@ -143,7 +143,7 @@ class GameState:
             for rName, rPayment in pState.resourcePayments.items():
                 r = self.resources[rName]
                 r.income -= rPayment
-                totalPayment = max(rPayment, r.count)
+                totalPayment = min(rPayment, r.count)
                 r.count -= totalPayment
                 pState.progress += totalPayment * pInfo.resourceRates[rName]
             

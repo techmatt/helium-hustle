@@ -130,8 +130,11 @@ class ProjectButtonWidget(QPushButton):
         subButton.setFixedSize(buttonSize)
         addButton.setFixedSize(buttonSize)
 
-        subButton.clicked.connect(partial(self.gameUI.modifyProjectPayment, self.pName, rName, -1))
-        addButton.clicked.connect(partial(self.gameUI.modifyProjectPayment, self.pName, rName, 1))
+        addValue = 1 / self.gameUI.state.database.params.intervalsPerSecond
+        subValue = -addValue
+
+        subButton.clicked.connect(partial(self.gameUI.modifyProjectPayment, self.pName, rName, subValue))
+        addButton.clicked.connect(partial(self.gameUI.modifyProjectPayment, self.pName, rName, addValue))
             
         rPaymentLayout.addWidget(rPaymentLabel)
         rPaymentLayout.addWidget(subButton)
@@ -161,7 +164,7 @@ class ProjectButtonWidget(QPushButton):
         pState : ProjectState = state.projects[self.pName]
         
         for rName, rPayment in pState.resourcePayments.items():
-            self.rPaymentLabels[rName].setText(f"{-rPayment} /s")
+            self.rPaymentLabels[rName].setText(f"{-rPayment * state.database.params.intervalsPerSecond} /s")
                 
         self.update()
 
