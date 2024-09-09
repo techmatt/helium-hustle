@@ -38,7 +38,7 @@ class ProgramUIElements():
         
         processorSubButton = QPushButton("-")
         processorAddButton = QPushButton("+")
-        processorRestartButton = QPushButton("Restart all")
+        processorRestartButton = QPushButton("Reset")
         
         processorSubButton.clicked.connect(partial(gameUI.changeAssignedProcessors, -1))
         processorAddButton.clicked.connect(partial(gameUI.changeAssignedProcessors, 1))

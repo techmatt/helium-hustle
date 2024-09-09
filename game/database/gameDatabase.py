@@ -67,6 +67,10 @@ class EventInfo(NamedTuple):
     mechanicsText: str
     options: []
 
+class IdeologyInfo(NamedTuple):
+    name: str
+    flavorText: str
+    
 class GameParams:
     def __init__(self, database : GameDatabase):
         
@@ -135,6 +139,9 @@ class GameDatabase:
             
         with open(filePathBase + 'Projects.json', 'r') as file:
             projectData = json.load(file)
+            
+        with open(filePathBase + 'Ideologies.json', 'r') as file:
+            ideologyData = json.load(file)
 
         self.commands: Dict[str, CommandInfo] = {}
         for c in commandData['commands']:
@@ -215,6 +222,14 @@ class GameDatabase:
                 description = p['description']
             )
             self.projects[curProject.name] = curProject
+            
+        self.ideologies: Dict[str, IdeologyInfo] = {}
+        for i in ideologyData['ideologies']:
+            curIdeology = IdeologyInfo(
+                name = i['name'],
+                flavorText = i['flavorText']
+            )
+            self.ideologies[curIdeology.name] = curIdeology
             
         self.params: GameParams = GameParams(self)
         self.verifyData()

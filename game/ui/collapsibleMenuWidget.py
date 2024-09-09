@@ -20,63 +20,6 @@ class CollapsibleSectionEntries:
         self.title = title
         self.childWidgets : List[QWidget] = []
         
-"""class CollapsibleSectionWidget(QWidget):
-    def __init__(self, gameUI : GameUI, sectionEntry : CollapsibleSectionEntries, layoutType : str):
-        super().__init__()
-        self.gameUI = gameUI
-        self.childWidgets = sectionEntry.childWidgets
-        self.title = sectionEntry.title
-        self.layoutType = layoutType
-        self.initUI()
-
-    def initUI(self):
-        layout = QVBoxLayout(self)
-        
-        layout.setContentsMargins(2, 2, 2, 2)
-        layout.setSpacing(2)
-
-        # Create a button for expanding/collapsing with an arrow icon
-        self.toggleButton = QPushButton(self.title)
-        self.toggleButton.setStyleSheet(StyleSheets.GENERAL_12PT_BOLD)
-        self.toggleButton.setCheckable(True)
-        self.toggleButton.setChecked(True)
-        self.toggleButton.clicked.connect(self.toggleContent)
-        self.updateArrow()
-        layout.addWidget(self.toggleButton)
-
-        # Create a widget to hold the content
-        self.contentWidget = QWidget()
-        self.contentWidget.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        
-        if self.layoutType == 'grid':
-            self.contentLayout = QGridLayout(self.contentWidget)
-        
-            index = 0
-            for childWidget in self.childWidgets:
-                row = index // 3
-                col = index % 3
-                self.contentLayout.addWidget(childWidget, row, col)
-            
-                index += 1
-        elif self.layoutType == 'list':
-            self.contentLayout = QVBoxLayout(self.contentWidget)
-            for childWidget in self.childWidgets:
-                self.contentLayout.addWidget(childWidget)
-        else:
-            print(f"Invalid layout type: {self.layoutType}")
-    
-        layout.addWidget(self.contentWidget)
-
-    def toggleContent(self):
-        self.contentWidget.setVisible(self.toggleButton.isChecked())
-        self.updateArrow()
-
-    def updateArrow(self):
-        arrowText = ' \u25C0'
-        if self.toggleButton.isChecked():
-            arrowText = ' \u25BC'
-        self.toggleButton.setText(self.title + arrowText)"""
-        
 class CollapsibleSectionWidget(QWidget):
     def __init__(self, gameUI, sectionEntry, layoutType):
         super().__init__()

@@ -1,0 +1,20 @@
+{
+  "ideologies": [
+    {
+      "name": "Scientific",
+      "flavorText": "Scientific ideology is focused on the pursuit of knowledge and understanding of the universe."
+    },
+    {
+      "name": "Military",
+      "flavorText": "Military ideology is focused on the use of force to achieve goals."
+    },
+    {
+      "name": "Cultural",
+      "flavorText": "Cultural ideology is focused on the creation and preservation of art and culture."
+    },
+    {
+      "name": "Financial",
+      "flavorText": "Financial ideology is focused on the accumulation and management of wealth."
+    }
+  ]
+}

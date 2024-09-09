@@ -6,7 +6,7 @@ class GameWindowMode(Enum):
     BUILDINGS = auto()
     RESEARCH = auto()
     PROJECTS = auto()
-    IDEOLOGY = auto()
+    IDEOLOGIES = auto()
     STATS = auto()
     ACHIEVEMENTS = auto()
     OPTIONS = auto()

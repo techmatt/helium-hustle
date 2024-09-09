@@ -58,6 +58,11 @@ class ProjectState:
         self.resourcePayments: Dict[str, float] = {}
         self.progress: float = 0.0
 
+class IdeologyState:
+    def __init__(self, info : IdeologyInfo):
+        self.info: IdeologyInfo = info
+        self.totalScore: float = 0
+        
 class DirtyState:
     def __init__(self):
         self.events: bool = True
@@ -101,6 +106,11 @@ class GameState:
         for eInfo in database.events.values():
             eState = EventState(eInfo)
             self.events[eInfo.name] = eState
+
+        self.ideologies: Dict[str, IdeologyState] = {}
+        for iInfo in database.ideologies.values():
+            iState = IdeologyState(iInfo)
+            self.ideologies[iInfo.name] = iState
 
         self.programs: List[GameProgram] = []
         for i in range(0, database.params.maxProgramCount):

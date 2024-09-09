@@ -74,7 +74,7 @@ class MainMenuWidget(QWidget):
             ("Buildings", "buildings.png"),
             ("Research", "research.png"),
             ("Projects", "projects.png"),
-            ("Ideology", "ideology.png"),
+            ("Ideologies", "ideologies.png"),
             ("Stats", "stats.png"),
             ("Achievements", "achievements.png"),
             ("Options", "options.png"),
@@ -103,8 +103,8 @@ class MainMenuWidget(QWidget):
         if name == 'Projects':
             self.gameUI.mode = GameWindowMode.PROJECTS
             self.gameUI.majorUIUpdate()
-        if name == 'Ideology':
-            self.gameUI.mode = GameWindowMode.IDEOLOGY
+        if name == 'Ideologies':
+            self.gameUI.mode = GameWindowMode.IDEOLOGIES
             self.gameUI.majorUIUpdate()
         if name == 'Stats':
             self.gameUI.mode = GameWindowMode.STATS
