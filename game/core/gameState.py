@@ -62,6 +62,9 @@ class IdeologyState:
     def __init__(self, info : IdeologyInfo):
         self.info: IdeologyInfo = info
         self.totalScore: float = 0
+        self.rank: int = 0
+        self.localRankScore: float = 0
+        self.localRankThreshold: float = 0
         
 class DirtyState:
     def __init__(self):
@@ -175,6 +178,7 @@ class GameState:
                 rState = self.resources[rName]
                 rState.storage += bState.activeCount * stor
 
+
     def updateIncomeAndBuildingProduction(self):
         # because buildings that fail upkeep don't produce resources, we must handle
         # income and building proudction in the same function.
@@ -256,6 +260,9 @@ class GameState:
         # cap all resources to their storage capacity
         for rState in self.resources.values():
             rState.count = min(rState.count, rState.storage)
+            
+        for iState in self.ideologies.values():
+            ModifierManager.updateIdeologyRank(self, iState)
             
         self.eventManager.step()
         
@@ -371,7 +378,11 @@ class GameState:
             
         for rName, v in cInfo.production.items():
             r = self.resources[rName]
-            r.count = min(r.count + v, r.storage)
+            r.count += v
+            
+        for iName, v in cInfo.ideology.items():
+            i = self.ideologies[iName]
+            i.totalScore += v
             
     def processEventOption(self, eState : EventState, option : Str):
         eInfo = eState.info

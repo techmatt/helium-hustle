@@ -14,6 +14,7 @@ class ResourceList:
 class CommandInfo(NamedTuple):
     name: str
     production: Dict[str, float]
+    ideology: Dict[str, float]
     cost: Dict[str, float]
     category: str
     description: str
@@ -115,7 +116,10 @@ class GameParams:
         
         self.maxProgramCount = 5
         
-        self.commandCategories = ["Computation", "Manual Operation", "Science"]
+        self.baseIdeologyCost = 1000
+        self.ideologyScaleFactor = 1.5
+        
+        self.commandCategories = ["Computation", "Manual Operation", "Science", "Ideology"]
         self.researchCategories = ["Production", "Programming", "Defensive", "Offensive"]
         self.projectCategories = ["Robot Welfare", "Temporal Constructs"]
         self.buildingCategories = ["Mining", "Power", "Storage", "Processors", "Economy"]
@@ -147,7 +151,8 @@ class GameDatabase:
         for c in commandData['commands']:
             curCommand = CommandInfo(
                 name = c['name'],
-                production = c['production'],
+                production = c.get('production', {}),
+                ideology = c.get('ideology', {}),
                 cost = c['cost'],
                 category = c['category'],
                 description = c['description']
@@ -258,6 +263,7 @@ class GameDatabase:
                 {
                     "name": c.name,
                     "production": c.production,
+                    "ideology": c.ideology,
                     "costs": c.costs,
                     "description": c.description
                 } for c in self.commands.values()

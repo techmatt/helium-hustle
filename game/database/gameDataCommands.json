@@ -42,6 +42,30 @@
       },
       "category": "Computation",
       "description": "Think about nothing in particular."
+    },
+    {
+      "name": "Warmonger",
+      "ideology": {
+        "Scientific": -0.25,
+        "Military": 0.25
+      },
+      "cost": {
+        "Credits": 10.0
+      },
+      "category": "Ideology",
+      "description": "Shift global geopolitics."
+    },
+    {
+      "name": "Fund Basic Research",
+      "ideology": {
+        "Scientific": 0.25,
+        "Military": -0.25
+      },
+      "cost": {
+        "Credits": 10.0
+      },
+      "category": "Ideology",
+      "description": "Shift global geopolitics."
     }
   ]
 }

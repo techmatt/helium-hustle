@@ -64,6 +64,10 @@ class CommandButtonWidget(QPushButton):
             rWidget = self.makeResourceWidget(gameUI, rName, production)
             rListLayout.addWidget(rWidget)
             
+        for iName, production in cInfo.ideology.items():
+            iWidget = self.makeResourceWidget(gameUI, iName, production)
+            rListLayout.addWidget(iWidget)
+            
         for rName, cost in cInfo.cost.items():
             rWidget = self.makeResourceWidget(gameUI, rName, -cost)
             rListLayout.addWidget(rWidget)

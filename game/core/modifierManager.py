@@ -37,3 +37,19 @@ class ModifierManager:
         cost = costMultiplier * info.baseCost
         
         return math.floor(cost)
+    
+    def updateIdeologyRank(state : GameState, iState : IdeologyState):
+        params = state.database.params
+        
+        s = abs(iState.totalScore)
+        iState.rank = 0
+        while True:
+            iState.localRankThreshold = params.baseIdeologyCost * math.pow(params.ideologyScaleFactor, iState.rank)
+            if s >= iState.localRankThreshold:
+                iState.rank += 1
+                s -= iState.localRankThreshold
+            else:
+                break
+        iState.localRankScore = s
+        if iState.totalScore < 0.0:
+            iState.rank = -iState.rank

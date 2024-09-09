@@ -118,14 +118,16 @@
         "Ice": 10000,
         "Energy": 10000,
         "Science": 10000,
-        "Helium-3": 10000
+        "Helium-3": 10000,
+        "Credits": 10000
       },
       "production": {
         "Regolith": 1000,
         "Ice": 1000,
         "Energy": 1000,
         "Science": 1000,
-        "Helium-3": 1000
+        "Helium-3": 1000,
+        "Credits": 1000
       },
       "costScaling": 1.01,
       "canDeactivate": true,

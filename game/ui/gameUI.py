@@ -84,7 +84,7 @@ class GameUI(QMainWindow):
         self.middleLayout = QVBoxLayout(self.middleFrame)
         
         self.rightFrame = QWidget()
-        self.rightFrame.setFixedWidth(500)
+        self.rightFrame.setFixedWidth(520)
         self.rightLayout = QVBoxLayout(self.rightFrame)
         
         self.makeLeftFrame()

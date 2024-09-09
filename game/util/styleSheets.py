@@ -142,4 +142,32 @@ class StyleSheets:
                 background-color: #2c3e50;
             }
         """
+        
+    PROGRESS_BAR_RED = """
+    QWidget {
+            font-family: 'Roboto', 'Segoe UI', 'Helvetica', sans-serif;
+            font-size: 12pt;
+            color: #2c3e50;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+    QProgressBar::chunk {
+        background-color: #FFA0A0;
+    }
+    """
+    
+    PROGRESS_BAR_GREEN = """
+    QWidget {
+            font-family: 'Roboto', 'Segoe UI', 'Helvetica', sans-serif;
+            font-size: 12pt;
+            color: #2c3e50;
+            font-weight: bold;
+            line-height: 1.4;
+        }
+    QProgressBar::chunk {
+        background-color: #90EE90;
+    }
+    """
+
+
 

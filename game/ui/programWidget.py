@@ -71,7 +71,7 @@ class ProgramWidget(QWidget):
         self.listWidget.setDefaultDropAction(Qt.DropAction.MoveAction)
         self.listWidget.setDragEnabled(True)
         self.listWidget.model().rowsMoved.connect(self.onRowsMoved)
-        self.listWidget.setFixedWidth(500)
+        self.listWidget.setFixedWidth(490)
         self.listWidget.setFixedHeight(350)
         
         self.loadListFromVisibleProgram()
