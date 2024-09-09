@@ -1,5 +1,6 @@
 
 from __future__ import annotations
+from re import M
 
 import sys
 import os
@@ -112,6 +113,7 @@ class GameUI(QMainWindow):
     def majorUIUpdate(self):
         # called when a large update is needed, such as a menu change or an event
         self.makeMiddleFrame()
+        self.state.dirty.projects = False
         
     def makeLeftFrame(self):
         self.clearLayout(self.leftLayout)
@@ -210,8 +212,15 @@ class GameUI(QMainWindow):
         if self.gameSpeed > 0:
             for i in range(0, self.gameSpeed):
                 self.state.step()
-                
-        self.updateLabels()
+
+        majorUpdateNeeded = False
+        if self.state.dirty.projects:
+            majorUpdateNeeded = True
+            
+        if majorUpdateNeeded:
+            self.majorUIUpdate()
+        else:
+            self.updateLabels()
         
         for eState in chain(self.state.activeEvents, self.state.ongoingEvents):
             if not eState.displayed:

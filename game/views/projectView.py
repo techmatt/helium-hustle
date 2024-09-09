@@ -149,7 +149,11 @@ class ProjectButtonWidget(QPushButton):
         return rWidget
         
     def makeTitleWidget(self):
-        nameLabel = QLabel(f"{self.pName}")
+        pState = self.gameUI.state.projects[self.pName]
+        if pState.info.repeatable:
+            nameLabel = QLabel(f"{self.pName} {pState.purchaseCount + 1}")
+        else:
+            nameLabel = QLabel(f"{self.pName}")
         nameLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
         nameLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
         return nameLabel
@@ -164,7 +168,8 @@ class ProjectButtonWidget(QPushButton):
         pState : ProjectState = state.projects[self.pName]
         
         for rName, rPayment in pState.resourcePayments.items():
-            self.rPaymentLabels[rName].setText(f"{-rPayment * state.database.params.intervalsPerSecond} /s")
+            displayNum = round(-rPayment * state.database.params.intervalsPerSecond, 1)
+            self.rPaymentLabels[rName].setText(f"{displayNum}".rstrip('0').rstrip('.') + "/s")
                 
         self.update()
 
@@ -186,10 +191,6 @@ class ProjectButtonWidget(QPushButton):
     def leaveEvent(self, event):
         self.update()
         
-    #def mousePressEvent(self, event):
-    #    if event.button() == Qt.MouseButton.LeftButton:
-    #        self.clicked.emit(self.pName)
-            
 class ProjectView():
     def __init__(self, gameUI : GameUI):
         super().__init__()

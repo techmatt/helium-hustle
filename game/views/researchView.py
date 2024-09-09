@@ -179,6 +179,8 @@ class ResearchView():
             self.sections[researchCategory] = CollapsibleSectionEntries(researchCategory)
         
         for rState in self.gameUI.state.research.values():
+            if rState.purchased or not rState.unlocked:
+                continue
             entryWidget = ResearchButtonWidget(self.gameUI, rState.info.name)
             entryWidget.clicked.connect(gameUI.purchaseResearch)
             self.sections[rState.info.category].childWidgets.append(entryWidget)

@@ -61,6 +61,7 @@ class ProjectState:
 class DirtyState:
     def __init__(self):
         self.events: bool = True
+        self.projects: bool = True
         
 class GameState:
     def __init__(self, database : GameDatabase):
@@ -254,6 +255,7 @@ class GameState:
         pState = self.projects[projectName]
         pState.purchaseCount += 1
         pState.progress = 0
+        self.dirty.projects = True
     
     def getBuildingProduction(self, buildingName : str) -> ResourceList:
         b = self.buildings[buildingName]
