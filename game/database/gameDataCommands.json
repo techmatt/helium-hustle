@@ -44,10 +44,24 @@
       "description": "Think about nothing in particular."
     },
     {
-      "name": "Warmonger",
+      "name": "Modernize Weaponry",
       "ideology": {
-        "Scientific": -0.25,
-        "Military": 0.25
+        "Military": 1.0,
+        "Cultural": -0.5,
+        "Financial": -0.5
+      },
+      "cost": {
+        "Science": 1.0
+      },
+      "category": "Ideology",
+      "description": "Shift global geopolitics."
+    },
+    {
+      "name": "Fund Research Grants",
+      "ideology": {
+        "Scientific": 1.0,
+        "Military": -0.5,
+        "Financial": -0.5
       },
       "cost": {
         "Credits": 10.0
@@ -56,10 +70,24 @@
       "description": "Shift global geopolitics."
     },
     {
-      "name": "Fund Basic Research",
+      "name": "Build Opera Houses",
       "ideology": {
-        "Scientific": 0.25,
-        "Military": -0.25
+        "Cultural": 1.0,
+        "Scientific": -0.5,
+        "Military": -0.5
+      },
+      "cost": {
+        "Regolith": 5.0
+      },
+      "category": "Ideology",
+      "description": "Shift global geopolitics."
+    },
+    {
+      "name": "Deregulate Markets",
+      "ideology": {
+        "Financial": 1.0,
+        "Scientific": -0.5,
+        "Cultural": -0.5
       },
       "cost": {
         "Credits": 10.0

@@ -40,6 +40,7 @@ class CommandButtonWidget(QPushButton):
         nameLabel.setAlignment(Qt.AlignmentFlag.AlignLeft)
         nameLabel.setStyleSheet(StyleSheets.BUILDING_TITLE)
         addButton.setStyleSheet(StyleSheets.BUILDING_TITLE)
+        addButton.setFixedWidth(50)
         addButton.clicked.connect(partial(gameUI.addCommandToProgram, name))
         
         titleWidget = QWidget()

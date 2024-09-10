@@ -107,9 +107,10 @@ class CollapsibleSectionWidget(QWidget):
         #self.contentLayout.update()
 
 class CollapsibleMenuWidget(QWidget):
-    def __init__(self, gameUI : GameUI, sectionEntries : Dict[str, CollapsibleSectionEntries], layoutType : str):
+    def __init__(self, gameUI : GameUI, sectionEntries : Dict[str, CollapsibleSectionEntries], layoutType : str, skipLabelUpdate : bool = False):
         super().__init__()
         self.gameUI = gameUI
+        self.skipLabelUpdate = skipLabelUpdate
         
         mainLayout = QVBoxLayout(self)
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
@@ -142,6 +143,8 @@ class CollapsibleMenuWidget(QWidget):
         self.scrollArea.setWidget(self.contentWidget)
         
     def updateLabels(self):
+        if self.skipLabelUpdate:
+            return
         for sectionWidget in self.sectionWidgets:
             for childWidget in sectionWidget.childWidgets:
                 childWidget.updateLabels()

@@ -48,7 +48,7 @@ class StatsView():
             entryWidget.setStyleSheet(StyleSheets.GENERAL_12PT)
             self.sections["Events"].childWidgets.append(entryWidget)
 
-        self.mainWidget = CollapsibleMenuWidget(gameUI, self.sections, "list")
+        self.mainWidget = CollapsibleMenuWidget(gameUI, self.sections, "list", skipLabelUpdate=True)
         
     def updateLabels(self):
         self.mainWidget.updateLabels()
