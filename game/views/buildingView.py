@@ -141,8 +141,8 @@ class BuildingButtonWidget(QPushButton):
         rNameLabel  = QLabel(f"{rName}")
         
         if isRate:
-            rValue *= self.gameUI.state.database.params.intervalsPerSecond
-            valueText = f"{rValue:+} /s"
+            rValue = self.gameUI.state.convertPerTickToPerSecond(rValue)
+            valueText = f"{rValue:+}/s"
         else:
             valueText = f"{rValue}"
         rValueLabel = QLabel(valueText)

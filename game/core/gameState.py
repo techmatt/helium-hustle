@@ -173,7 +173,7 @@ class GameState:
         self.step()
 
     def convertPerTickToPerSecond(self, tickRate : float) -> float:
-        return tickRate * self.database.params.ticksPerSecond
+        return tickRate * self.database.params.ticksPerPlayerSecond
     
     def convertTicksToYears(self, ticks : float) -> float:
         return ticks / self.database.params.ticksPerGameYear

@@ -122,7 +122,7 @@ class GameParams:
             ]
         
         self.timerInterval = 250 # timer interval in milliseconds
-        self.intervalsPerSecond = 4.0
+        self.ticksPerPlayerSecond = 4.0
 
         self.gameSecondsPerTick = 60 # each tick is a game minute
         self.ticksPerGameYear = 365.25 * 24 * 60 * 60 / self.gameSecondsPerTick

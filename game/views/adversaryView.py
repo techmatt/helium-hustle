@@ -41,35 +41,55 @@ class AdversaryButtonWidget(QPushButton):
         titleLayout.setContentsMargins(0, 0, 0, 0)
         titleLayout.addWidget(nameLabel)
         titleLayout.addStretch(1)
-        titleLayout.addWidget(addButton)
+
+        iconStatsWidget = QWidget()
+        iconStatsLayout = QHBoxLayout(iconStatsWidget)
+        iconStatsLayout.setContentsMargins(2, 2, 2, 2)
+        iconWidget = gameUI.makeIconLabel('icons/armies/' + name + '.png', 60, 60)
+        iconWidget.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
+        
+        statsAWidget = QWidget()
+        statsALayout = QVBoxLayout(statsAWidget)
+        
+        self.strengthLabel = QLabel(f"Enemy forces: X")
+        self.strengthLabel.setStyleSheet(StyleSheets.GENERAL_12PT_BOLD)
+        self.effectivenessLabel = QLabel(f"Effectiveness: X%")
+        self.effectivenessLabel.setStyleSheet(StyleSheets.GENERAL_12PT_BOLD)
+        statsALayout.addWidget(self.strengthLabel)
+        statsALayout.addWidget(self.effectivenessLabel)
+        
+        iconStatsLayout.addWidget(iconWidget)
+        iconStatsLayout.addWidget(statsAWidget)
+        
         
         # Resource list
         
         attrListWidget = QWidget()
-        attrListLayout = QVBoxLayout(rListWidget)
+        attrListLayout = QVBoxLayout(attrListWidget)
         attrListLayout.setSpacing(0)
         attrListLayout.setContentsMargins(0, 0, 0, 0)
         attrListLayout.setAlignment(Qt.AlignmentFlag.AlignLeft | Qt.AlignmentFlag.AlignTop)
         
-        self.strengthLabel = QLabel(f"Strength: {aState.strength}")
-        self.effectivenessLabel = QLabel(f"Effectiveness: {aState.effectiveness}")
-        self.spawnRateLabel = QLabel(f"Spawn rate: {self.state.convertPerTickToPerSecond(aState.spawnRate)} /s")
-        self.nSurgeTimeLabel = QLabel(f"Time to next surge: {self.state.convertTicksToYears(aState.ticksToSurge)} years")
-        self.nSurgeStrLabel = QLabel(f"Next surge strength: {aState.nextSurgeStrength}")
+        self.spawnRateLabel = QLabel(f"Spawn rate: X/s")
+        self.nSurgeTimeLabel = QLabel(f"Time to next surge: X years")
+        self.nSurgeStrLabel = QLabel(f"Next surge force count: X")
         
-        attrListLayout.addWidget(self.strengthLabel)
-        attrListLayout.addWidget(self.effectivenessLabel)
+        self.spawnRateLabel.setStyleSheet(StyleSheets.GENERAL_12PT)
+        self.nSurgeTimeLabel.setStyleSheet(StyleSheets.GENERAL_12PT)
+        self.nSurgeStrLabel.setStyleSheet(StyleSheets.GENERAL_12PT)
+        
         attrListLayout.addWidget(self.spawnRateLabel)
         attrListLayout.addWidget(self.nSurgeTimeLabel)
         attrListLayout.addWidget(self.nSurgeStrLabel)
         
         attrListLayout.addStretch()
 
-        descWidget = QLabel(aInfo.description)
+        descWidget = QLabel(aInfo.flavorText)
         descWidget.setStyleSheet(StyleSheets.BUILDING_DESCRIPTION)
         descWidget.setWordWrap(True)
         
         layout.addWidget(titleWidget)
+        layout.addWidget(iconStatsWidget)
         layout.addWidget(attrListWidget)
         layout.addWidget(descWidget)
         
@@ -92,12 +112,10 @@ class AdversaryButtonWidget(QPushButton):
         self.update()
         
     def updateLabels(self):
+        state = self.gameUI.state
+        aState = state.adversaries[self.name]
         self.update()
-
-    def mousePressEvent(self, event):
-        if event.button() == Qt.MouseButton.LeftButton:
-            self.clicked.emit(self.name)
-            
+    
 class AdversaryView():
     def __init__(self, gameUI : GameUI):
         super().__init__()
@@ -106,11 +124,11 @@ class AdversaryView():
         
         self.sections: Dict[str, CollapsibleSectionEntries] = {}
 
-        for adversaryCategory in state.database.params.adversaries:
+        for adversaryCategory in state.database.params.adversaryCategories:
             self.sections[adversaryCategory] = CollapsibleSectionEntries(adversaryCategory)
         
         for aState in state.adversaries.values():
-            entryWidget = AdversaryButtonWidget(self.gameUI, cState.info.name)
+            entryWidget = AdversaryButtonWidget(self.gameUI, aState.info.name)
             self.sections[aState.info.category].childWidgets.append(entryWidget)
 
         self.mainWidget = CollapsibleMenuWidget(gameUI, self.sections, "grid")

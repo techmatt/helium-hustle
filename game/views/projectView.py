@@ -107,9 +107,7 @@ class ProjectButtonWidget(QPushButton):
         
         rNameLabel  = QLabel(f"{rName} (x{rate})")
         
-        #paymentValue *= self.gameUI.state.database.params.intervalsPerSecond
-        #paymentText = f"{rValue:+} /s"
-        rPaymentLabel = QLabel("X /s")
+        rPaymentLabel = QLabel("X/s")
         rNameLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignLeft)
         rPaymentLabel.setAlignment(Qt.AlignmentFlag.AlignVCenter | Qt.AlignmentFlag.AlignRight)
         rNameLabel.setStyleSheet(StyleSheets.BUILDING_RESOURCE_LIST)
@@ -130,7 +128,7 @@ class ProjectButtonWidget(QPushButton):
         subButton.setFixedSize(buttonSize)
         addButton.setFixedSize(buttonSize)
 
-        addValue = 1 / self.gameUI.state.database.params.intervalsPerSecond
+        addValue = 1 / self.gameUI.state.database.params.ticksPerPlayerSecond
         subValue = -addValue
 
         subButton.clicked.connect(partial(self.gameUI.modifyProjectPayment, self.pName, rName, subValue))
@@ -168,7 +166,7 @@ class ProjectButtonWidget(QPushButton):
         pState : ProjectState = state.projects[self.pName]
         
         for rName, rPayment in pState.resourcePayments.items():
-            displayNum = round(-rPayment * state.database.params.intervalsPerSecond, 1)
+            displayNum = round(-rPayment * state.database.params.ticksPerPlayerSecond, 1)
             self.rPaymentLabels[rName].setText(f"{displayNum}".rstrip('0').rstrip('.') + "/s")
                 
         self.update()

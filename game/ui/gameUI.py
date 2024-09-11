@@ -166,6 +166,8 @@ class GameUI(QMainWindow):
         self.buildingView = None
         self.researchView = None
         self.projectView = None
+        self.ideologyView = None
+        self.adversaryView = None
         self.statsView = None
 
         # TODO: delete these
@@ -260,7 +262,7 @@ class GameUI(QMainWindow):
         if self.mode == GameWindowMode.IDEOLOGIES:
             self.ideologyView.updateLabels()
         if self.mode == GameWindowMode.ADVERSARIES:
-            self.ideologyView.updateLabels()
+            self.adversaryView.updateLabels()
         if self.mode == GameWindowMode.STATS:
             self.statsView.updateLabels()
             
