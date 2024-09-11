@@ -42,7 +42,7 @@ class ResourceDisplayWidget(QWidget):
         rLayout.setContentsMargins(0, 0, 0, 0)
             
         iconPath = 'icons/resources/' + rState.info.name + '.png'
-        iconLabel = self.gameUI.makeIconLabel(iconPath, 32, 32)
+        iconLabel = self.gameUI.makeIconLabel(iconPath, 24, 24)
         
         rLabelName = QLabel(f"{rState.info.name}:")
         rLabelValue = QLabel("")

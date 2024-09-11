@@ -70,13 +70,18 @@ class IdeologyInfo(NamedTuple):
     name: str
     flavorText: str
     
+class DefenderInfo(NamedTuple):
+    name: str
+    category: str
+    flavorText: str
+    
 class AdversaryInfo(NamedTuple):
     name: str
     surgeIntervalTicksBase: float
     surgeBaseAmount: float
-    surgeGrowthFactor: float
-    incomeStart: float
-    incomeGrowth: float
+    surgeScaleFactor: float
+    spawnRateStart: float
+    spawnRateScalePerYearStart: float
     category: str
     flavorText: str
     
@@ -120,12 +125,13 @@ class GameParams:
         self.intervalsPerSecond = 4.0
 
         self.gameSecondsPerTick = 60 # each tick is a game minute
+        self.ticksPerGameYear = 365.25 * 24 * 60 * 60 / self.gameSecondsPerTick
         self.ticksPerProcessorCycle = 4 # the processors operate more slowly than the game clock
         
         self.maxProgramCount = 5
         
         self.baseIdeologyCost = 1000
-        self.ideologyScaleFactor = 1.5
+        self.ideologyScaleFactor = 1.2
         
         self.commandCategories = ["Computation", "Manual Operation", "Science", "Ideology"]
         self.researchCategories = ["Production", "Programming", "Defensive", "Offensive"]
@@ -158,6 +164,9 @@ class GameDatabase:
             
         with open(filePathBase + 'Adversaries.json', 'r') as file:
             adversaryData = json.load(file)
+            
+        with open(filePathBase + 'Defenders.json', 'r') as file:
+            defenderData = json.load(file)
 
         self.commands: Dict[str, CommandInfo] = {}
         for c in commandData['commands']:
@@ -246,15 +255,24 @@ class GameDatabase:
             )
             self.ideologies[curIdeology.name] = curIdeology
 
+        self.defenders: Dict[str, DefenderInfo] = {}
+        for d in defenderData['defenders']:
+            curDefender = DefenderInfo(
+                name = d['name'],
+                category = d['category'],
+                flavorText = d['flavorText']
+            )
+            self.defenders[curDefender.name] = curDefender
+            
         self.adversaries: Dict[str, AdversaryInfo] = {}
         for a in adversaryData['adversaries']:
             curAdversary = AdversaryInfo(
                 name = a['name'],
                 surgeIntervalTicksBase = a['surgeIntervalTicksBase'],
                 surgeBaseAmount = a['surgeBaseAmount'],
-                surgeGrowthFactor = a['surgeGrowthFactor'],
-                incomeStart = a['incomeStart'],
-                incomeGrowth = a['incomeGrowth'],
+                surgeScaleFactor = a['surgeScaleFactor'],
+                spawnRateStart = a['spawnRateStart'],
+                spawnRateScalePerYearStart = a['spawnRateScalePerYearStart'],
                 category = a['category'],
                 flavorText = a['flavorText']
             )

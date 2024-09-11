@@ -18,15 +18,15 @@ class IconButton(QPushButton):
     def __init__(self, name : str, iconPath : str, gameUI : GameUI):
         super().__init__()
         self.name = name
-        self.setFixedSize(120, 100)  # Adjust size as needed
+        self.setFixedSize(120, 80)  # Adjust size as needed
 
         layout = QVBoxLayout(self)
-        layout.setSpacing(5)
-        layout.setContentsMargins(5, 5, 5, 5)
+        layout.setSpacing(0)
+        layout.setContentsMargins(0, 0, 0, 0)
 
         # Icon
         iconLabel = QLabel()
-        iconLabel.setPixmap(gameUI.pixmapCache.getPixmap(iconPath, 80, 80))
+        iconLabel.setPixmap(gameUI.pixmapCache.getPixmap(iconPath, 64, 64))
         iconLabel.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         # Text
@@ -75,6 +75,7 @@ class MainMenuWidget(QWidget):
             ("Research", "research.png"),
             ("Projects", "projects.png"),
             ("Ideologies", "ideologies.png"),
+            ("Adversaries", "adversaries.png"),
             ("Stats", "stats.png"),
             ("Achievements", "achievements.png"),
             ("Options", "options.png"),

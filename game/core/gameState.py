@@ -71,16 +71,17 @@ class AdversaryState:
         self.info: AdversaryInfo = info
         self.unlocked: bool = False
         self.strength: float = 0
-        self.income: float = 0
-        self.incomeGrowthPerYear: float = 0
+        self.spawnRate: float = 0
+        self.spawnRateScalePerYear: float = 0
         self.ticksToSurge: float = 0
         self.nextSurgeStrength: float = 0
         self.decayRate: float = 0
         self.effectiveness: float = 0
         
 class DefenderState:
-    def __init__(self, info : DefenseInfo):
+    def __init__(self, info : DefenderInfo):
         self.info: DefenderInfo = info
+        self.rState: ResourceState = None
         self.unlocked: bool = False
         self.strength: float = 0
         self.decayRate: float = 0
@@ -133,6 +134,17 @@ class GameState:
         for iInfo in database.ideologies.values():
             iState = IdeologyState(iInfo)
             self.ideologies[iInfo.name] = iState
+            
+        self.adversaries: Dict[str, AdversaryState] = {}
+        for aInfo in database.adversaries.values():
+            aState = AdversaryState(aInfo)
+            self.adversaries[aInfo.name] = aState
+
+        self.defenders: Dict[str, DefenderState] = {}
+        for dInfo in database.defenders.values():
+            dState = DefenderState(dInfo)
+            dState.rState = self.resources[dInfo.name]
+            self.defenders[dInfo.name] = dState
 
         self.programs: List[GameProgram] = []
         for i in range(0, database.params.maxProgramCount):
@@ -160,6 +172,12 @@ class GameState:
 
         self.step()
 
+    def convertPerTickToPerSecond(self, tickRate : float) -> float:
+        return tickRate * self.database.params.ticksPerSecond
+    
+    def convertTicksToYears(self, ticks : float) -> float:
+        return ticks / self.database.params.ticksPerGameYear
+    
     def unlock(self, objectToUnlock : str):
         if objectToUnlock in self.commands:
             self.commands[objectToUnlock].unlocked = True

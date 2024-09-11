@@ -155,30 +155,7 @@ class CommandButtonWidget(QPushButton):
     def mousePressEvent(self, event):
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit(self.name)
-            
-"""class CommandViewWidget(QWidget):
-    def __init__(self, gameUI : GameUI):
-        super().__init__()
-        self.gameUI = gameUI
-        
-        commandGridLayout = QGridLayout(self)
-        
-        self.commandWidgets : Dict[str, CommandButtonWidget] = {}
-        
-        for index, cName in enumerate(gameUI.database.commands.keys()):
-            cWidget = CommandButtonWidget(gameUI, cName)
-
-            row = index // 3
-            col = index % 3
-            commandGridLayout.addWidget(cWidget, row, col)
-            self.commandWidgets[cName] = cWidget
-            
-            cWidget.clicked.connect(gameUI.runCommand)
-            
-    def updateLabels(self):
-        for widget in self.commandWidgets.values():
-            widget.updateLabels()"""
-    
+         
 class CommandView():
     def __init__(self, gameUI : GameUI):
         super().__init__()

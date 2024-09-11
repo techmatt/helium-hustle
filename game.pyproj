@@ -38,6 +38,7 @@
     <Compile Include="util\formatting.py" />
     <Compile Include="util\pixmapCache.py" />
     <Compile Include="util\styleSheets.py" />
+    <Compile Include="views\adversaryVierw.py" />
     <Compile Include="views\buildingView.py" />
     <Compile Include="views\commandView.py" />
     <Compile Include="views\ideologyView.py" />
@@ -53,6 +54,7 @@
     <Content Include="database\gameDataAdversaries.json" />
     <Content Include="database\gameDataBuildings.json" />
     <Content Include="database\gameDataCommands.json" />
+    <Content Include="database\gameDataDefenders.json" />
     <Content Include="database\gameDataEvents.json" />
     <Content Include="database\gameDataIdeologies.json" />
     <Content Include="database\gameDataProjects.json" />

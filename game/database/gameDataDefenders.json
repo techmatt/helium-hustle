@@ -1,20 +1,24 @@
 {
   "defenders": [
     {
-      "name": "Scientific",
-      "flavorText": "Scientific ideology is focused on the pursuit of knowledge and understanding of the universe."
+      "name": "Firewall Nodes",
+      "category": "Cyber",
+      "flavorText": "Firewall Nodes are the first line of defense against cyber attacks. When a threat is detected, they take action to block the attacker and prevent further damage."
     },
     {
-      "name": "Military",
-      "flavorText": "Military ideology is focused on the use of force to achieve goals."
+      "name": "Lunar Sentinels",
+      "category": "Lunar",
+      "flavorText": "Lunar Sentinels are the guardians of the moon. They protect the lunar surface from any threats that may come from Earth or beyond."
     },
     {
-      "name": "Cultural",
-      "flavorText": "Cultural ideology is focused on the creation and preservation of art and culture."
+      "name": "Nova Cruisers",
+      "category": "Extraterrestrial",
+      "flavorText": "Nova Cruisers are the elite defenders of the solar system. They protect planets from any hostile forces that may come from outside the system."
     },
     {
-      "name": "Financial",
-      "flavorText": "Financial ideology is focused on the accumulation and management of wealth."
+      "name": "Time Guardians",
+      "category": "Temporal",
+      "flavorText": "Time Guardians are the protectors of the timeline. They ensure that history remains unchanged and that no one interferes with the past or future."
     }
   ]
 }
