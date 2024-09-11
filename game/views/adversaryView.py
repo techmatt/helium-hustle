@@ -98,20 +98,20 @@ class AdversaryButtonWidget(QPushButton):
         if event.button() == Qt.MouseButton.LeftButton:
             self.clicked.emit(self.name)
             
-class CommandView():
+class AdversaryView():
     def __init__(self, gameUI : GameUI):
         super().__init__()
         self.gameUI = gameUI
+        state = gameUI.state
         
         self.sections: Dict[str, CollapsibleSectionEntries] = {}
 
-        for commandCategory in self.gameUI.state.database.params.commandCategories:
-            self.sections[commandCategory] = CollapsibleSectionEntries(commandCategory)
+        for adversaryCategory in state.database.params.adversaries:
+            self.sections[adversaryCategory] = CollapsibleSectionEntries(adversaryCategory)
         
-        for cState in self.gameUI.state.commands.values():
-            entryWidget = CommandButtonWidget(self.gameUI, cState.info.name)
-            entryWidget.clicked.connect(gameUI.runCommand)
-            self.sections[cState.info.category].childWidgets.append(entryWidget)
+        for aState in state.adversaries.values():
+            entryWidget = AdversaryButtonWidget(self.gameUI, cState.info.name)
+            self.sections[aState.info.category].childWidgets.append(entryWidget)
 
         self.mainWidget = CollapsibleMenuWidget(gameUI, self.sections, "grid")
         

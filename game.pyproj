@@ -38,7 +38,7 @@
     <Compile Include="util\formatting.py" />
     <Compile Include="util\pixmapCache.py" />
     <Compile Include="util\styleSheets.py" />
-    <Compile Include="views\adversaryVierw.py" />
+    <Compile Include="views\adversaryView.py" />
     <Compile Include="views\buildingView.py" />
     <Compile Include="views\commandView.py" />
     <Compile Include="views\ideologyView.py" />

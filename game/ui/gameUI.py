@@ -30,6 +30,7 @@ from game.views.researchView import ResearchView
 from game.views.projectView import ProjectView
 from game.views.ideologyView import IdeologyView
 from game.views.statsView import StatsView
+from game.views.adversaryView import AdversaryView
 
 from game.util.pixmapCache import PixmapCache
 from game.util.formatting import formatSystemUptime
@@ -196,6 +197,11 @@ class GameUI(QMainWindow):
             self.ideologyView = IdeologyView(self)
             middleWidget = self.ideologyView.mainWidget
 
+        if self.mode == GameWindowMode.ADVERSARIES:
+            middleTitle = "Adversaries"
+            self.adversaryView = AdversaryView(self)
+            middleWidget = self.adversaryView.mainWidget
+            
         if self.mode == GameWindowMode.STATS:
             middleTitle = "Statistics and Buffs"
             self.statsView = StatsView(self)
@@ -252,6 +258,8 @@ class GameUI(QMainWindow):
         if self.mode == GameWindowMode.PROJECTS:
             self.projectView.updateLabels()
         if self.mode == GameWindowMode.IDEOLOGIES:
+            self.ideologyView.updateLabels()
+        if self.mode == GameWindowMode.ADVERSARIES:
             self.ideologyView.updateLabels()
         if self.mode == GameWindowMode.STATS:
             self.statsView.updateLabels()
