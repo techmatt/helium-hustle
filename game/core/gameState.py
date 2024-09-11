@@ -66,6 +66,25 @@ class IdeologyState:
         self.localRankScore: float = 0
         self.localRankThreshold: float = 0
         
+class AdversaryState:
+    def __init__(self, info : AdversaryInfo):
+        self.info: AdversaryInfo = info
+        self.unlocked: bool = False
+        self.strength: float = 0
+        self.income: float = 0
+        self.incomeGrowthPerYear: float = 0
+        self.ticksToSurge: float = 0
+        self.nextSurgeStrength: float = 0
+        self.decayRate: float = 0
+        self.effectiveness: float = 0
+        
+class DefenderState:
+    def __init__(self, info : DefenseInfo):
+        self.info: DefenderInfo = info
+        self.unlocked: bool = False
+        self.strength: float = 0
+        self.decayRate: float = 0
+    
 class DirtyState:
     def __init__(self):
         self.events: bool = True

@@ -3,3 +3,8 @@ prompts:
 
 a simple game icon of an ideology on a white background
 a simple game icon of mathematics on a white background
+
+Adversary math:
+ * All armies decay per tick
+ * Each tick, compute sum of all armies at each category. 1% of this value eliminate each other from both sides, which could bring one size to zero.
+ * Adversary effectiveness is percentage of the combined troop total that is that adversary.

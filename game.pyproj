@@ -50,6 +50,7 @@
     <InterpreterReference Include="Global|PythonCore|3.10" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="database\gameDataAdversaries.json" />
     <Content Include="database\gameDataBuildings.json" />
     <Content Include="database\gameDataCommands.json" />
     <Content Include="database\gameDataEvents.json" />

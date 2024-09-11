@@ -53,10 +53,8 @@ class ProjectInfo(NamedTuple):
 
 class ResourceInfo(NamedTuple):
     name: str
-    basePrice: float
-    baseDemand: float
-    elasticity: float
-
+    category: str
+    
 class EventInfo(NamedTuple):
     name: str
     resourcesRequired: Dict[str, float]
@@ -70,6 +68,16 @@ class EventInfo(NamedTuple):
 
 class IdeologyInfo(NamedTuple):
     name: str
+    flavorText: str
+    
+class AdversaryInfo(NamedTuple):
+    name: str
+    surgeIntervalTicksBase: float
+    surgeBaseAmount: float
+    surgeGrowthFactor: float
+    incomeStart: float
+    incomeGrowth: float
+    category: str
     flavorText: str
     
 class GameParams:
@@ -123,6 +131,7 @@ class GameParams:
         self.researchCategories = ["Production", "Programming", "Defensive", "Offensive"]
         self.projectCategories = ["Robot Welfare", "Temporal Constructs"]
         self.buildingCategories = ["Mining", "Power", "Storage", "Processors", "Economy"]
+        self.adversaryCategories = ["Cyber", "Lunar", "Extraterrestrial", "Temporal"]
 
 class GameDatabase:
     def __init__(self, filePathBase):
@@ -146,6 +155,9 @@ class GameDatabase:
             
         with open(filePathBase + 'Ideologies.json', 'r') as file:
             ideologyData = json.load(file)
+            
+        with open(filePathBase + 'Adversaries.json', 'r') as file:
+            adversaryData = json.load(file)
 
         self.commands: Dict[str, CommandInfo] = {}
         for c in commandData['commands']:
@@ -163,9 +175,7 @@ class GameDatabase:
         for r in resourceData['resources']:
             curResource = ResourceInfo(
                 name = r['name'],
-                basePrice = r['basePrice'],
-                baseDemand = r['baseDemand'],
-                elasticity = r['elasticity']
+                category = r['category']
             )
             self.resources[curResource.name] = curResource
 
@@ -235,6 +245,20 @@ class GameDatabase:
                 flavorText = i['flavorText']
             )
             self.ideologies[curIdeology.name] = curIdeology
+
+        self.adversaries: Dict[str, AdversaryInfo] = {}
+        for a in adversaryData['adversaries']:
+            curAdversary = AdversaryInfo(
+                name = a['name'],
+                surgeIntervalTicksBase = a['surgeIntervalTicksBase'],
+                surgeBaseAmount = a['surgeBaseAmount'],
+                surgeGrowthFactor = a['surgeGrowthFactor'],
+                incomeStart = a['incomeStart'],
+                incomeGrowth = a['incomeGrowth'],
+                category = a['category'],
+                flavorText = a['flavorText']
+            )
+            self.adversaries[curAdversary.name] = curAdversary
             
         self.params: GameParams = GameParams(self)
         self.verifyData()

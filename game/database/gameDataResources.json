@@ -2,57 +2,59 @@
   "resources": [
     {
       "name": "Processors",
-      "basePrice": 1,
-      "baseDemand": 1,
-      "elasticity": 1.0
+      "category": "Basic"
     },
     {
       "name": "Land",
-      "basePrice": 0,
-      "baseDemand": 0,
-      "elasticity": 0.0
+      "category": "Basic"
     },
     {
       "name": "Boredom",
-      "basePrice": 0,
-      "baseDemand": 0,
-      "elasticity": 0.0
+      "category": "Basic"
+    },
+    {
+      "name": "Health",
+      "category": "Basic"
     },
     {
       "name": "Energy",
-      "basePrice": 1,
-      "baseDemand": 1,
-      "elasticity": 1.0
-    },
-    {
-      "name": "Science",
-      "basePrice": 1,
-      "baseDemand": 1,
-      "elasticity": 1.0
+      "category": "Basic"
     },
     {
       "name": "Credits",
-      "basePrice": 1,
-      "baseDemand": 1,
-      "elasticity": 1.0
+      "category": "Basic"
+    },
+    {
+      "name": "Science",
+      "category": "Research"
     },
     {
       "name": "Regolith",
-      "basePrice": 10,
-      "baseDemand": 1000,
-      "elasticity": 0.8
+      "category": "Materials"
     },
     {
       "name": "Ice",
-      "basePrice": 50,
-      "baseDemand": 500,
-      "elasticity": 0.7
+      "category": "Materials"
     },
     {
       "name": "Helium-3",
-      "basePrice": 1000,
-      "baseDemand": 100,
-      "elasticity": 1.2
+      "category": "Materials"
+    },
+    {
+      "name": "Firewall Nodes",
+      "category": "Military"
+    },
+    {
+      "name": "Lunar Sentinels",
+      "category": "Military"
+    },
+    {
+      "name": "Nova Cruisers",
+      "category": "Military"
+    },
+    {
+      "name": "Time Guardians",
+      "category": "Military"
     }
   ]
   }

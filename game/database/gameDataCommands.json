@@ -90,7 +90,10 @@
         "Cultural": -0.5
       },
       "cost": {
-        "Credits": 10.0
+        "Credits": 1.0
+      },
+      "production": {
+        "Boredom": 0.1
       },
       "category": "Ideology",
       "description": "Shift global geopolitics."
