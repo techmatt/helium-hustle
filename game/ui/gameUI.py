@@ -221,9 +221,11 @@ class GameUI(QMainWindow):
 
     def timerTick(self):
         
-        # do not tick game while dialog is active.
         if self.activeDialog:
-            return
+            if self.state.debugSkipEvents:
+                self.activeDialog.accept()
+            # do not tick game while dialog is active.
+            #return
             
         if self.gameSpeed > 0:
             for i in range(0, self.gameSpeed):

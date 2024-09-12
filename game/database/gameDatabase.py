@@ -77,11 +77,11 @@ class DefenderInfo(NamedTuple):
     
 class AdversaryInfo(NamedTuple):
     name: str
-    surgeIntervalTicksBase: float
+    surgeIntervalTicks: float
     surgeBaseAmount: float
     surgeScaleFactor: float
     spawnRateStart: float
-    spawnRateScalePerYearStart: float
+    spawnRateScalePerSurge: float
     category: str
     flavorText: str
     
@@ -124,15 +124,19 @@ class GameParams:
         self.timerInterval = 250 # timer interval in milliseconds
         self.ticksPerPlayerSecond = 4.0
 
-        self.gameSecondsPerTick = 60 # each tick is a game minute
+        self.gameSecondsPerTick = 60 * 60 # each tick is a game hour
         self.ticksPerGameYear = 365.25 * 24 * 60 * 60 / self.gameSecondsPerTick
         self.ticksPerProcessorCycle = 4 # the processors operate more slowly than the game clock
+        self.ticksPerArmyCycle = 4 # the armies operate more slowly than the game clock
         
         self.maxProgramCount = 5
         
         self.baseIdeologyCost = 1000
         self.ideologyScaleFactor = 1.2
         
+        self.startDefenderDecayRate = 0.01
+        self.armyFightRatio = 0.01
+
         self.commandCategories = ["Computation", "Manual Operation", "Science", "Ideology"]
         self.researchCategories = ["Production", "Programming", "Defensive", "Offensive"]
         self.projectCategories = ["Robot Welfare", "Temporal Constructs"]
@@ -268,11 +272,11 @@ class GameDatabase:
         for a in adversaryData['adversaries']:
             curAdversary = AdversaryInfo(
                 name = a['name'],
-                surgeIntervalTicksBase = a['surgeIntervalTicksBase'],
+                surgeIntervalTicks = a['surgeIntervalTicks'],
                 surgeBaseAmount = a['surgeBaseAmount'],
                 surgeScaleFactor = a['surgeScaleFactor'],
                 spawnRateStart = a['spawnRateStart'],
-                spawnRateScalePerYearStart = a['spawnRateScalePerYearStart'],
+                spawnRateScalePerSurge = a['spawnRateScalePerSurge'],
                 category = a['category'],
                 flavorText = a['flavorText']
             )

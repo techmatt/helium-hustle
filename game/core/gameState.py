@@ -8,8 +8,9 @@ import math
 from typing import Dict, List, NamedTuple, Set
 from game.core.gameProgram import GameProgram, GameCommand
 
-from game.database.gameDatabase import (ResourceList, GameDatabase, CommandInfo,
-    ResourceInfo, BuildingInfo, EventInfo, ResearchInfo, ProjectInfo)
+from game.database.gameDatabase import (ResourceList, GameDatabase, GameParams, CommandInfo,
+    ResourceInfo, BuildingInfo, EventInfo, ResearchInfo, ProjectInfo, AdversaryInfo, IdeologyInfo,
+    DefenderInfo)
 
 from game.core.eventManager import EventManager
 from game.core.modifierManager import ModifierManager
@@ -72,7 +73,6 @@ class AdversaryState:
         self.unlocked: bool = False
         self.strength: float = 0
         self.spawnRate: float = 0
-        self.spawnRateScalePerYear: float = 0
         self.ticksToSurge: float = 0
         self.nextSurgeStrength: float = 0
         self.decayRate: float = 0
@@ -83,7 +83,6 @@ class DefenderState:
         self.info: DefenderInfo = info
         self.rState: ResourceState = None
         self.unlocked: bool = False
-        self.strength: float = 0
         self.decayRate: float = 0
     
 class DirtyState:
@@ -94,6 +93,7 @@ class DirtyState:
 class GameState:
     def __init__(self, database : GameDatabase):
         self.database: GameDatabase = database
+        self.params: GameParams = self.database.params # quick access to params
         
         self.commands: Dict[str, CommandState] = {}
         for cInfp in database.commands.values():
@@ -141,10 +141,12 @@ class GameState:
             self.adversaries[aInfo.name] = aState
 
         self.defenders: Dict[str, DefenderState] = {}
+        self.defendersByCategory: Dict[str, DefenderState] = {}
         for dInfo in database.defenders.values():
             dState = DefenderState(dInfo)
             dState.rState = self.resources[dInfo.name]
             self.defenders[dInfo.name] = dState
+            self.defendersByCategory[dInfo.category] = dState
 
         self.programs: List[GameProgram] = []
         for i in range(0, database.params.maxProgramCount):
@@ -163,11 +165,21 @@ class GameState:
             self.programs[0].commands.append(GameCommand(self.commands["Sell Cloud Compute"].info))
             self.programs[0].commands[2].maxCount = 5
         
+        adversaryDebug = True
+        if adversaryDebug:
+            for dState in self.defenders.values():
+                dState.unlocked = True
+            for aState in self.adversaries.values():
+                aState.unlocked = True
+                
+        self.debugSkipEvents = True
+
         self.eventManager: EventManager = EventManager(self)
         self.activeEvents: List[EventState] = []
         self.ongoingEvents: List[EventState] = []
         self.ticks: int = 0
         self.ticksUntilProcessorCycle: int = 0
+        self.ticksUntilArmyCycle: int = 0
         self.dirty: DirtyState = DirtyState()
 
         self.step()
@@ -282,6 +294,62 @@ class GameState:
             if program.assignedProcessors > 0:
                 program.step()
 
+    def armySurge(self, adversaryName : str):
+        aState = self.adversaries[adversaryName]
+        aState.strength += aState.nextSurgeStrength
+        aState.ticksToSurge = aState.info.surgeIntervalTicks
+        aState.nextSurgeStrength *= aState.info.surgeScaleFactor
+        aState.spawnRate *= aState.info.surgeScaleFactor
+        
+    def updateArmies(self):
+        # process adversary growth, attrition, and surges
+        for aState in self.adversaries.values():
+            if not aState.unlocked:
+                continue
+            
+            # adversaries decay over time
+            aState.strength *= (1.0 - aState.decayRate)
+            
+            # adversaries spawn new troops
+            aState.strength += aState.spawnRate
+
+            # periodically, armies surge, creating a burst of new troops
+            aState.ticksToSurge -= self.params.ticksPerArmyCycle
+            if aState.ticksToSurge < 0:
+                self.armySurge(aState.info.name)
+                
+        # process defender attrition
+        for dState in self.defenders.values():
+            if not dState.unlocked:
+                continue
+            
+            # defenders decay over time
+            dState.rState.count *= dState.decayRate
+        
+        # process all army fights
+        for aState in self.adversaries.values():
+            dState = self.defendersByCategory[aState.info.category]
+            
+            totalDefenders = dState.rState.count
+            totalAttackers = aState.strength
+                    
+            totalArmies = totalDefenders + totalAttackers
+            activeFighters = totalArmies * self.params.armyFightRatio
+            activeFighters = min(activeFighters, totalAttackers)
+            activeFighters = min(activeFighters, totalDefenders)
+            
+            dState.rState.count -= activeFighters
+            aState.strength -= activeFighters
+
+        for aState in self.adversaries.values():
+            totalDefenders = dState.rState.count
+            totalAttackers = aState.strength
+            totalArmies = totalDefenders + totalAttackers
+            if totalArmies == 0:
+                aState.effectiveness = 0
+            else:
+                aState.effectiveness = totalAttackers / totalArmies
+            
     def step(self):
         self.updateStorageAndProcessors()
         self.updateIncomeAndBuildingProduction()
@@ -294,6 +362,12 @@ class GameState:
         
         self.updateProjectPayments()
 
+        if self.ticksUntilArmyCycle > 0:
+            self.ticksUntilArmyCycle -= 1
+        else:
+            self.updateArmies()
+            self.ticksUntilArmyCycle = self.database.params.ticksPerProcessorCycle
+        
         # cap all resources to their storage capacity
         for rState in self.resources.values():
             rState.count = min(rState.count, rState.storage)
@@ -335,14 +409,6 @@ class GameState:
         
     def getBuildingCost(self, buildingName : str) -> ResourceList:
         return ModifierManager.getBuildingCost(self, buildingName)
-        """b = self.buildings[buildingName]
-        
-        costs: Dict[str, float] = {}
-        costMultiplier = pow(b.info.costScaling, b.totalCount)
-        for resourceName, baseCost in b.info.baseCost.items():
-            costs[resourceName] = math.floor(baseCost * costMultiplier)
-            
-        return ResourceList(costs)"""
     
     def getResearchCost(self, researchName : str) -> ResourceList:
         r = self.research[researchName]

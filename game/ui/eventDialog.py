@@ -79,12 +79,12 @@ class EventDialog(QDialog):
         
         buttonLayout = QHBoxLayout()
 
-        options = eInfo.options
-        if len(options) == 0 or eState.completed:
-            options = ["OK"]
+        self.options = eInfo.options
+        if len(self.options) == 0 or eState.completed:
+            self.options = ["OK"]
             
         buttonLayout.addStretch()
-        for o in options:
+        for o in self.options:
             button = QPushButton(o)
             button.clicked.connect(partial(self.buttonPressed, o))
             button.setStyleSheet(StyleSheets.DIALOG_BUTTON)
@@ -114,6 +114,9 @@ class EventDialog(QDialog):
     def sizeHint(self) -> QSize:
         # Suggest a size that respects the minimum width but allows for minimum height
         return QSize(max(self.minWidth, super().sizeHint().width()), 0)
+        
+    def pressDefaultButton(self):
+        self.buttonPressed(self.options[0])
         
     def buttonPressed(self, text):
         self.gameUI.state.processEventOption(self.eState, text)

@@ -2,41 +2,41 @@
   "adversaries": [
     {
       "name": "Randsomware",
-      "surgeIntervalTicksBase": 10000,
+      "surgeIntervalTicks": 10000,
       "surgeBaseAmount": 100,
       "surgeScaleFactor": 1.1,
       "spawnRateStart": 100,
-      "spawnRateScalePerYearStart": 1.1,
+      "spawnRateScalePerSurge": 1.1,
       "category": "Cyber",
       "flavorText": "Randsomware is a type of malware that encrypts a user's files and demands payment to decrypt them."
     },
     {
       "name": "Rogue Rovers",
-      "surgeIntervalTicksBase": 5000,
+      "surgeIntervalTicks": 5000,
       "surgeBaseAmount": 200,
       "surgeScaleFactor": 1.1,
       "spawnRateStart": 100,
-      "spawnRateScalePerYearStart": 1.1,
+      "spawnRateScalePerSurge": 1.2,
       "category": "Lunar",
       "flavorText": "Lunar threats."
     },
     {
       "name": "Asteroid Hives",
-      "surgeIntervalTicksBase": 2000,
+      "surgeIntervalTicks": 2000,
       "surgeBaseAmount": 100,
       "surgeScaleFactor": 1.1,
       "spawnRateStart": 100,
-      "spawnRateScalePerYearStart": 1.1,
+      "spawnRateScalePerSurge": 1.1,
       "category": "Extraterrestrial",
       "flavorText": "Abc."
     },
     {
       "name": "Time Assassins",
-      "surgeIntervalTicksBase": 10000,
+      "surgeIntervalTicks": 10000,
       "surgeBaseAmount": 100,
       "surgeScaleFactor": 1.1,
       "spawnRateStart": 100,
-      "spawnRateScalePerYearStart": 1.1,
+      "spawnRateScalePerSurge": 1.1,
       "category": "Temporal",
       "flavorText": "Abc."
     }
