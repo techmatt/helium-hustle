@@ -107,9 +107,9 @@ class DefenderButtonWidget(QPushButton):
     def updateLabels(self):
         state = self.gameUI.state
         dState = state.defenders[self.name]
-
-        self.strengthLabel.setText(f"Your forces:\n{dState.rState.count} / {dState.rState.storage}")
-        self.decayLabel.setText(f"Attrition rate: <b>{dState.decayRate * 100}% /s<\b>")
+        self.strengthLabel.setText(f"Your forces:\n{dState.rState.count:.0f} / {dState.rState.storage:.0f}\n+{dState.rState.income:.2f}/sec")
+        perSecDecayRate = (1.0 - state.convertPerTickMultiplierToPerSecond(1.0 - dState.decayRate))
+        self.decayLabel.setText(f"Attrition rate: <b>{(perSecDecayRate * 100):.1f}% /s<\b>")
         
         self.update()
         
@@ -216,10 +216,10 @@ class AdversaryButtonWidget(QPushButton):
         state = self.gameUI.state
         aState = state.adversaries[self.name]
 
-        self.strengthLabel.setText(f"Enemy forces: {aState.strength}")
-        self.effectivenessLabel.setText(f"Effectiveness: {aState.effectiveness}%")
+        self.strengthLabel.setText(f"Enemy forces: {aState.strength:.0f}")
+        self.effectivenessLabel.setText(f"Effectiveness: {aState.effectiveness * 100:.1f}%")
         self.spawnRateLabel.setText(f"Spawn rate: <b>{aState.spawnRate}/s</b>")
-        self.nSurgeTimeLabel.setText(f"Time to next surge: <b>{state.convertTicksToYears(aState.ticksToSurge)} years<\b>")
+        self.nSurgeTimeLabel.setText(f"Time to next surge: <b>{state.convertTicksToYears(aState.ticksToSurge):.2f} years</b>")
         self.nSurgeStrLabel.setText(f"Next surge size: <b>{aState.nextSurgeStrength}<\b>")
         
         self.update()

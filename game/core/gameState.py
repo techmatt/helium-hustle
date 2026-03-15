@@ -72,9 +72,9 @@ class AdversaryState:
         self.info: AdversaryInfo = info
         self.unlocked: bool = False
         self.strength: float = 0
-        self.spawnRate: float = 0
-        self.ticksToSurge: float = 0
-        self.nextSurgeStrength: float = 0
+        self.spawnRate: float = info.spawnRateStart
+        self.ticksToSurge: float = info.surgeIntervalTicks
+        self.nextSurgeStrength: float = info.surgeBaseAmount
         self.decayRate: float = 0
         self.effectiveness: float = 0
         
@@ -138,6 +138,7 @@ class GameState:
         self.adversaries: Dict[str, AdversaryState] = {}
         for aInfo in database.adversaries.values():
             aState = AdversaryState(aInfo)
+            aState.decayRate = self.params.startAdversaryDecayRate
             self.adversaries[aInfo.name] = aState
 
         self.defenders: Dict[str, DefenderState] = {}
@@ -145,6 +146,7 @@ class GameState:
         for dInfo in database.defenders.values():
             dState = DefenderState(dInfo)
             dState.rState = self.resources[dInfo.name]
+            dState.decayRate = self.params.startDefenderDecayRate
             self.defenders[dInfo.name] = dState
             self.defendersByCategory[dInfo.category] = dState
 
@@ -157,6 +159,24 @@ class GameState:
         for objectToUnlock in self.database.params.startingUnlocks:
             self.unlock(objectToUnlock)
 
+        self.processDebug()
+        
+
+        self.eventManager: EventManager = EventManager(self)
+        self.activeEvents: List[EventState] = []
+        self.ongoingEvents: List[EventState] = []
+        self.ticks: int = 0
+        self.ticksUntilProcessorCycle: int = 0
+        self.dirty: DirtyState = DirtyState()
+
+        self.step()
+
+    def processDebug(self):
+        buildingDebug = True
+        if buildingDebug:
+            for bState in self.buildings.values():
+                bState.unlocked = True
+                
         loadDebugProgram = False
         if loadDebugProgram:
             self.programs[0].commands.append(GameCommand(self.commands["Sell Cloud Compute"].info))
@@ -173,17 +193,9 @@ class GameState:
                 aState.unlocked = True
                 
         self.debugSkipEvents = True
-
-        self.eventManager: EventManager = EventManager(self)
-        self.activeEvents: List[EventState] = []
-        self.ongoingEvents: List[EventState] = []
-        self.ticks: int = 0
-        self.ticksUntilProcessorCycle: int = 0
-        self.ticksUntilArmyCycle: int = 0
-        self.dirty: DirtyState = DirtyState()
-
-        self.step()
-
+        
+    def convertPerTickMultiplierToPerSecond(self, tickRate : float) -> float:
+        return math.pow(tickRate, self.database.params.ticksPerPlayerSecond)
     def convertPerTickToPerSecond(self, tickRate : float) -> float:
         return tickRate * self.database.params.ticksPerPlayerSecond
     
@@ -313,8 +325,7 @@ class GameState:
             # adversaries spawn new troops
             aState.strength += aState.spawnRate
 
-            # periodically, armies surge, creating a burst of new troops
-            aState.ticksToSurge -= self.params.ticksPerArmyCycle
+            aState.ticksToSurge -= 1
             if aState.ticksToSurge < 0:
                 self.armySurge(aState.info.name)
                 
@@ -324,17 +335,17 @@ class GameState:
                 continue
             
             # defenders decay over time
-            dState.rState.count *= dState.decayRate
+            dState.rState.count *= (1.0 - dState.decayRate)
         
         # process all army fights
         for aState in self.adversaries.values():
             dState = self.defendersByCategory[aState.info.category]
-            
             totalDefenders = dState.rState.count
             totalAttackers = aState.strength
                     
             totalArmies = totalDefenders + totalAttackers
             activeFighters = totalArmies * self.params.armyFightRatio
+            activeFighters += (aState.spawnRate + max(0, dState.rState.income)) * self.params.armyFightSpawnRatio
             activeFighters = min(activeFighters, totalAttackers)
             activeFighters = min(activeFighters, totalDefenders)
             
@@ -342,8 +353,10 @@ class GameState:
             aState.strength -= activeFighters
 
         for aState in self.adversaries.values():
+            dState = self.defendersByCategory[aState.info.category]
             totalDefenders = dState.rState.count
             totalAttackers = aState.strength
+            
             totalArmies = totalDefenders + totalAttackers
             if totalArmies == 0:
                 aState.effectiveness = 0
@@ -361,12 +374,7 @@ class GameState:
             self.ticksUntilProcessorCycle = self.database.params.ticksPerProcessorCycle
         
         self.updateProjectPayments()
-
-        if self.ticksUntilArmyCycle > 0:
-            self.ticksUntilArmyCycle -= 1
-        else:
-            self.updateArmies()
-            self.ticksUntilArmyCycle = self.database.params.ticksPerProcessorCycle
+        self.updateArmies()
         
         # cap all resources to their storage capacity
         for rState in self.resources.values():

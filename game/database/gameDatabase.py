@@ -127,20 +127,21 @@ class GameParams:
         self.gameSecondsPerTick = 60 * 60 # each tick is a game hour
         self.ticksPerGameYear = 365.25 * 24 * 60 * 60 / self.gameSecondsPerTick
         self.ticksPerProcessorCycle = 4 # the processors operate more slowly than the game clock
-        self.ticksPerArmyCycle = 4 # the armies operate more slowly than the game clock
         
         self.maxProgramCount = 5
         
         self.baseIdeologyCost = 1000
         self.ideologyScaleFactor = 1.2
         
-        self.startDefenderDecayRate = 0.01
+        self.startDefenderDecayRate = 0.00250943
+        self.startAdversaryDecayRate = 0.00250943
         self.armyFightRatio = 0.01
+        self.armyFightSpawnRatio = 0.1
 
         self.commandCategories = ["Computation", "Manual Operation", "Science", "Ideology"]
         self.researchCategories = ["Production", "Programming", "Defensive", "Offensive"]
         self.projectCategories = ["Robot Welfare", "Temporal Constructs"]
-        self.buildingCategories = ["Mining", "Power", "Storage", "Processors", "Economy"]
+        self.buildingCategories = ["Mining", "Power", "Storage", "Processors", "Economy", "Military"]
         self.adversaryCategories = ["Cyber", "Lunar", "Extraterrestrial", "Temporal"]
 
 class GameDatabase:

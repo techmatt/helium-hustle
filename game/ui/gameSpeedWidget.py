@@ -47,7 +47,7 @@ class GameSpeedWidget(QWidget):
             button.setIcon(QIcon(f'icons/gameSpeed{selectedStr}/{icon}.png'))
             
     def setGameSpeed(self, speed):
-        print(f"Setting game speed to {speed}x")
+        #print(f"Setting game speed to {speed}x")
         self.gameUI.gameSpeed = speed
         self.reloadIcons()
         

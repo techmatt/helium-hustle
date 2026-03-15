@@ -109,6 +109,28 @@
       "description": "Vital energy storage."
     },
     {
+      "name": "Army Base",
+      "baseCost": {
+        "Credits": 15,
+        "Regolith": 15
+      },
+      "storage": {
+        "Firewall Nodes": 100,
+        "Lunar Sentinels": 100,
+        "Nova Cruisers": 100,
+        "Time Guardians": 200
+      },
+      "production": {
+        "Firewall Nodes": 2,
+        "Lunar Sentinels": 2,
+        "Nova Cruisers": 3,
+        "Time Guardians": 4
+      },
+      "costScaling": 1.25,
+      "category": "Military",
+      "description": "Army storage and production."
+    },
+    {
       "name": "Perpetual Energy Machine",
       "baseCost": {
         "Credits": 1
