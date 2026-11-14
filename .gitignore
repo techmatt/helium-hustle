@@ -1,0 +1,7 @@
+/out/
+/target/
+node_modules/
+/crates/hh-wasm/pkg/
+/web/dist/
+/web/src/wasm/
+bash.exe.stackdump

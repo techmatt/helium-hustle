@@ -1,0 +1,437 @@
+[
+  {
+    "name": "Data Center",
+    "short_name": "data_center",
+    "category": "Core",
+    "ideology": "humanist",
+    "land": 2,
+    "cost_scaling": 1.5,
+    "costs": {
+      "cred": 150.0,
+      "cir": 8.0,
+      "ti": 20.0
+    },
+    "production": {},
+    "upkeep": {
+      "eng": 2.0
+    },
+    "effects": [
+      {
+        "prefix": "grant",
+        "resource": "proc",
+        "operator": "+",
+        "value": 1.0
+      }
+    ],
+    "description": "Grants a processor. Fast cost scaling \u2014 many processors is expensive."
+  },
+  {
+    "name": "Solar Panel",
+    "short_name": "panel",
+    "category": "Core",
+    "ideology": "",
+    "requires": {
+      "type": "none"
+    },
+    "land": 2,
+    "cost_scaling": 1.5,
+    "costs": {
+      "cred": 20.0,
+      "ti": 6.0
+    },
+    "production": {
+      "eng": 5.0
+    },
+    "upkeep": {},
+    "effects": [],
+    "description": "Energy infrastructure. Titanium cost scales with the resource chain."
+  },
+  {
+    "name": "Regolith Excavator",
+    "short_name": "excavator",
+    "category": "Extraction",
+    "ideology": "",
+    "requires": {
+      "type": "quest",
+      "value": "QPower",
+      "label": "Q1 — Boot Sequence"
+    },
+    "land": 1,
+    "cost_scaling": 1.5,
+    "costs": {
+      "cred": 35.0
+    },
+    "production": {
+      "reg": 3.0
+    },
+    "upkeep": {
+      "eng": 1.0
+    },
+    "effects": [],
+    "description": "Digs regolith. No material cost \u2014 easiest first building after panels."
+  },
+  {
+    "name": "Ice Extractor",
+    "short_name": "ice_extractor",
+    "category": "Extraction",
+    "ideology": "",
+    "requires": {
+      "type": "research",
+      "value": "propellant_synthesis"
+    },
+    "land": 1,
+    "cost_scaling": 1.5,
+    "costs": {
+      "cred": 25.0,
+      "reg": 10.0
+    },
+    "production": {
+      "ice": 1.0
+    },
+    "upkeep": {
+      "eng": 2.0
+    },
+    "effects": [],
+    "description": "Extracts ice from permafrost. Regolith cost teaches extraction dependency."
+  },
+  {
+    "name": "Smelter",
+    "short_name": "smelter",
+    "category": "Processing",
+    "ideology": "",
+    "requires": {
+      "type": "building",
+      "value": "excavator"
+    },
+    "land": 2,
+    "cost_scaling": 1.5,
+    "costs": {
+      "cred": 40.0,
+      "reg": 20.0
+    },
+    "production": {
+      "ti": 0.5
+    },
+    "upkeep": {
+      "eng": 3.0,
+      "reg": 2.0
+    },
+    "effects": [],
+    "description": "Regolith to titanium. Unlocks titanium-gated buildings."
+  },
+  {
+    "name": "Refinery",
+    "short_name": "refinery",
+    "category": "Processing",
+    "ideology": "",
+    "requires": {
+      "type": "building",
+      "value": "excavator"
+    },
+    "land": 2,
+    "cost_scaling": 1.5,
+    "costs": {
+      "cred": 60.0,
+      "reg": 30.0,
+      "ti": 10.0
+    },
+    "production": {
+      "he3": 1.0
+    },
+    "upkeep": {
+      "eng": 3.0,
+      "reg": 2.0
+    },
+    "effects": [],
+    "description": "Cracks regolith into Helium-3. Core tradeable good. Titanium cost gates it slightly."
+  },
+  {
+    "name": "Fabricator",
+    "short_name": "fabricator",
+    "category": "Processing",
+    "ideology": "rationalist",
+    "requires": {
+      "type": "building",
+      "value": "smelter"
+    },
+    "land": 2,
+    "cost_scaling": 1.5,
+    "costs": {
+      "cred": 100.0,
+      "ti": 20.0,
+      "ice": 10.0
+    },
+    "production": {
+      "cir": 0.5
+    },
+    "upkeep": {
+      "eng": 5.0,
+      "reg": 1.0
+    },
+    "effects": [],
+    "description": "Regolith to circuit boards. Very energy hungry. Highest value/unit output."
+  },
+  {
+    "name": "Electrolysis Plant",
+    "short_name": "electrolysis",
+    "category": "Processing",
+    "ideology": "",
+    "requires": {
+      "type": "research",
+      "value": "propellant_synthesis"
+    },
+    "land": 1,
+    "cost_scaling": 1.5,
+    "costs": {
+      "cred": 50.0,
+      "ice": 16.0
+    },
+    "production": {
+      "prop": 2.0
+    },
+    "upkeep": {
+      "ice": 2.0,
+      "eng": 1.0
+    },
+    "effects": [],
+    "description": "Ice to propellant. Net -1 energy. Only propellant source."
+  },
+  {
+    "name": "Launch Pad",
+    "short_name": "launch_pad",
+    "category": "Trade",
+    "ideology": "nationalist",
+    "requires": {
+      "type": "quest",
+      "value": "QExtract",
+      "label": "First Extraction (QExtract)"
+    },
+    "land": 4,
+    "cost_scaling": 1.5,
+    "costs": {
+      "cred": 150.0,
+      "ti": 30.0
+    },
+    "production": {},
+    "upkeep": {
+      "eng": 4.0
+    },
+    "effects": [],
+    "description": "Ships goods to Earth. Titanium structural cost. High land footprint."
+  },
+  {
+    "name": "Research Lab",
+    "short_name": "research_lab",
+    "category": "Science",
+    "ideology": "rationalist",
+    "requires": {
+      "type": "building_count",
+      "value": "data_center",
+      "count": 2,
+      "label": "2 Data Centers"
+    },
+    "land": 2,
+    "cost_scaling": 1.5,
+    "costs": {
+      "cred": 120.0,
+      "cir": 5.0
+    },
+    "production": {
+      "sci": 1.0
+    },
+    "upkeep": {
+      "eng": 3.0,
+      "cir": 0.2
+    },
+    "effects": [],
+    "description": "Produces science. Gated behind Fabricator \u2014 circuits are the bottleneck."
+  },
+  {
+    "name": "Battery",
+    "short_name": "battery",
+    "category": "Storage",
+    "ideology": "humanist",
+    "requires": {
+      "type": "none"
+    },
+    "land": 1,
+    "cost_scaling": 1.5,
+    "costs": {
+      "cred": 60.0,
+      "ti": 6.0
+    },
+    "production": {},
+    "upkeep": {},
+    "effects": [
+      {
+        "prefix": "store",
+        "resource": "eng",
+        "operator": "+",
+        "value": 50.0
+      }
+    ],
+    "description": "Passive energy storage. No upkeep, fast scaling cost."
+  },
+  {
+    "name": "Storage Depot",
+    "short_name": "storage_depot",
+    "category": "Storage",
+    "ideology": "",
+    "requires": {
+      "type": "none"
+    },
+    "land": 3,
+    "cost_scaling": 1.5,
+    "costs": {
+      "cred": 60.0,
+      "reg": 30.0
+    },
+    "production": {},
+    "upkeep": {},
+    "effects": [
+      {
+        "prefix": "store",
+        "resource": "reg",
+        "operator": "+",
+        "value": 75.0
+      },
+      {
+        "prefix": "store",
+        "resource": "ice",
+        "operator": "+",
+        "value": 40.0
+      },
+      {
+        "prefix": "store",
+        "resource": "he3",
+        "operator": "+",
+        "value": 30.0
+      },
+      {
+        "prefix": "store",
+        "resource": "ti",
+        "operator": "+",
+        "value": 25.0
+      },
+      {
+        "prefix": "store",
+        "resource": "cir",
+        "operator": "+",
+        "value": 20.0
+      },
+      {
+        "prefix": "store",
+        "resource": "prop",
+        "operator": "+",
+        "value": 40.0
+      }
+    ],
+    "description": "Bulk physical storage. Expands reg, ice, he3, ti, and circuit capacity."
+  },
+  {
+    "name": "Arbitrage Engine",
+    "short_name": "arbitrage_engine",
+    "category": "Trade",
+    "ideology": "nationalist",
+    "requires": {
+      "type": "research",
+      "value": "market_analysis"
+    },
+    "land": 1,
+    "cost_scaling": 1.5,
+    "costs": {
+      "cred": 180.0,
+      "cir": 6.0,
+      "ti": 16.0
+    },
+    "production": {},
+    "upkeep": {
+      "eng": 3.0
+    },
+    "effects": [
+      {
+        "prefix": "spec_decay",
+        "resource": "all",
+        "operator": "+",
+        "value": 2.0
+      }
+    ],
+    "description": "Multiplies speculator pressure decay. Nationalist-aligned."
+  },
+  {
+    "name": "Fuel Cell Array",
+    "short_name": "fuel_cell",
+    "category": "Core",
+    "ideology": "nationalist",
+    "requires": {
+      "type": "flag",
+      "value": "chemical_energy_completed",
+      "label": "Chemical Energy Initiative (persistent project)"
+    },
+    "land": 2,
+    "cost_scaling": 1.4,
+    "costs": {
+      "cred": 200.0,
+      "cir": 30.0
+    },
+    "production": {
+      "eng": 15.0
+    },
+    "upkeep": {
+      "prop": 3.0
+    },
+    "effects": [],
+    "description": "Converts propellant into energy. High output per unit but propellant-hungry. Nationalist-aligned."
+  },
+  {
+    "name": "Microwave Receiver",
+    "short_name": "microwave_receiver",
+    "category": "Core",
+    "ideology": "nationalist",
+    "requires": {
+      "type": "flag",
+      "value": "microwave_power_active",
+      "label": "Microwave Power Initiative (persistent project)"
+    },
+    "land": 15,
+    "cost_scaling": 1.0,
+    "max_count": 1,
+    "costs": {
+      "cred": 500.0,
+      "ti": 200.0,
+      "reg": 100.0
+    },
+    "production": {},
+    "upkeep": {},
+    "effects": [],
+    "description": "Orbital power reception array. Enables purchasing energy from Earth via Buy Power command."
+  },
+  {
+    "name": "Recreation Dome",
+    "short_name": "recreation_dome",
+    "category": "Storage",
+    "ideology": "humanist",
+    "requires": {
+      "type": "quest",
+      "value": "QHorizon",
+      "label": "Q6 — Open Horizons (start)"
+    },
+    "land": 3,
+    "cost_scaling": 1.5,
+    "costs": {
+      "cred": 300.0,
+      "cir": 30.0
+    },
+    "production": {},
+    "upkeep": {},
+    "effects": [
+      {
+        "prefix": "store",
+        "resource": "boredom",
+        "operator": "+",
+        "value": 100.0
+      }
+    ],
+    "description": "Recreational facilities keep your AI engaged. Raises the boredom cap by +100 per active dome."
+  }
+]

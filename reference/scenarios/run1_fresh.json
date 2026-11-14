@@ -1,0 +1,32 @@
+{
+  "name": "Run 1 — Fresh Start",
+  "description": "Brand new player, no persistence, no research. Validates the core building/resource/program loop from nothing to retirement.",
+
+  "available_actions": {
+    "buildings": [
+      "panel", "excavator", "ice_extractor", "smelter", "refinery",
+      "fabricator", "electrolysis", "launch_pad", "research_lab",
+      "data_center", "battery", "storage_depot"
+    ],
+    "commands": [
+      "idle", "cloud_compute", "buy_regolith", "buy_ice",
+      "buy_titanium", "buy_propellant", "load_pads", "launch_pads"
+    ],
+    "notes": "No research-gated commands. No Arbitrage Engine."
+  },
+
+  "objectives": [
+    { "id": "excavator",    "type": "building", "value": "excavator",    "target": [5,  20]  },
+    { "id": "smelter",      "type": "building", "value": "smelter",      "target": [40, 100] },
+    { "id": "refinery",     "type": "building", "value": "refinery",     "target": [100, 200] },
+    { "id": "he3_10",       "type": "resource", "value": "he3", "threshold": 10, "target": [140, 220] },
+    { "id": "first_ship",   "type": "event",    "value": "shipment_complete", "target": [260, 380] },
+    { "id": "data_center",  "type": "building", "value": "data_center",  "count": 2, "target": [380, 530] },
+    { "id": "research_lab", "type": "building", "value": "research_lab", "count": 1, "target": [600, 800] },
+    { "id": "retirement",   "type": "event",    "value": "boredom_100",  "target": [720, 1000] }
+  ],
+
+  "command_policy": "auto",
+
+  "end_condition": { "type": "boredom", "threshold": 100 }
+}

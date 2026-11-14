@@ -1,0 +1,62 @@
+[
+  {
+    "name": "Energy",
+    "short_name": "eng",
+    "storage_base": 100.0
+  },
+  {
+    "name": "Regolith",
+    "short_name": "reg",
+    "storage_base": 50.0
+  },
+  {
+    "name": "Ice",
+    "short_name": "ice",
+    "storage_base": 30.0
+  },
+  {
+    "name": "Helium-3",
+    "short_name": "he3",
+    "storage_base": 20.0
+  },
+  {
+    "name": "Titanium",
+    "short_name": "ti",
+    "storage_base": 20.0
+  },
+  {
+    "name": "Circuit Boards",
+    "short_name": "cir",
+    "storage_base": 10.0
+  },
+  {
+    "name": "Propellant",
+    "short_name": "prop",
+    "storage_base": 30.0
+  },
+  {
+    "name": "Credits",
+    "short_name": "cred",
+    "storage_base": null
+  },
+  {
+    "name": "Science",
+    "short_name": "sci",
+    "storage_base": null
+  },
+  {
+    "name": "Land",
+    "short_name": "land",
+    "storage_base": null
+  },
+  {
+    "name": "Boredom",
+    "short_name": "boredom",
+    "storage_base": 1000.0
+  },
+  {
+    "name": "Processors",
+    "short_name": "proc",
+    "storage_base": null
+  }
+]
