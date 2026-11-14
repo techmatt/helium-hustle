@@ -10,45 +10,68 @@ and neither holds any rules.
 - [reference/](reference/README.md): a read-only snapshot of the old Godot build, for the rules
   port. Not ground truth for the new game.
 
-## Layout (planned)
+## Layout
 
-Only `reference/` exists today; the scaffold item creates the rest.
+How the engine fits together: [docs/architecture.md](docs/architecture.md). The rules as
+implemented (a placeholder today): [docs/rules/](docs/rules/README.md).
 
 | Path | What it is |
 |---|---|
 | `crates/hh-core` | The rules engine: every rule, fixed-point state, no I/O, no clock, no global RNG (CLAUDE.md, *Engine rules*). |
-| `crates/hh-sim` | Native CLI: runs games from a config and seed, balance reads, sweeps, replay. |
+| `crates/hh-sim` | Native CLI ([docs/simulator.md](docs/simulator.md)): runs a seed, replays records; later agents and sweeps. |
 | `crates/hh-wasm` | wasm-bindgen bindings for `web/`, JSON in and out. |
-| `web/` | The browser UI (TypeScript on `hh-wasm`). Renders state, sends actions, holds no rules. |
+| `web/` | The browser UI ([web/README.md](web/README.md)). Renders the engine's view, sends actions, holds no rules. |
 | `configs/` | Game configs: modules, variants and every tunable number. No defaults in code. |
-| `content/` | Game data: resources, buildings, commands, research, events, achievements. |
+| `content/` | Game data (resources, buildings), embedded in `hh-core`. |
+| `scenarios/` | Named starting states for the sim and the web debug menu, embedded in `hh-core`. |
+| `scripts/` | `wasm-smoke.mjs` (native = wasm), `warning_checks.py` (CLAUDE.md, *Warning checks*). |
 | `docs/` | The current game: `docs/rules/` (rules as implemented), `docs/rules-history.md`. |
 | `reference/` | The Godot snapshot ([reference/README.md](reference/README.md)). Never edited. |
 | `out/` | Scratch and run output, git-ignored. |
 
 ## Toolchain
 
+Versions this was built with (2026-11-14): Rust 1.100.0 (stable), wasm-pack 0.15.0,
+Node 24.19.0, npm 11.17.0.
+
 - Rust stable, target `wasm32-unknown-unknown` (`rustup target add wasm32-unknown-unknown`).
 - wasm-pack (`cargo install wasm-pack --locked`).
 - Node (LTS) for `web/`.
-- Exact versions are recorded here by the scaffold item.
 
 ## Build and test
 
-*Stub: the scaffold item fills this in with the real commands and their measured times.*
+Times are on this machine, otherwise idle.
 
 ```sh
-cargo build --workspace
-cargo test --workspace                       # fast lane
-cargo clippy --workspace --all-targets       # must stay clean
-wasm-pack build crates/hh-wasm --target web  # -> crates/hh-wasm/pkg (git-ignored)
-cd web && npm ci && npm run dev              # the browser UI
+cargo build --workspace                      # under a minute cold
+cargo test --workspace                       # the test lane: ~1 s once built
+cargo test-all                               # also the slow lane's #[ignore]d tests (none yet)
+cargo clippy --workspace --all-targets       # must stay clean; ~7 s
+cargo run -q -p hh-sim -- run --seed 1 --ticks 365 --policy greedy:every=7
+wasm-pack build crates/hh-wasm --target web  # -> crates/hh-wasm/pkg (git-ignored); ~22 s cold, ~5 s warm
+node scripts/wasm-smoke.mjs                  # native = wasm: needs the pkg above (not web's copy); ~1 s
+python scripts/warning_checks.py             # warning checks, incl. parity (rebuilds a stale pkg); 1-5 s
+cd web && npm ci && npm run dev              # the browser UI at http://localhost:5173/ (web/README.md)
 ```
 
-**Rules changes:** *stub.* A golden-game test pins the final state of one fixed game (baseline
-config, fixed seed, fixed action rule). An intended rules change bumps `RULES_REVISION` in
-`hh-core` and updates the golden constants; the scaffold item records where they live and how to
-copy the new values from the failing assertion.
+**Test lanes.** `cargo test --workspace` is the fast lane and the default: run it after
+every change. `cargo test-all` (a `.cargo/config.toml` alias for `cargo test --workspace --
+--include-ignored`) is the full run, before every commit: a test slower than about a second
+is marked `#[ignore = "slow lane: ..."]`. Anything after an alias goes to the test binary,
+with no second `--`. Tests play whole games, so the test profile is optimized
+(`opt-level = 1`) and keeps overflow checks.
+
+**Rules changes:** the `golden_game` test (`crates/hh-core/src/tests/mod.rs`) pins the final
+state of one fixed game: baseline config, seed `u64::MAX`, 2000 ticks, buying each affordable
+building every 7 ticks (`driver.rs`). An intended play change bumps `RULES_REVISION`
+(`crates/hh-core/src/lib.rs`, and the revision line in `docs/rules/README.md`), adds its
+`docs/rules-history.md` row, and updates `GOLDEN_REVISION` and `GOLDEN_FINGERPRINT` there and
+the same three `GOLDEN_*` constants in `scripts/wasm-smoke.mjs`
+(`wasm_smoke_expects_the_golden_constants` fails until they match; it also checks the smoke's
+copy of the golden game's seed, length and policy against `driver.rs`). `GOLDEN_CONTENT_HASH`
+moves with any `content/` byte, play or not. Copy each from the failing assertion's left side
+(`cargo run -q -p hh-sim -- golden` prints all three); never type them. A rename or refactor
+that plays the same moves no golden constant; if it does, play changed.
 
 ## This machine
 

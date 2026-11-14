@@ -1,0 +1,21 @@
+[package]
+name = "hh-core"
+description = "Helium Hustle rules engine: pure, deterministic, front-end free"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[lib]
+doctest = false
+
+# clippy.toml's bans (platform floats, the clock, hash maps) fail clippy outright.
+[lints.clippy]
+disallowed_methods = "deny"
+disallowed_types = "deny"
+
+[dependencies]
+serde.workspace = true
+serde_json.workspace = true
+rand.workspace = true
+rand_chacha.workspace = true
+libm.workspace = true

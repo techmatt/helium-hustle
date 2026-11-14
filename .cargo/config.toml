@@ -1,0 +1,6 @@
+# Test lanes (README, "Build and test"): `cargo test --workspace` is the fast lane;
+# `cargo test-all` also runs the slow lane's #[ignore]d tests. Arguments after an alias go
+# to the test binary: no second `--` (it would turn a flag into a test-name filter).
+[alias]
+test-all = "test --workspace -- --include-ignored"
+test-slow = "test --workspace -- --ignored"

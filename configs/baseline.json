@@ -1,0 +1,15 @@
+{
+  "name": "baseline",
+  "modules": {
+    "placeholder": {
+      "variant": "basic",
+      "params": {
+        "start_credits": "20",
+        "credits_per_day": "1",
+        "energy_cap": "100",
+        "sunlight_spread": "0.2",
+        "cost_growth": "1.15"
+      }
+    }
+  }
+}

@@ -1,0 +1,9 @@
+{
+  "name": "rich",
+  "description": "Day 0 with 1,000 credits: buy freely.",
+  "start": {
+    "tick": 0,
+    "resources": { "credits": "1000" },
+    "buildings": {}
+  }
+}

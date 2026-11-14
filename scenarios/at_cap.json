@@ -1,0 +1,9 @@
+{
+  "name": "at_cap",
+  "description": "Day 100, 20 Solar Panels and energy at the baseline cap: watch the cap hold.",
+  "start": {
+    "tick": 100,
+    "resources": { "credits": "50", "energy": "100" },
+    "buildings": { "solar_panel": 20 }
+  }
+}

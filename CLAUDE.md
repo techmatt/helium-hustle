@@ -15,8 +15,8 @@ It is being restarted from an earlier Godot build as a **Rust simulation core** 
 - `reference/` is a read-only snapshot of the Godot build, there to port rules from. It is **not
   ground truth** for the new game: where it and `docs/rules/` disagree, `docs/rules/` wins. Never
   edit it.
-- Don't describe or document code as if it does more than it does. Read `docs/rules/README.md`
-  (once it exists), then only the files your task touches.
+- Don't describe or document code as if it does more than it does. Read `docs/rules/README.md`,
+  then only the files your task touches.
 
 ## Engine rules
 
@@ -97,15 +97,25 @@ Write the report to the path conductor's preamble gives, starting with the heade
 ## Warning checks
 
 Warnings are surfaced, never gate: an item whose own change trips one finishes and reports it in
-the header's `warnings:` line. Until a checker script exists, an item runs the checks that apply
-to what it touched, by hand, and reports what trips:
+the header's `warnings:` line, each line led by its kind. Every item runs, before its report:
 
-- **docs:** a doc over 15 KB (`wc -c README.md CLAUDE.md docs/*.md docs/rules/*.md`).
+`python scripts/warning_checks.py` prints one `<kind>: <text>` line per tripped check, nothing
+when clean (always exit 0; 1-5 s, more if it must build). Its checks, on:
+
+- **parity:** native = wasm: the golden game's fingerprint natively (`hh-sim golden`) and in
+  wasm (`scripts/wasm-smoke.mjs`, rebuilding a stale `crates/hh-wasm/pkg`) equals the pins.
+- **tunables:** a numeric literal in `hh-core` rule code (not tests) that belongs in a config
+  or content. Exceptions, each with its reason: `scripts/warning_checks.json`.
+- **platform-floats:** a platform float function reaching `hh-core` past clippy (a call by
+  name not through `libm`, an `#[allow]` of the ban, the ban's `deny` or a name dropped).
+
+And two by hand:
+
+- **docs:** a doc over 15 KB (`wc -c README.md CLAUDE.md docs/*.md docs/rules/*.md web/README.md`).
 - **docs:** a rules change without its `docs/rules-history.md` row, or a `RULES_REVISION` bump
   without golden constants moved (or the reverse).
 
-Candidate checks for the scripted checker (to be chosen by Matt, thresholds in a config):
+Candidates for when the simulator can read play (Matt picks, thresholds in a config):
 time-to-milestone against targets; resources sitting at cap; buildings, commands or research
 never used; idle stretches with nothing worth buying; simulation speed regression against a
-baseline; native = wasm parity; tunables in code instead of a config; platform-float calls in
-`hh-core`.
+baseline.

@@ -1,0 +1,8 @@
+[
+  {
+    "id": "solar_panel",
+    "name": "Solar Panel",
+    "cost": { "credits": "10" },
+    "produces": { "energy": "1" }
+  }
+]
