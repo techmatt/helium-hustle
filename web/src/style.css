@@ -579,8 +579,11 @@ tr.is-new td:first-child {
 .line.out-skipped {
   background: #eceff2;
 }
+/* The line the next processor runs: a green frame with a thick left edge, drawn by
+   box-shadow so nothing in the line moves (its background still shows the outcome). */
 .line.current {
-  border-color: #4caf50;
+  border-color: #2e7d32;
+  box-shadow: inset 4px 0 0 #2e7d32, 0 0 0 1px #2e7d32;
 }
 /* The bar's 60px minimum would spill over the − button from its 48px column. */
 .line .bar {

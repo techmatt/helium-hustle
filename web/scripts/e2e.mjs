@@ -164,9 +164,10 @@ const runOnly = async (cmd, lines) => {
   await click(`[data-testid="add-${cmd}"]`);
 };
 
-/** Program 1, one processor, lines of counts 2, 1, 3: at 10x (a day a redraw) the ▶ walks
- * the queue in order and the lines keep their order; at 50x (several days a redraw) no ▶
- * hops around, and the lines show what ran over the span. Leaves the game paused. */
+/** Program 1, one processor, lines of counts 2, 1, 3: at 10x (a day a redraw) the
+ * current-line frame walks the queue in order, the lines keep their order and no line's
+ * name moves; at 50x (several days a redraw) no frame hops around, and the lines show
+ * what ran over the span. Leaves the game paused. */
 async function programOrder() {
   const queue = [['idle', 2], ['cloud_compute', 1], ['idle', 3]];
   await speed(0);
@@ -184,11 +185,16 @@ async function programOrder() {
   const order = () => evaluate(`[...document.querySelectorAll('.lines .line')].map((l) => l.dataset.command + 'x' + l.textContent.match(/\\(x(\\d+)\\)/)[1]).join(' ')`);
   const queued = queue.map(([c, n]) => `${c}x${n}`).join(' ');
   check((await order()) === queued, `program queued in order: ${await order()}`);
-  // Each redraw's pointer, by a MutationObserver.
-  await evaluate(`(() => { window.__ptr = []; window.__ob?.disconnect();
+  // Each redraw's pointer, and where each line's name starts (it must never move).
+  await evaluate(`(() => { window.__ptr = []; window.__left = new Set(); window.__ob?.disconnect();
     window.__ob = new MutationObserver(() => {
       const p = [...document.querySelectorAll('.lines .line')].findIndex((l) => l.classList.contains('current'));
       if (window.__ptr.at(-1) !== p) window.__ptr.push(p);
+      for (const n of document.querySelectorAll('.lines .line-name')) {
+        const r = document.createRange();
+        r.selectNodeContents(n);
+        window.__left.add(Math.round(r.getBoundingClientRect().left));
+      }
     });
     window.__ob.observe(document.querySelector('.lines'), { subtree: true, attributes: true, childList: true }); })()`);
   await speed(10);
@@ -198,10 +204,13 @@ async function programOrder() {
   const forward = ptr.every((p, i) => i === 0 || p === (ptr[i - 1] + 1) % queue.length);
   check(ptr.length >= 4 && forward, `10x: the pointer walks the queue in order: ${ptr.join(',')}`);
   check((await order()) === queued, `10x: lines keep their order: ${await order()}`);
+  await shot('program-lines');
+  const lefts = await evaluate('[...window.__left]');
+  check(lefts.length === 1, `10x: no line's text moves as the pointer walks (name starts at ${lefts.join(', ')} px)`);
   await evaluate('window.__ptr = []');
   await speed(50);
   await sleep(1000);
-  // Read before pausing: paused, the ▶ is back.
+  // Read before pausing: paused, the frame is back.
   const fast = await evaluate('window.__ptr');
   const lit = await evaluate(`document.querySelectorAll('.lines .line[class*="out-"]').length`);
   const note = await exists('[data-testid="lines-span"]');

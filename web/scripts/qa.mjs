@@ -144,7 +144,7 @@ const AUDIT = `(() => {
     // Text clipped by its own box (overflow hidden, or an ellipsis).
     // An ellipsis is fine where a tooltip (on it or a parent) carries the whole text.
     const tooltip = el.closest('[title]')?.getAttribute('title') ?? '';
-    const whole = (el.textContent || '').replace(/^▶\\s*/, '').trim();
+    const whole = (el.textContent || '').trim();
     if (hasText && (cs.overflowX !== 'visible' || cs.textOverflow === 'ellipsis') && el.scrollWidth > el.clientWidth + 1 && cs.overflowX !== 'auto' && cs.overflowX !== 'scroll' && !(whole && tooltip.includes(whole)))
       out.push({ kind: 'overflow', what: 'text clipped: ' + label(el) + ' (' + el.scrollWidth + ' > ' + el.clientWidth + ')' });
     // Text spilling past a fixed-size box (buttons, bars, cells, tiles).

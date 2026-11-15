@@ -7,6 +7,7 @@
   "scripts": {
     "wasm": "node scripts/build-wasm.mjs",
     "dev": "node scripts/build-wasm.mjs && vite",
+    "game": "node scripts/game.mjs",
     "build": "node scripts/build-wasm.mjs && tsc --noEmit && vite build",
     "check": "tsc --noEmit",
     "preview": "vite preview",

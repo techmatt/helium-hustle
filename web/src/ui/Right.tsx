@@ -140,8 +140,9 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
               <span class="grip" aria-hidden>
                 ⠿
               </span>
+              {/* The current line is marked by its frame (style.css `.line.current`), never by
+                  text in the name, so no line's text moves as the pointer walks. */}
               <span class="line-name">
-                {current ? '▶ ' : ''}
                 {name(v, e.command)} (x{e.count})
               </span>
               <Bar frac={frac} tone={outcome === 'failed' ? 'red' : outcome === 'skipped' ? 'gray' : 'green'} />

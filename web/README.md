@@ -12,9 +12,9 @@ Needs the root README's *Toolchain*.
 ```sh
 cd web
 npm ci                                       # once per worktree (~10 s)
-npm run dev                                  # builds the wasm (~35 s cold), then serves http://localhost:5173/
-npm run dev -- --port 56214 --strictPort     # another port (what conductor's run target uses)
-npm run wasm                                 # only rebuild web/src/wasm/ from crates/hh-wasm (~8 s warm)
+npm run dev                                  # builds the wasm (~45 s cold), then serves http://localhost:5173/
+npm run game -- --port 5320 --strictPort     # conductor's Run game: npm install, wasm, vite, each skipped if unchanged (~1 s)
+npm run wasm                                 # only rebuild web/src/wasm/ from crates/hh-wasm (~13 s warm, 0 if unchanged)
 npm run check                                # typecheck (needs web/src/wasm/: npm run wasm first)
 npm run build                                # wasm + typecheck + static site in web/dist/
 npm run preview                              # serve web/dist/
@@ -27,7 +27,9 @@ npm run preview                              # serve web/dist/
   (what `npm run dev` runs after the wasm build), or kill by the port (`netstat -ano | grep :<p>`, then `taskkill //F //PID <pid>`).
 - **The wasm build:** `scripts/build-wasm.mjs` runs `wasm-pack build crates/hh-wasm
   --target web --release` into `web/src/wasm/` (git-ignored). `HH_WASM_PROFILE=dev` builds
-  unoptimized.
+  unoptimized. It skips the build when a content hash of its inputs (`crates/`,
+  `content/`, `scenarios/`, `Cargo.*`, the script) matches `web/src/wasm/.inputs`;
+  `HH_WASM_FORCE=1` builds anyway. A no-change build still costs ~11 s (`wasm-opt`).
 - **While the dev server runs**, editing anything under `crates/`, `content/` or
   `scenarios/` rebuilds the wasm and reloads the page; a config edit reloads it. A failed
   rebuild keeps the last good engine; the error is in the dev server's terminal.
@@ -109,10 +111,11 @@ The layout follows the last Godot build (`godot-buildings-day1427.png`, in
   next run's bonuses, Retire Now with a confirm) and Options (new career, the debug menu).
 - **Right:** program tabs 1 to 5, each with processors −/+ and Reset; a line per command
   with its progress, −/+/×, drag to reorder, and its color from today's outcome (ran,
-  failed, skipped), ▶ on the line the next processor runs. Above 10x one redraw covers
-  several days (the clock wakes every 100 ms), so the last day's pointer would hop around
-  the queue, even backward: there each line instead shows its last outcome over those
-  days (`advance_run`'s `lines`), with no ▶. Commands are added from the Commands panel
+  failed, skipped), and a dark green frame (thick on the left, drawn so no text moves) on
+  the line the next processor runs. Above 10x one redraw covers several days (the clock
+  wakes every 100 ms), so the last day's pointer would hop around the queue, even
+  backward: there each line instead shows its last outcome over those days
+  (`advance_run`'s `lines`), with no frame. Commands are added from the Commands panel
   to the selected program.
   Below, Events: the active quest with sub-goal checkmarks and progress, the completed
   quests, and Recent Activity (dated; green good, red bad, blue news).
