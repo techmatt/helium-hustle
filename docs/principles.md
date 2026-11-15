@@ -71,8 +71,9 @@ credits, a building count) is not seen.
 and skips stretches that need none ([agents.md](agents.md#when-it-looks)), so results are ticks
 and **decisions** (looks that applied an action), never speed-dependent. The ladder's players:
 `random`, `greedy`, `author` (playing well: about 140 decisions a run), `casual` (the author
-looking at most every 120 ticks: about 12 a run) and `oracle` (the ceiling: the author steered
-by rollouts that see the future; not read by the judge).
+looking at most every 120 ticks: about 12 a run). Above them, in its own spec
+(`experiments/ceiling.json`), `oracle` (the ceiling: the author steered by rollouts that see
+the future; not read by the judge).
 
 **Human models** (`configs/sim/humans.json`) are a separate, occasional projection of a career
 to real minutes: each decision takes `decide_s` seconds, and the gap to the next look plays its
@@ -100,6 +101,22 @@ The run-1 bands are keyed by player: "played well" is the author, "played casual
 author. The 30-minute band is read for the author only: the `mixed` model bursts through every
 quiet stretch, so the casual player's 120-tick gaps take about 5 real minutes a run there, which
 says how the model treats a player who leaves the game alone, not how long casual play takes.
+
+## What limits income
+
+Found by the oracle (rev 3, [011's findings](../experiments/results/011_oracle_planner/README.md#findings-for-the-balance-work));
+a balance item starts here:
+
+- **Energy is the late wall.** Every source but Solar Panel sits behind a Long-Term project
+  or a rank-5 project, and Solar Panel's titanium price passes the titanium cap by about the
+  tenth copy (#10 needs 230 against a 170 cap). With energy at 0, income topped out near 75
+  credits a day (best 100-day rate 75.6, short of M6's 100). Programs, Dream and Promote all
+  draw on it.
+- **Demand stops binding under Promote.** One processor promoting what ships holds He-3 and
+  circuits at the 1.1 demand ceiling; the oracle researches Trade Promotion first in most
+  runs.
+- **Boredom stops being a clock once Dream is researched:** two processors on Dream hold a run
+  indefinitely, so a strong run ends by choice (the prestige rule), not by force.
 
 ## Measures
 

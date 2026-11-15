@@ -115,7 +115,7 @@ can't change an old record.
 - **Record** (`record.rs`, format `hh-record/1`): config, seed, scenario, actions
   `[{tick, action}]`, the final tick, fingerprint and rules revision. `Session` plays a
   game and keeps its record; `Session::fork` copies the game with an empty record (the
-  oracle's rollouts, [agents.md](agents.md#the-oracle-oraclers)).
+  oracle's rollouts, [agents.md](agents.md#the-oracle-oracle)).
 - **Fingerprint**: FNV-1a of the state's JSON, 16 hex digits.
 - **Web saves**: the state, tagged with `RULES_REVISION` and the config hash; a mismatch
   discards the save. No migration code, ever.

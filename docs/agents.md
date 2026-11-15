@@ -105,7 +105,11 @@ is a real change, and `max_gap` 10 gives about 140 decisions a run (tuned on dev
 10, 20, 30 and 60 tried; 5 and 10 earned about the same, 12,000-14,000 credits a run, 10 with
 half the decisions; 20 and longer earned less and met M3 later).
 
-## The oracle (`oracle.rs`)
+## The oracle (`oracle/`)
+
+`score.rs` (profiles, rollouts, the score), `strategy.rs` (the strategy table, tactics),
+`retire.rs` (the retirement rule), `mod.rs` (knobs, each look). Its spec is
+`experiments/ceiling.json` (beside the author), not the ladder: its careers take minutes.
 
 The reasonable upper bound on a dedicated human, not an optimum: no per-tick search, no speed
 model. The author plays every look (looking at most every `max_gap`); the oracle sets its
@@ -122,23 +126,24 @@ often, so a rollout of the current goals is what will happen: with extra looks a
 the oracle's first shipment and second Data Center came 31 and 18 ticks after the author's;
 without, on the same ticks.
 
-- **Strategy** (each run's start, every `replan` ticks): standing bundles (`strategies`: the
-  author's own; *trade*: Trade Promotion first, market, diversified pads, main last; trade
-  with the main program first; trade + sustain, + all research, + Foundation Grant; once the
-  market quest is done, trade + each axis funded on 2 processors, with and without sustain),
-  each played `long` ticks through retirements. The quests profile, while Open Horizons is
+- **Strategy** (each run's start, every `replan` ticks): standing bundles, a fixed table
+  (`strategies`; `strategy=k` pins row k, a row unavailable now is skipped and a pinned one
+  unavailable searches the rest): 0 the author's own; 1 *trade* (Trade Promotion first,
+  market, diversified pads, main last); 2 trade with the main program first; 3-5 trade +
+  sustain, + all research, + Foundation Grant; 6-11, once the market quest is done, trade +
+  humanist, rationalist, nationalist funded on 2 processors, each without then with sustain.
+  Each is played `long` ticks through retirements. The quests profile, while Open Horizons is
   open, has one: its campaign (trade, Dream held, Humanist funded, then AI Consciousness).
 - **Tactics** (every `every` ticks, and once its target is bought): one change each to the
   target (every unlocked building), the research (once the strategy's is done), the project
   (when the strategy names none) or hoarding (from `hoard_at` credits on hand); all screened
   over a third of `horizon`, the best `width` over all of it, the two best together. A change
-  must beat keeping the goals by `margin` per mille. 300 ticks steered off slow chains
-  (circuits for a second Data Center) toward quick payback; 600 earned a third more.
+  must beat keeping the goals by `margin` per mille.
 - **Score**, in credits: credits earned; the closing income of the run under way at the end
   times the days it has left (room to the boredom cap at its closing growth, at most `tail`);
   and the profile's weights on what the career keeps (ideology best scores, Long-Term project
   progress, building types, commands, quests and sub-objectives, achievements, research), on
-  each open milestone met (`configs/sim/milestones.json`, embedded: 4,000 plus `early` 100 a
+  each open milestone met (the career's milestones, `--milestones`: 4,000 plus `early` 100 a
   tick sooner) and on each open milestone's progress squared (`progress.rs`). Credits weighs
   credits alone.
 - **Retirement**, checked every 100 ticks from day `min_run`: it plays the run out on a copy

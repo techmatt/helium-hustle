@@ -7,6 +7,7 @@
 
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
+use std::io::Write as _;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
 
@@ -177,7 +178,7 @@ pub fn load(
         humans.get(h)?;
     }
     for a in &spec.agents {
-        crate::agents::build(a, 0).map(|_| ())?;
+        crate::agents::build(a, 0, &milestones).map(|_| ())?;
     }
     Ok(Loaded { spec, humans, milestones, objectives })
 }
@@ -201,8 +202,17 @@ pub struct Results {
     pub wall_s: f64,
 }
 
-/// Plays the grid on `threads` threads. `read` turns a config path into its text.
-pub fn run(l: &Loaded, read: &dyn Fn(&str) -> Result<String, String>, threads: usize) -> Result<Results, String> {
+/// Plays the grid on `threads` threads. `read` turns a config path into its
+/// text. With `stream`, a directory, each game's line goes to its
+/// `games.jsonl` as the game finishes (finish order; [`write_out`] rewrites
+/// it in game order) and a progress line to stderr, so a long read can be
+/// inspected while it runs.
+pub fn run(
+    l: &Loaded,
+    read: &dyn Fn(&str) -> Result<String, String>,
+    threads: usize,
+    stream: Option<&str>,
+) -> Result<Results, String> {
     let start = std::time::Instant::now();
     let spec = &l.spec;
     let scenario = scenario_of(spec)?;
@@ -223,6 +233,39 @@ pub fn run(l: &Loaded, read: &dyn Fn(&str) -> Result<String, String>, threads: u
         (0..cells.len()).flat_map(|c| (0..spec.seeds).map(move |k| (c, spec.first_seed + k))).collect();
     let next = AtomicUsize::new(0);
     let out: Mutex<Vec<Option<Result<GameResult, String>>>> = Mutex::new(vec![None; jobs.len()]);
+    let sink = match stream {
+        Some(dir) => {
+            std::fs::create_dir_all(dir).map_err(|e| format!("{dir}: {e}"))?;
+            let path = format!("{dir}/games.jsonl");
+            Some(Mutex::new((std::fs::File::create(&path).map_err(|e| format!("{path}: {e}"))?, 0usize)))
+        }
+        None => None,
+    };
+    // Appends a finished game's line and says so (a failed write only warns:
+    // `write_out` writes the file again at the end).
+    let streamed = |cell: &Cell, r: &Result<GameResult, String>| {
+        let Some(sink) = &sink else { return };
+        let mut guard = sink.lock().expect("no panics while held");
+        let (file, done) = &mut *guard;
+        *done += 1;
+        match r {
+            Ok(g) => {
+                if let Err(e) = game_line(cell, g).and_then(|line| writeln!(file, "{line}").map_err(|e| e.to_string())) {
+                    eprintln!("games.jsonl: {e}");
+                }
+                eprintln!(
+                    "[{done}/{}] {} seed {}: {} retirements, {} ticks, {:.0} s",
+                    jobs.len(),
+                    cell.agent,
+                    g.seed,
+                    g.retirements,
+                    g.ticks,
+                    g.wall_s
+                );
+            }
+            Err(e) => eprintln!("[{done}/{}] {}: {e}", jobs.len(), cell.agent),
+        }
+    };
     std::thread::scope(|sc| {
         for _ in 0..threads.max(1) {
             sc.spawn(|| loop {
@@ -244,6 +287,7 @@ pub fn run(l: &Loaded, read: &dyn Fn(&str) -> Result<String, String>, threads: u
                     trace: false,
                 };
                 let r = career::play(&game);
+                streamed(cell, &r);
                 out.lock().expect("no panics while held")[j] = Some(r);
             });
         }
@@ -659,16 +703,21 @@ pub fn targets_line(ms: &Milestones) -> String {
         .join(", ")
 }
 
-/// Writes `report.md`, `results.json` and `games.jsonl` to `dir`.
+/// A game's `games.jsonl` line (without the newline): its result and cell.
+fn game_line(cell: &Cell, g: &GameResult) -> Result<String, String> {
+    let mut v = serde_json::to_value(g).map_err(|e| e.to_string())?;
+    v["cell"] = serde_json::to_value(cell).map_err(|e| e.to_string())?;
+    Ok(v.to_string())
+}
+
+/// Writes `report.md`, `results.json` and `games.jsonl` (in game order) to `dir`.
 pub fn write_out(dir: &str, l: &Loaded, res: &Results, sums: &[Summary], table: &str) -> Result<(), String> {
     let e = |e: std::io::Error| format!("{dir}: {e}");
     std::fs::create_dir_all(dir).map_err(e)?;
     let mut games = String::new();
     for (cell, gs) in &res.cells {
         for g in gs {
-            let mut v = serde_json::to_value(g).map_err(|e| e.to_string())?;
-            v["cell"] = serde_json::to_value(cell).map_err(|e| e.to_string())?;
-            games.push_str(&v.to_string());
+            games.push_str(&game_line(cell, g)?);
             games.push('\n');
         }
     }

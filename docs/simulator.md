@@ -23,16 +23,17 @@ careers in game time, against the targets in [principles.md](principles.md); a h
 projects real minutes on the side.
 
 ```sh
-$S ladder                                     # the ladder: experiments/ladder.json (~20 min on 6 threads)
-$S ladder --agents random,greedy,author,casual=author:min_gap=120   # without the oracle (~11 s)
+$S ladder                                     # the ladder: experiments/ladder.json (~11 s)
 $S ladder --agents author --humans mixed --seeds 8 --retirements 5   # any slice of it
+$S experiment experiments/ceiling.json        # the oracle beside the author (~20 min on 6 threads)
 $S experiment experiments/balance.json --out out/b   # any spec
+$S summarize out/experiments/ladder/games.jsonl      # each game's runs, milestones, career (mid-read too)
 $S compare --config-b configs/other.json      # two configs, paired on the same seeds
 $S compare --set boredom.base_cap=500         # a param (or module.variant=name) against the base
 $S balance                                    # the judge's missed targets, as balance: lines (~5 s)
 $S trace --agents author --retirements 2      # one career: actions, the agent's notes (#), milestones
 $S trace --lines                              # ... and each day's program lines run, in queue order
-cargo run -q --release -p hh-sim --example probe -- oracle 2 1500   # state at a tick: what walls a run in
+$S trace --agents oracle --first-seed 2 --at 1500   # the state at a tick: what walls a run in
 $S agents                                     # the ladder's rungs
 $S speed                                      # native engine speed
 node scripts/wasm-speed.mjs                   # the same in wasm (needs crates/hh-wasm/pkg)
@@ -61,7 +62,7 @@ career's `GameResult` (the `games.jsonl` line a sim career writes) with the time
 
 ### Against a human
 
-**`vs-human LOG`** replays the log, plays each sim player (the ladder's, or `--agents`) on the
+**`vs-human LOG`** replays the log, plays each sim player (the ladder's less any oracle, or `--agents`) on the
 log's config, seed and scenario for as many ticks as the human played (`--ticks N` for more),
 and prints them beside the human: ticks, retirements, each run's length, credits and
 decisions (`+` marks the run under way), decisions and ticks a decision, buildings and
@@ -100,7 +101,10 @@ whatever the thread count.
 spec, revision, content hash and each cell's summary); `games.jsonl` (a line a game: every
 measure, each run's ticks and decisions, every building bought, the career's best ranks,
 projects, quests, sub-objectives and achievements at the end, its cell, the fingerprint and
-`replay_ok`). Every command exits 1 if a game's record doesn't replay to its state.
+`replay_ok`), appended as each game finishes, with a progress line on stderr, and rewritten in
+game order at the end: `summarize` reads it, a read still running included. The milestones
+(`--milestones`) are the oracle's too. Every command exits 1 if a game's record doesn't
+replay to its state.
 `compare` prints the paired table (B minus A on the same seeds, mean difference and its
 standard error, per player; run 1's minutes under the spec's first human model) and both
 sides' tables; `--out` writes `compare.md`.
@@ -124,15 +128,13 @@ sides' tables; `--out` writes `compare.md`.
 | Run-1 objectives | With a spec's `objectives`: each objective's median run-1 day against its Godot window (`in`, `early`, `late`). |
 | Never built, never used | Buildings never owned and commands never run in any seed's career. |
 
-After the tables, the engine's own speed natively and, when `crates/hh-wasm/pkg` is built and
-`node` runs, in wasm (`scripts/wasm-speed.mjs`).
+After the tables, the engine's speed natively and, with `crates/hh-wasm/pkg` built, in wasm.
 
-**Costs** (this machine, idle): the ladder (5 players × 3 seeds, careers of 20 retirements)
-about 20 minutes on 6 threads, set by the oracle's careers (about 30 ticks a second, ~35,000
-ticks a career: [agents.md](agents.md#the-oracle-oraclers)); without the oracle about 11 s.
-`balance` (4 careers, no oracle) about 5 s; `vs-human` defaults to the ladder's players, the
-oracle among them, so a 1,600-tick log takes about a minute (`--agents author,casual=...`: a
-second). Other careers play 4,000-20,000 ticks a second, slower the more often their
+**Costs** (this machine, idle): the ladder (4 players × 3 seeds, careers of 20 retirements)
+about 11 s on 6 threads; `ceiling` about 20 minutes, set by the oracle's careers (about 30
+ticks a second, ~35,000 ticks a career: [agents.md](agents.md#the-oracle-oracle)); `balance`
+(4 careers) about 5 s; `vs-human` on a 1,600-tick log a second. Other careers play
+4,000-20,000 ticks a second, slower the more often their
 player looks (random and the author every 5-10 ticks, the casual author every ~130): a view
 costs ~150-200 µs and an applied action invalidates it, a state copy ~15 µs, so a rollout
 that plays an agent is view-bound.
@@ -142,8 +144,9 @@ that plays an agent is view-bound.
 The **seed ledger**: a read that must not be tuned on (a baseline, a confirming read) takes
 fresh seeds: `python scripts/seeds.py next N` prints the next N; `--take` also moves *Next
 free* past them (every seed below it counts as spent). The item records its range here and in
-its write-up. **Dev seeds** 1-3 are for development, on/off checks and the standing specs
-(`ladder.json`, `balance.json` start at 1).
+its write-up. Before freezing a long read, every player and knob changed since its last full
+dev career plays one (011 spent a 75-minute read on an untried profile). **Dev seeds** 1-3 are for development, on/off checks and the standing specs
+(`ladder.json`, `ceiling.json`, `balance.json` start at 1).
 
 Spent: 1-3 and 100-103 (005, development), 1000-1004 (005, the rev-2 baseline), 2000-2003
 (005, a compare), 3000-3004 (008, a baseline read before review fixes, superseded),
@@ -182,9 +185,7 @@ view and act only through actions.
 - **`greedy`** buys every affordable building in content order. Under Arc 1 it earns
   nothing (no program runs), so from a new game it buys nothing.
 - **`script`** is a fixed Arc 1 opening, one decision a day: put free processors on Program
-  1; buy the next building in its build order (Solar Panels, Excavator, Smelter, Refinery,
-  Storage Depot, Launch Pad, more extraction, Fabricator, a second Data Center, Research
-  Lab...), switching to a Solar Panel when the next building's energy upkeep would leave
+  1; buy the next building in its build order (`driver.rs`), switching to a Solar Panel when the next building's energy upkeep would leave
   less than a Cloud Compute spare, to a Storage Depot when a price exceeds a cap, and buying
   land when short; then set Program 1 to one command: launch a full fuelled pad, buy fuel
   for a full pad, load He-3, bridge the next building's missing titanium, regolith or ice

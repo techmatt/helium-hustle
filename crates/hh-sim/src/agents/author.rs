@@ -136,6 +136,82 @@ pub struct Directives {
     pub main_last: bool,
 }
 
+/// Each decision the directives change, one method each: the author asks
+/// these, and with none set each answers as the plain author plays.
+impl Directives {
+    /// The builder's ranking with the target, while unlocked, first.
+    fn rank_target(&self, v: &View, ranked: &mut Vec<(String, i64)>) {
+        if let Some(t) = &self.target {
+            if v.buildings.iter().any(|b| b.id == t && b.unlocked) {
+                ranked.retain(|(id, _)| id != t);
+                ranked.insert(0, (t.clone(), i64::MAX));
+            }
+        }
+    }
+
+    /// Research worth its science whatever else is open: all of it, or the
+    /// directed one.
+    fn wants_research(&self, id: &str) -> bool {
+        self.all_research || self.research.as_deref() == Some(id)
+    }
+
+    /// Research in the order wanted: the directed one, then [`RESEARCH`].
+    fn research_order(&self) -> impl Iterator<Item = &str> {
+        self.research.as_deref().into_iter().chain(RESEARCH.iter().copied())
+    }
+
+    /// Projects in the order funded: the pushed one, then [`PROJECTS`].
+    fn project_order(&self) -> impl Iterator<Item = &str> {
+        self.project.as_deref().into_iter().chain(PROJECTS.iter().copied())
+    }
+
+    /// Whether project `id` is pushed (funded with everything to spare).
+    fn pushes(&self, id: &str) -> bool {
+        self.project.as_deref() == Some(id)
+    }
+
+    /// The program slots of the main program and Dream, of `len`: main last
+    /// with `main_last`, Dream first while holding boredom, else in order.
+    fn program_slots(&self, len: usize) -> (usize, usize) {
+        let last = len.saturating_sub(1);
+        if self.main_last && last > MARKET {
+            (last, DREAM)
+        } else if self.sustain {
+            (DREAM, MAIN)
+        } else {
+            (MAIN, DREAM)
+        }
+    }
+
+    /// The axis to fund and its processors, when directed (else the
+    /// author's own rule).
+    fn funded_axis(&self) -> Option<(&str, u32)> {
+        self.axis.as_deref().filter(|_| self.fund_procs > 0).map(|a| (a, self.fund_procs))
+    }
+
+    /// Whether the market program runs with `left` processors free: the
+    /// author's own rule (`own`, from 3 free), or directed from 2.
+    fn market_runs(&self, own: bool, left: u32) -> bool {
+        (own && left > 2) || (self.market && left > 1)
+    }
+
+    /// The builder's energy reserve: holding boredom down, room for two
+    /// Dreams a day once Dream is unlocked (before, the room starved the run).
+    fn energy_reserve(&self, own: Fx, v: &View) -> Fx {
+        if self.sustain && command_unlocked(v, "dream") {
+            own + command_cost(v, "dream", "energy").mul_int(2)
+        } else {
+            own
+        }
+    }
+
+    /// Whether a run that has bought nothing for `stale_days` retires: not
+    /// while holding boredom down.
+    fn retires_stale(&self) -> bool {
+        !self.sustain
+    }
+}
+
 #[derive(Clone)]
 pub struct Author {
     /// The planner's goals (unset for the plain author).
@@ -281,12 +357,7 @@ impl Author {
     /// works toward that input's maker, or the building that unlocks it.
     fn reachable_target(&self, v: &View) -> Option<String> {
         let mut ranked = self.b.ranked(v);
-        if let Some(t) = &self.dir.target {
-            if v.buildings.iter().any(|b| b.id == t && b.unlocked) {
-                ranked.retain(|(id, _)| id != t);
-                ranked.insert(0, (t.clone(), i64::MAX));
-            }
-        }
+        self.dir.rank_target(v, &mut ranked);
         for (id, _) in ranked {
             let t = self.b.resolve(v, &id).to_string();
             let Some(b) = v.buildings.iter().find(|b| b.id == t) else { continue };
@@ -331,7 +402,7 @@ impl Author {
     /// Whether research `id` is worth science now: essential, or nothing
     /// Long-Term is open to fund instead.
     fn worth(&self, v: &View, id: &str) -> bool {
-        if self.dir.all_research || self.dir.research.as_deref() == Some(id) {
+        if self.dir.wants_research(id) {
             return true;
         }
         if id == "market_awareness" && v.completed_quests.contains(&"qmarket_awareness") {
@@ -343,10 +414,8 @@ impl Author {
     /// The research it wants next: the directed one first, then [`RESEARCH`]
     /// order.
     fn next_research<'v>(&self, v: &'v View) -> Option<&'v hh_core::view::ResearchView> {
-        let first = self.dir.research.as_deref();
-        first
-            .into_iter()
-            .chain(RESEARCH.iter().copied())
+        self.dir
+            .research_order()
             .filter_map(|id| v.research.iter().find(|r| r.id == id))
             .find(|r| r.visible && !r.done && self.worth(v, r.id))
     }
@@ -386,16 +455,15 @@ impl Author {
             }
             return;
         }
-        let first = self.dir.project.as_deref();
-        let Some(proj) = first
-            .into_iter()
-            .chain(PROJECTS.iter().copied())
+        let Some(proj) = self
+            .dir
+            .project_order()
             .filter_map(|id| v.projects.iter().find(|p| p.id == id))
             .find(|p| p.unlocked && !p.completed)
         else {
             return;
         };
-        let pushed = first == Some(proj.id);
+        let pushed = self.dir.pushes(proj.id);
         let keep = target.map_or(Fx::ZERO, |t| price(v, t, "credits"));
         // Every cost must be able to move: on hand, or made by a building.
         let movable = proj.costs.keys().all(|res| {
@@ -497,14 +565,7 @@ impl Author {
         // Holding boredom down, Dream runs first (programs run in order), so
         // loading can't take the He-3 and energy it needs.
         // With `main_last`, every other program runs before the main one.
-        let last = want.len().saturating_sub(1);
-        let (main, dream) = if self.dir.main_last && last > MARKET {
-            (last, DREAM)
-        } else if self.dir.sustain {
-            (DREAM, MAIN)
-        } else {
-            (MAIN, DREAM)
-        };
+        let (main, dream) = self.dir.program_slots(want.len());
         // Main: by hand while looks come often, else a standing cycle.
         let filler = if self.compute { "cloud_compute" } else { "idle" };
         want[main] = if gap <= self.hand_gap {
@@ -613,11 +674,10 @@ impl Author {
             left -= 1;
         }
         // Fund an ideology axis.
-        let directed = self.dir.axis.as_deref().filter(|_| self.dir.fund_procs > 0);
-        if let Some(axis) = directed {
+        if let Some((axis, fund_procs)) = self.dir.funded_axis() {
             let cmd = format!("fund_{axis}");
             if command_unlocked(v, &cmd) && left > 1 && FUND < want.len() {
-                let n = self.dir.fund_procs.min(left - 1);
+                let n = fund_procs.min(left - 1);
                 want[FUND] = vec![e(&cmd, 1)];
                 procs[FUND] = n;
                 left -= n;
@@ -637,8 +697,7 @@ impl Author {
             }
         }
         // Market: promote what ships, disrupt speculators.
-        let market = (self.market && left > 2) || (self.dir.market && left > 1);
-        if market && !pads.is_empty() && MARKET < want.len() {
+        if self.dir.market_runs(self.market, left) && !pads.is_empty() && MARKET < want.len() {
             let mut lines = Vec::new();
             for pad in &pads {
                 let cmd = format!("promote_{}", pad.good);
@@ -724,7 +783,7 @@ impl Author {
         if let Some(pad) = v.pads.iter().find(|p| p.active && p.cooldown > 0) {
             sooner(&mut soon, u64::from(pad.cooldown));
         }
-        if v.can_retire && !self.dir.sustain {
+        if v.can_retire && self.dir.retires_stale() {
             let stale = v.day.saturating_sub(self.built_day);
             sooner(&mut soon, self.stale_days.saturating_sub(stale));
         }
@@ -761,13 +820,7 @@ impl Agent for Author {
         let (run, day, built) = {
             let v = p.view();
             self.income.read(v);
-            // Holding boredom down, energy users leave room for two Dreams a
-            // day, once Dream is unlocked (before, the room starved the run).
-            self.b.reserve = if self.dir.sustain && command_unlocked(v, "dream") {
-                self.reserve + command_cost(v, "dream", "energy").mul_int(2)
-            } else {
-                self.reserve
-            };
+            self.b.reserve = self.dir.energy_reserve(self.reserve, v);
             (v.run, v.day, v.run_stats.buildings_built)
         };
         if run != self.run || built != self.built {
@@ -776,7 +829,7 @@ impl Agent for Author {
             self.built_day = day;
         }
         let v = p.view();
-        if v.can_retire && !self.dir.sustain && day.saturating_sub(self.built_day) >= self.stale_days {
+        if v.can_retire && self.dir.retires_stale() && day.saturating_sub(self.built_day) >= self.stale_days {
             let _ = p.apply(&Action::Retire);
             let v = p.view();
             self.run = v.run;

@@ -15,6 +15,7 @@ pub mod lab;
 pub mod milestones;
 pub mod objectives;
 pub mod playlog;
+pub mod summary;
 pub mod vs;
 
 pub const USAGE: &str = "usage:
@@ -28,7 +29,9 @@ pub const USAGE: &str = "usage:
   hh-sim experiment SPEC.json [GRID]               any spec
   hh-sim compare --config A [--config-b B] [--set module.key=value]... [GRID]
   hh-sim balance [GRID]                            balance: lines for the judge's missed targets
-  hh-sim trace [GRID] [--lines]                    one career's actions and milestones (--lines: each day's program lines run)
+  hh-sim trace [GRID] [--lines | --at T]           one career's actions and milestones (--lines: each day's program lines run;
+                                                   --at T: the state at career tick T instead, what walls a run in)
+  hh-sim summarize GAMES.jsonl [--milestones F]    a read's games: each run, the milestones, the career at the end
   hh-sim agents                                    the ladder's rungs
   hh-sim speed                                     native engine speed (ticks/s)
   hh-sim playlog LOG.jsonl [--json] [--milestones F] [--human-models F]   replay and measure a human's play log
@@ -134,6 +137,9 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     }
     if cmd == "vs-human" {
         return vs::run(rest);
+    }
+    if cmd == "summarize" {
+        return summarize_cmd(rest);
     }
     let o = parse(rest)?;
     if cmd != "replay" && cmd != "objectives" && !o.rest.is_empty() {
@@ -287,6 +293,27 @@ fn playlog_cmd(args: &[String]) -> Result<String, Fail> {
         Some(false) => Err(Fail::Check(out)),
         _ => Ok(out),
     }
+}
+
+/// `hh-sim summarize GAMES.jsonl [--milestones F]`: a read's per-game tables.
+fn summarize_cmd(args: &[String]) -> Result<String, Fail> {
+    let mut path = None;
+    let mut milestones = "configs/sim/milestones.json".to_string();
+    let mut it = args.iter();
+    while let Some(a) = it.next() {
+        match a.as_str() {
+            "--milestones" => milestones = it.next().ok_or(Fail::Usage("--milestones needs a file".into()))?.clone(),
+            f if f.starts_with("--") => return usage(format!("summarize: unknown option {f:?}")),
+            f if path.is_none() => path = Some(f.to_string()),
+            f => return usage(format!("summarize: one games.jsonl at a time (also given {f:?})")),
+        }
+    }
+    let Some(path) = path else {
+        return usage("summarize: give a games.jsonl");
+    };
+    let games = summary::parse(&read(&path)?).map_err(|e| Fail::Usage(format!("{path}: {e}")))?;
+    let ms = milestones::Milestones::from_json(&read(&milestones)?).map_err(Fail::Usage)?;
+    Ok(summary::tables(&games, &ms))
 }
 
 fn replay(paths: &[String]) -> Result<String, Fail> {

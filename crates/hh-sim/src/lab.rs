@@ -42,6 +42,8 @@ struct Grid {
     set: Vec<String>,
     /// `trace --lines`: each day's program lines run.
     lines: bool,
+    /// `trace --at T`: the state at career tick T instead of the trace.
+    at: Option<u64>,
 }
 
 /// Players, comma-separated; a piece with `=` but no `:` after a spec with
@@ -77,6 +79,7 @@ fn parse(args: &[String]) -> Result<Grid, Fail> {
         }
         match a.as_str() {
             "--lines" => g.lines = true,
+            "--at" => g.at = Some(num(a, val(a)?)?),
             "--agents" => g.agents = Some(agent_list(&val(a)?)),
             "--humans" => g.humans = Some(list(val(a)?)),
             "--seeds" => g.seeds = Some(num(a, val(a)?)?),
@@ -142,8 +145,8 @@ impl Grid {
         if self.config_b.is_some() && !config_b {
             return usage("--config-b is compare's");
         }
-        if self.lines && cmd != "trace" {
-            return usage("--lines is trace's");
+        if (self.lines || self.at.is_some()) && cmd != "trace" {
+            return usage("--lines and --at are trace's");
         }
         Ok(())
     }
@@ -170,13 +173,13 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
             };
             g.only(cmd, true, false)?;
             let l = g.load(g.spec(&path)?)?;
-            let res = experiment::run(&l, &read, g.threads).map_err(Fail::Usage)?;
+            let dir = g.out.clone().unwrap_or(format!("out/experiments/{}", l.spec.name));
+            let res = experiment::run(&l, &read, g.threads, Some(&dir)).map_err(Fail::Usage)?;
             let sums: Vec<_> =
                 res.cells.iter().map(|(c, games)| experiment::summarize(c, games, &l.milestones, &l.models())).collect();
             let mut table = experiment::tables(&sums, &l);
             let _ = writeln!(table, "\n{}", speed_line());
             let _ = writeln!(table, "{}", wasm_speed_line());
-            let dir = g.out.clone().unwrap_or(format!("out/experiments/{}", l.spec.name));
             experiment::write_out(&dir, &l, &res, &sums, &table).map_err(Fail::Usage)?;
             let bad = sums.iter().any(|s| !s.replay_ok);
             let out = format!(
@@ -209,8 +212,8 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
             sb.variants = vec![Variant { name: "b".into(), set: g.set.clone() }];
             let la = g.load(sa)?;
             let lb = g.load(sb)?;
-            let ra = experiment::run(&la, &read, g.threads).map_err(Fail::Usage)?;
-            let rb = experiment::run(&lb, &read, g.threads).map_err(Fail::Usage)?;
+            let ra = experiment::run(&la, &read, g.threads, None).map_err(Fail::Usage)?;
+            let rb = experiment::run(&lb, &read, g.threads, None).map_err(Fail::Usage)?;
             let name_b = if g.set.is_empty() { b_path.clone() } else { format!("{b_path} {}", g.set.join(" ")) };
             let models = la.models();
             let model = models.first().and_then(|(n, h)| Some((n.as_str(), (*h)?)));
@@ -230,7 +233,7 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
             g.only(cmd, false, false)?;
             let path = g.spec.clone().unwrap_or(BALANCE.into());
             let l = g.load(g.spec(&path)?)?;
-            let res = experiment::run(&l, &read, g.threads).map_err(Fail::Usage)?;
+            let res = experiment::run(&l, &read, g.threads, None).map_err(Fail::Usage)?;
             let sums: Vec<_> =
                 res.cells.iter().map(|(c, games)| experiment::summarize(c, games, &l.milestones, &l.models())).collect();
             let lines = experiment::balance(&sums, &l.milestones);
@@ -242,18 +245,23 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
             let l = g.load(g.spec(&path)?)?;
             let s = &l.spec;
             let (config, scenario) = experiment::first_cell(s, &read).map_err(Fail::Usage)?;
+            // With --at, the career runs to that tick whatever its retirements.
             let game = crate::career::Game {
                 config: &config,
                 seed: s.first_seed,
                 scenario: scenario.as_ref(),
                 agent: &s.agents[0],
-                retirements: s.retirements,
-                max_ticks: s.max_ticks,
+                retirements: if g.at.is_some() { u32::MAX } else { s.retirements },
+                max_ticks: g.at.unwrap_or(s.max_ticks),
                 milestones: &l.milestones,
                 objectives: &l.objectives,
                 trace: true,
             };
             let (r, sess) = crate::career::play_session(&game).map_err(Fail::Usage)?;
+            if g.at.is_some() {
+                let note = r.notes.last().map_or("", |n| n.1.as_str());
+                return Ok(state_at(&sess, note));
+            }
             let mut t = String::new();
             // Actions and the agent's notes, by tick (a note after that look's actions).
             let rec = sess.record();
@@ -307,6 +315,53 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
         "speed" => Ok(format!("{}\n", speed_line())),
         _ => usage(format!("unknown command {cmd:?}")),
     }
+}
+
+/// `trace --at T`: the state's economy (resources against caps, buildings
+/// with their next price, programs, markets), the agent's last note, and the
+/// career's long goals: what walls a run in.
+fn state_at(s: &Session, note: &str) -> String {
+    let mut t = String::new();
+    let v = s.rules.view(&s.state);
+    let amount = |id: &str| v.resources.iter().find(|r| r.id == id).map_or(hh_core::Fx::ZERO, |r| r.amount);
+    let _ = writeln!(t, "tick {} run {} day {} processors {} land {}", v.tick, v.run, v.day, v.processors, amount("land"));
+    for r in &v.resources {
+        let cap = r.cap.map_or("-".into(), |c| c.to_string());
+        let _ = writeln!(t, "  {:12} {:>10} cap {:>10} per_day {:>8}", r.id, r.amount.to_string(), cap, r.per_day.to_string());
+    }
+    for b in v.buildings.iter().filter(|b| b.unlocked || b.owned > 0) {
+        let cost: Vec<String> = b.cost.iter().map(|(k, x)| format!("{k} {}", x.floor_int())).collect();
+        let _ = writeln!(
+            t,
+            "  {:20} owned {:>2} active {:>2} land {} next: {} short {:?}",
+            b.id,
+            b.owned,
+            b.active,
+            b.land,
+            cost.join(", "),
+            b.short
+        );
+    }
+    for p in v.programs.iter().filter(|p| !p.entries.is_empty()) {
+        let lines: Vec<String> = p.entries.iter().map(|e| format!("{} x{}", e.command, e.count)).collect();
+        let _ = writeln!(t, "  program procs {}: {}", p.processors, lines.join(", "));
+    }
+    for m in &v.markets {
+        let _ = writeln!(t, "  market {:10} demand {:?} tier {}", m.good, m.demand.map(|d| d.to_string()), m.tier);
+    }
+    let _ = writeln!(t, "  # {note}");
+    let c = &s.state.career;
+    let _ = writeln!(
+        t,
+        "career: retirements {} best run days {} best run credits {}",
+        c.retirements, c.best_run_days, c.best_run_credits
+    );
+    let _ = writeln!(t, "  quests: {:?}", c.completed_quests);
+    let _ = writeln!(t, "  sub-objectives: {:?}", c.completed_sub_objectives);
+    let _ = writeln!(t, "  best ranks: {:?} best scores: {:?}", c.max_ideology_ranks, c.max_ideology_scores);
+    let _ = writeln!(t, "  projects done: {:?} progress: {:?}", c.completed_projects, c.project_progress);
+    let _ = writeln!(t, "  achievements: {:?}", c.achievements);
+    t
 }
 
 /// The record replayed a day at a time: for each day a program line ran, the

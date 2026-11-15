@@ -316,12 +316,14 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
         }
     }
     let Some(path) = path else { return usage("vs-human: give a play log") };
-    // The ladder's players and human models unless given.
+    // The ladder's players and human models unless given; never the oracle by
+    // default (its careers take minutes: `--agents oracle` asks for it).
     let (agents, models) = match (agents, models) {
         (Some(a), Some(m)) => (a, m),
         (a, m) => {
             let spec = crate::experiment::Spec::from_json(&read(LADDER)?).map_err(|e| Fail::Usage(format!("{LADDER}: {e}")))?;
-            (a.unwrap_or(spec.agents), m.unwrap_or(spec.humans))
+            let ladder = spec.agents.into_iter().filter(|p| crate::agents::kind(p) != "oracle").collect();
+            (a.unwrap_or(ladder), m.unwrap_or(spec.humans))
         }
     };
     if agents.is_empty() {
@@ -331,16 +333,16 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     for m in &models {
         humans.get(m).map_err(Fail::Usage)?;
     }
+    let ms = Milestones::from_json(&read(&milestones)?).map_err(Fail::Usage)?;
     let mut names = vec!["human"];
     for a in &agents {
-        crate::agents::build(a, 0).map_err(Fail::Usage)?;
+        crate::agents::build(a, 0, &ms).map_err(Fail::Usage)?;
         let name = crate::agents::named(a).0;
         if names.contains(&name) {
             return usage(format!("vs-human: two rows named {name:?} (the log's row is \"human\")"));
         }
         names.push(name);
     }
-    let ms = Milestones::from_json(&read(&milestones)?).map_err(Fail::Usage)?;
     let log = Log::parse(&read(&path)?).map_err(|e| Fail::Usage(format!("{path}: {e}")))?;
     let h = playlog::replay(&log, &ms).map_err(|e| Fail::Check(format!("{path}: replay failed: {e}")))?;
     let span = ticks.unwrap_or(h.game.ticks).max(1);

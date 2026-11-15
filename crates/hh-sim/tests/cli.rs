@@ -101,6 +101,22 @@ fn grid(cmd: &str, agents: &str, extra: &[&str]) -> Vec<String> {
     a
 }
 
+/// The ladder's players' games on the small grid (seeds 1-2, careers of 2
+/// retirements), pinned: an agent edit that should play the same moves
+/// (a refactor) keeps these, as the core's `golden_game` does for the rules.
+/// One that changes play updates them and says so; a rules change moves them
+/// all. Copy them from the failing assertion (or the test's `games.jsonl`).
+const PINNED: &[(&str, u64, &str)] = &[
+    ("random", 1, "9debab9793aeeb84"),
+    ("random", 2, "8e52cb5aab7e8bfd"),
+    ("greedy", 1, "12a7901f142cfc47"),
+    ("greedy", 2, "3f543fbd2f76c618"),
+    ("author", 1, "79d8e49185ce1941"),
+    ("author", 2, "4be3835f4746ea04"),
+    ("casual", 1, "04f0193eb9c8805f"),
+    ("casual", 2, "ce0546983f3594cb"),
+];
+
 #[test]
 fn the_ladder_prints_its_tables_and_writes_results() {
     let dir = root("out/hh-sim-tests/ladder");
@@ -122,6 +138,15 @@ fn the_ladder_prints_its_tables_and_writes_results() {
     }
     let games = std::fs::read_to_string(format!("{dir}/games.jsonl")).unwrap();
     assert_eq!(games.lines().count(), 8);
+    let played: Vec<(String, u64, String)> = games
+        .lines()
+        .map(|l| {
+            let v: serde_json::Value = serde_json::from_str(l).unwrap();
+            (v["cell"]["agent"].as_str().unwrap().into(), v["seed"].as_u64().unwrap(), v["fingerprint"].as_str().unwrap().into())
+        })
+        .collect();
+    let pinned: Vec<(String, u64, String)> = PINNED.iter().map(|&(a, s, f)| (a.into(), s, f.into())).collect();
+    assert_eq!(played, pinned, "the ladder's players played other games (PINNED's doc says what to do)");
     for line in games.lines() {
         let v: serde_json::Value = serde_json::from_str(line).unwrap();
         assert_eq!(v["replay_ok"], true, "{line}");
@@ -136,6 +161,12 @@ fn the_ladder_prints_its_tables_and_writes_results() {
         if v["cell"]["agent"] == "casual" {
             assert!(ticks / looks >= 60, "the casual author looks at most every 120 ticks: {ticks} {looks}");
         }
+    }
+    // `summarize` reads it back: each game's runs, milestones and career.
+    let ms = root("configs/sim/milestones.json");
+    let s = run(&args(&["summarize", &format!("{dir}/games.jsonl"), "--milestones", &ms])).unwrap();
+    for want in ["## Runs (8 games", "| author | 1 | 1 |", "| casual | 2 | 2 |","## Milestones", "| M1 |", "## Career at the end"] {
+        assert!(s.contains(want), "{want}: {s}");
     }
 }
 
@@ -229,15 +260,18 @@ fn agents_keep_their_knobs_and_cope_with_one_program() {
 }
 
 /// The oracle plans on copies of the game: its own game's record replays, a
-/// second play is the same game, and a pinned strategy and its knobs parse.
+/// second play is the same game, a strategy pinned by its row in the table
+/// (trade) and its knobs parse, and both play the pinned games (an oracle
+/// refactor keeps them; see `PINNED`).
 #[test]
 #[ignore = "slow lane: an oracle career plays thousands of rollouts (~20 s)"]
 fn the_oracle_plays_on_copies_and_its_game_replays() {
     let dir = root("out/hh-sim-tests/oracle");
     let player = "oracle:horizon=90,long=200,every=200,replan=1000,width=2";
+    let trade = hh_sim::agents::oracle::strategy_index("trade").unwrap();
     let mut fingerprints = Vec::new();
     for threads in ["1", "2"] {
-        let a = grid("experiment", &format!("{player},pinned=oracle:strategy=1,horizon=60,long=100,every=400"), &[
+        let a = grid("experiment", &format!("{player},pinned=oracle:strategy={trade},horizon=60,long=100,every=400"), &[
             "--out", &dir, "--threads", threads,
         ]);
         let out = run(&a).unwrap();
@@ -251,6 +285,47 @@ fn the_oracle_plays_on_copies_and_its_game_replays() {
     }
     let half = fingerprints.len() / 2;
     assert_eq!(fingerprints[..half], fingerprints[half..]);
+    // Seeds 1 and 2 of the oracle, then of the pinned one.
+    assert_eq!(fingerprints[..half], ["eb78a1bdbf1c6a7b", "35263767a808849e", "941def33435f5bce", "cc4d1aedd9df7372"]);
+}
+
+/// `trace --at T` prints the state at career tick T: what walls a run in.
+#[test]
+fn trace_at_prints_the_state_at_a_tick() {
+    let out = run(&grid("trace", "author", &["--at", "300"])).unwrap();
+    for want in ["tick 300 run 1 day ","solar_panel", "program procs", "  # target ", "career: retirements 0"] {
+        assert!(out.contains(want), "{want}: {out}");
+    }
+    assert!(matches!(run(&grid("experiment", "author", &["--at", "300"])), Err(Fail::Usage(_))));
+}
+
+/// Every standing spec (`experiments/*.json`: ladder, ceiling, balance) loads
+/// and builds its players; the ladder keeps the oracle out (ceiling.json's).
+#[test]
+fn every_standing_spec_loads() {
+    let read = |p: &str| std::fs::read_to_string(root(p)).map_err(|e| format!("{p}: {e}"));
+    let (humans, ms) = (read("configs/sim/humans.json").unwrap(), read("configs/sim/milestones.json").unwrap());
+    let mut names = Vec::new();
+    for entry in std::fs::read_dir(root("experiments")).unwrap() {
+        let path = entry.unwrap().path();
+        if path.extension().is_some_and(|x| x == "json") {
+            let spec = hh_sim::experiment::Spec::from_json(&std::fs::read_to_string(&path).unwrap()).unwrap();
+            let l = hh_sim::experiment::load(spec, &humans, &ms, &read).unwrap_or_else(|e| panic!("{}: {e}", path.display()));
+            if l.spec.name == "ladder" {
+                assert!(l.spec.agents.iter().all(|a| hh_sim::agents::kind(a) != "oracle"), "{:?}", l.spec.agents);
+            }
+            names.push(l.spec.name);
+        }
+    }
+    names.sort();
+    assert_eq!(names, ["balance", "ceiling", "ladder"]);
+}
+
+/// A strategy pinned past the table's end is refused.
+#[test]
+fn the_oracle_refuses_a_strategy_past_its_table() {
+    let rows = hh_sim::agents::oracle::strategies().len();
+    assert!(matches!(run(&grid("experiment", &format!("oracle:strategy={rows}"), &[])), Err(Fail::Usage(_))));
 }
 
 #[test]
@@ -307,14 +382,24 @@ fn trace_lines_show_the_queue_in_order() {
 /// can't differ between native and wasm builds (docs/agents.md).
 #[test]
 fn agents_use_no_floats_or_hash_maps() {
-    let dir = format!("{}/src/agents", env!("CARGO_MANIFEST_DIR"));
-    for entry in std::fs::read_dir(&dir).unwrap() {
-        let path = entry.unwrap().path();
-        let text = std::fs::read_to_string(&path).unwrap();
-        for banned in ["f64", "f32", "HashMap", "HashSet", "to_f64", "from_f64"] {
-            assert!(!text.contains(banned), "{} uses {banned}", path.display());
+    // Every file under `agents/`, subfolders (`oracle/`) included.
+    let mut dirs = vec![std::path::PathBuf::from(format!("{}/src/agents", env!("CARGO_MANIFEST_DIR")))];
+    let mut files = 0;
+    while let Some(dir) = dirs.pop() {
+        for entry in std::fs::read_dir(&dir).unwrap() {
+            let path = entry.unwrap().path();
+            if path.is_dir() {
+                dirs.push(path);
+                continue;
+            }
+            files += 1;
+            let text = std::fs::read_to_string(&path).unwrap();
+            for banned in ["f64", "f32", "HashMap", "HashSet", "to_f64", "from_f64"] {
+                assert!(!text.contains(banned), "{} uses {banned}", path.display());
+            }
         }
     }
+    assert!(files >= 9, "only {files} agent files read");
 }
 
 #[test]

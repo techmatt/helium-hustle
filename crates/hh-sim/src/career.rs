@@ -423,7 +423,7 @@ pub fn play(game: &Game) -> Result<GameResult, String> {
 pub fn play_session(game: &Game) -> Result<(GameResult, Session), String> {
     let start = Instant::now();
     let mut s = Session::new(game.config, game.seed, game.scenario)?;
-    let mut agent = agents::build(game.agent, game.seed)?;
+    let mut agent = agents::build(game.agent, game.seed, game.milestones)?;
     let mut meter = Meter::new(&s, game.milestones, game.objectives);
     let mut seen_run = 0u32;
     let max_tick = s.state.tick.saturating_add(game.max_ticks);

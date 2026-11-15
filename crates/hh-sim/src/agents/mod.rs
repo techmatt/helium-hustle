@@ -11,6 +11,8 @@ use std::collections::BTreeMap;
 
 use hh_core::{Action, Fx, Session, View};
 
+use crate::milestones::Milestones;
+
 pub mod author;
 pub mod builder;
 pub mod oracle;
@@ -127,8 +129,16 @@ pub fn named(player: &str) -> (&str, &str) {
     }
 }
 
-/// Builds an agent from its spec (`[name=]kind[:key=value,...]`) for a game seed.
-pub fn build(player: &str, seed: u64) -> Result<Box<dyn Agent>, String> {
+/// A player's agent kind: `author` for `casual=author:min_gap=120`.
+pub fn kind(player: &str) -> &str {
+    let spec = named(player).1;
+    spec.split_once(':').map_or(spec, |x| x.0)
+}
+
+/// Builds an agent from its spec (`[name=]kind[:key=value,...]`) for a game
+/// seed. `ms` are the milestones the career is measured against (the oracle
+/// scores them in its rollouts).
+pub fn build(player: &str, seed: u64, ms: &Milestones) -> Result<Box<dyn Agent>, String> {
     let spec = named(player).1;
     let (kind, rest) = spec.split_once(':').unwrap_or((spec, ""));
     let mut knobs = BTreeMap::new();
@@ -153,7 +163,7 @@ pub fn build(player: &str, seed: u64) -> Result<Box<dyn Agent>, String> {
         }
         "oracle" => {
             knobs.check(oracle::KNOBS, kind)?;
-            Ok(Box::new(oracle::Oracle::new(&knobs)))
+            Ok(Box::new(oracle::Oracle::new(&knobs, ms)?))
         }
         "planner" => Err(format!("agent {kind:?} is a hook for a later rung, not built yet")),
         _ => Err(format!(

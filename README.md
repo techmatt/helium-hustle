@@ -20,7 +20,7 @@ implemented (the Godot build's Arc 1, ported): [docs/rules/](docs/rules/README.m
 | `crates/hh-core` | The rules engine: every rule, fixed-point state, no I/O, no clock, no global RNG (CLAUDE.md, *Engine rules*). |
 | `crates/hh-sim` | Native CLI ([docs/simulator.md](docs/simulator.md)): runs a seed, replays records; agents ([docs/agents.md](docs/agents.md)) play careers in game time against the targets ([docs/principles.md](docs/principles.md)): the ladder, experiments, compare, balance, a human's play log beside them (`vs-human`). |
 | `configs/sim/` | The simulator's data: human time models (real minutes from a career's looks) and the milestones with their targets. |
-| `experiments/` | Experiment specs (`ladder.json`, `balance.json`); `results/` holds each item's write-up and working papers (`<item>/`). |
+| `experiments/` | Experiment specs (`ladder.json`, `ceiling.json` the oracle's, `balance.json` the judge's); `results/` holds each item's write-up and working papers (`<item>/`). A read's `games.jsonl`: `hh-sim summarize`. |
 | `crates/hh-wasm` | wasm-bindgen bindings for `web/`, JSON in and out. |
 | `web/` | The browser UI ([web/README.md](web/README.md)). Renders the engine's view, sends actions, holds no rules. |
 | `configs/` | Game configs: modules, variants and every tunable number. No defaults in code. |
@@ -51,7 +51,7 @@ cargo test-all                               # also the slow lane's #[ignore]d t
 cargo clippy --workspace --all-targets       # must stay clean; ~7 s
 cargo run -q -p hh-sim -- run --seed 1 --ticks 365 --policy script
 cargo run -q --release -p hh-sim -- objectives reference/scenarios/run1_fresh.json   # ~0.2 s
-cargo run -q --release -p hh-sim -- ladder   # the agent ladder, 15 careers: ~20 min on 6 threads, the oracle's (docs/simulator.md)
+cargo run -q --release -p hh-sim -- ladder   # the agent ladder, 12 careers: ~11 s on 6 threads (the oracle's ceiling.json: ~20 min)
 wasm-pack build crates/hh-wasm --target web  # -> crates/hh-wasm/pkg (git-ignored); ~22 s cold, ~5 s warm
 node scripts/wasm-smoke.mjs                  # native = wasm: needs the pkg above (not web's copy); ~1 s
 python scripts/warning_checks.py             # warning checks, incl. parity and balance (rebuilds stale builds); ~7 s, up to a minute cold
@@ -71,7 +71,8 @@ state of one fixed game: baseline config, seed `u64::MAX`, 2000 ticks of the scr
 policy (`driver.rs`: it ships, is retired by boredom at tick 1574 and starts run 2). An intended play
 change bumps `RULES_REVISION`
 (`crates/hh-core/src/lib.rs`, and the revision line in `docs/rules/README.md`), adds its
-`docs/rules-history.md` row, and updates `GOLDEN_REVISION` and `GOLDEN_FINGERPRINT` there and
+`docs/rules-history.md` row, the sim players' pinned games (`PINNED` and the oracle's in
+`crates/hh-sim/tests/cli.rs`; an agent refactor keeps them), and updates `GOLDEN_REVISION` and `GOLDEN_FINGERPRINT` there and
 the same three `GOLDEN_*` constants in `scripts/wasm-smoke.mjs`
 (`wasm_smoke_expects_the_golden_constants` fails until they match; it also checks the smoke
 plays the golden game through `play_golden`, the wasm build's own copy of `driver.rs`, with
