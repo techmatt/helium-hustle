@@ -6,7 +6,8 @@ How the engine is put together. The rules are in [rules/](rules/README.md); the 
 ## Crates
 
 - **`hh-core`**: every rule; nothing else holds one.
-- **`hh-sim`**: the native CLI (later agents and experiments).
+- **`hh-sim`**: the native CLI: agents, careers, experiments ([simulator.md](simulator.md),
+  [agents.md](agents.md)).
 - **`hh-wasm`**: wasm-bindgen adapter, JSON strings in and out, no rules.
 - **`web/`**: Vite + TypeScript, no UI framework. Renders the engine's view, sends
   actions, owns the wall clock.
@@ -122,7 +123,8 @@ can't change an old record.
 
 `Rules::view` (`view.rs`) gives everything a client shows and can do: resources (amount,
 cap, change over the next day, visible), buildings (price, buyable, unlocked, visible,
-stall, the action that buys one), commands, programs, pads (payout, can launch), markets
+stall, content rates per copy, the action that buys one), commands, programs, pads (fuel,
+cargo per load, payout, can launch), the run's totals (credits earned, shipments, buildings, research), markets
 (demand once Market Awareness is researched, else a tier), research, ideology, projects,
 the active quest, the run's fired events, boredom (cap, rate, phase), unlocked panels, the
 career's bests and next-run bonuses, and the career log. Clients

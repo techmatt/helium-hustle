@@ -1,0 +1,15 @@
+{
+  "_doc": "Player profiles for hh-sim (docs/simulator.md, Profiles). attention: real seconds between looks (the player acts at each look). speeds: which speed the player runs at and when it changes; speeds are the web client's (1, 3, 10, 50, 200 ticks a real second). fixed: always `speed`. adaptive: `busy` after a look where the player acted, `idle` after one where it didn't. ramp: `speeds[k]` with k the career's retirements so far (the last for every later run).",
+  "attention": {
+    "active": { "seconds": 5, "says": "acts every few seconds" },
+    "casual": { "seconds": 120, "says": "looks in every couple of minutes" },
+    "afk": { "seconds": 1800, "says": "leaves it running, back every half hour" }
+  },
+  "speeds": {
+    "1x": { "type": "fixed", "speed": 1 },
+    "mixed": { "type": "adaptive", "busy": 1, "idle": 10, "says": "1x while acting, 10x while waiting" },
+    "10x": { "type": "fixed", "speed": 10 },
+    "ramp": { "type": "ramp", "speeds": [1, 3, 10, 50, 200], "says": "faster each retirement: 1x in run 1 up to 200x from run 5" },
+    "200x": { "type": "fixed", "speed": 200 }
+  }
+}

@@ -1,0 +1,305 @@
+//! The builder: a scored build order (roughly the Godot optimizer's greedy
+//! over purchase orderings), shared by `greedy` and `author`, and the `greedy`
+//! agent itself.
+//!
+//! **Scoring.** Each unlocked building scores its base weight ([`WEIGHTS`])
+//! times its keep percent per copy owned (`decay` sets one for all), with
+//! needs read from the view:
+//! - a building whose every product sits at its cap scores 0 (no more of a
+//!   capped pile);
+//! - an input a building is starved of raises its maker by `starved`%;
+//! - an energy user that would leave less than `reserve` spare energy a day
+//!   gives way to a Solar Panel.
+//!
+//! A target priced past a cap gives way to a Storage Depot (a Battery for
+//! energy); one short of land buys land first when credits allow.
+//!
+//! **`greedy`** buys the best-scored affordable building, up to `buys` a look,
+//! never saving for a dearer one, buys the cheapest affordable research, and
+//! runs one command on the first program with every processor, chosen afresh
+//! each look ([`hand_command`]). It funds no project and never retires.
+
+use std::collections::BTreeMap;
+
+use hh_core::state::Entry;
+use hh_core::{Action, Fx, View};
+
+use super::{amount, command_cost, command_unlocked, Agent, Knobs, Player};
+
+pub const KNOBS: &[&str] = &["decay", "starved", "reserve", "buys"];
+
+/// Base weights (points) and the percent kept per copy owned, by building id.
+/// A building not listed scores 0.
+pub const WEIGHTS: &[(&str, i64, i64)] = &[
+    ("data_center", 90, 85),
+    ("refinery", 70, 70),
+    ("launch_pad", 65, 40),
+    ("excavator", 60, 70),
+    ("smelter", 50, 60),
+    ("research_lab", 60, 80),
+    ("solar_panel", 40, 75),
+    ("electrolysis", 35, 60),
+    ("fabricator", 35, 50),
+    ("ice_extractor", 30, 60),
+    ("recreation_dome", 30, 75),
+    ("fuel_cell", 25, 75),
+    ("arbitrage_engine", 20, 50),
+    ("microwave_receiver", 20, 50),
+    ("storage_depot", 0, 70),
+    ("battery", 0, 50),
+];
+
+/// The building that makes a starved input.
+const MAKERS: &[(&str, &str)] = &[
+    ("energy", "solar_panel"),
+    ("regolith", "excavator"),
+    ("ice", "ice_extractor"),
+    ("circuits", "fabricator"),
+    ("propellant", "electrolysis"),
+];
+
+/// Commands that bridge a missing building input, by resource.
+pub const BRIDGES: &[(&str, &str)] = &[
+    ("titanium", "buy_titanium"),
+    ("regolith", "buy_regolith"),
+    ("ice", "buy_ice"),
+    ("propellant", "buy_propellant"),
+];
+
+#[derive(Debug, Clone)]
+pub struct Builder {
+    /// Percent of the weight kept per copy owned, for every building
+    /// (the knob); else each building's own ([`WEIGHTS`]).
+    pub decay: Option<i64>,
+    /// Percent added to a starved input's maker.
+    pub starved: i64,
+    /// Spare energy a day an energy user must leave.
+    pub reserve: Fx,
+}
+
+impl Builder {
+    pub fn new(k: &Knobs) -> Self {
+        Builder {
+            decay: k.0.get("decay").map(|d| (*d).clamp(1, 100)),
+            starved: k.get("starved", 100).max(0),
+            reserve: Fx::from_int(k.get("reserve", 3).max(0)),
+        }
+    }
+
+    /// Unlocked buildings by score, best first (ties in content order);
+    /// zero scores dropped.
+    pub fn ranked(&self, v: &View) -> Vec<(String, i64)> {
+        let mut starved: BTreeMap<&str, bool> = BTreeMap::new();
+        for b in &v.buildings {
+            if b.active > 0 && b.stall == Some(hh_core::state::Stall::InputStarved) {
+                for (res, need) in &b.upkeep {
+                    let short = amount(v, res) < need.mul_int(b.active as i64);
+                    if short {
+                        starved.insert(res.as_str(), true);
+                    }
+                }
+            }
+        }
+        let glut = v.markets.iter().any(|m| super::cap(v, &m.good).is_some_and(|c| amount(v, &m.good) >= c));
+        let mut out: Vec<(String, i64)> = Vec::new();
+        for b in v.buildings.iter().filter(|b| b.unlocked) {
+            let (base, keep) = WEIGHTS.iter().find(|w| w.0 == b.id).map_or((0, 100), |w| (w.1, w.2));
+            let keep = self.decay.unwrap_or(keep);
+            let mut s = base * 1000;
+            for _ in 0..b.owned.min(64) {
+                s = s * keep / 100;
+            }
+            let capped = !b.produces.is_empty()
+                && b.produces.keys().all(|res| super::cap(v, res).is_some_and(|c| amount(v, res) >= c));
+            if capped {
+                s = 0;
+            }
+            if MAKERS.iter().any(|(res, maker)| *maker == b.id && starved.contains_key(res)) {
+                s += s * self.starved / 100;
+            }
+            // A good piling up at its cap with no pad to ship it.
+            if b.id == "launch_pad" && b.owned == 0 && glut {
+                s += s * self.starved / 100;
+            }
+            if s > 0 {
+                out.push((b.id.clone(), s));
+            }
+        }
+        out.sort_by_key(|x| std::cmp::Reverse(x.1));
+        out
+    }
+
+    /// Energy active buildings make a day minus what they use (content rates).
+    pub fn energy_spare(v: &View) -> Fx {
+        let mut net = Fx::ZERO;
+        for b in &v.buildings {
+            let n = b.active as i64;
+            net += b.produces.get("energy").copied().unwrap_or(Fx::ZERO).mul_int(n);
+            net -= b.upkeep.get("energy").copied().unwrap_or(Fx::ZERO).mul_int(n);
+        }
+        net
+    }
+
+    /// What to build for `id` now: itself, or what it needs first (a Solar
+    /// Panel for energy, storage for a price past a cap), followed a few steps.
+    pub fn resolve<'v>(&self, v: &'v View, id: &'v str) -> &'v str {
+        let mut at = id;
+        for _ in 0..4 {
+            let next = self.resolve_once(v, at);
+            if next == at {
+                break;
+            }
+            at = next;
+        }
+        at
+    }
+
+    fn resolve_once<'v>(&self, v: &'v View, id: &'v str) -> &'v str {
+        let Some(b) = v.buildings.iter().find(|b| b.id == id) else { return id };
+        let uses = b.upkeep.get("energy").copied().unwrap_or(Fx::ZERO);
+        if uses > Fx::ZERO && Self::energy_spare(v) - uses < self.reserve && unlocked(v, "solar_panel") {
+            return "solar_panel";
+        }
+        for (res, &price) in &b.cost {
+            if super::cap(v, res).is_some_and(|c| price > c) {
+                let store = if res == "energy" { "battery" } else { "storage_depot" };
+                if unlocked(v, store) && store != id {
+                    return store;
+                }
+            }
+        }
+        id
+    }
+
+    /// The building to work toward: the best-scored one, resolved.
+    pub fn target(&self, v: &View) -> Option<String> {
+        let best = self.ranked(v).into_iter().next()?;
+        Some(self.resolve(v, &best.0).to_string())
+    }
+
+    /// Buys `id` if it can (land first when short and credits allow).
+    /// Returns whether a building was bought.
+    pub fn try_buy(p: &mut Player, id: &str) -> bool {
+        let v = p.view();
+        let Some(b) = v.buildings.iter().find(|b| b.id == id) else { return false };
+        if amount(v, "land") < Fx::from_int(b.land as i64) {
+            let price_credits = b.cost.get("credits").copied().unwrap_or(Fx::ZERO);
+            if amount(v, "credits") >= v.land_price + price_credits {
+                let _ = p.apply(&Action::BuyLand);
+            }
+        }
+        let v = p.view();
+        let Some(b) = v.buildings.iter().find(|b| b.id == id) else { return false };
+        if b.affordable {
+            let a = b.buy.clone();
+            return p.apply(&a).is_ok();
+        }
+        false
+    }
+}
+
+fn unlocked(v: &View, id: &str) -> bool {
+    v.buildings.iter().any(|b| b.id == id && b.unlocked)
+}
+
+/// The one command a hand-player runs, chosen from the view: launch a full
+/// fuelled pad; fuel a full pad; load when goods wait; bridge the target's
+/// missing titanium, regolith or ice; else Cloud Compute (Idle without energy).
+pub fn hand_command(v: &View, target: Option<&str>) -> &'static str {
+    let credits = amount(v, "credits");
+    if let Some(pad) = v.pads.iter().find(|p| p.active) {
+        let full = pad.cargo >= pad.capacity;
+        if full && pad.can_launch && command_unlocked(v, "launch_pads") {
+            return "launch_pads";
+        }
+        let fuel = command_cost(v, "buy_propellant", "credits");
+        if full && amount(v, "propellant") < pad.fuel && credits >= fuel {
+            return "buy_propellant";
+        }
+        if !full && amount(v, &pad.good) >= pad.load && command_unlocked(v, "load_pads") {
+            return "load_pads";
+        }
+    }
+    if let Some(id) = target {
+        if let Some(b) = v.buildings.iter().find(|b| b.id == id) {
+            let price_credits = b.cost.get("credits").copied().unwrap_or(Fx::ZERO);
+            for &(res, cmd) in &BRIDGES[..3] {
+                let need = b.cost.get(res).copied().unwrap_or(Fx::ZERO);
+                if amount(v, res) < need && credits - price_credits >= command_cost(v, cmd, "credits") {
+                    return cmd;
+                }
+            }
+        }
+    }
+    if amount(v, "energy") >= command_cost(v, "cloud_compute", "energy") {
+        "cloud_compute"
+    } else {
+        "idle"
+    }
+}
+
+/// Puts every processor on the first program.
+pub fn all_on_first(p: &mut Player) {
+    let v = p.view();
+    if v.processors_free > 0 {
+        let n = v.programs[0].processors + v.processors_free;
+        let _ = p.apply(&Action::SetProcessors { program: 0, processors: n });
+    }
+}
+
+pub struct Greedy {
+    b: Builder,
+    buys: u32,
+}
+
+/// Affordable now, or short only of land that credits can buy along with it
+/// (the view's `affordable` includes the land check).
+fn buyable_with_land(v: &View, b: &hh_core::view::BuildingView) -> bool {
+    if b.affordable {
+        return true;
+    }
+    let short_land = amount(v, "land") < Fx::from_int(b.land as i64);
+    let credits = b.cost.get("credits").copied().unwrap_or(Fx::ZERO);
+    short_land
+        && b.unlocked
+        && amount(v, "credits") >= v.land_price + credits
+        && b.cost.iter().all(|(res, need)| amount(v, res) >= *need)
+}
+
+impl Greedy {
+    pub fn new(k: &Knobs) -> Self {
+        Greedy { b: Builder::new(k), buys: k.get("buys", 3).max(1) as u32 }
+    }
+}
+
+impl Agent for Greedy {
+    fn act(&mut self, p: &mut Player) {
+        all_on_first(p);
+        for _ in 0..self.buys {
+            let v = p.view();
+            let pick = self
+                .b
+                .ranked(v)
+                .into_iter()
+                .map(|(id, _)| self.b.resolve(v, &id).to_string())
+                .find(|id| v.buildings.iter().any(|b| b.id == *id && buyable_with_land(v, b)));
+            match pick {
+                Some(id) if Builder::try_buy(p, &id) => {}
+                _ => break,
+            }
+        }
+        // The cheapest affordable research.
+        let v = p.view();
+        let cheapest = v.research.iter().filter(|r| r.affordable).min_by_key(|r| r.cost).map(|r| r.id.clone());
+        if let Some(id) = cheapest {
+            let _ = p.apply(&Action::Research { research: id });
+        }
+        let v = p.view();
+        let target = self.b.target(v);
+        let cmd = hand_command(v, target.as_deref());
+        let want = vec![Entry { command: cmd.to_string(), count: 1 }];
+        if v.programs[0].entries != want {
+            let _ = p.apply(&Action::SetProgram { program: 0, entries: want });
+        }
+    }
+}

@@ -33,15 +33,27 @@ struct Available {
     commands: Vec<String>,
 }
 
-#[derive(Deserialize)]
-struct Objective {
-    id: String,
+#[derive(Deserialize, Clone, Debug)]
+pub struct Objective {
+    pub id: String,
     #[serde(rename = "type")]
     kind: String,
     value: String,
     count: Option<u32>,
     threshold: Option<f64>,
-    target: [u64; 2],
+    pub target: [u64; 2],
+}
+
+/// A scenario file's objectives, for scoring run 1 of any career (the
+/// experiment harness: a spec's `objectives`).
+pub fn load(path: &str, text: &str) -> Result<Vec<Objective>, String> {
+    let sc: OptimizerScenario = serde_json::from_str(text).map_err(|e| format!("{path}: {e}"))?;
+    Ok(sc.objectives)
+}
+
+/// Whether an objective holds now.
+pub fn holds(o: &Objective, s: &Session) -> Result<bool, String> {
+    met(o, s)
 }
 
 #[derive(Deserialize)]

@@ -1,0 +1,88 @@
+{
+  "_doc": "Arc 1 milestones as measurable objectives, and their targets (docs/principles.md). Each `when` follows the design rules: building existence for capability, events for pipeline outputs, cumulative counters for volume, production-rate thresholds for scaling, stockpile thresholds only for uncapped resources (a load error otherwise). `runs` is the target window in run numbers (run 1 is the first; run n starts after n-1 retirements); `ticks` a window in run-1 ticks where the design gives one. `run1` holds the first run's length and real-time targets. The judge's cells (agent, profiles, seeds) are experiments/balance.json's.",
+  "milestones": [
+    {
+      "id": "M1", "name": "First Light", "says": "self-sustaining energy (run 1, early)",
+      "when": { "type": "building", "building": "solar_panel", "count": 2 },
+      "target": { "runs": [1, 1], "ticks": [0, 350] }
+    },
+    {
+      "id": "M2", "name": "First Shipment", "says": "full pipeline working (run 1, mid)",
+      "when": { "type": "shipments", "count": 1 },
+      "target": { "runs": [1, 1], "ticks": [250, 700] }
+    },
+    {
+      "id": "M3", "name": "Program Awakening", "says": "first meaningful automation (runs 1-2)",
+      "when": { "type": "building", "building": "data_center", "count": 2 },
+      "target": { "runs": [1, 2] }
+    },
+    {
+      "id": "M4", "name": "First Retirement", "says": "end of run 1",
+      "when": { "type": "retirements", "count": 1 },
+      "target": { "runs": [1, 1] }
+    },
+    {
+      "id": "M5", "name": "Positive Credit Flow", "says": "runs 2-4",
+      "when": { "type": "credit_rate", "per_day": "25", "days": 100 },
+      "target": { "runs": [2, 4] }
+    },
+    {
+      "id": "M6", "name": "Speed Becomes Useful", "says": "automation + speed synergy (runs 3-5)",
+      "when": { "type": "all_of", "of": [
+        { "type": "building", "building": "data_center", "count": 3 },
+        { "type": "credit_rate", "per_day": "100", "days": 100 }
+      ] },
+      "target": { "runs": [3, 5] }
+    },
+    {
+      "id": "M7", "name": "Boredom Management", "says": "Dream and research extend runs (runs 4-8)",
+      "when": { "type": "all_of", "of": [
+        { "type": "commands_used", "groups": [["dream"]] },
+        { "type": "research", "research": "stress_tolerance" }
+      ] },
+      "target": { "runs": [4, 8] }
+    },
+    {
+      "id": "M8", "name": "Diversified Trade", "says": "runs 5-8",
+      "when": { "type": "goods_shipped", "count": 3 },
+      "target": { "runs": [5, 8] }
+    },
+    {
+      "id": "M9", "name": "Credit Surplus", "says": "runs 5-10",
+      "when": { "type": "stockpile", "resource": "credits", "at_least": "20000" },
+      "target": { "runs": [5, 10] }
+    },
+    {
+      "id": "M10", "name": "Market Manipulation", "says": "Promote + Disrupt active (runs 6-10)",
+      "when": { "type": "commands_used", "groups": [
+        ["promote_he3", "promote_titanium", "promote_circuits", "promote_propellant"],
+        ["disrupt_speculators"]
+      ] },
+      "target": { "runs": [6, 10] }
+    },
+    {
+      "id": "M11", "name": "First Major Project", "says": "persistent (runs 8-15)",
+      "when": { "type": "project_completed", "tier": "persistent" },
+      "target": { "runs": [8, 15] }
+    },
+    {
+      "id": "M12", "name": "Adversary Subverted", "says": "speculators managed (runs 8-15)",
+      "when": { "type": "building", "building": "arbitrage_engine", "count": 1 },
+      "target": { "runs": [8, 15] }
+    },
+    {
+      "id": "M13", "name": "Ideology Influence", "says": "rank 3+ in an axis (runs 10-18)",
+      "when": { "type": "ideology_rank", "rank": 3 },
+      "target": { "runs": [10, 18] }
+    },
+    {
+      "id": "M14", "name": "Timeline Unlocked", "says": "Arc 1 to Arc 2 (runs 15-20)",
+      "when": { "type": "quest", "quest": "qhorizon_open_horizons" },
+      "target": { "runs": [15, 20] }
+    }
+  ],
+  "run1": {
+    "ticks": { "active": [800, 1100], "casual": [1300, 1700] },
+    "minutes": { "speed": "mixed", "band": [25, 35] }
+  }
+}

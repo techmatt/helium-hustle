@@ -7,7 +7,7 @@ use serde::Serialize;
 use std::collections::BTreeMap;
 
 use crate::action::Action;
-use crate::content::{content, Condition, AXES};
+use crate::content::{content, BuildingEffect, Condition, Requirement, AXES};
 use crate::fx::Fx;
 use crate::modules::*;
 use crate::rules::Rules;
@@ -36,6 +36,13 @@ pub struct BuildingView {
     /// Price of the next one (`Fx::MAX` past the number range).
     pub cost: BTreeMap<String, Fx>,
     pub land: u32,
+    /// What one active copy makes and uses per day (content rates, before
+    /// modifiers and overclocks), and the caps it raises.
+    pub produces: BTreeMap<String, Fx>,
+    pub upkeep: BTreeMap<String, Fx>,
+    pub stores: BTreeMap<String, Fx>,
+    /// What unlocks it (content).
+    pub requires: Requirement,
     /// Buyable now (unlocked, land, price, limit).
     pub affordable: bool,
     pub unlocked: bool,
@@ -74,6 +81,10 @@ pub struct PadView {
     pub cargo: Fx,
     pub capacity: Fx,
     pub cooldown: u32,
+    /// Propellant a launch burns.
+    pub fuel: Fx,
+    /// Cargo one Load Launch Pads moves onto it, at most.
+    pub load: Fx,
     /// Credits it would fetch launched now.
     pub payout: Fx,
     pub can_launch: bool,
@@ -118,6 +129,8 @@ pub struct ProjectView {
     pub costs: BTreeMap<String, Fx>,
     pub progress: BTreeMap<String, Fx>,
     pub rates: BTreeMap<String, Fx>,
+    /// The most a rate may be (per resource, per day).
+    pub max_rate: Fx,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -162,6 +175,15 @@ pub struct CareerView {
     pub lifetime_credits_earned: Fx,
 }
 
+/// This run's running totals.
+#[derive(Debug, Clone, Serialize)]
+pub struct RunStatsView {
+    pub credits_earned: Fx,
+    pub shipments: u32,
+    pub buildings_built: u32,
+    pub research_completed: u32,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct View {
     pub tick: u64,
@@ -186,6 +208,7 @@ pub struct View {
     pub events: Vec<String>,
     pub achievements: Vec<String>,
     pub career: CareerView,
+    pub run_stats: RunStatsView,
     pub boredom: BoredomView,
     /// Unlocked nav panels (retirement, projects, ideologies).
     pub panels: Vec<String>,
@@ -231,6 +254,17 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 bonus: h.bonus,
                 cost: economy::price(r, g, b),
                 land: b.land,
+                produces: b.produces.clone(),
+                upkeep: b.upkeep.clone(),
+                requires: b.requires.clone(),
+                stores: b
+                    .effects
+                    .iter()
+                    .filter_map(|e| match e {
+                        BuildingEffect::Store { resource, amount } => Some((resource.clone(), *amount)),
+                        _ => None,
+                    })
+                    .collect(),
                 affordable: economy::buy_blocker(r, g, b).is_none(),
                 unlocked: economy::unlocked(g, b),
                 visible: economy::visible(g, b),
@@ -317,6 +351,8 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                     cargo: p.cargo,
                     capacity: r.p.shipments.pad_cargo_capacity,
                     cooldown: p.cooldown,
+                    fuel: r.p.shipments.fuel_per_pad,
+                    load: shipments::load_amount(r, g),
                     payout: shipments::payout(r, g, i),
                     can_launch: shipments::can_launch(r, g, i),
                 }
@@ -356,6 +392,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 costs: p.costs.clone(),
                 progress: projects::progress(g, p).cloned().unwrap_or_default(),
                 rates: g.run.project_rates.get(&p.id).cloned().unwrap_or_default(),
+                max_rate: r.p.projects.max_drain_rate,
             })
             .collect(),
         quest,
@@ -383,6 +420,12 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             buy_power_mult: career::buy_power_mult(r, g),
             lifetime_shipments: g.career.lifetime.shipments,
             lifetime_credits_earned: g.career.lifetime.credits_earned,
+        },
+        run_stats: RunStatsView {
+            credits_earned: g.run.stats.credits_earned,
+            shipments: g.run.stats.shipments,
+            buildings_built: g.run.stats.buildings_built,
+            research_completed: g.run.stats.research_completed,
         },
         boredom: BoredomView {
             amount: g.amount(economy::BOREDOM),

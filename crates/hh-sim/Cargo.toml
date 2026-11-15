@@ -1,6 +1,6 @@
 [package]
 name = "hh-sim"
-description = "Native CLI for Helium Hustle: runs seeds, replays records (later agents and experiments)"
+description = "Native CLI for Helium Hustle: runs seeds, replays records, agents, careers and experiments"
 version.workspace = true
 edition.workspace = true
 license.workspace = true

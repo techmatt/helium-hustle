@@ -100,7 +100,7 @@ Warnings are surfaced, never gate: an item whose own change trips one finishes a
 the header's `warnings:` line, each line led by its kind. Every item runs, before its report:
 
 `python scripts/warning_checks.py` prints one `<kind>: <text>` line per tripped check, nothing
-when clean (always exit 0; 1-5 s, more if it must build). Its checks, on:
+when clean (always exit 0; about 7 s, up to a minute if it must build). Its checks, on:
 
 - **parity:** native = wasm: the golden game's fingerprint natively (`hh-sim golden`) and in
   wasm (`scripts/wasm-smoke.mjs`, rebuilding a stale `crates/hh-wasm/pkg`) equals the pins.
@@ -108,6 +108,8 @@ when clean (always exit 0; 1-5 s, more if it must build). Its checks, on:
   or content. Exceptions, each with its reason: `scripts/warning_checks.json`.
 - **platform-floats:** a platform float function reaching `hh-core` past clippy (a call by
   name not through `libm`, an `#[allow]` of the ban, the ban's `deny` or a name dropped).
+- **balance:** a target the judge misses (`hh-sim balance`: milestones outside their run
+  windows, run 1's length and real time; targets and judge in `docs/principles.md`).
 
 And two by hand:
 
@@ -115,7 +117,6 @@ And two by hand:
 - **docs:** a rules change without its `docs/rules-history.md` row, or a `RULES_REVISION` bump
   without golden constants moved (or the reverse).
 
-Candidates for when the simulator can read play (Matt picks, thresholds in a config):
-time-to-milestone against targets; resources sitting at cap; buildings, commands or research
-never used; idle stretches with nothing worth buying; simulation speed regression against a
-baseline.
+Candidates the simulator now measures but no check reads yet (Matt picks, thresholds in a
+config): resources sitting at cap; buildings never built or commands never used; idle stretches
+with nothing worth buying; simulation speed regression against a baseline.

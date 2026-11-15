@@ -7,7 +7,13 @@ use hh_core::{
 };
 use std::fmt::Write as _;
 
+pub mod agents;
+pub mod career;
+pub mod experiment;
+pub mod lab;
+pub mod milestones;
 pub mod objectives;
+pub mod profile;
 
 pub const USAGE: &str = "usage:
   hh-sim run [--config F] [--seed S] [--ticks N] [--policy P] [--scenario NAME | --scenario-file F] [--save F] [--json]
@@ -16,6 +22,16 @@ pub const USAGE: &str = "usage:
   hh-sim scenarios
   hh-sim golden
   hh-sim objectives SCENARIO.json [--config F] [--seed S] [--ticks N]
+  hh-sim ladder [SPEC.json] [GRID]                 the agent ladder (default experiments/ladder.json)
+  hh-sim experiment SPEC.json [GRID]               any spec
+  hh-sim compare --config A [--config-b B] [--set module.key=value]... [GRID]
+  hh-sim balance [GRID]                            balance: lines for the judge's missed targets
+  hh-sim trace [GRID]                              one career's actions and milestones
+  hh-sim agents                                    the ladder's rungs
+  hh-sim speed                                     native engine speed (ticks/s)
+GRID: [SPEC.json] [--agents a,b] [--attention a,b] [--speeds a,b] [--seeds N] [--first-seed S]
+      [--retirements N] [--max-ticks N] [--config F] [--set module.key=value]... [--threads T]
+      [--out DIR (ladder, experiment, compare)] [--profiles F] [--milestones F]
 defaults: --config configs/baseline.json --seed 0 --ticks 1000 (objectives: 5000) --policy idle
 policies: idle, greedy (buy whatever is affordable every tick), greedy:every=N, script";
 
@@ -104,6 +120,9 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     let Some((cmd, rest)) = args.split_first() else {
         return usage("no command");
     };
+    if lab::COMMANDS.contains(&cmd.as_str()) {
+        return lab::run(cmd, rest);
+    }
     let o = parse(rest)?;
     if cmd != "replay" && cmd != "objectives" && !o.rest.is_empty() {
         return usage(format!("unexpected argument {:?}", o.rest[0]));

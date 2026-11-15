@@ -1,0 +1,13 @@
+{
+  "name": "ladder",
+  "note": "The agent ladder over the attention × speed grid: careers of 20 retirements from a new game, run 1 scored against reference/scenarios/run1_fresh.json's objectives.",
+  "configs": ["configs/baseline.json"],
+  "agents": ["random", "greedy", "author"],
+  "attention": ["active", "casual", "afk"],
+  "speeds": ["1x", "mixed", "10x", "ramp", "200x"],
+  "seeds": 3,
+  "first_seed": 1,
+  "retirements": 20,
+  "max_ticks": 60000,
+  "objectives": "reference/scenarios/run1_fresh.json"
+}

@@ -1,0 +1,24 @@
+// Engine speed in wasm, the same reads as `hh-sim speed` natively: the golden game (the
+// script reads a view each tick) and a plain advance of a new game, in ticks per second.
+// Usage (after `wasm-pack build crates/hh-wasm --target web`):
+//   node scripts/wasm-speed.mjs            prints one line
+import { readFileSync } from 'node:fs';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import path from 'node:path';
+
+const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const pkg = path.join(root, 'crates', 'hh-wasm', 'pkg');
+const m = await import(pathToFileURL(path.join(pkg, 'hh_wasm.js')).href);
+await m.default({ module_or_path: readFileSync(path.join(pkg, 'hh_wasm_bg.wasm')) });
+
+const cfg = readFileSync(path.join(root, 'configs', 'baseline.json'), 'utf8');
+const GOLDEN_TICKS = 2000;
+let t = performance.now();
+m.play_golden(cfg);
+const scripted = GOLDEN_TICKS / ((performance.now() - t) / 1000);
+const N = 20000;
+const state = m.new_game(cfg, '1', '');
+t = performance.now();
+m.advance(state, N);
+const plain = N / ((performance.now() - t) / 1000);
+console.log(`engine speed, wasm: ${scripted.toFixed(0)} ticks/s scripted (golden game, a view a tick), ${plain.toFixed(0)} ticks/s plain advance`);

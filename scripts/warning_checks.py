@@ -1,8 +1,8 @@
 """Warning checks (CLAUDE.md, *Warning checks*). Prints one `<kind>: <text>` line per
 tripped check and nothing when clean; always exits 0 (warnings never gate).
 
-    python scripts/warning_checks.py            all three checks
-    python scripts/warning_checks.py --no-parity  skip the builds (static checks only)
+    python scripts/warning_checks.py            every check
+    python scripts/warning_checks.py --no-parity --no-balance  static checks only (no builds)
 
 Checks:
 - parity: the golden game's fingerprint natively (`hh-sim golden`) and in wasm
@@ -13,6 +13,9 @@ Checks:
 - platform-floats: a platform float function reaching hh-core past clippy (any
   call by name not through `libm::`, an `#[allow]` of the ban, the ban's `deny`
   removed, a name missing from clippy.toml).
+- balance: each target the judge misses (`hh-sim balance`: the author at active
+  and casual attention, mixed speed, 2 seeds, careers of 20 retirements;
+  docs/principles.md). A few seconds once the release build is current.
 """
 
 import json
@@ -244,6 +247,19 @@ def check_parity():
         warn("parity", "native != wasm: " + "; ".join(l.removeprefix("FAIL ").strip() for l in fails))
 
 
+def check_balance():
+    """The judge's cells (experiments/balance.json) against the targets in
+    configs/sim/milestones.json: `hh-sim balance` prints the `balance:` lines.
+    About 3 s once the release build is current."""
+    r = run(["cargo", "run", "--release", "-q", "-p", "hh-sim", "--", "balance"], timeout=300)
+    if r.returncode != 0:
+        warn("balance", f"hh-sim balance failed: {(r.stderr or r.stdout).strip().splitlines()[-1:]}")
+        return
+    for line in r.stdout.splitlines():
+        if line.startswith("balance: "):
+            out.append(line)
+
+
 def main():
     sys.stdout.reconfigure(encoding="utf-8", newline="\n")
     try:
@@ -252,6 +268,8 @@ def main():
         check_floats()
         if "--no-parity" not in sys.argv[1:]:
             check_parity()
+        if "--no-balance" not in sys.argv[1:]:
+            check_balance()
     except Exception as e:  # a broken check is itself a warning; never gate
         warn("checks", f"scripts/warning_checks.py failed: {type(e).__name__}: {e}")
     finally:

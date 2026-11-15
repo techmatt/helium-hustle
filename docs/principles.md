@@ -1,0 +1,96 @@
+# Principles: targets and measures
+
+What the game should feel like, as numbers the simulator can check. The targets come from the
+design doc (quoted below); the measurable definitions, the profiles and the judge are this
+repo's, in `configs/sim/` (data, not code). The simulator that reads them: [simulator.md](simulator.md);
+its players: [agents.md](agents.md).
+
+## Targets (design doc)
+
+> The first run should take about 30 minutes of real time at mixed speeds: about 800–1,100 ticks
+> played well, about 1,500 played casually (1 tick = 1 in-game day; 1x speed = 1 tick a second).
+>
+> M5–M7 land together, M8–M10 overlap, M11/M12 converge, then M13, then M14. Each run ideally
+> reaches one major milestone, with 2–3 real strategy branches open at any point.
+
+Objective design rules (carried from the Godot optimizer): building existence for capability
+milestones, events for pipeline outputs, cumulative counters for volume, production-rate
+thresholds for scaling, stockpile thresholds only for uncapped resources, and never a stockpile
+threshold for a capped, flowing resource. `Milestones::from_json` refuses a stockpile threshold
+on a capped resource.
+
+## Milestones
+
+`configs/sim/milestones.json`. Run *n* is the run after *n − 1* retirements; a milestone is met
+the first tick its condition holds (checked after every tick and every look), and reported as
+its run, the run's day and the real minutes since the career began. A milestone first seen
+in the step that ended a run (a retirement, or what the run's last tick did) counts in the run
+it ended, on its last day. What a run's last tick reached and the new run reset (a pile of
+credits, a building count) is not seen.
+
+| Id | Name (design) | Measurable definition | Rule | Target |
+|---|---|---|---|---|
+| M1 | First Light: self-sustaining energy | 2 Solar Panels owned (the Boot Sequence quest) | capability | run 1, day 0–350 |
+| M2 | First Shipment: full pipeline working | first shipment launched | event | run 1, day 250–700 |
+| M3 | Program Awakening: first meaningful automation | 2 Data Centers owned: a second processor (the Automation quest) | capability | runs 1–2 |
+| M4 | First Retirement | first retirement, forced or chosen | event | end of run 1 (its day: run 1's length bands, below) |
+| M5 | Positive Credit Flow | credits earned in the run over the last 100 days ≥ 25 a day | rate | runs 2–4 |
+| M6 | Speed Becomes Useful: automation + speed synergy | 3 Data Centers owned and credits earned ≥ 100 a day over 100 days | capability + rate | runs 3–5 |
+| M7 | Boredom Management: Dream and research extend runs | Dream run once in the career and Stress Tolerance bought in the run | event + capability | runs 4–8 |
+| M8 | Diversified Trade | 3 different goods launched in one run | event | runs 5–8 |
+| M9 | Credit Surplus | 20,000 credits held | stockpile (credits are uncapped) | runs 5–10 |
+| M10 | Market Manipulation: Promote + Disrupt active | a Promote and Disrupt Speculators each run once in the career | event | runs 6–10 |
+| M11 | First Major Project (persistent) | a Long-Term project completed | event | runs 8–15 |
+| M12 | Adversary Subverted: speculators managed | an Arbitrage Engine owned | capability | runs 8–15 |
+| M13 | Ideology Influence: rank 3+ in an axis | the career's best rank on any axis ≥ 3 | counter | runs 10–18 |
+| M14 | Timeline Unlocked: Arc 1 → Arc 2 | the Open Horizons quest completed (the End Signal quest opens) | event | runs 15–20 |
+
+**Judgement calls** (candidates; the data may move them):
+
+- **M1** reads "self-sustaining" as the Boot Sequence quest's two panels, not an energy-rate
+  threshold: at two panels a run's energy runs positive with the opening buildings.
+- **M3** reads "meaningful automation" as the second processor (Automation quest), not as a
+  program of a given shape: a program is the agent's choice, a processor is the game's.
+- **M5** and **M6**'s thresholds (25 and 100 credits a day over 100 days) are guesses at
+  "positive" and "useful": one Cloud Compute processor earns 5 a day, so 25 needs shipping or
+  several processors. Credits earned can't be split between shipments and commands without a
+  state change, so the rate counts both.
+- **M7** asks for Dream used and Stress Tolerance bought ("Dream and research"), not for a run
+  that actually lasted longer.
+- **M8**'s "diversified" is three goods of the four; a launch is seen as its good's market
+  revenue rising over a tick, or a ready pad cooling down after it.
+- **M9**'s 20,000 is four times what one idle Cloud Compute processor earns in a forced-length
+  run (5 a day × ~1,000 days), so idling can't meet it; 5,000 could.
+- **M10** counts use in the career, not both in the same run.
+- **M12** reads "speculators managed" as owning the building that decays them; Speculator
+  Dossier (the Strategic project) is the other candidate.
+
+## Profiles
+
+`configs/sim/profiles.json`. **Attention** is how often the player looks and acts: `active`
+every 5 real seconds, `casual` every 2 minutes, `afk` every 30 minutes. **Speed** is which speed
+the player runs at (the web client's 1x, 3x, 10x, 50x, 200x) and when it changes: `1x`, `10x`
+and `200x` fixed; `mixed` 1x after a look where the player acted, 10x after one where it didn't;
+`ramp` 1x in run 1, then 3x, 10x, 50x and 200x from run 5. Between looks the game runs
+`attention × speed` ticks, so going faster means fewer looks per run, and real time is ticks
+over speed: boredom counts game days, so a faster player retires sooner in real time.
+
+## The judge
+
+The balance warnings (`python scripts/warning_checks.py`, `balance:` lines) read the author
+([agents.md](agents.md)) at `active` and `casual` attention, `mixed` speed, 2 seeds, careers of
+20 retirements (`experiments/balance.json`, the judge's one home). A line is written for:
+
+- a milestone whose median run falls outside its window, or that half or fewer of the seeds
+  reached, or that no seed reached in a career long enough to reach it;
+- a run-1 milestone (M1, M2) whose median day falls outside its day window;
+- run 1's median length outside its band for the attention profile (`active` 800–1,100 ticks,
+  `casual` 1,300–1,700);
+- run 1's median real time at `mixed` speed outside 25–35 minutes.
+
+## Measures
+
+Every game reports (`hh-sim ladder`, [simulator.md](simulator.md#measures)): time to each
+milestone in ticks, runs and real minutes; run length and boredom's share of it; the share of
+real time with nothing to buy; resources sitting at cap and the production lost to caps;
+buildings never bought and commands never used; and simulation speed, native and wasm.
