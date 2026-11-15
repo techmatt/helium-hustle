@@ -109,6 +109,40 @@ impl Fx {
         Fx::try_from_f64(x).unwrap_or_else(|| panic!("Fx::from_f64({x}): not finite or out of range"))
     }
 
+    /// `self ^ n` for a whole `n` (a negative `n` is `1 / self ^ |n|`), for cost
+    /// curves and per-rank bonuses. No float: the power is built by repeated
+    /// multiplication at 10^-18 in `i128` (each step floored there), then floored
+    /// once to 10^-6, so an exact decimal power comes out exact (1.15² is
+    /// 1.3225, not the float's 1.322499). `None` past `Fx`'s range or for
+    /// `0 ^ negative`.
+    pub fn pow_int(self, n: i64) -> Option<Fx> {
+        const FINE: Wide = 1_000_000_000_000_000_000; // 1.0 at 10^-18
+        const UP: Wide = FINE / SCALE as Wide;
+        let base = self.0 as Wide;
+        if base == SCALE as Wide || n == 0 {
+            return Some(Fx::ONE);
+        }
+        // Past this the value is beyond Fx::MAX whatever comes next (for |base| >= 1).
+        let limit = (Raw::MAX as Wide + 1) * UP;
+        let mut acc = FINE;
+        for _ in 0..n.unsigned_abs() {
+            acc = div_floor(acc.checked_mul(base)?, SCALE as Wide);
+            if acc == 0 {
+                break;
+            }
+            if acc.abs() >= limit && base.abs() >= SCALE as Wide {
+                return if n > 0 { None } else { Some(Fx::ZERO) };
+            }
+        }
+        if n > 0 {
+            Raw::try_from(div_floor(acc, UP)).ok().map(Fx)
+        } else if acc == 0 {
+            None
+        } else {
+            Raw::try_from(div_floor(FINE * SCALE as Wide, acc)).ok().map(Fx)
+        }
+    }
+
     /// `*` (same rounding), or `None` on overflow.
     pub fn checked_mul(self, o: Fx) -> Option<Fx> {
         Raw::try_from(div_floor(self.0 as Wide * o.0 as Wide, SCALE as Wide))

@@ -13,7 +13,7 @@ and neither holds any rules.
 ## Layout
 
 How the engine fits together: [docs/architecture.md](docs/architecture.md). The rules as
-implemented (a placeholder today): [docs/rules/](docs/rules/README.md).
+implemented (the Godot build's Arc 1, ported): [docs/rules/](docs/rules/README.md).
 
 | Path | What it is |
 |---|---|
@@ -22,9 +22,10 @@ implemented (a placeholder today): [docs/rules/](docs/rules/README.md).
 | `crates/hh-wasm` | wasm-bindgen bindings for `web/`, JSON in and out. |
 | `web/` | The browser UI ([web/README.md](web/README.md)). Renders the engine's view, sends actions, holds no rules. |
 | `configs/` | Game configs: modules, variants and every tunable number. No defaults in code. |
-| `content/` | Game data (resources, buildings), embedded in `hh-core`. |
+| `content/` | Game data (resources, buildings, commands, research, events, projects, achievements, rivals), embedded in `hh-core`. |
 | `scenarios/` | Named starting states for the sim and the web debug menu, embedded in `hh-core`. |
-| `scripts/` | `wasm-smoke.mjs` (native = wasm), `warning_checks.py` (CLAUDE.md, *Warning checks*). |
+| `scripts/` | `wasm-smoke.mjs` (native = wasm), `warning_checks.py` (CLAUDE.md, *Warning checks*), `set_golden.py` (re-pins the golden game). |
+| `experiments/results/` | Each item's write-up and working papers (`<item>/`). |
 | `docs/` | The current game: `docs/rules/` (rules as implemented), `docs/rules-history.md`. |
 | `reference/` | The Godot snapshot ([reference/README.md](reference/README.md)). Never edited. |
 | `out/` | Scratch and run output, git-ignored. |
@@ -47,7 +48,8 @@ cargo build --workspace                      # under a minute cold
 cargo test --workspace                       # the test lane: ~1 s once built
 cargo test-all                               # also the slow lane's #[ignore]d tests (none yet)
 cargo clippy --workspace --all-targets       # must stay clean; ~7 s
-cargo run -q -p hh-sim -- run --seed 1 --ticks 365 --policy greedy:every=7
+cargo run -q -p hh-sim -- run --seed 1 --ticks 365 --policy script
+cargo run -q --release -p hh-sim -- objectives reference/scenarios/run1_fresh.json   # ~0.2 s
 wasm-pack build crates/hh-wasm --target web  # -> crates/hh-wasm/pkg (git-ignored); ~22 s cold, ~5 s warm
 node scripts/wasm-smoke.mjs                  # native = wasm: needs the pkg above (not web's copy); ~1 s
 python scripts/warning_checks.py             # warning checks, incl. parity (rebuilds a stale pkg); 1-5 s
@@ -58,20 +60,23 @@ cd web && npm ci && npm run dev              # the browser UI at http://localhos
 every change. `cargo test-all` (a `.cargo/config.toml` alias for `cargo test --workspace --
 --include-ignored`) is the full run, before every commit: a test slower than about a second
 is marked `#[ignore = "slow lane: ..."]`. Anything after an alias goes to the test binary,
-with no second `--`. Tests play whole games, so the test profile is optimized
-(`opt-level = 1`) and keeps overflow checks.
+with no second `--`, so `cargo test-all -j 6` fails (`Unrecognized option: 'j'`): limit
+jobs with `CARGO_BUILD_JOBS=6 cargo test-all`. Tests play whole games, so the test profile
+is optimized (`opt-level = 1`) and keeps overflow checks.
 
 **Rules changes:** the `golden_game` test (`crates/hh-core/src/tests/mod.rs`) pins the final
-state of one fixed game: baseline config, seed `u64::MAX`, 2000 ticks, buying each affordable
-building every 7 ticks (`driver.rs`). An intended play change bumps `RULES_REVISION`
+state of one fixed game: baseline config, seed `u64::MAX`, 2000 ticks of the scripted
+policy (`driver.rs`: it ships, retires at about tick 1100 and starts run 2). An intended play
+change bumps `RULES_REVISION`
 (`crates/hh-core/src/lib.rs`, and the revision line in `docs/rules/README.md`), adds its
 `docs/rules-history.md` row, and updates `GOLDEN_REVISION` and `GOLDEN_FINGERPRINT` there and
 the same three `GOLDEN_*` constants in `scripts/wasm-smoke.mjs`
-(`wasm_smoke_expects_the_golden_constants` fails until they match; it also checks the smoke's
-copy of the golden game's seed, length and policy against `driver.rs`). `GOLDEN_CONTENT_HASH`
-moves with any `content/` byte, play or not. Copy each from the failing assertion's left side
-(`cargo run -q -p hh-sim -- golden` prints all three); never type them. A rename or refactor
-that plays the same moves no golden constant; if it does, play changed.
+(`wasm_smoke_expects_the_golden_constants` fails until they match; it also checks the smoke
+plays the golden game through `play_golden`, the wasm build's own copy of `driver.rs`, with
+the same seed and length). `GOLDEN_CONTENT_HASH` moves with any `content/` byte, play or
+not. Never type them: `python scripts/set_golden.py` copies all six from `hh-sim golden`
+(or copy each from the failing assertion's left side). A rename or refactor that plays the
+same moves no golden constant; if it does, play changed.
 
 ## This machine
 

@@ -1,0 +1,414 @@
+//! **economy**: resources, storage caps, buildings (buy, sell, enable, the
+//! multi-pass daily resolution with partial production and stall tracking), land
+//! and the end-of-tick clamp (docs/rules/economy.md).
+
+use std::collections::BTreeMap;
+
+use super::{param, ModuleDef, ParamKind as K, VariantDef};
+use crate::config::ModuleConfig;
+use crate::content::{content, Amounts, Building, BuildingEffect, Requirement};
+use crate::fx::Fx;
+use crate::modifiers::modifier;
+use crate::rules::Rules;
+use crate::state::{GameState, Holding, Stall};
+
+pub const ENERGY: &str = "energy";
+pub const CREDITS: &str = "credits";
+pub const LAND: &str = "land";
+pub const PROCESSORS: &str = "processors";
+pub const BOREDOM: &str = "boredom";
+pub const SCIENCE: &str = "science";
+
+pub static DEF: ModuleDef = ModuleDef {
+    id: "economy",
+    variants: &[VariantDef {
+        name: "arc1",
+        params: &[
+            param("starting_resources", K::FxMap, Some(("0", "1000000000")), "resources at the start of every run, by id"),
+            param("starting_buildings", K::IntMap, Some(("0", "1000")), "buildings owned (and active) at the start of every run"),
+            param("land_base_cost", K::Fx, Some(("0", "1000000000")), "credits for the first land purchase"),
+            param("land_cost_scaling", K::Fx, Some(("1", "10")), "each land purchase multiplies the next one's price by this"),
+            param("land_per_purchase", K::Fx, Some(("0", "1000000")), "land gained per purchase"),
+            param("upkeep_epsilon", K::Fx, Some(("0", "1")), "a building pays full upkeep if short by no more than this"),
+        ],
+        rng: &[],
+    }],
+};
+
+pub struct Params {
+    pub starting_resources: BTreeMap<String, Fx>,
+    pub starting_buildings: BTreeMap<String, u32>,
+    pub land_base_cost: Fx,
+    pub land_cost_scaling: Fx,
+    pub land_per_purchase: Fx,
+    pub upkeep_epsilon: Fx,
+}
+
+impl Params {
+    pub fn new(mc: &ModuleConfig) -> Result<Params, String> {
+        let c = content();
+        let starting_resources = mc.fx_map("starting_resources");
+        let starting_buildings: BTreeMap<String, u32> = mc
+            .int_map("starting_buildings")
+            .into_iter()
+            .map(|(k, v)| (k, u32::try_from(v).expect("range-checked")))
+            .collect();
+        let mut bad: Vec<String> = starting_resources
+            .keys()
+            .filter(|r| c.resource(r).is_none())
+            .map(|r| format!("modules.economy.params.starting_resources.{r}: unknown resource"))
+            .collect();
+        bad.extend(
+            starting_buildings
+                .keys()
+                .filter(|b| c.building(b).is_none())
+                .map(|b| format!("modules.economy.params.starting_buildings.{b}: unknown building")),
+        );
+        if !bad.is_empty() {
+            return Err(format!("config: {}", bad.join("; ")));
+        }
+        Ok(Params {
+            starting_resources,
+            starting_buildings,
+            land_base_cost: mc.fx("land_base_cost"),
+            land_cost_scaling: mc.fx("land_cost_scaling"),
+            land_per_purchase: mc.fx("land_per_purchase"),
+            upkeep_epsilon: mc.fx("upkeep_epsilon"),
+        })
+    }
+}
+
+/// `resource`'s storage cap now: its base plus every active building's `store`
+/// effect, times `storage_cap_mult` for everything but energy. Boredom's is the
+/// boredom module's. `None` is uncapped.
+pub fn cap(r: &Rules, g: &GameState, resource: &str) -> Option<Fx> {
+    if resource == BOREDOM {
+        return Some(super::boredom::cap(r, g));
+    }
+    let base = content().resource(resource)?.cap?;
+    let cap = base + stored(g, resource);
+    Some(if resource == ENERGY { cap } else { cap * modifier(r, g, "storage_cap_mult") })
+}
+
+/// The sum of active buildings' `store` effects on `resource`.
+pub fn stored(g: &GameState, resource: &str) -> Fx {
+    let mut total = Fx::ZERO;
+    for b in &content().buildings {
+        let n = g.active(&b.id);
+        for e in &b.effects {
+            if let BuildingEffect::Store { resource: res, amount } = e {
+                if res == resource && n > 0 {
+                    total += amount.mul_int(n as i64);
+                }
+            }
+        }
+    }
+    total
+}
+
+/// Whether a content requirement holds now.
+pub fn requirement_met(g: &GameState, req: &Requirement) -> bool {
+    match req {
+        Requirement::None => true,
+        Requirement::Building { building, count } => g.owned(building) >= *count,
+        Requirement::Quest { quest } => super::events::quest_open_or_done(g, quest),
+        Requirement::Research { research } => g.run.research.contains(research),
+        Requirement::Flag { flag } => g.career.flags.contains(flag),
+    }
+}
+
+/// Buyable now, prices aside: its requirement holds and, if an event gates it,
+/// the event enabled it this run.
+pub fn unlocked(g: &GameState, b: &Building) -> bool {
+    requirement_met(g, &b.requires)
+        && (!content().event_gated(&b.id) || g.run.enabled_buildings.contains(&b.id))
+}
+
+/// Shown to the player: unlocked, or (for a building-count requirement only)
+/// owned in any run.
+pub fn visible(g: &GameState, b: &Building) -> bool {
+    unlocked(g, b)
+        || (matches!(b.requires, Requirement::Building { .. })
+            && !content().event_gated(&b.id)
+            && g.career.owned_buildings.contains(&b.id))
+}
+
+/// The next one's price: `cost × cost_scaling ^ (owned − bonus) × discount ^
+/// rank` (its ideology axis), each power exact (`Fx::pow_int`). A price past
+/// `Fx`'s range is `Fx::MAX`: shown, never affordable.
+pub fn price(r: &Rules, g: &GameState, b: &Building) -> BTreeMap<String, Fx> {
+    let h = g.run.buildings.get(&b.id).copied().unwrap_or_default();
+    let bought = h.owned.saturating_sub(h.bonus) as i64;
+    let mut factor = b.cost_scaling.pow_int(bought);
+    if let Some(axis) = &b.ideology {
+        let d = super::ideology::discount(r, g, axis);
+        factor = factor.and_then(|f| f.checked_mul(d));
+    }
+    b.cost
+        .iter()
+        .map(|(res, &base)| (res.clone(), factor.and_then(|f| base.checked_mul(f)).unwrap_or(Fx::MAX)))
+        .collect()
+}
+
+pub fn affordable(g: &GameState, cost: &BTreeMap<String, Fx>) -> bool {
+    cost.iter().all(|(r, &c)| c < Fx::MAX && g.amount(r) >= c)
+}
+
+/// Why `b` can't be bought now, if it can't.
+pub fn buy_blocker(r: &Rules, g: &GameState, b: &Building) -> Option<String> {
+    if !unlocked(g, b) {
+        return Some(format!("buy {}: locked", b.name));
+    }
+    if b.max_count.is_some_and(|m| g.owned(&b.id) >= m) {
+        return Some(format!("buy {}: at its limit", b.name));
+    }
+    if g.amount(LAND) < Fx::from_int(b.land as i64) {
+        return Some(format!("buy {}: not enough land", b.name));
+    }
+    if !affordable(g, &price(r, g, b)) {
+        return Some(format!("buy {}: can't afford it", b.name));
+    }
+    None
+}
+
+pub fn buy(r: &Rules, g: &mut GameState, id: &str) -> Result<(), String> {
+    let b = content().building(id).ok_or_else(|| format!("buy: unknown building {id:?}"))?;
+    if let Some(e) = buy_blocker(r, g, b) {
+        return Err(e);
+    }
+    for (res, c) in price(r, g, b) {
+        *g.run.resources.get_mut(&res).expect("content checked") -= c;
+    }
+    *g.run.resources.get_mut(LAND).expect("content has land") -= Fx::from_int(b.land as i64);
+    let h = g.run.buildings.entry(b.id.clone()).or_default();
+    h.owned += 1;
+    h.active += 1;
+    g.run.stats.buildings_built += 1;
+    g.career.owned_buildings.insert(b.id.clone());
+    refresh(g);
+    Ok(())
+}
+
+/// Sells one: no credits back. A copy that took land (bought) goes first and
+/// refunds its land; once only free copies (starting, bonus) remain, one goes
+/// with no refund. An idle copy goes before an active one.
+pub fn sell(g: &mut GameState, id: &str) -> Result<(), String> {
+    let b = content().building(id).ok_or_else(|| format!("sell: unknown building {id:?}"))?;
+    let h = g.run.buildings.get_mut(&b.id).filter(|h| h.owned > 0);
+    let Some(h) = h else {
+        return Err(format!("sell {}: none owned", b.name));
+    };
+    let paid = h.owned > h.free;
+    h.owned -= 1;
+    h.free = h.free.min(h.owned);
+    h.active = h.active.min(h.owned);
+    h.bonus = h.bonus.min(h.owned);
+    if h.owned == 0 {
+        g.run.buildings.remove(&b.id);
+    }
+    if paid {
+        g.add(LAND, Fx::from_int(b.land as i64));
+    }
+    refresh(g);
+    Ok(())
+}
+
+/// Sets how many of a type run (the rest stay owned, idle, still on their land).
+pub fn set_active(g: &mut GameState, id: &str, active: u32) -> Result<(), String> {
+    let b = content().building(id).ok_or_else(|| format!("set active: unknown building {id:?}"))?;
+    let owned = g.owned(&b.id);
+    if active > owned {
+        return Err(format!("set active {}: only {owned} owned", b.name));
+    }
+    if let Some(h) = g.run.buildings.get_mut(&b.id) {
+        h.active = active;
+    }
+    refresh(g);
+    Ok(())
+}
+
+/// Grants free (bonus) buildings at run start: owned, active and bonus all rise.
+pub fn grant_bonus(g: &mut GameState, id: &str, n: u32) {
+    let h = g.run.buildings.entry(id.to_string()).or_default();
+    h.owned += n;
+    h.active += n;
+    h.bonus += n;
+    h.free += n;
+}
+
+/// The next land purchase's price in credits.
+pub fn land_price(r: &Rules, g: &GameState) -> Fx {
+    let p = &r.p.economy;
+    let factor = p
+        .land_cost_scaling
+        .pow_int(g.run.land_bought as i64)
+        .and_then(|f| f.checked_mul(modifier(r, g, "land_cost_mult")))
+        .and_then(|f| f.checked_mul(super::ideology::discount(r, g, "nationalist")));
+    factor.and_then(|f| p.land_base_cost.checked_mul(f)).unwrap_or(Fx::MAX)
+}
+
+pub fn buy_land(r: &Rules, g: &mut GameState) -> Result<(), String> {
+    let price = land_price(r, g);
+    if price == Fx::MAX || g.amount(CREDITS) < price {
+        return Err("buy land: can't afford it".into());
+    }
+    *g.run.resources.get_mut(CREDITS).expect("content has credits") -= price;
+    g.add(LAND, r.p.economy.land_per_purchase);
+    g.run.land_bought += 1;
+    Ok(())
+}
+
+/// After any change to buildings: derived resources (processors) from active
+/// `grant` effects, launch pads matched to Launch Pads owned, and processor
+/// assignments trimmed to the processors there are (last program first).
+pub fn refresh(g: &mut GameState) {
+    let mut granted: BTreeMap<String, Fx> = BTreeMap::new();
+    for b in &content().buildings {
+        for e in &b.effects {
+            if let BuildingEffect::Grant { resource, .. } = e {
+                granted.entry(resource.clone()).or_insert(Fx::ZERO);
+            }
+        }
+    }
+    for b in &content().buildings {
+        let n = g.active(&b.id) as i64;
+        for e in &b.effects {
+            if let BuildingEffect::Grant { resource, amount } = e {
+                *granted.get_mut(resource).expect("listed above") += amount.mul_int(n);
+            }
+        }
+    }
+    for (res, v) in granted {
+        g.run.resources.insert(res, v);
+    }
+    super::shipments::sync_pads(g);
+    super::programs::trim_processors(g);
+}
+
+/// The multiplier on `b`'s production now: its output modifiers times its
+/// category's overclock (science's Rationalist bonus is applied in [`resolve`]).
+fn output_factor(r: &Rules, g: &GameState, b: &Building) -> Fx {
+    let mut f = super::programs::overclock_factor(r, g, &b.category);
+    for k in &b.output_modifiers {
+        f = f * modifier(r, g, k);
+    }
+    f
+}
+
+/// The day's building production, in content order (docs/rules/economy.md,
+/// *Daily resolution*): passes in which every building that can pay its full
+/// upkeep (within `upkeep_epsilon`) pays and produces, repeated while any
+/// succeeds; then one pass where the rest run at the fraction their scarcest
+/// input allows (`input_starved`).
+pub fn resolve(r: &Rules, g: &mut GameState) {
+    let eps = r.p.economy.upkeep_epsilon;
+    let upkeep_mult = modifier(r, g, "building_upkeep_mult");
+    let science = super::ideology::bonus(r, g, "rationalist");
+    let mut energy_made = Fx::ZERO;
+    // Per running building: (id, production, upkeep) for its active count.
+    let mut pending: Vec<(String, Amounts, Amounts)> = Vec::new();
+    for b in &content().buildings {
+        let n = g.active(&b.id) as i64;
+        if n == 0 {
+            continue;
+        }
+        let f = output_factor(r, g, b);
+        let prod = b
+            .produces
+            .iter()
+            .map(|(res, &v)| {
+                let mut amt = v.mul_int(n) * f;
+                if res == SCIENCE {
+                    amt = amt * science;
+                }
+                (res.clone(), amt)
+            })
+            .collect::<BTreeMap<_, _>>();
+        let upk = b.upkeep.iter().map(|(res, &v)| (res.clone(), v.mul_int(n) * upkeep_mult)).collect();
+        let capped = !prod.is_empty()
+            && prod.keys().all(|res| cap(r, g, res).is_some_and(|c| g.amount(res) >= c));
+        if capped {
+            g.run.today.stalls.insert(b.id.clone(), Stall::OutputCapped);
+        }
+        pending.push((b.id.clone(), prod, upk));
+    }
+    loop {
+        let mut progressed = false;
+        let mut retry = Vec::new();
+        for (id, prod, upk) in pending {
+            if upk.iter().all(|(res, &need)| g.amount(res) >= need - eps) {
+                for (res, &v) in &upk {
+                    g.consume(res, v);
+                }
+                for (res, &v) in &prod {
+                    g.produce(res, v);
+                    if res == ENERGY {
+                        energy_made += v;
+                    }
+                }
+                progressed = true;
+            } else {
+                retry.push((id, prod, upk));
+            }
+        }
+        pending = retry;
+        if !progressed || pending.is_empty() {
+            break;
+        }
+    }
+    for (id, prod, upk) in pending {
+        let mut frac = Fx::ONE;
+        for (res, &need) in &upk {
+            if need > Fx::ZERO {
+                frac = frac.min(g.amount(res).max(Fx::ZERO) / need);
+            }
+        }
+        g.run.today.stalls.insert(id, Stall::InputStarved);
+        if frac <= Fx::ZERO {
+            continue;
+        }
+        for (res, &v) in &upk {
+            g.consume(res, v * frac);
+        }
+        for (res, &v) in &prod {
+            g.produce(res, v * frac);
+            if res == ENERGY {
+                energy_made += v * frac;
+            }
+        }
+    }
+    let stats = &mut g.run.stats;
+    stats.peak_energy = stats.peak_energy.max(energy_made);
+}
+
+/// The end-of-tick clamp, the only place caps bind: anything over its cap is
+/// cut to it (counted as today's overflow); anything below zero (an upkeep
+/// tolerance) is lifted to zero.
+pub fn clamp(r: &Rules, g: &mut GameState) {
+    let ids: Vec<String> = g.run.resources.keys().cloned().collect();
+    for id in ids {
+        let cap = cap(r, g, &id);
+        let v = g.run.resources.get_mut(&id).expect("listed");
+        if let Some(c) = cap {
+            if *v > c {
+                let over = *v - c;
+                *v = c;
+                g.run.today.overflow.insert(id.clone(), over);
+            }
+        }
+        let v = g.run.resources.get_mut(&id).expect("listed");
+        if v.is_negative() {
+            *v = Fx::ZERO;
+        }
+    }
+}
+
+/// The building holding for a new run (the config's starting buildings).
+pub fn starting_buildings(r: &Rules) -> BTreeMap<String, Holding> {
+    r.p.economy
+        .starting_buildings
+        .iter()
+        .filter(|(_, &n)| n > 0)
+        .map(|(id, &n)| (id.clone(), Holding { owned: n, active: n, bonus: 0, free: n }))
+        .collect()
+}

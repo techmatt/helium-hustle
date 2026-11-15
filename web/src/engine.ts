@@ -30,21 +30,48 @@ export interface ResourceView {
   amount: Fx;
   cap: Fx | null;
   per_day: Fx;
+  visible: boolean;
 }
 
 export interface BuildingView {
   id: string;
   name: string;
   owned: number;
+  active: number;
   cost: Record<string, Fx>;
   affordable: boolean;
+  visible: boolean;
   buy: Action;
 }
 
+export interface CommandView {
+  id: string;
+  name: string;
+  unlocked: boolean;
+  visible: boolean;
+}
+
+export interface ProgramView {
+  entries: { command: string; count: number }[];
+  processors: number;
+}
+
+export interface QuestView {
+  id: string;
+  title: string;
+  summary: string;
+}
+
+/** The parts of hh-core's `View` this page reads (crates/hh-core/src/view.rs has it all). */
 export interface View {
   tick: number;
+  day: number;
+  run: number;
   resources: ResourceView[];
   buildings: BuildingView[];
+  commands: CommandView[];
+  programs: ProgramView[];
+  quest: QuestView | null;
 }
 
 export interface Replayed {

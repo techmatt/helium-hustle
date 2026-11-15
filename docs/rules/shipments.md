@@ -1,0 +1,109 @@
+# Shipments (module `shipments`, variant `arc1`)
+
+Launch pads turn stockpiled goods into credits: commands load cargo onto pads, a launch burns
+propellant and pays by the good's demand ([demand.md](demand.md)). Loading and launching happen
+when programs run their commands ([programs.md](programs.md)); pads cool down later in the same
+day ([the day](README.md#the-day)).
+
+## Rules
+
+**Goods.** The tradeable goods are the keys of `base_values`, listed in content resource order
+(Helium-3, Titanium, Circuit Boards, Propellant at baseline). A key that is not a content
+resource, or an empty map, is a config load error.
+
+**Pads.** There is one pad per Launch Pad owned (`launch_pad`), in purchase order. Each pad
+holds a good, a paused flag, its cargo and a cooldown in days. Whenever buildings change, pads
+are matched to the count: a new pad carries the first good in the loading priority, empty and
+ready; selling a Launch Pad drops the last pad, cargo and all. A pad is **active** while its
+index is below the number of active Launch Pads ([economy.md](economy.md)): switching Launch
+Pads off idles the last pads, which keep their cargo.
+
+**Loading** (Load Launch Pads). Every active, unpaused pad, in loading-priority order of its
+good (then pad order), takes from its good's stockpile:
+
+`take = min(load amount, pad_cargo_capacity − cargo, stockpile)` (never below 0)
+
+where `load amount = load_per_execution × cargo_capacity_mult`. Bought research with a
+`load_per_execution` effect replaces the config value (Shipping Efficiency: 7). Earlier pads
+draw first, so a short stockpile fills the first pads and leaves later ones short. A partial
+load is fine: the pad takes what there is.
+
+**Can launch.** A pad can launch when it is active, its cooldown is 0, it holds some cargo,
+and propellant on hand is at least `fuel_per_pad`.
+
+**Launch Full Pads** launches, in pad order, every unpaused pad that can launch and holds a
+full `pad_cargo_capacity`. Each launch burns its fuel before the next pad is checked, so
+propellant can run out partway through.
+
+**A launch:**
+
+1. Burns `fuel_per_pad` propellant.
+2. Pays `base_values[good] × demand × cargo × shipment_credit_mult` credits, at the good's
+   demand for today (set earlier in the day).
+3. Counts a shipment for the run, empties the pad and sets its cooldown to `launch_cooldown`.
+4. Raises the good's launch saturation and adds the payout to its burst-target revenue
+   ([demand.md](demand.md)). Demand moves at the next day's update, so every launch of a good
+   in one day pays the same demand.
+5. Checks the shipment achievements: payout, shipments this run, and demand at launch
+   ([achievements.md](achievements.md)).
+
+**Cooldown.** At the end of each day's commands (after projects drain), every pad's cooldown
+drops by 1, stopping at 0. A pad launched by a program can launch again `launch_cooldown` days
+later. A manual launch between days loses no day: the next tick's commands still see the full
+cooldown, so a program can launch that pad again only on the `launch_cooldown + 1`th tick.
+
+**Loading priority** is an ordering of every tradeable good, reset to content order each run.
+Load Launch Pads serves pads in this order of their goods (pad order within a good), so a
+short stockpile goes to the higher-priority good's pads first; each pad still loads only its
+own good. It also decides the good a new pad starts with and the pool Disrupt Speculators
+hits ([demand.md](demand.md)).
+
+**A new run** starts with fresh pads (one per Launch Pad the run starts with, empty, unpaused,
+cooled down) and the default loading priority.
+
+## Actions
+
+- **`launch { pad }`**: launches that pad now. Works on a paused pad and on one that is not
+  full. Illegal if there is no such pad, or it can't launch (inactive, cooling down, empty, or
+  propellant below `fuel_per_pad`).
+- **`set_pad_good { pad, good }`**: sets the good a pad carries. Illegal if the good is not
+  tradeable, the pad doesn't exist, or the pad holds cargo of another good (setting the same
+  good again is allowed).
+- **`set_pad_paused { pad, paused }`**: pauses or resumes a pad. A paused pad keeps its good
+  and cargo; Load and Launch Full Pads skip it. Illegal only for a missing pad.
+- **`set_loading_priority { goods }`**: replaces the loading priority. Illegal unless the list
+  holds every tradeable good exactly once.
+
+Pad indices are 0-based. The commands Load Launch Pads and Launch Full Pads run through
+programs; they need their full cost to run (Load costs energy; Launch Full Pads has no cost of
+its own, the propellant is the launch's).
+
+## Params
+
+| Param | Baseline | Meaning |
+|---|---|---|
+| `base_values` | He-3 10, titanium 6, circuits 15, propellant 4 | The tradeable goods and each one's credits per unit at demand 1. |
+| `pad_cargo_capacity` | 100 | Cargo a pad holds when full. |
+| `fuel_per_pad` | 20 | Propellant burned per launch. |
+| `load_per_execution` | 5 | Units Load Launch Pads puts on each pad, before research. |
+| `launch_cooldown` | 10 | Days after a launch before the pad can launch again. |
+
+Modifiers read ([README.md](README.md)): `cargo_capacity_mult` (Bulk Shipper achievement),
+`shipment_credit_mult` (First Profit achievement).
+
+## Content
+
+- `content/buildings.json`: `launch_pad` (one pad each). `content/commands.json`: `load_pads`
+  (effect `load_pads`), `launch_pads` (effect `launch_full_pads`).
+- `content/research.json`: rows with a `load_per_execution` effect (`shipping_efficiency`).
+
+## Port notes
+
+- Conflict: load per execution was 5 in both the command effect and `game_config`; the engine
+  keeps one home, the config's `load_per_execution`.
+- Candidate: the 10-day launch cooldown is the handoff's number; the data has none.
+- Candidate: a manual launch needs only some cargo (not a full pad) and fuel, and works on a
+  paused pad.
+- Candidate: a pad's good can change only while it is empty or already carries that good.
+- Candidate: `shipment_completed` events and the shipments-this-run achievement count this
+  run's shipments.

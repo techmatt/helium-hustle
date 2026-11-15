@@ -48,7 +48,9 @@ Every quantity in game state is `Fx` (`fx.rs`): a private `i64` count of million
   at once via `Fx::try_from_f64`/`from_f64`, the one boundary (floor of the float's value,
   so a float a hair under an exact decimal lands one step low). Add a `math` function instead of calling
   an `f64` method.
-- Counts (buildings owned, the tick) are integers.
+- Whole powers (`Fx::pow_int`) need no float: exact to one final floor
+  ([rules/README.md](rules/README.md#numbers)).
+- Counts (buildings owned, the tick, days, ranks) are integers.
 - The representation is private: changing its width or scale touches `fx.rs` only (and
   moves every golden constant).
 
@@ -66,10 +68,13 @@ A config is JSON (`configs/baseline.json`):
 
 - **Every** parameter must be given: no defaults in code. Unknown, missing, wrong-kind
   and out-of-range keys are errors naming each one.
-- `Fx` params are decimal strings (`"1.15"`, at most six places), integer params JSON integers.
+- `Fx` params are decimal strings (`"1.15"`, at most six places), integer params JSON
+  integers; list params are JSON arrays of either, map params objects keyed by content id
+  (a range bounds each element; ids are checked when `Rules::new` builds the params).
 - **Config hash**: `Config::hash`, FNV-1a over the canonical resolved JSON, `name`
   excluded: `"100"` and `"100.000"` hash the same.
-- Modules play in registry order (`modules::REGISTRY`), not config order.
+- Every module in `modules::REGISTRY` must be in the config (`Rules::new` names the
+  missing ones); the tick plays them in `rules.rs`'s order, not config order.
 
 ## Modules and content
 
@@ -82,19 +87,24 @@ A config is JSON (`configs/baseline.json`):
 | A new kind of player action | `Action` |
 
 A module is `modules/<id>.rs` with `pub static DEF: ModuleDef` (variants, each with its
-`ParamDef`s and RNG purposes), listed in `REGISTRY` and `modules::build`, implementing
-`Module` (`init`, `tick`, `apply`, `view`). `apply` checks legality before changing
-anything. Content is serde structs in `content.rs` (unknown fields refused);
-`Content::check` validates ids (unique across all content) and references.
-`content_hash()` is FNV-1a over the embedded files.
+`ParamDef`s and RNG purposes) listed in `REGISTRY`, a typed `Params` built from its
+config entry (a field of `modules::Params`), and the functions that play its rules. Arc
+1's systems read each other every tick, so modules aren't isolated objects: `Rules`
+holds every module's params and `Rules::tick` calls their functions in one order
+([rules/README.md](rules/README.md#the-day)); `Rules::apply` dispatches each `Action` to
+its module, on a copy of the state that replaces it only on success. Content is serde
+structs in `content.rs` (unknown fields refused); `Content::check` validates ids (unique
+across all content) and references. `content_hash()` is FNV-1a over the embedded files.
+Shared derived values: `modifiers.rs` (the modifier framework).
 
-The only module today is `placeholder` ([rules/README.md](rules/README.md)).
+The modules are Arc 1's ([rules/README.md](rules/README.md)).
 
 ## Scenarios
 
 Named starting states (`scenarios/*.json`, listed in `scenario.rs` `FILES`), laid over a
 new game: `{"name", "description", "start": {"tick", "resources", "buildings"}}`, every
-key required; a listed resource or building replaces the new game's value. Unknown ids are
+key required; a listed resource or building (owned and active) replaces the new game's
+value, the tick sets the run's day too, and processors gained go to the first program. Unknown ids are
 errors naming them. `hh-sim run --scenario NAME` (or `--scenario-file F`) and the web
 debug menu use them. A record carries its scenario in full, so a later edit to the file
 can't change an old record.
@@ -110,7 +120,19 @@ can't change an old record.
 
 ## The view
 
-`Rules::view` gives display data: each resource's amount, cap and expected change per day,
-each building's next price, whether it is affordable and the action that buys it. Clients
-compute no rule. The view is never read by the rules and isn't in the state, fingerprint
-or replay.
+`Rules::view` (`view.rs`) gives everything a client shows and can do: resources (amount,
+cap, change over the next day, visible), buildings (price, buyable, unlocked, visible,
+stall, the action that buys one), commands, programs, pads (payout, can launch), markets
+(demand once Market Awareness is researched, else a tier), research, ideology, projects,
+the active quest, the run's fired events, boredom (cap, rate, phase), unlocked panels, the
+career's bests and next-run bonuses, and the career log. Clients
+compute no rule; an agent reads the same view. The change per day comes from playing one
+day on a copy. The view is never read by the rules and isn't in the state, fingerprint or
+replay.
+
+## State
+
+`GameState` (`state.rs`): the seed, the config, the career-wide `tick`, the RNG streams,
+the `career` (what persists across retirements) and the `run` (what a retirement resets,
+including the run's own `day`). Everything that affects play is in it; derived values
+(caps, modifiers, the active quest, processors' assignment limits) are recomputed from it.

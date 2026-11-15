@@ -56,6 +56,19 @@ td {
 .rate {
   color: #8d93a8;
 }
+#commands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+#commands button[aria-pressed='true'] {
+  background: #3b6fd8;
+  color: white;
+}
+#quest,
+#run {
+  color: #a5abbd;
+}
 .building {
   display: flex;
   gap: 1rem;

@@ -1,0 +1,57 @@
+Run 1 — Fresh Start (seed 1), scripted policy, 477 actions
+objectives (tick hit, target window):
+  excavator         59  [5, 20] late
+  smelter           67  [40, 100] in
+  refinery         108  [100, 200] in
+  he3_10           117  [140, 220] early
+  first_ship       303  [260, 380] in
+  data_center      789  [380, 530] late
+  research_lab     831  [600, 800] late
+  retirement       461  [720, 1000] early
+end condition (boredom >= 100): tick 461
+milestones (tick, run, day):
+      52  run 1 day    51  quest qpower_boot_sequence
+     157  run 1 day   156  quest qextract_first_extraction
+     303  run 1 day   302  quest qshipment_proof_of_concept
+     789  run 1 day   788  quest qautomate_automation
+     875  run 1 day   874  achievement bulk_shipper
+    1098  run 1 day  1098  forced_retirement
+
+Run 1 — Fresh Start (seed 2), scripted policy, 529 actions
+objectives (tick hit, target window):
+  excavator         59  [5, 20] late
+  smelter           67  [40, 100] in
+  refinery         108  [100, 200] in
+  he3_10           117  [140, 220] early
+  first_ship       303  [260, 380] in
+  data_center      527  [380, 530] in
+  research_lab     528  [600, 800] early
+  retirement       467  [720, 1000] early
+end condition (boredom >= 100): tick 467
+milestones (tick, run, day):
+      52  run 1 day    51  quest qpower_boot_sequence
+     157  run 1 day   156  quest qextract_first_extraction
+     303  run 1 day   302  quest qshipment_proof_of_concept
+     527  run 1 day   526  quest qautomate_automation
+     747  run 1 day   746  achievement bulk_shipper
+    1109  run 1 day  1109  forced_retirement
+
+Run 1 — Fresh Start (seed 3), scripted policy, 503 actions
+objectives (tick hit, target window):
+  excavator         59  [5, 20] late
+  smelter           67  [40, 100] in
+  refinery         108  [100, 200] in
+  he3_10           117  [140, 220] early
+  first_ship       303  [260, 380] in
+  data_center      549  [380, 530] late
+  research_lab     550  [600, 800] early
+  retirement       467  [720, 1000] early
+end condition (boredom >= 100): tick 467
+milestones (tick, run, day):
+      52  run 1 day    51  quest qpower_boot_sequence
+     157  run 1 day   156  quest qextract_first_extraction
+     303  run 1 day   302  quest qshipment_proof_of_concept
+     549  run 1 day   548  quest qautomate_automation
+     767  run 1 day   766  achievement bulk_shipper
+    1105  run 1 day  1105  forced_retirement
+

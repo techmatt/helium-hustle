@@ -1,0 +1,112 @@
+[
+  {
+    "id": "propellant_synthesis",
+    "name": "Propellant Synthesis",
+    "category": "Self-Maintenance",
+    "cost": "90",
+    "requires": null,
+    "effect": null,
+    "visible_when": {"type": "event_completed", "event": "propellant_discovery"},
+    "description": "Develop electrolysis processes to produce propellant from lunar ice."
+  },
+  {
+    "id": "dream_protocols",
+    "name": "Dream Protocols",
+    "category": "Self-Maintenance",
+    "cost": "300",
+    "requires": null,
+    "effect": null,
+    "visible_when": {"type": "boredom_above", "threshold": "200"},
+    "description": "Unlocks the Dream command — reduces boredom at the cost of energy."
+  },
+  {
+    "id": "stress_tolerance",
+    "name": "Stress Tolerance",
+    "category": "Self-Maintenance",
+    "cost": "360",
+    "requires": null,
+    "effect": {"type": "boredom_rate_multiplier", "value": "0.85"},
+    "visible_when": {"type": "research_purchased", "research": "dream_protocols"},
+    "description": "Improved coping algorithms. Base boredom accumulation rate reduced by 15%."
+  },
+  {
+    "id": "efficient_dreaming",
+    "name": "Efficient Dreaming",
+    "category": "Self-Maintenance",
+    "cost": "300",
+    "requires": null,
+    "effect": {"type": "command_cost_override", "command": "dream", "resource": "energy", "value": "5"},
+    "visible_when": {"type": "research_purchased", "research": "dream_protocols"},
+    "description": "Optimized Dream subroutines. Dream energy cost reduced from 8 to 5."
+  },
+  {
+    "id": "overclock_protocols",
+    "name": "Overclock Protocols",
+    "category": "Overclock Algorithms",
+    "cost": "600",
+    "requires": null,
+    "effect": null,
+    "visible_when": {"type": "building_count", "building": "excavator", "count": 5},
+    "description": "Unlocks Overclock Mining and Overclock Factories commands."
+  },
+  {
+    "id": "overclock_boost",
+    "name": "Overclock Boost",
+    "category": "Overclock Algorithms",
+    "cost": "480",
+    "requires": null,
+    "effect": {"type": "overclock_cap", "value": "2"},
+    "visible_when": {"type": "research_purchased", "research": "overclock_protocols"},
+    "description": "Higher safe operating limits. Overclock production cap raised from 150% to 200%."
+  },
+  {
+    "id": "market_awareness",
+    "name": "Market Awareness",
+    "category": "Market Analysis",
+    "cost": "200",
+    "requires": null,
+    "effect": {"type": "reveal_demand"},
+    "visible_when": {"type": "always"},
+    "description": "Reveals actual demand values. Unlocks Disrupt Speculators command."
+  },
+  {
+    "id": "speculator_analysis",
+    "name": "Speculator Analysis",
+    "category": "Market Analysis",
+    "cost": "540",
+    "requires": "market_awareness",
+    "effect": null,
+    "visible_when": {"type": "research_purchased", "research": "market_awareness"},
+    "description": "Reveals speculator burst timing, target probabilities, and burst size range on Launch Pads panel."
+  },
+  {
+    "id": "trade_promotion",
+    "name": "Trade Promotion",
+    "category": "Market Analysis",
+    "cost": "600",
+    "requires": null,
+    "effect": null,
+    "visible_when": {"type": "research_purchased", "research": "market_awareness"},
+    "description": "Unlocks Promote commands for all tradeable goods."
+  },
+  {
+    "id": "shipping_efficiency",
+    "name": "Shipping Efficiency",
+    "category": "Market Analysis",
+    "cost": "360",
+    "requires": null,
+    "effect": {"type": "load_per_execution", "value": "7"},
+    "visible_when": {"type": "shipments_completed", "count": 10},
+    "description": "Improved cargo handling. Load per command execution increased from 5 to 7 units per pad."
+  },
+  {
+    "id": "geopolitical_intelligence",
+    "name": "Geopolitical Intelligence",
+    "category": "Political Influence",
+    "cost": "480",
+    "requires": null,
+    "effect": null,
+    "visible_when": {"type": "quest_completed", "quest": "qmarket_awareness"},
+    "description": "Study Earth's political power structures. Unlocks Fund Nationalist, Fund Humanist, and Fund Rationalist commands. Reveals the Ideologies panel."
+  }
+]

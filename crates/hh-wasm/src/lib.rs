@@ -116,6 +116,21 @@ pub fn config_hash(state_json: &str) -> Result<String, JsValue> {
     Ok(load(state_json)?.0.config_hash)
 }
 
+/// Plays the golden game (`hh_core::driver`: the golden seed, length and
+/// policy, on `config_json`) in wasm. Returns `{"fingerprint", "record"}`:
+/// the parity check compares the fingerprint with the native pin and replays
+/// the record through this API.
+#[wasm_bindgen]
+pub fn play_golden(config_json: &str) -> Result<String, JsValue> {
+    use hh_core::driver::{play, GOLDEN_POLICY, GOLDEN_SEED, GOLDEN_TICKS};
+    let mut s = hh_core::Session::new(&config(config_json)?, GOLDEN_SEED, None).map_err(err)?;
+    play(&mut s, GOLDEN_TICKS, GOLDEN_POLICY);
+    Ok(to_json(&serde_json::json!({
+        "fingerprint": s.state.fingerprint(),
+        "record": s.record(),
+    })))
+}
+
 /// Replays a record (`hh_core::Record` JSON). Returns
 /// `{"state": <state>, "fingerprint": "...", "warnings": [...]}` or throws.
 #[wasm_bindgen]

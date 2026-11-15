@@ -36,12 +36,29 @@ fn json_output_parses() {
 }
 
 #[test]
+fn objectives_play_the_reference_scenario_to_a_forced_retirement() {
+    let c = baseline();
+    let sc = format!("{}/../../reference/scenarios/run1_fresh.json", env!("CARGO_MANIFEST_DIR"));
+    let out = run(&args(&["objectives", &sc, "--config", &c, "--seed", "1"])).unwrap();
+    for want in [
+        "first_ship",
+        "quest qpower_boot_sequence",
+        "quest qextract_first_extraction",
+        "quest qshipment_proof_of_concept",
+        "forced_retirement",
+    ] {
+        assert!(out.contains(want), "{want}: {out}");
+    }
+}
+
+#[test]
 fn bad_input_is_a_usage_error() {
     for a in [
         vec!["run", "--bogus"],
         vec!["run", "--seed", "-1"],
         vec!["run", "--policy", "smart"],
         vec!["run", "--scenario", "nope"],
+        vec!["objectives"],
         vec!["frobnicate"],
         vec![],
     ] {

@@ -51,13 +51,30 @@ fn from_f64_floors() {
 }
 
 #[test]
-fn libm_pow() {
-    assert_eq!(math::pow_int(f("2"), 10), Some(f("1024")));
-    assert_eq!(math::pow_int(f("1.15"), 0), Some(Fx::ONE));
-    assert_eq!(math::pow_int(f("1.5"), 2), Some(f("2.25")));
-    // The floor of the float: 1.15 * 1.15 as an f64 is just under 1.3225.
-    assert_eq!(math::pow_int(f("1.15"), 2), Some(f("1.322499")));
-    assert_eq!(math::pow_int(f("10"), 20), None, "out of range");
+fn whole_powers_are_exact() {
+    assert_eq!(f("2").pow_int(10), Some(f("1024")));
+    assert_eq!(f("1.15").pow_int(0), Some(Fx::ONE));
+    assert_eq!(f("1.5").pow_int(2), Some(f("2.25")));
+    // Exact, not the float's floor (1.15 * 1.15 as an f64 is just under 1.3225).
+    assert_eq!(f("1.15").pow_int(2), Some(f("1.3225")));
+    assert_eq!(f("1.5").pow_int(20), Some(f("3325.256730")));
+    assert_eq!(f("0.97").pow_int(3), Some(f("0.912673")));
+    // Negative exponents: 1 / x^n, floored once.
+    assert_eq!(f("1.05").pow_int(-3), Some(f("0.863837")));
+    assert_eq!(f("2").pow_int(-2), Some(f("0.25")));
+    assert_eq!(f("10").pow_int(20), None, "out of range");
+    assert_eq!(f("1.5").pow_int(i64::from(u32::MAX)), None, "a huge exponent ends early");
+    assert_eq!(f("0.5").pow_int(i64::from(u32::MAX)), Some(Fx::ZERO));
+    assert_eq!(Fx::ZERO.pow_int(-1), None);
+}
+
+#[test]
+fn libm_factors() {
+    // A fractional power goes through libm and floors the float.
+    assert_eq!(math::pow_frac(f("4"), f("0.5")), Some(f("2")));
+    let two = math::log_in(f("2.25"), f("1.5")).unwrap();
+    assert!(two == f("2") || two == f("2") - Fx::EPSILON, "{two}");
+    assert_eq!(math::log_in(Fx::ZERO, f("1.5")), None);
 }
 
 #[test]

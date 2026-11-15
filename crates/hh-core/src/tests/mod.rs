@@ -17,9 +17,9 @@ pub(crate) fn baseline() -> Config {
 // The golden constants: update all three together on a `RULES_REVISION` bump
 // (and `GOLDEN_*` in scripts/wasm-smoke.mjs), copying the failing assertion's
 // left side.
-const GOLDEN_REVISION: u32 = 1;
-const GOLDEN_FINGERPRINT: &str = "36d8cc14b1f9de2a";
-const GOLDEN_CONTENT_HASH: &str = "8f392297a9a3af48";
+const GOLDEN_REVISION: u32 = 2;
+const GOLDEN_FINGERPRINT: &str = "9a841070021b71f0";
+const GOLDEN_CONTENT_HASH: &str = "38f4e713790969a6";
 
 pub(crate) fn golden_session() -> Session {
     let mut s = Session::new(&baseline(), GOLDEN_SEED, None).unwrap();
@@ -31,7 +31,9 @@ pub(crate) fn golden_session() -> Session {
 fn golden_game() {
     let s = golden_session();
     assert_eq!(s.state.tick, GOLDEN_TICKS);
-    assert!(s.state.owned("solar_panel") > 0, "the golden game buys something");
+    let c = &s.state.career;
+    assert!(c.completed_quests.contains("qshipment_proof_of_concept"), "the golden game ships");
+    assert!(c.retirements >= 1, "the golden game retires");
     assert_eq!(
         (RULES_REVISION, s.state.fingerprint().as_str()),
         (GOLDEN_REVISION, GOLDEN_FINGERPRINT)
@@ -63,14 +65,13 @@ fn wasm_smoke_expects_the_golden_constants() {
         smoke.contains(&format!("GOLDEN_REVISION = {GOLDEN_REVISION};")),
         "scripts/wasm-smoke.mjs holds another golden revision"
     );
-    // The golden game's definition, which the smoke script mirrors.
-    let crate::Policy::Greedy { every } = GOLDEN_POLICY else {
-        panic!("the smoke script mirrors a greedy golden policy only")
-    };
+    // The smoke plays the golden game through the wasm build's own copy of
+    // `driver.rs` (`play_golden`), then checks its record's seed and length.
+    assert_eq!(GOLDEN_POLICY, crate::Policy::Script);
     for line in [
+        "m.play_golden(".to_string(),
         format!("const SEED = '{GOLDEN_SEED}';"),
         format!("const TICKS = {GOLDEN_TICKS};"),
-        format!("const EVERY = {every};"),
     ] {
         assert!(smoke.contains(&line), "scripts/wasm-smoke.mjs lacks `{line}`");
     }

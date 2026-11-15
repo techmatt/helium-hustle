@@ -6,13 +6,43 @@
       "crates/hh-core/src/fx.rs": "representation: scale, places, i128 widths",
       "crates/hh-core/src/hash.rs": "FNV-1a constants and hex widths",
       "crates/hh-core/src/rng.rs": "ChaCha seed widths and hex parsing",
-      "crates/hh-core/src/driver.rs": "the golden game's fixed seed, length and policy"
+      "crates/hh-core/src/driver.rs": "the golden game's fixed seed, length and policy, and the script's build order"
     },
     "exceptions": [
       {
-        "file": "crates/hh-core/src/modules/placeholder.rs",
+        "file": "crates/hh-core/src/lib.rs",
         "literal": "2",
-        "why": "a spread either side of 1: 2 * steps + 1 values"
+        "why": "RULES_REVISION itself"
+      },
+      {
+        "file": "crates/hh-core/src/modules/boredom.rs",
+        "literal": "2",
+        "why": "windows(2): each adjacent pair of phase days"
+      },
+      {
+        "file": "crates/hh-core/src/modules/demand.rs",
+        "literal": "2",
+        "why": "windows(2) (adjacent tier bounds); lattice gradients in -2..=2 make one 1D gradient-noise octave span about -1..=1"
+      },
+      {
+        "file": "crates/hh-core/src/modules/demand.rs",
+        "literal": "4",
+        "why": "the width of the -2..=2 gradient range"
+      },
+      {
+        "file": "crates/hh-core/src/modules/demand.rs",
+        "literal": "6",
+        "why": "quintic fade polynomial 6t^5 - 15t^4 + 10t^3 (math, not a tunable)"
+      },
+      {
+        "file": "crates/hh-core/src/modules/demand.rs",
+        "literal": "15",
+        "why": "quintic fade polynomial 6t^5 - 15t^4 + 10t^3 (math, not a tunable)"
+      },
+      {
+        "file": "crates/hh-core/src/modules/demand.rs",
+        "literal": "10",
+        "why": "quintic fade polynomial 6t^5 - 15t^4 + 10t^3 (math, not a tunable)"
       }
     ]
   }

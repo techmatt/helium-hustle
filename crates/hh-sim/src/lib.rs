@@ -7,14 +7,17 @@ use hh_core::{
 };
 use std::fmt::Write as _;
 
+pub mod objectives;
+
 pub const USAGE: &str = "usage:
   hh-sim run [--config F] [--seed S] [--ticks N] [--policy P] [--scenario NAME | --scenario-file F] [--save F] [--json]
   hh-sim replay RECORD.json...
   hh-sim show [--config F]
   hh-sim scenarios
   hh-sim golden
-defaults: --config configs/baseline.json --seed 0 --ticks 1000 --policy idle
-policies: idle, greedy (buy whatever is affordable every tick), greedy:every=N";
+  hh-sim objectives SCENARIO.json [--config F] [--seed S] [--ticks N]
+defaults: --config configs/baseline.json --seed 0 --ticks 1000 (objectives: 5000) --policy idle
+policies: idle, greedy (buy whatever is affordable every tick), greedy:every=N, script";
 
 /// A failure: bad input (exit 2) or a failed check (exit 1).
 #[derive(Debug)]
@@ -39,6 +42,7 @@ struct Opts {
     config: String,
     seed: u64,
     ticks: u64,
+    ticks_given: bool,
     policy: Policy,
     scenario: Option<Scenario>,
     save: Option<String>,
@@ -51,6 +55,7 @@ fn parse(args: &[String]) -> Result<Opts, Fail> {
         config: "configs/baseline.json".into(),
         seed: 0,
         ticks: 1000,
+        ticks_given: false,
         policy: Policy::Idle,
         scenario: None,
         save: None,
@@ -73,6 +78,7 @@ fn parse(args: &[String]) -> Result<Opts, Fail> {
             "--ticks" => {
                 let v = val("--ticks")?;
                 o.ticks = v.parse().map_err(|_| Fail::Usage(format!("bad --ticks {v:?}")))?;
+                o.ticks_given = true;
             }
             "--policy" => o.policy = Policy::parse(&val("--policy")?).map_err(Fail::Usage)?,
             "--scenario" => {
@@ -99,7 +105,7 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
         return usage("no command");
     };
     let o = parse(rest)?;
-    if cmd != "replay" && !o.rest.is_empty() {
+    if cmd != "replay" && cmd != "objectives" && !o.rest.is_empty() {
         return usage(format!("unexpected argument {:?}", o.rest[0]));
     }
     match cmd.as_str() {
@@ -118,6 +124,14 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
             .iter()
             .map(|s| format!("{}: {}\n", s.name, s.description))
             .collect()),
+        "objectives" => {
+            let [path] = o.rest.as_slice() else {
+                return usage("objectives: give one scenario file");
+            };
+            let c = load_config(&o.config)?;
+            let ticks = if o.ticks_given { o.ticks } else { 5000 };
+            objectives::run(path, &read(path)?, &c, o.seed, ticks).map_err(Fail::Usage)
+        }
         "golden" => {
             let c = load_config("configs/baseline.json")?;
             let mut s = Session::new(&c, hh_core::driver::GOLDEN_SEED, None).map_err(Fail::Usage)?;
@@ -170,14 +184,22 @@ fn run_game(o: &Opts) -> Result<String, Fail> {
             o.seed,
             o.scenario.as_ref().map(|s| format!(", scenario {}", s.name)).unwrap_or_default()
         );
-        let _ = writeln!(t, "day {}, {} actions", s.state.tick, rec.actions.len());
+        let _ = writeln!(
+            t,
+            "tick {}, run {} day {}, {} actions",
+            s.state.tick,
+            v.run,
+            v.day,
+            rec.actions.len()
+        );
         for r in &v.resources {
             let cap = r.cap.map(|c| format!(" / {c}")).unwrap_or_default();
-            let _ = writeln!(t, "  {:<12} {}{cap}  ({} per day)", r.name, r.amount, r.per_day);
+            let _ = writeln!(t, "  {:<16} {}{cap}  ({} per day)", r.name, r.amount, r.per_day);
         }
-        for b in &v.buildings {
-            let _ = writeln!(t, "  {:<12} {} owned", b.name, b.owned);
+        for b in v.buildings.iter().filter(|b| b.owned > 0) {
+            let _ = writeln!(t, "  {:<20} {} owned, {} active", b.name, b.owned, b.active);
         }
+        t.push_str(&objectives::milestones(&s));
         let _ = writeln!(t, "fingerprint {}", s.state.fingerprint());
         let _ = writeln!(t, "replay {}", if replay_ok { "ok" } else { "MISMATCH" });
         t

@@ -1,37 +1,33 @@
-//! The engine: a config compiled into its modules. Time advances only through
-//! [`Rules::advance`] (N ticks, 1 tick = 1 in-game day); player actions apply
-//! between ticks through [`Rules::apply`].
+//! The engine: a config compiled into its modules' params. Time advances only
+//! through [`Rules::advance`] (N ticks, 1 tick = 1 in-game day); player actions
+//! apply between ticks through [`Rules::apply`].
 
 use std::collections::BTreeMap;
 
 use crate::action::Action;
 use crate::config::Config;
 use crate::content::content;
-use crate::fx::Fx;
-use crate::modules::{self, Module, REGISTRY};
+use crate::modules::{self, *};
 use crate::rng::Stream;
 use crate::scenario::Scenario;
-use crate::state::GameState;
-use crate::view::{ResourceView, View};
+use crate::state::{Career, GameState, Run};
+use crate::view::View;
 
 pub struct Rules {
     pub config: Config,
     pub config_hash: String,
-    /// `(module id, module)` in registry order.
-    modules: Vec<(&'static str, Box<dyn Module>)>,
+    /// Every module's params.
+    pub(crate) p: modules::Params,
 }
 
 impl Rules {
     pub fn new(config: &Config) -> Result<Rules, String> {
         config.check()?;
-        let modules = REGISTRY
-            .iter()
-            .filter_map(|d| config.module(d.id).map(|mc| (d.id, modules::build(d.id, mc))))
-            .collect();
+        let p = modules::Params::new(|id| config.module(id).cloned())?;
         Ok(Rules {
             config: config.clone(),
             config_hash: config.hash(),
-            modules,
+            p,
         })
     }
 
@@ -40,7 +36,7 @@ impl Rules {
         Rules::new(&g.config)
     }
 
-    /// A new game at tick 0.
+    /// A new game: run 1 of a fresh career, at tick 0.
     pub fn new_game(&self, seed: u64) -> GameState {
         let mut rng = BTreeMap::new();
         for (id, mc) in &self.config.modules {
@@ -53,17 +49,11 @@ impl Rules {
             seed,
             config: self.config.clone(),
             tick: 0,
-            resources: content()
-                .resources
-                .iter()
-                .map(|r| (r.id.clone(), Fx::ZERO))
-                .collect(),
-            buildings: BTreeMap::new(),
+            career: Career { run_number: 1, ..Career::default() },
+            run: Run::default(),
             rng,
         };
-        for (_, m) in &self.modules {
-            m.init(&mut g);
-        }
+        career::new_run(self, &mut g);
         g
     }
 
@@ -79,21 +69,56 @@ impl Rules {
     /// Runs `n` ticks.
     pub fn advance(&self, g: &mut GameState, n: u64) {
         for _ in 0..n {
-            g.tick += 1;
-            for (_, m) in &self.modules {
-                m.tick(g);
-            }
+            self.tick(g);
+        }
+    }
+
+    /// One day, in this order (docs/rules/README.md, *The day*).
+    fn tick(&self, g: &mut GameState) {
+        g.tick += 1;
+        g.run.today = Default::default();
+        boredom::grow(self, g);
+        programs::expire_overclocks(g);
+        economy::resolve(self, g);
+        demand::update(self, g);
+        programs::run(self, g);
+        projects::drain(g);
+        shipments::tick(g);
+        demand::bursts(self, g);
+        economy::clamp(self, g);
+        events::check(self, g);
+        achievements::check(g);
+        ideology::track(self, g);
+        g.run.day += 1;
+        if boredom::at_cap(self, g) {
+            career::retire(self, g, true);
         }
     }
 
     /// Applies a player action between ticks. An `Err` leaves `g` untouched.
     pub fn apply(&self, g: &mut GameState, a: &Action) -> Result<(), String> {
-        for (_, m) in &self.modules {
-            if let Some(r) = m.apply(g, a) {
-                return r;
+        let mut h = g.clone();
+        match a {
+            Action::Buy { building } => economy::buy(self, &mut h, building),
+            Action::Sell { building } => economy::sell(&mut h, building),
+            Action::SetActive { building, active } => economy::set_active(&mut h, building, *active),
+            Action::BuyLand => economy::buy_land(self, &mut h),
+            Action::SetProgram { program, entries } => programs::set_program(self, &mut h, *program, entries),
+            Action::SetProcessors { program, processors } => {
+                programs::set_processors(&mut h, *program, *processors)
             }
-        }
-        Err(format!("no module in this config takes {a:?}"))
+            Action::SetPadGood { pad, good } => shipments::set_pad_good(self, &mut h, *pad, good),
+            Action::SetPadPaused { pad, paused } => shipments::set_pad_paused(&mut h, *pad, *paused),
+            Action::Launch { pad } => shipments::launch_action(self, &mut h, *pad),
+            Action::SetLoadingPriority { goods } => shipments::set_loading_priority(self, &mut h, goods),
+            Action::Research { research } => research::buy(self, &mut h, research),
+            Action::SetProjectRate { project, resource, rate } => {
+                projects::set_rate(self, &mut h, project, resource, *rate)
+            }
+            Action::Retire => career::retire_action(self, &mut h),
+        }?;
+        *g = h;
+        Ok(())
     }
 
     /// Whether `a` would apply now.
@@ -102,25 +127,14 @@ impl Rules {
     }
 
     pub fn view(&self, g: &GameState) -> View {
-        let mut v = View {
-            tick: g.tick,
-            resources: content()
-                .resources
-                .iter()
-                .map(|r| ResourceView {
-                    id: r.id.clone(),
-                    name: r.name.clone(),
-                    amount: g.amount(&r.id),
-                    cap: None,
-                    per_day: Fx::ZERO,
-                })
-                .collect(),
-            buildings: Vec::new(),
-        };
-        for (_, m) in &self.modules {
-            m.view(g, &mut v);
-        }
-        v
+        crate::view::build(self, g)
+    }
+
+    /// The state one day on, for the view's expected change per day.
+    pub(crate) fn peek(&self, g: &GameState) -> GameState {
+        let mut h = g.clone();
+        self.tick(&mut h);
+        h
     }
 
     /// A state fits these rules: its config is this one and it holds every
@@ -130,7 +144,7 @@ impl Rules {
             return Err("state: its config differs from the rules'".into());
         }
         for r in &content().resources {
-            if !g.resources.contains_key(&r.id) {
+            if !g.run.resources.contains_key(&r.id) {
                 return Err(format!("state: missing resource {:?}", r.id));
             }
         }

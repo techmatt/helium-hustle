@@ -1,0 +1,127 @@
+# Economy (module `economy`, variant `arc1`)
+
+Resources, storage caps, buildings (buy, sell, set active), land, the daily building
+production and the end-of-day clamp. In [the day](README.md#the-day), buildings resolve
+right after boredom grows and expired overclocks drop, before demand and programs; the clamp
+runs late in the day, after shipments and bursts. Prices and amounts are `Fx`; counts
+(owned, active, land bought) are integers.
+
+## Rules
+
+**Resources.** Every content resource is held from the start of a run (0 unless
+`starting_resources` says otherwise). Credits, science, land and processors have no cap.
+
+**Caps.** A capped resource's cap is its content `cap` plus the `store` effects of every
+*active* building on it (per copy), times the modifier `storage_cap_mult`; energy's cap skips
+`storage_cap_mult`. Boredom's cap is the boredom module's (`boredom.base_cap` plus active
+Recreation Domes' `store`; see boredom.md). Caps bind only in the clamp: production during the
+day may run past a cap.
+
+**Processors** are derived: after any building change (buy, sell, set active, a new run) the
+processors resource is set to the sum of active buildings' `grant` effects (1 per active Data
+Center). Lost processors come off program assignments, last program first (programs.md);
+Launch Pads owned and pads are matched (shipments.md).
+
+**Price.** The next building of a type costs, per resource in its `cost`:
+`cost × cost_scaling ^ (owned − bonus) × discount_factor ^ rank`, the last factor only for a
+building with an `ideology` axis (that axis's rank; ideology.md). `bonus` counts free
+buildings granted at run start, so they don't raise the price. Whole powers use `Fx::pow_int`
+(see [the rounding rule](README.md)). A price past `Fx`'s range is shown as the maximum and is
+never affordable.
+
+**Buy** checks, in order: unlocked (its `requires` holds and, if an event enables it, that
+event enabled it this run), under `max_count`, enough land (its `land`), and every price
+resource on hand. It then pays the price and the land, and the new building is owned and
+active. Starting buildings and run-start bonus buildings take no land.
+
+**Visible:** unlocked, or (for a building-count requirement only, and not event-gated) owned
+in any run of the career.
+
+**Sell** never refunds the price. A copy that took land (a bought one) goes first and
+refunds its `land`; once only free copies remain (starting and run-start bonus buildings,
+counted as `free`), one goes with no land back. Active is lowered only if it would exceed
+owned (an idle copy goes first); bonus is lowered the same way, so selling a bought copy
+lowers the next price. Starting buildings count toward the price (they are not `bonus`).
+
+**Land.** The next land purchase costs
+`land_base_cost × land_cost_scaling ^ land_bought × land_cost_mult × discount_factor ^ nationalist rank`
+credits and gives `land_per_purchase` land. `land_bought` counts this run's purchases.
+
+**Daily resolution** (`resolve`), over building types in content order, each type's active
+copies together:
+
+1. Each type's production is `produces × active × output factor`, where the output factor is
+   the overclock factor for its `category` (programs.md) times each of its
+   `output_modifiers`; science is further multiplied by `bonus_factor ^ rationalist rank`.
+   Its upkeep is `upkeep × active × building_upkeep_mult`.
+2. A type whose every product is at or over its cap is marked `output_capped` for the day; it
+   still pays and produces.
+3. **Full passes:** each pending type whose every upkeep resource has at least
+   `need − upkeep_epsilon` pays its upkeep and adds its production. Passes repeat while one
+   succeeds and any remain, so a type later in content order can feed an earlier one.
+4. **Partial pass:** each remaining type, in order, runs at `frac` = the least of
+   `max(held, 0) / need` over its upkeep (at most 1), paying and producing that fraction, and
+   is marked `input_starved` (also when `frac` is 0 and it does nothing).
+
+Energy produced by buildings in the day (gross) updates the run's peak energy (the career's
+`peak_power` takes it at retirement, [career.md](career.md)).
+
+**Clamp** (end of the day): every capped resource over its cap is cut to it, the excess
+recorded as the day's overflow; every resource below zero (left by `upkeep_epsilon`) is
+raised to zero.
+
+**New run:** resources from `starting_resources`, buildings from `starting_buildings` (owned
+and active, no land taken), then run-start bonus buildings from projects and achievements
+([career.md](career.md)).
+
+## Actions
+
+| Action | Refused when |
+|---|---|
+| `buy {building}` | unknown id, locked, at `max_count`, short of land, or can't afford the price |
+| `sell {building}` | unknown id, or none owned |
+| `set_active {building, active}` | unknown id, or `active` over the number owned |
+| `buy_land` | credits short of the price, or the price is past `Fx`'s range |
+
+A refused action changes nothing.
+
+## Params
+
+| Param | Baseline | Meaning |
+|---|---|---|
+| `starting_resources` | energy 100, land 30 | Resources at the start of every run, by id. |
+| `starting_buildings` | solar_panel 1, data_center 1 | Buildings owned and active at the start of every run. |
+| `land_base_cost` | 200 | Credits for the first land purchase. |
+| `land_cost_scaling` | 1.5 | Each land purchase multiplies the next one's price by this. |
+| `land_per_purchase` | 15 | Land gained per purchase. |
+| `upkeep_epsilon` | 0.001 | A building pays full upkeep if short by no more than this. |
+
+## Content
+
+`content/resources.json`: each resource's `cap` (null for none). `content/buildings.json`:
+`category`, `ideology`, `requires`, `land`, `cost`, `cost_scaling`, `max_count`, `produces`,
+`upkeep`, `effects` (`grant`, `store`, `speculator_decay` for demand.md) and
+`output_modifiers`.
+
+## Port notes
+
+- Conflict: land purchase. Handoffs: 15 credits, x1.5, 10 land; data: 200 credits, x1.5,
+  15 land. The engine takes the data.
+- Conflict: starting land. Data starts a run with 30 land, a Solar Panel and a Data Center;
+  the 30 is free land, and starting buildings take none.
+- Conflict: Microwave Receiver. The building requires flag `microwave_power_active` but the
+  project sets `microwave_power_completed`; the engine uses the one flag
+  `microwave_power_completed` (else unreachable). Handoffs say it produces energy; the data
+  has no production (it enables Buy Power, programs.md). The engine takes the data.
+- Conflict: Arbitrage Engine. Its content effect `spec_decay` 2.0 disagrees with
+  `game_config`'s 0.04 per building; the engine uses the flat 0.04 (demand.md), and the
+  content effect `speculator_decay` is a marker.
+- Conflict: the data's Arbitrage Engine requires research `market_analysis`, which is not a
+  research id (Market Analysis is a category); the engine requires `market_awareness`.
+- Candidate: starting buildings take no land and selling one refunds none; they still count
+  toward the price (the second Solar Panel costs 30 credits, as in Godot's opening).
+- Candidate: peak power is gross energy buildings made in a day.
+- Candidate: a new Data Center's processor starts unassigned; losing processors unassigns
+  from the last program first.
+- Candidate: cost curves use exact whole powers (`Fx::pow_int`), not `libm::pow` then floor
+  (1.15² = 1.3225, not 1.322499); see [the rounding rule](README.md).

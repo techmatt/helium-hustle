@@ -1,6 +1,7 @@
-// Native = wasm parity check: plays the golden game through the wasm build's JSON
-// API and checks it reaches the golden fingerprint `golden_game` pins natively
-// (crates/hh-core/src/tests/mod.rs), then replays its record in wasm.
+// Native = wasm parity check: plays the golden game in wasm (the wasm build's own copy of
+// hh-core's driver, `play_golden`) and checks it reaches the golden fingerprint
+// `golden_game` pins natively (crates/hh-core/src/tests/mod.rs); then plays the same
+// record again step by step through the JSON API (new_game, advance, apply) and replays it.
 // Usage (after `wasm-pack build crates/hh-wasm --target web`):
 //   node scripts/wasm-smoke.mjs            exit 0 ok, 1 on any mismatch
 import { readFileSync } from 'node:fs';
@@ -8,14 +9,13 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 
 // Must equal GOLDEN_* in crates/hh-core/src/tests/mod.rs (a fast-lane test checks it).
-const GOLDEN_REVISION = 1;
-const GOLDEN_FINGERPRINT = '36d8cc14b1f9de2a';
-const GOLDEN_CONTENT_HASH = '8f392297a9a3af48';
-// The golden game (crates/hh-core/src/driver.rs): baseline, seed u64::MAX,
-// 2000 ticks, every 7 ticks buy each affordable building in view order.
+const GOLDEN_REVISION = 2;
+const GOLDEN_FINGERPRINT = '9a841070021b71f0';
+const GOLDEN_CONTENT_HASH = '38f4e713790969a6';
+// The golden game (crates/hh-core/src/driver.rs): baseline, seed u64::MAX, 2000 ticks of
+// the scripted policy.
 const SEED = '18446744073709551615';
 const TICKS = 2000;
-const EVERY = 7;
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const pkg = path.join(root, 'crates', 'hh-wasm', 'pkg');
@@ -31,39 +31,28 @@ const check = (ok, what) => {
 const cfg = readFileSync(path.join(root, 'configs', 'baseline.json'), 'utf8');
 const resolved = JSON.parse(m.resolve_config(cfg));
 
-let state = m.new_game(cfg, SEED, '');
-const actions = [];
-let tick = 0;
-while (tick < TICKS) {
-  const n = Math.min(EVERY, TICKS - tick);
-  state = m.advance(state, n);
-  tick += n;
-  const count = JSON.parse(m.view(state)).buildings.length;
-  for (let i = 0; i < count; i++) {
-    const b = JSON.parse(m.view(state)).buildings[i]; // re-read after each buy
-    if (b.affordable) {
-      state = m.apply(state, JSON.stringify(b.buy));
-      actions.push({ tick, action: b.buy });
-    }
-  }
-}
-const fp = m.fingerprint(state);
+const golden = JSON.parse(m.play_golden(cfg));
+const record = golden.record;
 check(m.rules_revision() === GOLDEN_REVISION, `rules revision ${m.rules_revision()} (golden ${GOLDEN_REVISION})`);
-check(fp === GOLDEN_FINGERPRINT, `golden fingerprint ${fp} (native ${GOLDEN_FINGERPRINT}), ${actions.length} buys`);
+check(golden.fingerprint === GOLDEN_FINGERPRINT, `golden fingerprint ${golden.fingerprint} (native ${GOLDEN_FINGERPRINT}), ${record.actions.length} actions`);
 check(m.content_hash() === GOLDEN_CONTENT_HASH, `content hash ${m.content_hash()} (golden ${GOLDEN_CONTENT_HASH})`);
+check(record.seed === SEED && record.ticks === TICKS, `golden record: seed ${record.seed}, ${record.ticks} ticks`);
 
-const record = {
-  format: 'hh-record/1',
-  rules_revision: m.rules_revision(),
-  config: resolved.config,
-  seed: SEED,
-  scenario: null,
-  actions,
-  ticks: TICKS,
-  fingerprint: fp,
-};
+// The same actions through the JSON API, one call at a time.
+let state = m.new_game(cfg, SEED, '');
+let tick = 0;
+for (const { tick: at, action } of record.actions) {
+  if (at > tick) state = m.advance(state, at - tick);
+  tick = at;
+  state = m.apply(state, JSON.stringify(action));
+}
+state = m.advance(state, TICKS - tick);
+check(m.fingerprint(state) === golden.fingerprint, 'the record played through new_game / advance / apply');
+const view = JSON.parse(m.view(state));
+check(view.tick === TICKS && view.resources.length > 0 && view.buildings.length > 0, `view at tick ${view.tick}`);
+
 const replayed = JSON.parse(m.replay(JSON.stringify(record)));
-check(replayed.fingerprint === fp && replayed.warnings.length === 0, 'record replays in wasm');
+check(replayed.fingerprint === golden.fingerprint && replayed.warnings.length === 0, 'record replays in wasm');
 check(m.config_hash(state) === resolved.hash, 'config hash');
 
 const throws = (f, pattern, what) => {
@@ -75,7 +64,7 @@ const throws = (f, pattern, what) => {
   }
 };
 throws(() => m.apply(m.new_game(cfg, '1', ''), JSON.stringify({ type: 'buy', building: 'fusion' })), /unknown building/, 'illegal action throws');
-throws(() => m.resolve_config(cfg.replace('"energy_cap"', '"energy_capp"')), /energy_cap: missing/, 'bad config names the key');
+throws(() => m.resolve_config(cfg.replace('"land_base_cost"', '"land_base_costs"')), /land_base_cost: missing/, 'bad config names the key');
 throws(() => m.new_game(cfg, '-1', ''), /bad seed/, 'bad seed throws');
 
 for (const s of JSON.parse(m.scenarios())) {

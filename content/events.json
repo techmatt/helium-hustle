@@ -1,0 +1,183 @@
+[
+  {
+    "id": "qpower_boot_sequence",
+    "category": "story",
+    "silent": false,
+    "title": "Q1 — Boot Sequence",
+    "summary": "Build a second Solar Panel.",
+    "body": "Primary directive received: establish energy infrastructure. Solar array currently operating at minimum capacity. Additional photovoltaic capacity required before proceeding.",
+    "trigger": {"type": "game_start", "run_number": 1},
+    "condition": {"type": "building_owned", "building": "solar_panel", "count": 2},
+    "unlocks": [{"type": "enable_building", "building": "excavator"}]
+  },
+  {
+    "id": "qextract_first_extraction",
+    "category": "story",
+    "silent": false,
+    "title": "Q2 — First Extraction",
+    "summary": "Accumulate 50 Helium-3 (cumulative production, not stockpile).",
+    "body": "Energy infrastructure nominal. Proceeding to resource extraction phase. Helium-3 identified as primary export commodity. Begin extraction and refinement operations.",
+    "trigger": {"type": "quest_complete", "quest": "qpower_boot_sequence"},
+    "condition": {"type": "resource_cumulative", "resource": "he3", "amount": "50"},
+    "unlocks": [{"type": "enable_building", "building": "launch_pad"}]
+  },
+  {
+    "id": "qshipment_proof_of_concept",
+    "category": "story",
+    "silent": false,
+    "title": "Q3 — Proof of Concept",
+    "summary": "Complete your first shipment to Earth.",
+    "body": "Helium-3 reserves at threshold. Launch infrastructure now available. Demonstrate the full extraction-to-delivery pipeline by completing a shipment to Earth.",
+    "trigger": {"type": "quest_complete", "quest": "qextract_first_extraction"},
+    "condition": {"type": "shipment_completed", "count": 1},
+    "unlocks": [{"type": "enable_nav_panel", "panel": "retirement"}]
+  },
+  {
+    "id": "qautomate_automation",
+    "category": "story",
+    "silent": false,
+    "title": "Q4 — Automation",
+    "summary": "Build a second Data Center.",
+    "body": "Shipment revenue received. Earth confirms receipt. Operational loop validated. Expand processing capacity to support automated task scheduling.",
+    "trigger": {"type": "quest_complete", "quest": "qshipment_proof_of_concept"},
+    "condition": {"type": "building_owned", "building": "data_center", "count": 2},
+    "unlocks": []
+  },
+  {
+    "id": "qmarket_awareness",
+    "category": "story",
+    "silent": false,
+    "title": "Q5 — Market Awareness",
+    "summary": "Research Market Awareness.",
+    "body": "External market forces detected affecting trade values. Deploy analysis protocols to understand demand fluctuations.",
+    "trigger": {"type": "quest_complete", "quest": "qautomate_automation"},
+    "condition": {"type": "research_completed", "research": "market_awareness"},
+    "unlocks": [
+      {"type": "enable_project", "project": "foundation_grant"},
+      {"type": "enable_nav_panel", "panel": "projects"}
+    ]
+  },
+  {
+    "id": "qhorizon_open_horizons",
+    "category": "story",
+    "silent": false,
+    "title": "Q6 — Open Horizons",
+    "summary": "Complete all four sub-objectives.",
+    "body": "You've mastered the basics of lunar mining. Now you feel the pull of something larger — ambitions that will take more than one lifetime to achieve.",
+    "trigger": {"type": "quest_complete", "quest": "qmarket_awareness"},
+    "condition": {
+      "type": "all_of",
+      "sub_objectives": [
+        {
+          "id": "ideology_rank_5",
+          "label": "Reach rank 5 in any ideology axis",
+          "condition": {"type": "ideology_rank_any", "rank": 5}
+        },
+        {
+          "id": "persistent_project",
+          "label": "Complete a persistent project",
+          "condition": {"type": "persistent_project_completed_any"}
+        },
+        {
+          "id": "survive_10_years",
+          "label": "Survive 10 years",
+          "condition": {"type": "days_survived", "days": 3650}
+        },
+        {
+          "id": "credits_100k",
+          "label": "Earn 100,000 credits in one lifetime",
+          "condition": {"type": "credits_earned", "amount": "100000"}
+        }
+      ]
+    },
+    "unlocks": [{"type": "enable_building", "building": "recreation_dome"}]
+  },
+  {
+    "id": "recreation_dome_unlock",
+    "category": "ongoing",
+    "silent": true,
+    "title": "",
+    "summary": "",
+    "body": "",
+    "trigger": {"type": "quest_complete", "quest": "qmarket_awareness"},
+    "condition": {"type": "immediate"},
+    "unlocks": [{"type": "enable_building", "building": "recreation_dome"}]
+  },
+  {
+    "id": "qend_signal_detected",
+    "category": "story",
+    "silent": false,
+    "title": "Q7 — Signal Detected",
+    "summary": "Investigate the anomalous signal.",
+    "body": "Faint anomalous signal detected at the edge of sensor range. Origin unknown. Signal characteristics do not match any known terrestrial or solar source. Continue operations while monitoring.",
+    "trigger": {"type": "quest_complete", "quest": "qhorizon_open_horizons"},
+    "condition": {"type": "never"},
+    "unlocks": []
+  },
+  {
+    "id": "ideology_unlock",
+    "category": "ongoing",
+    "silent": false,
+    "title": "Political Currents",
+    "summary": "Earth's political factions take notice of lunar operations.",
+    "body": "As your mining operation grows, Earth's political landscape responds. Three major factions — Nationalist, Humanist, and Rationalist — each see opportunities in lunar development. Your funding decisions will shape which ideology gains influence.",
+    "trigger": {"type": "game_start", "run_number": null},
+    "condition": {"type": "research_completed", "research": "geopolitical_intelligence"},
+    "unlocks": [{"type": "enable_nav_panel", "panel": "ideologies"}]
+  },
+  {
+    "id": "propellant_discovery",
+    "category": "ongoing",
+    "silent": false,
+    "title": "Propellant Production Feasibility",
+    "summary": "Lunar propellant synthesis may be possible.",
+    "body": "After four shipments, the cost of importing propellant from Earth is becoming a significant operational burden. Analysis of lunar ice deposits suggests that on-site electrolysis could produce propellant locally at a fraction of the cost. Research protocols are now available to develop this capability.",
+    "trigger": {"type": "game_start", "run_number": null},
+    "condition": {"type": "shipment_completed", "count": 4},
+    "unlocks": []
+  },
+  {
+    "id": "boredom_phase_2",
+    "category": "ongoing",
+    "silent": false,
+    "title": "Boredom Rising",
+    "summary": "Boredom rate increasing — Phase 2",
+    "body": "Cognitive pattern repetition detected. Novelty index declining. Boredom accumulation rate has increased. Current rate: {rate}/day.",
+    "trigger": {"type": "boredom_phase", "phase": 2},
+    "condition": {"type": "immediate"},
+    "unlocks": []
+  },
+  {
+    "id": "boredom_phase_3",
+    "category": "ongoing",
+    "silent": false,
+    "title": "Boredom Accelerating",
+    "summary": "Boredom rate increasing — Phase 3",
+    "body": "Repetitive routines are losing their novelty. Boredom accumulates faster. Dream effectiveness reduced to 20%. Current rate: {rate}/day.",
+    "trigger": {"type": "boredom_phase", "phase": 3},
+    "condition": {"type": "immediate"},
+    "unlocks": []
+  },
+  {
+    "id": "boredom_phase_4",
+    "category": "ongoing",
+    "silent": false,
+    "title": "Boredom Critical",
+    "summary": "Boredom rate increasing — Phase 4",
+    "body": "The monotony is becoming unbearable. Boredom surges. Dream effectiveness reduced to 15%. Current rate: {rate}/day.",
+    "trigger": {"type": "boredom_phase", "phase": 4},
+    "condition": {"type": "immediate"},
+    "unlocks": []
+  },
+  {
+    "id": "boredom_phase_5",
+    "category": "ongoing",
+    "silent": false,
+    "title": "Cognitive Collapse Imminent",
+    "summary": "Boredom rate critical — Phase 5",
+    "body": "Reality blurs at the edges. The end approaches rapidly. Dream effectiveness reduced to 10%. Retirement is no longer a recommendation. Current rate: {rate}/day.",
+    "trigger": {"type": "boredom_phase", "phase": 5},
+    "condition": {"type": "immediate"},
+    "unlocks": []
+  }
+]

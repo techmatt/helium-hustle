@@ -1,6 +1,6 @@
 //! Seeded, per-purpose random streams held in the game state.
 //!
-//! Every purpose (a name such as `"sunlight"`) gets its own ChaCha8 stream,
+//! Every purpose (a name such as `"speculators"`) gets its own ChaCha8 stream,
 //! keyed by the game seed and the FNV-1a hash of the purpose name, so a new
 //! draw in one system never shifts the numbers another sees. Each variant
 //! declares its purposes (`VariantDef::rng`); none is shared.
@@ -9,6 +9,7 @@ use rand::{RngCore, SeedableRng};
 use rand_chacha::ChaCha8Rng;
 use serde::{de::Error as _, Deserialize, Deserializer, Serialize, Serializer};
 
+use crate::fx::Fx;
 use crate::hash::{as_string, fnv1a64};
 
 /// A ChaCha8 stream; serializes as
@@ -36,6 +37,24 @@ impl Stream {
                 return x % n;
             }
         }
+    }
+
+    /// Uniform whole number in `lo..=hi`.
+    pub fn int_in(&mut self, lo: u32, hi: u32) -> u32 {
+        assert!(lo <= hi, "int_in({lo}, {hi})");
+        match (hi - lo).checked_add(1) {
+            Some(n) => lo + self.below(n),
+            None => self.0.next_u32(),
+        }
+    }
+
+    /// Uniform in `lo..=hi` in steps of `Fx::EPSILON` (a span of more than
+    /// 2^32 - 1 steps is refused).
+    pub fn fx_in(&mut self, lo: Fx, hi: Fx) -> Fx {
+        assert!(lo <= hi, "fx_in({lo}, {hi})");
+        let span = u32::try_from((hi - lo).steps()).ok().and_then(|s| s.checked_add(1));
+        let span = span.unwrap_or_else(|| panic!("fx_in({lo}, {hi}): span too wide"));
+        lo.plus_steps(self.below(span) as i64)
     }
 }
 

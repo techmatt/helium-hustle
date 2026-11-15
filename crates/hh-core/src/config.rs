@@ -26,6 +26,10 @@ use crate::modules::{self, ParamKind};
 pub enum Param {
     Int(i64),
     Fx(Fx),
+    IntList(Vec<i64>),
+    FxList(Vec<Fx>),
+    IntMap(BTreeMap<String, i64>),
+    FxMap(BTreeMap<String, Fx>),
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -49,6 +53,43 @@ impl ModuleConfig {
         match self.params.get(name) {
             Some(Param::Int(v)) => *v,
             other => panic!("param {name}: expected a checked integer, found {other:?}"),
+        }
+    }
+
+    /// A checked list of integers. (An empty list reads back from JSON as
+    /// either kind, so both empty forms are accepted.)
+    pub fn int_list(&self, name: &str) -> Vec<i64> {
+        match self.params.get(name) {
+            Some(Param::IntList(v)) => v.clone(),
+            Some(Param::FxList(v)) if v.is_empty() => Vec::new(),
+            other => panic!("param {name}: expected a checked integer list, found {other:?}"),
+        }
+    }
+
+    /// A checked list of decimals.
+    pub fn fx_list(&self, name: &str) -> Vec<Fx> {
+        match self.params.get(name) {
+            Some(Param::FxList(v)) => v.clone(),
+            Some(Param::IntList(v)) if v.is_empty() => Vec::new(),
+            other => panic!("param {name}: expected a checked decimal list, found {other:?}"),
+        }
+    }
+
+    /// A checked map of integers by content id.
+    pub fn int_map(&self, name: &str) -> BTreeMap<String, i64> {
+        match self.params.get(name) {
+            Some(Param::IntMap(v)) => v.clone(),
+            Some(Param::FxMap(v)) if v.is_empty() => BTreeMap::new(),
+            other => panic!("param {name}: expected a checked integer map, found {other:?}"),
+        }
+    }
+
+    /// A checked map of decimals by content id.
+    pub fn fx_map(&self, name: &str) -> BTreeMap<String, Fx> {
+        match self.params.get(name) {
+            Some(Param::FxMap(v)) => v.clone(),
+            Some(Param::IntMap(v)) if v.is_empty() => BTreeMap::new(),
+            other => panic!("param {name}: expected a checked decimal map, found {other:?}"),
         }
     }
 }
@@ -192,41 +233,82 @@ fn check_module(id: &str, m: &Value, errors: &mut Vec<String>) -> Option<ModuleC
     let mut out = BTreeMap::new();
     for p in vdef.params {
         let path = format!("modules.{id}.params.{}", p.name);
-        match (params.get(p.name), p.kind) {
-            (None, _) => errors.push(format!("{path}: missing")),
-            (Some(Value::String(s)), ParamKind::Fx) => match Fx::parse(s) {
-                Ok(v) => {
-                    out.insert(p.name.to_string(), Param::Fx(v));
+        let Some(v) = params.get(p.name) else {
+            errors.push(format!("{path}: missing"));
+            continue;
+        };
+        match parse_param(v, p.kind) {
+            Ok(val) => {
+                if let Some((lo, hi)) = p.range {
+                    if !in_range(&val, lo, hi) {
+                        errors.push(format!("{path}: out of range {lo}..={hi}"));
+                        continue;
+                    }
                 }
-                Err(e) => errors.push(format!("{path}: {e}")),
-            },
-            (Some(v), ParamKind::Int) if v.is_i64() => {
-                out.insert(p.name.to_string(), Param::Int(v.as_i64().expect("checked")));
+                out.insert(p.name.to_string(), val);
             }
-            (Some(_), ParamKind::Fx) => {
-                errors.push(format!("{path}: expected a decimal string such as \"1.5\""))
-            }
-            (Some(_), ParamKind::Int) => errors.push(format!("{path}: expected an integer")),
-        }
-    }
-    for p in vdef.params {
-        if let (Some(v), Some((lo, hi))) = (out.get(p.name), p.range) {
-            let ok = match v {
-                Param::Fx(x) => {
-                    Fx::parse(lo).expect("range bound") <= *x && *x <= Fx::parse(hi).expect("range bound")
-                }
-                Param::Int(i) => {
-                    lo.parse::<i64>().expect("range bound") <= *i
-                        && *i <= hi.parse::<i64>().expect("range bound")
-                }
-            };
-            if !ok {
-                errors.push(format!("modules.{id}.params.{}: out of range {lo}..={hi}", p.name));
-            }
+            Err(e) => errors.push(format!("{path}: {e}")),
         }
     }
     (errors.len() == before).then_some(ModuleConfig {
         variant,
         params: out,
     })
+}
+
+fn parse_fx(v: &Value) -> Result<Fx, String> {
+    match v {
+        Value::String(s) => Fx::parse(s),
+        _ => Err("expected a decimal string such as \"1.5\"".into()),
+    }
+}
+
+fn parse_int(v: &Value) -> Result<i64, String> {
+    v.as_i64().ok_or_else(|| "expected an integer".to_string())
+}
+
+fn parse_list<T>(v: &Value, each: fn(&Value) -> Result<T, String>) -> Result<Vec<T>, String> {
+    let Value::Array(a) = v else {
+        return Err("expected a list".into());
+    };
+    a.iter()
+        .enumerate()
+        .map(|(i, x)| each(x).map_err(|e| format!("[{i}]: {e}")))
+        .collect()
+}
+
+fn parse_map<T>(v: &Value, each: fn(&Value) -> Result<T, String>) -> Result<BTreeMap<String, T>, String> {
+    let Value::Object(o) = v else {
+        return Err("expected an object".into());
+    };
+    o.iter()
+        .map(|(k, x)| each(x).map(|t| (k.clone(), t)).map_err(|e| format!("{k}: {e}")))
+        .collect()
+}
+
+fn parse_param(v: &Value, kind: ParamKind) -> Result<Param, String> {
+    Ok(match kind {
+        ParamKind::Fx => Param::Fx(parse_fx(v)?),
+        ParamKind::Int => Param::Int(parse_int(v)?),
+        ParamKind::FxList => Param::FxList(parse_list(v, parse_fx)?),
+        ParamKind::IntList => Param::IntList(parse_list(v, parse_int)?),
+        ParamKind::FxMap => Param::FxMap(parse_map(v, parse_fx)?),
+        ParamKind::IntMap => Param::IntMap(parse_map(v, parse_int)?),
+    })
+}
+
+/// Every value (each element of a list or map) within `lo..=hi`.
+fn in_range(v: &Param, lo: &str, hi: &str) -> bool {
+    let fx = |x: &Fx| Fx::parse(lo).expect("range bound") <= *x && *x <= Fx::parse(hi).expect("range bound");
+    let int = |i: &i64| {
+        lo.parse::<i64>().expect("range bound") <= *i && *i <= hi.parse::<i64>().expect("range bound")
+    };
+    match v {
+        Param::Fx(x) => fx(x),
+        Param::Int(i) => int(i),
+        Param::FxList(l) => l.iter().all(fx),
+        Param::IntList(l) => l.iter().all(int),
+        Param::FxMap(m) => m.values().all(fx),
+        Param::IntMap(m) => m.values().all(int),
+    }
 }

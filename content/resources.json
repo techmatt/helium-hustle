@@ -1,4 +1,14 @@
 [
-  { "id": "credits", "name": "Credits" },
-  { "id": "energy", "name": "Energy" }
+  {"id": "energy", "name": "Energy", "cap": "100", "always_visible": true},
+  {"id": "regolith", "name": "Regolith", "cap": "50", "always_visible": true},
+  {"id": "ice", "name": "Ice", "cap": "30", "always_visible": false},
+  {"id": "he3", "name": "Helium-3", "cap": "20", "always_visible": false},
+  {"id": "titanium", "name": "Titanium", "cap": "20", "always_visible": true},
+  {"id": "circuits", "name": "Circuit Boards", "cap": "10", "always_visible": false},
+  {"id": "propellant", "name": "Propellant", "cap": "30", "always_visible": false},
+  {"id": "credits", "name": "Credits", "cap": null, "always_visible": true},
+  {"id": "science", "name": "Science", "cap": null, "always_visible": false},
+  {"id": "land", "name": "Land", "cap": null, "always_visible": true},
+  {"id": "boredom", "name": "Boredom", "cap": null, "always_visible": true},
+  {"id": "processors", "name": "Processors", "cap": null, "always_visible": true}
 ]

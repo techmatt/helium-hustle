@@ -31,8 +31,9 @@ npm run preview                 # serve web/dist/
 `npm run e2e` (`scripts/e2e.mjs`) drives headless Edge or Chrome over the DevTools
 protocol (no packages) against a served page: `HH_URL` (default
 `http://localhost:5173/`), `HH_BROWSER` for a browser off the usual paths. It checks each
-speed's days per second, pause, a buy, a reload keeping the save, a save from another
-revision discarded with its notice, a debug-menu scenario and the replay check. About
+speed's days per second, pause, a Solar Panel buy (in the `rich` scenario: a fresh game
+can't afford one), a reload keeping the save, a save from another revision discarded with
+its notice, debug-menu scenarios, a command set on Program 1 and the replay check. About
 25 s. Against a snapshot rather than the dev server: `npm run build && npx vite preview
 --port 61873 --strictPort`, then `HH_URL=http://localhost:61873/ npm run e2e`.
 
@@ -48,8 +49,14 @@ revision discarded with its notice, a debug-menu scenario and the replay check. 
   a second or less) the page runs the ticks owed for the wall time since the last wake at
   the current speed, so a background tab catches up. Closing the page pauses the game:
   there is no offline progress.
+- **A minimal Arc 1 page** (the real UI is a later item): the day and run, the active
+  quest, the resources and buildings the engine marks visible, and **Program 1**.
 - **Buy:** each building's button shows its next price and is enabled when the engine says
-  it is affordable. An action applies between ticks, stamped with the current tick.
+  it can be bought now. An action applies between ticks, stamped with the current tick.
+- **Program 1:** a button per visible command sets Program 1 to run it, one step per
+  processor per day (a fresh game puts its one processor there). Sell Cloud Compute is the
+  way to first credits. Other programs, research, pads, projects and retirement have no
+  controls yet.
 - **Autosave:** `localStorage` key `hh.save`, written at most once a second while
   ticking, on every action and speed change, and when the page is hidden or closed. It
   holds the state, the game's record (seed, scenario, stamped actions) and the speed,

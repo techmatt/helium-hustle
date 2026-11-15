@@ -101,12 +101,14 @@ function renderSpeeds(): void {
 
 function render(): void {
   const v: View = engine.view(game.state);
-  $('day').textContent = `Day ${v.tick.toLocaleString('en-US')}`;
+  $('day').textContent = `Day ${v.day.toLocaleString('en-US')}`;
+  $('run').textContent = `Run ${v.run}`;
+  $('quest').textContent = v.quest ? `${v.quest.title}: ${v.quest.summary}` : '';
   for (const b of $('speeds').querySelectorAll('button')) {
     b.setAttribute('aria-pressed', String(Number(b.dataset.speed) === clock.speed));
   }
   $('resources').replaceChildren(
-    ...v.resources.map((r) => {
+    ...v.resources.filter((r) => r.visible).map((r) => {
       const tr = document.createElement('tr');
       const cap = r.cap === null ? '' : ` / ${fmt(r.cap)}`;
       tr.innerHTML = `<td></td><td></td><td class="rate"></td>`;
@@ -118,9 +120,10 @@ function render(): void {
     }),
   );
   $('buildings').replaceChildren(
-    ...v.buildings.map((b) => {
+    ...v.buildings.filter((b) => b.visible || b.owned > 0).map((b) => {
       const div = document.createElement('div');
       div.className = 'building';
+      div.dataset.id = b.id;
       const btn = document.createElement('button');
       btn.type = 'button';
       const price = Object.entries(b.cost)
@@ -128,11 +131,30 @@ function render(): void {
         .join(', ');
       btn.textContent = `Buy ${b.name} (${price})`;
       btn.disabled = !b.affordable;
-      btn.onclick = () => buy(b.buy);
+      btn.onclick = () => act(b.buy);
       const owned = document.createElement('span');
       owned.textContent = `${b.owned} owned`;
       div.append(btn, owned);
       return div;
+    }),
+  );
+  // Program 1 runs one command, chosen here; the full program editor is a later item.
+  const program = v.programs[0];
+  const running = program?.entries[0]?.command;
+  const name = (id: string | undefined) => v.commands.find((c) => c.id === id)?.name ?? id;
+  $('program').textContent = running
+    ? `Running ${name(running)} on ${program.processors} processor(s).`
+    : `Idle: pick a command for ${program?.processors ?? 0} processor(s).`;
+  $('commands').replaceChildren(
+    ...v.commands.filter((c) => c.visible).map((c) => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.textContent = c.name;
+      btn.dataset.id = c.id;
+      btn.disabled = !c.unlocked;
+      btn.setAttribute('aria-pressed', String(c.id === running));
+      btn.onclick = () => act({ type: 'set_program', program: 0, entries: [{ command: c.id, count: 1 }] });
+      return btn;
     }),
   );
   $('debug-info').textContent =
@@ -141,7 +163,7 @@ function render(): void {
     `${game.actions.length} actions · fingerprint ${engine.fingerprint(game.state)}`;
 }
 
-function buy(action: Stamped['action']): void {
+function act(action: Stamped['action']): void {
   clock.wake(); // settle the ticks owed so the action lands between the right ticks
   try {
     game.state = engine.apply(game.state, action);

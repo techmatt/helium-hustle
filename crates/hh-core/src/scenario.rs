@@ -17,7 +17,7 @@ use std::sync::OnceLock;
 
 use crate::content::content;
 use crate::fx::Fx;
-use crate::state::GameState;
+use crate::state::{GameState, Holding};
 
 const FILES: &[(&str, &str)] = &[
     ("rich.json", include_str!("../../../scenarios/rich.json")),
@@ -68,17 +68,31 @@ impl Scenario {
         }
     }
 
+    /// Lays the start over a new game: the tick (and the run's day), resources
+    /// and buildings (owned and active); processors gained go to the first program.
     pub(crate) fn apply_to(&self, g: &mut GameState) {
         g.tick = self.start.tick;
+        g.run.day = self.start.tick;
+        // The run's schedules start from the scenario's day, not day 0.
+        g.run.next_burst_day += self.start.tick;
+        for d in g.run.rival_next.values_mut() {
+            *d += self.start.tick;
+        }
         for (r, &v) in &self.start.resources {
-            g.resources.insert(r.clone(), v);
+            g.run.resources.insert(r.clone(), v);
         }
         for (b, &n) in &self.start.buildings {
             if n == 0 {
-                g.buildings.remove(b);
+                g.run.buildings.remove(b);
             } else {
-                g.buildings.insert(b.clone(), n);
+                g.run.buildings.insert(b.clone(), Holding { owned: n, active: n, bonus: 0, free: n });
+                g.career.owned_buildings.insert(b.clone());
             }
+        }
+        crate::modules::economy::refresh(g);
+        let free = crate::modules::programs::processors(g) - crate::modules::programs::assigned(g);
+        if let Some(p) = g.run.programs.first_mut() {
+            p.processors += free;
         }
     }
 }

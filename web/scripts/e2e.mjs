@@ -1,7 +1,7 @@
 // Browser check: drives headless Edge or Chrome over the DevTools protocol (no
-// packages) against a served page. Checks each speed ticks at its rate, buying, the
-// autosave surviving a reload, a revision-mismatch save discarded, a scenario started
-// from the debug menu and the replay check.
+// packages) against a served page. Checks each speed ticks at its rate, buying (in the
+// rich scenario), the autosave surviving a reload, a revision-mismatch save discarded,
+// scenarios started from the debug menu, a command set on program 1 and the replay check.
 //   HH_URL      the page (default http://localhost:5173/)
 //   HH_BROWSER  a browser off the usual paths
 //   HH_PROFILE  browser profile dir (default ../out/e2e-profile, wiped first)
@@ -68,7 +68,8 @@ const evaluate = async (expr) => {
   return r.result?.result?.value;
 };
 const day = async () => Number((await evaluate(`document.getElementById('day').textContent`)).replace(/\D/g, ''));
-const owned = () => evaluate(`document.querySelector('.building span')?.textContent ?? ''`);
+const PANEL = '.building[data-id="solar_panel"]';
+const owned = () => evaluate(`document.querySelector('${PANEL} span')?.textContent ?? ''`);
 const noticeText = () => evaluate(`document.getElementById('notice').hidden ? '' : document.getElementById('notice').textContent`);
 const click = (selector) => evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`);
 const waitFor = async (expr, what, ms = 10000) => {
@@ -94,6 +95,10 @@ try {
   await send('Page.enable');
   await load(url);
   check(true, `page loads: ${await day()}`);
+  // A fresh game can't afford a building: the rich scenario can.
+  await evaluate(`document.getElementById('scenario').value = 'rich'`);
+  await click('#start-scenario');
+  check((await day()) === 0 && /Started scenario rich/.test(await noticeText()), 'debug menu starts scenario rich');
   // Each speed's rate, measured over wall time (loose bounds: timers jitter).
   for (const [speed, label, secs] of [[1, '1x', 3], [3, '3x', 2], [10, '10x', 2], [50, '50x', 1], [200, '200x', 1]]) {
     await click(`#speeds button[data-speed="${speed}"]`);
@@ -107,10 +112,10 @@ try {
   const paused = await day();
   await sleep(1200);
   check((await day()) === paused, 'pause holds the day');
-  const enabled = await evaluate(`!document.querySelector('.building button').disabled`);
-  check(enabled, 'Solar Panel affordable after a few hundred days');
+  const enabled = await evaluate(`!document.querySelector('${PANEL} button').disabled`);
+  check(enabled, 'Solar Panel affordable in the rich scenario');
   const before = await owned();
-  await click('.building button');
+  await click(`${PANEL} button`);
   const after = await owned();
   check(before !== after && /\d+ owned/.test(after), `buy: ${before} -> ${after}`);
   const savedDay = await day();
@@ -132,6 +137,11 @@ try {
   check((await day()) === 100 && /20 owned/.test(await owned()), 'debug menu starts scenario at_cap');
   await click('#speeds button[data-speed="50"]');
   await sleep(1000);
+  await click('#speeds button[data-speed="0"]');
+  await click('#commands button[data-id="cloud_compute"]');
+  check(/Running Sell Cloud Compute/.test(await evaluate(`document.getElementById('program').textContent`)), 'a command runs on program 1');
+  await click('#speeds button[data-speed="50"]');
+  await sleep(500);
   await click('#speeds button[data-speed="0"]');
   await click('.building button:not([disabled])').catch(() => {});
   await click('#check-replay');

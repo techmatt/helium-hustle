@@ -14,6 +14,18 @@ pub fn fnv1a64(bytes: &[u8]) -> u64 {
     h
 }
 
+/// A lattice hash for gradient noise: FNV-1a over the three words'
+/// little-endian bytes. Deterministic everywhere; not a random stream.
+pub fn lattice(key: u64, octave: u64, i: i64) -> u64 {
+    let mut bytes = [0u8; 24];
+    bytes[..8].copy_from_slice(&key.to_le_bytes());
+    bytes[8..16].copy_from_slice(&octave.to_le_bytes());
+    bytes[16..].copy_from_slice(&i.to_le_bytes());
+    // FNV-1a's low bits mix poorly on short inputs: fold the high half in.
+    let h = fnv1a64(&bytes);
+    h ^ (h >> 29)
+}
+
 /// A hash as 16 lowercase hex digits.
 pub fn hex(h: u64) -> String {
     format!("{h:016x}")
