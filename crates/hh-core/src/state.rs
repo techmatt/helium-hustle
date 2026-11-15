@@ -8,6 +8,7 @@
 
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, BTreeSet};
+use std::sync::Arc;
 
 use crate::config::Config;
 use crate::fx::Fx;
@@ -19,8 +20,10 @@ use crate::rng::Stream;
 pub struct GameState {
     #[serde(with = "as_string")]
     pub seed: u64,
-    /// The resolved config this game plays under.
-    pub config: Config,
+    /// The resolved config this game plays under. Shared, never changed in
+    /// play: the view and `Rules::apply` copy the state often, and a deep copy
+    /// of the config was a third of each copy. Its JSON is the config's.
+    pub config: Arc<Config>,
     /// Ticks elapsed over the whole career (1 tick = 1 in-game day). Records
     /// stamp actions with it; the run's own day count is `run.day`.
     pub tick: u64,

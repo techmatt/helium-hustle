@@ -252,11 +252,18 @@ pub fn land_price(r: &Rules, g: &GameState) -> Fx {
     factor.and_then(|f| p.land_base_cost.checked_mul(f)).unwrap_or(Fx::MAX)
 }
 
-pub fn buy_land(r: &Rules, g: &mut GameState) -> Result<(), String> {
+/// Why Buy Land wouldn't apply now, if it wouldn't (the view's `can_buy_land`,
+/// without playing the action on a copy of the state).
+pub fn land_blocker(r: &Rules, g: &GameState) -> Option<String> {
     let price = land_price(r, g);
-    if price == Fx::MAX || g.amount(CREDITS) < price {
-        return Err("buy land: can't afford it".into());
+    (price == Fx::MAX || g.amount(CREDITS) < price).then(|| "buy land: can't afford it".into())
+}
+
+pub fn buy_land(r: &Rules, g: &mut GameState) -> Result<(), String> {
+    if let Some(e) = land_blocker(r, g) {
+        return Err(e);
     }
+    let price = land_price(r, g);
     *g.run.resources.get_mut(CREDITS).expect("content has credits") -= price;
     g.add(LAND, r.p.economy.land_per_purchase);
     g.run.land_bought += 1;

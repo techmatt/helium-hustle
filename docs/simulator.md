@@ -23,12 +23,12 @@ careers in game time, against the targets in [principles.md](principles.md); a h
 projects real minutes on the side.
 
 ```sh
-$S ladder                                     # the ladder: experiments/ladder.json (~20 s on 6 threads)
+$S ladder                                     # the ladder: experiments/ladder.json (~11 s on 6 threads)
 $S ladder --agents author --humans mixed --seeds 8 --retirements 5   # any slice of it
 $S experiment experiments/balance.json --out out/b   # any spec
 $S compare --config-b configs/other.json      # two configs, paired on the same seeds
 $S compare --set boredom.base_cap=500         # a param (or module.variant=name) against the base
-$S balance                                    # the judge's missed targets, as balance: lines (~7 s)
+$S balance                                    # the judge's missed targets, as balance: lines (~5 s)
 $S trace --agents author --retirements 2      # one career: actions, the agent's notes (#), milestones
 $S agents                                     # the ladder's rungs
 $S speed                                      # native engine speed
@@ -123,9 +123,9 @@ sides' tables; `--out` writes `compare.md`.
 After the tables, the engine's own speed natively and, when `crates/hh-wasm/pkg` is built and
 `node` runs, in wasm (`scripts/wasm-speed.mjs`).
 
-**Costs** (this machine, idle): the ladder (4 players × 3 seeds, careers of 20 retirements, 12 games) about 20 s on 6
-threads, set by the author's careers; the same at 5 seeds about 35 s; `balance` (4 careers)
-about 7 s; `vs-human` on a 1,600-tick log about a second. A career plays 2,000-15,000 ticks a
+**Costs** (this machine, idle): the ladder (4 players × 3 seeds, careers of 20 retirements, 12 games) about 11 s on 6
+threads, set by the author's careers; the same at 5 seeds about 18 s; `balance` (4 careers)
+about 5 s; `vs-human` on a 1,600-tick log about a second. A career plays 4,000-20,000 ticks a
 second, slower the more often its player looks (random and the author every 5-10 ticks,
 the casual author every ~130).
 

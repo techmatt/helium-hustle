@@ -47,7 +47,7 @@ impl Rules {
         }
         let mut g = GameState {
             seed,
-            config: self.config.clone(),
+            config: std::sync::Arc::new(self.config.clone()),
             tick: 0,
             career: Career { run_number: 1, ..Career::default() },
             run: Run::default(),
@@ -144,7 +144,7 @@ impl Rules {
     /// A state fits these rules: its config is this one and it holds every
     /// content resource and declared RNG stream.
     pub fn check_state(&self, g: &GameState) -> Result<(), String> {
-        if g.config != self.config {
+        if *g.config != self.config {
             return Err("state: its config differs from the rules'".into());
         }
         for r in &content().resources {

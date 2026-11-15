@@ -92,7 +92,7 @@ impl Builder {
         let mut starved: BTreeMap<&str, bool> = BTreeMap::new();
         for b in &v.buildings {
             if b.active > 0 && b.stall == Some(hh_core::state::Stall::InputStarved) {
-                for (res, need) in &b.upkeep {
+                for (res, need) in b.upkeep {
                     let short = amount(v, res) < need.mul_int(b.active as i64);
                     if short {
                         starved.insert(res.as_str(), true);
@@ -122,7 +122,7 @@ impl Builder {
                 s += s * self.starved / 100;
             }
             if s > 0 {
-                out.push((b.id.clone(), s));
+                out.push((b.id.to_string(), s));
             }
         }
         out.sort_by_key(|x| std::cmp::Reverse(x.1));
@@ -315,9 +315,9 @@ impl Agent for Greedy {
         }
         // The cheapest affordable research.
         let v = p.view();
-        let cheapest = v.research.iter().filter(|r| r.affordable).min_by_key(|r| r.cost).map(|r| r.id.clone());
+        let cheapest = v.research.iter().filter(|r| r.affordable).min_by_key(|r| r.cost).map(|r| r.id);
         if let Some(id) = cheapest {
-            let _ = p.apply(&Action::Research { research: id });
+            let _ = p.apply(&Action::Research { research: id.to_string() });
         }
         let v = p.view();
         let target = self.b.target(v);

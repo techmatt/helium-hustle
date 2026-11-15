@@ -20,6 +20,11 @@ npm run build                                # wasm + typecheck + static site in
 npm run preview                              # serve web/dist/
 ```
 
+- **Under a launcher that kills by pid** (conductor's `start`, a background job): `npm`
+  and `npx` start the server as a grandchild, so killing the started pid's tree can leave
+  it listening and the next start fails "port in use". Run `npm run wasm`, then start `node
+  node_modules/vite/bin/vite.js --port <p> --strictPort` so the started pid is the server
+  (what `npm run dev` runs after the wasm build), or kill by the port (`netstat -ano | grep :<p>`, then `taskkill //F //PID <pid>`).
 - **The wasm build:** `scripts/build-wasm.mjs` runs `wasm-pack build crates/hh-wasm
   --target web --release` into `web/src/wasm/` (git-ignored). `HH_WASM_PROFILE=dev` builds
   unoptimized.

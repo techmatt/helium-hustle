@@ -47,6 +47,30 @@ fn a_new_game_starts_from_the_config() {
 }
 
 #[test]
+fn the_views_can_apply_flags_agree_with_is_legal() {
+    // The view answers "would it apply" with blocker functions, not by playing the
+    // action on a copy; they must say what `apply` says.
+    let mut s = Session::new(&baseline(), 7, None).unwrap();
+    let mut checked = [0u32; 2];
+    for _ in 0..60 {
+        play(&mut s, 25, Policy::Script);
+        let (r, g) = (&s.rules, &s.state);
+        let v = r.view(g);
+        assert_eq!(v.can_buy_land, r.is_legal(g, &Action::BuyLand), "land at tick {}", g.tick);
+        for b in &v.buildings {
+            assert_eq!(b.affordable, r.is_legal(g, &buy(b.id)), "{} at tick {}", b.id, g.tick);
+            checked[0] += b.affordable as u32;
+        }
+        for x in &v.research {
+            let legal = r.is_legal(g, &Action::Research { research: x.id.into() });
+            assert_eq!(x.affordable, legal, "{} at tick {}", x.id, g.tick);
+        }
+        checked[1] += v.can_buy_land as u32;
+    }
+    assert!(checked[0] > 0 && checked[1] > 0, "the game never made a buy or Buy Land legal: {checked:?}");
+}
+
+#[test]
 fn buying_costs_resources_and_land_and_grows_the_price() {
     let r = rules();
     let mut g = r.new_game(1);
@@ -385,7 +409,7 @@ fn the_view_shows_nav_tiles_from_content_and_the_next_run() {
     let r = rules();
     let mut g = r.new_game(1);
     let shown = |g: &GameState| -> Vec<String> {
-        r.view(g).nav.into_iter().filter(|t| t.visible).map(|t| t.id).collect()
+        r.view(g).nav.into_iter().filter(|t| t.visible).map(|t| t.id.to_string()).collect()
     };
     let start = shown(&g);
     assert!(start.contains(&"buildings".to_string()) && start.contains(&"story".to_string()));
@@ -417,7 +441,7 @@ fn the_view_fills_every_text_placeholder() {
     let v = r.view(&g);
     let placeholder = |t: &str| t.split('{').skip(1).any(|rest| rest.split('}').next().is_some_and(|n| !n.is_empty() && n.chars().all(|c| c.is_ascii_lowercase() || c == '_')));
     for s in v.event_texts.iter().chain(&v.story) {
-        assert!(!placeholder(&s.body) && !placeholder(&s.title) && !placeholder(&s.summary), "{}: {}", s.id, s.body);
+        assert!(!placeholder(&s.body) && !placeholder(s.title) && !placeholder(s.summary), "{}: {}", s.id, s.body);
     }
     // Phase 2's rate is its baseline 0.2 per day (no modifiers yet).
     let p2 = v.event_texts.iter().find(|s| s.id == "boredom_phase_2").unwrap();

@@ -136,6 +136,16 @@ compute no rule; an agent reads the same view. The change per day comes from pla
 day on a copy. The view is never read by the rules and isn't in the state, fingerprint or
 replay.
 
+**Its cost.** Sim players build a view at every look (about half a ladder's CPU), so it
+borrows content text (`&'static` ids, names, descriptions, content rates; `names` built
+once) instead of copying it, and answers "can it apply" with blocker functions
+(`economy::buy_blocker`, `land_blocker`, `research::blocker`), never `Rules::is_legal`'s
+state copy; the state's config is shared (`Arc`), so a state copy doesn't copy it. What's
+left is 120-200 µs natively (it grows with the run): the day on a copy ~25-50 µs and the
+retire on a copy ~20-35 µs, both exact by construction. `cargo run --release -p hh-sim --example
+view_bench` prints a view's cost split into those parts and a digest of every view's JSON
+over the golden game: a refactor that only reshapes the view keeps the digest.
+
 ## State
 
 `GameState` (`state.rs`): the seed, the config, the career-wide `tick`, the RNG streams,

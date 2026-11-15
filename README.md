@@ -51,7 +51,7 @@ cargo test-all                               # also the slow lane's #[ignore]d t
 cargo clippy --workspace --all-targets       # must stay clean; ~7 s
 cargo run -q -p hh-sim -- run --seed 1 --ticks 365 --policy script
 cargo run -q --release -p hh-sim -- objectives reference/scenarios/run1_fresh.json   # ~0.2 s
-cargo run -q --release -p hh-sim -- ladder   # the agent ladder, 12 careers: ~20 s on 6 threads (docs/simulator.md)
+cargo run -q --release -p hh-sim -- ladder   # the agent ladder, 12 careers: ~11 s on 6 threads (docs/simulator.md)
 wasm-pack build crates/hh-wasm --target web  # -> crates/hh-wasm/pkg (git-ignored); ~22 s cold, ~5 s warm
 node scripts/wasm-smoke.mjs                  # native = wasm: needs the pkg above (not web's copy); ~1 s
 python scripts/warning_checks.py             # warning checks, incl. parity and balance (rebuilds stale builds); ~7 s, up to a minute cold

@@ -137,7 +137,7 @@ fn owned(v: &View, id: &str) -> u32 {
 fn energy_surplus(v: &View) -> Fx {
     let mut net = Fx::ZERO;
     for b in &v.buildings {
-        let Some(c) = content().building(&b.id) else { continue };
+        let Some(c) = content().building(b.id) else { continue };
         let n = b.active as i64;
         net += c.produces.get("energy").copied().unwrap_or(Fx::ZERO).mul_int(n);
         net -= c.upkeep.get("energy").copied().unwrap_or(Fx::ZERO).mul_int(n);

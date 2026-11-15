@@ -2,22 +2,31 @@
 //! (prices, rates, caps, what is affordable, unlocked or visible, the action
 //! for each), so no client computes a rule. Never read by the rules, not part
 //! of the state, the fingerprint or a replay.
+//!
+//! Content text (ids, names, descriptions, content rates) is borrowed from the
+//! embedded content (`&'static`), not copied: a view is built at every look of
+//! every sim player, and copying the text was most of its cost.
 
 use serde::Serialize;
+use std::borrow::Cow;
 use std::collections::BTreeMap;
+use std::sync::OnceLock;
 
 use crate::action::Action;
-use crate::content::{content, BuildingEffect, Condition, NavCondition, Requirement, AXES, MODIFIER_KEYS};
+use crate::content::{content, Amounts, BuildingEffect, Condition, NavCondition, Requirement, AXES, MODIFIER_KEYS};
 use crate::fx::Fx;
 use crate::modifiers::modifier;
 use crate::modules::*;
 use crate::rules::Rules;
 use crate::state::{Activity, Entry, GameState, LastRun, LineOutcome, LogEntry, Overclock, Stall};
 
+/// Text borrowed from the embedded content.
+pub type Text = &'static str;
+
 #[derive(Debug, Clone, Serialize)]
 pub struct ResourceView {
-    pub id: String,
-    pub name: String,
+    pub id: Text,
+    pub name: Text,
     pub amount: Fx,
     /// Most that can be held, if capped.
     pub cap: Option<Fx>,
@@ -28,12 +37,12 @@ pub struct ResourceView {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct BuildingView {
-    pub id: String,
-    pub name: String,
-    pub description: String,
-    pub category: String,
+    pub id: Text,
+    pub name: Text,
+    pub description: Text,
+    pub category: Text,
     /// The ideology axis whose rank discounts it, if any.
-    pub ideology: Option<String>,
+    pub ideology: Option<Text>,
     pub owned: u32,
     pub active: u32,
     pub bonus: u32,
@@ -46,13 +55,13 @@ pub struct BuildingView {
     pub short: Vec<String>,
     /// What one active copy makes and uses per day (content rates, before
     /// modifiers and overclocks), and the caps it raises.
-    pub produces: BTreeMap<String, Fx>,
-    pub upkeep: BTreeMap<String, Fx>,
-    pub stores: BTreeMap<String, Fx>,
+    pub produces: &'static Amounts,
+    pub upkeep: &'static Amounts,
+    pub stores: BTreeMap<Text, Fx>,
     /// Resources one active copy grants (processors).
-    pub grants: BTreeMap<String, Fx>,
+    pub grants: BTreeMap<Text, Fx>,
     /// What unlocks it (content).
-    pub requires: Requirement,
+    pub requires: &'static Requirement,
     /// Buyable now (unlocked, land, price, limit).
     pub affordable: bool,
     /// It owns as many as its limit allows.
@@ -67,9 +76,9 @@ pub struct BuildingView {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct CommandView {
-    pub id: String,
-    pub name: String,
-    pub description: String,
+    pub id: Text,
+    pub name: Text,
+    pub description: Text,
     pub unlocked: bool,
     pub visible: bool,
     pub costs: BTreeMap<String, Fx>,
@@ -118,13 +127,13 @@ pub struct MarketView {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ResearchView {
-    pub id: String,
-    pub name: String,
-    pub description: String,
-    pub category: String,
+    pub id: Text,
+    pub name: Text,
+    pub description: Text,
+    pub category: Text,
     pub cost: Fx,
     /// Research it needs first, if any.
-    pub requires: Option<String>,
+    pub requires: Option<Text>,
     pub done: bool,
     pub visible: bool,
     pub affordable: bool,
@@ -142,13 +151,13 @@ pub struct AxisView {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ProjectView {
-    pub id: String,
-    pub name: String,
-    pub description: String,
-    pub tier: String,
+    pub id: Text,
+    pub name: Text,
+    pub description: Text,
+    pub tier: Text,
     pub unlocked: bool,
     pub completed: bool,
-    pub costs: BTreeMap<String, Fx>,
+    pub costs: &'static Amounts,
     pub progress: BTreeMap<String, Fx>,
     pub rates: BTreeMap<String, Fx>,
     /// The most a rate may be (per resource, per day).
@@ -164,18 +173,18 @@ pub struct ProgressView {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct SubObjectiveView {
-    pub id: String,
-    pub label: String,
+    pub id: Text,
+    pub label: Text,
     pub done: bool,
     pub progress: Option<ProgressView>,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct QuestView {
-    pub id: String,
-    pub title: String,
-    pub summary: String,
-    pub body: String,
+    pub id: Text,
+    pub title: Text,
+    pub summary: Text,
+    pub body: Text,
     pub progress: Option<ProgressView>,
     pub sub_objectives: Vec<SubObjectiveView>,
 }
@@ -183,35 +192,36 @@ pub struct QuestView {
 /// An event's text (a completed quest or a fired one-off event).
 #[derive(Debug, Clone, Serialize)]
 pub struct StoryView {
-    pub id: String,
-    pub title: String,
-    pub summary: String,
-    pub body: String,
+    pub id: Text,
+    pub title: Text,
+    pub summary: Text,
+    /// Owned only when a `{rate}` was filled in.
+    pub body: Cow<'static, str>,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct AchievementView {
-    pub id: String,
-    pub name: String,
-    pub category: String,
-    pub description: String,
-    pub reward: String,
+    pub id: Text,
+    pub name: Text,
+    pub category: Text,
+    pub description: Text,
+    pub reward: Text,
     pub earned: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct RivalView {
-    pub id: String,
-    pub name: String,
-    pub good: String,
+    pub id: Text,
+    pub name: Text,
+    pub good: Text,
     /// Dumps this run so far (from the activity feed's kept lines).
     pub dumps_seen: u32,
 }
 
 #[derive(Debug, Clone, Serialize)]
 pub struct NavView {
-    pub id: String,
-    pub name: String,
+    pub id: Text,
+    pub name: Text,
     pub visible: bool,
 }
 
@@ -294,11 +304,11 @@ pub struct View {
     pub ideology: Vec<AxisView>,
     pub projects: Vec<ProjectView>,
     pub quest: Option<QuestView>,
-    pub completed_quests: Vec<String>,
+    pub completed_quests: Vec<Text>,
     /// The completed quests' texts, in chain order.
     pub story: Vec<StoryView>,
     /// One-off events fired this run, in content order.
-    pub events: Vec<String>,
+    pub events: Vec<Text>,
     /// Their texts, in content order.
     pub event_texts: Vec<StoryView>,
     pub achievements: Vec<String>,
@@ -308,7 +318,7 @@ pub struct View {
     /// Live overclocks.
     pub overclocks: Vec<Overclock>,
     /// Every modifier key's value now (1 with no source).
-    pub modifiers: BTreeMap<String, Fx>,
+    pub modifiers: BTreeMap<Text, Fx>,
     pub career: CareerView,
     pub next_run: NextRunView,
     /// The last finished run's summary, if any.
@@ -324,8 +334,30 @@ pub struct View {
     /// The run's activity feed, oldest first.
     pub activity: Vec<Activity>,
     /// Display names by content id (resources, buildings, commands, research,
-    /// projects, achievements, rivals, and events by title).
-    pub names: BTreeMap<String, String>,
+    /// projects, achievements, rivals, and events by title). Content only, so
+    /// built once.
+    pub names: &'static BTreeMap<Text, Text>,
+}
+
+/// The view's `names`: later content kinds win an id shared with an earlier one.
+fn names() -> &'static BTreeMap<Text, Text> {
+    static NAMES: OnceLock<BTreeMap<Text, Text>> = OnceLock::new();
+    NAMES.get_or_init(|| {
+        let c = content();
+        let mut names = BTreeMap::new();
+        let mut name = |id: &'static String, n: &'static String| {
+            names.insert(id.as_str(), n.as_str());
+        };
+        c.resources.iter().for_each(|x| name(&x.id, &x.name));
+        c.buildings.iter().for_each(|x| name(&x.id, &x.name));
+        c.commands.iter().for_each(|x| name(&x.id, &x.name));
+        c.research.iter().for_each(|x| name(&x.id, &x.name));
+        c.projects.iter().for_each(|x| name(&x.id, &x.name));
+        c.achievements.iter().for_each(|x| name(&x.id, &x.name));
+        c.rivals.iter().for_each(|x| name(&x.id, &x.name));
+        c.events.iter().filter(|e| !e.title.is_empty()).for_each(|x| name(&x.id, &x.title));
+        names
+    })
 }
 
 const TIERS: &[&str] = &["LOW", "MEDIUM", "HIGH", "VERY HIGH"];
@@ -349,13 +381,13 @@ fn axes(r: &Rules, g: &GameState) -> Vec<AxisView> {
         .collect()
 }
 
-fn story(e: &crate::content::Event) -> StoryView {
-    StoryView { id: e.id.clone(), title: e.title.clone(), summary: e.summary.clone(), body: e.body.clone() }
+fn story(e: &'static crate::content::Event) -> StoryView {
+    StoryView { id: &e.id, title: &e.title, summary: &e.summary, body: Cow::Borrowed(&e.body) }
 }
 
 /// An event's text with its `{rate}` filled in: for a boredom-phase event, that phase's
 /// boredom per day under this run's multiplier (display only, to two places).
-fn event_story(r: &Rules, g: &GameState, e: &crate::content::Event) -> StoryView {
+fn event_story(r: &Rules, g: &GameState, e: &'static crate::content::Event) -> StoryView {
     let mut s = story(e);
     if let crate::content::Trigger::BoredomPhase { phase } = e.trigger {
         let rates = &r.p.boredom.phase_rates;
@@ -368,7 +400,7 @@ fn event_story(r: &Rules, g: &GameState, e: &crate::content::Event) -> StoryView
             }
             None => full,
         };
-        s.body = s.body.replace("{rate}", &shown);
+        s.body = Cow::Owned(s.body.replace("{rate}", &shown));
     }
     s
 }
@@ -390,8 +422,8 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 .iter()
                 .any(|cmd| cmd.produces.contains_key(&res.id) && g.career.used_commands.contains(&cmd.id));
             ResourceView {
-                id: res.id.clone(),
-                name: res.name.clone(),
+                id: &res.id,
+                name: &res.name,
                 amount: g.amount(&res.id),
                 cap: economy::cap(r, g, &res.id),
                 per_day: if same_run { next.amount(&res.id) - g.amount(&res.id) } else { Fx::ZERO },
@@ -414,18 +446,18 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 b.effects
                     .iter()
                     .filter_map(|e| match e {
-                        BuildingEffect::Store { resource, amount } if !grant => Some((resource.clone(), *amount)),
-                        BuildingEffect::Grant { resource, amount } if grant => Some((resource.clone(), *amount)),
+                        BuildingEffect::Store { resource, amount } if !grant => Some((resource.as_str(), *amount)),
+                        BuildingEffect::Grant { resource, amount } if grant => Some((resource.as_str(), *amount)),
                         _ => None,
                     })
                     .collect()
             };
             BuildingView {
-                id: b.id.clone(),
-                name: b.name.clone(),
-                description: b.description.clone(),
-                category: b.category.clone(),
-                ideology: b.ideology.clone(),
+                id: &b.id,
+                name: &b.name,
+                description: &b.description,
+                category: &b.category,
+                ideology: b.ideology.as_deref(),
                 owned: h.owned,
                 active: h.active,
                 bonus: h.bonus,
@@ -433,9 +465,9 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 cost,
                 land: b.land,
                 short,
-                produces: b.produces.clone(),
-                upkeep: b.upkeep.clone(),
-                requires: b.requires.clone(),
+                produces: &b.produces,
+                upkeep: &b.upkeep,
+                requires: &b.requires,
                 stores: effect(false),
                 grants: effect(true),
                 affordable: economy::buy_blocker(r, g, b).is_none(),
@@ -453,9 +485,9 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         .map(|cmd| {
             let (costs, produces) = programs::flows(r, g, cmd);
             CommandView {
-                id: cmd.id.clone(),
-                name: cmd.name.clone(),
-                description: cmd.description.clone(),
+                id: &cmd.id,
+                name: &cmd.name,
+                description: &cmd.description,
                 unlocked: programs::unlocked(g, cmd),
                 visible: programs::visible(g, cmd),
                 costs,
@@ -479,17 +511,17 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         })
         .collect();
     let quest = events::active_quest(g).map(|q| QuestView {
-        id: q.id.clone(),
-        title: q.title.clone(),
-        summary: q.summary.clone(),
-        body: q.body.clone(),
+        id: &q.id,
+        title: &q.title,
+        summary: &q.summary,
+        body: &q.body,
         progress: progress(events::progress(r, g, &q.condition)),
         sub_objectives: match &q.condition {
             Condition::AllOf { sub_objectives } => sub_objectives
                 .iter()
                 .map(|s| SubObjectiveView {
-                    id: s.id.clone(),
-                    label: s.label.clone(),
+                    id: &s.id,
+                    label: &s.label,
                     done: g.career.completed_sub_objectives.contains(&events::sub_key(&q.id, &s.id)),
                     progress: progress(events::progress(r, g, &s.condition)),
                 })
@@ -506,18 +538,6 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         buy_power_mult: career::buy_power_mult(r, &after),
         ideology: axes(r, &after),
     };
-    let mut names = BTreeMap::new();
-    let mut name = |id: &str, n: &str| {
-        names.insert(id.to_string(), n.to_string());
-    };
-    c.resources.iter().for_each(|x| name(&x.id, &x.name));
-    c.buildings.iter().for_each(|x| name(&x.id, &x.name));
-    c.commands.iter().for_each(|x| name(&x.id, &x.name));
-    c.research.iter().for_each(|x| name(&x.id, &x.name));
-    c.projects.iter().for_each(|x| name(&x.id, &x.name));
-    c.achievements.iter().for_each(|x| name(&x.id, &x.name));
-    c.rivals.iter().for_each(|x| name(&x.id, &x.name));
-    c.events.iter().filter(|e| !e.title.is_empty()).for_each(|x| name(&x.id, &x.title));
     let procs = programs::processors(g);
     View {
         tick: g.tick,
@@ -528,7 +548,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         buildings,
         land_price: economy::land_price(r, g),
         land_per_purchase: r.p.economy.land_per_purchase,
-        can_buy_land: r.is_legal(g, &Action::BuyLand),
+        can_buy_land: economy::land_blocker(r, g).is_none(),
         commands,
         programs: g
             .run
@@ -575,12 +595,12 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             .map(|item| {
                 let cost = research::price(r, g, item);
                 ResearchView {
-                    id: item.id.clone(),
-                    name: item.name.clone(),
-                    description: item.description.clone(),
-                    category: item.category.clone(),
+                    id: &item.id,
+                    name: &item.name,
+                    description: &item.description,
+                    category: &item.category,
                     cost,
-                    requires: item.requires.clone(),
+                    requires: item.requires.as_deref(),
                     done: g.run.research.contains(&item.id),
                     visible: research::visible(g, item),
                     affordable: research::blocker(r, g, item).is_none(),
@@ -592,13 +612,13 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             .projects
             .iter()
             .map(|p| ProjectView {
-                id: p.id.clone(),
-                name: p.name.clone(),
-                description: p.description.clone(),
-                tier: p.tier.clone(),
+                id: &p.id,
+                name: &p.name,
+                description: &p.description,
+                tier: &p.tier,
                 unlocked: projects::unlocked(g, p),
                 completed: projects::completed(g, &p.id),
-                costs: p.costs.clone(),
+                costs: &p.costs,
                 progress: projects::progress(g, p).cloned().unwrap_or_default(),
                 rates: g.run.project_rates.get(&p.id).cloned().unwrap_or_default(),
                 max_rate: r.p.projects.max_drain_rate,
@@ -609,14 +629,14 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             .events
             .iter()
             .filter(|e| g.career.completed_quests.contains(&e.id))
-            .map(|e| e.id.clone())
+            .map(|e| e.id.as_str())
             .collect(),
         story: c.events.iter().filter(|e| g.career.completed_quests.contains(&e.id)).map(story).collect(),
         events: c
             .events
             .iter()
             .filter(|e| !e.is_quest() && !e.silent && g.run.events.contains(&e.id))
-            .map(|e| e.id.clone())
+            .map(|e| e.id.as_str())
             .collect(),
         event_texts: c
             .events
@@ -629,11 +649,11 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             .achievements
             .iter()
             .map(|a| AchievementView {
-                id: a.id.clone(),
-                name: a.name.clone(),
-                category: a.category.clone(),
-                description: a.description.clone(),
-                reward: a.reward_description.clone(),
+                id: &a.id,
+                name: &a.name,
+                category: &a.category,
+                description: &a.description,
+                reward: &a.reward_description,
                 earned: g.career.achievements.contains(&a.id),
             })
             .collect(),
@@ -641,14 +661,14 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             .rivals
             .iter()
             .map(|rv| RivalView {
-                id: rv.id.clone(),
-                name: rv.name.clone(),
-                good: rv.good.clone(),
+                id: &rv.id,
+                name: &rv.name,
+                good: &rv.good,
                 dumps_seen: g.run.activity.iter().filter(|a| a.kind == "rival_dump" && a.id == rv.id).count() as u32,
             })
             .collect(),
         overclocks: g.run.overclocks.clone(),
-        modifiers: MODIFIER_KEYS.iter().map(|&k| (k.to_string(), modifier(r, g, k))).collect(),
+        modifiers: MODIFIER_KEYS.iter().map(|&k| (k, modifier(r, g, k))).collect(),
         career: CareerView {
             retirements: g.career.retirements,
             best_run_days: g.career.best_run_days,
@@ -687,8 +707,8 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             .nav
             .iter()
             .map(|t| NavView {
-                id: t.id.clone(),
-                name: t.name.clone(),
+                id: &t.id,
+                name: &t.name,
                 visible: match &t.visible {
                     NavCondition::Always => true,
                     NavCondition::Panel { panel } => g.run.enabled_panels.contains(panel),
@@ -701,6 +721,6 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         can_retire: g.run.enabled_panels.contains(career::RETIREMENT_PANEL),
         log: g.career.log.clone(),
         activity: g.run.activity.clone(),
-        names,
+        names: names(),
     }
 }

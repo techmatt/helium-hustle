@@ -57,12 +57,12 @@ impl Agent for Random {
                 v.research
                     .iter()
                     .filter(|r| r.affordable)
-                    .map(|r| Action::Research { research: r.id.clone() }),
+                    .map(|r| Action::Research { research: r.id.to_string() }),
             );
             if amount(v, "credits") >= v.land_price {
                 options.push(Action::BuyLand);
             }
-            let commands: Vec<String> = v.commands.iter().filter(|c| c.unlocked).map(|c| c.id.clone()).collect();
+            let commands: Vec<String> = v.commands.iter().filter(|c| c.unlocked).map(|c| c.id.to_string()).collect();
             let programs = v.programs.len() as u32;
             let free = v.processors_free;
             let assigned: Vec<u32> = v.programs.iter().map(|p| p.processors).collect();
@@ -70,7 +70,7 @@ impl Agent for Random {
                 .projects
                 .iter()
                 .filter(|p| p.unlocked && !p.completed)
-                .map(|p| (p.id.clone(), p.costs.keys().cloned().collect()))
+                .map(|p| (p.id.to_string(), p.costs.keys().cloned().collect()))
                 .collect();
             // Write a program.
             let lines = 1 + self.rng.below(4);

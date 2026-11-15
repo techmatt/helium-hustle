@@ -169,7 +169,7 @@ impl Author {
             .filter_map(|b| {
                 let pause = self.pause && b.upkeep.keys().any(|res| short.contains(res));
                 let want = if pause { 0 } else { b.owned };
-                (b.active != want).then(|| Action::SetActive { building: b.id.clone(), active: want })
+                (b.active != want).then(|| Action::SetActive { building: b.id.to_string(), active: want })
             })
             .collect();
         for a in sets {
@@ -242,7 +242,7 @@ impl Author {
     fn toward_maker<'v>(v: &'v View, res: &str) -> Option<&'v str> {
         for m in v.buildings.iter().filter(|m| m.produces.contains_key(res)) {
             if m.unlocked {
-                return Some(&m.id);
+                return Some(m.id);
             }
             if let Requirement::Building { building, .. } = &m.requires {
                 if v.buildings.iter().any(|x| x.id == *building && x.unlocked) {
@@ -256,14 +256,14 @@ impl Author {
     /// Whether research `id` is worth science now: essential, or nothing
     /// Long-Term is open to fund instead.
     fn worth(v: &View, id: &str) -> bool {
-        if id == "market_awareness" && v.completed_quests.iter().any(|q| q == "qmarket_awareness") {
+        if id == "market_awareness" && v.completed_quests.contains(&"qmarket_awareness") {
             return Self::long_term_open(v).is_none();
         }
         ESSENTIAL.contains(&id) || Self::long_term_open(v).is_none()
     }
 
     fn long_term_open(v: &View) -> Option<&str> {
-        v.projects.iter().find(|p| p.tier == "persistent" && p.unlocked && !p.completed).map(|p| p.id.as_str())
+        v.projects.iter().find(|p| p.tier == "persistent" && p.unlocked && !p.completed).map(|p| p.id)
     }
 
     fn research(&self, p: &mut Player) {
@@ -271,10 +271,10 @@ impl Author {
         let next = RESEARCH
             .iter()
             .filter_map(|id| v.research.iter().find(|r| r.id == *id))
-            .find(|r| r.visible && !r.done && Self::worth(v, &r.id));
+            .find(|r| r.visible && !r.done && Self::worth(v, r.id));
         if let Some(r) = next {
             if r.affordable {
-                let a = Action::Research { research: r.id.clone() };
+                let a = Action::Research { research: r.id.to_string() };
                 let _ = p.apply(&a);
             }
         }
@@ -320,14 +320,14 @@ impl Author {
                 }
             };
             if proj.rates.get(res).copied().unwrap_or(Fx::ZERO) != rate {
-                want.push(Action::SetProjectRate { project: proj.id.clone(), resource: res.clone(), rate });
+                want.push(Action::SetProjectRate { project: proj.id.to_string(), resource: res.clone(), rate });
             }
         }
         // Rates left on other projects stop.
         for other in v.projects.iter().filter(|o| o.id != proj.id) {
             for (res, r) in &other.rates {
                 if *r > Fx::ZERO {
-                    want.push(Action::SetProjectRate { project: other.id.clone(), resource: res.clone(), rate: Fx::ZERO });
+                    want.push(Action::SetProjectRate { project: other.id.to_string(), resource: res.clone(), rate: Fx::ZERO });
                 }
             }
         }
@@ -553,7 +553,7 @@ impl Author {
         let next = RESEARCH
             .iter()
             .filter_map(|id| v.research.iter().find(|r| r.id == *id))
-            .find(|r| r.visible && !r.done && Self::worth(v, &r.id));
+            .find(|r| r.visible && !r.done && Self::worth(v, r.id));
         if let Some(r) = next {
             let rate = v.resources.iter().find(|x| x.id == "science").map_or(Fx::ZERO, |x| x.per_day);
             if let Some(t) = super::ticks_to(amount(v, "science"), r.cost, rate) {
