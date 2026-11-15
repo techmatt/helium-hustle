@@ -32,6 +32,7 @@ $S compare --set boredom.base_cap=500         # a param (or module.variant=name)
 $S balance                                    # the judge's missed targets, as balance: lines (~5 s)
 $S trace --agents author --retirements 2      # one career: actions, the agent's notes (#), milestones
 $S trace --lines                              # ... and each day's program lines run, in queue order
+cargo run -q --release -p hh-sim --example probe -- oracle 2 1500   # state at a tick: what walls a run in
 $S agents                                     # the ladder's rungs
 $S speed                                      # native engine speed
 node scripts/wasm-speed.mjs                   # the same in wasm (needs crates/hh-wasm/pkg)
@@ -132,7 +133,9 @@ ticks a career: [agents.md](agents.md#the-oracle-oraclers)); without the oracle 
 `balance` (4 careers, no oracle) about 5 s; `vs-human` defaults to the ladder's players, the
 oracle among them, so a 1,600-tick log takes about a minute (`--agents author,casual=...`: a
 second). Other careers play 4,000-20,000 ticks a second, slower the more often their
-player looks (random and the author every 5-10 ticks, the casual author every ~130).
+player looks (random and the author every 5-10 ticks, the casual author every ~130): a view
+costs ~150-200 µs and an applied action invalidates it, a state copy ~15 µs, so a rollout
+that plays an agent is view-bound.
 
 ### Seeds
 

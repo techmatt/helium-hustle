@@ -29,6 +29,11 @@
 //! research worth it waits; a tenth of the credits past twice its target's
 //! price plus 200; anything else `project_rate`), and retires once the run
 //! has bought nothing for `stale_days` days. docs/agents.md says the same.
+//!
+//! The oracle steers it through [`Directives`] (a target, research, a
+//! project, funding, Dream held, market, pads, hoarding, program order); each
+//! one set changes the rules above where its doc says. Unset, as for the
+//! `author` and `casual` rungs, they change nothing.
 
 use hh_core::content::Requirement;
 use hh_core::state::Entry;

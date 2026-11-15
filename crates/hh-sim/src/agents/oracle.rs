@@ -165,17 +165,17 @@ pub fn strategies(g: &GameState) -> Vec<(String, Directives)> {
 /// What the oracle has seen of the real game at its looks: credits earned by
 /// tick and goods launched, this run (for the history milestones).
 #[derive(Debug, Clone, Default)]
-struct Seen {
+struct Looks {
     run: u32,
     earned: Vec<(u64, Fx)>,
     saturation: Vec<(String, Fx)>,
     shipped: BTreeSet<String>,
 }
 
-impl Seen {
+impl Looks {
     fn look(&mut self, g: &GameState) {
         if g.career.run_number != self.run {
-            *self = Seen { run: g.career.run_number, ..Default::default() };
+            *self = Looks { run: g.career.run_number, ..Default::default() };
         }
         self.earned.push((g.tick, g.run.stats.credits_earned));
         for (good, m) in &g.run.markets {
@@ -243,7 +243,7 @@ pub struct Oracle {
     target_owned: u32,
     /// Milestones met in the real game (as far as its looks show).
     done: BTreeSet<String>,
-    seen: Seen,
+    seen: Looks,
     plans: u32,
     rollouts: u64,
     note: String,
@@ -294,7 +294,7 @@ impl Oracle {
             built_day: 0,
             target_owned: 0,
             done: BTreeSet::new(),
-            seen: Seen::default(),
+            seen: Looks::default(),
             plans: 0,
             rollouts: 0,
             note: String::new(),
