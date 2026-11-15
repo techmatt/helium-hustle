@@ -1,9 +1,10 @@
 # Rules
 
-The rules as implemented, rules revision **2** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **3** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
-Revision 2 is the Godot build's **Arc 1** ported into `hh-core`: numbers from
+The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
+boredom cap the Godot build was played at (revision 3): numbers from
 `reference/data/*.json` (as content rows in `content/` and params in
 `configs/baseline.json`), prose rules from `reference/docs/handoff_*.md`. Where the two
 disagreed the data won, unless a ruling said otherwise; each module page's *Port notes*
@@ -61,8 +62,9 @@ the page of the module that takes them (`crates/hh-core/src/action.rs` has them 
 
 `content/*.json`, embedded in `hh-core`: resources (12), buildings (16), commands (20),
 research (11), events (14, seven of them the quest chain), projects (11), achievements (6),
-rivals (4). Ids are unique across all files. Buildings resolve in file order; quests chain
-in file order.
+rivals (4), and the UI's nav tiles (`nav.json`, 11: when each panel's tile shows; display
+only). Ids are unique across all files but `nav.json`, whose ids are panel names.
+Buildings resolve in file order; quests chain in file order.
 
 The port renamed the Godot data's short ids: `eng` energy, `reg` regolith, `ti` titanium,
 `cir` circuits, `prop` propellant, `cred` credits, `sci` science, `proc` processors, `panel`
@@ -112,7 +114,16 @@ and in every later run; Strategic ones for the rest of their run.
 
 ## Not built
 
-Dream Echo (Dream is the flat variant), "new" markers on revealed items, saved program
-loadouts, block/skip toggles, the Stats panel's per-source rate tracking and lifetime
-source totals, rolling overflow averages, and playtest telemetry. The view reports what
-the UI needs to show progressive disclosure (`visible` flags), not the markers.
+Dream Echo (Dream is the flat variant), saved program loadouts, block/skip toggles, the
+Stats panel's per-source rate tracking and lifetime source totals, rolling overflow
+averages, and playtest telemetry. The view reports what the UI needs for progressive
+disclosure (`visible` flags, nav tiles); the "new" markers are the UI's own, not state
+([web/README.md](../../web/README.md)).
+
+## Cheats
+
+The web debug menu's cheats are actions (`Action::Cheat`, `cheat.rs`), so a cheated game
+replays exactly: **grant** adds to a resource up to its cap (not processors or boredom),
+**set boredom** sets it up to its cap (at the cap the run retires on the next tick), and
+**jump ahead** marks a jump whose days then pass as usual. Any cheat sets the state's
+`cheated` mark for good (absent from an honest game's JSON); no rule reads it.

@@ -52,6 +52,7 @@ impl Rules {
             career: Career { run_number: 1, ..Career::default() },
             run: Run::default(),
             rng,
+            cheated: false,
         };
         career::new_run(self, &mut g);
         g
@@ -93,6 +94,7 @@ impl Rules {
         if boredom::at_cap(self, g) {
             career::retire(self, g, true);
         }
+        events::trim_activity(self, g);
     }
 
     /// Applies a player action between ticks. An `Err` leaves `g` untouched.
@@ -116,7 +118,9 @@ impl Rules {
                 projects::set_rate(self, &mut h, project, resource, *rate)
             }
             Action::Retire => career::retire_action(self, &mut h),
+            Action::Cheat { cheat } => crate::cheat::apply(self, &mut h, cheat),
         }?;
+        events::trim_activity(self, &mut h);
         *g = h;
         Ok(())
     }

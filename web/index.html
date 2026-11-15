@@ -8,42 +8,7 @@
     <link rel="stylesheet" href="./src/style.css" />
   </head>
   <body>
-    <header>
-      <h1>Helium Hustle</h1>
-      <span id="day">Loading…</span>
-      <span id="run"></span>
-      <span id="speeds" role="group" aria-label="Speed"></span>
-    </header>
-    <p id="notice" hidden></p>
-    <p id="quest"></p>
-    <main>
-      <section>
-        <h2>Resources</h2>
-        <table id="resources"></table>
-      </section>
-      <section>
-        <h2>Buildings</h2>
-        <div id="buildings"></div>
-      </section>
-      <section>
-        <h2>Program 1</h2>
-        <p id="program"></p>
-        <div id="commands"></div>
-      </section>
-    </main>
-    <details id="debug">
-      <summary>Debug</summary>
-      <p>
-        <label>Scenario <select id="scenario"></select></label>
-        <button type="button" id="start-scenario">Start scenario</button>
-      </p>
-      <p>
-        <label>Seed <input id="seed" type="text" inputmode="numeric" size="22" value="0" /></label>
-        <button type="button" id="new-game">New game</button>
-        <button type="button" id="check-replay">Check replay</button>
-      </p>
-      <p id="debug-info"></p>
-    </details>
-    <script type="module" src="./src/main.ts"></script>
+    <div id="app"><p id="boot">Loading…</p></div>
+    <script type="module" src="./src/main.tsx"></script>
   </body>
 </html>

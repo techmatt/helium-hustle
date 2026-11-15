@@ -218,3 +218,89 @@ fn a_stockpile_milestone_on_a_capped_resource_is_refused() {
     assert!(hh_sim::milestones::Milestones::from_json(&bad).unwrap_err().contains("capped"));
     assert!(hh_sim::milestones::Milestones::from_json(&m).is_ok());
 }
+
+/// A play log as the web client writes one: a scripted career at 10x with a
+/// minute's pause, its actions, and a closing checkpoint.
+fn write_playlog(path: &str, tamper: bool) {
+    use hh_core::{driver, Config, Session, RULES_REVISION};
+    let c = Config::from_json(&std::fs::read_to_string(baseline()).unwrap()).unwrap();
+    let mut s = Session::new(&c, 7, None).unwrap();
+    driver::play(&mut s, 600, driver::Policy::Script);
+    let rec = s.record();
+    // 10 ticks a second, with a 60 s pause at tick 300.
+    let t = |tick: u64| tick as f64 * 100.0 + if tick >= 300 { 60_000.0 } else { 0.0 };
+    let mut lines = vec![serde_json::json!({
+        "kind": "header", "format": "hh-playlog/1", "career": "test", "rules_revision": RULES_REVISION,
+        "config_hash": c.hash(), "engine": "test", "config": c, "seed": "7", "scenario": null,
+        "prior_actions": [], "t": 0.0, "commit": "test",
+    })];
+    let at = |kind: &str, tick: u64, ms: f64, speed: u32| {
+        serde_json::json!({"t": ms, "kind": kind, "tick": tick, "run": 1, "day": tick, "speed": speed})
+    };
+    lines.push(at("session_start", 0, 0.0, 10));
+    let mut paused = false;
+    for a in &rec.actions {
+        if a.tick >= 300 && !paused {
+            lines.push(at("speed", 300, t(300) - 60_000.0, 0));
+            lines.push(at("speed", 300, t(300), 10));
+            paused = true;
+        }
+        let mut l = at("action", a.tick, t(a.tick), 10);
+        l["action"] = serde_json::to_value(&a.action).unwrap();
+        lines.push(l);
+    }
+    let mut end = at("checkpoint", 600, t(600), 10);
+    let fp = s.state.fingerprint();
+    end["fingerprint"] = serde_json::json!(if tamper { "0000000000000000".to_string() } else { fp });
+    lines.push(end);
+    let text: String = lines.iter().map(|l| format!("{l}\n")).collect();
+    std::fs::write(path, text).unwrap();
+}
+
+#[test]
+fn a_play_log_replays_to_its_final_state_and_measures_real_time() {
+    let dir = root("out/hh-sim-tests");
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = format!("{dir}/play.jsonl");
+    write_playlog(&path, false);
+    let (ms, pf) = (root("configs/sim/milestones.json"), root("configs/sim/profiles.json"));
+    let out = run(&args(&["playlog", &path, "--milestones", &ms, "--profiles", &pf])).unwrap();
+    assert!(out.contains("final state reproduced") && out.contains("## Milestones") && out.contains("| paused |"), "{out}");
+    let j = run(&args(&["playlog", &path, "--json", "--milestones", &ms, "--profiles", &pf])).unwrap();
+    let v: serde_json::Value = serde_json::from_str(j.trim()).unwrap();
+    assert_eq!(v["reproduced"], true);
+    assert_eq!(v["game"]["ticks"], 600);
+    let paused = v["time"]["at_speed_s"]["0"].as_f64().unwrap();
+    assert!((paused - 60.0).abs() < 1e-6, "{paused}");
+    // 600 ticks at 10x plus the pause, all played.
+    let real = v["game"]["real_s"].as_f64().unwrap();
+    assert!((real - 120.0).abs() < 1e-6, "{real}");
+    let bad = format!("{dir}/play-bad.jsonl");
+    write_playlog(&bad, true);
+    assert!(matches!(run(&args(&["playlog", &bad, "--milestones", &ms, "--profiles", &pf])), Err(Fail::Check(_))));
+    // An action after the last checkpoint, at its tick: the fingerprint no longer
+    // stands for the end, so nothing is checked (not a mismatch); a line written at a
+    // later visit (`offline`) takes no time.
+    let late = format!("{dir}/play-late.jsonl");
+    write_playlog(&late, false);
+    let mut text = std::fs::read_to_string(&late).unwrap();
+    // The same line twice (a resend): read once.
+    let dup = serde_json::json!({"id": "p:1", "t": 999_998.0, "kind": "action", "tick": 600, "run": 1, "day": 600,
+        "speed": 10, "action": {"type": "cheat", "cheat": {"kind": "grant", "resource": "credits", "amount": "1"}}});
+    text.push_str(&format!("{dup}\n{dup}\n"));
+    text.push_str(&format!(
+        "{}\n{}\n",
+        serde_json::json!({"t": 999_999.0, "kind": "action", "tick": 600, "run": 1, "day": 600, "speed": 10,
+            "action": {"type": "set_program", "program": 4, "entries": []}}),
+        serde_json::json!({"t": 9.9e12, "kind": "career_end", "tick": 0, "run": 0, "day": 0, "speed": 0,
+            "reason": "save discarded", "offline": true})
+    ));
+    std::fs::write(&late, text).unwrap();
+    let actions = v["game"]["actions"].as_u64().unwrap();
+    let j = run(&args(&["playlog", &late, "--json", "--milestones", &ms, "--profiles", &pf])).unwrap();
+    let v: serde_json::Value = serde_json::from_str(j.trim()).unwrap();
+    assert_eq!(v["reproduced"], serde_json::Value::Null);
+    assert_eq!(v["game"]["actions"].as_u64().unwrap(), actions + 2, "the repeated line is read once");
+    let real = v["game"]["real_s"].as_f64().unwrap();
+    assert!((real - 120.0).abs() < 1e-6, "the late line adds no time: {real}");
+}

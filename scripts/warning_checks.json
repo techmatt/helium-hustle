@@ -11,8 +11,8 @@
     "exceptions": [
       {
         "file": "crates/hh-core/src/lib.rs",
-        "literal": "2",
-        "why": "RULES_REVISION itself"
+        "literal": "3",
+        "why": "RULES_REVISION itself (move this with each bump)"
       },
       {
         "file": "crates/hh-core/src/modules/boredom.rs",

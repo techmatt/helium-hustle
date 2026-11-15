@@ -44,13 +44,7 @@ impl Params {
 }
 
 /// What a command did when a processor ran it.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Outcome {
-    Ran,
-    /// Every output was at its cap: nothing paid, nothing made.
-    Skipped,
-    Failed,
-}
+pub use crate::state::LineOutcome as Outcome;
 
 /// Empty programs with every processor on the first (a new run).
 pub fn new_programs(r: &Rules, processors: u32) -> Vec<Program> {
@@ -104,6 +98,8 @@ pub fn set_program(r: &Rules, g: &mut GameState, program: u32, entries: &[Entry]
     p.entries = entries.to_vec();
     p.entry = 0;
     p.step = 0;
+    // Today's line outcomes named the old lines.
+    g.run.today.lines.remove(&program);
     Ok(())
 }
 
@@ -237,7 +233,9 @@ pub fn run(r: &Rules, g: &mut GameState) {
                 break;
             };
             let c = content().command(&e.command).expect("set_program checked");
-            execute(r, g, c);
+            let line = p.entry;
+            let outcome = execute(r, g, c);
+            g.run.today.lines.entry(i as u32).or_default().insert(line, outcome);
             let p = &mut g.run.programs[i];
             p.step += 1;
             if p.step >= p.entries[p.entry as usize].count {

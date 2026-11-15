@@ -58,10 +58,10 @@ None. Boredom moves only through the day and commands.
 |---|---|---|
 | `phase_days` | 0, 200, 500, 1000, 2000 | The run day each phase starts. Must start at 0 and rise; one per rate (a load error otherwise). |
 | `phase_rates` | 0.1, 0.2, 0.5, 1, 3 | Boredom per day in each phase, before the multiplier. |
-| `base_cap` | 500 | The cap before Recreation Domes. |
+| `base_cap` | 1000 | The cap before Recreation Domes. |
 
 At baseline with no modifiers a run has 20 + 60 + 250 = 330 boredom by day 1000 and
-reaches 500 on day 1170; command boredom brings it sooner.
+reaches 1000 on day 1670; command boredom brings it sooner.
 
 ## Content
 
@@ -74,8 +74,8 @@ reaches 500 on day 1170; command boredom brings it sooner.
 ## Port notes
 
 - Conflict: cap. The handoffs say 500 + 100 per Recreation Dome; the data's `boredom_max` is
-  1000. By ruling the base is 500 in config (`base_cap`, for simulation to tune; a later chat
-  said 1000), and the dome's 100 is its content `store` effect.
+  1000. By ruling the base is 1000 in config (`base_cap`, as in the Godot build Matt played;
+  rules revision 3), and the dome's 100 is its content `store` effect.
 - Conflict: the phase 3 to 5 event texts say Dream effectiveness falls to 20/15/10%; the
   handoffs' Dream is flat. By ruling Dream is flat ([dream.md](dream.md)) and the event text
   is left as the Godot placeholder: the phases change only the growth rate.

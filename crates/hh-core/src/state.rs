@@ -28,6 +28,10 @@ pub struct GameState {
     pub run: Run,
     /// One stream per declared purpose (`rng.rs`).
     pub rng: BTreeMap<String, Stream>,
+    /// A cheat action has been applied (`cheat.rs`): the game is marked for
+    /// good. Absent from the JSON while false.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub cheated: bool,
 }
 
 /// Buildings of one type: owned, of which `active` run, `bonus` were granted
@@ -135,6 +139,38 @@ pub struct Today {
     /// Production lost to a cap at the end-of-tick clamp.
     pub overflow: BTreeMap<String, Fx>,
     pub stalls: BTreeMap<String, Stall>,
+    /// What each program line did the last time a processor ran it today:
+    /// program -> line -> outcome.
+    pub lines: BTreeMap<u32, BTreeMap<u32, LineOutcome>>,
+}
+
+/// What a command did when a processor ran it.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum LineOutcome {
+    Ran,
+    /// Every output was at its cap: nothing paid, nothing made.
+    Skipped,
+    /// Locked, or short of its costs.
+    Failed,
+}
+
+/// One line of the run's activity feed (the UI's Recent Activity): what
+/// happened on which day. Kept to the events module's `activity_kept` newest.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Activity {
+    pub day: u64,
+    /// `shipment` (id: the good, quantity: cargo, amount: credits),
+    /// `speculator_burst` (id: the good, amount: speculators added),
+    /// `rival_dump` (id: the rival), `event` (a one-off event), and the
+    /// career log's kinds (`quest`, `achievement`, `project`, `research`).
+    pub kind: String,
+    pub id: String,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub amount: Option<Fx>,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub quantity: Option<Fx>,
 }
 
 /// Everything a retirement resets.
@@ -177,6 +213,8 @@ pub struct Run {
     pub boredom_phase: u32,
     pub stats: RunStats,
     pub today: Today,
+    /// The run's activity feed, oldest first (display only: no rule reads it).
+    pub activity: Vec<Activity>,
 }
 
 /// Career-wide totals over every finished run.
@@ -230,6 +268,21 @@ pub struct Career {
     pub completed_projects: BTreeSet<String>,
     pub achievements: BTreeSet<String>,
     pub log: Vec<LogEntry>,
+    /// The last finished run, as it stood when it retired (display: the UI's
+    /// retirement summary). No rule reads it.
+    pub last_run: Option<LastRun>,
+}
+
+/// A finished run's summary.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct LastRun {
+    pub run: u32,
+    pub days: u64,
+    pub forced: bool,
+    pub stats: RunStats,
+    /// Each axis's rank when it ended.
+    pub ideology_ranks: BTreeMap<String, i64>,
 }
 
 impl GameState {
@@ -298,7 +351,8 @@ impl GameState {
         *t = t.saturating_add(v);
     }
 
-    /// Adds a milestone to the career log.
+    /// Adds a milestone to the career log (and, but for retirements, which
+    /// start a fresh run, to the run's activity feed).
     pub(crate) fn note(&mut self, kind: &str, id: &str) {
         let e = LogEntry {
             tick: self.tick,
@@ -308,5 +362,19 @@ impl GameState {
             id: id.to_string(),
         };
         self.career.log.push(e);
+        if !matches!(kind, "retired" | "forced_retirement") {
+            self.activity(kind, id, None, None);
+        }
+    }
+
+    /// Adds a line to the run's activity feed (the events module trims it).
+    pub(crate) fn activity(&mut self, kind: &str, id: &str, amount: Option<Fx>, quantity: Option<Fx>) {
+        self.run.activity.push(Activity {
+            day: self.run.day,
+            kind: kind.to_string(),
+            id: id.to_string(),
+            amount,
+            quantity,
+        });
     }
 }

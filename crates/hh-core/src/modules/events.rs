@@ -1,22 +1,34 @@
 //! **events**: the quest chain ("Breadcrumbs") and one-off events, their
 //! triggers, conditions and unlock effects (docs/rules/events.md).
 
-use super::{ModuleDef, VariantDef};
+use super::{param, ModuleDef, ParamKind as K, VariantDef};
 use crate::config::ModuleConfig;
 use crate::content::{content, Condition, Event, Trigger, Unlock};
+use crate::fx::Fx;
 use crate::rules::Rules;
 use crate::state::GameState;
 
 pub static DEF: ModuleDef = ModuleDef {
     id: "events",
-    variants: &[VariantDef { name: "arc1", params: &[], rng: &[] }],
+    variants: &[VariantDef {
+        name: "arc1",
+        params: &[param(
+            "activity_kept",
+            K::Int,
+            Some(("1", "100000")),
+            "lines of the run's activity feed kept (newest; display only)",
+        )],
+        rng: &[],
+    }],
 };
 
-pub struct Params;
+pub struct Params {
+    pub activity_kept: usize,
+}
 
 impl Params {
-    pub fn new(_: &ModuleConfig) -> Result<Params, String> {
-        Ok(Params)
+    pub fn new(mc: &ModuleConfig) -> Result<Params, String> {
+        Ok(Params { activity_kept: mc.int("activity_kept") as usize })
     }
 }
 
@@ -72,6 +84,26 @@ pub fn holds(r: &Rules, g: &GameState, quest: &str, c: &Condition) -> bool {
         // Checked before the day count rises: today counts as survived.
         Condition::DaysSurvived { days } => g.run.day + 1 >= *days,
         Condition::CreditsEarned { amount } => g.run.stats.credits_earned >= *amount,
+    }
+}
+
+/// How far along a countable condition is: `(now, target)` (display only;
+/// `None` for one with nothing to count).
+pub fn progress(r: &Rules, g: &GameState, c: &Condition) -> Option<(Fx, Fx)> {
+    let n = |v: u64| Fx::from_int(i64::try_from(v).unwrap_or(i64::MAX));
+    match c {
+        Condition::BuildingOwned { building, count } => Some((n(g.owned(building).into()), n((*count).into()))),
+        Condition::ResourceCumulative { resource, amount } => {
+            Some((g.run.stats.produced.get(resource).copied().unwrap_or(Fx::ZERO), *amount))
+        }
+        Condition::ShipmentCompleted { count } => Some((n(g.run.stats.shipments.into()), n((*count).into()))),
+        Condition::IdeologyRankAny { rank } => {
+            let best = crate::content::AXES.iter().map(|a| super::ideology::rank(r, g, a)).max().unwrap_or(0);
+            Some((Fx::from_int(best), Fx::from_int(*rank)))
+        }
+        Condition::DaysSurvived { days } => Some((n(g.run.day), n(*days))),
+        Condition::CreditsEarned { amount } => Some((g.run.stats.credits_earned, *amount)),
+        _ => None,
     }
 }
 
@@ -132,8 +164,18 @@ pub fn check(r: &Rules, g: &mut GameState) {
     for e in content().events.iter().filter(|e| !e.is_quest()) {
         if !g.run.events.contains(&e.id) && triggered(g, e) && holds(r, g, &e.id, &e.condition) {
             fire(g, e);
+            if !e.silent {
+                g.activity("event", &e.id, None, None);
+            }
         }
     }
+}
+
+/// Drops the activity feed's oldest lines beyond `activity_kept` (end of each
+/// tick and after each action).
+pub fn trim_activity(r: &Rules, g: &mut GameState) {
+    let over = g.run.activity.len().saturating_sub(r.p.events.activity_kept);
+    g.run.activity.drain(..over);
 }
 
 /// Run start: every event the career has seen re-applies its unlocks.

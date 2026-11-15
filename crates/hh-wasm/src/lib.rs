@@ -85,6 +85,22 @@ pub fn advance(state_json: &str, ticks: u32) -> Result<String, JsValue> {
     Ok(g.to_json())
 }
 
+/// Runs up to `ticks` ticks, stopping after a tick that retired the run
+/// (forced), so the client can show the retirement before the next run plays
+/// on. Returns the new state; the ticks run are its `tick` minus the old one.
+#[wasm_bindgen]
+pub fn advance_run(state_json: &str, ticks: u32) -> Result<String, JsValue> {
+    let (r, mut g) = load(state_json)?;
+    let run = g.career.run_number;
+    for _ in 0..ticks {
+        r.advance(&mut g, 1);
+        if g.career.run_number != run {
+            break;
+        }
+    }
+    Ok(g.to_json())
+}
+
 /// Applies an action (`{"type": "buy", "building": "solar_panel"}`) between
 /// ticks; returns the new state or throws why it can't.
 #[wasm_bindgen]

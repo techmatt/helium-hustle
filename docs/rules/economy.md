@@ -10,6 +10,9 @@ runs late in the day, after shipments and bursts. Prices and amounts are `Fx`; c
 
 **Resources.** Every content resource is held from the start of a run (0 unless
 `starting_resources` says otherwise). Credits, science, land and processors have no cap.
+A resource is **shown** (the view's `visible`; display only) if its content says always,
+a building making it is owned or was in any run, a command making it was ever used (Buy
+Propellant shows Propellant), or some is held now.
 
 **Caps.** A capped resource's cap is its content `cap` plus the `store` effects of every
 *active* building on it (per copy), times the modifier `storage_cap_mult`; energy's cap skips

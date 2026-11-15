@@ -1,12 +1,14 @@
 // Autosave in localStorage, tagged with the rules revision and config hash. A save
 // from another revision or config is discarded, never migrated.
 
-import type { Scenario, Stamped } from './engine';
+import type { LastRun, Scenario, Stamped, StoryView } from './engine';
 import type { Speed } from './clock';
 
 const KEY = 'hh.save';
 
 export interface Save {
+  /** The career's play log (src/playlog.ts). */
+  careerId?: string;
   revision: number;
   configHash: string;
   /** The state JSON as the engine produced it. */
@@ -16,9 +18,16 @@ export interface Save {
   scenario: Scenario | null;
   actions: Stamped[];
   speed: Speed;
+  /** A run summary still open, the speed Continue restores, and the last speed played. */
+  summary?: LastRun | null;
+  speedBeforeSummary?: Speed;
+  resumeSpeed?: Speed;
+  /** Story texts not yet read. */
+  stories?: StoryView[];
 }
 
-export type Loaded = { save: Save } | { discarded: string } | null;
+/** A save, or why one was dropped (with its career's play log id, to close it). */
+export type Loaded = { save: Save } | { discarded: string; careerId?: string } | null;
 
 /** The saved game, if it fits this engine and config; otherwise why it was dropped. */
 export function loadSave(revision: number, configHash: string): Loaded {
@@ -34,11 +43,17 @@ export function loadSave(revision: number, configHash: string): Loaded {
   }
   if (save.revision !== revision) {
     localStorage.removeItem(KEY);
-    return { discarded: `The saved game was from rules revision ${save.revision} (this is ${revision}), so a new game started.` };
+    return {
+      discarded: `The saved game was from rules revision ${save.revision} (this is ${revision}), so a new game started.`,
+      careerId: save.careerId,
+    };
   }
   if (save.configHash !== configHash) {
     localStorage.removeItem(KEY);
-    return { discarded: `The saved game used another config (${save.configHash}, this is ${configHash}), so a new game started.` };
+    return {
+      discarded: `The saved game used another config (${save.configHash}, this is ${configHash}), so a new game started.`,
+      careerId: save.careerId,
+    };
   }
   return { save };
 }

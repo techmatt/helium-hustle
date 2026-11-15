@@ -109,6 +109,17 @@ pub fn retire(r: &Rules, g: &mut GameState, forced: bool) {
     let s = g.run.stats.clone();
     let day = g.run.day;
     g.note(if forced { "forced_retirement" } else { "retired" }, "");
+    let ideology_ranks = crate::content::AXES
+        .iter()
+        .map(|&a| (a.to_string(), super::ideology::rank(r, g, a)))
+        .collect();
+    g.career.last_run = Some(crate::state::LastRun {
+        run: g.career.run_number,
+        days: day,
+        forced,
+        stats: s.clone(),
+        ideology_ranks,
+    });
     let c = &mut g.career;
     c.lifetime.credits_earned = c.lifetime.credits_earned.saturating_add(s.credits_earned);
     c.lifetime.shipments += s.shipments;

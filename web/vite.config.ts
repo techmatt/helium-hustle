@@ -1,5 +1,7 @@
-import { spawn } from 'node:child_process';
-import { dirname, resolve } from 'node:path';
+import { execFileSync, spawn } from 'node:child_process';
+import { appendFileSync, existsSync, mkdirSync } from 'node:fs';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig, type Plugin, type ViteDevServer } from 'vite';
 
@@ -52,9 +54,89 @@ function engineWatch(): Plugin {
   };
 }
 
+/** Where play logs go: `HH_PLAYLOG_DIR`, else the synced folder on Matt's machine,
+ * else `out/playlogs/` in the repo. A browser under automation (`bot_` careers: the
+ * e2e) logs to `out/playlogs/` unless `HH_PLAYLOG_DIR` says otherwise, so the synced
+ * folder holds only people's play. */
+const SYNCED = 'C:\\Code\\gdrive-sync\\helium-hustle';
+const localDir = resolve(repo, 'out', 'playlogs');
+const playlogDir = process.env.HH_PLAYLOG_DIR
+  ? resolve(process.env.HH_PLAYLOG_DIR)
+  : existsSync(SYNCED)
+    ? join(SYNCED, 'playlogs')
+    : localDir;
+const dirFor = (career: string) => (career.startsWith('bot_') && !process.env.HH_PLAYLOG_DIR ? localDir : playlogDir);
+
+/** The repo commit, `+dirty` with uncommitted changes. */
+function commit(): string {
+  try {
+    const head = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: repo, encoding: 'utf8' }).trim();
+    const dirty = execFileSync('git', ['status', '--porcelain'], { cwd: repo, encoding: 'utf8' }).trim() !== '';
+    return dirty ? `${head}+dirty` : head;
+  } catch {
+    return 'unknown';
+  }
+}
+
+/**
+ * The play log endpoint (dev server and preview): `POST /__playlog` with
+ * `{career, lines}` appends the lines to `<dir>/<career>.jsonl`, stamping a header line
+ * with the repo commit; `GET /__playlog` answers `{dir}`. One request at a time per page
+ * keeps a file in order (src/playlog.ts).
+ */
+function playlogServer(): Plugin {
+  const handle = (req: IncomingMessage, res: ServerResponse) => {
+    if (req.method === 'GET') {
+      // `?career=<id>`: that career's folder (the e2e reads its own log back).
+      const career = new URL(req.url ?? '', 'http://x').searchParams.get('career') ?? '';
+      res.setHeader('Content-Type', 'application/json');
+      res.end(JSON.stringify({ dir: career ? dirFor(career) : playlogDir }));
+      return;
+    }
+    if (req.method !== 'POST') {
+      res.statusCode = 405;
+      res.end();
+      return;
+    }
+    let body = '';
+    req.setEncoding('utf8');
+    req.on('data', (c: string) => (body += c));
+    req.on('end', () => {
+      try {
+        const { career, lines } = JSON.parse(body) as { career: string; lines: string[] };
+        if (!/^[\w.-]+$/.test(career) || !Array.isArray(lines)) throw new Error('bad play log batch');
+        const out = lines.map((l) => {
+          const v = JSON.parse(l) as Record<string, unknown>;
+          return v.kind === 'header' ? JSON.stringify({ ...v, commit: commit() }) : JSON.stringify(v);
+        });
+        const dir = dirFor(career);
+        mkdirSync(dir, { recursive: true });
+        appendFileSync(join(dir, `${career}.jsonl`), out.map((l) => `${l}\n`).join(''), 'utf8');
+        res.statusCode = 204;
+        res.end();
+      } catch (e) {
+        res.statusCode = 400;
+        res.end(String(e));
+      }
+    });
+  };
+  return {
+    name: 'hh-playlog',
+    configureServer(server) {
+      server.middlewares.use('/__playlog', handle);
+      server.config.logger.info(`play logs: ${playlogDir}`);
+    },
+    configurePreviewServer(server) {
+      server.middlewares.use('/__playlog', handle);
+    },
+  };
+}
+
 export default defineConfig({
   base: './',
-  plugins: [engineWatch()],
+  plugins: [engineWatch(), playlogServer()],
+  // TSX renders through Preact's automatic JSX runtime.
+  oxc: { jsx: { runtime: 'automatic', importSource: 'preact' } },
   server: {
     // configs/ lives beside web/.
     fs: { allow: [repo] },

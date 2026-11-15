@@ -1,0 +1,172 @@
+// Options: the career, keyboard help, and the debug menu (scenario starts, replay check,
+// and the cheats, off by default). Cheats are engine actions, so replay stays exact.
+
+import { useState } from 'preact/hooks';
+import { engine } from '../engine';
+import * as playlog from '../playlog';
+import {
+  act,
+  checkReplay,
+  fingerprint,
+  jumpAhead,
+  newCareer,
+  newGame,
+  setCheatsEnabled,
+  setNotice,
+  type Store,
+} from '../store';
+import { Section } from './common';
+
+export function Options({ s }: { s: Store }) {
+  const [confirm, setConfirm] = useState(false);
+  return (
+    <div class="panel" data-panel="options">
+      <h2>Options</h2>
+      <Section title="Game">
+        <p>
+          The game saves itself in this browser every second and when you leave. Closing the page pauses it: there is
+          no offline progress.
+        </p>
+        <p class="muted small">Keys: space pauses or resumes, 1 to 5 pick 1x to 200x.</p>
+        <p class="small" data-testid="playlog-status" data-career={playlog.currentCareer() ?? ''}>
+          {playlog.status === 'off'
+            ? 'Play log: not recording (no log server; play through `npm run dev`).'
+            : `Play log: recording this career to ${playlog.logDir || 'the dev server'}${playlog.currentCareer() ? ` as ${playlog.currentCareer()}.jsonl` : ''}.`}
+        </p>
+        {!confirm ? (
+          <button type="button" onClick={() => setConfirm(true)}>
+            Start a new career…
+          </button>
+        ) : (
+          <div class="confirm">
+            <span>Erase this career and start over?</span>
+            <button
+              type="button"
+              class="danger"
+              onClick={() => {
+                setConfirm(false);
+                newCareer();
+              }}
+            >
+              Yes, start over
+            </button>
+            <button type="button" onClick={() => setConfirm(false)}>
+              Cancel
+            </button>
+          </div>
+        )}
+      </Section>
+      <Debug s={s} />
+    </div>
+  );
+}
+
+function Debug({ s }: { s: Store }) {
+  const v = s.view;
+  const scenarios = engine.scenarios();
+  const [scenario, setScenario] = useState(scenarios[0]?.name ?? '');
+  const [seed, setSeed] = useState('0');
+  const [res, setRes] = useState('credits');
+  const [amount, setAmount] = useState('1000');
+  const [boredom, setBoredom] = useState('0');
+  const [days, setDays] = useState('100');
+  const start = (name: string | null) => {
+    try {
+      const sc = scenarios.find((x) => x.name === name) ?? null;
+      newGame(seed.trim() || '0', sc, sc ? `debug: scenario ${sc.name}` : 'debug: new game');
+      setNotice(sc ? `Started scenario ${sc.name}: ${sc.description}` : null);
+    } catch (e) {
+      setNotice(String(e));
+    }
+  };
+  return (
+    <Section title="Debug" open={false} testid="debug">
+      <p>
+        <label>
+          Scenario{' '}
+          <select id="scenario" value={scenario} onChange={(e) => setScenario((e.target as HTMLSelectElement).value)}>
+            {scenarios.map((x) => (
+              <option key={x.name} value={x.name} title={x.description}>
+                {x.name}
+              </option>
+            ))}
+          </select>
+        </label>{' '}
+        <button type="button" id="start-scenario" onClick={() => start(scenario)}>
+          Start scenario
+        </button>
+      </p>
+      <p>
+        <label>
+          Seed <input id="seed" type="text" inputMode="numeric" size={22} value={seed} onInput={(e) => setSeed((e.target as HTMLInputElement).value)} />
+        </label>{' '}
+        <button type="button" id="new-game" onClick={() => start(null)}>
+          New game
+        </button>{' '}
+        <button type="button" id="check-replay" onClick={checkReplay}>
+          Check replay
+        </button>
+      </p>
+      <p class="muted small" id="debug-info">
+        engine {engine.version()} · rules revision {engine.rulesRevision()} · config {s.configHash} · seed {s.seed}
+        {s.scenario ? ` · scenario ${s.scenario.name}` : ''} · {s.actionCount} actions · fingerprint {fingerprint()}
+        {v.cheated ? ' · CHEATED' : ''}
+      </p>
+      <label>
+        <input
+          type="checkbox"
+          id="cheats-toggle"
+          checked={s.cheatsEnabled}
+          onChange={(e) => setCheatsEnabled((e.target as HTMLInputElement).checked)}
+        />{' '}
+        Show cheats (a cheat marks the game as cheated for good)
+      </label>
+      {s.cheatsEnabled && (
+        <div class="cheats" data-testid="cheats">
+          <p>
+            Grant{' '}
+            <input id="cheat-amount" size={8} value={amount} onInput={(e) => setAmount((e.target as HTMLInputElement).value)} />{' '}
+            <select id="cheat-resource" value={res} onChange={(e) => setRes((e.target as HTMLSelectElement).value)}>
+              {v.resources
+                .filter((r) => r.id !== 'processors' && r.id !== 'boredom')
+                .map((r) => (
+                  <option key={r.id} value={r.id}>
+                    {r.name}
+                  </option>
+                ))}
+            </select>{' '}
+            <button
+              type="button"
+              id="cheat-grant"
+              onClick={() => act({ type: 'cheat', cheat: { kind: 'grant', resource: res, amount: amount.trim() } })}
+            >
+              Grant
+            </button>
+          </p>
+          <p>
+            Set boredom to{' '}
+            <input id="cheat-boredom" size={8} value={boredom} onInput={(e) => setBoredom((e.target as HTMLInputElement).value)} />{' '}
+            <button type="button" id="cheat-set-boredom" onClick={() => act({ type: 'cheat', cheat: { kind: 'set_boredom', amount: boredom.trim() } })}>
+              Set
+            </button>
+          </p>
+          <p>
+            Jump ahead{' '}
+            <input id="cheat-days" size={6} value={days} onInput={(e) => setDays((e.target as HTMLInputElement).value)} /> days{' '}
+            <button
+              type="button"
+              id="cheat-jump"
+              onClick={() => {
+                const n = Math.floor(Number(days));
+                if (n > 0 && n <= 1_000_000) jumpAhead(n);
+                else setNotice('Jump: give a whole number of days from 1 to 1,000,000.');
+              }}
+            >
+              Jump
+            </button>
+          </p>
+        </div>
+      )}
+    </Section>
+  );
+}

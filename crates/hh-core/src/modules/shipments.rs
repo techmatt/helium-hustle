@@ -156,6 +156,8 @@ pub fn launch(r: &Rules, g: &mut GameState, i: usize) {
     let demand = g.run.markets.get(&good).map_or(Fx::ZERO, |m| m.demand);
     g.produce(CREDITS, pay);
     g.run.stats.shipments += 1;
+    let cargo = g.run.pads[i].cargo;
+    g.activity("shipment", &good, Some(pay), Some(cargo));
     let p = &mut g.run.pads[i];
     p.cargo = Fx::ZERO;
     p.cooldown = r.p.shipments.launch_cooldown;

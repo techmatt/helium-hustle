@@ -1,12 +1,17 @@
 // Browser check: drives headless Edge or Chrome over the DevTools protocol (no
-// packages) against a served page. Checks each speed ticks at its rate, buying (in the
-// rich scenario), the autosave surviving a reload, a revision-mismatch save discarded,
-// scenarios started from the debug menu, a command set on program 1 and the replay check.
+// packages) against a served page.
+//   1. A fresh game played through the normal UI only (no debug menu): Boot Sequence,
+//      First Extraction and Proof of Concept, then retirement and into run 2.
+//   2. Every nav panel opens (the gated ones reached with the debug menu's cheats),
+//      a cheated game is marked, and its replay check passes.
+//   3. Each speed's days per second, pause, a reload keeping the save, a save from
+//      another revision discarded, debug-menu scenarios.
+// Any uncaught page error fails the run.
 //   HH_URL      the page (default http://localhost:5173/)
 //   HH_BROWSER  a browser off the usual paths
 //   HH_PROFILE  browser profile dir (default ../out/e2e-profile, wiped first)
 import { spawn, spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, rmSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -31,7 +36,8 @@ try {
 mkdirSync(profile, { recursive: true });
 const proc = spawn(exe, [
   '--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
-  '--no-first-run', '--no-default-browser-check', 'about:blank',
+  // --enable-automation sets navigator.webdriver: the page files its play logs as a bot's.
+  '--enable-automation', '--window-size=1600,900', '--no-first-run', '--no-default-browser-check', 'about:blank',
 ], { stdio: 'ignore' });
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -49,11 +55,16 @@ const ws = new WebSocket(page.webSocketDebuggerUrl);
 await new Promise((r) => ws.addEventListener('open', r, { once: true }));
 let nextId = 1;
 const pending = new Map();
+const pageErrors = [];
 ws.addEventListener('message', (ev) => {
   const msg = JSON.parse(ev.data);
   if (msg.id && pending.has(msg.id)) {
     pending.get(msg.id)(msg);
     pending.delete(msg.id);
+  } else if (msg.method === 'Runtime.exceptionThrown') {
+    pageErrors.push(msg.params.exceptionDetails?.exception?.description ?? msg.params.exceptionDetails?.text);
+  } else if (msg.method === 'Runtime.consoleAPICalled' && msg.params.type === 'error') {
+    pageErrors.push(msg.params.args.map((a) => a.value ?? a.description).join(' '));
   }
 });
 const send = (method, params = {}) =>
@@ -67,11 +78,22 @@ const evaluate = async (expr) => {
   if (r.result?.exceptionDetails) throw new Error(`${expr}: ${JSON.stringify(r.result.exceptionDetails)}`);
   return r.result?.result?.value;
 };
+const q = (sel) => JSON.stringify(sel);
 const day = async () => Number((await evaluate(`document.getElementById('day').textContent`)).replace(/\D/g, ''));
-const PANEL = '.building[data-id="solar_panel"]';
-const owned = () => evaluate(`document.querySelector('${PANEL} span')?.textContent ?? ''`);
-const noticeText = () => evaluate(`document.getElementById('notice').hidden ? '' : document.getElementById('notice').textContent`);
-const click = (selector) => evaluate(`document.querySelector(${JSON.stringify(selector)}).click()`);
+const run = async () => Number((await evaluate(`document.getElementById('run').textContent`)).replace(/\D/g, ''));
+const noticeText = () => evaluate(`document.getElementById('notice')?.textContent ?? ''`);
+const exists = (sel) => evaluate(`!!document.querySelector(${q(sel)})`);
+const enabled = (sel) => evaluate(`(() => { const b = document.querySelector(${q(sel)}); return !!b && !b.disabled; })()`);
+const click = async (sel) => {
+  const ok = await evaluate(`(() => { const b = document.querySelector(${q(sel)}); if (!b) return false; b.click(); return true; })()`);
+  if (!ok) throw new Error(`nothing to click at ${sel}`);
+};
+const setValue = (sel, value) =>
+  evaluate(`(() => {
+    const el = document.querySelector(${q(sel)});
+    el.value = ${q(value)};
+    el.dispatchEvent(new Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true }));
+  })()`);
 const waitFor = async (expr, what, ms = 10000) => {
   for (const end = Date.now() + ms; Date.now() < end; await sleep(100)) if (await evaluate(expr)) return;
   throw new Error(`timed out waiting for ${what}`);
@@ -81,8 +103,31 @@ const load = async (u) => {
   await evaluate('window.__stale = true');
   await send('Page.navigate', { url: u });
   await waitFor('!window.__stale', 'the navigation');
-  // The page says "Loading…" until the engine has rendered once.
-  await waitFor(`/^Day \\d/.test(document.getElementById('day')?.textContent ?? '') && !!document.querySelector('.building button')`, 'the page');
+  // "Loading…" until the engine has rendered once.
+  const ready = `/^Day \\d/.test(document.getElementById('day')?.textContent ?? '') && !!document.querySelector('.nav-tile')`;
+  await waitFor(ready, 'the page');
+  // A dev server just after an edit may reload the page once more: let it settle.
+  await sleep(700);
+  await waitFor(ready, 'the page (settled)');
+};
+const speed = (s) => click(`#speeds button[data-speed="${s}"]`);
+const panel = async (id) => {
+  await click(`.nav-tile[data-nav="${id}"]`);
+  await waitFor(`!!document.querySelector('[data-panel="${id}"]')`, `the ${id} panel`, 3000);
+};
+const navVisible = (id) => exists(`.nav-tile[data-nav="${id}"]`);
+/** Opens the debug section of Options (it starts folded). */
+const debugMenu = async () => {
+  await panel('options');
+  if (!(await exists('#scenario'))) await click('[data-testid="debug"] .fold-head');
+};
+
+/** With HH_SHOTS=<dir>, saves a PNG of the page at each named moment. */
+const shot = async (name) => {
+  if (!process.env.HH_SHOTS) return;
+  mkdirSync(process.env.HH_SHOTS, { recursive: true });
+  const r = await send('Page.captureScreenshot', { format: 'png' });
+  writeFileSync(resolve(process.env.HH_SHOTS, `${name}.png`), Buffer.from(r.result.data, 'base64'));
 };
 
 const failures = [];
@@ -91,36 +136,233 @@ const check = (ok, what) => {
   if (!ok) failures.push(what);
 };
 
+/** What the player reads off the screen each look: resources, buildings, pads. */
+const look = () =>
+  evaluate(`(() => {
+    const res = {};
+    for (const tr of document.querySelectorAll('tr[data-res]')) res[tr.dataset.res] = Number(tr.dataset.amount);
+    const quest = document.querySelector('[data-testid="quest"]')?.dataset.quest ?? null;
+    const lines = [...document.querySelectorAll('.lines li')].map((li) => li.dataset.command);
+    return { res, quest, lines, day: Number(document.getElementById('day').textContent.replace(/\\D/g, '')) };
+  })()`);
+const buildings = () =>
+  evaluate(`(() => {
+    const out = {};
+    for (const c of document.querySelectorAll('.card.building')) {
+      const buy = c.querySelector('button.buy');
+      out[c.dataset.id] = { owned: Number(c.dataset.owned), short: c.dataset.short.split(' ').filter(Boolean), buyable: !buy.disabled };
+    }
+    return out;
+  })()`);
+
+/** Program 1 runs just `cmd`: Reset, then add it from the Commands panel. */
+const runOnly = async (cmd, lines) => {
+  if (lines.length === 1 && lines[0] === cmd) return;
+  await click('.prog-tabs button[data-program="0"]');
+  if (lines.length) await click('.prog-procs button[title="Clear this program"]');
+  await panel('commands');
+  await click(`[data-testid="add-${cmd}"]`);
+};
+
+// The opening, as a player would: Solar Panels, then the extraction chain, storage for
+// the Launch Pad's titanium, the pad, and more Solar Panels for its upkeep.
+const ORDER = [
+  ['solar_panel', 2], ['excavator', 1], ['smelter', 1], ['refinery', 1], ['solar_panel', 3],
+  ['excavator', 2], ['storage_depot', 1], ['solar_panel', 4], ['launch_pad', 1], ['solar_panel', 5],
+];
+
+async function playToFirstShipment() {
+  await speed(50);
+  const started = Date.now();
+  let lastLog = 0;
+  const seenQuests = new Set();
+  while (Date.now() - started < 180_000) {
+    if (await navVisible('retirement')) return true;
+    const s = await look();
+    if (s.quest) seenQuests.add(s.quest);
+    if (Date.now() - lastLog > 5000) {
+      lastLog = Date.now();
+      console.log(`     day ${s.day}, quest ${s.quest}, credits ${s.res.credits}, he3 ${s.res.he3 ?? '-'}`);
+    }
+    await panel('buildings');
+    const b = await buildings();
+    const goal = ORDER.find(([id, n]) => b[id] && b[id].owned < n);
+    if (goal && b[goal[0]].buyable) {
+      await click(`[data-testid="buy-${goal[0]}"]`);
+      continue;
+    }
+    const credits = s.res.credits ?? 0;
+    let cmd = 'cloud_compute';
+    if ((b.launch_pad?.owned ?? 0) > 0) {
+      await panel('launch_pads');
+      const cargo = Number(await evaluate(`document.querySelector('[data-pad="0"]')?.dataset.cargo ?? 0`));
+      if (cargo >= 10 && (await enabled('[data-testid="launch-0"]'))) {
+        await click('[data-testid="launch-0"]');
+        continue;
+      }
+      if ((s.res.propellant ?? 0) < 20 && credits >= 12) cmd = 'buy_propellant';
+      else if ((s.res.he3 ?? 0) >= 5 && cargo < 10) cmd = 'load_pads';
+    } else if (goal) {
+      const short = b[goal[0]].short;
+      if (short.includes('titanium') && credits >= 25) cmd = 'buy_titanium';
+      else if (short.includes('regolith') && credits >= 12) cmd = 'buy_regolith';
+    }
+    await runOnly(cmd, s.lines);
+    await sleep(60);
+  }
+  return false;
+}
+
 try {
   await send('Page.enable');
+  await send('Runtime.enable');
   await load(url);
-  check(true, `page loads: ${await day()}`);
-  // A fresh game can't afford a building: the rich scenario can.
-  await evaluate(`document.getElementById('scenario').value = 'rich'`);
+  check((await day()) < 5 && (await run()) === 1, `a fresh game loads: day ${await day()}, run ${await run()}`);
+  check(!(await exists('[data-testid="cheats"]')), 'cheats are off by default');
+  check(!(await navVisible('retirement')) && !(await navVisible('launch_pads')), 'gated nav tiles start hidden');
+  check(/Boot Sequence/.test(await evaluate(`document.querySelector('[data-testid="quest"]')?.textContent ?? ''`)), 'the first quest shows');
+
+  check((await evaluate(`document.querySelector('[data-testid="story-banner"]')?.dataset.story`)) === 'qpower_boot_sequence', 'a new game tells its first quest');
+  await click('[data-testid="story-banner"] button');
+  // Two quick clicks (no render between them) both land.
+  await panel('commands');
+  await evaluate(`['add-cloud_compute', 'add-idle'].forEach((t) => document.querySelector('[data-testid="' + t + '"]').click())`);
+  await sleep(100);
+  const two = await evaluate(`[...document.querySelectorAll('.lines li')].map((li) => li.dataset.command).join(',')`);
+  check(two === 'cloud_compute,idle', `two quick adds both land: ${two}`);
+
+  // ---- 1. a fresh game to retirement and run 2, through the normal UI ----
+  const shipped = await playToFirstShipment();
+  check(shipped, `played to the first shipment by day ${await day()}`);
+  await click('[data-testid="events-completed"] .fold-head'); // it starts folded
+  const done = await evaluate(`[...document.querySelectorAll('[data-testid="events-completed"] [data-quest]')].map((li) => li.dataset.quest)`);
+  check(
+    ['qpower_boot_sequence', 'qextract_first_extraction', 'qshipment_proof_of_concept'].every((x) => done.includes(x)),
+    `QPower, QExtract and QShipment complete: ${done.join(', ')}`,
+  );
+  check(await evaluate(`!!document.querySelector('.activity li[data-kind="shipment"]')`), 'the shipment is in Recent Activity');
+  check(await exists('tr[data-res="propellant"]'), 'Propellant shows in Resources once bought');
+  const told = await evaluate(`document.querySelector('[data-testid="story-banner"]')?.textContent ?? ''`);
+  check(/First Extraction|Proof of Concept|Automation/.test(told), `later quests are told as they open: ${told.slice(0, 40)}`);
+  check(await evaluate(`!!document.querySelector('.nav-tile[data-nav="retirement"] .dot')`), 'the new Retirement tile carries a "new" dot');
+  await panel('retirement');
+  check(!(await evaluate(`!!document.querySelector('.nav-tile[data-nav="retirement"] .dot')`)), 'opening it clears the dot');
+  await shot('retirement-panel');
+  await panel('buildings');
+  await shot('run1-buildings');
+  await panel('launch_pads');
+  await shot('run1-launch-pads');
+  await panel('retirement');
+  const runDays = await day();
+  await click('[data-testid="retire"]');
+  await click('[data-testid="retire-confirm"]');
+  await waitFor(`!!document.querySelector('[data-testid="summary"]')`, 'the run summary', 3000);
+  const paused1 = await day();
+  await sleep(600);
+  check((await day()) === paused1 && (await run()) === 2, `the run summary pauses the game (run 2, day ${paused1})`);
+  await shot('run-summary');
+  await click('[data-testid="continue"]');
+  await sleep(1000);
+  check((await run()) === 2 && (await day()) > 0 && !(await exists('[data-testid="summary"]')), `run 2 plays on (day ${await day()}; run 1 lasted ${runDays} days)`);
+  check(await exists('#speeds button[data-speed="50"][aria-pressed="true"]'), 'Continue restores the speed before the summary');
+  check(await navVisible('retirement') && await navVisible('launch_pads'), 'known nav tiles stay visible in run 2');
+  check(await evaluate(`!!document.querySelector('tr[data-res="he3"]')`), 'known resources stay visible in run 2');
+  check(!(await evaluate(`document.getElementById('status')?.textContent ?? document.querySelector('.status').textContent`)).includes('CHEATED'), 'an honest game is not marked');
+
+  // The play log of that career, on disk through the dev server.
+  await panel('options');
+  const career = await evaluate(`document.querySelector('[data-testid="playlog-status"]').dataset.career`);
+  const logDir = await evaluate(`fetch('/__playlog?career=${career}').then((r) => r.json()).then((j) => j.dir)`);
+  check(career.startsWith('bot_'), `an automated browser's career is filed as a bot's: ${career}`);
+  await sleep(2500); // the page sends its log every 2 s
+  const logFile = resolve(logDir, `${career}.jsonl`);
+  const logLines = existsSync(logFile) ? readFileSync(logFile, 'utf8').trim().split('\n').map((l) => JSON.parse(l)) : [];
+  const kinds = new Set(logLines.map((l) => l.kind));
+  check(
+    logLines[0]?.kind === 'header' && logLines[0].commit && ['action', 'speed', 'panel', 'retirement', 'checkpoint', 'session_start'].every((k) => kinds.has(k)),
+    `the play log is on disk: ${logFile} (${logLines.length} lines, ${logLines.filter((l) => l.kind === 'action').length} actions)`,
+  );
+
+  // ---- 2. every panel, reaching the gated ones with cheats ----
+  await speed(0);
+  await debugMenu();
+  await click('#cheats-toggle');
+  check(await exists('[data-testid="cheats"]'), 'the cheats section opens');
+  const grant = async (res, amount) => {
+    await setValue('#cheat-resource', res);
+    await setValue('#cheat-amount', amount);
+    await click('#cheat-grant');
+  };
+  const buy = async (id) => {
+    await panel('buildings');
+    await click(`[data-testid="buy-${id}"]`);
+    await debugMenu();
+  };
+  await grant('credits', '100000');
+  await grant('regolith', '50');
+  await grant('titanium', '20');
+  await buy('storage_depot');
+  await grant('titanium', '45');
+  await grant('circuits', '30');
+  await buy('data_center');
+  await grant('circuits', '30');
+  await buy('research_lab');
+  await grant('science', '5000');
+  check(await navVisible('research'), 'Research appears with a Research Lab');
+  await panel('research');
+  await click('[data-testid="research-market_awareness"]');
+  // Quests and events check at the end of a day: let days pass.
+  await speed(1);
+  await waitFor(`!!document.querySelector('[data-testid="research-geopolitical_intelligence"]')`, 'Geopolitical Intelligence', 5000);
+  await speed(0);
+  check(await navVisible('projects'), 'Projects appears with Market Awareness');
+  await click('[data-testid="research-geopolitical_intelligence"]');
+  await speed(1);
+  await waitFor(`!!document.querySelector('.nav-tile[data-nav="ideologies"]')`, 'the Ideologies tile', 5000);
+  await speed(0);
+  const tiles = await evaluate(`[...document.querySelectorAll('.nav-tile')].map((t) => t.dataset.nav)`);
+  for (const id of tiles) {
+    await panel(id);
+    const text = await evaluate(`document.querySelector('[data-panel="${id}"]').textContent.length`);
+    check(text > 20, `panel ${id} opens (${text} chars)`);
+    await shot(`panel-${id}`);
+  }
+  check(tiles.length === 11, `all 11 nav tiles reachable: ${tiles.join(', ')}`);
+  check((await evaluate(`document.querySelector('.status').textContent`)).includes('CHEATED'), 'a cheated game is marked');
+  await debugMenu();
+  await setValue('#cheat-days', '30');
+  const d0 = await day();
+  await click('#cheat-jump');
+  check((await day()) === d0 + 30, `jump ahead 30 days (${d0} -> ${await day()})`);
+  await click('#check-replay');
+  check(/^Replay ok/.test(await noticeText()), `replay check of the whole career: ${await noticeText()}`);
+
+  // ---- 3. speeds, saves and scenarios ----
+  await setValue('#scenario', 'rich');
   await click('#start-scenario');
   check((await day()) === 0 && /Started scenario rich/.test(await noticeText()), 'debug menu starts scenario rich');
-  // Each speed's rate, measured over wall time (loose bounds: timers jitter).
-  for (const [speed, label, secs] of [[1, '1x', 3], [3, '3x', 2], [10, '10x', 2], [50, '50x', 1], [200, '200x', 1]]) {
-    await click(`#speeds button[data-speed="${speed}"]`);
-    const d0 = await day();
+  for (const [s, secs] of [[1, 3], [3, 2], [10, 2], [50, 1], [200, 1]]) {
+    await speed(s);
+    const a = await day();
     const t0 = Date.now();
     await sleep(secs * 1000);
-    const rate = ((await day()) - d0) / ((Date.now() - t0) / 1000);
-    check(rate > speed * 0.6 && rate < speed * 1.4, `${label}: ${rate.toFixed(1)} days/s`);
+    const rate = ((await day()) - a) / ((Date.now() - t0) / 1000);
+    check(rate > s * 0.6 && rate < s * 1.4, `${s}x: ${rate.toFixed(1)} days/s`);
   }
-  await click('#speeds button[data-speed="0"]');
+  await speed(0);
   const paused = await day();
   await sleep(1200);
   check((await day()) === paused, 'pause holds the day');
-  const enabled = await evaluate(`!document.querySelector('${PANEL} button').disabled`);
-  check(enabled, 'Solar Panel affordable in the rich scenario');
+  await panel('buildings');
+  const owned = () => evaluate(`document.querySelector('.card.building[data-id="solar_panel"]').dataset.owned`);
   const before = await owned();
-  await click(`${PANEL} button`);
+  await click('[data-testid="buy-solar_panel"]');
   const after = await owned();
-  check(before !== after && /\d+ owned/.test(after), `buy: ${before} -> ${after}`);
+  check(Number(after) === Number(before) + 1, `buy a Solar Panel: ${before} -> ${after}`);
   const savedDay = await day();
   await load(url);
-  check((await day()) === savedDay && (await owned()) === after, `reload keeps the save (day ${savedDay}, ${after})`);
+  await panel('buildings');
+  check((await day()) === savedDay && (await owned()) === after, `reload keeps the save (day ${savedDay}, ${after} panels)`);
   // As if the next load ran a newer engine: retag the save after each of the page's own
   // leaving saves (pagehide, then visibilitychange; listeners run in order, so ours last).
   await evaluate(`(() => {
@@ -130,27 +372,21 @@ try {
   })()`);
   await load(url);
   const n = await noticeText();
-  check(/rules revision 999/.test(n) && (await day()) < savedDay,
-    `revision mismatch discards the save: ${n || `no notice; day ${await day()}, save ${await evaluate(`localStorage.getItem('hh.save')?.slice(0, 40)`)}`}`);
-  await evaluate(`document.getElementById('scenario').value = 'at_cap'`);
+  check(/rules revision 999/.test(n) && (await day()) < savedDay, `revision mismatch discards the save: ${n}`);
+  await debugMenu();
+  await setValue('#scenario', 'at_cap');
   await click('#start-scenario');
-  check((await day()) === 100 && /20 owned/.test(await owned()), 'debug menu starts scenario at_cap');
-  await click('#speeds button[data-speed="50"]');
-  await sleep(1000);
-  await click('#speeds button[data-speed="0"]');
-  await click('#commands button[data-id="cloud_compute"]');
-  check(/Running Sell Cloud Compute/.test(await evaluate(`document.getElementById('program').textContent`)), 'a command runs on program 1');
-  await click('#speeds button[data-speed="50"]');
-  await sleep(500);
-  await click('#speeds button[data-speed="0"]');
-  await click('.building button:not([disabled])').catch(() => {});
+  await panel('buildings');
+  check((await day()) === 100 && (await owned()) === '20', 'debug menu starts scenario at_cap');
+  await debugMenu();
   await click('#check-replay');
   check(/^Replay ok/.test(await noticeText()), `replay check: ${await noticeText()}`);
-  const errors = await evaluate(`document.getElementById('notice').textContent.includes('failed')`);
-  check(!errors, 'no engine errors');
+  check(pageErrors.length === 0, `no page errors${pageErrors.length ? `: ${pageErrors.join(' | ')}` : ''}`);
 } catch (e) {
   failures.push(String(e));
   console.error(e);
+  if (pageErrors.length) console.error(`page errors: ${pageErrors.join(' | ')}`);
+  await shot('failure');
 } finally {
   ws.close();
   // The browser's child processes outlive a plain kill on Windows (and hold the profile).

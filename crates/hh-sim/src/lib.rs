@@ -13,6 +13,7 @@ pub mod experiment;
 pub mod lab;
 pub mod milestones;
 pub mod objectives;
+pub mod playlog;
 pub mod profile;
 
 pub const USAGE: &str = "usage:
@@ -29,6 +30,7 @@ pub const USAGE: &str = "usage:
   hh-sim trace [GRID]                              one career's actions and milestones
   hh-sim agents                                    the ladder's rungs
   hh-sim speed                                     native engine speed (ticks/s)
+  hh-sim playlog LOG.jsonl [--json] [--milestones F] [--profiles F]   replay and measure a human's play log
 GRID: [SPEC.json] [--agents a,b] [--attention a,b] [--speeds a,b] [--seeds N] [--first-seed S]
       [--retirements N] [--max-ticks N] [--config F] [--set module.key=value]... [--threads T]
       [--out DIR (ladder, experiment, compare)] [--profiles F] [--milestones F]
@@ -122,6 +124,9 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     };
     if lab::COMMANDS.contains(&cmd.as_str()) {
         return lab::run(cmd, rest);
+    }
+    if cmd == "playlog" {
+        return playlog_cmd(rest);
     }
     let o = parse(rest)?;
     if cmd != "replay" && cmd != "objectives" && !o.rest.is_empty() {
@@ -227,6 +232,53 @@ fn run_game(o: &Opts) -> Result<String, Fail> {
         Ok(out)
     } else {
         Err(Fail::Check(format!("{out}replay mismatch: {warnings:?}")))
+    }
+}
+
+/// `hh-sim playlog LOG [--json] [--milestones F] [--profiles F]`: replays a
+/// human's play log and measures it as the ladder measures an agent.
+fn playlog_cmd(args: &[String]) -> Result<String, Fail> {
+    let (mut path, mut json) = (None, false);
+    let mut milestones = "configs/sim/milestones.json".to_string();
+    let mut profiles = "configs/sim/profiles.json".to_string();
+    let mut it = args.iter();
+    while let Some(a) = it.next() {
+        match a.as_str() {
+            "--json" => json = true,
+            "--milestones" => milestones = it.next().ok_or(Fail::Usage("--milestones needs a file".into()))?.clone(),
+            "--profiles" => profiles = it.next().ok_or(Fail::Usage("--profiles needs a file".into()))?.clone(),
+            f if f.starts_with("--") => return usage(format!("playlog: unknown option {f:?}")),
+            f if path.is_none() => path = Some(f.to_string()),
+            f => return usage(format!("playlog: one log at a time (also given {f:?})")),
+        }
+    }
+    let Some(path) = path else {
+        return usage("playlog: give a log file");
+    };
+    let log = playlog::Log::parse(&read(&path)?).map_err(|e| Fail::Usage(format!("{path}: {e}")))?;
+    let ms = milestones::Milestones::from_json(&read(&milestones)?).map_err(Fail::Usage)?;
+    let pf = profile::Profiles::from_json(&read(&profiles)?).map_err(Fail::Usage)?;
+    let r = playlog::replay(&log, &ms).map_err(|e| Fail::Check(format!("{path}: replay failed: {e}")))?;
+    let out = if json {
+        serde_json::json!({
+            "log": path,
+            "career": log.career,
+            "rules_revision": log.rules_revision,
+            "config_hash": log.config_hash,
+            "commit": log.commit,
+            "fingerprint": r.fingerprint,
+            "reproduced": r.matches,
+            "game": r.game,
+            "time": r.time,
+        })
+        .to_string()
+            + "\n"
+    } else {
+        playlog::report(&path, &log, &r, ms, pf)
+    };
+    match r.matches {
+        Some(false) => Err(Fail::Check(out)),
+        _ => Ok(out),
     }
 }
 

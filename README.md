@@ -68,7 +68,7 @@ is optimized (`opt-level = 1`) and keeps overflow checks.
 
 **Rules changes:** the `golden_game` test (`crates/hh-core/src/tests/mod.rs`) pins the final
 state of one fixed game: baseline config, seed `u64::MAX`, 2000 ticks of the scripted
-policy (`driver.rs`: it ships, retires at about tick 1100 and starts run 2). An intended play
+policy (`driver.rs`: it ships, is retired by boredom at tick 1574 and starts run 2). An intended play
 change bumps `RULES_REVISION`
 (`crates/hh-core/src/lib.rs`, and the revision line in `docs/rules/README.md`), adds its
 `docs/rules-history.md` row, and updates `GOLDEN_REVISION` and `GOLDEN_FINGERPRINT` there and
@@ -78,7 +78,8 @@ plays the golden game through `play_golden`, the wasm build's own copy of `drive
 the same seed and length). `GOLDEN_CONTENT_HASH` moves with any `content/` byte, play or
 not. Never type them: `python scripts/set_golden.py` copies all six from `hh-sim golden`
 (or copy each from the failing assertion's left side). A rename or refactor that plays the
-same moves no golden constant; if it does, play changed.
+same moves no golden constant; if it does, play changed. The bump also moves the
+`RULES_REVISION` literal's exception in `scripts/warning_checks.json` (else *tunables* trips).
 
 ## This machine
 

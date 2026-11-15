@@ -31,4 +31,20 @@ pub enum Action {
     SetProjectRate { project: String, resource: String, rate: Fx },
     /// Voluntary retirement (once unlocked).
     Retire,
+    /// A debug cheat (`cheat.rs`): marks the game as cheated for good.
+    Cheat { cheat: Cheat },
+}
+
+/// The debug menu's cheats. JSON: `{"type": "cheat", "cheat": {"kind": "grant",
+/// "resource": "credits", "amount": "500"}}`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum Cheat {
+    /// Adds to a resource, up to its cap (not processors or boredom).
+    Grant { resource: String, amount: Fx },
+    /// Sets boredom, up to its cap (at the cap the run retires on the next tick).
+    SetBoredom { amount: Fx },
+    /// Marks a jump of `days` days; the client then advances them as usual,
+    /// so a replay plays them like any others.
+    JumpAhead { days: u32 },
 }

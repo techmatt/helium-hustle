@@ -21,7 +21,8 @@ processor gained mid-run (a new Data Center) starts unassigned.
 under its pointer is executed once, then the pointer advances whatever the outcome (ran,
 skipped or failed): the line's run count rises and, at its `count`, the pointer moves to the
 next line, wrapping to the first. A program with no lines does nothing. So a program with 3
-processors runs three consecutive steps of its queue a day.
+processors runs three consecutive steps of its queue a day. Each line's outcome today (the
+last time it ran) is kept for display (the UI colors the line); no rule reads it.
 
 **Running a command** (one execution):
 

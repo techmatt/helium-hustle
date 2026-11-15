@@ -17,9 +17,9 @@ pub(crate) fn baseline() -> Config {
 // The golden constants: update all three together on a `RULES_REVISION` bump
 // (and `GOLDEN_*` in scripts/wasm-smoke.mjs), copying the failing assertion's
 // left side.
-const GOLDEN_REVISION: u32 = 2;
-const GOLDEN_FINGERPRINT: &str = "9a841070021b71f0";
-const GOLDEN_CONTENT_HASH: &str = "38f4e713790969a6";
+const GOLDEN_REVISION: u32 = 3;
+const GOLDEN_FINGERPRINT: &str = "f58bdb39741cb645";
+const GOLDEN_CONTENT_HASH: &str = "99c3dd10d17f35b9";
 
 pub(crate) fn golden_session() -> Session {
     let mut s = Session::new(&baseline(), GOLDEN_SEED, None).unwrap();

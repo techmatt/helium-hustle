@@ -6,7 +6,7 @@
       "params": {
         "phase_days": [0, 200, 500, 1000, 2000],
         "phase_rates": ["0.1", "0.2", "0.5", "1", "3"],
-        "base_cap": "500"
+        "base_cap": "1000"
       }
     },
     "economy": {
@@ -93,7 +93,7 @@
         "overclock_duration_factor": "1.03"
       }
     },
-    "events": { "variant": "arc1", "params": {} },
+    "events": { "variant": "arc1", "params": { "activity_kept": 50 } },
     "achievements": { "variant": "arc1", "params": {} },
     "career": {
       "variant": "arc1",

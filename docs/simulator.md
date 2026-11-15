@@ -4,7 +4,7 @@
 
 ```sh
 S="cargo run -q --release -p hh-sim --"
-$S run --seed 1 --ticks 1200 --policy script            # the scripted opening, to a retirement
+$S run --seed 1 --ticks 1700 --policy script            # the scripted opening, to a retirement
 $S run --scenario rich --ticks 100 --policy greedy      # from a named starting state
 $S run --scenario-file my.json --ticks 50               # from any scenario file
 $S run --seed 5 --ticks 1000 --json                     # machine-readable, with the full state
@@ -26,13 +26,25 @@ $S ladder                                     # the ladder: experiments/ladder.j
 $S ladder --agents author --speeds 1x,mixed --seeds 8 --retirements 5   # any slice of it
 $S experiment experiments/balance.json --out out/b   # any spec
 $S compare --config-b configs/other.json      # two configs, paired on the same seeds
-$S compare --set boredom.base_cap=1000        # a param (or module.variant=name) against the base
+$S compare --set boredom.base_cap=500         # a param (or module.variant=name) against the base
 $S balance                                    # the judge's missed targets, as balance: lines (~3 s)
 $S trace --agents author --attention active --speeds 1x --retirements 2   # one career: actions, the agent's notes (#), milestones
 $S agents                                     # the ladder's rungs
 $S speed                                      # native engine speed
 node scripts/wasm-speed.mjs                   # the same in wasm (needs crates/hh-wasm/pkg)
+$S playlog C:/Code/gdrive-sync/helium-hustle/playlogs/<career>.jsonl   # a human's career (--json: one line)
 ```
+
+**`playlog`** replays a web play log ([web/README.md](../web/README.md), *Play logs*) and
+checks the fingerprint logged at its last tick (exit 1 on a mismatch). It measures the
+career with the same `Meter` (`career.rs`) as an agent's, so its tables are the ladder's
+for one human row; real time comes from the log's wall clock (each tick reached at its
+share of the time between logged points; time paused before a tick counts toward it;
+time with the page closed doesn't count). Then where the time went: sessions, minutes
+played, hidden and closed, pauses, real minutes and ticks at each speed, actions applied
+and refused, panels opened. `--json` prints the career's `GameResult` (the
+`games.jsonl` line an agent's career writes) with the time use, for comparing against
+sim players on the same seed.
 
 Grid options (`ladder`, `experiment`, `compare`, `balance`, `trace`) override the spec:
 `--agents a,b` (an agent's knobs stay with it: `author:a=1,b=2,greedy` is two), `--attention
@@ -136,5 +148,5 @@ scenario's end condition was met, and the milestones. Objective types: `building
 `boredom_N`. A run takes about 0.2 s.
 
 Seed 1 (`run1_fresh.json`): QPower at tick 52, QExtract 157, the first shipment (QShipment)
-303, QAutomate 789, forced retirement 1098. The opening has no randomness, so other seeds
+303, QAutomate 789, forced retirement 1572. The opening has no randomness, so other seeds
 match it until the first shipment.

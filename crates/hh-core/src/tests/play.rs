@@ -307,7 +307,7 @@ fn forced_retirement_starts_the_next_run_with_career_bonuses() {
     let mut g = r.new_game(1);
     g.run.stats.credits_earned = f("5000");
     own(&mut g, "excavator", 1);
-    set(&mut g, "boredom", "499.95");
+    set(&mut g, "boredom", "999.95");
     r.advance(&mut g, 1);
     assert_eq!(g.career.run_number, 2);
     assert_eq!(g.career.retirements, 1);
@@ -322,12 +322,84 @@ fn forced_retirement_starts_the_next_run_with_career_bonuses() {
 #[test]
 fn the_script_reaches_the_first_shipment_and_retires() {
     let mut s = Session::new(&baseline(), 1, None).unwrap();
-    play(&mut s, 1200, Policy::Script);
+    play(&mut s, 2000, Policy::Script);
     let c = &s.state.career;
     for q in ["qpower_boot_sequence", "qextract_first_extraction", "qshipment_proof_of_concept"] {
         assert!(c.completed_quests.contains(q), "{q}");
     }
     assert_eq!(c.retirements, 1);
+    let last = c.last_run.as_ref().expect("the finished run's summary");
+    assert_eq!((last.run, last.forced), (1, true));
+    assert!(last.stats.shipments >= 1);
+}
+
+#[test]
+fn the_activity_feed_logs_shipments_and_quests_and_keeps_the_newest() {
+    let r = rules();
+    let mut s = Session::new(&baseline(), 1, None).unwrap();
+    play(&mut s, 900, Policy::Script);
+    let a = &s.state.run.activity;
+    assert!(a.iter().any(|x| x.kind == "quest" && x.id == "qpower_boot_sequence"));
+    let ship = a.iter().find(|x| x.kind == "shipment").expect("a shipment by day 900");
+    assert!(ship.amount.is_some_and(|v| v > Fx::ZERO) && ship.quantity.is_some());
+    assert!(a.len() <= r.p.events.activity_kept);
+    assert!(a.windows(2).all(|w| w[0].day <= w[1].day), "oldest first");
+}
+
+#[test]
+fn cheats_apply_through_actions_mark_the_game_and_replay() {
+    let r = rules();
+    let mut s = Session::new(&baseline(), 4, None).unwrap();
+    let cheat = |c: crate::Cheat| Action::Cheat { cheat: c };
+    assert!(!s.state.cheated);
+    assert!(!s.state.to_json().contains("cheated"), "an honest game's JSON has no mark");
+    s.advance(3);
+    s.apply(&cheat(crate::Cheat::Grant { resource: "credits".into(), amount: f("500") })).unwrap();
+    assert!(s.state.cheated);
+    assert_eq!(s.state.amount("credits"), f("500"));
+    // Capped resources stop at the cap.
+    s.apply(&cheat(crate::Cheat::Grant { resource: "titanium".into(), amount: f("1000000") })).unwrap();
+    assert_eq!(s.state.amount("titanium"), f("20"));
+    assert!(s.apply(&cheat(crate::Cheat::Grant { resource: "processors".into(), amount: f("1") })).is_err());
+    assert!(s.apply(&cheat(crate::Cheat::Grant { resource: "credits".into(), amount: f("-1") })).is_err());
+    s.apply(&cheat(crate::Cheat::SetBoredom { amount: f("400") })).unwrap();
+    assert_eq!(s.state.amount("boredom"), f("400"));
+    s.apply(&cheat(crate::Cheat::JumpAhead { days: 30 })).unwrap();
+    s.advance(30);
+    let rec = s.record();
+    let (g, warnings) = Record::from_json(&rec.to_json()).unwrap().replay().unwrap();
+    assert!(warnings.is_empty(), "{warnings:?}");
+    assert_eq!(g.fingerprint(), s.state.fingerprint());
+    assert!(r.view(&g).cheated);
+    // Boredom set to the cap retires the run on the next tick.
+    let cap = r.view(&s.state).boredom.cap;
+    s.apply(&cheat(crate::Cheat::SetBoredom { amount: cap + f("5") })).unwrap();
+    assert_eq!(s.state.amount("boredom"), cap);
+    s.advance(1);
+    assert_eq!(s.state.career.run_number, 2);
+    assert!(s.state.cheated, "the mark outlives the run");
+}
+
+#[test]
+fn the_view_shows_nav_tiles_from_content_and_the_next_run() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    let shown = |g: &GameState| -> Vec<String> {
+        r.view(g).nav.into_iter().filter(|t| t.visible).map(|t| t.id).collect()
+    };
+    let start = shown(&g);
+    assert!(start.contains(&"buildings".to_string()) && start.contains(&"story".to_string()));
+    assert!(!start.contains(&"launch_pads".to_string()) && !start.contains(&"retirement".to_string()));
+    g.career.owned_buildings.insert("launch_pad".into());
+    g.run.enabled_panels.insert("retirement".into());
+    let later = shown(&g);
+    assert!(later.contains(&"launch_pads".to_string()) && later.contains(&"retirement".to_string()));
+    // The next run's starting credits count this run's credits.
+    g.run.stats.credits_earned = f("5000");
+    let v = r.view(&g);
+    assert_eq!(v.next_run.starting_credits, f("100"));
+    assert_eq!(v.career.starting_credits, Fx::ZERO);
+    assert!(v.last_run.is_none());
 }
 
 #[test]

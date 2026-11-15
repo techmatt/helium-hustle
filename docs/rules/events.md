@@ -70,17 +70,25 @@ trigger and condition hold.
 `category` decides quest or one-off. `silent`, `title`, `summary` and `body` are text the
 engine doesn't read (body placeholders like `{rate}` are left as is).
 
+**Activity feed** (display: no rule reads it). The run keeps a feed of what happened, by
+day: each completed quest, earned achievement, completed project and bought research (the
+career log's lines), each fired non-silent one-off event, each shipment (good, cargo,
+credits), speculator burst (good, speculators added) and rival dump. At the end of each day
+and after each action the oldest lines beyond `activity_kept` are dropped; a new run starts
+it empty. The view also gives each quest's countable progress (owned, produced, shipments,
+days, credits, best rank) beside its condition.
+
 ## Actions
 
 None: events are checked each day.
 
 ## Params
 
-The variant has none (`"params": {}`): triggers, conditions and unlocks are content.
+Triggers, conditions and unlocks are content (`content/events.json`).
 
 | Param | Baseline | Meaning |
 |---|---|---|
-| (none) | | Everything is in `content/events.json`. |
+| `activity_kept` | 50 | Lines of the run's activity feed kept, newest first out last (display only). |
 
 ## Content
 

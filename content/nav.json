@@ -1,0 +1,13 @@
+[
+  {"id": "buildings", "name": "Buildings", "visible": {"type": "always"}},
+  {"id": "commands", "name": "Commands", "visible": {"type": "always"}},
+  {"id": "launch_pads", "name": "Launch Pads", "visible": {"type": "building_known", "building": "launch_pad"}},
+  {"id": "research", "name": "Research", "visible": {"type": "building_known", "building": "research_lab"}},
+  {"id": "projects", "name": "Projects", "visible": {"type": "panel", "panel": "projects"}},
+  {"id": "ideologies", "name": "Ideologies", "visible": {"type": "panel", "panel": "ideologies"}},
+  {"id": "adversaries", "name": "Adversaries", "visible": {"type": "always"}},
+  {"id": "stats", "name": "Stats", "visible": {"type": "always"}},
+  {"id": "story", "name": "Story", "visible": {"type": "always"}},
+  {"id": "retirement", "name": "Retirement", "visible": {"type": "panel", "panel": "retirement"}},
+  {"id": "options", "name": "Options", "visible": {"type": "always"}}
+]

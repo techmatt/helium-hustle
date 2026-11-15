@@ -300,6 +300,7 @@ pub fn bursts(r: &Rules, g: &mut GameState) {
             m.speculators = m.speculators.saturating_add(add);
             m.speculators_seen |= m.speculators > Fx::ZERO;
             g.run.bursts += 1;
+            g.activity("speculator_burst", &target, Some(add), None);
             for m in g.run.markets.values_mut() {
                 m.revenue = Fx::ZERO;
             }
@@ -310,6 +311,7 @@ pub fn bursts(r: &Rules, g: &mut GameState) {
         if g.run.rival_next.get(&rv.id).is_some_and(|&d| g.run.day >= d) {
             if let Some(m) = g.run.markets.get_mut(&rv.good) {
                 m.rival_pressure += rv.demand_hit;
+                g.activity("rival_dump", &rv.id, None, None);
             }
             let next = g.run.day + g.stream(RIVALS).int_in(rv.interval_min, rv.interval_max) as u64;
             g.run.rival_next.insert(rv.id.clone(), next);

@@ -24,6 +24,7 @@ const FILES: &[(&str, &str)] = &[
     ("projects.json", include_str!("../../../content/projects.json")),
     ("achievements.json", include_str!("../../../content/achievements.json")),
     ("rivals.json", include_str!("../../../content/rivals.json")),
+    ("nav.json", include_str!("../../../content/nav.json")),
 ];
 
 /// The modifier keys rewards may name (docs/rules/README.md, *Modifiers*).
@@ -333,6 +334,28 @@ pub struct Rival {
     pub demand_hit: Fx,
 }
 
+/// When a nav tile shows (display only: no rule reads it).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum NavCondition {
+    Always,
+    /// An event's `enable_nav_panel` enabled the panel this run (seen events
+    /// re-enable theirs at each run start).
+    Panel { panel: String },
+    /// The building is owned now or was in any run.
+    BuildingKnown { building: String },
+}
+
+/// A tile of the UI's nav grid, in display order. Nav ids are panel names, a
+/// namespace of their own (not checked against the other content ids).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct NavTile {
+    pub id: String,
+    pub name: String,
+    pub visible: NavCondition,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Content {
     pub resources: Vec<Resource>,
@@ -343,6 +366,7 @@ pub struct Content {
     pub projects: Vec<Project>,
     pub achievements: Vec<Achievement>,
     pub rivals: Vec<Rival>,
+    pub nav: Vec<NavTile>,
 }
 
 fn parse<T: for<'de> Deserialize<'de>>(name: &str) -> Result<Vec<T>, String> {
@@ -361,6 +385,7 @@ impl Content {
             projects: parse("projects.json")?,
             achievements: parse("achievements.json")?,
             rivals: parse("rivals.json")?,
+            nav: parse("nav.json")?,
         };
         c.check()?;
         Ok(c)
@@ -515,6 +540,26 @@ impl Content {
         for r in &self.rivals {
             need(res(&r.good), format!("rival {:?}: unknown good", r.id));
             need(r.interval_min <= r.interval_max, format!("rival {:?}: interval", r.id));
+        }
+        // Nav tiles: unique ids, real buildings, and every panel an event
+        // enables has the tile it shows.
+        let mut tiles = BTreeSet::new();
+        for t in &self.nav {
+            need(tiles.insert(t.id.as_str()), format!("nav {:?}: duplicate id", t.id));
+            if let NavCondition::BuildingKnown { building } = &t.visible {
+                need(bld(building), format!("nav {:?}: unknown building", t.id));
+            }
+        }
+        for e in &self.events {
+            for u in &e.unlocks {
+                if let Unlock::EnableNavPanel { panel } = u {
+                    let shown = self
+                        .nav
+                        .iter()
+                        .any(|t| matches!(&t.visible, NavCondition::Panel { panel: p } if p == panel));
+                    need(shown, format!("event {:?}: no nav tile shows panel {panel:?}", e.id));
+                }
+            }
         }
         if errors.is_empty() {
             Ok(())

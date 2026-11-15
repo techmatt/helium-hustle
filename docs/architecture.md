@@ -9,8 +9,8 @@ How the engine is put together. The rules are in [rules/](rules/README.md); the 
 - **`hh-sim`**: the native CLI: agents, careers, experiments ([simulator.md](simulator.md),
   [agents.md](agents.md)).
 - **`hh-wasm`**: wasm-bindgen adapter, JSON strings in and out, no rules.
-- **`web/`**: Vite + TypeScript, no UI framework. Renders the engine's view, sends
-  actions, owns the wall clock.
+- **`web/`**: Vite + TypeScript + Preact. Renders the engine's view, sends actions, owns
+  the wall clock ([web/README.md](../web/README.md)).
 
 ## Core invariants
 
@@ -122,12 +122,16 @@ can't change an old record.
 ## The view
 
 `Rules::view` (`view.rs`) gives everything a client shows and can do: resources (amount,
-cap, change over the next day, visible), buildings (price, buyable, unlocked, visible,
-stall, content rates per copy, the action that buys one), commands, programs, pads (fuel,
-cargo per load, payout, can launch), the run's totals (credits earned, shipments, buildings, research), markets
-(demand once Market Awareness is researched, else a tier), research, ideology, projects,
-the active quest, the run's fired events, boredom (cap, rate, phase), unlocked panels, the
-career's bests and next-run bonuses, and the career log. Clients
+cap, change over the next day, visible), buildings (price, what's short, buyable, unlocked,
+visible, stall, description, ideology tag, content rates per copy, the action that buys
+one), land (price, per purchase, buyable), commands, programs (with each line's outcome
+today), pads (fuel, cargo per load, payout, can launch), the run's totals, markets (demand
+once Market Awareness is researched, else a tier), research, ideology (with the scores of
+this rank and the next), projects, the active quest (with countable progress), quest and
+event texts, achievements, rivals, live overclocks and modifiers, boredom (cap, rate,
+phase), the nav tiles (`content/nav.json`), the career's bests, the next run's bonuses if
+the run retired now (`career::retire` on a copy), the last finished run's summary, the
+run's activity feed, display names by id, the cheat mark and the career log. Clients
 compute no rule; an agent reads the same view. The change per day comes from playing one
 day on a copy. The view is never read by the rules and isn't in the state, fingerprint or
 replay.

@@ -20,9 +20,11 @@ step of [the day](README.md#the-day); voluntary retirement happens between days.
   credits earned in a run, most shipments in a run), each axis's best ideology rank and best
   score, peak power, career flags, ids ever researched, owned and used, events seen, quests
   and sub-objectives completed, persistent project progress and completions, achievements,
-  and the log.
+  the log, and the last finished run's summary (display: its number, length, whether forced,
+  stats and final ranks, for the UI's run summary).
 
-**Retirement.** `retire` logs `retired` or `forced_retirement`, folds the run into the
+**Retirement.** `retire` logs `retired` or `forced_retirement`, records the run's summary,
+folds the run into the
 career (adds the run's stats and day count to the lifetime totals, raises each personal best
 it beats, counts a retirement, raises the run number), then starts a new run. The run's day
 count at retirement is its length (a forced retirement counts the tick it happened on).

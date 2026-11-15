@@ -16,10 +16,11 @@ files; port from them, and record the new game's rules in `docs/rules/`.
 | `docs/optimizer_design.md` | `docs/` | Design of the old balance optimizer (scenario-based single-lifetime runs). |
 | `data/*.json` | `godot/data/` | The game data: resources, buildings, commands, research, projects, events, achievements, and `game_config.json` (global tunables). |
 | `scenarios/run1_fresh.json` | `sim/scenarios/` | The optimizer's fresh-start scenario: actions available, objectives, command policy, end condition. |
-| `screenshots/HHustle_SS1.png` | `screenshots/` | The Godot build's UI (debug run, Options panel open). |
-| `screenshots/MagicalResearchB.png` | `screenshots/` | A layout reference from another idle game (Magic Research 2), not Helium Hustle. |
-| `screenshots/HHustle.png` | `screenshots/` | The 2024 PyQt prototype's layout (byte-identical to `pyqt-layout.png`). |
-| `screenshots/pyqt-layout.png` | `C:\Code\storage\helium-hustle\UIScreenshots\HHustle.png` | The 2024 PyQt prototype's layout, under a name that says so. |
-
 Not copied: the Godot scripts and scenes, `docs/generate_constants.py`, the top-level `data/`
 (the design spreadsheet and its converters) and the logs. The source folder still holds them.
+
+**Screenshots** live outside git, in `C:\Code\gdrive-sync\helium-hustle\screenshots\`:
+`godot-buildings-day1427.png` (the latest Godot build mid-career, the layout `web/` follows),
+`godot-options-day27.png` (an early Godot shot, Options panel open),
+`pyqt-2024-buildings.png` (the 2024 PyQt prototype) and `magical-research-inspiration.png`
+(a layout reference from another idle game, not Helium Hustle).

@@ -59,8 +59,8 @@ credits, a building count) is not seen.
   that actually lasted longer.
 - **M8**'s "diversified" is three goods of the four; a launch is seen as its good's market
   revenue rising over a tick, or a ready pad cooling down after it.
-- **M9**'s 20,000 is four times what one idle Cloud Compute processor earns in a forced-length
-  run (5 a day × ~1,000 days), so idling can't meet it; 5,000 could.
+- **M9**'s 20,000 is about two and a half times what one idle Cloud Compute processor earns
+  in a forced-length run (5 a day × ~1,600 days), so idling can't meet it; 8,000 could.
 - **M10** counts use in the career, not both in the same run.
 - **M12** reads "speculators managed" as owning the building that decays them; Speculator
   Dossier (the Strategic project) is the other candidate.

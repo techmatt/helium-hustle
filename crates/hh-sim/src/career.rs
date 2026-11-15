@@ -3,7 +3,8 @@
 //!
 //! The loop: at each look the agent reads the view and acts; the speed policy
 //! sets the speed from what happened; the game then runs `attention × speed`
-//! ticks before the next look. Real time is ticks over speed.
+//! ticks before the next look. Real time is ticks over speed. The measuring
+//! is a [`Meter`], which `hh-sim playlog` also runs over a human's career.
 
 use std::collections::{BTreeMap, BTreeSet};
 use std::time::Instant;
@@ -116,38 +117,68 @@ fn something_to_buy(s: &Session) -> bool {
             .any(|x| !g.run.research.contains(&x.id) && research::visible(g, x) && research::blocker(r, g, x).is_none())
 }
 
-pub fn play(game: &Game) -> Result<GameResult, String> {
-    play_session(game).map(|r| r.0)
+/// A career's measures, taken as it plays: call [`Meter::look`] after each
+/// round of actions and [`Meter::tick`] to play each tick (with the real
+/// seconds it took), then [`Meter::finish`].
+pub struct Meter<'a> {
+    milestones: &'a Milestones,
+    objectives: &'a [Objective],
+    tracker: Tracker,
+    hits: BTreeMap<String, Hit>,
+    real: f64,
+    idle: f64,
+    at_cap: BTreeMap<String, u64>,
+    overflow: BTreeMap<String, f64>,
+    produced: BTreeMap<String, f64>,
+    runs: Vec<RunResult>,
+    run_real: f64,
+    growth: f64,
+    cmd: f64,
+    last_run: u32,
+    start_tick: u64,
+    totals: Totals,
+    objectives_hit: BTreeMap<String, u64>,
 }
 
-/// [`play`], also returning the session (for `hh-sim trace`).
-pub fn play_session(game: &Game) -> Result<(GameResult, Session), String> {
-    let start = Instant::now();
-    let mut s = Session::new(game.config, game.seed, game.scenario)?;
-    let mut agent = agents::build(game.agent, game.seed)?;
-    let mut tracker = Tracker::new(game.milestones);
-    tracker.after(&s);
-    let mut hits: BTreeMap<String, Hit> = BTreeMap::new();
-    let mut real = 0.0f64;
-    let mut idle = 0.0f64;
-    let mut looks = 0u64;
-    let mut at_cap: BTreeMap<String, u64> = BTreeMap::new();
-    let mut overflow: BTreeMap<String, f64> = BTreeMap::new();
-    let mut produced: BTreeMap<String, f64> = BTreeMap::new();
-    let mut runs: Vec<RunResult> = Vec::new();
-    let mut run_real = 0.0f64;
-    let (mut growth, mut cmd) = (0.0f64, 0.0f64);
-    let mut last_run = s.state.career.run_number;
-    let mut seen_run = 0u32;
-    let start_tick = s.state.tick;
-    // `ended`: the run a retirement closed in this step, if any. A milestone
-    // first seen then counts in that run (on its last day): a retirement, or
-    // a career-wide condition (a quest, lifetime shipments, a command used)
-    // the run's last tick met. A run-scoped one the new run already reset (a
-    // building count, a launch on that tick) is not seen (docs/principles.md).
-    let check = |hits: &mut BTreeMap<String, Hit>, tracker: &Tracker, s: &Session, real: f64, ended: Option<&RunResult>| {
-        for m in &game.milestones.milestones {
-            if !hits.contains_key(&m.id) && tracker.met(&m.when, s) {
+impl<'a> Meter<'a> {
+    pub fn new(s: &Session, milestones: &'a Milestones, objectives: &'a [Objective]) -> Meter<'a> {
+        let mut tracker = Tracker::new(milestones);
+        tracker.after(s);
+        Meter {
+            milestones,
+            objectives,
+            tracker,
+            hits: BTreeMap::new(),
+            real: 0.0,
+            idle: 0.0,
+            at_cap: BTreeMap::new(),
+            overflow: BTreeMap::new(),
+            produced: BTreeMap::new(),
+            runs: Vec::new(),
+            run_real: 0.0,
+            growth: 0.0,
+            cmd: 0.0,
+            last_run: s.state.career.run_number,
+            start_tick: s.state.tick,
+            totals: Totals::of(s),
+            objectives_hit: BTreeMap::new(),
+        }
+    }
+
+    /// Real seconds so far.
+    pub fn real_s(&self) -> f64 {
+        self.real
+    }
+
+    /// Records each milestone met now. `ended`: the run a retirement closed
+    /// in this step, if any. A milestone first seen then counts in that run
+    /// (on its last day): a retirement, or a career-wide condition (a quest,
+    /// lifetime shipments, a command used) the run's last tick met. A
+    /// run-scoped one the new run already reset (a building count, a launch on
+    /// that tick) is not seen (docs/principles.md).
+    fn check(&mut self, s: &Session, ended: Option<&RunResult>) {
+        for m in &self.milestones.milestones {
+            if !self.hits.contains_key(&m.id) && self.tracker.met(&m.when, s) {
                 let g = &s.state;
                 let (run, day) = match (&m.when, ended) {
                     (_, Some(r)) => (r.run, r.days),
@@ -157,28 +188,24 @@ pub fn play_session(game: &Game) -> Result<(GameResult, Session), String> {
                     }
                     _ => (g.career.run_number, g.run.day),
                 };
-                hits.insert(m.id.clone(), Hit { tick: g.tick, run, day, real_s: real });
+                self.hits.insert(m.id.clone(), Hit { tick: g.tick, run, day, real_s: self.real });
             }
         }
-    };
-    // A retirement (forced in a tick, or chosen at a look) closes a run.
-    let close = |runs: &mut Vec<RunResult>,
-                 s: &Session,
-                 tracker: &mut Tracker,
-                 t: &Totals,
-                 run_real: &mut f64,
-                 growth: &mut f64,
-                 cmd: &mut f64| {
+    }
+
+    /// A retirement (forced in a tick, or chosen at a look) closes a run.
+    fn close(&mut self, s: &Session) -> Option<RunResult> {
         let e = s.state.career.log.iter().rev().find(|e| e.kind == "retired" || e.kind == "forced_retirement");
-        let best = tracker.take_best_rate().to_f64();
+        let best = self.tracker.take_best_rate().to_f64();
         if let Some(e) = e {
-            runs.push(RunResult {
+            let t = &self.totals;
+            self.runs.push(RunResult {
                 run: e.run,
                 days: e.day,
                 forced: e.kind == "forced_retirement",
-                real_s: *run_real,
-                boredom_growth: *growth,
-                boredom_commands: *cmd,
+                real_s: self.run_real,
+                boredom_growth: self.growth,
+                boredom_commands: self.cmd,
                 credits_earned: t.credits,
                 shipments: t.shipments,
                 buildings_built: t.buildings,
@@ -186,13 +213,114 @@ pub fn play_session(game: &Game) -> Result<(GameResult, Session), String> {
                 best_credit_rate: best,
             });
         }
-        *run_real = 0.0;
-        *growth = 0.0;
-        *cmd = 0.0;
-    };
-    let max_tick = start_tick.saturating_add(game.max_ticks);
-    let mut totals = Totals::of(&s);
-    let mut objectives_hit: BTreeMap<String, u64> = BTreeMap::new();
+        self.run_real = 0.0;
+        self.growth = 0.0;
+        self.cmd = 0.0;
+        self.last_run = s.state.career.run_number;
+        self.runs.last().cloned()
+    }
+
+    /// After a round of actions between ticks.
+    pub fn look(&mut self, s: &Session) {
+        let mut ended = None;
+        if s.state.career.run_number != self.last_run {
+            ended = self.close(s);
+        }
+        self.totals = Totals::of(s);
+        self.tracker.after(s);
+        self.check(s, ended.as_ref());
+    }
+
+    /// Plays one tick that took `dt` real seconds, and measures it.
+    pub fn tick(&mut self, s: &mut Session, dt: f64) -> Result<(), String> {
+        if !something_to_buy(s) {
+            self.idle += dt;
+        }
+        let b0 = s.state.amount(economy::BOREDOM);
+        let rate = boredom::rate(&s.rules, &s.state);
+        self.tracker.before(s);
+        s.advance(1);
+        self.real += dt;
+        self.run_real += dt;
+        let mut ended = None;
+        if s.state.career.run_number == self.last_run {
+            let b1 = s.state.amount(economy::BOREDOM);
+            self.growth += rate.to_f64();
+            self.cmd += (b1 - b0 - rate).to_f64();
+        } else {
+            self.growth += rate.to_f64();
+            ended = self.close(s);
+        }
+        self.totals = Totals::of(s);
+        if s.state.career.run_number == 1 {
+            for o in self.objectives {
+                if !self.objectives_hit.contains_key(&o.id) && objectives::holds(o, s)? {
+                    self.objectives_hit.insert(o.id.clone(), s.state.run.day);
+                }
+            }
+        }
+        let today = &s.state.run.today;
+        for (res, v) in &today.overflow {
+            *self.overflow.entry(res.clone()).or_default() += v.to_f64();
+        }
+        for (res, v) in &today.produced {
+            *self.produced.entry(res.clone()).or_default() += v.to_f64();
+        }
+        for (res, c) in capped(&s.rules, s) {
+            if s.state.amount(&res) >= c {
+                *self.at_cap.entry(res).or_default() += 1;
+            }
+        }
+        self.tracker.after(s);
+        self.check(s, ended.as_ref());
+        Ok(())
+    }
+
+    /// The career's measures. `replay_ok`: its record replays to the same state.
+    pub fn finish(self, s: &Session, seed: u64, agent: &str, looks: u64, notes: Vec<(u64, String)>, wall_s: f64) -> GameResult {
+        let rec = s.record();
+        let replay_ok = rec.replay().map(|(g, w)| g == s.state && w.is_empty()).unwrap_or(false);
+        let c = content();
+        let built: &BTreeSet<String> = &s.state.career.owned_buildings;
+        let used: &BTreeSet<String> = &s.state.career.used_commands;
+        GameResult {
+            seed,
+            agent: agent.to_string(),
+            ticks: s.state.tick - self.start_tick,
+            real_s: self.real,
+            retirements: s.state.career.retirements,
+            looks,
+            actions: rec.actions.len() as u64,
+            milestones: self.hits,
+            objectives: self.objectives_hit,
+            runs: self.runs,
+            idle_real_s: self.idle,
+            at_cap: self.at_cap,
+            overflow: self.overflow,
+            produced: self.produced,
+            never_built: c.buildings.iter().filter(|b| !built.contains(&b.id)).map(|b| b.id.clone()).collect(),
+            never_used: c.commands.iter().filter(|x| !used.contains(&x.id)).map(|x| x.id.clone()).collect(),
+            wall_s,
+            fingerprint: s.state.fingerprint(),
+            replay_ok,
+            notes,
+        }
+    }
+}
+
+pub fn play(game: &Game) -> Result<GameResult, String> {
+    play_session(game).map(|r| r.0)
+}
+
+/// [`play`], also returning the session (for `hh-sim trace`).
+pub fn play_session(game: &Game) -> Result<(GameResult, Session), String> {
+    let start = Instant::now();
+    let mut s = Session::new(game.config, game.seed, game.scenario)?;
+    let mut agent = agents::build(game.agent, game.seed)?;
+    let mut meter = Meter::new(&s, game.milestones, game.objectives);
+    let mut looks = 0u64;
+    let mut seen_run = 0u32;
+    let max_tick = s.state.tick.saturating_add(game.max_ticks);
     let mut notes: Vec<(u64, String)> = Vec::new();
     'career: while s.state.career.retirements < game.retirements && s.state.tick < max_tick {
         looks += 1;
@@ -220,15 +348,7 @@ pub fn play_session(game: &Game) -> Result<(GameResult, Session), String> {
             }
             p.applied > 0
         };
-        let mut ended = None;
-        if s.state.career.run_number != last_run {
-            close(&mut runs, &s, &mut tracker, &totals, &mut run_real, &mut growth, &mut cmd);
-            last_run = s.state.career.run_number;
-            ended = runs.last().cloned();
-        }
-        totals = Totals::of(&s);
-        tracker.after(&s);
-        check(&mut hits, &tracker, &s, real, ended.as_ref());
+        meter.look(&s);
         if s.state.career.retirements >= game.retirements {
             break;
         }
@@ -236,78 +356,12 @@ pub fn play_session(game: &Game) -> Result<(GameResult, Session), String> {
         let ticks = game.attention.seconds * speed;
         let dt = 1.0 / speed as f64;
         for _ in 0..ticks {
-            if !something_to_buy(&s) {
-                idle += dt;
-            }
-            let b0 = s.state.amount(economy::BOREDOM);
-            let rate = boredom::rate(&s.rules, &s.state);
-            tracker.before(&s);
-            s.advance(1);
-            real += dt;
-            run_real += dt;
-            let mut ended = None;
-            if s.state.career.run_number == last_run {
-                let b1 = s.state.amount(economy::BOREDOM);
-                growth += rate.to_f64();
-                cmd += (b1 - b0 - rate).to_f64();
-            } else {
-                growth += rate.to_f64();
-                close(&mut runs, &s, &mut tracker, &totals, &mut run_real, &mut growth, &mut cmd);
-                last_run = s.state.career.run_number;
-                ended = runs.last().cloned();
-            }
-            totals = Totals::of(&s);
-            if s.state.career.run_number == 1 {
-                for o in game.objectives {
-                    if !objectives_hit.contains_key(&o.id) && objectives::holds(o, &s)? {
-                        objectives_hit.insert(o.id.clone(), s.state.run.day);
-                    }
-                }
-            }
-            let today = &s.state.run.today;
-            for (res, v) in &today.overflow {
-                *overflow.entry(res.clone()).or_default() += v.to_f64();
-            }
-            for (res, v) in &today.produced {
-                *produced.entry(res.clone()).or_default() += v.to_f64();
-            }
-            for (res, c) in capped(&s.rules, &s) {
-                if s.state.amount(&res) >= c {
-                    *at_cap.entry(res).or_default() += 1;
-                }
-            }
-            tracker.after(&s);
-            check(&mut hits, &tracker, &s, real, ended.as_ref());
+            meter.tick(&mut s, dt)?;
             if s.state.career.retirements >= game.retirements || s.state.tick >= max_tick {
                 break 'career;
             }
         }
     }
-    let rec = s.record();
-    let replay_ok = rec.replay().map(|(g, w)| g == s.state && w.is_empty()).unwrap_or(false);
-    let c = content();
-    let built: &BTreeSet<String> = &s.state.career.owned_buildings;
-    let used: &BTreeSet<String> = &s.state.career.used_commands;
-    Ok((GameResult {
-        seed: game.seed,
-        agent: game.agent.to_string(),
-        ticks: s.state.tick - start_tick,
-        real_s: real,
-        retirements: s.state.career.retirements,
-        looks,
-        actions: rec.actions.len() as u64,
-        milestones: hits,
-        objectives: objectives_hit,
-        runs,
-        idle_real_s: idle,
-        at_cap,
-        overflow,
-        produced,
-        never_built: c.buildings.iter().filter(|b| !built.contains(&b.id)).map(|b| b.id.clone()).collect(),
-        never_used: c.commands.iter().filter(|x| !used.contains(&x.id)).map(|x| x.id.clone()).collect(),
-        wall_s: start.elapsed().as_secs_f64(),
-        fingerprint: s.state.fingerprint(),
-        replay_ok,
-        notes,
-    }, s))
+    let result = meter.finish(&s, game.seed, game.agent, looks, notes, start.elapsed().as_secs_f64());
+    Ok((result, s))
 }
