@@ -1,18 +1,108 @@
-/* Light mode only (no theme switch until asked). Desktop, 1280 to 2560 px wide. */
-:root {
+/* Earthrise, light and dark. Desktop, 1280 to 2560 px wide.
+   The two themes are 1:1: everything below the two token blocks is shared, and a token
+   block sets colors only (never a size, a font or a width), so switching moves nothing.
+   scripts/contrast.mjs checks every text pair the tokens make at 4.5:1: a new text or
+   background token goes in its list. */
+:root,
+:root[data-theme='light'] {
   color-scheme: light;
-  font-family: system-ui, 'Segoe UI', sans-serif;
-  font-size: 14px;
-  color: #1d2129;
-  background: #eceef1;
-  --line: #d4d8de;
-  --panel: #f6f7f9;
+  --page: #f3f1ec;
+  --panel: #fbfaf7;
   --card: #ffffff;
-  --dark: #2c3e50;
-  --good: #1f9d3a;
-  --bad: #d32f2f;
-  --info: #1565c0;
-  --new: #f59e0b;
+  --banner: #f6eedf;
+  --line: #ddd8cf;
+  --text: #211f1b;
+  --muted: #625d55;
+  --accent: #b86e00;
+  --accent-text: #8f5600;
+  --pos: #1f7a42;
+  --neg: #b4352c;
+  --info: #1f5fa8;
+  --sel-bg: #f4e3c4;
+  --sel-text: #211f1b;
+  --sel-hover: #eed6ac;
+  --btn-line: #cbc5ba;
+  --hover: #f8efe0;
+  --disabled: #efece6;
+  --strip: #ebe7df;
+  --strip-hover: #e2dcd1;
+  --track: #e6e2da;
+  --fill-green: #86cfa0;
+  --fill-red: #e9a39c;
+  --fill-gray: #c4beb4;
+  --fill-blue: #93bce9;
+  --ok-tint: #eaf5ee;
+  --bad-tint: #fbecea;
+  --skip-tint: #efede8;
+  --on-neg: #ffffff;
+  --axis-nationalist: #b4352c;
+  --axis-humanist: #1f7a42;
+  --axis-rationalist: #1f5fa8;
+  --backdrop: rgb(33 31 27 / 45%);
+  --shadow: rgb(0 0 0 / 22%);
+  /* The art: the lunar horizon and the sky the Earth hangs in. */
+  --hz-far: #dcd6cb;
+  --hz-near: #cbc3b5;
+  --hz-crater: #b8af9f;
+  --hz-dome: #eeebe4;
+  --hz-metal: #8f877a;
+  --hz-glow: #f5a524;
+  --star: transparent;
+  --sky: #e9e6df;
+}
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --page: #16161a;
+  --panel: #1c1c21;
+  --card: #232329;
+  --banner: #26231e;
+  --line: #34343c;
+  --text: #eeeae4;
+  --muted: #a39e96;
+  --accent: #f5a524;
+  --accent-text: #f7b955;
+  --pos: #62d98b;
+  --neg: #f28b82;
+  --info: #8ab4f8;
+  --sel-bg: #3a2a10;
+  --sel-text: #f7e6c8;
+  --sel-hover: #4a3614;
+  --btn-line: #4a4a54;
+  --hover: #2e2a24;
+  --disabled: #1f1f24;
+  --strip: #2a2a31;
+  --strip-hover: #33333b;
+  --track: #2e2e35;
+  --fill-green: #2c6e45;
+  --fill-red: #8a3a34;
+  --fill-gray: #4f4c55;
+  --fill-blue: #2d5a92;
+  --ok-tint: #1e2c24;
+  --bad-tint: #2f2120;
+  --skip-tint: #26262c;
+  --on-neg: #16161a;
+  --axis-nationalist: #f28b82;
+  --axis-humanist: #62d98b;
+  --axis-rationalist: #8ab4f8;
+  --backdrop: rgb(0 0 0 / 60%);
+  --shadow: rgb(0 0 0 / 50%);
+  --hz-far: #34343b;
+  --hz-near: #28282e;
+  --hz-crater: #1f1f24;
+  --hz-dome: #4a4a52;
+  --hz-metal: #77737c;
+  --hz-glow: #f5a524;
+  --star: rgb(255 255 255 / 55%);
+  --sky: #111114;
+}
+:root {
+  --font-head: 'Rajdhani', 'Bahnschrift', sans-serif;
+  --font-body: 'IBM Plex Sans', system-ui, 'Segoe UI', sans-serif;
+  --font-mono: 'IBM Plex Mono', Consolas, monospace;
+  font-family: var(--font-body);
+  font-size: 14px;
+  color: var(--text);
+  background: var(--page);
   --left: clamp(270px, 18vw, 440px);
   --right: clamp(340px, 23vw, 560px);
   --status: 34px;
@@ -30,20 +120,26 @@ body {
 button {
   font: inherit;
   cursor: pointer;
-  border: 1px solid #b9bfc8;
-  background: #fff;
+  border: 1px solid var(--btn-line);
+  background: var(--card);
   border-radius: 4px;
   padding: 3px 10px;
-  color: inherit;
+  color: var(--text);
 }
 button:hover:not(:disabled) {
-  background: #eef4ff;
-  border-color: #7aa7e8;
+  background: var(--hover);
+  border-color: var(--accent);
+  color: var(--text);
 }
 button:disabled {
   cursor: default;
-  color: #9aa0a8;
-  background: #f1f2f4;
+  color: var(--muted);
+  background: var(--disabled);
+}
+button:focus-visible,
+.card.building:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
 }
 button.tiny {
   padding: 0 6px;
@@ -55,31 +151,42 @@ button.big {
   font-size: 15px;
   font-weight: 600;
 }
-button.danger {
-  border-color: var(--bad);
-  color: var(--bad);
+button.danger,
+button.danger:hover:not(:disabled) {
+  border-color: var(--neg);
+  color: var(--neg);
 }
-button.link {
+button.link,
+button.link:hover:not(:disabled) {
   border: none;
   background: none;
   padding: 0;
   color: var(--info);
 }
+button.link:hover:not(:disabled) {
+  text-decoration: underline;
+}
 input,
 select {
   font: inherit;
+  color: var(--text);
+  background: var(--card);
+  border: 1px solid var(--btn-line);
 }
 h1,
 h2,
 h3 {
   margin: 0;
+  font-family: var(--font-head);
+  font-weight: 700;
 }
 h2 {
-  font-size: 20px;
+  font-size: 22px;
   margin-bottom: 8px;
+  letter-spacing: 0.02em;
 }
 h3 {
-  font-size: 15px;
+  font-size: 16px;
 }
 hr {
   border: none;
@@ -90,28 +197,28 @@ blockquote {
   margin: 4px 0 8px 12px;
   padding-left: 8px;
   border-left: 3px solid var(--line);
-  color: #444b55;
+  color: var(--muted);
   font-style: italic;
 }
 .muted {
-  color: #6b7380;
+  color: var(--muted);
 }
 .small {
   font-size: 12px;
 }
 .num {
   text-align: right;
+  font-family: var(--font-mono);
+  font-size: 0.93em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
-.pos {
-  color: var(--good);
+.pos,
+.ok {
+  color: var(--pos);
 }
 .neg {
-  color: var(--bad);
-}
-.ok {
-  color: var(--good);
+  color: var(--neg);
 }
 ul.plain {
   list-style: none;
@@ -136,15 +243,26 @@ ul.plain {
 .col-left {
   overflow-x: hidden;
   background: var(--panel);
-  border-right: 4px solid #c9ced6;
-  padding: 10px;
+  border-right: 1px solid var(--line);
+  padding: 10px 10px 0;
+  /* The horizon sits at the foot: after the content, or at the bottom when it is short. */
+  display: flex;
+  flex-direction: column;
+}
+.col-left > * {
+  flex: none;
 }
 .col-mid {
-  padding: 10px 14px;
+  position: relative;
+  /* Room on top for the sky the Earth hangs in. */
+  padding: 100px 14px 10px;
+}
+.col-mid > :not(.sky) {
+  position: relative;
 }
 .col-right {
   background: var(--panel);
-  border-left: 4px solid #c9ced6;
+  border-left: 1px solid var(--line);
   padding: 10px;
 }
 .status {
@@ -154,7 +272,7 @@ ul.plain {
   gap: 10px;
   padding: 0 10px;
   border-top: 1px solid var(--line);
-  background: #fff;
+  background: var(--panel);
 }
 .status .bar {
   flex: 1;
@@ -165,27 +283,53 @@ ul.plain {
   min-width: 90px;
 }
 .status-run {
-  color: #6b7380;
+  color: var(--muted);
   border-right: 1px solid var(--line);
   padding-right: 10px;
 }
 .status-rate {
   min-width: 72px;
-  color: #6b7380;
+  color: var(--muted);
+  font-family: var(--font-mono);
+  font-size: 13px;
 }
 .cheated {
-  background: var(--bad);
-  color: #fff;
+  background: var(--neg);
+  color: var(--on-neg);
   font-weight: 700;
   font-size: 11px;
   padding: 2px 6px;
   border-radius: 3px;
 }
 
+/* ---- the sky and the Earth ----
+   The Earth is the home for a later live view of the base (Flash/3D): swap what
+   .sky holds, keep its box. Nothing interactive sits over it. */
+.sky {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 136px;
+  overflow: hidden;
+  pointer-events: none;
+  background: linear-gradient(to bottom, var(--sky), transparent);
+}
+.sky .stars circle {
+  fill: var(--star);
+}
+.earth {
+  position: absolute;
+  top: -56px;
+  right: 28px;
+  width: 190px;
+  height: 190px;
+}
+
 /* ---- left ---- */
 .title {
   text-align: center;
-  font-size: 22px;
+  font-size: 24px;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
   padding: 6px 0 10px;
   border-bottom: 1px solid var(--line);
   margin-bottom: 8px;
@@ -205,12 +349,16 @@ ul.plain {
   align-items: center;
   gap: 6px;
   padding: 8px 4px;
-  background: #fff;
 }
-.nav-tile.active {
-  background: #4caf50;
-  border-color: #3d8b40;
-  color: #fff;
+/* Every tile state names its own text color: normal, hover, selected, selected + hover. */
+.nav-tile.active,
+.nav-tile.active:hover:not(:disabled) {
+  background: var(--sel-bg);
+  border-color: var(--accent);
+  color: var(--sel-text);
+}
+.nav-tile.active:hover:not(:disabled) {
+  background: var(--sel-hover);
 }
 .nav-tile .dot {
   position: absolute;
@@ -219,13 +367,15 @@ ul.plain {
   width: 9px;
   height: 9px;
   border-radius: 50%;
-  background: var(--new);
+  background: var(--accent);
 }
 .sq {
   display: inline-block;
   flex: none;
   vertical-align: -1px;
   border-radius: 2px;
+  /* True colors always; the edge keeps pale ones (Energy, Ice) visible on white. */
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 18%);
 }
 .speed {
   border-top: 1px solid var(--line);
@@ -234,7 +384,9 @@ ul.plain {
   padding: 8px 0;
 }
 .speed .label {
-  font-weight: 600;
+  font-family: var(--font-head);
+  font-weight: 700;
+  font-size: 15px;
   margin-bottom: 6px;
 }
 .speeds {
@@ -242,10 +394,14 @@ ul.plain {
   gap: 4px;
   flex-wrap: wrap;
 }
-.speeds button[aria-pressed='true'] {
-  background: #4caf50;
-  border-color: #3d8b40;
-  color: #fff;
+.speeds button[aria-pressed='true'],
+.speeds button[aria-pressed='true']:hover,
+.prog-tabs button[aria-selected='true'],
+.prog-tabs button[aria-selected='true']:hover {
+  background: var(--sel-bg);
+  border-color: var(--accent);
+  color: var(--sel-text);
+  box-shadow: inset 0 -3px 0 var(--accent);
 }
 .res-table {
   width: 100%;
@@ -259,10 +415,39 @@ ul.plain {
   font-size: 12px;
 }
 .at-cap {
-  color: #d9822b;
+  color: var(--accent-text);
 }
 .empty {
-  color: var(--bad);
+  color: var(--neg);
+}
+.horizon {
+  display: block;
+  margin: auto -10px 0;
+  padding-top: 12px;
+  width: calc(100% + 20px);
+  height: 150px;
+}
+.horizon .far {
+  fill: var(--hz-far);
+}
+.horizon .near {
+  fill: var(--hz-near);
+}
+.horizon .crater {
+  fill: var(--hz-crater);
+}
+.horizon .dome {
+  fill: var(--hz-dome);
+  stroke: var(--hz-metal);
+  stroke-width: 1.5;
+}
+.horizon .metal {
+  fill: none;
+  stroke: var(--hz-metal);
+  stroke-width: 2;
+}
+.horizon .lamp {
+  fill: var(--hz-glow);
 }
 
 /* ---- folds ---- */
@@ -275,22 +460,24 @@ ul.plain {
   text-align: left;
   border: none;
   background: none;
-  font-weight: 600;
+  font-family: var(--font-head);
+  font-size: 15px;
+  font-weight: 700;
   padding: 4px 2px;
 }
 .fold-head:hover:not(:disabled) {
-  background: #e6e9ee;
+  background: var(--strip);
 }
 .fold-dark > .fold-head {
-  background: var(--dark);
-  color: #fff;
+  background: var(--strip);
+  color: var(--text);
   text-align: center;
-  font-size: 12px;
-  letter-spacing: 0.04em;
+  font-size: 13px;
+  letter-spacing: 0.12em;
 }
 .fold-dark > .fold-head:hover:not(:disabled) {
-  background: #3d5266;
-  color: #fff;
+  background: var(--strip-hover);
+  color: var(--text);
 }
 .fold-body {
   padding: 6px 2px;
@@ -301,16 +488,16 @@ ul.plain {
 
 /* ---- middle ---- */
 .notice {
-  background: #fff8e1;
-  border: 1px solid #f0c36d;
+  background: var(--banner);
+  border: 1px solid var(--accent);
   padding: 6px 10px;
   border-radius: 4px;
   margin: 0 0 10px;
 }
 .story-banner {
-  background: #fffdf3;
-  border: 1px solid #e8d48a;
-  border-left: 4px solid var(--new);
+  background: var(--banner);
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
   border-radius: 4px;
   padding: 8px 12px;
   margin: 0 0 10px;
@@ -324,14 +511,15 @@ ul.plain {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: #eef7ee;
-  border: 1px solid #cfe3cf;
+  background: var(--card);
+  border: 1px solid var(--line);
   padding: 8px 10px;
   border-radius: 4px;
   margin-bottom: 8px;
 }
 .land-bar strong {
-  font-size: 17px;
+  font-family: var(--font-head);
+  font-size: 18px;
 }
 .land-offer {
   margin-left: auto;
@@ -351,18 +539,16 @@ ul.plain {
   flex-direction: column;
   gap: 4px;
 }
+/* Affordable: a 1px outline in the positive color. */
 .card.can-buy {
-  background: #f1faf1;
-}
-.card.cannot-buy {
-  background: #fcf1f1;
+  border-color: var(--pos);
 }
 .card.done {
-  background: #f3f5f7;
+  background: var(--skip-tint);
 }
 .card.is-new,
 tr.is-new td:first-child {
-  box-shadow: inset 4px 0 0 var(--new);
+  box-shadow: inset 4px 0 0 var(--accent);
 }
 .card-head {
   display: flex;
@@ -371,14 +557,14 @@ tr.is-new td:first-child {
 }
 .card-head h3 {
   margin-right: auto;
-  font-size: 17px;
+  font-size: 18px;
 }
 .card .owned {
-  color: #6b7380;
+  color: var(--muted);
 }
 .desc {
   margin: 0;
-  color: #444b55;
+  color: var(--muted);
 }
 .flow {
   display: flex;
@@ -397,8 +583,8 @@ tr.is-new td:first-child {
   font-size: 12px;
   padding: 1px 6px;
   border-radius: 3px;
-  background: #fff3e0;
-  color: #b25e00;
+  background: var(--banner);
+  color: var(--accent-text);
 }
 .costs {
   width: 100%;
@@ -408,7 +594,7 @@ tr.is-new td:first-child {
   padding: 1px 0;
 }
 .costs tr.short {
-  color: var(--bad);
+  color: var(--neg);
 }
 .card-actions {
   display: flex;
@@ -419,18 +605,13 @@ tr.is-new td:first-child {
 }
 .card.building.can-buy {
   cursor: pointer;
-  transition: background 0.1s, border-color 0.1s;
+  transition: background 0.1s;
 }
 .card.building.can-buy:hover {
-  background: #e2f4e2;
-  border-color: #7cbf7c;
+  background: var(--ok-tint);
 }
 .card.building.can-buy:active {
-  background: #d3edd3;
-}
-.card.building:focus-visible {
-  outline: 2px solid #4a8fd8;
-  outline-offset: 1px;
+  background: var(--hover);
 }
 .card.building button {
   cursor: pointer;
@@ -443,11 +624,11 @@ tr.is-new td:first-child {
   font-size: 13px;
 }
 .card-actions .buy-hint.short {
-  color: var(--bad);
+  color: var(--neg);
 }
-.card-actions .sell {
-  color: var(--bad);
-  border-color: #e3a5a5;
+.card-actions .sell,
+.card-actions .sell:hover:not(:disabled) {
+  color: var(--neg);
 }
 .grid-table {
   border-collapse: collapse;
@@ -460,7 +641,7 @@ tr.is-new td:first-child {
   border-bottom: 1px solid var(--line);
 }
 .grid-table.kv td:first-child {
-  color: #444b55;
+  color: var(--muted);
   /* One value column for every table on a page (Stats, Retirement, the summary). */
   width: 60%;
 }
@@ -494,6 +675,15 @@ tr.is-new td:first-child {
   height: 12px;
   margin: 6px 0;
 }
+.axis-nationalist {
+  color: var(--axis-nationalist);
+}
+.axis-humanist {
+  color: var(--axis-humanist);
+}
+.axis-rationalist {
+  color: var(--axis-rationalist);
+}
 .active-quest {
   margin-top: 8px;
 }
@@ -503,10 +693,21 @@ tr.is-new td:first-child {
   gap: 8px;
 }
 .cheats {
-  border: 1px dashed var(--bad);
+  border: 1px dashed var(--neg);
   padding: 4px 10px;
   margin-top: 6px;
   border-radius: 4px;
+}
+.theme-pick {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.theme-pick button[aria-pressed='true'],
+.theme-pick button[aria-pressed='true']:hover {
+  background: var(--sel-bg);
+  border-color: var(--accent);
+  color: var(--sel-text);
 }
 
 /* ---- bars ---- */
@@ -515,7 +716,7 @@ tr.is-new td:first-child {
   display: inline-block;
   height: 14px;
   min-width: 60px;
-  background: #dfe3e8;
+  background: var(--track);
   border-radius: 2px;
   overflow: hidden;
   vertical-align: middle;
@@ -523,28 +724,25 @@ tr.is-new td:first-child {
 .bar .fill {
   position: absolute;
   inset: 0 auto 0 0;
-  background: #22aa22;
+  background: var(--fill-green);
 }
 .bar-red .fill {
-  background: #c62828;
+  background: var(--fill-red);
 }
 .bar-gray .fill {
-  background: #9aa0a8;
+  background: var(--fill-gray);
 }
 .bar-blue .fill {
-  background: #1e5bd6;
+  background: var(--fill-blue);
 }
 .bar-label {
   position: relative;
   display: block;
   text-align: center;
+  font-family: var(--font-mono);
   font-size: 11px;
   line-height: inherit;
-  color: #111;
-  mix-blend-mode: normal;
-}
-.bar-label {
-  text-shadow: 0 0 3px #fff, 0 0 3px #fff, 0 0 3px #fff;
+  color: var(--text);
 }
 .status .bar .bar-label {
   line-height: 18px;
@@ -557,14 +755,10 @@ tr.is-new td:first-child {
   gap: 4px;
 }
 .prog-tabs button {
-  font-size: 16px;
-  font-weight: 600;
+  font-family: var(--font-head);
+  font-size: 17px;
+  font-weight: 700;
   padding: 6px 0;
-}
-.prog-tabs button[aria-selected='true'] {
-  background: #4caf50;
-  border-color: #3d8b40;
-  color: #fff;
 }
 .prog-procs {
   display: flex;
@@ -590,24 +784,24 @@ tr.is-new td:first-child {
   gap: 4px;
   padding: 5px 6px;
   border: 1px solid var(--line);
-  background: #fff;
+  background: var(--card);
   border-radius: 3px;
   margin-bottom: 3px;
 }
 .line.out-ran {
-  background: #e3f6e3;
+  background: var(--ok-tint);
 }
 .line.out-failed {
-  background: #f8dcdc;
+  background: var(--bad-tint);
 }
 .line.out-skipped {
-  background: #eceff2;
+  background: var(--skip-tint);
 }
-/* The line the next processor runs: a green frame with a thick left edge, drawn by
+/* The line the next processor runs: an accent ring with a thick left edge, drawn by
    box-shadow so nothing in the line moves (its background still shows the outcome). */
 .line.current {
-  border-color: #2e7d32;
-  box-shadow: inset 4px 0 0 #2e7d32, 0 0 0 1px #2e7d32;
+  border-color: var(--accent);
+  box-shadow: inset 4px 0 0 var(--accent), 0 0 0 1px var(--accent);
 }
 /* The bar's 60px minimum would spill over the − button from its 48px column. */
 .line .bar {
@@ -615,7 +809,7 @@ tr.is-new td:first-child {
 }
 .line .grip {
   cursor: grab;
-  color: #9aa0a8;
+  color: var(--muted);
 }
 .line-name {
   overflow: hidden;
@@ -633,7 +827,7 @@ tr.is-new td:first-child {
   font-weight: 600;
 }
 .quest-summary {
-  color: #444b55;
+  color: var(--muted);
   margin-bottom: 4px;
 }
 .quest .bar {
@@ -643,17 +837,15 @@ tr.is-new td:first-child {
   font-size: 13px;
   padding-left: 8px;
 }
-.sub.done {
-  color: var(--good);
+.sub.done,
+.act-good {
+  color: var(--pos);
 }
 .activity li {
   padding: 1px 0;
 }
-.act-good {
-  color: var(--good);
-}
 .act-bad {
-  color: var(--bad);
+  color: var(--neg);
 }
 .act-info {
   color: var(--info);
@@ -663,17 +855,17 @@ tr.is-new td:first-child {
 .modal-back {
   position: fixed;
   inset: 0;
-  background: rgb(20 24 30 / 45%);
+  background: var(--backdrop);
   display: grid;
   place-items: center;
   z-index: 10;
 }
 .modal {
-  background: #fff;
+  background: var(--card);
   border-radius: 6px;
   padding: 18px 22px;
   width: min(560px, 90vw);
   max-height: 90vh;
   overflow-y: auto;
-  box-shadow: 0 8px 30px rgb(0 0 0 / 25%);
+  box-shadow: 0 8px 30px var(--shadow);
 }

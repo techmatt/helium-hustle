@@ -35,6 +35,8 @@ const NAV_COLORS: Record<string, string> = {
   options: '#9aa0a8',
 };
 
+/** True axis colors, behind white text (an ideology tag). As text, an axis takes its
+ * class (`axis-<id>` in style.css), which has a readable variant per theme. */
 export const AXIS_COLORS: Record<string, string> = {
   nationalist: '#c62828',
   humanist: '#2e7d32',

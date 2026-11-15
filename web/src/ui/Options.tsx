@@ -1,8 +1,9 @@
 // Options: the career, keyboard help, and the debug menu (scenario starts, replay check,
 // and the cheats, off by default). Cheats are engine actions, so replay stays exact.
 
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { engine } from '../engine';
+import { onTheme, setTheme, theme, type Theme } from '../theme';
 import * as playlog from '../playlog';
 import {
   act,
@@ -28,6 +29,7 @@ export function Options({ s }: { s: Store }) {
           no offline progress.
         </p>
         <p class="muted small">Keys: space pauses or resumes, 1 to 5 pick 1x to 200x.</p>
+        <ThemePick id="theme" />
         <p class="small" data-testid="playlog-status" data-career={playlog.currentCareer() ?? ''}>
           {playlog.status === 'off'
             ? 'Play log: not recording (no log server; play through npm run dev).'
@@ -63,6 +65,22 @@ export function Options({ s }: { s: Store }) {
   );
 }
 
+/** Light or dark, remembered in this browser. In Options and again in the debug menu. */
+function ThemePick({ id }: { id: string }) {
+  const [t, setT] = useState<Theme>(theme());
+  useEffect(() => onTheme(() => setT(theme())), []);
+  return (
+    <p class="theme-pick" role="group" aria-label="Theme" id={id}>
+      <span>Theme</span>
+      {(['light', 'dark'] as const).map((x) => (
+        <button type="button" key={x} data-theme-pick={x} aria-pressed={t === x} onClick={() => setTheme(x)}>
+          {x === 'light' ? 'Light' : 'Dark'}
+        </button>
+      ))}
+    </p>
+  );
+}
+
 function Debug({ s }: { s: Store }) {
   const v = s.view;
   const scenarios = engine.scenarios();
@@ -83,6 +101,7 @@ function Debug({ s }: { s: Store }) {
   };
   return (
     <Section title="Debug" open={false} testid="debug">
+      <ThemePick id="debug-theme" />
       <p>
         <label>
           Scenario{' '}

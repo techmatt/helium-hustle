@@ -1,9 +1,10 @@
-// Left column: title, nav grid, speed controls, Resources and Ideology.
+// Left column: title, nav grid, speed controls, Resources and Ideology, the horizon.
 
 import { SPEEDS } from '../clock';
 import { capitalize, num, perDay } from '../format';
 import { navHasNews, seen, setSpeed, type Store } from '../store';
-import { AXIS_COLORS, Section, Square } from './common';
+import { Horizon } from './art';
+import { Section, Square } from './common';
 
 export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: string) => void }) {
   const v = s.view;
@@ -84,7 +85,7 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
             <tbody>
               {v.ideology.map((a) => (
                 <tr key={a.axis}>
-                  <td style={{ color: AXIS_COLORS[a.axis] }}>{capitalize(a.axis)}</td>
+                  <td class={`axis-${a.axis}`}>{capitalize(a.axis)}</td>
                   <td>Rank {a.rank}</td>
                   <td class="num muted">
                     {Number(a.score) < 0 ? '−' : ''}
@@ -96,6 +97,7 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
           </table>
         </Section>
       )}
+      <Horizon />
     </aside>
   );
 }

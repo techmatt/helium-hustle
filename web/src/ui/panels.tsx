@@ -5,7 +5,7 @@ import { useState } from 'preact/hooks';
 import type { Amounts, Fx, ProjectView, View } from '../engine';
 import { capitalize, mult, num, perDay } from '../format';
 import { act, seen, store, type Store } from '../store';
-import { AXIS_COLORS, Bar, FlowLines, Section, Square, freshClass, name } from './common';
+import { Bar, FlowLines, Section, Square, freshClass, name } from './common';
 import { Quest, editProgram } from './Right';
 
 // ---- Commands ------------------------------------------------------------------
@@ -300,7 +300,7 @@ export function Ideologies({ s }: { s: Store }) {
         const down = Number(a.score) < 0;
         return (
           <div class="axis" key={a.axis} data-axis={a.axis}>
-            <h3 style={{ color: AXIS_COLORS[a.axis] }}>{capitalize(a.axis)}</h3>
+            <h3 class={`axis-${a.axis}`}>{capitalize(a.axis)}</h3>
             <div>
               Rank <strong>{a.rank}</strong> · score {num(a.score)} · next rank at {down ? '−' : ''}
               {num(a.next_rank_score)}

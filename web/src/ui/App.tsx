@@ -14,6 +14,7 @@ import {
   useStore,
   type Store,
 } from '../store';
+import { Sky } from './art';
 import { Buildings } from './Buildings';
 import { Bar, Section } from './common';
 import { Left } from './Left';
@@ -65,6 +66,7 @@ export function App() {
         }}
       />
       <main class="col-mid">
+        <Sky />
         {s.notice && (
           <p id="notice" class="notice">
             {s.notice}{' '}

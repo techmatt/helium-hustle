@@ -6,6 +6,8 @@
 //      a cheated game is marked, and its replay check passes.
 //   3. A program's lines in queue order at 10x and 50x, each speed's days per second, pause, a reload keeping the save, a save from
 //      another revision discarded, debug-menu scenarios.
+//   4. The theme: light by default; the Options and debug toggles switch it with no
+//      element moving, and a reload keeps it.
 // Any uncaught page error fails the run.
 //   HH_URL      the page (default http://localhost:5173/)
 //   HH_BROWSER  a browser off the usual paths
@@ -457,6 +459,49 @@ try {
   await debugMenu();
   await click('#check-replay');
   check(/^Replay ok/.test(await noticeText()), `replay check: ${await noticeText()}`);
+
+  // ---- 4. the theme: light by default; the Options toggle switches it, moving nothing ----
+  const theme = () => evaluate('document.documentElement.dataset.theme');
+  // Every element's box, to the hundredth of a pixel.
+  const layout = () =>
+    evaluate(`JSON.stringify([...document.querySelectorAll('body *')].map((e) => {
+      const r = e.getBoundingClientRect();
+      return [r.x, r.y, r.width, r.height].map((n) => Math.round(n * 100)).join();
+    }))`);
+  const pick = async (t, where = '#theme') => {
+    const before = await layout();
+    await click(`${where} [data-theme-pick="${t}"]`);
+    await sleep(200);
+    check((await theme()) === t && (await layout()) === before, `${where} switches to ${t} with nothing moving`);
+  };
+  check((await theme()) === 'light' && (await evaluate(`localStorage.getItem('hh.theme')`)) === null, 'the game opens in the light theme');
+  await speed(0);
+  await click('#notice button');
+  await panel('commands');
+  await evaluate(`[...document.querySelectorAll('[data-testid^="add-"]')].filter((b) => !b.disabled).slice(0, 3).forEach((b) => b.click())`);
+  await panel('buildings');
+  const looks = {};
+  for (const t of ['light', 'dark']) {
+    if (t === 'dark') {
+      await panel('options');
+      await pick('dark');
+    }
+    for (const p of ['buildings', 'commands']) {
+      await panel(p);
+      await sleep(200);
+      looks[`${t} ${p}`] = await layout();
+      await shot(`theme-${t}-${p}`);
+    }
+  }
+  for (const p of ['buildings', 'commands']) check(looks[`light ${p}`] === looks[`dark ${p}`], `${p}: the same layout in both themes`);
+  await load(url);
+  check((await theme()) === 'dark', 'a reload keeps the dark theme');
+  await speed(0);
+  await panel('options');
+  await debugMenu();
+  await pick('light', '#debug-theme');
+  await pick('dark');
+  await pick('light');
   check(pageErrors.length === 0, `no page errors${pageErrors.length ? `: ${pageErrors.join(' | ')}` : ''}`);
 } catch (e) {
   failures.push(String(e));
