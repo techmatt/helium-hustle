@@ -7,7 +7,9 @@ against: [principles.md](principles.md); how they're run: [simulator.md](simulat
   the web client gets it) and `apply(action)`. It never sees the state. What an agent needed
   that the view lacked went into the view: each building's content rates (`produces`,
   `upkeep`, `stores`), a pad's `fuel` and `load` (cargo per Load), and the run's totals
-  (`run_stats`).
+  (`run_stats`). The one exception is the oracle's privilege (Matt's ruling: it may see the
+  future): `Player::state()` and `Player::fork()`, a copy of the game to play ahead on
+  (`Session::fork`, an empty record). It still acts only through `apply`.
 - **Game time only.** A player acts at a look, then says how many ticks to skip to its next
   (`Agent::next_look`, below): no speed or attention setting touches a game. Real time is a
   human model's projection afterwards ([principles.md](principles.md#players-and-human-models)).
@@ -24,8 +26,8 @@ against: [principles.md](principles.md); how they're run: [simulator.md](simulat
 | `random` | Each look, `actions` times: one action uniform over what the view offers (an affordable building or research, land, a random 1-4 line program on a random program, free processors to a random program, a random rate on an open project); retires with chance 1 in `retire_odds` a look; looks every `every` ticks. | `actions` 2, `retire_odds` 500, `every` 5 |
 | `greedy` | The **builder**: buys the best-scored building it can afford (land included), up to `buys` a look, never saving; the cheapest affordable research; one command on the first program with every processor, chosen afresh each look. No projects, no voluntary retirement. Looks again when its target comes within reach, at most `max_gap` ticks on. | `buys` 3, `decay`, `starved` 100, `reserve` 3, `min_gap` 1, `max_gap` 10 |
 | `author` | The **program author**: the builder's score, but saves for its target; writes programs from templates; research, projects, ideology, Dream, market commands; retires a stale run. | the builder's, `min_gap` 1, `max_gap` 10, `compute` 1, `hand_gap` 60, `loads` 20, `pause` 1, `wait_demand` 0, `dream_at` 60, `stale_days` 300, `project_rate` 3, `fund` 1, `market` 1 |
-| `planner` | **Not built.** A strategic player that plans across retirements: the hook is `Agent::new_run`, called once a run: at the first look after a forced retirement, before `act`; after a retirement the agent chose, at the end of that look (whatever else `act` did in the new run came first, so a planner should retire last in its look). | |
-| `oracle` | **Not built.** A full-information search, the ceiling. | |
+| `planner` | **Not built.** A strategic player that plans across retirements without peeking: the hook is `Agent::new_run`, called once a run: at the first look after a forced retirement, before `act`; after a retirement the agent chose, at the end of that look (whatever else `act` did in the new run came first, so a planner should retire last in its look). | |
+| `oracle` | The **ceiling**: the author steered by rollouts on copies of the game, the future included (below). Profiles: `profile` 0 milestones, 1 credits, 2 ideology, 3 builder, 4 quests. | `profile` 0, `every` 50, `horizon` 600, `width` 5, `beam` 1, `margin` 20, `long` 2000, `replan` 500, `strategy` -1 (search), `retire` 1, `min_run` 1000, `retire_margin` 0, `first_margin` 0, `early` and `ideology` (the profile's weights), `tail` 400, `hoard_at` 5000, `stale_days` 300, `max_gap` 10, `roll_gap` = `max_gap` |
 
 ## The builder (`builder.rs`)
 
@@ -102,6 +104,56 @@ decision (a look that applied an action)
 is a real change, and `max_gap` 10 gives about 140 decisions a run (tuned on dev seeds 1-3: 5,
 10, 20, 30 and 60 tried; 5 and 10 earned about the same, 12,000-14,000 credits a run, 10 with
 half the decisions; 20 and longer earned less and met M3 later).
+
+## The oracle (`oracle.rs`)
+
+The reasonable upper bound on a dedicated human, not an optimum: no per-tick search, no speed
+model. The author plays every look (looking at most every `max_gap`); the oracle sets its
+**goals** (`author::Directives`, none set for the plain author): a building to save for,
+research first, a project pushed (all spare credits; science the research doesn't want), an
+axis funded on N processors, Dream held against boredom (`sustain`: enough Dream processors
+to outpace growth, Dream's program first, energy users leave room for two Dreams, no stale
+retirement), all research, the market program on one processor once two are free, a different
+good on each extra pad, hoarding, and the main program run last (`main_last`, so Dream, Fund
+and Promote get energy before Cloud Compute's filler). It chooses them by **rollouts**: the
+author, cloned, plays a copy of the game under the goals, and the score picks. The real game
+looks exactly when the author would (plans fall due at its next look) and rollouts look as
+often, so a rollout of the current goals is what will happen: with extra looks at plan times
+the oracle's first shipment and second Data Center came 31 and 18 ticks after the author's;
+without, on the same ticks.
+
+- **Strategy** (each run's start, every `replan` ticks): standing bundles (`strategies`: the
+  author's own; *trade*: Trade Promotion first, market, diversified pads, main last; trade
+  with the main program first; trade + sustain, + all research, + Foundation Grant; once the
+  market quest is done, trade + each axis funded on 2 processors, with and without sustain),
+  each played `long` ticks through retirements. The quests profile, while Open Horizons is
+  open, has one: its campaign (trade, Dream held, Humanist funded, then AI Consciousness).
+- **Tactics** (every `every` ticks, and once its target is bought): one change each to the
+  target (every unlocked building), the research (once the strategy's is done), the project
+  (when the strategy names none) or hoarding (from `hoard_at` credits on hand); all screened
+  over a third of `horizon`, the best `width` over all of it, the two best together. A change
+  must beat keeping the goals by `margin` per mille. 300 ticks steered off slow chains
+  (circuits for a second Data Center) toward quick payback; 600 earned a third more.
+- **Score**, in credits: credits earned; the closing income of the run under way at the end
+  times the days it has left (room to the boredom cap at its closing growth, at most `tail`);
+  and the profile's weights on what the career keeps (ideology best scores, Long-Term project
+  progress, building types, commands, quests and sub-objectives, achievements, research), on
+  each open milestone met (`configs/sim/milestones.json`, embedded: 4,000 plus `early` 100 a
+  tick sooner) and on each open milestone's progress squared (`progress.rs`). Credits weighs
+  credits alone.
+- **Retirement**, checked every 100 ticks from day `min_run`: it plays the run out on a copy
+  and retires once the run's average credits a day is the best it will see (the prestige
+  rule). Judging it by rollouts of retiring against staying instead favored retiring at once:
+  the retiring branch ends its window in a mature run. Before `min_run` it never retires: a
+  retirement re-rolls the markets for free, which a peeking player farms, and the run played
+  out under fixed goals underestimates a young run (400 let runs end at day 625-730).
+  `first_margin` loosens the rule for the first retirement (a milestone) in a profile that
+  scores milestones: 100 and 200 per mille didn't put it reliably before the author's and 200
+  halved one seed's run 1 credits.
+
+It plays about 30 ticks a second (a rollout a few milliseconds): a career of 20 retirements
+is about 18 minutes on one thread. Results and what blocks each milestone:
+[experiments/results/011_oracle_planner/](../experiments/results/011_oracle_planner/README.md).
 
 ## Adding a rung
 

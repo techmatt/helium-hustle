@@ -22,6 +22,7 @@ pub static DEF: ModuleDef = ModuleDef {
     }],
 };
 
+#[derive(Clone)]
 pub struct Params {
     pub activity_kept: usize,
 }

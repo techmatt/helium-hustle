@@ -119,6 +119,13 @@ pub struct GameResult {
     pub never_used: Vec<String>,
     /// Every building bought, in order.
     pub builds: Vec<Build>,
+    /// The career's long goals at the end: each axis's best rank, projects
+    /// completed (Long-Term), quests and sub-objectives done, achievements.
+    pub best_ranks: BTreeMap<String, i64>,
+    pub projects: Vec<String>,
+    pub quests: Vec<String>,
+    pub sub_objectives: Vec<String>,
+    pub achievements: Vec<String>,
     pub wall_s: f64,
     pub fingerprint: String,
     pub replay_ok: bool,
@@ -392,6 +399,11 @@ impl<'a> Meter<'a> {
             never_built: c.buildings.iter().filter(|b| !built.contains(&b.id)).map(|b| b.id.clone()).collect(),
             never_used: c.commands.iter().filter(|x| !used.contains(&x.id)).map(|x| x.id.clone()).collect(),
             builds,
+            best_ranks: s.state.career.max_ideology_ranks.clone(),
+            projects: s.state.career.completed_projects.iter().cloned().collect(),
+            quests: s.state.career.completed_quests.iter().cloned().collect(),
+            sub_objectives: s.state.career.completed_sub_objectives.iter().cloned().collect(),
+            achievements: s.state.career.achievements.iter().cloned().collect(),
             wall_s,
             fingerprint: s.state.fingerprint(),
             replay_ok,

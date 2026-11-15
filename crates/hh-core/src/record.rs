@@ -114,6 +114,18 @@ impl Session {
         })
     }
 
+    /// A copy of the game from here on, with an empty record: a sandbox to
+    /// try moves in (the oracle's rollouts). Its actions never reach this
+    /// session's record.
+    pub fn fork(&self) -> Session {
+        Session {
+            rules: self.rules.clone(),
+            state: self.state.clone(),
+            actions: Vec::new(),
+            scenario: None,
+        }
+    }
+
     pub fn advance(&mut self, n: u64) {
         self.rules.advance(&mut self.state, n);
     }

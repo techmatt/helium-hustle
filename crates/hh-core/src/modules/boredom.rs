@@ -24,6 +24,7 @@ pub static DEF: ModuleDef = ModuleDef {
     }],
 };
 
+#[derive(Clone)]
 pub struct Params {
     pub phase_days: Vec<u64>,
     pub phase_rates: Vec<Fx>,

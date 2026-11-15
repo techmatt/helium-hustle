@@ -55,6 +55,7 @@ pub static DEF: ModuleDef = ModuleDef {
     }],
 };
 
+#[derive(Clone)]
 pub struct Params {
     pub min_demand: Fx,
     pub max_demand: Fx,

@@ -218,6 +218,11 @@ impl Tracker {
         std::mem::replace(&mut self.best_rate, Fx::ZERO)
     }
 
+    /// Goods seen shipped this run.
+    pub fn shipped(&self) -> usize {
+        self.shipped.len()
+    }
+
     pub fn met(&self, w: &When, s: &Session) -> bool {
         let g = &s.state;
         match w {

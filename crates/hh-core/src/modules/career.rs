@@ -30,6 +30,7 @@ pub static DEF: ModuleDef = ModuleDef {
     }],
 };
 
+#[derive(Clone)]
 pub struct Params {
     pub credits_bonus_fraction: Fx,
     pub boredom_resilience_base: Fx,

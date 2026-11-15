@@ -88,6 +88,7 @@ pub static REGISTRY: &[&ModuleDef] = &[
 ];
 
 /// Every module's params, compiled from a config.
+#[derive(Clone)]
 pub struct Params {
     pub boredom: boredom::Params,
     pub economy: economy::Params,

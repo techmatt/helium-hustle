@@ -228,6 +228,36 @@ fn agents_keep_their_knobs_and_cope_with_one_program() {
     assert!(out.contains("| author:hand_gap=0,loads=10 |") && out.contains("| greedy |"), "{out}");
 }
 
+/// The oracle plans on copies of the game: its own game's record replays, a
+/// second play is the same game, and a pinned strategy and its knobs parse.
+#[test]
+#[ignore = "slow lane: an oracle career plays thousands of rollouts (~20 s)"]
+fn the_oracle_plays_on_copies_and_its_game_replays() {
+    let dir = root("out/hh-sim-tests/oracle");
+    let player = "oracle:horizon=90,long=200,every=200,replan=1000,width=2";
+    let mut fingerprints = Vec::new();
+    for threads in ["1", "2"] {
+        let a = grid("experiment", &format!("{player},pinned=oracle:strategy=1,horizon=60,long=100,every=400"), &[
+            "--out", &dir, "--threads", threads,
+        ]);
+        let out = run(&a).unwrap();
+        assert!(out.contains(&format!("| {player} |")) && out.contains("| pinned |"), "{out}");
+        let games = std::fs::read_to_string(format!("{dir}/games.jsonl")).unwrap();
+        for line in games.lines() {
+            let g: serde_json::Value = serde_json::from_str(line).unwrap();
+            assert_eq!(g["replay_ok"], true, "{line}");
+            fingerprints.push(g["fingerprint"].as_str().unwrap().to_string());
+        }
+    }
+    let half = fingerprints.len() / 2;
+    assert_eq!(fingerprints[..half], fingerprints[half..]);
+}
+
+#[test]
+fn the_oracle_refuses_an_unknown_knob() {
+    assert!(matches!(run(&grid("experiment", "oracle:peek=1", &[])), Err(Fail::Usage(_))));
+}
+
 #[test]
 fn empty_lists_and_stray_options_are_usage_errors() {
     for extra in [

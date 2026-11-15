@@ -27,6 +27,7 @@ pub static DEF: ModuleDef = ModuleDef {
     }],
 };
 
+#[derive(Clone)]
 pub struct Params {
     pub program_count: usize,
     pub max_entries: usize,

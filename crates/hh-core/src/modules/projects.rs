@@ -20,6 +20,7 @@ pub static DEF: ModuleDef = ModuleDef {
     }],
 };
 
+#[derive(Clone)]
 pub struct Params {
     pub max_drain_rate: Fx,
 }

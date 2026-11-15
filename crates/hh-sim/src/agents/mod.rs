@@ -13,6 +13,8 @@ use hh_core::{Action, Fx, Session, View};
 
 pub mod author;
 pub mod builder;
+pub mod oracle;
+pub mod progress;
 pub mod random;
 
 /// The seat an agent plays from: the view, and actions. Nothing else.
@@ -34,6 +36,21 @@ impl<'a> Player<'a> {
             self.view = Some(self.s.rules.view(&self.s.state));
         }
         self.view.as_ref().expect("just built")
+    }
+
+    /// The oracle's seat only (docs/agents.md): the whole state, and a copy of
+    /// the game to try moves on (its future included: seeded draws, events).
+    /// The other rungs read the view alone.
+    pub fn state(&self) -> &hh_core::GameState {
+        &self.s.state
+    }
+
+    pub fn session(&self) -> &Session {
+        self.s
+    }
+
+    pub fn fork(&self) -> Session {
+        self.s.fork()
     }
 
     /// Applies an action; an illegal one changes nothing and returns its error.
@@ -89,15 +106,15 @@ impl Knobs {
     }
 }
 
-/// The rungs, weakest first. `Planner` and `Oracle` are hooks for later
-/// items: a strategic player that plans across retirements (through
-/// [`Agent::new_run`]), and a full-information search as the ceiling.
+/// The rungs, weakest first. `planner` is a hook for a later item: a player
+/// that plans across retirements without peeking (through
+/// [`Agent::new_run`]); `oracle` is the ceiling, a full-information planner.
 pub const RUNGS: &[(&str, &str)] = &[
     ("random", "uniform over the actions the view offers"),
     ("greedy", "scored build order, one hand-picked command at a time"),
     ("author", "the builder plus programs written from templates, research, projects, Dream"),
-    ("planner", "not built: plans across retirements (hook: Agent::new_run)"),
-    ("oracle", "not built: full-information search, the ceiling"),
+    ("planner", "not built: plans across retirements without peeking (hook: Agent::new_run)"),
+    ("oracle", "the author steered by rollouts on copies of the game (the future included): run strategies, then tactics"),
 ];
 
 /// A player's name and its agent spec: `name=kind[:key=value,...]` names a
@@ -134,7 +151,11 @@ pub fn build(player: &str, seed: u64) -> Result<Box<dyn Agent>, String> {
             knobs.check(author::KNOBS, kind)?;
             Ok(Box::new(author::Author::new(&knobs)))
         }
-        "planner" | "oracle" => Err(format!("agent {kind:?} is a hook for a later rung, not built yet")),
+        "oracle" => {
+            knobs.check(oracle::KNOBS, kind)?;
+            Ok(Box::new(oracle::Oracle::new(&knobs)))
+        }
+        "planner" => Err(format!("agent {kind:?} is a hook for a later rung, not built yet")),
         _ => Err(format!(
             "unknown agent {kind:?} (rungs: {})",
             RUNGS.iter().map(|r| r.0).collect::<Vec<_>>().join(", ")

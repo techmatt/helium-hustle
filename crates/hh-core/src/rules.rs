@@ -13,6 +13,7 @@ use crate::scenario::Scenario;
 use crate::state::{Career, GameState, Run};
 use crate::view::View;
 
+#[derive(Clone)]
 pub struct Rules {
     pub config: Config,
     pub config_hash: String,

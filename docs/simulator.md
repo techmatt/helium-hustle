@@ -23,7 +23,8 @@ careers in game time, against the targets in [principles.md](principles.md); a h
 projects real minutes on the side.
 
 ```sh
-$S ladder                                     # the ladder: experiments/ladder.json (~11 s on 6 threads)
+$S ladder                                     # the ladder: experiments/ladder.json (~20 min on 6 threads)
+$S ladder --agents random,greedy,author,casual=author:min_gap=120   # without the oracle (~11 s)
 $S ladder --agents author --humans mixed --seeds 8 --retirements 5   # any slice of it
 $S experiment experiments/balance.json --out out/b   # any spec
 $S compare --config-b configs/other.json      # two configs, paired on the same seeds
@@ -96,7 +97,8 @@ whatever the thread count.
 
 **Output.** The tables on stdout and in `report.md`; `results.json` (`hh-experiment/1`: the
 spec, revision, content hash and each cell's summary); `games.jsonl` (a line a game: every
-measure, each run's ticks and decisions, every building bought, its cell, the fingerprint and
+measure, each run's ticks and decisions, every building bought, the career's best ranks,
+projects, quests, sub-objectives and achievements at the end, its cell, the fingerprint and
 `replay_ok`). Every command exits 1 if a game's record doesn't replay to its state.
 `compare` prints the paired table (B minus A on the same seeds, mean difference and its
 standard error, per player; run 1's minutes under the spec's first human model) and both
@@ -124,11 +126,13 @@ sides' tables; `--out` writes `compare.md`.
 After the tables, the engine's own speed natively and, when `crates/hh-wasm/pkg` is built and
 `node` runs, in wasm (`scripts/wasm-speed.mjs`).
 
-**Costs** (this machine, idle): the ladder (4 players × 3 seeds, careers of 20 retirements, 12 games) about 11 s on 6
-threads, set by the author's careers; the same at 5 seeds about 18 s; `balance` (4 careers)
-about 5 s; `vs-human` on a 1,600-tick log about a second. A career plays 4,000-20,000 ticks a
-second, slower the more often its player looks (random and the author every 5-10 ticks,
-the casual author every ~130).
+**Costs** (this machine, idle): the ladder (5 players × 3 seeds, careers of 20 retirements)
+about 20 minutes on 6 threads, set by the oracle's careers (about 30 ticks a second, ~35,000
+ticks a career: [agents.md](agents.md#the-oracle-oraclers)); without the oracle about 11 s.
+`balance` (4 careers, no oracle) about 5 s; `vs-human` defaults to the ladder's players, the
+oracle among them, so a 1,600-tick log takes about a minute (`--agents author,casual=...`: a
+second). Other careers play 4,000-20,000 ticks a second, slower the more often their
+player looks (random and the author every 5-10 ticks, the casual author every ~130).
 
 ### Seeds
 
@@ -140,9 +144,10 @@ its write-up. **Dev seeds** 1-3 are for development, on/off checks and the stand
 
 Spent: 1-3 and 100-103 (005, development), 1000-1004 (005, the rev-2 baseline), 2000-2003
 (005, a compare), 3000-3004 (008, a baseline read before review fixes, superseded),
-3005-3009 (008, the rev-3 baseline).
+3005-3009 (008, the rev-3 baseline), 3010-3012 (011, the oracle's first read, superseded by a
+fix), 3013-3015 (011, the oracle's final read).
 
-Next free: 3010
+Next free: 3016
 
 ## `run` and `replay`
 

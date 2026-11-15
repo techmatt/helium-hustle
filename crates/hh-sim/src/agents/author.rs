@@ -90,13 +90,54 @@ const AXES: &[(&str, &str)] = &[
     ("nationalist", "microwave_power"),
 ];
 
+/// Tradeable goods by base value, dearest first (baseline: circuits 15, He-3
+/// 10, titanium 6, propellant 4).
+const DEAREST: &[&str] = &["circuits", "he3", "titanium", "propellant"];
+
 const MAIN: usize = 0;
 const DREAM: usize = 1;
 const FUND: usize = 2;
 const MARKET: usize = 3;
 
+/// Goals a planner sets on top of the author's own choices (the oracle,
+/// docs/agents.md). Unset, the author plays as itself.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct Directives {
+    /// The building to save for, in place of the best-scored one.
+    pub target: Option<String>,
+    /// Research to buy first, saving science for it.
+    pub research: Option<String>,
+    /// The project to fund, in place of the first open one in order; funded
+    /// with everything to spare (credits past the target's price, all science).
+    pub project: Option<String>,
+    /// The axis to fund, and processors on it (0: the author's own rule).
+    pub axis: Option<String>,
+    pub fund_procs: u32,
+    /// Hold boredom down with Dream (enough processors to outpace growth,
+    /// from a third of the cap), and never retire for a stale run.
+    pub sustain: bool,
+    /// Buy all visible research, not only the essential ones.
+    pub all_research: bool,
+    /// Run the market program (Promote what ships, Disrupt) on one processor
+    /// whenever two are free, not only three.
+    pub market: bool,
+    /// Extra pads each carry a different good with a maker running, dearest
+    /// first, not only a good at its cap.
+    pub diversify: bool,
+    /// Buy no buildings and fund no project: let credits pile up.
+    pub hoard: bool,
+    /// The main program runs last (programs run in order), so Dream, Fund
+    /// and the market get energy before Cloud Compute's filler takes it.
+    pub main_last: bool,
+}
+
+#[derive(Clone)]
 pub struct Author {
+    /// The planner's goals (unset for the plain author).
+    pub dir: Directives,
     b: Builder,
+    /// The builder's own energy reserve (its `reserve` knob).
+    reserve: Fx,
     buys: u32,
     compute: bool,
     dream_at: i64,
@@ -123,8 +164,11 @@ pub struct Author {
 impl Author {
     pub fn new(k: &Knobs) -> Self {
         let min_gap = k.get("min_gap", 1).max(1) as u64;
+        let b = Builder::new(k);
         Author {
-            b: Builder::new(k),
+            dir: Directives::default(),
+            reserve: b.reserve,
+            b,
             buys: k.get("buys", 3).max(1) as u32,
             compute: k.get("compute", 1) != 0,
             dream_at: k.get("dream_at", 60).clamp(0, 100),
@@ -145,6 +189,22 @@ impl Author {
             wait_demand: k.get("wait_demand", 0) != 0,
             last_note: String::new(),
         }
+    }
+
+    /// The builder's ranking of unlocked buildings, best first.
+    pub fn ranked(&self, v: &View) -> Vec<(String, i64)> {
+        self.b.ranked(v)
+    }
+
+    /// Its look gaps (the oracle sets its own and its rollouts').
+    pub fn set_gaps(&mut self, min_gap: u64, max_gap: u64) {
+        self.min_gap = min_gap.max(1);
+        self.max_gap = max_gap.max(self.min_gap);
+    }
+
+    /// Days a run may buy nothing before it retires.
+    pub fn set_stale_days(&mut self, days: u64) {
+        self.stale_days = days.max(1);
     }
 
     /// Pauses buildings that eat a material the target is short of (regolith,
@@ -181,6 +241,9 @@ impl Author {
     /// beyond the target's price. Returns the target.
     fn build(&mut self, p: &mut Player) -> Option<String> {
         let mut target = None;
+        if self.dir.hoard {
+            return None;
+        }
         for _ in 0..self.buys {
             let v = p.view();
             let t = self.reachable_target(v);
@@ -212,7 +275,14 @@ impl Author {
     /// A target short of an input nothing makes and no command buys (circuits)
     /// works toward that input's maker, or the building that unlocks it.
     fn reachable_target(&self, v: &View) -> Option<String> {
-        for (id, _) in self.b.ranked(v) {
+        let mut ranked = self.b.ranked(v);
+        if let Some(t) = &self.dir.target {
+            if v.buildings.iter().any(|b| b.id == t && b.unlocked) {
+                ranked.retain(|(id, _)| id != t);
+                ranked.insert(0, (t.clone(), i64::MAX));
+            }
+        }
+        for (id, _) in ranked {
             let t = self.b.resolve(v, &id).to_string();
             let Some(b) = v.buildings.iter().find(|b| b.id == t) else { continue };
             let mut ok = true;
@@ -255,11 +325,25 @@ impl Author {
 
     /// Whether research `id` is worth science now: essential, or nothing
     /// Long-Term is open to fund instead.
-    fn worth(v: &View, id: &str) -> bool {
+    fn worth(&self, v: &View, id: &str) -> bool {
+        if self.dir.all_research || self.dir.research.as_deref() == Some(id) {
+            return true;
+        }
         if id == "market_awareness" && v.completed_quests.contains(&"qmarket_awareness") {
             return Self::long_term_open(v).is_none();
         }
         ESSENTIAL.contains(&id) || Self::long_term_open(v).is_none()
+    }
+
+    /// The research it wants next: the directed one first, then [`RESEARCH`]
+    /// order.
+    fn next_research<'v>(&self, v: &'v View) -> Option<&'v hh_core::view::ResearchView> {
+        let first = self.dir.research.as_deref();
+        first
+            .into_iter()
+            .chain(RESEARCH.iter().copied())
+            .filter_map(|id| v.research.iter().find(|r| r.id == id))
+            .find(|r| r.visible && !r.done && self.worth(v, r.id))
     }
 
     fn long_term_open(v: &View) -> Option<&str> {
@@ -268,11 +352,7 @@ impl Author {
 
     fn research(&self, p: &mut Player) {
         let v = p.view();
-        let next = RESEARCH
-            .iter()
-            .filter_map(|id| v.research.iter().find(|r| r.id == *id))
-            .find(|r| r.visible && !r.done && Self::worth(v, r.id));
-        if let Some(r) = next {
+        if let Some(r) = self.next_research(v) {
             if r.affordable {
                 let a = Action::Research { research: r.id.to_string() };
                 let _ = p.apply(&a);
@@ -281,21 +361,36 @@ impl Author {
     }
 
     /// Science is spoken for while research worth it is visible and unbought.
-    fn science_wanted(v: &View) -> bool {
+    fn science_wanted(&self, v: &View) -> bool {
         RESEARCH
             .iter()
-            .any(|id| v.research.iter().any(|r| r.id == *id && r.visible && !r.done && Self::worth(v, id)))
+            .any(|id| v.research.iter().any(|r| r.id == *id && r.visible && !r.done && self.worth(v, id)))
     }
 
     fn projects(&self, p: &mut Player, target: Option<&str>) {
         let v = p.view();
-        let Some(proj) = PROJECTS
-            .iter()
-            .filter_map(|id| v.projects.iter().find(|p| p.id == *id))
+        if self.dir.hoard {
+            let stops: Vec<Action> = v
+                .projects
+                .iter()
+                .flat_map(|o| o.rates.iter().filter(|(_, r)| **r > Fx::ZERO).map(move |(res, _)| (o.id, res)))
+                .map(|(id, res)| Action::SetProjectRate { project: id.to_string(), resource: res.clone(), rate: Fx::ZERO })
+                .collect();
+            for a in stops {
+                let _ = p.apply(&a);
+            }
+            return;
+        }
+        let first = self.dir.project.as_deref();
+        let Some(proj) = first
+            .into_iter()
+            .chain(PROJECTS.iter().copied())
+            .filter_map(|id| v.projects.iter().find(|p| p.id == id))
             .find(|p| p.unlocked && !p.completed)
         else {
             return;
         };
+        let pushed = first == Some(proj.id);
         let keep = target.map_or(Fx::ZERO, |t| price(v, t, "credits"));
         // Every cost must be able to move: on hand, or made by a building.
         let movable = proj.costs.keys().all(|res| {
@@ -309,8 +404,10 @@ impl Author {
             } else {
                 match res.as_str() {
                     // All of it, unless research is waiting on it.
-                    "science" if !Self::science_wanted(v) => max,
+                    "science" if !self.science_wanted(v) => max,
                     "science" => Fx::ZERO,
+                    // Pushed: everything past the target's price.
+                    "credits" if pushed => (amount(v, "credits") - keep).max(Fx::ZERO).min(max),
                     // A tenth of the credits past twice the target's price and 200.
                     "credits" => {
                         let spare = amount(v, "credits") - keep.mul_int(2) - Fx::from_int(200);
@@ -340,6 +437,28 @@ impl Author {
     fn pads(&self, p: &mut Player, target: Option<&str>) {
         let v = p.view();
         let mut sets = Vec::new();
+        if self.dir.diversify {
+            // Goods with a maker running, dearest first (the view has no
+            // prices: [`DEAREST`], the baseline's order).
+            let first = v.pads.first().map(|p| p.good.clone());
+            let others: Vec<String> = DEAREST
+                .iter()
+                .filter(|g| v.markets.iter().any(|m| m.good == **g))
+                .filter(|g| v.buildings.iter().any(|b| b.active > 0 && b.produces.contains_key(**g)))
+                .map(|g| g.to_string())
+                .filter(|g| Some(g) != first.as_ref())
+                .collect();
+            for (i, pad) in v.pads.iter().enumerate().skip(1) {
+                let Some(good) = others.get(i - 1).or(first.as_ref()) else { continue };
+                if pad.cargo == Fx::ZERO && pad.good != *good {
+                    sets.push(Action::SetPadGood { pad: i as u32, good: good.clone() });
+                }
+            }
+            for a in sets {
+                let _ = p.apply(&a);
+            }
+            return;
+        }
         for (i, pad) in v.pads.iter().enumerate().skip(1) {
             if pad.cargo > Fx::ZERO {
                 continue;
@@ -370,9 +489,20 @@ impl Author {
         let mut left = total;
         let e = |c: &str, n: u32| Entry { command: c.to_string(), count: n };
         let pads: Vec<_> = v.pads.iter().filter(|p| p.active).collect();
+        // Holding boredom down, Dream runs first (programs run in order), so
+        // loading can't take the He-3 and energy it needs.
+        // With `main_last`, every other program runs before the main one.
+        let last = want.len().saturating_sub(1);
+        let (main, dream) = if self.dir.main_last && last > MARKET {
+            (last, DREAM)
+        } else if self.dir.sustain {
+            (DREAM, MAIN)
+        } else {
+            (MAIN, DREAM)
+        };
         // Main: by hand while looks come often, else a standing cycle.
         let filler = if self.compute { "cloud_compute" } else { "idle" };
-        want[MAIN] = if gap <= self.hand_gap {
+        want[main] = if gap <= self.hand_gap {
             // A plan for the next gap: what is due now, then filler to the next look.
             let mut lines = Vec::new();
             let credits = amount(v, "credits");
@@ -458,13 +588,36 @@ impl Author {
         // Dream, while the run still builds.
         let bored = v.boredom.amount.mul_int(100) >= v.boredom.cap.mul_int(self.dream_at);
         let building = v.day.saturating_sub(self.built_day) < self.stale_days;
-        if bored && building && command_unlocked(v, "dream") && left > 1 && DREAM < want.len() {
-            want[DREAM] = vec![e("dream", 1)];
-            procs[DREAM] = 1;
+        if self.dir.sustain {
+            // Enough Dream to outpace growth and a command's boredom a
+            // processor (relief 2, before the Humanist bonus) once boredom
+            // passes a third of its cap; one more past two thirds.
+            let third = v.boredom.amount.mul_int(3) >= v.boredom.cap;
+            let two = v.boredom.amount.mul_int(3) >= v.boredom.cap.mul_int(2);
+            if third && command_unlocked(v, "dream") && left > 1 && dream < want.len() {
+                let cmds = Fx::from_int(i64::from(total)).mul_ratio(1, 5);
+                let need = (v.boredom.rate + cmds).mul_ratio(1, 2).floor_int() as u32 + 1 + u32::from(two);
+                let n = need.min(left - 1);
+                want[dream] = vec![e("dream", 1)];
+                procs[dream] = n;
+                left -= n;
+            }
+        } else if bored && building && command_unlocked(v, "dream") && left > 1 && dream < want.len() {
+            want[dream] = vec![e("dream", 1)];
+            procs[dream] = 1;
             left -= 1;
         }
         // Fund an ideology axis.
-        if self.fund && left > 2 && FUND < want.len() {
+        let directed = self.dir.axis.as_deref().filter(|_| self.dir.fund_procs > 0);
+        if let Some(axis) = directed {
+            let cmd = format!("fund_{axis}");
+            if command_unlocked(v, &cmd) && left > 1 && FUND < want.len() {
+                let n = self.dir.fund_procs.min(left - 1);
+                want[FUND] = vec![e(&cmd, 1)];
+                procs[FUND] = n;
+                left -= n;
+            }
+        } else if self.fund && left > 2 && FUND < want.len() {
             let axis = AXES
                 .iter()
                 .find(|(_, proj)| !v.projects.iter().any(|p| p.id == *proj && p.completed))
@@ -479,7 +632,8 @@ impl Author {
             }
         }
         // Market: promote what ships, disrupt speculators.
-        if self.market && left > 2 && !pads.is_empty() && MARKET < want.len() {
+        let market = (self.market && left > 2) || (self.dir.market && left > 1);
+        if market && !pads.is_empty() && MARKET < want.len() {
             let mut lines = Vec::new();
             for pad in &pads {
                 let cmd = format!("promote_{}", pad.good);
@@ -496,10 +650,10 @@ impl Author {
                 left -= 1;
             }
         }
-        procs[MAIN] = left;
+        procs[main] = left;
         let hand = gap <= self.hand_gap;
         let due: u64 = if hand {
-            want[MAIN].iter().filter(|l| l.command != filler).map(|l| u64::from(l.count)).sum()
+            want[main].iter().filter(|l| l.command != filler).map(|l| u64::from(l.count)).sum()
         } else {
             0
         };
@@ -516,13 +670,13 @@ impl Author {
         let idle_same = |i: usize| {
             let p = &v.programs[i];
             let left_steps = p.entries.last().map_or(0, |l| u64::from(l.count.saturating_sub(p.step)));
-            hand && i == MAIN
+            hand && i == main
                 && due == 0
                 && in_filler(i)
                 && p.entries.last() == want[i].last()
-                && left_steps >= gap * u64::from(procs[MAIN].max(1))
+                && left_steps >= gap * u64::from(procs[main].max(1))
         };
-        let rearm = |i: usize| hand && i == MAIN && due > 0 && in_filler(i);
+        let rearm = |i: usize| hand && i == main && due > 0 && in_filler(i);
         let writes: Vec<(usize, Vec<Entry>)> = (0..want.len())
             .filter(|&i| (v.programs[i].entries != want[i] && !idle_same(i)) || rearm(i))
             .map(|i| (i, want[i].clone()))
@@ -550,11 +704,7 @@ impl Author {
                 sooner(&mut soon, t);
             }
         }
-        let next = RESEARCH
-            .iter()
-            .filter_map(|id| v.research.iter().find(|r| r.id == *id))
-            .find(|r| r.visible && !r.done && Self::worth(v, r.id));
-        if let Some(r) = next {
+        if let Some(r) = self.next_research(v) {
             let rate = v.resources.iter().find(|x| x.id == "science").map_or(Fx::ZERO, |x| x.per_day);
             if let Some(t) = super::ticks_to(amount(v, "science"), r.cost, rate) {
                 sooner(&mut soon, t);
@@ -569,7 +719,7 @@ impl Author {
         if let Some(pad) = v.pads.iter().find(|p| p.active && p.cooldown > 0) {
             sooner(&mut soon, u64::from(pad.cooldown));
         }
-        if v.can_retire {
+        if v.can_retire && !self.dir.sustain {
             let stale = v.day.saturating_sub(self.built_day);
             sooner(&mut soon, self.stale_days.saturating_sub(stale));
         }
@@ -606,6 +756,13 @@ impl Agent for Author {
         let (run, day, built) = {
             let v = p.view();
             self.income.read(v);
+            // Holding boredom down, energy users leave room for two Dreams a
+            // day, once Dream is unlocked (before, the room starved the run).
+            self.b.reserve = if self.dir.sustain && command_unlocked(v, "dream") {
+                self.reserve + command_cost(v, "dream", "energy").mul_int(2)
+            } else {
+                self.reserve
+            };
             (v.run, v.day, v.run_stats.buildings_built)
         };
         if run != self.run || built != self.built {
@@ -614,7 +771,7 @@ impl Agent for Author {
             self.built_day = day;
         }
         let v = p.view();
-        if v.can_retire && day.saturating_sub(self.built_day) >= self.stale_days {
+        if v.can_retire && !self.dir.sustain && day.saturating_sub(self.built_day) >= self.stale_days {
             let _ = p.apply(&Action::Retire);
             let v = p.view();
             self.run = v.run;

@@ -31,6 +31,7 @@ pub static DEF: ModuleDef = ModuleDef {
     }],
 };
 
+#[derive(Clone)]
 pub struct Params {
     pub base_values: BTreeMap<String, Fx>,
     pub pad_cargo_capacity: Fx,

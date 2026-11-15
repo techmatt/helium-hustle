@@ -70,8 +70,9 @@ credits, a building count) is not seen.
 **Sim players play in game time** (Matt's ruling): a player acts whenever a decision is useful
 and skips stretches that need none ([agents.md](agents.md#when-it-looks)), so results are ticks
 and **decisions** (looks that applied an action), never speed-dependent. The ladder's players:
-`random`, `greedy`, `author` (playing well: about 140 decisions a run) and `casual` (the author
-looking at most every 120 ticks: about 12 a run).
+`random`, `greedy`, `author` (playing well: about 140 decisions a run), `casual` (the author
+looking at most every 120 ticks: about 12 a run) and `oracle` (the ceiling: the author steered
+by rollouts that see the future; not read by the judge).
 
 **Human models** (`configs/sim/humans.json`) are a separate, occasional projection of a career
 to real minutes: each decision takes `decide_s` seconds, and the gap to the next look plays its

@@ -17,6 +17,7 @@ pub static DEF: ModuleDef = ModuleDef {
     variants: &[VariantDef { name: "arc1", params: &[], rng: &[] }],
 };
 
+#[derive(Clone)]
 pub struct Params;
 
 impl Params {

@@ -35,6 +35,7 @@ pub static DEF: ModuleDef = ModuleDef {
     }],
 };
 
+#[derive(Clone)]
 pub struct Params {
     pub starting_resources: BTreeMap<String, Fx>,
     pub starting_buildings: BTreeMap<String, u32>,

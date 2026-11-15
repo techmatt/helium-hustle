@@ -1,8 +1,8 @@
 {
   "name": "ladder",
-  "note": "The agent ladder in game time: each player looks whenever a decision is useful and skips stretches that need none; careers of 20 retirements from a new game, run 1 scored against reference/scenarios/run1_fresh.json's objectives. Real time is projected by the human models in `humans`.",
+  "note": "The agent ladder in game time: each player looks whenever a decision is useful and skips stretches that need none; careers of 20 retirements from a new game, run 1 scored against reference/scenarios/run1_fresh.json's objectives. The oracle tops it: the author steered by rollouts on copies of the game (docs/agents.md, The oracle); its careers set the ladder's cost (~20 minutes on 6 threads). Real time is projected by the human models in `humans`.",
   "configs": ["configs/baseline.json"],
-  "agents": ["random", "greedy", "author", "casual=author:min_gap=120"],
+  "agents": ["random", "greedy", "author", "casual=author:min_gap=120", "oracle"],
   "humans": ["careful", "mixed", "brisk"],
   "seeds": 3,
   "first_seed": 1,

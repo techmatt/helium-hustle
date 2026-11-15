@@ -28,6 +28,7 @@ pub static DEF: ModuleDef = ModuleDef {
     }],
 };
 
+#[derive(Clone)]
 pub struct Params {
     pub rank_base_score: Fx,
     pub rank_growth: Fx,
