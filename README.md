@@ -29,6 +29,7 @@ implemented (the Godot build's Arc 1, ported): [docs/rules/](docs/rules/README.m
 | `scripts/` | `wasm-smoke.mjs` (native = wasm), `wasm-speed.mjs` (engine speed in wasm), `warning_checks.py` (CLAUDE.md, *Warning checks*), `set_golden.py` (re-pins the golden game). |
 | `docs/` | The current game: `docs/rules/` (rules as implemented), `docs/rules-history.md`. |
 | `reference/` | The Godot snapshot ([reference/README.md](reference/README.md)). Never edited. |
+| `art/` | Generated art and picker images: a link to the main checkout's `art/`, shared by every worktree and never committed. The scripts that draw it are committed with their item's write-up in `experiments/results/<item>/`. |
 | `out/` | Scratch and run output, git-ignored. |
 
 ## Toolchain

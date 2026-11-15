@@ -1,4 +1,6 @@
 /out/
+# Shared generated art, linked into every worktree; never committed.
+/art
 /target/
 node_modules/
 /crates/hh-wasm/pkg/
