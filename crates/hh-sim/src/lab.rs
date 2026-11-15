@@ -40,6 +40,8 @@ struct Grid {
     config: Option<String>,
     config_b: Option<String>,
     set: Vec<String>,
+    /// `trace --lines`: each day's program lines run.
+    lines: bool,
 }
 
 /// Players, comma-separated; a piece with `=` but no `:` after a spec with
@@ -74,6 +76,7 @@ fn parse(args: &[String]) -> Result<Grid, Fail> {
             v.parse().map_err(|_| Fail::Usage(format!("bad {name} {v:?}")))
         }
         match a.as_str() {
+            "--lines" => g.lines = true,
             "--agents" => g.agents = Some(agent_list(&val(a)?)),
             "--humans" => g.humans = Some(list(val(a)?)),
             "--seeds" => g.seeds = Some(num(a, val(a)?)?),
@@ -138,6 +141,9 @@ impl Grid {
         }
         if self.config_b.is_some() && !config_b {
             return usage("--config-b is compare's");
+        }
+        if self.lines && cmd != "trace" {
+            return usage("--lines is trace's");
         }
         Ok(())
     }
@@ -252,11 +258,30 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
             // Actions and the agent's notes, by tick (a note after that look's actions).
             let rec = sess.record();
             let mut notes = r.notes.iter().peekable();
+            // With --lines, each day's program lines before the actions taken after it.
+            let days = if g.lines { day_lines(&rec).map_err(Fail::Usage)? } else { Vec::new() };
+            let mut days = days.iter().peekable();
             for a in &rec.actions {
-                while let Some((tick, n)) = notes.next_if(|(tick, _)| *tick < a.tick) {
-                    let _ = writeln!(t, "{tick:>6}  # {n}");
+                // By tick; a day's lines before a note at its tick (the day played, then the look).
+                loop {
+                    let day = days.peek().map(|(tick, _)| *tick).filter(|&d| d <= a.tick);
+                    let note = notes.peek().map(|(tick, _)| *tick).filter(|&n| n < a.tick);
+                    match (day, note) {
+                        (Some(d), n) if n.is_none_or(|n| d <= n) => {
+                            let (tick, d) = days.next().expect("peeked");
+                            let _ = writeln!(t, "{tick:>6}  {d}");
+                        }
+                        (_, Some(_)) => {
+                            let (tick, n) = notes.next().expect("peeked");
+                            let _ = writeln!(t, "{tick:>6}  # {n}");
+                        }
+                        _ => break,
+                    }
                 }
                 let _ = writeln!(t, "{:>6}  {}", a.tick, serde_json::to_string(&a.action).expect("json"));
+            }
+            for (tick, d) in days {
+                let _ = writeln!(t, "{tick:>6}  {d}");
             }
             for (tick, n) in notes {
                 let _ = writeln!(t, "{tick:>6}  # {n}");
@@ -282,6 +307,45 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
         "speed" => Ok(format!("{}\n", speed_line())),
         _ => usage(format!("unknown command {cmd:?}")),
     }
+}
+
+/// The record replayed a day at a time: for each day a program line ran, the
+/// tick and `lines p<program>: <line> <command> <outcome>, ...`, lines in queue
+/// order (`trace --lines`).
+pub fn day_lines(rec: &hh_core::Record) -> Result<Vec<(u64, String)>, String> {
+    let rules = hh_core::Rules::new(&rec.config)?;
+    let mut g = rules.start(rec.seed, rec.scenario.as_ref());
+    let mut out = Vec::new();
+    let mut actions = rec.actions.iter().peekable();
+    loop {
+        while let Some(a) = actions.next_if(|a| a.tick == g.tick) {
+            rules.apply(&mut g, &a.action).map_err(|e| format!("tick {}: {e}", a.tick))?;
+        }
+        if g.tick >= rec.ticks {
+            break;
+        }
+        rules.advance(&mut g, 1);
+        let ran = hh_core::view::LinesRun::today(&g);
+        let mut parts = Vec::new();
+        for (p, row) in ran.lines.iter().enumerate() {
+            let lines: Vec<String> = row
+                .iter()
+                .enumerate()
+                .filter_map(|(i, o)| {
+                    let o = (*o)?;
+                    let cmd = &g.run.programs[p].entries[i].command;
+                    Some(format!("{i} {cmd} {}", serde_json::to_value(o).expect("json").as_str().unwrap_or("?")))
+                })
+                .collect();
+            if !lines.is_empty() {
+                parts.push(format!("p{p}: {}", lines.join(", ")));
+            }
+        }
+        if !parts.is_empty() {
+            out.push((g.tick, format!("lines {}", parts.join("; "))));
+        }
+    }
+    Ok(out)
 }
 
 /// `out`, or a check failure if any game's record didn't replay to its state.

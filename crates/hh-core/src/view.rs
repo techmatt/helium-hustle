@@ -97,6 +97,45 @@ pub struct ProgramView {
     pub outcomes: Vec<Option<LineOutcome>>,
 }
 
+/// The program lines run over a span of days (a client drawing once per
+/// several days, or a trace): per program, per line in queue order, its
+/// outcome the last time it ran in the span (`None`: not run). Noted after
+/// each tick from that day's outcomes; the span holds no actions, so line
+/// indices name the same lines throughout. Display only, like the view.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
+pub struct LinesRun {
+    pub days: u64,
+    pub lines: Vec<Vec<Option<LineOutcome>>>,
+}
+
+impl LinesRun {
+    /// Adds the day `g` just played.
+    pub fn note(&mut self, g: &GameState) {
+        self.days += 1;
+        let programs = &g.run.programs;
+        // A retirement in the span leaves new (empty) programs: fit to the queues now.
+        self.lines.resize(programs.len(), Vec::new());
+        for (i, p) in programs.iter().enumerate() {
+            let row = &mut self.lines[i];
+            row.resize(p.entries.len(), None);
+            if let Some(today) = g.run.today.lines.get(&(i as u32)) {
+                for (&line, &o) in today {
+                    if let Some(slot) = row.get_mut(line as usize) {
+                        *slot = Some(o);
+                    }
+                }
+            }
+        }
+    }
+
+    /// The day `g` just played alone.
+    pub fn today(g: &GameState) -> LinesRun {
+        let mut l = LinesRun::default();
+        l.note(g);
+        l
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct PadView {
     pub good: String,
@@ -554,18 +593,13 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             .run
             .programs
             .iter()
-            .enumerate()
-            .map(|(i, p)| {
-                let today = g.run.today.lines.get(&(i as u32));
-                ProgramView {
-                    entries: p.entries.clone(),
-                    processors: p.processors,
-                    entry: p.entry,
-                    step: p.step,
-                    outcomes: (0..p.entries.len() as u32)
-                        .map(|e| today.and_then(|t| t.get(&e)).copied())
-                        .collect(),
-                }
+            .zip(LinesRun::today(g).lines)
+            .map(|(p, outcomes)| ProgramView {
+                entries: p.entries.clone(),
+                processors: p.processors,
+                entry: p.entry,
+                step: p.step,
+                outcomes,
             })
             .collect(),
         processors: procs,

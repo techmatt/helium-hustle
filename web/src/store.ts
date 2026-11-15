@@ -6,7 +6,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import baselineConfig from '../../configs/baseline.json?raw';
 import { Clock, SPEEDS, type Speed } from './clock';
-import { engine, type Action, type LastRun, type Scenario, type Stamped, type StoryView, type View } from './engine';
+import { engine, type Action, type LastRun, type LinesRun, type Scenario, type Stamped, type StoryView, type View } from './engine';
 import * as playlog from './playlog';
 import { clearSave, loadSave, SAVE_KEY, writeSave } from './save';
 
@@ -44,6 +44,9 @@ export interface Store {
   scenario: Scenario | null;
   actionCount: number;
   configHash: string;
+  /** The program lines run over the days since the last redraw (null after an action
+   * or a load): above 10x one redraw covers several days. */
+  lines: LinesRun | null;
   /** Bumped on every change, so components re-render. */
   version: number;
 }
@@ -60,6 +63,8 @@ let speedBeforeSummary: Speed = 1;
 /** The last speed other than pause. */
 let resumeSpeed: Speed = 1;
 let baselineRun = -1;
+/** The lines run by the ticks just played, for the next refresh. */
+let ranLines: LinesRun | null = null;
 const baseline = new Set<string>();
 const listeners = new Set<() => void>();
 export const clock = new Clock(runTicks);
@@ -76,6 +81,7 @@ export const store: Store = {
   scenario: null,
   actionCount: 0,
   configHash: '',
+  lines: null,
   version: 0,
 };
 
@@ -186,6 +192,9 @@ function refresh(reset = false, story: 'load' | 'intro' | 'play' = reset ? 'load
   const before = store.view?.run;
   const v = engine.view(game.state);
   store.view = v;
+  // Only the redraw after ticks has lines run; after an action or a load the queues may differ.
+  store.lines = ranLines;
+  ranLines = null;
   store.seed = game.seed;
   store.scenario = game.scenario;
   store.actionCount = game.actions.length;
@@ -208,14 +217,18 @@ function refresh(reset = false, story: 'load' | 'intro' | 'play' = reset ? 'load
 function runTicks(ticks: number): void {
   if (store.summary) return;
   const run = store.view.run;
+  let lines: LinesRun | null = null;
   while (ticks > 0) {
     const n = Math.min(ticks, MAX_CHUNK);
-    game.state = engine.advanceRun(game.state, n);
+    const r = engine.advanceRun(game.state, n);
+    game.state = r.state;
+    lines = r.lines; // one chunk in practice (MAX_CHUNK); a later one supersedes
     ticks -= n;
     // advance_run stops after a forced retirement: show it before playing on.
     if ((JSON.parse(game.state) as { career: { run_number: number } }).career.run_number !== run) break;
   }
   if (performance.now() - lastSave > SAVE_EVERY_MS) save();
+  ranLines = lines;
   refresh();
 }
 

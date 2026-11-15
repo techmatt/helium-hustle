@@ -28,7 +28,7 @@ pub const USAGE: &str = "usage:
   hh-sim experiment SPEC.json [GRID]               any spec
   hh-sim compare --config A [--config-b B] [--set module.key=value]... [GRID]
   hh-sim balance [GRID]                            balance: lines for the judge's missed targets
-  hh-sim trace [GRID]                              one career's actions and milestones
+  hh-sim trace [GRID] [--lines]                    one career's actions and milestones (--lines: each day's program lines run)
   hh-sim agents                                    the ladder's rungs
   hh-sim speed                                     native engine speed (ticks/s)
   hh-sim playlog LOG.jsonl [--json] [--milestones F] [--human-models F]   replay and measure a human's play log

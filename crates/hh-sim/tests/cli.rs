@@ -242,6 +242,35 @@ fn empty_lists_and_stray_options_are_usage_errors() {
     let mut a = grid("trace", "author", &[]);
     a.extend(["--out".to_string(), "x".to_string()]);
     assert!(matches!(run(&a), Err(Fail::Usage(_))), "{a:?}");
+    let mut a = grid("balance", "author", &[]);
+    a.push("--lines".into());
+    assert!(matches!(run(&a), Err(Fail::Usage(_))), "{a:?}");
+}
+
+/// `trace --lines` shows a program's lines run in the order queued, day after
+/// day: counts 2, 1, 3 on one processor (more processors: hh-core's
+/// `programs_run_and_show_their_lines_in_queue_order_day_after_day`).
+#[test]
+fn trace_lines_show_the_queue_in_order() {
+    use hh_core::{state::Entry, Action, Config, Session};
+    let c = Config::from_json(&std::fs::read_to_string(baseline()).unwrap()).unwrap();
+    let mut s = Session::new(&c, 3, None).unwrap();
+    let e = |c: &str, n| Entry { command: c.into(), count: n };
+    let entries = vec![e("idle", 2), e("cloud_compute", 1), e("idle", 3)];
+    s.apply(&Action::SetProgram { program: 0, entries }).unwrap();
+    s.advance(7);
+    let days = hh_sim::lab::day_lines(&s.record()).unwrap();
+    let got: Vec<String> = days.iter().map(|(t, d)| format!("{t} {d}")).collect();
+    let want = [
+        "1 lines p0: 0 idle ran",
+        "2 lines p0: 0 idle ran",
+        "3 lines p0: 1 cloud_compute ran",
+        "4 lines p0: 2 idle ran",
+        "5 lines p0: 2 idle ran",
+        "6 lines p0: 2 idle ran",
+        "7 lines p0: 0 idle ran",
+    ];
+    assert_eq!(got, want);
 }
 
 /// Agents decide in integers and `Fx` with ordered maps only, so a decision

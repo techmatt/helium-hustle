@@ -87,18 +87,28 @@ pub fn advance(state_json: &str, ticks: u32) -> Result<String, JsValue> {
 
 /// Runs up to `ticks` ticks, stopping after a tick that retired the run
 /// (forced), so the client can show the retirement before the next run plays
-/// on. Returns the new state; the ticks run are its `tick` minus the old one.
+/// on. Returns `{"state": <the new state's JSON, as a string>, "lines": <the
+/// program lines run over the ticks, hh_core::view::LinesRun>}`: a client
+/// drawing once per several days colors each line by the whole span, not by
+/// its last day. The ticks run are the state's `tick` minus the old one.
 #[wasm_bindgen]
 pub fn advance_run(state_json: &str, ticks: u32) -> Result<String, JsValue> {
     let (r, mut g) = load(state_json)?;
     let run = g.career.run_number;
+    let mut lines = hh_core::view::LinesRun::default();
     for _ in 0..ticks {
         r.advance(&mut g, 1);
+        lines.note(&g);
         if g.career.run_number != run {
             break;
         }
     }
-    Ok(g.to_json())
+    #[derive(Serialize)]
+    struct Advanced {
+        state: String,
+        lines: hh_core::view::LinesRun,
+    }
+    Ok(to_json(&Advanced { state: g.to_json(), lines }))
 }
 
 /// Applies an action (`{"type": "buy", "building": "solar_panel"}`) between

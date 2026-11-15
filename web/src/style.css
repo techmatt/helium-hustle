@@ -582,6 +582,10 @@ tr.is-new td:first-child {
 .line.current {
   border-color: #4caf50;
 }
+/* The bar's 60px minimum would spill over the − button from its 48px column. */
+.line .bar {
+  min-width: 0;
+}
 .line .grip {
   cursor: grab;
   color: #9aa0a8;

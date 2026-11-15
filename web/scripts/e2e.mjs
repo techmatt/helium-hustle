@@ -4,7 +4,7 @@
 //      First Extraction and Proof of Concept, then retirement and into run 2.
 //   2. Every nav panel opens (the gated ones reached with the debug menu's cheats),
 //      a cheated game is marked, and its replay check passes.
-//   3. Each speed's days per second, pause, a reload keeping the save, a save from
+//   3. A program's lines in queue order at 10x and 50x, each speed's days per second, pause, a reload keeping the save, a save from
 //      another revision discarded, debug-menu scenarios.
 // Any uncaught page error fails the run.
 //   HH_URL      the page (default http://localhost:5173/)
@@ -163,6 +163,57 @@ const runOnly = async (cmd, lines) => {
   await panel('commands');
   await click(`[data-testid="add-${cmd}"]`);
 };
+
+/** Program 1, one processor, lines of counts 2, 1, 3: at 10x (a day a redraw) the ▶ walks
+ * the queue in order and the lines keep their order; at 50x (several days a redraw) no ▶
+ * hops around, and the lines show what ran over the span. Leaves the game paused. */
+async function programOrder() {
+  const queue = [['idle', 2], ['cloud_compute', 1], ['idle', 3]];
+  await speed(0);
+  await click('.prog-tabs button[data-program="0"]');
+  if (await exists('.lines .line')) await click('.prog-procs button[title="Clear this program"]');
+  while (Number(await evaluate(`document.querySelector('.prog-procs span').textContent.match(/\\d+/)[0]`)) > 1) {
+    await click('[data-testid="proc-minus"]');
+  }
+  if (!(await enabled('[data-testid="proc-minus"]'))) await click('[data-testid="proc-plus"]');
+  await panel('commands');
+  for (const [c] of queue) await click(`[data-testid="add-${c}"]`);
+  for (const [i, [, n]] of queue.entries()) {
+    for (let k = 1; k < n; k++) await click(`.lines .line[data-line="${i}"] button:nth-of-type(2)`);
+  }
+  const order = () => evaluate(`[...document.querySelectorAll('.lines .line')].map((l) => l.dataset.command + 'x' + l.textContent.match(/\\(x(\\d+)\\)/)[1]).join(' ')`);
+  const queued = queue.map(([c, n]) => `${c}x${n}`).join(' ');
+  check((await order()) === queued, `program queued in order: ${await order()}`);
+  // Each redraw's pointer, by a MutationObserver.
+  await evaluate(`(() => { window.__ptr = []; window.__ob?.disconnect();
+    window.__ob = new MutationObserver(() => {
+      const p = [...document.querySelectorAll('.lines .line')].findIndex((l) => l.classList.contains('current'));
+      if (window.__ptr.at(-1) !== p) window.__ptr.push(p);
+    });
+    window.__ob.observe(document.querySelector('.lines'), { subtree: true, attributes: true, childList: true }); })()`);
+  await speed(10);
+  await sleep(2500);
+  await speed(0);
+  const ptr = await evaluate('window.__ptr');
+  const forward = ptr.every((p, i) => i === 0 || p === (ptr[i - 1] + 1) % queue.length);
+  check(ptr.length >= 4 && forward, `10x: the pointer walks the queue in order: ${ptr.join(',')}`);
+  check((await order()) === queued, `10x: lines keep their order: ${await order()}`);
+  await evaluate('window.__ptr = []');
+  await speed(50);
+  await sleep(1000);
+  // Read before pausing: paused, the ▶ is back.
+  const fast = await evaluate('window.__ptr');
+  const lit = await evaluate(`document.querySelectorAll('.lines .line[class*="out-"]').length`);
+  const note = await exists('[data-testid="lines-span"]');
+  const fastOrder = await order();
+  await speed(0);
+  check(
+    fast.length > 0 && fast.every((p) => p === -1) && note && lit >= 2,
+    `50x: no hopping pointer, lines lit by the span (pointer ${fast.join(',')}, ${lit} lit)`,
+  );
+  check(fastOrder === queued, `50x: lines keep their order: ${fastOrder}`);
+  await evaluate('window.__ob.disconnect()');
+}
 
 // The opening, as a player would: Solar Panels, then the extraction chain, storage for
 // the Launch Pad's titanium, the pad, and more Solar Panels for its upkeep.
@@ -341,6 +392,7 @@ try {
   await setValue('#scenario', 'rich');
   await click('#start-scenario');
   check((await day()) === 0 && /Started scenario rich/.test(await noticeText()), 'debug menu starts scenario rich');
+  await programOrder();
   for (const [s, secs] of [[1, 3], [3, 2], [10, 2], [50, 1], [200, 1]]) {
     await speed(s);
     const a = await day();

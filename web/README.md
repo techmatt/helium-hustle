@@ -109,7 +109,11 @@ The layout follows the last Godot build (`godot-buildings-day1427.png`, in
   next run's bonuses, Retire Now with a confirm) and Options (new career, the debug menu).
 - **Right:** program tabs 1 to 5, each with processors −/+ and Reset; a line per command
   with its progress, −/+/×, drag to reorder, and its color from today's outcome (ran,
-  failed, skipped). Commands are added from the Commands panel to the selected program.
+  failed, skipped), ▶ on the line the next processor runs. Above 10x one redraw covers
+  several days (the clock wakes every 100 ms), so the last day's pointer would hop around
+  the queue, even backward: there each line instead shows its last outcome over those
+  days (`advance_run`'s `lines`), with no ▶. Commands are added from the Commands panel
+  to the selected program.
   Below, Events: the active quest with sub-goal checkmarks and progress, the completed
   quests, and Recent Activity (dated; green good, red bad, blue news).
 - **Bottom:** day and run, the cheated mark, Boredom and Energy bars with their rates.

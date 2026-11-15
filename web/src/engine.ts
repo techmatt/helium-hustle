@@ -86,6 +86,13 @@ export interface ProgramView {
   outcomes: (LineOutcome | null)[];
 }
 
+/** The program lines run over a span of days: per program, per line in queue order,
+ * its outcome the last time it ran in the span (null: not run). */
+export interface LinesRun {
+  days: number;
+  lines: (LineOutcome | null)[][];
+}
+
 export interface PadView {
   good: string;
   paused: boolean;
@@ -287,8 +294,10 @@ export const engine = {
   scenarios: (): Scenario[] => JSON.parse(wasm.scenarios()),
   newGame: (config: string, seed: string, scenario = ''): string => wasm.new_game(config, seed, scenario),
   advance: (state: string, ticks: number): string => wasm.advance(state, ticks),
-  /** Like `advance`, but stops after a tick that retired the run. */
-  advanceRun: (state: string, ticks: number): string => wasm.advance_run(state, ticks),
+  /** Like `advance`, but stops after a tick that retired the run; also returns the
+   * program lines run over those ticks. */
+  advanceRun: (state: string, ticks: number): { state: string; lines: LinesRun } =>
+    JSON.parse(wasm.advance_run(state, ticks)),
   apply: (state: string, action: Action): string => wasm.apply(state, JSON.stringify(action)),
   view: (state: string): View => JSON.parse(wasm.view(state)),
   fingerprint: (state: string): string => wasm.fingerprint(state),

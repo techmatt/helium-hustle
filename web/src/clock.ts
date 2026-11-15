@@ -12,6 +12,11 @@ export const TICKS_PER_SECOND = 1;
 /** How often the clock asks to wake (browsers stretch this in background tabs). */
 const WAKE_MS = 100;
 
+/** Days one wake hands over at a speed: above 1, each redraw covers several days. */
+export function daysPerWake(s: Speed): number {
+  return (s * TICKS_PER_SECOND * WAKE_MS) / 1000;
+}
+
 export class Clock {
   speed: Speed = 1;
   private last = performance.now();

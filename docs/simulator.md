@@ -30,6 +30,7 @@ $S compare --config-b configs/other.json      # two configs, paired on the same 
 $S compare --set boredom.base_cap=500         # a param (or module.variant=name) against the base
 $S balance                                    # the judge's missed targets, as balance: lines (~5 s)
 $S trace --agents author --retirements 2      # one career: actions, the agent's notes (#), milestones
+$S trace --lines                              # ... and each day's program lines run, in queue order
 $S agents                                     # the ladder's rungs
 $S speed                                      # native engine speed
 node scripts/wasm-speed.mjs                   # the same in wasm (needs crates/hh-wasm/pkg)

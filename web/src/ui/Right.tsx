@@ -4,6 +4,7 @@
 import { useState } from 'preact/hooks';
 import type { Activity, Entry, View } from '../engine';
 import { num } from '../format';
+import { daysPerWake } from '../clock';
 import { act, store, type Store } from '../store';
 import { Bar, Section, name } from './common';
 
@@ -29,6 +30,12 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
   const [drag, setDrag] = useState<number | null>(null);
   if (!p) return null;
   const entries = p.entries;
+  // Above 10x one redraw covers several days: the pointer and "ran today" of the last
+  // of them would hop around the queue (even backward), so each line instead shows what
+  // it did over those days, with no pointer.
+  const perRedraw = daysPerWake(s.speed);
+  const span = perRedraw > 1;
+  const spanOutcomes = s.lines?.lines[program];
   const move = (from: number, to: number) => {
     if (from === to) return;
     editProgram(program, (now) => {
@@ -91,10 +98,15 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
       {entries.length === 0 && (
         <p class="muted hint">Empty. Add commands from the Commands panel; each processor runs one step a day.</p>
       )}
+      {span && entries.length > 0 && (
+        <p class="muted hint" data-testid="lines-span">
+          {perRedraw} days per redraw: lines show what ran over them.
+        </p>
+      )}
       <ol class="lines">
         {entries.map((e, i) => {
-          const outcome = p.outcomes[i];
-          const current = i === p.entry;
+          const outcome = span ? (spanOutcomes?.[i] ?? null) : p.outcomes[i];
+          const current = !span && i === p.entry;
           // Part way through its runs: that share; otherwise full once it ran today.
           const frac = current && p.step > 0 ? p.step / e.count : outcome ? 1 : 0;
           return (
@@ -115,7 +127,15 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
                 setDrag(null);
               }}
               // The name can be cut short at narrow widths: the tooltip carries it whole.
-              title={`${name(v, e.command)} (x${e.count}): ${outcome ? `last run today: ${outcome}` : 'not run today'}`}
+              title={`${name(v, e.command)} (x${e.count}): ${
+                span
+                  ? outcome
+                    ? `last run since the last redraw: ${outcome}`
+                    : 'not run since the last redraw'
+                  : outcome
+                    ? `last run today: ${outcome}`
+                    : 'not run today'
+              }`}
             >
               <span class="grip" aria-hidden>
                 ⠿

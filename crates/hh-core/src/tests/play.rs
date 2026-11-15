@@ -232,6 +232,44 @@ fn processors_share_a_pointer_and_failed_lines_advance() {
 }
 
 #[test]
+fn programs_run_and_show_their_lines_in_queue_order_day_after_day() {
+    use crate::view::LinesRun;
+    // Lines of different counts (a command may repeat), 1 to 3 processors on one pointer.
+    let queue = [("idle", 2u32), ("cloud_compute", 1), ("idle", 3), ("buy_regolith", 1)];
+    // The queue walked one step at a time: line indices, wrapping.
+    let walk: Vec<usize> =
+        queue.iter().enumerate().flat_map(|(i, &(_, n))| std::iter::repeat_n(i, n as usize)).collect();
+    for procs in 1..=3u32 {
+        let r = rules();
+        let mut g = r.new_game(1);
+        own(&mut g, "data_center", procs);
+        r.apply(&mut g, &Action::SetProcessors { program: 0, processors: procs }).unwrap();
+        program(&r, &mut g, &queue);
+        let names: Vec<_> = queue.iter().map(|&(c, n)| Entry { command: c.into(), count: n }).collect();
+        let mut span = LinesRun::default();
+        for day in 0..20usize {
+            r.advance(&mut g, 1);
+            span.note(&g);
+            let steps = (day * procs as usize..(day + 1) * procs as usize).map(|s| walk[s % walk.len()]);
+            let mut want = vec![false; queue.len()];
+            steps.for_each(|l| want[l] = true);
+            let v = r.view(&g);
+            let p = &v.programs[0];
+            assert_eq!(p.entries, names, "the queue keeps its order ({procs} processors, day {day})");
+            let ran: Vec<bool> = p.outcomes.iter().map(Option::is_some).collect();
+            assert_eq!(ran, want, "lines run today ({procs} processors, day {day})");
+            assert_eq!(p.outcomes, LinesRun::today(&g).lines[0]);
+            let next = walk[((day + 1) * procs as usize) % walk.len()];
+            assert_eq!(p.entry as usize, next, "the pointer ({procs} processors, day {day})");
+        }
+        // Over the 20 days every line ran, each shown in its own queue slot.
+        assert_eq!(span.days, 20);
+        assert!(span.lines[0].iter().all(Option::is_some));
+        assert!(span.lines[1..].iter().all(Vec::is_empty));
+    }
+}
+
+#[test]
 fn shipments_load_launch_pay_and_cool_down() {
     let r = rules();
     let mut g = r.new_game(1);
