@@ -70,29 +70,28 @@ fn root(p: &str) -> String {
     format!("{}/../../{p}", env!("CARGO_MANIFEST_DIR"))
 }
 
-/// A small grid: the given agents, one profile, 2 seeds, careers of 2 retirements.
+/// A small grid: the given players, the mixed human model, 2 seeds, careers
+/// of 2 retirements.
 fn grid(cmd: &str, agents: &str, extra: &[&str]) -> Vec<String> {
-    let (spec, profiles, milestones, config) = (
+    let (spec, humans, milestones, config) = (
         root("experiments/balance.json"),
-        root("configs/sim/profiles.json"),
+        root("configs/sim/humans.json"),
         root("configs/sim/milestones.json"),
         baseline(),
     );
     let mut a = vec![
         cmd.to_string(),
         spec,
-        "--profiles".into(),
-        profiles,
+        "--human-models".into(),
+        humans,
         "--milestones".into(),
         milestones,
         "--config".into(),
         config,
         "--agents".into(),
         agents.into(),
-        "--attention".into(),
-        "active".into(),
-        "--speeds".into(),
-        "10x".into(),
+        "--humans".into(),
+        "mixed".into(),
         "--seeds".into(),
         "2".into(),
         "--retirements".into(),
@@ -105,17 +104,64 @@ fn grid(cmd: &str, agents: &str, extra: &[&str]) -> Vec<String> {
 #[test]
 fn the_ladder_prints_its_tables_and_writes_results() {
     let dir = root("out/hh-sim-tests/ladder");
-    let out = run(&grid("experiment", "random,greedy,author", &["--out", &dir, "--threads", "3"])).unwrap();
-    for want in ["## Pace", "## Milestones", "## Never built", "author active/10x", "greedy active/10x", "random active/10x", "M4"] {
+    let players = "random,greedy,author,casual=author:min_gap=120";
+    let out = run(&grid("experiment", players, &["--out", &dir, "--threads", "3"])).unwrap();
+    for want in [
+        "## Pace in game time",
+        "## Milestones",
+        "## Real time",
+        "## Never built",
+        "| author |",
+        "| greedy |",
+        "| random |",
+        "| casual |",
+        "| author | mixed |",
+        "M4",
+    ] {
         assert!(out.contains(want), "{want}: {out}");
     }
     let games = std::fs::read_to_string(format!("{dir}/games.jsonl")).unwrap();
-    assert_eq!(games.lines().count(), 6);
+    assert_eq!(games.lines().count(), 8);
     for line in games.lines() {
         let v: serde_json::Value = serde_json::from_str(line).unwrap();
         assert_eq!(v["replay_ok"], true, "{line}");
         assert_eq!(v["retirements"], 2);
+        // Players skip stretches that need no decision.
+        let (ticks, looks, decisions) =
+            (v["ticks"].as_u64().unwrap(), v["looks"].as_u64().unwrap(), v["decisions"].as_u64().unwrap());
+        assert!(decisions > 0 && decisions <= looks && looks * 2 < ticks, "{ticks} {looks} {decisions}");
+        let runs = v["runs"].as_array().unwrap();
+        let per_run: u64 = runs.iter().map(|r| r["decisions"].as_u64().unwrap()).sum();
+        assert!(per_run <= decisions, "{per_run} {decisions}");
+        if v["cell"]["agent"] == "casual" {
+            assert!(ticks / looks >= 60, "the casual author looks at most every 120 ticks: {ticks} {looks}");
+        }
     }
+}
+
+#[test]
+fn real_time_is_a_projection_that_changes_no_game() {
+    let fp = |humans: &str| {
+        let dir = root(&format!("out/hh-sim-tests/humans-{}", humans.replace(',', "-")));
+        let mut a = grid("experiment", "author", &["--out", &dir]);
+        let i = a.iter().position(|x| x == "--humans").unwrap();
+        a[i + 1] = humans.into();
+        let out = run(&a).unwrap();
+        let games = std::fs::read_to_string(format!("{dir}/games.jsonl")).unwrap();
+        let fps: Vec<String> = games
+            .lines()
+            .map(|l| serde_json::from_str::<serde_json::Value>(l).unwrap()["fingerprint"].to_string())
+            .collect();
+        (out, fps)
+    };
+    let (slow, a) = fp("careful");
+    let (fast, b) = fp("brisk");
+    assert_eq!(a, b);
+    let run1 = |out: &str, h: &str| -> f64 {
+        let line = out.lines().find(|l| l.starts_with(&format!("| author | {h} |"))).unwrap();
+        line.split('|').nth(3).unwrap().trim().parse().unwrap()
+    };
+    assert!(run1(&slow, "careful") > run1(&fast, "brisk"), "{slow}\n{fast}");
 }
 
 #[test]
@@ -156,7 +202,8 @@ fn bad_grids_are_usage_errors() {
         ("smart", vec![]),
         ("planner", vec![]),
         ("author:bogus=1", vec![]),
-        ("author", vec!["--speeds", "warp"]),
+        ("author", vec!["--humans", "warp"]),
+        ("a=author,a=greedy", vec![]),
         ("author", vec!["--seeds", "0"]),
         ("author", vec!["--set", "boredom.nope=1"]),
     ] {
@@ -178,13 +225,13 @@ fn agents_keep_their_knobs_and_cope_with_one_program() {
         &["--out", &dir, "--set", "programs.program_count=1", "--set", "economy.upkeep_epsilon=0.000001"],
     ))
     .unwrap();
-    assert!(out.contains("| author:hand_gap=0,loads=10 active/10x |") && out.contains("| greedy active/10x |"), "{out}");
+    assert!(out.contains("| author:hand_gap=0,loads=10 |") && out.contains("| greedy |"), "{out}");
 }
 
 #[test]
 fn empty_lists_and_stray_options_are_usage_errors() {
     for extra in [
-        vec!["--speeds", ","],
+        vec!["--humans", "warp,mixed"],
         vec!["--agents", ""],
         vec!["--first-seed", "18446744073709551615"],
     ] {
@@ -222,11 +269,18 @@ fn a_stockpile_milestone_on_a_capped_resource_is_refused() {
 /// A play log as the web client writes one: a scripted career at 10x with a
 /// minute's pause, its actions, and a closing checkpoint.
 fn write_playlog(path: &str, tamper: bool) {
-    use hh_core::{driver, Config, Session, RULES_REVISION};
+    use hh_core::{driver, Config, Session};
     let c = Config::from_json(&std::fs::read_to_string(baseline()).unwrap()).unwrap();
     let mut s = Session::new(&c, 7, None).unwrap();
     driver::play(&mut s, 600, driver::Policy::Script);
+    write_log_of(path, &c, &s, tamper);
+}
+
+/// The play log of a played session (seed 7, 600 ticks).
+fn write_log_of(path: &str, c: &hh_core::Config, s: &hh_core::Session, tamper: bool) {
+    use hh_core::RULES_REVISION;
     let rec = s.record();
+    assert_eq!(s.state.tick, 600);
     // 10 ticks a second, with a 60 s pause at tick 300.
     let t = |tick: u64| tick as f64 * 100.0 + if tick >= 300 { 60_000.0 } else { 0.0 };
     let mut lines = vec![serde_json::json!({
@@ -263,10 +317,10 @@ fn a_play_log_replays_to_its_final_state_and_measures_real_time() {
     std::fs::create_dir_all(&dir).unwrap();
     let path = format!("{dir}/play.jsonl");
     write_playlog(&path, false);
-    let (ms, pf) = (root("configs/sim/milestones.json"), root("configs/sim/profiles.json"));
-    let out = run(&args(&["playlog", &path, "--milestones", &ms, "--profiles", &pf])).unwrap();
+    let (ms, pf) = (root("configs/sim/milestones.json"), root("configs/sim/humans.json"));
+    let out = run(&args(&["playlog", &path, "--milestones", &ms, "--human-models", &pf])).unwrap();
     assert!(out.contains("final state reproduced") && out.contains("## Milestones") && out.contains("| paused |"), "{out}");
-    let j = run(&args(&["playlog", &path, "--json", "--milestones", &ms, "--profiles", &pf])).unwrap();
+    let j = run(&args(&["playlog", &path, "--json", "--milestones", &ms, "--human-models", &pf])).unwrap();
     let v: serde_json::Value = serde_json::from_str(j.trim()).unwrap();
     assert_eq!(v["reproduced"], true);
     assert_eq!(v["game"]["ticks"], 600);
@@ -283,11 +337,11 @@ fn a_play_log_replays_to_its_final_state_and_measures_real_time() {
     head["id"] = serde_json::json!("p:0");
     let rest: Vec<&str> = text.lines().skip(1).collect();
     std::fs::write(&resent, format!("{head}\n{}\n{head}\n", rest.join("\n"))).unwrap();
-    let out = run(&args(&["playlog", &resent, "--milestones", &ms, "--profiles", &pf])).unwrap();
+    let out = run(&args(&["playlog", &resent, "--milestones", &ms, "--human-models", &pf])).unwrap();
     assert!(out.contains("final state reproduced"), "{out}");
     let bad = format!("{dir}/play-bad.jsonl");
     write_playlog(&bad, true);
-    assert!(matches!(run(&args(&["playlog", &bad, "--milestones", &ms, "--profiles", &pf])), Err(Fail::Check(_))));
+    assert!(matches!(run(&args(&["playlog", &bad, "--milestones", &ms, "--human-models", &pf])), Err(Fail::Check(_))));
     // An action after the last checkpoint, at its tick: the fingerprint no longer
     // stands for the end, so nothing is checked (not a mismatch); a line written at a
     // later visit (`offline`) takes no time.
@@ -307,10 +361,67 @@ fn a_play_log_replays_to_its_final_state_and_measures_real_time() {
     ));
     std::fs::write(&late, text).unwrap();
     let actions = v["game"]["actions"].as_u64().unwrap();
-    let j = run(&args(&["playlog", &late, "--json", "--milestones", &ms, "--profiles", &pf])).unwrap();
+    let j = run(&args(&["playlog", &late, "--json", "--milestones", &ms, "--human-models", &pf])).unwrap();
     let v: serde_json::Value = serde_json::from_str(j.trim()).unwrap();
     assert_eq!(v["reproduced"], serde_json::Value::Null);
     assert_eq!(v["game"]["actions"].as_u64().unwrap(), actions + 2, "the repeated line is read once");
+    // Time at the last tick (the actions there, 880 s on) is played; the
+    // offline line adds none.
     let real = v["game"]["real_s"].as_f64().unwrap();
-    assert!((real - 120.0).abs() < 1e-6, "the late line adds no time: {real}");
+    let active = v["time"]["active_s"].as_f64().unwrap();
+    assert!((real - 999.999).abs() < 1e-6 && (real - active).abs() < 1e-6, "{real} {active}");
+}
+
+/// The human and the sim players on the same game: a log of the author's own
+/// career parts from the author nowhere; the scripted opening parts from it.
+#[test]
+fn vs_human_sets_the_players_beside_the_human_and_finds_where_they_part() {
+    use hh_core::Config;
+    let dir = root("out/hh-sim-tests");
+    std::fs::create_dir_all(&dir).unwrap();
+    let c = Config::from_json(&std::fs::read_to_string(baseline()).unwrap()).unwrap();
+    let ms_text = std::fs::read_to_string(root("configs/sim/milestones.json")).unwrap();
+    let ms = hh_sim::milestones::Milestones::from_json(&ms_text).unwrap();
+    let game = hh_sim::career::Game {
+        config: &c,
+        seed: 7,
+        scenario: None,
+        agent: "author",
+        retirements: u32::MAX,
+        max_ticks: 600,
+        milestones: &ms,
+        objectives: &[],
+        trace: false,
+    };
+    let (_, s) = hh_sim::career::play_session(&game).unwrap();
+    let mine = format!("{dir}/vs-author.jsonl");
+    write_log_of(&mine, &c, &s, false);
+    let (msf, hf) = (root("configs/sim/milestones.json"), root("configs/sim/humans.json"));
+    let opts = ["--agents", "greedy,author", "--humans", "mixed", "--milestones", &msf, "--human-models", &hf];
+    let mut a = vec!["vs-human", mine.as_str()];
+    a.extend(opts);
+    let out = run(&args(&a)).unwrap();
+    for want in ["## Side by side", "| human | 600 |", "| author | 600 |", "| greedy | 600 |", "## Real time", "| human | log |", "| author | mixed |"] {
+        assert!(out.contains(want), "{want}: {out}");
+    }
+    assert!(out.contains("best player, author") && out.contains("First apart in what: never"), "{out}");
+    // The scripted opening builds in another order.
+    let script = format!("{dir}/vs-script.jsonl");
+    write_playlog(&script, false);
+    let mut a = vec!["vs-human", script.as_str()];
+    a.extend(opts);
+    let out = run(&args(&a)).unwrap();
+    assert!(out.contains("First apart in what: run 1, purchase"), "{out}");
+    let mut a = vec!["vs-human", script.as_str(), "--json"];
+    a.extend(opts);
+    let v: serde_json::Value = serde_json::from_str(run(&args(&a)).unwrap().trim()).unwrap();
+    assert_eq!(v["rows"].as_array().unwrap().len(), 3);
+    assert_eq!(v["rows"][0]["name"], "human");
+    assert!(v["divergence"]["what"]["nth"].as_u64().unwrap() >= 1);
+    // A tampered log is a failed check.
+    let bad = format!("{dir}/vs-bad.jsonl");
+    write_playlog(&bad, true);
+    let mut a = vec!["vs-human", bad.as_str()];
+    a.extend(opts);
+    assert!(matches!(run(&args(&a)), Err(Fail::Check(_))));
 }

@@ -13,9 +13,9 @@ Checks:
 - platform-floats: a platform float function reaching hh-core past clippy (any
   call by name not through `libm::`, an `#[allow]` of the ban, the ban's `deny`
   removed, a name missing from clippy.toml).
-- balance: each target the judge misses (`hh-sim balance`: the author at active
-  and casual attention, mixed speed, 2 seeds, careers of 20 retirements;
-  docs/principles.md). A few seconds once the release build is current.
+- balance: each target the judge misses (`hh-sim balance`: the author and the
+  casual author in game time, run 1's real time under the mixed human model,
+  2 seeds, careers of 20 retirements; docs/principles.md). A few seconds once the release build is current.
 """
 
 import json

@@ -11,12 +11,13 @@ use hh_core::{Action, Fx};
 
 use super::{amount, Agent, Knobs, Player};
 
-pub const KNOBS: &[&str] = &["actions", "retire_odds"];
+pub const KNOBS: &[&str] = &["actions", "retire_odds", "every"];
 
 pub struct Random {
     rng: Stream,
     actions: u32,
     retire_odds: u32,
+    every: u64,
 }
 
 impl Random {
@@ -25,6 +26,7 @@ impl Random {
             rng: Stream::new(seed, "agent:random"),
             actions: k.get("actions", 2).max(1) as u32,
             retire_odds: k.get("retire_odds", 500).max(1) as u32,
+            every: k.get("every", 5).max(1) as u64,
         }
     }
 
@@ -38,6 +40,10 @@ impl Random {
 }
 
 impl Agent for Random {
+    fn next_look(&mut self, _p: &mut Player) -> u64 {
+        self.every
+    }
+
     fn act(&mut self, p: &mut Player) {
         if p.view().can_retire && self.rng.below(self.retire_odds) == 0 {
             let _ = p.apply(&Action::Retire);

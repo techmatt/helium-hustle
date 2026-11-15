@@ -26,7 +26,7 @@ use hh_core::{Action, Fx, View};
 
 use super::{amount, command_cost, command_unlocked, Agent, Knobs, Player};
 
-pub const KNOBS: &[&str] = &["decay", "starved", "reserve", "buys"];
+pub const KNOBS: &[&str] = &["decay", "starved", "reserve", "buys", "min_gap", "max_gap"];
 
 /// Base weights (points) and the percent kept per copy owned, by building id.
 /// A building not listed scores 0.
@@ -250,6 +250,9 @@ pub fn all_on_first(p: &mut Player) {
 pub struct Greedy {
     b: Builder,
     buys: u32,
+    min_gap: u64,
+    max_gap: u64,
+    income: super::Income,
 }
 
 /// Affordable now, or short only of land that credits can buy along with it
@@ -268,11 +271,33 @@ fn buyable_with_land(v: &View, b: &hh_core::view::BuildingView) -> bool {
 
 impl Greedy {
     pub fn new(k: &Knobs) -> Self {
-        Greedy { b: Builder::new(k), buys: k.get("buys", 3).max(1) as u32 }
+        let min_gap = k.get("min_gap", 1).max(1) as u64;
+        Greedy {
+            b: Builder::new(k),
+            buys: k.get("buys", 3).max(1) as u32,
+            min_gap,
+            max_gap: (k.get("max_gap", 10).max(1) as u64).max(min_gap),
+            income: super::Income::default(),
+        }
     }
 }
 
 impl Agent for Greedy {
+    /// Its hand command is chosen afresh each look, so it looks at least
+    /// every `max_gap` ticks; sooner when its target comes within reach.
+    fn next_look(&mut self, p: &mut Player) -> u64 {
+        let v = p.view();
+        self.income.read(v);
+        let soon = self
+            .b
+            .target(v)
+            .and_then(|t| v.buildings.iter().find(|b| b.id == t))
+            .and_then(|b| super::ticks_to_afford(v, &b.cost, self.income.rate))
+            .filter(|&t| t > 0)
+            .unwrap_or(u64::MAX);
+        soon.clamp(self.min_gap, self.max_gap)
+    }
+
     fn act(&mut self, p: &mut Player) {
         all_on_first(p);
         for _ in 0..self.buys {

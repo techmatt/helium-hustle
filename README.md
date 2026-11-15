@@ -18,8 +18,8 @@ implemented (the Godot build's Arc 1, ported): [docs/rules/](docs/rules/README.m
 | Path | What it is |
 |---|---|
 | `crates/hh-core` | The rules engine: every rule, fixed-point state, no I/O, no clock, no global RNG (CLAUDE.md, *Engine rules*). |
-| `crates/hh-sim` | Native CLI ([docs/simulator.md](docs/simulator.md)): runs a seed, replays records; agents ([docs/agents.md](docs/agents.md)) play careers against the targets ([docs/principles.md](docs/principles.md)): the ladder, experiments, compare, balance. |
-| `configs/sim/` | The simulator's data: player profiles (attention, speed) and the milestones with their targets. |
+| `crates/hh-sim` | Native CLI ([docs/simulator.md](docs/simulator.md)): runs a seed, replays records; agents ([docs/agents.md](docs/agents.md)) play careers in game time against the targets ([docs/principles.md](docs/principles.md)): the ladder, experiments, compare, balance, a human's play log beside them (`vs-human`). |
+| `configs/sim/` | The simulator's data: human time models (real minutes from a career's looks) and the milestones with their targets. |
 | `experiments/` | Experiment specs (`ladder.json`, `balance.json`); `results/` holds each item's write-up and working papers (`<item>/`). |
 | `crates/hh-wasm` | wasm-bindgen bindings for `web/`, JSON in and out. |
 | `web/` | The browser UI ([web/README.md](web/README.md)). Renders the engine's view, sends actions, holds no rules. |
@@ -51,7 +51,7 @@ cargo test-all                               # also the slow lane's #[ignore]d t
 cargo clippy --workspace --all-targets       # must stay clean; ~7 s
 cargo run -q -p hh-sim -- run --seed 1 --ticks 365 --policy script
 cargo run -q --release -p hh-sim -- objectives reference/scenarios/run1_fresh.json   # ~0.2 s
-cargo run -q --release -p hh-sim -- ladder   # the agent ladder, 135 careers: ~35 s on 6 threads (docs/simulator.md)
+cargo run -q --release -p hh-sim -- ladder   # the agent ladder, 12 careers: ~20 s on 6 threads (docs/simulator.md)
 wasm-pack build crates/hh-wasm --target web  # -> crates/hh-wasm/pkg (git-ignored); ~22 s cold, ~5 s warm
 node scripts/wasm-smoke.mjs                  # native = wasm: needs the pkg above (not web's copy); ~1 s
 python scripts/warning_checks.py             # warning checks, incl. parity and balance (rebuilds stale builds); ~7 s, up to a minute cold

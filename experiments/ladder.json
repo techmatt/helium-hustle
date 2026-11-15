@@ -1,10 +1,9 @@
 {
   "name": "ladder",
-  "note": "The agent ladder over the attention × speed grid: careers of 20 retirements from a new game, run 1 scored against reference/scenarios/run1_fresh.json's objectives.",
+  "note": "The agent ladder in game time: each player looks whenever a decision is useful and skips stretches that need none; careers of 20 retirements from a new game, run 1 scored against reference/scenarios/run1_fresh.json's objectives. Real time is projected by the human models in `humans`.",
   "configs": ["configs/baseline.json"],
-  "agents": ["random", "greedy", "author"],
-  "attention": ["active", "casual", "afk"],
-  "speeds": ["1x", "mixed", "10x", "ramp", "200x"],
+  "agents": ["random", "greedy", "author", "casual=author:min_gap=120"],
+  "humans": ["careful", "mixed", "brisk"],
   "seeds": 3,
   "first_seed": 1,
   "retirements": 20,

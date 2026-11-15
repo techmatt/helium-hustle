@@ -1,10 +1,9 @@
 {
   "name": "balance",
-  "note": "The judge's cells (docs/principles.md, The judge) for the balance warning check and as compare's default grid: the author at active and casual attention, mixed speed, careers of 20 retirements, 2 seeds.",
+  "note": "The judge's cells (docs/principles.md, The judge) for the balance warning check and as compare's default grid: the author and the casual author in game time, run 1's real time under the mixed human model, careers of 20 retirements, 2 seeds.",
   "configs": ["configs/baseline.json"],
-  "agents": ["author"],
-  "attention": ["active", "casual"],
-  "speeds": ["mixed"],
+  "agents": ["author", "casual=author:min_gap=120"],
+  "humans": ["mixed"],
   "seeds": 2,
   "first_seed": 1,
   "retirements": 20,

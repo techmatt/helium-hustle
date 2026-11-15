@@ -10,11 +10,12 @@ use std::fmt::Write as _;
 pub mod agents;
 pub mod career;
 pub mod experiment;
+pub mod human;
 pub mod lab;
 pub mod milestones;
 pub mod objectives;
 pub mod playlog;
-pub mod profile;
+pub mod vs;
 
 pub const USAGE: &str = "usage:
   hh-sim run [--config F] [--seed S] [--ticks N] [--policy P] [--scenario NAME | --scenario-file F] [--save F] [--json]
@@ -23,17 +24,20 @@ pub const USAGE: &str = "usage:
   hh-sim scenarios
   hh-sim golden
   hh-sim objectives SCENARIO.json [--config F] [--seed S] [--ticks N]
-  hh-sim ladder [SPEC.json] [GRID]                 the agent ladder (default experiments/ladder.json)
+  hh-sim ladder [SPEC.json] [GRID]                 the agent ladder in game time (default experiments/ladder.json)
   hh-sim experiment SPEC.json [GRID]               any spec
   hh-sim compare --config A [--config-b B] [--set module.key=value]... [GRID]
   hh-sim balance [GRID]                            balance: lines for the judge's missed targets
   hh-sim trace [GRID]                              one career's actions and milestones
   hh-sim agents                                    the ladder's rungs
   hh-sim speed                                     native engine speed (ticks/s)
-  hh-sim playlog LOG.jsonl [--json] [--milestones F] [--profiles F]   replay and measure a human's play log
-GRID: [SPEC.json] [--agents a,b] [--attention a,b] [--speeds a,b] [--seeds N] [--first-seed S]
+  hh-sim playlog LOG.jsonl [--json] [--milestones F] [--human-models F]   replay and measure a human's play log
+  hh-sim vs-human LOG.jsonl [--agents a,b] [--humans a,b] [--ticks N] [--json] [--threads T] [--milestones F] [--human-models F]
+                                                   the sim players on the log's game, beside the human
+GRID: [SPEC.json] [--agents a,b] [--humans a,b] [--seeds N] [--first-seed S]
       [--retirements N] [--max-ticks N] [--config F] [--set module.key=value]... [--threads T]
-      [--out DIR (ladder, experiment, compare)] [--profiles F] [--milestones F]
+      [--out DIR (ladder, experiment, compare)] [--human-models F] [--milestones F]
+players: [name=]agent[:knob=value,...]; --humans adds real time projected by those human models
 defaults: --config configs/baseline.json --seed 0 --ticks 1000 (objectives: 5000) --policy idle
 policies: idle, greedy (buy whatever is affordable every tick), greedy:every=N, script";
 
@@ -127,6 +131,9 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     }
     if cmd == "playlog" {
         return playlog_cmd(rest);
+    }
+    if cmd == "vs-human" {
+        return vs::run(rest);
     }
     let o = parse(rest)?;
     if cmd != "replay" && cmd != "objectives" && !o.rest.is_empty() {
@@ -235,18 +242,18 @@ fn run_game(o: &Opts) -> Result<String, Fail> {
     }
 }
 
-/// `hh-sim playlog LOG [--json] [--milestones F] [--profiles F]`: replays a
+/// `hh-sim playlog LOG [--json] [--milestones F] [--human-models F]`: replays a
 /// human's play log and measures it as the ladder measures an agent.
 fn playlog_cmd(args: &[String]) -> Result<String, Fail> {
     let (mut path, mut json) = (None, false);
     let mut milestones = "configs/sim/milestones.json".to_string();
-    let mut profiles = "configs/sim/profiles.json".to_string();
+    let mut humans = "configs/sim/humans.json".to_string();
     let mut it = args.iter();
     while let Some(a) = it.next() {
         match a.as_str() {
             "--json" => json = true,
             "--milestones" => milestones = it.next().ok_or(Fail::Usage("--milestones needs a file".into()))?.clone(),
-            "--profiles" => profiles = it.next().ok_or(Fail::Usage("--profiles needs a file".into()))?.clone(),
+            "--human-models" => humans = it.next().ok_or(Fail::Usage("--human-models needs a file".into()))?.clone(),
             f if f.starts_with("--") => return usage(format!("playlog: unknown option {f:?}")),
             f if path.is_none() => path = Some(f.to_string()),
             f => return usage(format!("playlog: one log at a time (also given {f:?})")),
@@ -257,7 +264,7 @@ fn playlog_cmd(args: &[String]) -> Result<String, Fail> {
     };
     let log = playlog::Log::parse(&read(&path)?).map_err(|e| Fail::Usage(format!("{path}: {e}")))?;
     let ms = milestones::Milestones::from_json(&read(&milestones)?).map_err(Fail::Usage)?;
-    let pf = profile::Profiles::from_json(&read(&profiles)?).map_err(Fail::Usage)?;
+    let pf = human::Humans::from_json(&read(&humans)?).map_err(Fail::Usage)?;
     let r = playlog::replay(&log, &ms).map_err(|e| Fail::Check(format!("{path}: replay failed: {e}")))?;
     let out = if json {
         serde_json::json!({

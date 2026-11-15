@@ -1,8 +1,10 @@
 //! `hh-sim playlog FILE`: replays a human's play log (the web client writes
 //! one per career, `web/README.md`, *Play logs*) and measures the career as
-//! the ladder measures a sim player's ([`crate::career::Meter`]), with real
-//! time taken from the log's wall clock instead of a speed profile; then
-//! reports where the human's real time went (speed mix, pauses, sessions).
+//! the ladder measures a sim player's ([`crate::career::Meter`]), in game
+//! time, with real time from the log's wall clock (a sim player's is a human
+//! model's projection); then reports where the human's real time went (speed
+//! mix, pauses, sessions). `hh-sim vs-human` ([`crate::vs`]) sets the same
+//! career beside the sim players'.
 //!
 //! A log is JSON lines, in the order the client sent them. The first is the
 //! header (`kind: "header"`, `format: "hh-playlog/1"`): rules revision, config
@@ -21,8 +23,8 @@ use serde_json::Value;
 
 use crate::career::{GameResult, Meter};
 use crate::experiment::{self, Cell, Loaded, Spec};
+use crate::human::{Clock, Humans};
 use crate::milestones::Milestones;
-use crate::profile::Profiles;
 
 pub const FORMAT: &str = "hh-playlog/1";
 
@@ -268,9 +270,10 @@ pub struct Replayed {
     pub matches: Option<bool>,
 }
 
-/// Replays the log tick by tick under a [`Meter`]; each tick's real seconds
-/// come from the log's wall clock (time at a tick before the next tick runs,
-/// a pause included, counts toward that next tick).
+/// Replays the log tick by tick under a [`Meter`]; the career's real clock
+/// comes from the log's wall clock (time at a tick before the next tick runs,
+/// a pause included, counts toward that next tick). A decision is a tick
+/// where the human applied actions.
 pub fn replay(log: &Log, milestones: &Milestones) -> Result<Replayed, String> {
     let wall = std::time::Instant::now();
     let mut s = Session::new(&log.config, log.seed, log.scenario.as_ref())?;
@@ -295,20 +298,18 @@ pub fn replay(log: &Log, milestones: &Milestones) -> Result<Replayed, String> {
         }
     };
     let start = s.state.tick;
-    let mut prev = 0.0f64;
-    let mut looks = 0u64;
+    let mut clock = Clock { points: vec![(start, 0.0)] };
     let mut i = 0usize;
     loop {
         // Every action stamped at this tick, then a look.
-        let mut acted = false;
+        let mut acted = 0u32;
         while i < log.actions.len() && log.actions[i].tick == s.state.tick {
             s.apply(&log.actions[i].action).map_err(|e| format!("action {i} at tick {}: {e}", s.state.tick))?;
             i += 1;
-            acted = true;
+            acted += 1;
         }
-        if acted {
-            looks += 1;
-            meter.look(&s);
+        if acted > 0 {
+            meter.look(&s, acted);
         }
         if i < log.actions.len() && log.actions[i].tick < s.state.tick {
             return Err(format!("action {i}: tick {} is before tick {}", log.actions[i].tick, s.state.tick));
@@ -317,13 +318,20 @@ pub fn replay(log: &Log, milestones: &Milestones) -> Result<Replayed, String> {
             break;
         }
         let k = s.state.tick + 1;
-        let now = if k <= start { 0.0 } else { reached(k) };
-        meter.tick(&mut s, (now - prev).max(0.0))?;
-        prev = now;
+        let prev = clock.total();
+        clock.points.push((k, reached(k).max(prev)));
+        meter.tick(&mut s)?;
+    }
+    // Time at the last tick (deciding, paused) is played too.
+    let end = active.last().copied().unwrap_or(0.0);
+    if end > clock.total() {
+        clock.points.push((s.state.tick, end));
     }
     let fingerprint = s.state.fingerprint();
     let matches = log.last_fingerprint.as_ref().map(|f| *f == fingerprint);
-    let game = meter.finish(&s, log.seed, "human", looks, Vec::new(), wall.elapsed().as_secs_f64());
+    let mut game = meter.finish(&s, log.seed, "human", Vec::new(), wall.elapsed().as_secs_f64());
+    game.real_s = Some(clock.total());
+    game.own_clock = Some(clock);
     Ok(Replayed { game, time: time_use(log), fingerprint, matches })
 }
 
@@ -333,7 +341,7 @@ fn mins(s: f64) -> String {
 
 /// The report: the log's stamp, whether the replay reproduces it, the
 /// ladder's tables for this one career, and the time use.
-pub fn report(path: &str, log: &Log, r: &Replayed, milestones: Milestones, profiles: Profiles) -> String {
+pub fn report(path: &str, log: &Log, r: &Replayed, milestones: Milestones, humans: Humans) -> String {
     let mut t = String::new();
     let _ = writeln!(
         t,
@@ -359,22 +367,15 @@ pub fn report(path: &str, log: &Log, r: &Replayed, milestones: Milestones, profi
             None => "(the log has no fingerprint at its last tick to check)".to_string(),
         }
     );
-    let cell = Cell {
-        config: log.config.name.clone(),
-        variant: "human".into(),
-        agent: "human".into(),
-        attention: "log".into(),
-        speed: "log".into(),
-    };
-    let sum = experiment::summarize(&cell, std::slice::from_ref(&r.game), &milestones);
+    let cell = Cell::new(&log.config.name, "human", "human");
+    let sum = experiment::summarize(&cell, std::slice::from_ref(&r.game), &milestones, &[("log".into(), None)]);
     let spec = Spec {
         name: "playlog".into(),
         note: String::new(),
         configs: Vec::new(),
         variants: Vec::new(),
         agents: Vec::new(),
-        attention: Vec::new(),
-        speeds: Vec::new(),
+        humans: vec!["log".into()],
         seeds: 1,
         first_seed: log.seed,
         retirements: r.game.retirements,
@@ -382,7 +383,7 @@ pub fn report(path: &str, log: &Log, r: &Replayed, milestones: Milestones, profi
         scenario: None,
         objectives: None,
     };
-    let loaded = Loaded { spec, profiles, milestones, objectives: Vec::new() };
+    let loaded = Loaded { spec, humans, milestones, objectives: Vec::new() };
     t.push('\n');
     t.push_str(&experiment::tables(&[sum], &loaded));
     let u = &r.time;

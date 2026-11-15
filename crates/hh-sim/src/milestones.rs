@@ -56,20 +56,22 @@ pub struct Milestone {
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Run1 {
-    /// Run-1 length bands by attention profile.
+    /// Run-1 length bands by player name (a spec's `name=agent`).
     pub ticks: BTreeMap<String, [u64; 2]>,
-    /// Run-1 real minutes at one speed policy.
+    /// Run-1 real minutes under one human time model.
     pub minutes: Run1Minutes,
 }
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Run1Minutes {
-    pub speed: String,
+    pub human: String,
     pub band: [u64; 2],
+    /// The players it's read for (by name).
+    pub players: Vec<String>,
 }
 
-/// The judge's cells (agent, profiles, seeds) are `experiments/balance.json`'s.
+/// The judge's cells (players, seeds) are `experiments/balance.json`'s.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Milestones {
@@ -135,7 +137,6 @@ pub struct Hit {
     pub run: u32,
     /// Ticks into that run.
     pub day: u64,
-    pub real_s: f64,
 }
 
 /// Run-scoped observations the milestones need, updated each tick.

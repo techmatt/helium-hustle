@@ -13,7 +13,7 @@ pub const COMMANDS: &[&str] = &["ladder", "experiment", "compare", "balance", "t
 
 const LADDER: &str = "experiments/ladder.json";
 const BALANCE: &str = "experiments/balance.json";
-const PROFILES: &str = "configs/sim/profiles.json";
+const HUMANS: &str = "configs/sim/humans.json";
 const MILESTONES: &str = "configs/sim/milestones.json";
 
 fn read(path: &str) -> Result<String, String> {
@@ -28,28 +28,28 @@ fn usage<T>(e: impl Into<String>) -> Result<T, Fail> {
 struct Grid {
     spec: Option<String>,
     agents: Option<Vec<String>>,
-    attention: Option<Vec<String>>,
-    speeds: Option<Vec<String>>,
+    humans: Option<Vec<String>>,
     seeds: Option<u64>,
     first_seed: Option<u64>,
     retirements: Option<u32>,
     max_ticks: Option<u64>,
     threads: usize,
     out: Option<String>,
-    profiles: String,
+    human_models: String,
     milestones: String,
     config: Option<String>,
     config_b: Option<String>,
     set: Vec<String>,
 }
 
-/// Agent specs, comma-separated; a piece with `=` but no `:` is another knob
-/// of the spec before it (`author:a=1,b=2,greedy` is two agents).
-fn agent_list(s: &str) -> Vec<String> {
+/// Players, comma-separated; a piece with `=` but no `:` after a spec with
+/// knobs is another knob of it (`author:a=1,b=2,greedy` is two players;
+/// `casual=author:min_gap=120` one, named).
+pub fn agent_list(s: &str) -> Vec<String> {
     let mut out: Vec<String> = Vec::new();
     for piece in s.split(',').filter(|x| !x.is_empty()) {
         match out.last_mut() {
-            Some(prev) if piece.contains('=') && !piece.contains(':') => {
+            Some(prev) if piece.contains('=') && !piece.contains(':') && prev.contains(':') => {
                 prev.push(',');
                 prev.push_str(piece);
             }
@@ -62,7 +62,7 @@ fn agent_list(s: &str) -> Vec<String> {
 fn parse(args: &[String]) -> Result<Grid, Fail> {
     let mut g = Grid {
         threads: 6,
-        profiles: PROFILES.into(),
+        human_models: HUMANS.into(),
         milestones: MILESTONES.into(),
         ..Default::default()
     };
@@ -75,15 +75,14 @@ fn parse(args: &[String]) -> Result<Grid, Fail> {
         }
         match a.as_str() {
             "--agents" => g.agents = Some(agent_list(&val(a)?)),
-            "--attention" => g.attention = Some(list(val(a)?)),
-            "--speeds" => g.speeds = Some(list(val(a)?)),
+            "--humans" => g.humans = Some(list(val(a)?)),
             "--seeds" => g.seeds = Some(num(a, val(a)?)?),
             "--first-seed" => g.first_seed = Some(num(a, val(a)?)?),
             "--retirements" => g.retirements = Some(num(a, val(a)?)?),
             "--max-ticks" => g.max_ticks = Some(num(a, val(a)?)?),
             "--threads" => g.threads = num(a, val(a)?)?,
             "--out" => g.out = Some(val(a)?),
-            "--profiles" => g.profiles = val(a)?,
+            "--human-models" => g.human_models = val(a)?,
             "--milestones" => g.milestones = val(a)?,
             "--config" => g.config = Some(val(a)?),
             "--config-b" => g.config_b = Some(val(a)?),
@@ -106,11 +105,8 @@ impl Grid {
         if let Some(v) = &self.agents {
             s.agents = v.clone();
         }
-        if let Some(v) = &self.attention {
-            s.attention = v.clone();
-        }
-        if let Some(v) = &self.speeds {
-            s.speeds = v.clone();
+        if let Some(v) = &self.humans {
+            s.humans = v.clone();
         }
         if let Some(v) = self.seeds {
             s.seeds = v;
@@ -149,7 +145,7 @@ impl Grid {
     fn load(&self, spec: Spec) -> Result<experiment::Loaded, Fail> {
         experiment::load(
             spec,
-            &read(&self.profiles).map_err(Fail::Usage)?,
+            &read(&self.human_models).map_err(Fail::Usage)?,
             &read(&self.milestones).map_err(Fail::Usage)?,
             &read,
         )
@@ -170,7 +166,7 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
             let l = g.load(g.spec(&path)?)?;
             let res = experiment::run(&l, &read, g.threads).map_err(Fail::Usage)?;
             let sums: Vec<_> =
-                res.cells.iter().map(|(c, games)| experiment::summarize(c, games, &l.milestones)).collect();
+                res.cells.iter().map(|(c, games)| experiment::summarize(c, games, &l.milestones, &l.models())).collect();
             let mut table = experiment::tables(&sums, &l);
             let _ = writeln!(table, "\n{}", speed_line());
             let _ = writeln!(table, "{}", wasm_speed_line());
@@ -210,10 +206,12 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
             let ra = experiment::run(&la, &read, g.threads).map_err(Fail::Usage)?;
             let rb = experiment::run(&lb, &read, g.threads).map_err(Fail::Usage)?;
             let name_b = if g.set.is_empty() { b_path.clone() } else { format!("{b_path} {}", g.set.join(" ")) };
-            let mut t = experiment::compare_table(&ra, &rb, &la.milestones, (&a_path, &name_b));
+            let models = la.models();
+            let model = models.first().and_then(|(n, h)| Some((n.as_str(), (*h)?)));
+            let mut t = experiment::compare_table(&ra, &rb, &la.milestones, (&a_path, &name_b), model);
             for (label, l, r) in [("A", &la, &ra), ("B", &lb, &rb)] {
                 let sums: Vec<_> =
-                    r.cells.iter().map(|(c, games)| experiment::summarize(c, games, &l.milestones)).collect();
+                    r.cells.iter().map(|(c, games)| experiment::summarize(c, games, &l.milestones, &l.models())).collect();
                 let _ = write!(t, "\n# Side {label}\n\n{}", experiment::tables(&sums, l));
             }
             if let Some(dir) = &g.out {
@@ -228,7 +226,7 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
             let l = g.load(g.spec(&path)?)?;
             let res = experiment::run(&l, &read, g.threads).map_err(Fail::Usage)?;
             let sums: Vec<_> =
-                res.cells.iter().map(|(c, games)| experiment::summarize(c, games, &l.milestones)).collect();
+                res.cells.iter().map(|(c, games)| experiment::summarize(c, games, &l.milestones, &l.models())).collect();
             let lines = experiment::balance(&sums, &l.milestones);
             replayed(&[&res], lines.iter().map(|l| format!("{l}\n")).collect())
         }
@@ -243,8 +241,6 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
                 seed: s.first_seed,
                 scenario: scenario.as_ref(),
                 agent: &s.agents[0],
-                attention: l.profiles.attention(&s.attention[0]).map_err(Fail::Usage)?,
-                speed: l.profiles.speed(&s.speeds[0]).map_err(Fail::Usage)?,
                 retirements: s.retirements,
                 max_ticks: s.max_ticks,
                 milestones: &l.milestones,
@@ -273,6 +269,7 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
                 c.lifetime.credits_earned, c.lifetime.days, c.lifetime.shipments, c.best_run_credits, c.best_run_shipments
             );
             let _ = writeln!(t, "{}", serde_json::to_string(&r.runs).expect("json"));
+            let _ = writeln!(t, "{} looks, {} decisions, {} actions in {} ticks", r.looks, r.decisions, r.actions, r.ticks);
             let _ = writeln!(t, "{}", serde_json::to_string(&r.milestones).expect("json"));
             let _ = writeln!(t, "replay {}", if r.replay_ok { "ok" } else { "MISMATCH" });
             if r.replay_ok {

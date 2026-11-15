@@ -47,11 +47,16 @@ impl<'a> Player<'a> {
     }
 }
 
-/// A sim player.
+/// A sim player. It plays in game time only: at each look it acts, then says
+/// how many ticks to skip before its next look ([`Agent::next_look`]), so it
+/// looks whenever a decision is useful and skips stretches that need none
+/// (docs/agents.md, *When it looks*).
 pub trait Agent: Send {
-    /// One look at the game: read the view, act. Called at each attention
-    /// point (docs/simulator.md, *Profiles*).
+    /// One look at the game: read the view, act.
     fn act(&mut self, p: &mut Player);
+
+    /// Ticks until the next look (at least 1), asked once after each `act`.
+    fn next_look(&mut self, p: &mut Player) -> u64;
 
     /// Hook for the strategic rung: called once for each new run, at the
     /// first look after a forced retirement (before `act`), or right after
@@ -95,8 +100,19 @@ pub const RUNGS: &[(&str, &str)] = &[
     ("oracle", "not built: full-information search, the ceiling"),
 ];
 
-/// Builds an agent from its spec (`kind[:key=value,...]`) for a game seed.
-pub fn build(spec: &str, seed: u64) -> Result<Box<dyn Agent>, String> {
+/// A player's name and its agent spec: `name=kind[:key=value,...]` names a
+/// player (`casual=author:min_gap=120`); a bare spec is its own name.
+pub fn named(player: &str) -> (&str, &str) {
+    let head = player.split(':').next().unwrap_or(player);
+    match head.split_once('=') {
+        Some((name, _)) => (name, &player[name.len() + 1..]),
+        None => (player, player),
+    }
+}
+
+/// Builds an agent from its spec (`[name=]kind[:key=value,...]`) for a game seed.
+pub fn build(player: &str, seed: u64) -> Result<Box<dyn Agent>, String> {
+    let spec = named(player).1;
     let (kind, rest) = spec.split_once(':').unwrap_or((spec, ""));
     let mut knobs = BTreeMap::new();
     for kv in rest.split(',').filter(|s| !s.is_empty()) {
@@ -154,4 +170,58 @@ pub fn command_cost(v: &View, id: &str, res: &str) -> Fx {
 
 pub fn researched(v: &View, id: &str) -> bool {
     v.research.iter().any(|r| r.id == id && r.done)
+}
+
+/// Whole ticks for `have` to reach `need` growing `rate` a day: 0 if it
+/// already has, `None` if it doesn't grow.
+pub fn ticks_to(have: Fx, need: Fx, rate: Fx) -> Option<u64> {
+    if have >= need {
+        return Some(0);
+    }
+    if rate <= Fx::ZERO {
+        return None;
+    }
+    // Whole ticks, rounded up (at least one: it isn't there yet).
+    let q = (need - have) / rate;
+    let whole = q.floor_int().max(0);
+    let up = if Fx::from_int(whole) < q { whole + 1 } else { whole };
+    Some(up.max(1) as u64)
+}
+
+/// Ticks until every cost of `cost` is on hand: credits at `credit_rate`
+/// (the player's own reading of its income), anything else at its view rate.
+/// `None` when some cost doesn't grow.
+pub fn ticks_to_afford(v: &View, cost: &BTreeMap<String, Fx>, credit_rate: Fx) -> Option<u64> {
+    let mut most = 0u64;
+    for (res, &need) in cost {
+        let rate = if res == "credits" {
+            credit_rate
+        } else {
+            v.resources.iter().find(|r| r.id == *res).map_or(Fx::ZERO, |r| r.per_day)
+        };
+        most = most.max(ticks_to(amount(v, res), need, rate)?);
+    }
+    Some(most)
+}
+
+/// A player's reading of its credit income: credits earned this run between
+/// two looks, a day.
+#[derive(Debug, Clone, Default)]
+pub struct Income {
+    last: Option<(u32, u64, Fx)>,
+    pub rate: Fx,
+}
+
+impl Income {
+    pub fn read(&mut self, v: &View) {
+        let now = (v.run, v.tick, v.run_stats.credits_earned);
+        if let Some((run, tick, earned)) = self.last {
+            if run == now.0 && now.1 > tick {
+                self.rate = (now.2 - earned) / Fx::from_int((now.1 - tick) as i64);
+            } else if run != now.0 {
+                self.rate = Fx::ZERO;
+            }
+        }
+        self.last = Some(now);
+    }
 }

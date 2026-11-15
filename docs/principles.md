@@ -1,7 +1,7 @@
 # Principles: targets and measures
 
 What the game should feel like, as numbers the simulator can check. The targets come from the
-design doc (quoted below); the measurable definitions, the profiles and the judge are this
+design doc (quoted below); the measurable definitions, the players, human models and the judge are this
 repo's, in `configs/sim/` (data, not code). The simulator that reads them: [simulator.md](simulator.md);
 its players: [agents.md](agents.md).
 
@@ -23,7 +23,7 @@ on a capped resource.
 
 `configs/sim/milestones.json`. Run *n* is the run after *n − 1* retirements; a milestone is met
 the first tick its condition holds (checked after every tick and every look), and reported as
-its run, the run's day and the real minutes since the career began. A milestone first seen
+its career tick, its run and the run's day (real minutes under a human model). A milestone first seen
 in the step that ended a run (a retirement, or what the run's last tick did) counts in the run
 it ended, on its last day. What a run's last tick reached and the new run reset (a pile of
 credits, a building count) is not seen.
@@ -65,32 +65,45 @@ credits, a building count) is not seen.
 - **M12** reads "speculators managed" as owning the building that decays them; Speculator
   Dossier (the Strategic project) is the other candidate.
 
-## Profiles
+## Players and human models
 
-`configs/sim/profiles.json`. **Attention** is how often the player looks and acts: `active`
-every 5 real seconds, `casual` every 2 minutes, `afk` every 30 minutes. **Speed** is which speed
-the player runs at (the web client's 1x, 3x, 10x, 50x, 200x) and when it changes: `1x`, `10x`
-and `200x` fixed; `mixed` 1x after a look where the player acted, 10x after one where it didn't;
-`ramp` 1x in run 1, then 3x, 10x, 50x and 200x from run 5. Between looks the game runs
-`attention × speed` ticks, so going faster means fewer looks per run, and real time is ticks
-over speed: boredom counts game days, so a faster player retires sooner in real time.
+**Sim players play in game time** (Matt's ruling): a player acts whenever a decision is useful
+and skips stretches that need none ([agents.md](agents.md#when-it-looks)), so results are ticks
+and **decisions** (looks that applied an action), never speed-dependent. The ladder's players:
+`random`, `greedy`, `author` (playing well: about 140 decisions a run) and `casual` (the author
+looking at most every 120 ticks: about 12 a run).
+
+**Human models** (`configs/sim/humans.json`) are a separate, occasional projection of a career
+to real minutes: each decision takes `decide_s` seconds, and the gap to the next look plays its
+first `burst_after` ticks at `play` speed and the rest at `burst`. Human play is decisions at
+1-3x with brief bursts to 5-20x (200x comes later, once programs automate more): `careful` 1x
+and 5x, `mixed` 2x (a mix of 1x and 3x) and 10x, `brisk` 3x and 20x. A model changes no game;
+a human's play log has its own clock (`hh-sim playlog`, `vs-human`), against which a model can
+be checked.
 
 ## The judge
 
-The balance warnings (`python scripts/warning_checks.py`, `balance:` lines) read the author
-([agents.md](agents.md)) at `active` and `casual` attention, `mixed` speed, 2 seeds, careers of
-20 retirements (`experiments/balance.json`, the judge's one home). A line is written for:
+The balance warnings (`python scripts/warning_checks.py`, `balance:` lines) read the `author`
+and `casual` players ([agents.md](agents.md)), 2 seeds, careers of 20 retirements, real time
+under the `mixed` model (`experiments/balance.json`, the judge's one home). A line is written
+for:
 
 - a milestone whose median run falls outside its window, or that half or fewer of the seeds
   reached, or that no seed reached in a career long enough to reach it;
 - a run-1 milestone (M1, M2) whose median day falls outside its day window;
-- run 1's median length outside its band for the attention profile (`active` 800–1,100 ticks,
-  `casual` 1,300–1,700);
-- run 1's median real time at `mixed` speed outside 25–35 minutes.
+- run 1's median length outside its player's band (`author` 800–1,100 ticks, `casual`
+  1,300–1,700);
+- the author's run 1 outside 25–35 real minutes under `mixed`.
+
+The run-1 bands are keyed by player: "played well" is the author, "played casually" the casual
+author. The 30-minute band is read for the author only: the `mixed` model bursts through every
+quiet stretch, so the casual player's 120-tick gaps take about 5 real minutes a run there, which
+says how the model treats a player who leaves the game alone, not how long casual play takes.
 
 ## Measures
 
 Every game reports (`hh-sim ladder`, [simulator.md](simulator.md#measures)): time to each
-milestone in ticks, runs and real minutes; run length and boredom's share of it; the share of
-real time with nothing to buy; resources sitting at cap and the production lost to caps;
-buildings never bought and commands never used; and simulation speed, native and wasm.
+milestone in ticks and runs (in real minutes under a human model); run length, decisions and
+boredom's share; the share of ticks with nothing to buy; resources sitting at cap and the
+production lost to caps; buildings never bought and commands never used; and simulation speed,
+native and wasm.

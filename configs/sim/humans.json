@@ -1,0 +1,8 @@
+{
+  "_doc": "Human time models for hh-sim (docs/principles.md, Players and human models): how a person's attention and speed map a sim player's ticks to real minutes. A projection only: sim players play in game time and no model changes a game. Each decision (a look that acted) takes decide_s real seconds; the gap to the next look plays its first burst_after ticks at play ticks a second (watching) and the rest at burst (a brief burst through a stretch that needs nothing). Speeds are 1 to 200 ticks a second; the web client's are 1, 3, 10, 50 and 200, and a model's 2 stands for a mix of 1x and 3x. Human play (Matt): decisions at 1-3x, brief bursts to 5-20x; 200x comes later, once programs automate more.",
+  "humans": {
+    "careful": { "play": 1, "burst": 5, "burst_after": 30, "decide_s": 5, "says": "1x while deciding, short bursts to 5x" },
+    "mixed": { "play": 2, "burst": 10, "burst_after": 20, "decide_s": 4, "says": "1-3x while deciding, bursts to 10x: the targets' model" },
+    "brisk": { "play": 3, "burst": 20, "burst_after": 10, "decide_s": 3, "says": "3x while deciding, bursts to 20x" }
+  }
+}

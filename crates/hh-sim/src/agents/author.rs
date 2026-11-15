@@ -1,20 +1,25 @@
 //! `author`: the heuristic program author, the rung that matters most
 //! (program authoring is the core skill). It builds with the builder's scored
 //! order but saves for its target (buying another only from credits past the
-//! target's price), and writes programs from templates. How it writes the main
-//! program depends on how often it gets to look (the ticks since its last
-//! look, `gap`):
+//! target's price), and writes programs from templates. After acting it picks
+//! the ticks to its next look, `gap` (`plan_gap`: the soonest its
+//! target or next research is affordable, boredom reaches `dream_at`, the pad
+//! cools down or a stale run would retire; `min_gap`..`max_gap`). How it writes
+//! the main program depends on that gap:
 //!
 //! | Program | Template | Processors |
 //! |---|---|---|
-//! | 1 main, `gap <= hand_gap` | a plan to the next look: `launch_pads` if a pad is full; `buy_propellant` × the fuel short when a pad is within 25 of full; `load_pads` × the loads that would move cargo; `buy_*` × the target's missing titanium, regolith or ice, as far as credits past its price go; then `cloud_compute` × gap × processors | the rest |
+//! | 1 main, `gap <= hand_gap` | a plan to the next look: `launch_pads` if a pad is full; `buy_propellant` × the fuel short when a pad is within 25 of full; `load_pads` × the loads that would move cargo; `buy_*` × the target's missing titanium, regolith or ice, as far as credits past its price go; then `cloud_compute` × 2 × `max_gap` × processors | the rest |
 //! | 1 main, longer gaps | a standing cycle: `load_pads × loads, launch_pads, cloud_compute × loads, buy_propellant × fuel`, `buy_*` for target inputs no building makes | the rest |
 //! | 2 dream | `dream` | 1 while boredom is past `dream_at`% of its cap and the run still builds |
 //! | 3 fund | `fund_<axis>`: the first axis (humanist, rationalist, nationalist) whose persistent project isn't done | 1 when 3 or more are left |
 //! | 4 market | `promote_<good>` for each pad good, `disrupt_speculators` | 1 when 3 or more are left |
 //!
 //! A program is rewritten only when its text changes (a rewrite restarts its
-//! pointer). Extra pads carry a good other than He-3 that sits at its cap.
+//! pointer), or, for the main plan, to run its due lines again once the
+//! pointer has passed into the filler; a plan with nothing due isn't written
+//! over one already in its filler. Extra pads carry a good other than He-3
+//! that sits at its cap.
 //! While looking often, it pauses buildings that eat a material its target is
 //! short of, so the stock builds up.
 //!
@@ -34,7 +39,7 @@ use super::{amount, cap, command_cost, command_unlocked, Agent, Knobs, Player};
 
 pub const KNOBS: &[&str] = &[
     "decay", "starved", "reserve", "buys", "compute", "dream_at", "stale_days", "project_rate", "fund", "market",
-    "hand_gap", "loads", "pause", "wait_demand",
+    "hand_gap", "loads", "pause", "wait_demand", "min_gap", "max_gap",
 ];
 
 /// Research, first wanted first.
@@ -105,7 +110,11 @@ pub struct Author {
     run: u32,
     hand_gap: u64,
     loads: u32,
-    last_tick: Option<u64>,
+    min_gap: u64,
+    max_gap: u64,
+    /// The ticks to its next look, chosen at this one.
+    gap: u64,
+    income: super::Income,
     pause: bool,
     wait_demand: bool,
     last_note: String,
@@ -113,6 +122,7 @@ pub struct Author {
 
 impl Author {
     pub fn new(k: &Knobs) -> Self {
+        let min_gap = k.get("min_gap", 1).max(1) as u64;
         Author {
             b: Builder::new(k),
             buys: k.get("buys", 3).max(1) as u32,
@@ -127,7 +137,10 @@ impl Author {
             run: 0,
             hand_gap: k.get("hand_gap", 60).max(0) as u64,
             loads: k.get("loads", 20).clamp(1, 1000) as u32,
-            last_tick: None,
+            min_gap,
+            max_gap: (k.get("max_gap", 10).max(1) as u64).max(min_gap),
+            gap: min_gap,
+            income: super::Income::default(),
             pause: k.get("pause", 1) != 0,
             wait_demand: k.get("wait_demand", 0) != 0,
             last_note: String::new(),
@@ -347,8 +360,8 @@ impl Author {
         }
     }
 
-    /// The programs' templates and processors; `gap` is the ticks since the
-    /// last look.
+    /// The programs' templates and processors; `gap` is the ticks to the next
+    /// look.
     fn programs(&self, p: &mut Player, target: Option<&str>, gap: u64) {
         let v = p.view();
         let total = v.processors;
@@ -409,7 +422,9 @@ impl Author {
                     }
                 }
             }
-            let fill = (gap.max(1) * u64::from(left.max(1))).min(1000) as u32;
+            // Twice what reaches the latest next look; a constant, so the text
+            // changes only when what is due does.
+            let fill = (2 * self.max_gap.max(gap) * u64::from(left.max(1))).min(1000) as u32;
             lines.push(e(filler, fill));
             lines
         } else {
@@ -482,10 +497,34 @@ impl Author {
             }
         }
         procs[MAIN] = left;
+        let hand = gap <= self.hand_gap;
+        let due: u64 = if hand {
+            want[MAIN].iter().filter(|l| l.command != filler).map(|l| u64::from(l.count)).sum()
+        } else {
+            0
+        };
         // Lower first, then raise, so the total never passes the processors.
         let cur: Vec<u32> = v.programs.iter().map(|p| p.processors).collect();
+        // A hand plan is rewritten when its text changes, or to run its due
+        // lines again once the pointer has passed them into the filler. One
+        // with nothing due isn't written over a plan in its filler with
+        // enough filler left to reach the next look: it would do the same.
+        let in_filler = |i: usize| {
+            let p = &v.programs[i];
+            p.entries.len() > 1 && p.entry as usize + 1 >= p.entries.len()
+        };
+        let idle_same = |i: usize| {
+            let p = &v.programs[i];
+            let left_steps = p.entries.last().map_or(0, |l| u64::from(l.count.saturating_sub(p.step)));
+            hand && i == MAIN
+                && due == 0
+                && in_filler(i)
+                && p.entries.last() == want[i].last()
+                && left_steps >= gap * u64::from(procs[MAIN].max(1))
+        };
+        let rearm = |i: usize| hand && i == MAIN && due > 0 && in_filler(i);
         let writes: Vec<(usize, Vec<Entry>)> = (0..want.len())
-            .filter(|&i| v.programs[i].entries != want[i])
+            .filter(|&i| (v.programs[i].entries != want[i] && !idle_same(i)) || rearm(i))
             .map(|i| (i, want[i].clone()))
             .collect();
         for (i, entries) in writes {
@@ -499,6 +538,51 @@ impl Author {
         }
     }
 
+    /// The ticks until a decision is next useful, from what it can see: its
+    /// target or the next research coming within reach (at its credit income
+    /// and the view's rates), boredom reaching `dream_at`, the pad's cooldown
+    /// ending, and the day a stale run would retire; at least `min_gap`, at
+    /// most `max_gap` (what it can't foresee: events, demand, a stall).
+    fn plan_gap(&self, v: &View, target: Option<&str>) -> u64 {
+        let mut soon = u64::MAX;
+        if let Some(b) = target.and_then(|t| v.buildings.iter().find(|b| b.id == t)) {
+            if let Some(t) = super::ticks_to_afford(v, &b.cost, self.income.rate) {
+                sooner(&mut soon, t);
+            }
+        }
+        let next = RESEARCH
+            .iter()
+            .filter_map(|id| v.research.iter().find(|r| r.id == *id))
+            .find(|r| r.visible && !r.done && Self::worth(v, &r.id));
+        if let Some(r) = next {
+            let rate = v.resources.iter().find(|x| x.id == "science").map_or(Fx::ZERO, |x| x.per_day);
+            if let Some(t) = super::ticks_to(amount(v, "science"), r.cost, rate) {
+                sooner(&mut soon, t);
+            }
+        }
+        if command_unlocked(v, "dream") {
+            let at = v.boredom.cap.mul_ratio(self.dream_at, 100);
+            if let Some(t) = super::ticks_to(v.boredom.amount, at, v.boredom.rate) {
+                sooner(&mut soon, t);
+            }
+        }
+        if let Some(pad) = v.pads.iter().find(|p| p.active && p.cooldown > 0) {
+            sooner(&mut soon, u64::from(pad.cooldown));
+        }
+        if v.can_retire {
+            let stale = v.day.saturating_sub(self.built_day);
+            sooner(&mut soon, self.stale_days.saturating_sub(stale));
+        }
+        soon.clamp(self.min_gap, self.max_gap)
+    }
+}
+
+/// Keeps the sooner of `soon` and `t`; a `t` of 0 (it holds already, yet this
+/// look didn't act on it) gives no reason to look again sooner.
+fn sooner(soon: &mut u64, t: u64) {
+    if t > 0 {
+        *soon = (*soon).min(t);
+    }
 }
 
 fn price(v: &View, id: &str, res: &str) -> Fx {
@@ -510,18 +594,20 @@ fn price(v: &View, id: &str, res: &str) -> Fx {
 }
 
 impl Agent for Author {
+    fn next_look(&mut self, _p: &mut Player) -> u64 {
+        self.gap
+    }
+
     fn note(&self) -> String {
         self.last_note.clone()
     }
 
     fn act(&mut self, p: &mut Player) {
-        let (run, day, built, tick) = {
+        let (run, day, built) = {
             let v = p.view();
-            (v.run, v.day, v.run_stats.buildings_built, v.tick)
+            self.income.read(v);
+            (v.run, v.day, v.run_stats.buildings_built)
         };
-        // How often it gets to look decides how it writes programs.
-        let gap = self.last_tick.map_or(0, |t| tick - t);
-        self.last_tick = Some(tick);
         if run != self.run || built != self.built {
             self.run = run;
             self.built = built;
@@ -542,12 +628,15 @@ impl Agent for Author {
             self.built = v.run_stats.buildings_built;
             self.built_day = v.day;
         }
+        // How long until it looks again decides how it writes programs.
+        let gap = self.plan_gap(p.view(), target.as_deref());
         // Pausing pays only while it looks often enough to undo it.
         let paused = if gap <= self.hand_gap { target.as_deref() } else { None };
         self.pause_for(p, paused);
         self.projects(p, target.as_deref());
         self.pads(p, target.as_deref());
         self.programs(p, target.as_deref(), gap);
+        self.gap = gap;
         let v = p.view();
         self.last_note = format!(
             "target {}, credits {}, processors {}, gap {gap}",

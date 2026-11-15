@@ -1,5 +1,5 @@
 {
-  "_doc": "Arc 1 milestones as measurable objectives, and their targets (docs/principles.md). Each `when` follows the design rules: building existence for capability, events for pipeline outputs, cumulative counters for volume, production-rate thresholds for scaling, stockpile thresholds only for uncapped resources (a load error otherwise). `runs` is the target window in run numbers (run 1 is the first; run n starts after n-1 retirements); `ticks` a window in run-1 ticks where the design gives one. `run1` holds the first run's length and real-time targets. The judge's cells (agent, profiles, seeds) are experiments/balance.json's.",
+  "_doc": "Arc 1 milestones as measurable objectives, and their targets (docs/principles.md). Each `when` follows the design rules: building existence for capability, events for pipeline outputs, cumulative counters for volume, production-rate thresholds for scaling, stockpile thresholds only for uncapped resources (a load error otherwise). `runs` is the target window in run numbers (run 1 is the first; run n starts after n-1 retirements); `ticks` a window in run-1 ticks where the design gives one. `run1` holds the first run's length bands by player name (`author` played well, `casual` played casually) and its real-time band under one human model (configs/sim/humans.json), read for the players named. The judge's cells (players, human models, seeds) are experiments/balance.json's.",
   "milestones": [
     {
       "id": "M1", "name": "First Light", "says": "self-sustaining energy (run 1, early)",
@@ -82,7 +82,7 @@
     }
   ],
   "run1": {
-    "ticks": { "active": [800, 1100], "casual": [1300, 1700] },
-    "minutes": { "speed": "mixed", "band": [25, 35] }
+    "ticks": { "author": [800, 1100], "casual": [1300, 1700] },
+    "minutes": { "human": "mixed", "band": [25, 35], "players": ["author"] }
   }
 }

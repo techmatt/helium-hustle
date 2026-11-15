@@ -147,7 +147,8 @@ start, and markers don't survive a reload.
 ## Play logs
 
 Every career is recorded as it is played, one JSON-lines file per career, so a human's
-play can be replayed exactly and measured against the sim players (`hh-sim playlog`,
+play can be replayed exactly and measured against the sim players (`hh-sim playlog`, and
+`hh-sim vs-human` for the players on the same game side by side,
 [../docs/simulator.md](../docs/simulator.md)).
 
 - **Where:** the dev server (and `vite preview`) takes the page's lines at `POST
