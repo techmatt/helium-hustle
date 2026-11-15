@@ -417,9 +417,33 @@ tr.is-new td:first-child {
   margin-top: auto;
   padding-top: 4px;
 }
-.card-actions .buy {
+.card.building.can-buy {
+  cursor: pointer;
+  transition: background 0.1s, border-color 0.1s;
+}
+.card.building.can-buy:hover {
+  background: #e2f4e2;
+  border-color: #7cbf7c;
+}
+.card.building.can-buy:active {
+  background: #d3edd3;
+}
+.card.building:focus-visible {
+  outline: 2px solid #4a8fd8;
+  outline-offset: 1px;
+}
+.card.building button {
+  cursor: pointer;
+}
+.card.building button:disabled {
+  cursor: default;
+}
+.card-actions .buy-hint {
   margin-right: auto;
-  font-weight: 600;
+  font-size: 13px;
+}
+.card-actions .buy-hint.short {
+  color: var(--bad);
 }
 .card-actions .sell {
   color: var(--bad);

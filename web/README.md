@@ -50,7 +50,8 @@ to save a PNG at each step worth seeing. About 40 s. It plays, in order:
 2. **Every panel**: with the debug menu's cheats it reaches Research, Projects and
    Ideologies, opens all 11 nav tiles, checks the cheated mark, a jump ahead and the
    replay check over the whole career.
-3. Each speed's days per second, pause, a buy, a reload keeping the save, a save from
+3. Each speed's days per second, pause, click-to-buy (a green card's text buys, its
+   −/+ and Sell 1 don't, a grey card buys nothing and says why), a reload keeping the save, a save from
    another revision discarded with its notice, the debug-menu scenarios and the replay
    check. Any uncaught page error fails the run.
 
@@ -104,7 +105,8 @@ The layout follows the last Godot build (`godot-buildings-day1427.png`, in
 - **Middle:** the active panel. Buildings: the Land bar with Buy Land, a collapsible
   section per category, cards with description, per-day effects, ideology tag (once
   Ideologies is unlocked), stall, price with shortfalls in red, active/owned with −/+,
-  Buy, Sell 1 and Sell All (confirmed). Commands, Launch Pads (markets, loading priority,
+  Sell 1 and Sell All (confirmed). A click on a green card, off its controls, builds
+  one (Shift: up to ten); a grey one buys nothing and briefly says what it lacks. Commands, Launch Pads (markets, loading priority,
   pads with cargo, launch and pause), Research, Projects (a funding rate per resource),
   Ideologies, Adversaries (rivals, speculators), Stats (run, career, modifiers), Story
   (quests with their text, achievements, this run's events), Retirement (this run, the

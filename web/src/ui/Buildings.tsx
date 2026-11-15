@@ -1,5 +1,6 @@
 // The Buildings panel: the Land bar, then a collapsible section per category of cards.
 
+import { useEffect, useRef, useState } from 'preact/hooks';
 import type { BuildingView, View } from '../engine';
 import { capitalize, num } from '../format';
 import { act, actAll, seen, store, type Store } from '../store';
@@ -43,6 +44,14 @@ export function Buildings({ s }: { s: Store }) {
   );
 }
 
+/** Why a grey card buys nothing, in a few words. */
+function whyNot(v: View, b: BuildingView): string {
+  if (b.at_limit) return 'At its limit.';
+  if (!b.unlocked) return 'Locked.';
+  if (b.short.length === 0) return 'Not affordable.';
+  return `Short of ${b.short.map((r) => name(v, r)).join(', ')}.`;
+}
+
 function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: boolean; fresh: Set<string> }) {
   const key = `building:${b.id}`;
   const atLimit = b.at_limit;
@@ -51,13 +60,56 @@ function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: boolean; 
     const now = store.view.buildings.find((x) => x.id === b.id);
     if (now) act({ type: 'set_active', building: b.id, active: Math.max(0, Math.min(now.owned, now.active + by)) });
   };
+  // The card is the Buy button: a click anywhere but its own controls buys one, Shift
+  // buys up to ten. Each buy reads the engine's view now, not this render's, so two quick
+  // clicks buy two and a double-click buys what its two clicks would, never more.
+  const [hint, setHint] = useState<string | null>(null);
+  const hintTimer = useRef<number | undefined>(undefined);
+  const showHint = (text: string) => {
+    setHint(text);
+    clearTimeout(hintTimer.current);
+    hintTimer.current = window.setTimeout(() => setHint(null), 1800);
+  };
+  useEffect(() => () => clearTimeout(hintTimer.current), []);
+  const buy = (times: number) => {
+    for (let i = 0; i < times; i++) {
+      const now = store.view.buildings.find((x) => x.id === b.id);
+      if (!now?.affordable) {
+        if (i === 0 && now) showHint(whyNot(store.view, now));
+        return;
+      }
+      if (!act(now.buy)) return;
+    }
+  };
+  const onClick = (e: MouseEvent) => {
+    // The card's own controls (−/+, Sell) keep their jobs.
+    if ((e.target as HTMLElement).closest('button, a, input, select, textarea, label')) return;
+    buy(e.shiftKey ? 10 : 1);
+  };
   return (
     <div
       class={`card building ${b.affordable ? 'can-buy' : 'cannot-buy'}${freshClass(fresh, key)}`}
       data-id={b.id}
       data-owned={b.owned}
       data-short={b.short.join(' ')}
+      data-testid={`buy-${b.id}`}
+      role="button"
+      tabIndex={0}
+      aria-disabled={!b.affordable}
+      title={b.affordable ? 'Click to build one (Shift-click: up to 10)' : undefined}
       onMouseEnter={() => seen(key)}
+      onClick={onClick}
+      // A double-click selects no text (its two clicks still buy two).
+      onMouseDown={(e) => {
+        if (e.detail > 1) e.preventDefault();
+      }}
+      onKeyDown={(e) => {
+        if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault();
+          e.stopPropagation(); // the space key is also pause
+          buy(e.shiftKey ? 10 : 1);
+        }
+      }}
     >
       <div class="card-head">
         <h3>{b.name}</h3>
@@ -105,9 +157,7 @@ function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: boolean; 
         </>
       )}
       <div class="card-actions">
-        <button type="button" class="buy" data-testid={`buy-${b.id}`} disabled={!b.affordable} onClick={() => act(b.buy)}>
-          {b.unlocked ? 'Buy' : 'Locked'}
-        </button>
+        <span class={hint ? 'buy-hint short' : 'buy-hint muted'}>{hint ?? (b.unlocked ? '' : 'Locked')}</span>
         {b.owned > 0 && (
           <>
             <button type="button" class="tiny sell" title="Sell one (refunds its land only)" onClick={() => act({ type: 'sell', building: b.id })}>

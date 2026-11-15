@@ -320,8 +320,7 @@ async function pass(seed, width) {
       evaluate(`(() => {
         const out = {};
         for (const c of document.querySelectorAll('.card.building')) {
-          const buy = c.querySelector('button.buy');
-          out[c.dataset.id] = { owned: Number(c.dataset.owned), short: (c.dataset.short ?? '').split(' ').filter(Boolean), buyable: !!buy && !buy.disabled };
+          out[c.dataset.id] = { owned: Number(c.dataset.owned), short: (c.dataset.short ?? '').split(' ').filter(Boolean), buyable: c.classList.contains('can-buy') };
         }
         return out;
       })()`);
@@ -510,7 +509,7 @@ async function pass(seed, width) {
     }
     for (const id of ['storage_depot', 'data_center', 'data_center', 'research_lab']) {
       await panel('buildings');
-      if (await exists(`[data-testid="buy-${id}"]:not([disabled])`)) await click(`[data-testid="buy-${id}"]`, `buy ${id}`);
+      if (await exists(`[data-testid="buy-${id}"].can-buy`)) await click(`[data-testid="buy-${id}"]`, `buy ${id}`);
     }
     for (let round = 0; round < 4; round++) {
       await speed(10);

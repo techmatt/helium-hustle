@@ -149,8 +149,7 @@ const buildings = () =>
   evaluate(`(() => {
     const out = {};
     for (const c of document.querySelectorAll('.card.building')) {
-      const buy = c.querySelector('button.buy');
-      out[c.dataset.id] = { owned: Number(c.dataset.owned), short: c.dataset.short.split(' ').filter(Boolean), buyable: !buy.disabled };
+      out[c.dataset.id] = { owned: Number(c.dataset.owned), short: c.dataset.short.split(' ').filter(Boolean), buyable: c.classList.contains('can-buy') };
     }
     return out;
   })()`);
@@ -417,13 +416,29 @@ try {
   await panel('buildings');
   const owned = () => evaluate(`document.querySelector('.card.building[data-id="solar_panel"]').dataset.owned`);
   const before = await owned();
-  await click('[data-testid="buy-solar_panel"]');
+  // The card is the Buy button: a click anywhere on its text buys one.
+  await click('.card.building[data-id="solar_panel"].can-buy .desc');
   const after = await owned();
-  check(Number(after) === Number(before) + 1, `buy a Solar Panel: ${before} -> ${after}`);
+  check(Number(after) === Number(before) + 1, `a click on a green card buys a Solar Panel: ${before} -> ${after}`);
+  // Its own controls keep their jobs and buy nothing.
+  await click('.card.building[data-id="solar_panel"] button[title="Run one more"]');
+  await click('.card.building[data-id="solar_panel"] button[title="Run one fewer"]');
+  check((await owned()) === after, `the card's −/+ buttons buy nothing (${await owned()})`);
+  await click('.card.building[data-id="solar_panel"] button.sell[title^="Sell one"]');
+  check(Number(await owned()) === Number(after) - 1, `the card's Sell 1 sells one and buys none (${after} -> ${await owned()})`);
+  const kept = await owned();
+  const grey = await evaluate(`document.querySelector('.card.building.cannot-buy')?.dataset.id ?? null`);
+  if (grey) {
+    const greyOwned = () => evaluate(`document.querySelector('.card.building[data-id="${grey}"]').dataset.owned`);
+    const g0 = await greyOwned();
+    await click(`[data-testid="buy-${grey}"]`);
+    const hint = await evaluate(`document.querySelector('.card.building[data-id="${grey}"] .buy-hint').textContent`);
+    check((await greyOwned()) === g0 && hint.length > 0, `a grey card buys nothing and says why (${grey}: "${hint}")`);
+  }
   const savedDay = await day();
   await load(url);
   await panel('buildings');
-  check((await day()) === savedDay && (await owned()) === after, `reload keeps the save (day ${savedDay}, ${after} panels)`);
+  check((await day()) === savedDay && (await owned()) === kept, `reload keeps the save (day ${savedDay}, ${kept} panels)`);
   // As if the next load ran a newer engine: retag the save after each of the page's own
   // leaving saves (pagehide, then visibilitychange; listeners run in order, so ours last).
   await evaluate(`(() => {
