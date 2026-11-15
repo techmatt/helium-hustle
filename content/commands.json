@@ -81,7 +81,7 @@
     "effect": {"type": "load_pads"},
     "scale_modifier": null,
     "sets_flag": null,
-    "description": "Fill each enabled pad by 5 units from assigned resource stockpile."
+    "description": "Load each active, unpaused pad from its good's stockpile (each pad shows how much a load moves)."
   },
   {
     "id": "launch_pads",
@@ -117,7 +117,7 @@
     "effect": {"type": "overclock", "target": "extraction", "bonus": "0.05", "duration": 5},
     "scale_modifier": null,
     "sets_flag": null,
-    "description": "+5% extractor output for 5 days. Stacks multiplicatively, cap +200%."
+    "description": "+5% extractor output for 5 days. Stacks multiplicatively, up to +50% (+100% with Overclock Boost)."
   },
   {
     "id": "overclock_factories",
@@ -129,7 +129,7 @@
     "effect": {"type": "overclock", "target": "processing", "bonus": "0.05", "duration": 5},
     "scale_modifier": null,
     "sets_flag": null,
-    "description": "+5% processing output for 5 days. Stacks multiplicatively, cap +200%."
+    "description": "+5% processing output for 5 days. Stacks multiplicatively, up to +50% (+100% with Overclock Boost)."
   },
   {
     "id": "promote_he3",

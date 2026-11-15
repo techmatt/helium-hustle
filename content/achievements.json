@@ -42,7 +42,7 @@
     "description": "Complete 10 shipments in a single run.",
     "condition": {"type": "shipments_this_run", "at_least": 10},
     "reward": {"type": "modifier", "key": "cargo_capacity_mult", "value": "1.1"},
-    "reward_description": "+10% cargo capacity per pad"
+    "reward_description": "+10% cargo moved per Load Launch Pads"
   },
   {
     "id": "market_timer",

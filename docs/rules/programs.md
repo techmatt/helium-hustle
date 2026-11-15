@@ -83,8 +83,9 @@ overclock's `target`, `bonus`, `duration`) and `scale_modifier`. `content/resear
 
 ## Port notes
 
-- Conflict: overclock cap. The command text says "+200%"; Overclock Boost research raises
-  150% to 200%. The engine: base cap 1.5 in config, research raises it to 2.
+- Conflict: overclock cap. The Godot command text said "+200%"; Overclock Boost research raises
+  150% to 200%. The engine: base cap 1.5 in config, research raises it to 2 (the text now
+  says so: up to +50%, +100% with Overclock Boost).
 - Conflict: Buy Ice. Handoffs require an Ice Extractor; data has no requirement. The engine
   takes the data (Fabricators cost ice before Ice Extractors exist).
 - Conflict: research `unlocks_commands` duplicates each command's `requires`; it is dropped,

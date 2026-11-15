@@ -52,6 +52,8 @@ export interface BuildingView {
   stores: Amounts;
   grants: Amounts;
   affordable: boolean;
+  /** It owns as many as its limit allows. */
+  at_limit: boolean;
   unlocked: boolean;
   visible: boolean;
   stall: 'input_starved' | 'output_capped' | null;
@@ -260,7 +262,7 @@ export interface View {
   next_run: NextRunView;
   last_run: LastRun | null;
   run_stats: RunStats;
-  boredom: { amount: Fx; cap: Fx; rate: Fx; phase: number };
+  boredom: { amount: Fx; cap: Fx; rate: Fx; phase: number; phases: number };
   panels: string[];
   nav: { id: string; name: string; visible: boolean }[];
   can_retire: boolean;

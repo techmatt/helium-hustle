@@ -87,6 +87,7 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
                   <td style={{ color: AXIS_COLORS[a.axis] }}>{capitalize(a.axis)}</td>
                   <td>Rank {a.rank}</td>
                   <td class="num muted">
+                    {Number(a.score) < 0 ? '−' : ''}
                     {num(Math.abs(Number(a.score)))} / {num(a.next_rank_score)}
                   </td>
                 </tr>

@@ -114,7 +114,8 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
                 if (drag !== null) move(drag, i);
                 setDrag(null);
               }}
-              title={outcome ? `Last run today: ${outcome}` : 'Not run today'}
+              // The name can be cut short at narrow widths: the tooltip carries it whole.
+              title={`${name(v, e.command)} (x${e.count}): ${outcome ? `last run today: ${outcome}` : 'not run today'}`}
             >
               <span class="grip" aria-hidden>
                 ⠿
@@ -143,7 +144,7 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
 
 function Events({ v }: { v: View }) {
   const q = v.quest;
-  const recent = [...v.activity].reverse().slice(0, 40);
+  const recent = [...v.activity].reverse();
   return (
     <div class="events" data-testid="events">
       <h2>Events</h2>
@@ -159,7 +160,7 @@ function Events({ v }: { v: View }) {
           ))}
         </ul>
       </Section>
-      <Section title={`Recent Activity (${v.activity.length})`} dark testid="events-activity">
+      <Section title={`Recent Activity (${recent.length})`} dark testid="events-activity">
         <ul class="plain activity">
           {recent.map((a, i) => (
             <li key={`${a.day}-${a.kind}-${a.id}-${i}`} class={`act-${tone(a)}`} data-kind={a.kind}>

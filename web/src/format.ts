@@ -16,13 +16,19 @@ export function num(x: Fx | number, digits = 1): string {
   // Fx::MAX: a price past the number range.
   if (Math.abs(n) >= 9e12) return '∞';
   const a = Math.abs(n);
-  if (a >= 10_000) {
-    for (const [v, s] of SUFFIXES) {
-      if (a >= v) return `${trim((n / v).toFixed(a / v >= 100 ? 0 : a / v >= 10 ? 1 : 2))}${s}`;
+  // From 100 up, whole numbers: rounded first, so 9,999.6 is 10K and 1,234.5 is 1,235.
+  const r = a >= 100 ? Math.round(n) : n;
+  if (Math.abs(r) >= 10_000) {
+    // The suffix from the rounded mantissa: 999,600 is 1M, not 1000K.
+    for (let i = SUFFIXES.length - 1; i >= 0; i--) {
+      const [v, s] = SUFFIXES[i];
+      const m = a / v;
+      const shown = Number(m.toFixed(m >= 100 ? 0 : m >= 10 ? 1 : 2));
+      if (shown < 1000 || i === 0) return `${n < 0 ? '-' : ''}${trim(String(shown))}${s}`;
     }
   }
-  if (Number.isInteger(n)) return n.toLocaleString('en-US');
-  return trim(n.toFixed(a >= 100 ? 0 : digits));
+  if (Number.isInteger(r)) return r.toLocaleString('en-US');
+  return trim(n.toFixed(digits));
 }
 
 function trim(s: string): string {

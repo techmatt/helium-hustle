@@ -4,7 +4,8 @@
 import type { LastRun, Scenario, Stamped, StoryView } from './engine';
 import type { Speed } from './clock';
 
-const KEY = 'hh.save';
+export const SAVE_KEY = 'hh.save';
+const KEY = SAVE_KEY;
 
 export interface Save {
   /** The career's play log (src/playlog.ts). */
@@ -24,6 +25,9 @@ export interface Save {
   resumeSpeed?: Speed;
   /** Story texts not yet read. */
   stories?: StoryView[];
+  /** The page that wrote it: a claim by another tab always changes the save, so the
+   * tab playing before hears of it (`storage` fires only on a change). */
+  page?: string;
 }
 
 /** A save, or why one was dropped (with its career's play log id, to close it). */
@@ -58,11 +62,14 @@ export function loadSave(revision: number, configHash: string): Loaded {
   return { save };
 }
 
-export function writeSave(save: Save): void {
+/** Writes the save; on failure (storage full) returns why, so the page can say so. */
+export function writeSave(save: Save): string | null {
   try {
     localStorage.setItem(KEY, JSON.stringify(save));
+    return null;
   } catch (e) {
     console.warn('autosave failed', e);
+    return String(e);
   }
 }
 

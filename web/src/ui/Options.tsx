@@ -30,7 +30,9 @@ export function Options({ s }: { s: Store }) {
         <p class="muted small">Keys: space pauses or resumes, 1 to 5 pick 1x to 200x.</p>
         <p class="small" data-testid="playlog-status" data-career={playlog.currentCareer() ?? ''}>
           {playlog.status === 'off'
-            ? 'Play log: not recording (no log server; play through `npm run dev`).'
+            ? 'Play log: not recording (no log server; play through npm run dev).'
+            : playlog.status === 'failed'
+            ? `Play log: NOT recording: the log server refused it (${playlog.lastError}).`
             : `Play log: recording this career to ${playlog.logDir || 'the dev server'}${playlog.currentCareer() ? ` as ${playlog.currentCareer()}.jsonl` : ''}.`}
         </p>
         {!confirm ? (

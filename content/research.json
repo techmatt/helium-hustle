@@ -17,7 +17,7 @@
     "requires": null,
     "effect": null,
     "visible_when": {"type": "boredom_above", "threshold": "200"},
-    "description": "Unlocks the Dream command — reduces boredom at the cost of energy."
+    "description": "Unlocks the Dream command — reduces boredom at the cost of energy and Helium-3."
   },
   {
     "id": "stress_tolerance",
@@ -107,6 +107,6 @@
     "requires": null,
     "effect": null,
     "visible_when": {"type": "quest_completed", "quest": "qmarket_awareness"},
-    "description": "Study Earth's political power structures. Unlocks Fund Nationalist, Fund Humanist, and Fund Rationalist commands. Reveals the Ideologies panel."
+    "description": "Study Earth's political power structures. Unlocks the Fund Nationalists, Fund Humanists and Fund Rationalists commands. Reveals the Ideologies panel."
   }
 ]

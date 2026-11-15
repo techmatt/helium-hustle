@@ -10,7 +10,9 @@
     "build": "node scripts/build-wasm.mjs && tsc --noEmit && vite build",
     "check": "tsc --noEmit",
     "preview": "vite preview",
-    "e2e": "node scripts/e2e.mjs"
+    "e2e": "node scripts/e2e.mjs",
+    "qa": "node scripts/qa.mjs",
+    "unit": "node scripts/unit.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

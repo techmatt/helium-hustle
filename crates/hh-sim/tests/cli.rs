@@ -275,6 +275,16 @@ fn a_play_log_replays_to_its_final_state_and_measures_real_time() {
     // 600 ticks at 10x plus the pause, all played.
     let real = v["game"]["real_s"].as_f64().unwrap();
     assert!((real - 120.0).abs() < 1e-6, "{real}");
+    // The first batch sent twice (the page saw the send fail): its header repeats.
+    let resent = format!("{dir}/play-resent.jsonl");
+    write_playlog(&resent, false);
+    let text = std::fs::read_to_string(&resent).unwrap();
+    let mut head: serde_json::Value = serde_json::from_str(text.lines().next().unwrap()).unwrap();
+    head["id"] = serde_json::json!("p:0");
+    let rest: Vec<&str> = text.lines().skip(1).collect();
+    std::fs::write(&resent, format!("{head}\n{}\n{head}\n", rest.join("\n"))).unwrap();
+    let out = run(&args(&["playlog", &resent, "--milestones", &ms, "--profiles", &pf])).unwrap();
+    assert!(out.contains("final state reproduced"), "{out}");
     let bad = format!("{dir}/play-bad.jsonl");
     write_playlog(&bad, true);
     assert!(matches!(run(&args(&["playlog", &bad, "--milestones", &ms, "--profiles", &pf])), Err(Fail::Check(_))));

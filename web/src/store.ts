@@ -8,7 +8,7 @@ import baselineConfig from '../../configs/baseline.json?raw';
 import { Clock, SPEEDS, type Speed } from './clock';
 import { engine, type Action, type LastRun, type Scenario, type Stamped, type StoryView, type View } from './engine';
 import * as playlog from './playlog';
-import { clearSave, loadSave, writeSave } from './save';
+import { clearSave, loadSave, SAVE_KEY, writeSave } from './save';
 
 /** wasm's `advance` takes a u32 tick count; larger catch-ups go in chunks. */
 const MAX_CHUNK = 1_000_000;
@@ -49,7 +49,12 @@ export interface Store {
 }
 
 let game: Game;
+/** The page's session is under way (start() logged its session_start). */
+let sessionOpen = false;
+/** Another tab took this career over: this page stops playing, saving and logging. */
+let stood_down = false;
 let lastSave = 0;
+let saveFailed = false;
 let configHash = '';
 let speedBeforeSummary: Speed = 1;
 /** The last speed other than pause. */
@@ -215,9 +220,10 @@ function runTicks(ticks: number): void {
 }
 
 function save(): void {
+  if (stood_down) return;
   lastSave = performance.now();
   if (lastSave - lastCheckpoint > CHECKPOINT_MS) checkpoint();
-  writeSave({
+  const failed = writeSave({
     careerId: game.careerId,
     revision: engine.rulesRevision(),
     configHash,
@@ -230,7 +236,11 @@ function save(): void {
     speedBeforeSummary,
     resumeSpeed,
     stories: store.stories,
+    page: playlog.pageId,
   });
+  // Said once until a save lands again: the game is no longer being kept.
+  if (failed && !saveFailed) store.notice = `Autosave failed (${failed}): progress since is not kept in this browser.`;
+  saveFailed = failed !== null;
 }
 
 export function setNotice(text: string | null): void {
@@ -265,14 +275,23 @@ function openLog(prior: Stamped[]): string {
 
 /** A new career (`why`: what started it). The career before, if any, closes its log. */
 export function newGame(seed: string, scenario: Scenario | null, why = 'new game'): void {
+  if (stood_down) throw new Error('This game is playing in another tab. Reload this tab to play here.');
+  // The new state first: a seed or scenario the engine refuses throws here, and the
+  // career in play goes on untouched (its log not closed).
+  const state = engine.newGame(baselineConfig, seed, scenario?.name ?? '');
+  // The engine's own reading of the seed ("+5", " 5" -> "5"): the career id (a file
+  // name) and the record carry that.
+  seed = String((JSON.parse(state) as { seed: number | string }).seed ?? seed);
   if (game) {
     checkpoint();
     playlog.log('career_end', { reason: why });
   }
-  game = { state: engine.newGame(baselineConfig, seed, scenario?.name ?? ''), seed, scenario, actions: [], careerId: '' };
+  game = { state, seed, scenario, actions: [], careerId: '' };
   store.view = undefined as unknown as View;
   game.careerId = openLog([]);
   playlog.log('new_game', { why, seed, scenario: scenario?.name ?? null });
+  // A career begun mid-visit starts its own session (a page load logs its own).
+  if (sessionOpen) playlog.log('session_start', { how: 'new', width: window.innerWidth, height: window.innerHeight, agent: navigator.userAgent });
   store.summary = null;
   store.stories = [];
   toldStories.clear();
@@ -282,6 +301,10 @@ export function newGame(seed: string, scenario: Scenario | null, why = 'new game
 
 /** A fresh career on a random seed. */
 export function newCareer(): void {
+  if (stood_down) {
+    setNotice('This game is playing in another tab. Reload this tab to play here.');
+    return;
+  }
   const words = crypto.getRandomValues(new Uint32Array(2));
   const seed = ((BigInt(words[0]) << 32n) | BigInt(words[1])).toString();
   newGame(seed, null, 'new career');
@@ -290,6 +313,10 @@ export function newCareer(): void {
 
 /** Applies an engine action between ticks; returns whether it applied. */
 export function act(action: Action): boolean {
+  if (stood_down) {
+    setNotice('This game is playing in another tab. Reload this tab to play here.');
+    return false;
+  }
   const run = store.view.run;
   clock.wake(); // settle the ticks owed so the action lands between the right ticks
   if (store.view.run !== run) {
@@ -321,6 +348,10 @@ export function actAll(actions: Action[]): void {
 }
 
 export function setSpeed(s: Speed): void {
+  // Settle the ticks owed at the old speed first: they may end the run, and then the
+  // summary holds the clock stopped.
+  if (stood_down) return;
+  clock.wake();
   if (store.summary) return;
   clock.setSpeed(s);
   // `speed` on a line is the speed from then on.
@@ -338,6 +369,7 @@ export function togglePause(): void {
 
 /** Closes the retirement summary and plays on at the speed before it. */
 export function continueAfterRetirement(): void {
+  if (stood_down) return;
   store.summary = null;
   playlog.log('continue');
   setSpeed(speedBeforeSummary);
@@ -356,6 +388,8 @@ export function jumpAhead(days: number): void {
   if (!act({ type: 'cheat', cheat: { kind: 'jump_ahead', days } })) return;
   clock.wake();
   runTicks(days);
+  // The wall time the jump took to compute is no play time.
+  clock.forgetTimeAway();
   // Pins the jump in the play log: its days took no real time.
   checkpoint('jump_end');
   save();
@@ -389,6 +423,28 @@ export function checkReplay(): void {
 
 export function fingerprint(): string {
   return engine.fingerprint(game.state);
+}
+
+/** Another tab claimed the career: stop at once, without playing the ticks owed (the
+ * other tab goes on from the save it loaded) or writing anything more but a session end. */
+function standDown(): void {
+  if (stood_down) return;
+  stood_down = true;
+  clock.stop();
+  clock.speed = 0;
+  store.speed = 0;
+  playlog.log('session_end', { reason: 'another tab took over' });
+  playlog.close();
+  setNotice('This game is now playing in another tab. Reload this tab to play here instead.');
+}
+
+/** The page that wrote the save now, if it says. */
+function readSavePage(): string | undefined {
+  try {
+    return (JSON.parse(localStorage.getItem(SAVE_KEY) ?? 'null') as { page?: string } | null)?.page;
+  } catch {
+    return undefined;
+  }
 }
 
 /** Loads the save (or starts a new game) and starts the clock. */
@@ -444,9 +500,18 @@ export function start(): void {
     agent: navigator.userAgent,
   });
   checkpoint();
+  sessionOpen = true;
+  // Claims the career: a tab already playing it stands down (below, in that tab).
+  save();
   clock.start();
+  // One page plays a career at a time: when another tab of this game saves (`storage`
+  // fires only in the other pages), this one stands down rather than overwrite it.
+  window.addEventListener('storage', (e) => {
+    if (e.key === SAVE_KEY) standDown();
+  });
   // Leaving the page pauses the game (no offline progress): save what was played.
   window.addEventListener('pagehide', () => {
+    if (stood_down) return;
     clock.wake();
     checkpoint();
     playlog.log('session_end');
@@ -455,12 +520,18 @@ export function start(): void {
   });
   // A page restored from the back/forward cache resumes where it left off.
   window.addEventListener('pageshow', (e) => {
-    if (e.persisted) {
+    if (e.persisted && !stood_down) {
+      // A cached page hears no storage events: another tab may have claimed the career.
+      if (readSavePage() !== playlog.pageId) {
+        standDown();
+        return;
+      }
       clock.forgetTimeAway();
       playlog.log('session_start', { how: 'restored' });
     }
   });
   document.addEventListener('visibilitychange', () => {
+    if (stood_down) return;
     if (document.visibilityState === 'hidden') {
       checkpoint();
       playlog.log('hidden');

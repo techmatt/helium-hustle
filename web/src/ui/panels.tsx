@@ -87,7 +87,7 @@ export function LaunchPads({ s }: { s: Store }) {
             ))}
           </tbody>
         </table>
-        <p class="muted">Exact demand shows once Market Awareness is researched.</p>
+        {v.markets.some((m) => m.demand === null) && <p class="muted">Exact demand shows once Market Awareness is researched.</p>}
       </Section>
       <Section title="Loading priority">
         <ol class="priority">
@@ -128,7 +128,7 @@ export function LaunchPads({ s }: { s: Store }) {
               </label>
               <Bar frac={Number(p.cargo) / Number(p.capacity)} label={`${num(p.cargo)} / ${num(p.capacity)}`} />
               <div class="muted small">
-                One Load Launch Pads moves up to {num(p.load)} · a launch burns {num(p.fuel)} Propellant
+                Each Load Launch Pads run loads up to {num(p.load)} {name(v, p.good)} · a launch burns {num(p.fuel)} Propellant
                 {p.cooldown > 0 ? ` · cooling down ${p.cooldown} days` : ''}
               </div>
               <div>Would pay {num(p.payout)} credits now</div>
@@ -183,7 +183,9 @@ export function Research({ s }: { s: Store }) {
                       {r.done && <span class="ok">✓ Done</span>}
                     </div>
                     <p class="desc">{r.description}</p>
-                    {r.requires && <p class="muted small">Needs {name(v, r.requires)} first.</p>}
+                    {r.requires && !r.done && !v.research.find((x) => x.id === r.requires)?.done && (
+                      <p class="muted small">Needs {name(v, r.requires)} first.</p>
+                    )}
                     {!r.done && (
                       <div class="card-actions">
                         <span>
@@ -294,14 +296,16 @@ export function Ideologies({ s }: { s: Store }) {
         const lo = Number(a.rank_score);
         const hi = Number(a.next_rank_score);
         const sc = Math.abs(Number(a.score));
+        // Below rank 1 either way the rank is 0: the score's sign says which way it heads.
+        const down = Number(a.score) < 0;
         return (
           <div class="axis" key={a.axis} data-axis={a.axis}>
             <h3 style={{ color: AXIS_COLORS[a.axis] }}>{capitalize(a.axis)}</h3>
             <div>
-              Rank <strong>{a.rank}</strong> · score {num(a.score)} · next rank at {a.rank < 0 ? '−' : ''}
+              Rank <strong>{a.rank}</strong> · score {num(a.score)} · next rank at {down ? '−' : ''}
               {num(a.next_rank_score)}
             </div>
-            <Bar frac={(sc - lo) / (hi - lo)} tone={a.rank < 0 ? 'red' : 'green'} />
+            <Bar frac={(sc - lo) / (hi - lo)} tone={down ? 'red' : 'green'} />
             <div class="muted small">Career best rank: {v.career.max_ideology_ranks[a.axis] ?? 0}</div>
           </div>
         );
@@ -324,7 +328,7 @@ export function Adversaries({ s }: { s: Store }) {
             <tr>
               <th>Rival</th>
               <th>Market</th>
-              <th>Dumps this run</th>
+              <th title="Among the recent activity kept (the last lines of Recent Activity)">Recent dumps</th>
             </tr>
           </thead>
           <tbody>
@@ -395,7 +399,7 @@ export function Stats({ s }: { s: Store }) {
             ['Buildings built', v.run_stats.buildings_built],
             ['Research completed', v.run_stats.research_completed],
             ['Peak energy production', perDay(v.run_stats.peak_energy)],
-            ['Boredom growth', `${perDay(v.boredom.rate, 2)} (phase ${v.boredom.phase})`],
+            ['Base boredom growth (before commands and Dream)', `${perDay(v.boredom.rate, 2)} (phase ${v.boredom.phase} of ${v.boredom.phases})`],
           ]}
         />
       </Section>
@@ -517,7 +521,11 @@ export function NextRunRows({ v }: { v: View }) {
 
 export function Retirement({ s }: { s: Store }) {
   const v = s.view;
-  const [confirming, setConfirming] = useState(false);
+  // The run the confirm was opened in: a run that ended meanwhile (boredom) drops it, so
+  // a stale "Yes, retire" can't end the next run on its first day.
+  const [confirmRun, setConfirmRun] = useState<number | null>(null);
+  const confirming = confirmRun === v.run;
+  const setConfirming = (on: boolean) => setConfirmRun(on ? v.run : null);
   return (
     <div class="panel" data-panel="retirement">
       <h2>Retirement</h2>
@@ -551,6 +559,7 @@ export function Retirement({ s }: { s: Store }) {
             type="button"
             class="big danger"
             data-testid="retire-confirm"
+            disabled={!v.can_retire}
             onClick={() => {
               setConfirming(false);
               act({ type: 'retire' });

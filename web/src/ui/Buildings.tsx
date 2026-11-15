@@ -45,7 +45,7 @@ export function Buildings({ s }: { s: Store }) {
 
 function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: boolean; fresh: Set<string> }) {
   const key = `building:${b.id}`;
-  const atLimit = b.max_count !== null && b.owned >= b.max_count;
+  const atLimit = b.at_limit;
   // From the engine's count now, not this render's: quick clicks must each count.
   const setActive = (by: number) => {
     const now = store.view.buildings.find((x) => x.id === b.id);

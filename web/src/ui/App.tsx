@@ -40,10 +40,13 @@ export function App() {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
-      if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA')) return;
+      if (t && (t.tagName === 'INPUT' || t.tagName === 'SELECT' || t.tagName === 'TEXTAREA' || t.isContentEditable)) return;
+      // Browser shortcuts (Ctrl+1 picks a tab) are not ours.
+      if (e.ctrlKey || e.altKey || e.metaKey) return;
       if (e.key === ' ') {
         e.preventDefault();
-        togglePause();
+        // A held space repeats: one press, one toggle.
+        if (!e.repeat) togglePause();
       } else if (KEY_SPEEDS[e.key]) setSpeed(KEY_SPEEDS[e.key]);
     };
     window.addEventListener('keydown', onKey);

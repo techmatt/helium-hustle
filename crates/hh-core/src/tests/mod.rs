@@ -19,7 +19,7 @@ pub(crate) fn baseline() -> Config {
 // left side.
 const GOLDEN_REVISION: u32 = 3;
 const GOLDEN_FINGERPRINT: &str = "f58bdb39741cb645";
-const GOLDEN_CONTENT_HASH: &str = "99c3dd10d17f35b9";
+const GOLDEN_CONTENT_HASH: &str = "06d9cf540641e1af";
 
 pub(crate) fn golden_session() -> Session {
     let mut s = Session::new(&baseline(), GOLDEN_SEED, None).unwrap();

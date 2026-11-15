@@ -403,6 +403,28 @@ fn the_view_shows_nav_tiles_from_content_and_the_next_run() {
 }
 
 #[test]
+fn the_view_fills_every_text_placeholder() {
+    // Every event fired: no `{name}` left in any text the view hands out.
+    let r = rules();
+    let mut g = r.new_game(1);
+    for e in &crate::content::content().events {
+        if e.is_quest() {
+            g.career.completed_quests.insert(e.id.clone());
+        } else {
+            g.run.events.insert(e.id.clone());
+        }
+    }
+    let v = r.view(&g);
+    let placeholder = |t: &str| t.split('{').skip(1).any(|rest| rest.split('}').next().is_some_and(|n| !n.is_empty() && n.chars().all(|c| c.is_ascii_lowercase() || c == '_')));
+    for s in v.event_texts.iter().chain(&v.story) {
+        assert!(!placeholder(&s.body) && !placeholder(&s.title) && !placeholder(&s.summary), "{}: {}", s.id, s.body);
+    }
+    // Phase 2's rate is its baseline 0.2 per day (no modifiers yet).
+    let p2 = v.event_texts.iter().find(|s| s.id == "boredom_phase_2").unwrap();
+    assert!(p2.body.ends_with("Current rate: 0.2/day."), "{}", p2.body);
+}
+
+#[test]
 fn a_saved_state_reloads_to_the_same_future() {
     let mut s = Session::new(&baseline(), 9, None).unwrap();
     play(&mut s, 400, Policy::Script);

@@ -15,6 +15,11 @@
         "why": "RULES_REVISION itself (move this with each bump)"
       },
       {
+        "file": "crates/hh-core/src/view.rs",
+        "literal": "2",
+        "why": "display only: an event text's {rate} shows two decimal places"
+      },
+      {
         "file": "crates/hh-core/src/modules/boredom.rs",
         "literal": "2",
         "why": "windows(2): each adjacent pair of phase days"

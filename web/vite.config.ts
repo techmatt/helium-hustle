@@ -102,20 +102,32 @@ function playlogServer(): Plugin {
     req.setEncoding('utf8');
     req.on('data', (c: string) => (body += c));
     req.on('end', () => {
+      let career: string;
+      let out: string[];
       try {
-        const { career, lines } = JSON.parse(body) as { career: string; lines: string[] };
-        if (!/^[\w.-]+$/.test(career) || !Array.isArray(lines)) throw new Error('bad play log batch');
-        const out = lines.map((l) => {
+        const batch = JSON.parse(body) as { career: string; lines: string[] };
+        career = batch.career;
+        if (!/^[\w.-]+$/.test(career) || !Array.isArray(batch.lines)) throw new Error('bad play log batch');
+        out = batch.lines.map((l) => {
           const v = JSON.parse(l) as Record<string, unknown>;
           return v.kind === 'header' ? JSON.stringify({ ...v, commit: commit() }) : JSON.stringify(v);
         });
+      } catch (e) {
+        // A batch that can never be taken: the page drops it.
+        res.statusCode = 400;
+        res.end(String(e));
+        return;
+      }
+      try {
         const dir = dirFor(career);
         mkdirSync(dir, { recursive: true });
         appendFileSync(join(dir, `${career}.jsonl`), out.map((l) => `${l}\n`).join(''), 'utf8');
         res.statusCode = 204;
         res.end();
       } catch (e) {
-        res.statusCode = 400;
+        // The folder can't be written now (an unmounted drive): the page keeps the
+        // batch and retries.
+        res.statusCode = 500;
         res.end(String(e));
       }
     });

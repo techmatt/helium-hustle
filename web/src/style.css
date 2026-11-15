@@ -437,6 +437,8 @@ tr.is-new td:first-child {
 }
 .grid-table.kv td:first-child {
   color: #444b55;
+  /* One value column for every table on a page (Stats, Retirement, the summary). */
+  width: 60%;
 }
 .priority {
   margin: 0;

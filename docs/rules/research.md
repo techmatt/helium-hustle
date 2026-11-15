@@ -76,7 +76,7 @@ rows' `requires` (`content/commands.json`, `content/buildings.json`), not here.
 
 - Conflict: item count. The handoffs list 12 research items, the data 11; the engine has
   the data's 11.
-- Conflict: Overclock cap. The command text says "+200%"; Overclock Boost's data says the
+- Conflict: Overclock cap. The Godot command text said "+200%" (rewritten to the engine's caps); Overclock Boost's data says the
   cap goes from 150% to 200%. The engine has a base cap of 1.5 in config
   (`programs.overclock_base_cap`) and Overclock Boost's `overclock_cap` 2.
 - Conflict: Geopolitical Intelligence visibility. The handoffs show it after QAutomate; the

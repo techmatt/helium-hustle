@@ -154,12 +154,17 @@ pub fn affordable(g: &GameState, cost: &BTreeMap<String, Fx>) -> bool {
     cost.iter().all(|(r, &c)| c < Fx::MAX && g.amount(r) >= c)
 }
 
+/// `b` has a limit and owns that many.
+pub fn at_limit(g: &GameState, b: &Building) -> bool {
+    b.max_count.is_some_and(|m| g.owned(&b.id) >= m)
+}
+
 /// Why `b` can't be bought now, if it can't.
 pub fn buy_blocker(r: &Rules, g: &GameState, b: &Building) -> Option<String> {
     if !unlocked(g, b) {
         return Some(format!("buy {}: locked", b.name));
     }
-    if b.max_count.is_some_and(|m| g.owned(&b.id) >= m) {
+    if at_limit(g, b) {
         return Some(format!("buy {}: at its limit", b.name));
     }
     if g.amount(LAND) < Fx::from_int(b.land as i64) {

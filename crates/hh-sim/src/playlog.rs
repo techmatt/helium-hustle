@@ -112,6 +112,10 @@ impl Log {
         // A line can reach the file twice (a send the page saw fail but the
         // server took): the second copy of an `id` is dropped.
         let mut seen = std::collections::BTreeSet::new();
+        // The header too: a resent first batch repeats it.
+        if let Some(id) = h.get("id").and_then(Value::as_str) {
+            seen.insert(id.to_string());
+        }
         for (i, l) in lines {
             let n = i + 1;
             let v: Value = serde_json::from_str(l).map_err(|e| format!("line {n}: {e}"))?;
@@ -120,6 +124,10 @@ impl Log {
                     log.duplicates += 1;
                     continue;
                 }
+            }
+            if v.get("kind").and_then(Value::as_str) == Some("header") {
+                log.duplicates += 1;
+                continue;
             }
             let kind = field(&v, "kind", n)?.as_str().ok_or(format!("line {n}: kind"))?.to_string();
             *log.kinds.entry(kind).or_default() += 1;
@@ -167,6 +175,12 @@ impl Log {
                 }
             }
             let speed = v.get("speed").and_then(Value::as_u64).unwrap_or(0) as u32;
+            // A jump ahead's action starts the ticks its `jump_end` closes.
+            let kind = if kind == "action" && v.pointer("/action/cheat/kind").and_then(Value::as_str) == Some("jump_ahead") {
+                "jump_start".to_string()
+            } else {
+                kind
+            };
             log.points.push(Point { t, tick, speed, kind, hidden });
         }
         log.actions = actions;
@@ -207,7 +221,17 @@ pub struct TimeUse {
 
 fn time_use(log: &Log) -> TimeUse {
     let mut u = TimeUse::default();
+    // Between a jump's action and its `jump_end` (a forced retirement's lines may come
+    // between): every tick is jumped.
+    let mut jumping = false;
     for (i, p) in log.points.iter().enumerate() {
+        if p.kind == "jump_start" {
+            jumping = true;
+        } else if matches!(p.kind.as_str(), "jump_end" | "speed" | "continue" | "session_start" | "session_end") {
+            // (A log from before `jump_end` existed never closes its jump: the player's
+            // next move does.)
+            jumping = false;
+        }
         if p.kind == "session_start" {
             u.sessions += 1;
         }
@@ -226,7 +250,7 @@ fn time_use(log: &Log) -> TimeUse {
         }
         *u.at_speed_s.entry(p.speed).or_default() += dt;
         let ticks = next.tick.saturating_sub(p.tick);
-        if next.kind == "jump_end" {
+        if jumping || next.kind == "jump_end" {
             u.jumped_ticks += ticks;
         } else {
             *u.ticks_at_speed.entry(p.speed).or_default() += ticks;

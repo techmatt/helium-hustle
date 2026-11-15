@@ -13,7 +13,7 @@
     "upkeep": {"energy": "2"},
     "effects": [{"type": "grant", "resource": "processors", "amount": "1"}],
     "output_modifiers": [],
-    "description": "Grants a processor. Fast cost scaling — many processors is expensive."
+    "description": "Grants a processor. Each one costs more than the last, so many processors are expensive."
   },
   {
     "id": "solar_panel",
@@ -157,7 +157,7 @@
     "upkeep": {"energy": "3", "circuits": "0.2"},
     "effects": [],
     "output_modifiers": [],
-    "description": "Produces science. Gated behind Fabricator — circuits are the bottleneck."
+    "description": "Produces science. Needs two Data Centers; circuit boards are the bottleneck."
   },
   {
     "id": "battery",
@@ -173,7 +173,7 @@
     "upkeep": {},
     "effects": [{"type": "store", "resource": "energy", "amount": "50"}],
     "output_modifiers": [],
-    "description": "Passive energy storage. No upkeep, fast scaling cost."
+    "description": "Passive energy storage. No upkeep."
   },
   {
     "id": "storage_depot",
@@ -196,7 +196,7 @@
       {"type": "store", "resource": "propellant", "amount": "40"}
     ],
     "output_modifiers": [],
-    "description": "Bulk physical storage. Expands reg, ice, he3, ti, and circuit capacity."
+    "description": "Bulk physical storage. Expands regolith, ice, Helium-3, titanium, circuit board and propellant capacity."
   },
   {
     "id": "arbitrage_engine",
@@ -212,7 +212,7 @@
     "upkeep": {"energy": "3"},
     "effects": [{"type": "speculator_decay"}],
     "output_modifiers": [],
-    "description": "Multiplies speculator pressure decay. Nationalist-aligned."
+    "description": "Clears speculators from every market faster each day. Nationalist-aligned."
   },
   {
     "id": "fuel_cell",

@@ -17,6 +17,8 @@ const ENDPOINT = '/__playlog';
 const FLUSH_MS = 2000;
 /** Lines kept while the server can't be reached (oldest dropped past this). */
 const MAX_QUEUED = 50_000;
+/** Lines per request at most. */
+const MAX_BATCH = 2_000;
 
 export interface Where {
   tick: number;
@@ -43,7 +45,9 @@ let career: string | null = null;
 let queue: { career: string; line: string }[] = [];
 let sending = false;
 /** `on`: the server took the last lines; `off`: there is no log server (a static build). */
-export let status: 'on' | 'off' | 'pending' = 'pending';
+export let status: 'on' | 'off' | 'pending' | 'failed' = 'pending';
+/** `failed`: what the server said when it last refused a batch. */
+export let lastError = '';
 export let logDir = '';
 let where: () => Where = () => ({ tick: 0, run: 0, day: 0, speed: 0 });
 
@@ -73,6 +77,11 @@ export function open(id: string, header: Header | null): void {
   if (header) push({ kind: 'header', format: FORMAT, ...header, t: Date.now() }, id);
 }
 
+/** Stops logging (another tab took the career over): lines already queued still go. */
+export function close(): void {
+  career = null;
+}
+
 /** Appends a line to a career's log (the current one unless `to` is given). */
 export function log(kind: string, extra: Line = {}, to: string | null = career): void {
   if (!to) return;
@@ -82,21 +91,30 @@ export function log(kind: string, extra: Line = {}, to: string | null = career):
 
 /** Every line's `id` (`<page load>:<n>`): a line can reach the server twice (a send
  * the page saw fail but the server took, then sent again), and readers drop repeats. */
-const pageId = Array.from(crypto.getRandomValues(new Uint8Array(4)), (b) => b.toString(16).padStart(2, '0')).join('');
+export const pageId = Array.from(crypto.getRandomValues(new Uint8Array(4)), (b) => b.toString(16).padStart(2, '0')).join('');
 let seq = 0;
 
 function push(line: Line, to: string): void {
   line.id = `${pageId}:${seq++}`;
   queue.push({ career: to, line: JSON.stringify(line) });
-  if (queue.length > MAX_QUEUED) queue.splice(0, queue.length - MAX_QUEUED);
+  if (queue.length > MAX_QUEUED) {
+    // Oldest first, but never a header: a log without one can't be replayed.
+    const i = queue.findIndex((q) => !q.line.includes('"kind":"header"'));
+    if (i >= 0) queue.splice(i, 1);
+  }
 }
+
+/** The batch a timed send has in flight: a page closing meanwhile beacons it again
+ * (readers drop the repeated line ids if both land). */
+let inFlight: { career: string; lines: string[] } | null = null;
 
 /** The queued lines, grouped by career in order. */
 function batches(lines: { career: string; line: string }[]): { career: string; lines: string[] }[] {
   const out: { career: string; lines: string[] }[] = [];
   for (const l of lines) {
     const last = out[out.length - 1];
-    if (last && last.career === l.career) last.lines.push(l.line);
+    // A backlog goes in pieces: each request stays small.
+    if (last && last.career === l.career && last.lines.length < MAX_BATCH) last.lines.push(l.line);
     else out.push({ career: l.career, lines: [l.line] });
   }
   return out;
@@ -120,6 +138,7 @@ export async function flush(keepalive = false): Promise<void> {
       const b = todo[0];
       const body = JSON.stringify(b);
       let r: Response;
+      inFlight = b;
       try {
         r = await fetch(ENDPOINT, {
           method: 'POST',
@@ -135,11 +154,27 @@ export async function flush(keepalive = false): Promise<void> {
         todo.length = 0;
         break;
       }
-      todo.shift();
-      if (r.ok) status = 'on';
-      else console.warn(`play log: the server refused a batch (${r.status}); dropped`);
+      if (r.ok) {
+        todo.shift();
+        status = 'on';
+      } else if (r.status < 500) {
+        // A batch the server can never take (malformed, or no log server that takes
+        // POSTs at all): dropped.
+        todo.shift();
+        lastError = `${r.status} ${await r.text().catch(() => '')}`.trim().slice(0, 200);
+        if (r.status !== 400) status = 'failed';
+        console.warn(`play log: the server refused a batch (${lastError}); dropped`);
+      } else {
+        // Refused (the log folder can't be written): kept and retried, so the file is
+        // whole once the server can write again; Options says it isn't recording.
+        lastError = `${r.status} ${await r.text().catch(() => '')}`.trim().slice(0, 200);
+        status = 'failed';
+        console.warn(`play log: the server refused a batch (${lastError}); kept to retry`);
+        break;
+      }
     }
   } finally {
+    inFlight = null;
     for (const b of todo.reverse()) requeue(b);
     sending = false;
   }
@@ -148,8 +183,11 @@ export async function flush(keepalive = false): Promise<void> {
 /** On leaving the page: whatever is queued goes in beacons (they outlive the page; a
  * send still in flight may land after them, so readers order lines by tick and time). */
 export function flushOnLeave(): void {
-  if (queue.length === 0 || status === 'off') return;
-  const todo = batches(queue);
+  if (status === 'off') return;
+  // A timed send still in flight is aborted with the page: beacon it too.
+  const lines = inFlight ? inFlight.lines.map((line) => ({ career: inFlight!.career, line })).concat(queue) : queue;
+  if (lines.length === 0) return;
+  const todo = batches(lines);
   queue = [];
   for (const b of todo) {
     const ok = navigator.sendBeacon?.(ENDPOINT, new Blob([JSON.stringify(b)], { type: 'application/json' }));
@@ -162,9 +200,14 @@ export async function start(): Promise<void> {
   try {
     const r = await fetch(ENDPOINT);
     if (r.status === 404) status = 'off';
-    else if (r.ok) logDir = ((await r.json()) as { dir: string }).dir;
+    else if (r.ok) {
+      // A static host may answer with its index page: no log server there.
+      const j = (await r.json().catch(() => null)) as { dir?: string } | null;
+      if (j && typeof j.dir === 'string') logDir = j.dir;
+      else status = 'off';
+    }
   } catch {
-    status = 'off';
+    // Unreachable for now (a dev server restarting): stay pending, the sends retry.
   }
   window.setInterval(() => void flush(), FLUSH_MS);
 }

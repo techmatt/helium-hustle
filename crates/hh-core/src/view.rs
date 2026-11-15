@@ -55,6 +55,8 @@ pub struct BuildingView {
     pub requires: Requirement,
     /// Buyable now (unlocked, land, price, limit).
     pub affordable: bool,
+    /// It owns as many as its limit allows.
+    pub at_limit: bool,
     pub unlocked: bool,
     pub visible: bool,
     /// Its stall today, if any.
@@ -220,6 +222,8 @@ pub struct BoredomView {
     /// Growth per day now (before command boredom and Dream).
     pub rate: Fx,
     pub phase: u32,
+    /// How many phases there are.
+    pub phases: u32,
 }
 
 /// The career at a glance: bests and what the next run starts with.
@@ -349,6 +353,26 @@ fn story(e: &crate::content::Event) -> StoryView {
     StoryView { id: e.id.clone(), title: e.title.clone(), summary: e.summary.clone(), body: e.body.clone() }
 }
 
+/// An event's text with its `{rate}` filled in: for a boredom-phase event, that phase's
+/// boredom per day under this run's multiplier (display only, to two places).
+fn event_story(r: &Rules, g: &GameState, e: &crate::content::Event) -> StoryView {
+    let mut s = story(e);
+    if let crate::content::Trigger::BoredomPhase { phase } = e.trigger {
+        let rates = &r.p.boredom.phase_rates;
+        let i = (phase.max(1) as usize - 1).min(rates.len() - 1);
+        let full = (rates[i] * boredom::multiplier(r, g)).to_string();
+        let shown = match full.split_once('.') {
+            Some((whole, frac)) => {
+                let frac = frac[..frac.len().min(2)].trim_end_matches('0');
+                if frac.is_empty() { whole.to_string() } else { format!("{whole}.{frac}") }
+            }
+            None => full,
+        };
+        s.body = s.body.replace("{rate}", &shown);
+    }
+    s
+}
+
 pub fn build(r: &Rules, g: &GameState) -> View {
     let c = content();
     let next = r.peek(g);
@@ -415,6 +439,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 stores: effect(false),
                 grants: effect(true),
                 affordable: economy::buy_blocker(r, g, b).is_none(),
+                at_limit: economy::at_limit(g, b),
                 unlocked: economy::unlocked(g, b),
                 visible: economy::visible(g, b),
                 stall: g.run.today.stalls.get(&b.id).copied(),
@@ -597,7 +622,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             .events
             .iter()
             .filter(|e| !e.is_quest() && !e.silent && g.run.events.contains(&e.id))
-            .map(story)
+            .map(|e| event_story(r, g, e))
             .collect(),
         achievements: g.career.achievements.iter().cloned().collect(),
         achievement_list: c
@@ -655,6 +680,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             cap: boredom::cap(r, g),
             rate: boredom::rate(r, g),
             phase: boredom::phase(r, g.run.day),
+            phases: r.p.boredom.phase_days.len() as u32,
         },
         panels: g.run.enabled_panels.iter().cloned().collect(),
         nav: c
