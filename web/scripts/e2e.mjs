@@ -11,10 +11,11 @@
 //      a click pauses and buys nothing, a grey card says why), a reload keeping the save,
 //      a save from another revision discarded, the scenarios and the replay check.
 //   5. (Run before 4.) Readability: a capped resource's positive rate (Resources and the
-//      status bar), an affordable card's tinted header, scenario pad_loading's full pad
-//      short on fuel then Ready (green Launch, border, nav dot), and a boredom beat that
-//      leaves the main quest pinned and counts unread in a folded Story until it is open
-//      and on screen for a second. Shots read-*.png.
+//      status bar; Energy's green), Resources' two groups, an affordable card's tinted
+//      header and the Land row's green, scenario pad_loading's full pad short on fuel
+//      then Ready (green Launch, border, nav dot), a boredom beat that leaves the main
+//      quest pinned and counts unread in a folded Story until it is open and on screen
+//      for a second, and phase 3 superseding it in Story. Shots read-*.png, parked-*.png.
 //   4. The theme: light by default; the Options and debug toggles switch it with no
 //      element moving, and a reload keeps it.
 // Any uncaught page error fails the run.
@@ -292,6 +293,20 @@ async function readability(grant) {
   check(/^\+[\d.]+ cap$/.test(capped), `a capped resource shows its positive rate: "${capped}"`);
   const bar = await evaluate(`document.querySelector('[data-testid="energy-rate"]').textContent`);
   check(/^\+[\d.]+\/day \(capped\)$/.test(bar), `the status bar's Energy rate too: "${bar}"`);
+  // Capped Energy's surplus is spare power: green (the text token), not muted.
+  const spare = await evaluate(`(() => {
+    const el = document.querySelector('tr[data-res="energy"] [data-capped]');
+    const root = getComputedStyle(document.documentElement);
+    const probe = (v) => { const s = document.createElement('span'); s.style.color = v; document.body.append(s); const c = getComputedStyle(s).color; s.remove(); return c; };
+    return { color: getComputedStyle(el).color, green: probe(root.getPropertyValue('--pos-text')), muted: probe(root.getPropertyValue('--muted')) };
+  })()`);
+  const barSpare = await evaluate(`getComputedStyle(document.querySelector('[data-testid="energy-rate"] [data-capped]')).color`);
+  check(spare.color === spare.green && spare.color !== spare.muted && barSpare === spare.green, `capped Energy's rate is green, in the status bar too: ${JSON.stringify({ ...spare, barSpare })}`);
+  // Resources in two groups: Energy, Credits, Land, Boredom, Processors (those shown), then the rest.
+  const groups = await evaluate(`[...document.querySelectorAll('[data-testid="resources"] tbody')].map((b) => [...b.querySelectorAll('tr')].map((r) => r.dataset.res))`);
+  const first = ['energy', 'credits', 'land', 'boredom', 'processors'];
+  check(groups.length === 2 && groups[0].join() === first.filter((id) => groups.flat().includes(id)).join() && groups[0][0] === 'energy' && groups[1].every((id) => !first.includes(id)) && groups[1].length > 0,
+    `Resources in two groups, the first in its fixed order: ${JSON.stringify(groups)}`);
   // Affordable vs not: only the affordable card's name row is tinted.
   await debugMenu();
   // (20 Solar Panels hold all the land: free some too.)
@@ -306,7 +321,16 @@ async function readability(grant) {
     return { yes: bg('.card.building.can-buy'), no: bg('.card.building.cannot-buy'), body: card('.card.building.can-buy') };
   })()`);
   check(!!heads.yes && !!heads.no && heads.yes !== heads.no && heads.yes !== heads.body, `an affordable card's header is tinted, the card body isn't: ${JSON.stringify(heads)}`);
+  // The Land row, affordable: the cards' green outline and tinted head, its box unchanged.
+  const land = await evaluate(`(() => {
+    const b = document.querySelector('[data-testid="land-bar"]'), r = b.getBoundingClientRect(), s = getComputedStyle(b);
+    return { can: !document.querySelector('[data-testid="buy-land"]').disabled, cls: b.classList.contains('can-buy'), border: s.borderTopColor, bg: s.backgroundColor,
+      head: getComputedStyle(document.querySelector('.card.building.can-buy .card-head')).backgroundColor,
+      cardBorder: getComputedStyle(document.querySelector('.card.building.can-buy')).borderTopColor, h: r.height };
+  })()`);
+  check(land.can && land.cls && land.border === land.cardBorder && land.bg === land.head, `the Land row shows green when land is affordable: ${JSON.stringify(land)}`);
   await shot('read-capped-and-cards');
+  await shot('parked-land-resources-capped');
 
   // A pad short on fuel, then Ready; a boredom beat fires on the way (day 200).
   await debugMenu();
@@ -380,6 +404,22 @@ async function readability(grant) {
     'the quest is still pinned after Story is read',
   );
   await shot('read-story-read');
+  // Past day 500 boredom phase 3 supersedes phase 2 in Story; Recent Activity keeps both.
+  await debugMenu();
+  await setValue('#cheat-days', '320');
+  await click('#cheat-jump');
+  await sleep(300);
+  await panel('launch_pads');
+  const phases = await evaluate(`(() => ({
+    story: [...document.querySelectorAll('[data-testid="events-story"] [data-event]')].map((e) => e.dataset.event),
+    activity: [...document.querySelectorAll('[data-testid="events-activity"] li[data-kind="event"]')].map((e) => e.textContent),
+  }))()`);
+  const boredom = phases.story.filter((id) => id.startsWith('boredom_phase_'));
+  check(boredom.length === 1 && boredom[0] === 'boredom_phase_3' && phases.activity.some((t) => /Boredom Rising/.test(t)) && phases.activity.some((t) => /Boredom Accelerating/.test(t)),
+    `Story lists only the latest boredom phase, Recent Activity both: ${JSON.stringify(phases)}`);
+  await shot('parked-story-latest-phase');
+  // Read it now, so no count clears under section 4's layout comparison.
+  await waitFor(`document.querySelector('[data-testid="events-story"]').dataset.unread === '0'`, 'phase 3 read', 4000);
   await debugMenu();
   await click('#check-replay');
   check(/^Replay ok/.test(await noticeText()), `replay check after the readability steps: ${await noticeText()}`);

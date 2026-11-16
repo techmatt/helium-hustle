@@ -139,10 +139,10 @@ export function Section({
 /** A resource's net rate while it sits at its cap: muted, marked capped (the surplus the
  * cap throws away). `compact` (the narrow Resources column, where several can be capped
  * at once): "+6" and a small "cap" tag, no wider than an ordinary "+0.2/day". */
-export function CappedRate({ net, compact = false }: { net: Fx; compact?: boolean }) {
+export function CappedRate({ net, compact = false, spare = false }: { net: Fx; compact?: boolean; spare?: boolean }) {
   const rate = perDay(net);
   return (
-    <span class={`capped-rate${compact ? ' compact' : ''}`} title={`At its cap: ${rate} is lost each day`} data-capped>
+    <span class={`capped-rate${compact ? ' compact' : ''}${spare ? ' spare' : ''}`} title={`At its cap: ${rate} is lost each day`} data-capped>
       {compact ? rate.replace('/day', '') : rate} <span class="cap-mark">{compact ? 'cap' : '(capped)'}</span>
     </span>
   );

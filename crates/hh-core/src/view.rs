@@ -361,7 +361,8 @@ pub struct View {
     pub story: Vec<StoryView>,
     /// One-off events fired this run, in content order.
     pub events: Vec<Text>,
-    /// Their texts, in content order.
+    /// Their texts, in content order, but of the boredom-phase events only the latest
+    /// phase's: each phase supersedes the last (the earlier ones stay in `activity`).
     pub event_texts: Vec<StoryView>,
     pub achievements: Vec<String>,
     /// Every achievement, earned or not, in content order.
@@ -461,6 +462,16 @@ pub fn build(r: &Rules, g: &GameState) -> View {
     let c = content();
     let next = r.peek(g);
     let same_run = next.career.run_number == g.career.run_number;
+    // The highest boredom phase whose event fired this run: Story lists only its text.
+    let latest_phase = c
+        .events
+        .iter()
+        .filter(|e| !e.silent && g.run.events.contains(&e.id))
+        .filter_map(|e| match e.trigger {
+            crate::content::Trigger::BoredomPhase { phase } => Some(phase),
+            _ => None,
+        })
+        .max();
     let resources = c
         .resources
         .iter()
@@ -697,6 +708,10 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             .events
             .iter()
             .filter(|e| !e.is_quest() && !e.silent && g.run.events.contains(&e.id))
+            .filter(|e| match e.trigger {
+                crate::content::Trigger::BoredomPhase { phase } => Some(phase) == latest_phase,
+                _ => true,
+            })
             .map(|e| event_story(r, g, e))
             .collect(),
         achievements: g.career.achievements.iter().cloned().collect(),

@@ -1,6 +1,7 @@
 // Contrast check: the text-on-background pairs in the hand-kept PAIRS list below, in both
 // themes, read from the token blocks in src/style.css. It checks only those pairs: a new
-// text or background token needs its pairs added there. WCAG 2 ratio; fails under 4.5:1.
+// text or background token needs its pairs added there. WCAG 2 ratio; fails under 4.5:1
+// (or a pair's own higher minimum).
 // Prints one line per pair below 7:1 and exits 1 on any failure.
 //   node scripts/contrast.mjs
 import { readFileSync } from 'node:fs';
@@ -16,8 +17,12 @@ function tokens(selector) {
   return Object.fromEntries([...body.matchAll(/--([\w-]+):\s*(#[0-9a-f]{6})/gi)].map((m) => [m[1], m[2]]));
 }
 
-// [text, backgrounds]: a #hex is a fixed color, anything else a token.
+// [text, backgrounds, minimum (default 4.5)]: a #hex is a fixed color, anything else a
+// token.
 const PAIRS = [
+  // The Resources panel's green rates (small mono figures) and the status bar's spare
+  // Energy, both on the panel: held to 7:1.
+  ['pos-text', ['panel'], 7],
   ['text', ['page', 'panel', 'card', 'banner', 'strip', 'strip-hover', 'hover', 'disabled', 'skip-tint', 'ok-tint', 'ok-head', 'bad-tint', 'sky', 'track', 'fill-green', 'fill-red', 'fill-gray', 'fill-blue']],
   ['muted', ['page', 'panel', 'card', 'banner', 'strip', 'hover', 'disabled', 'skip-tint', 'ok-tint', 'ok-head']],
   ['accent-text', ['panel', 'card', 'banner', 'hover']],
@@ -46,13 +51,13 @@ let fails = 0;
 for (const [theme, sel] of [['light', ":root[data-theme='light']"], ['dark', ":root[data-theme='dark']"]]) {
   const t = tokens(sel);
   const get = (k) => (k.startsWith('#') ? k : t[k]);
-  for (const [fg, bgs] of PAIRS)
+  for (const [fg, bgs, min = 4.5] of PAIRS)
     for (const bg of bgs) {
       if (!get(fg) || !get(bg)) throw new Error(`${theme}: no token ${get(fg) ? bg : fg}`);
       const r = ratio(get(fg), get(bg));
-      if (r < 4.5) fails++;
-      if (r < 7) console.log(`${r < 4.5 ? 'FAIL' : 'ok  '} ${theme.padEnd(5)} ${fg} on ${bg}: ${r.toFixed(2)}`);
+      if (r < min) fails++;
+      if (r < 7) console.log(`${r < min ? 'FAIL' : 'ok  '} ${theme.padEnd(5)} ${fg} on ${bg}: ${r.toFixed(2)}`);
     }
 }
-console.log(fails ? `${fails} pairs under 4.5:1` : 'every pair at 4.5:1 or better');
+console.log(fails ? `${fails} pairs under their minimum` : 'every pair at its minimum (4.5:1 unless set) or better');
 process.exit(fails ? 1 : 0);

@@ -16,6 +16,8 @@
   --accent: #b86e00;
   --accent-text: #8f5600;
   --pos: #1f7a42;
+  /* Small green figures (the Resources rates): 7:1 on the panel. */
+  --pos-text: #166235;
   --neg: #b4352c;
   --info: #1f5fa8;
   --sel-bg: #f4e3c4;
@@ -63,6 +65,7 @@
   --accent: #f5a524;
   --accent-text: #f7b955;
   --pos: #62d98b;
+  --pos-text: #62d98b;
   --neg: #f28b82;
   --info: #8ab4f8;
   --sel-bg: #3a2a10;
@@ -468,6 +471,19 @@ ul.plain {
 .res-table .num {
   font-size: 12px;
 }
+/* Its small green figures use the stronger green text token. */
+.res-table .pos {
+  color: var(--pos-text);
+}
+/* The second group of resources, set off by a rule (no height change to its rows'
+   cells beyond the gap). */
+.res-table tbody + tbody tr:first-child td {
+  border-top: 1px solid var(--line);
+  padding-top: 5px;
+}
+.res-table tbody:first-child tr:last-child td {
+  padding-bottom: 5px;
+}
 .at-cap {
   color: var(--accent-text);
 }
@@ -574,6 +590,11 @@ ul.plain {
   padding: 8px 10px;
   border-radius: 4px;
   margin-bottom: 8px;
+}
+/* Land affordable: the building cards' treatment (positive outline, tinted head). */
+.land-bar.can-buy {
+  border-color: var(--pos);
+  background: var(--ok-head);
 }
 .land-bar strong {
   font-family: var(--font-head);
@@ -1035,6 +1056,10 @@ button.go:hover:not(:disabled) {
 .capped-rate {
   color: var(--muted);
   white-space: nowrap;
+}
+/* Except Energy's: power the cap can't store is spare, and good news. */
+.capped-rate.spare {
+  color: var(--pos-text);
 }
 .cap-mark {
   font-size: 0.85em;

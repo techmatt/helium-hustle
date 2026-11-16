@@ -7,6 +7,16 @@ import { navHasNews, seen, setSpeed, type Store } from '../store';
 import { Horizon } from './art';
 import { CappedRate, Section, Square, navShown } from './common';
 
+/** The Resources panel's first group, in this order; every other resource follows in a
+ * second group, in the engine's order. Display order only. */
+const FIRST_GROUP = ['energy', 'credits', 'land', 'boredom', 'processors'];
+
+function resourceGroups<R extends { id: string }>(shown: R[]): R[][] {
+  const first = FIRST_GROUP.flatMap((id) => shown.filter((r) => r.id === id));
+  const rest = shown.filter((r) => !FIRST_GROUP.includes(r.id));
+  return [first, rest].filter((g) => g.length > 0);
+}
+
 export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: string) => void }) {
   const v = s.view;
   const tiles = v.nav.filter((t) => t.visible);
@@ -55,10 +65,9 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
       </div>
       <Section title="Resources" testid="resources">
         <table class="res-table">
-          <tbody>
-            {v.resources
-              .filter((r) => r.visible)
-              .map((r) => {
+          {resourceGroups(v.resources.filter((r) => r.visible)).map((group, gi) => (
+          <tbody key={gi} data-res-group={gi}>
+            {group.map((r) => {
                 const amt = Number(r.amount);
                 const cap = r.cap === null ? null : Number(r.cap);
                 const full = cap !== null && amt >= cap;
@@ -66,15 +75,17 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
                 let shown = r.cap === null ? num(r.amount) : `${num(r.amount)} / ${num(r.cap)}`;
                 // At its cap the change reads 0; the surplus the cap throws away still shows,
                 // muted and marked.
+                // Capped Energy's surplus is spare power, good news: it shows green.
                 const capped = full && r.id !== 'boredom' && Number(r.net_per_day) > Number(r.per_day);
-                let rate: ComponentChildren = capped ? <CappedRate net={r.net_per_day} compact /> : perDay(r.per_day);
+                let rate: ComponentChildren = capped ? <CappedRate net={r.net_per_day} compact spare={r.id === 'energy'} /> : perDay(r.per_day);
                 if (r.id === 'processors') {
                   shown = `${v.processors - v.processors_free} / ${v.processors}`;
                   rate = `${v.processors_free} free`;
                 }
                 if (r.id === 'land') rate = 'free';
                 // Boredom rising is bad news: its rate reads the other way round.
-                const rateNum = capped ? 0 : Number(r.per_day) * (r.id === 'boredom' ? -1 : 1);
+                // A rate too small to show reads "0/day", uncolored.
+                const rateNum = capped || rate === '0/day' ? 0 : Number(r.per_day) * (r.id === 'boredom' ? -1 : 1);
                 return (
                   <tr key={r.id} data-res={r.id} data-amount={r.amount} class={s.fresh.has(`resource:${r.id}`) ? 'is-new' : ''} onMouseEnter={() => seen(`resource:${r.id}`)}>
                     <td>
@@ -101,6 +112,7 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
                 );
               })}
           </tbody>
+          ))}
         </table>
       </Section>
       {navShown(v, 'ideologies') && (

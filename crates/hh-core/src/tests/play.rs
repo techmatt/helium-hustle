@@ -511,9 +511,32 @@ fn the_view_fills_every_text_placeholder() {
     for s in v.event_texts.iter().chain(&v.story) {
         assert!(!placeholder(&s.body) && !placeholder(s.title) && !placeholder(s.summary), "{}: {}", s.id, s.body);
     }
-    // Phase 2's rate is its baseline 0.2 per day (no modifiers yet).
+    // Only the latest boredom phase is listed; each earlier one's text fills in when it is
+    // the latest. Phase 2's rate is its baseline 0.2 per day (no modifiers yet).
+    for later in ["boredom_phase_5", "boredom_phase_4", "boredom_phase_3"] {
+        g.run.events.remove(later);
+        let v = r.view(&g);
+        for s in &v.event_texts {
+            assert!(!placeholder(&s.body), "{}: {}", s.id, s.body);
+        }
+    }
+    let v = r.view(&g);
     let p2 = v.event_texts.iter().find(|s| s.id == "boredom_phase_2").unwrap();
     assert!(p2.body.ends_with("Current rate: 0.2/day."), "{}", p2.body);
+}
+
+#[test]
+fn story_lists_only_the_latest_boredom_phase() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    for id in ["propellant_discovery", "boredom_phase_2", "boredom_phase_3"] {
+        g.run.events.insert(id.to_string());
+    }
+    let v = r.view(&g);
+    let ids: Vec<&str> = v.event_texts.iter().map(|s| s.id).collect();
+    // The one-off beat stays; phase 3 supersedes phase 2 (still in `events`).
+    assert_eq!(ids, ["propellant_discovery", "boredom_phase_3"]);
+    assert!(v.events.contains(&"boredom_phase_2"));
 }
 
 #[test]

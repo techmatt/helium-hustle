@@ -164,7 +164,7 @@ function StatusBar({ s }: { s: Store }) {
         label={`${num(energy?.amount ?? '0')} / ${num(energy?.cap ?? '0')}`}
       />
       <span class="status-rate" data-testid="energy-rate">
-        {energyCapped ? <CappedRate net={energy.net_per_day} /> : perDay(energy?.per_day ?? '0')}
+        {energyCapped ? <CappedRate net={energy.net_per_day} spare /> : perDay(energy?.per_day ?? '0')}
       </span>
     </footer>
   );

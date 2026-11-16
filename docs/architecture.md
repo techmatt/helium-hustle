@@ -134,7 +134,7 @@ today), pads (fuel, whether the shared Propellant covers it, cargo per load, pay
 ready: full and can launch), the run's totals, markets (demand
 once Market Awareness is researched, else a tier), research, ideology (with the scores of
 this rank and the next), projects, the active quest (with countable progress), quest and
-event texts, achievements, rivals, live overclocks and modifiers, boredom (cap, rate,
+event texts (of the boredom phases, only the latest), achievements, rivals, live overclocks and modifiers, boredom (cap, rate,
 phase), the nav tiles (`content/nav.json`), the career's bests, the next run's bonuses if
 the run retired now (`career::retire` on a copy), the last finished run's summary, the
 run's activity feed, display names by id, the cheat mark and the career log. Clients

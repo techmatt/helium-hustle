@@ -52,8 +52,8 @@ to save a PNG at each step worth seeing. About 45 s. It plays, in order:
 4. **The theme:** the game opens light; the Options and debug-menu toggles switch it with
    every element's box unchanged (to 0.01 px); a reload keeps it. Shots
    `theme-<light|dark>-<buildings|commands>.png`.
-5. **Readability** (before 4): capped rate, affordable header, `pad_loading`'s pad short
-   of fuel then Ready, a boredom beat under the pinned quest, Story's unread count.
+5. **Readability** (before 4; header of `scripts/e2e.mjs`): capped rates, Resources'
+   groups, affordable cards and Land, a pad short of fuel then Ready, Story.
 
 Any uncaught page error fails the run. Against a snapshot rather than the dev server:
 `npm run build && npx vite preview --port 61873 --strictPort`, then
@@ -66,7 +66,7 @@ Any uncaught page error fails the run. Against a snapshot rather than the dev se
 
 `npm run unit` checks the number formatting (`src/format.ts`). `node scripts/contrast.mjs`
 checks the text-on-background pairs in its hand-kept `PAIRS` list, in both themes, at
-4.5:1: a new text or background token needs its pairs added there.
+4.5:1 (7:1 for `pos-text`, the Resources rates' green): a new token needs its pairs there.
 
 ## QA checker
 
@@ -80,11 +80,8 @@ must not start the clock), run 2 at 200x, a reload, the replay check, the play l
 by `hh-sim playlog` (`HH_SIM`), and, on the first pass, a
 second tab (the first must stand down). Themes alternate pass by pass (picked in Options;
 the late panels again in the other, from the debug menu); a pass ends on every building's
-card (`?all-cards`, a display-only URL flag) in both. Real mouse and key probes:
-**click-to-buy** (click, Shift-click, double-click, a disabled control, Enter and space
-on a focused card, space after a click pauses, a grey card's hint, no text selected) and
-the **program frame** (one framed line at 3x, nothing moving; none and the span note at
-50x and 200x). The checks by kind (overflow, hidden, contrast, text, assets, console,
+card (`?all-cards`, a display-only URL flag) in both. Real mouse and key probes of
+click-to-buy and the program frame. The checks by kind (overflow, hidden, contrast, text, assets, console,
 input, frame, memory) are listed in the header of `scripts/qa.mjs`. Exit 1 on any finding.
 `HH_LONG=<minutes>` instead plays one career that long at 200x (summaries continued, a
 reload every 2 min) and logs heap, DOM size, save size and the worst frame each minute.
@@ -108,11 +105,12 @@ Three columns and a status bar, as in the last Godot build:
 - **Left:** the title, the nav grid (tiles from `content/nav.json`; a dot marks a tile new
   this run or whose panel holds something new; past nine tiles they go compact, icon beside
   name; a green dot on Launch Pads while a pad is ready), the speed buttons, Resources
-  (amount / cap, change per day, at its cap the surplus thrown away, muted: "+9
-  CAP"; processors assigned / total), each ideology axis's rank once Ideologies
+  (Energy, Credits, Land, Boredom, Processors, then a second group of the rest; amount /
+  cap, change per day, at its cap the surplus thrown away, muted, or green for Energy's
+  spare power: "+9 CAP"; processors assigned / total), each ideology axis's rank once Ideologies
   is unlocked, and the lunar horizon with the habitat at the foot.
 - **Middle:** the sky with the Earth, the main quest's text when it opens (the only story
-  banner), then the active panel. Buildings: the Land bar, a
+  banner), then the active panel. Buildings: the Land bar (green like a card when affordable), a
   collapsible section per category, cards (a 96 px picture beside the description,
   per-day effects and storage lines such as "+100 Boredom cap", ideology tag, stall, price
   with shortfalls in red, active/owned with −/+, Sell 1, Sell All). A click on an
@@ -127,7 +125,7 @@ Three columns and a status bar, as in the last Godot build:
   skipped), and an accent frame (drawn so no text moves) on the line the next processor
   runs (none without a processor). Above 10x one redraw covers several days, so each line
   shows its outcome over them (`advance_run`'s `lines`) with no frame. Below, Events:
-  Story (this run's event texts: boredom beats, side story), completed quests, and Recent
+  Story (this run's event texts: side story, and the latest boredom phase only), completed quests, and Recent
   Activity (green good, red bad, blue news), each with an unread count (UI state),
   cleared once the section is open and on screen for about a second.
 - **Bottom:** day and run, the cheated mark, Boredom and Energy bars with their rates

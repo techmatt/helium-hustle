@@ -20,7 +20,7 @@ export function Buildings({ s }: { s: Store }) {
   return (
     <div class="panel" data-panel="buildings">
       <h2>Buildings</h2>
-      <div class="land-bar">
+      <div class={`land-bar${v.can_buy_land ? ' can-buy' : ''}`} data-testid="land-bar">
         <Square id="land" size={16} />
         <strong>Land</strong>
         <span class="muted">{num(land?.amount ?? '0')} free</span>
