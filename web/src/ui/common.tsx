@@ -1,9 +1,10 @@
 // Small shared pieces: placeholder icons, bars, collapsible sections, amount lists.
 
 import type { ComponentChildren } from 'preact';
-import { useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Amounts, View } from '../engine';
 import { num } from '../format';
+import { justMoved } from '../store';
 
 /** Placeholder icon colors (real art is a later round). */
 const RESOURCE_COLORS: Record<string, string> = {
@@ -87,6 +88,11 @@ export function Section({
   );
 }
 
+/** Whether the nav tile (and so the panel) `id` shows. */
+export function navShown(v: View, id: string): boolean {
+  return v.nav.some((t) => t.id === id && t.visible);
+}
+
 export function name(v: View, id: string): string {
   return v.names[id] ?? id;
 }
@@ -120,6 +126,54 @@ export function CostRows({ v, cost, short }: { v: View; cost: Amounts; short: st
       </tbody>
     </table>
   );
+}
+
+/** The card's own controls, which keep their jobs inside a clickable card. */
+const CONTROLS = 'button, a, input, select, textarea, label';
+
+/** Props that make a card the button for its action (building and research cards): a click
+ * anywhere but its own controls calls `buy(times)` (Shift: `shiftTimes`), as do Enter and
+ * space when the card has keyboard focus. `buy` must read the engine's view at call time,
+ * not a render's, so two quick clicks count twice and never more. */
+export function cardButton(buy: (times: number) => void, shiftTimes = 1) {
+  return {
+    role: 'button' as const,
+    tabIndex: 0,
+    onClick: (e: MouseEvent) => {
+      if ((e.target as HTMLElement).closest(CONTROLS)) return;
+      // The second click of a double-click on a story's OK or the summary's Continue lands
+      // on whatever slid under the pointer: not a buy. (Pointer clicks only: a click with
+      // no pointer behind it, detail 0, was aimed.)
+      if (e.detail > 0 && justMoved()) return;
+      buy(e.shiftKey ? shiftTimes : 1);
+    },
+    // A mouse press neither focuses the card nor selects text: focus would turn the next
+    // space (the pause key) into a second buy, and a double- or Shift-click would select
+    // text (its clicks still buy). Tab still focuses it for the keyboard.
+    onMouseDown: (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest(CONTROLS)) e.preventDefault();
+    },
+    onKeyDown: (e: KeyboardEvent) => {
+      if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
+        e.preventDefault();
+        e.stopPropagation(); // the space key is also pause
+        buy(e.shiftKey ? shiftTimes : 1);
+      }
+    },
+  };
+}
+
+/** A short hint on a card that clears itself (why a grey card buys nothing). */
+export function useHint(): [string | null, (text: string) => void] {
+  const [hint, setHint] = useState<string | null>(null);
+  const timer = useRef<number | undefined>(undefined);
+  useEffect(() => () => clearTimeout(timer.current), []);
+  const show = (text: string) => {
+    setHint(text);
+    clearTimeout(timer.current);
+    timer.current = window.setTimeout(() => setHint(null), 1800);
+  };
+  return [hint, show];
 }
 
 /** A small "new" accent: rendered as a class on the element it marks. */

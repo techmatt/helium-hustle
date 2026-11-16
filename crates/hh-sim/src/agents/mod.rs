@@ -47,10 +47,12 @@ impl<'a> Player<'a> {
         &self.s.state
     }
 
+    /// The oracle's seat only, like [`Player::state`]: the session (its milestone tracker).
     pub fn session(&self) -> &Session {
         self.s
     }
 
+    /// The oracle's seat only: a copy of the game to play ahead on.
     pub fn fork(&self) -> Session {
         self.s.fork()
     }
@@ -173,10 +175,10 @@ pub fn build(player: &str, seed: u64, ms: &Milestones) -> Result<Box<dyn Agent>,
     }
 }
 
-// Shared view readers.
+// Shared view readers (the first three are `View`'s own, shared with `driver.rs`).
 
 pub fn amount(v: &View, id: &str) -> Fx {
-    v.resources.iter().find(|r| r.id == id).map_or(Fx::ZERO, |r| r.amount)
+    v.amount(id)
 }
 
 pub fn cap(v: &View, id: &str) -> Option<Fx> {
@@ -184,7 +186,7 @@ pub fn cap(v: &View, id: &str) -> Option<Fx> {
 }
 
 pub fn owned(v: &View, id: &str) -> u32 {
-    v.buildings.iter().find(|b| b.id == id).map_or(0, |b| b.owned)
+    v.owned(id)
 }
 
 pub fn command_unlocked(v: &View, id: &str) -> bool {
@@ -192,11 +194,7 @@ pub fn command_unlocked(v: &View, id: &str) -> bool {
 }
 
 pub fn command_cost(v: &View, id: &str, res: &str) -> Fx {
-    v.commands
-        .iter()
-        .find(|c| c.id == id)
-        .and_then(|c| c.costs.get(res).copied())
-        .unwrap_or(Fx::ZERO)
+    v.command_cost(id, res)
 }
 
 pub fn researched(v: &View, id: &str) -> bool {

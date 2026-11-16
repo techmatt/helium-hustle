@@ -2,7 +2,7 @@
 // retirement summary over everything when a run ends.
 
 import { useEffect, useState } from 'preact/hooks';
-import type { Speed } from '../clock';
+import { SPEEDS, type Speed } from '../clock';
 import { capitalize, mult, num, perDay } from '../format';
 import {
   continueAfterRetirement,
@@ -16,7 +16,7 @@ import {
 } from '../store';
 import { Sky } from './art';
 import { Buildings } from './Buildings';
-import { Bar, Section } from './common';
+import { Bar, Section, navShown } from './common';
 import { Left } from './Left';
 import { Options } from './Options';
 import {
@@ -32,7 +32,8 @@ import {
 } from './panels';
 import { Right } from './Right';
 
-const KEY_SPEEDS: Record<string, Speed> = { '1': 1, '2': 3, '3': 10, '4': 50, '5': 200 };
+/** Keys 1-5 pick the speeds after pause, in order. */
+const KEY_SPEEDS: Record<string, Speed> = Object.fromEntries(SPEEDS.slice(1).map((sp, i) => [String(i + 1), sp]));
 
 export function App() {
   const s = useStore();
@@ -54,7 +55,7 @@ export function App() {
     return () => window.removeEventListener('keydown', onKey);
   }, []);
   // A panel whose tile hides (a new run re-gates it) falls back to Buildings.
-  const shown = s.view.nav.some((t) => t.id === panel && t.visible) ? panel : 'buildings';
+  const shown = navShown(s.view, panel) ? panel : 'buildings';
   return (
     <div class="app">
       <Left

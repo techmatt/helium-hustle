@@ -4,7 +4,6 @@
 //! `hh-sim`.
 
 use crate::action::Action;
-use crate::content::content;
 use crate::fx::Fx;
 use crate::record::Session;
 use crate::state::Entry;
@@ -117,40 +116,24 @@ const BUILD_ORDER: &[(&str, u32)] = &[
     ("solar_panel", 8),
 ];
 
-/// Commands that bridge a missing resource, with their credit price.
+/// (resource, the command that buys it): bridges for a building's missing input; the
+/// price comes from the view.
 const BRIDGES: &[(&str, &str)] = &[
     ("titanium", "buy_titanium"),
     ("regolith", "buy_regolith"),
     ("ice", "buy_ice"),
 ];
 
-fn amount(v: &View, id: &str) -> Fx {
-    v.resources.iter().find(|r| r.id == id).map_or(Fx::ZERO, |r| r.amount)
-}
-
-fn owned(v: &View, id: &str) -> u32 {
-    v.buildings.iter().find(|b| b.id == id).map_or(0, |b| b.owned)
-}
-
 /// Energy active buildings make per day minus what they use (content rates,
 /// before modifiers).
 fn energy_surplus(v: &View) -> Fx {
     let mut net = Fx::ZERO;
     for b in &v.buildings {
-        let Some(c) = content().building(b.id) else { continue };
         let n = b.active as i64;
-        net += c.produces.get("energy").copied().unwrap_or(Fx::ZERO).mul_int(n);
-        net -= c.upkeep.get("energy").copied().unwrap_or(Fx::ZERO).mul_int(n);
+        net += b.produces.get("energy").copied().unwrap_or(Fx::ZERO).mul_int(n);
+        net -= b.upkeep.get("energy").copied().unwrap_or(Fx::ZERO).mul_int(n);
     }
     net
-}
-
-fn command_cost(v: &View, id: &str, res: &str) -> Fx {
-    v.commands
-        .iter()
-        .find(|c| c.id == id)
-        .and_then(|c| c.costs.get(res).copied())
-        .unwrap_or(Fx::ZERO)
 }
 
 /// One decision, before a tick: assign free processors to the first program,
@@ -171,15 +154,15 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
     }
     let mut goal = BUILD_ORDER.iter().find(|(id, n)| {
         allowed.building(id)
-            && owned(&v, id) < *n
+            && v.owned(id) < *n
             && v.buildings.iter().any(|b| b.id == *id && b.unlocked)
     });
     // Energy first: a building whose upkeep would leave less than a cloud
     // compute's energy spare waits for another Solar Panel.
     if let Some((id, _)) = goal {
-        let upkeep = |b: &str| content().building(b).and_then(|b| b.upkeep.get("energy").copied());
+        let upkeep = |b: &str| v.buildings.iter().find(|x| x.id == b).and_then(|x| x.upkeep.get("energy").copied());
         let spare = energy_surplus(&v) - upkeep(id).unwrap_or(Fx::ZERO);
-        if *id != "solar_panel" && spare < command_cost(&v, "cloud_compute", "energy") {
+        if *id != "solar_panel" && spare < v.command_cost("cloud_compute", "energy") {
             goal = Some(&("solar_panel", u32::MAX));
         }
     }
@@ -196,7 +179,7 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
     // Land runs out: buy more when the credits allow.
     if let Some((id, _)) = goal {
         let b = v.buildings.iter().find(|b| b.id == *id).expect("a content building");
-        if amount(&v, "land") < Fx::from_int(b.land as i64) && amount(&v, "credits") >= v.land_price {
+        if v.amount("land") < Fx::from_int(b.land as i64) && v.amount("credits") >= v.land_price {
             stale |= s.apply(&Action::BuyLand).is_ok();
         }
     }
@@ -222,17 +205,17 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
 
 fn choose_command(v: &View, goal: Option<&str>, allowed: &Allowed) -> &'static str {
     let ok = |c: &str| allowed.command(c) && v.commands.iter().any(|x| x.id == c && x.unlocked);
-    let credits = amount(v, "credits");
+    let credits = v.amount("credits");
     if let Some(pad) = v.pads.first() {
         let full = pad.cargo >= pad.capacity;
         if full && pad.can_launch && ok("launch_pads") {
             return "launch_pads";
         }
-        let fuel = command_cost(v, "buy_propellant", "credits");
-        if full && amount(v, "propellant") < Fx::from_int(20) && credits >= fuel && ok("buy_propellant") {
+        let fuel = v.command_cost("buy_propellant", "credits");
+        if full && v.amount("propellant") < Fx::from_int(20) && credits >= fuel && ok("buy_propellant") {
             return "buy_propellant";
         }
-        if !full && amount(v, &pad.good) >= Fx::from_int(5) && ok("load_pads") {
+        if !full && v.amount(&pad.good) >= Fx::from_int(5) && ok("load_pads") {
             return "load_pads";
         }
     }
@@ -242,12 +225,12 @@ fn choose_command(v: &View, goal: Option<&str>, allowed: &Allowed) -> &'static s
         for &(res, cmd) in BRIDGES {
             let need = b.cost.get(res).copied().unwrap_or(Fx::ZERO);
             let spare = credits - price_credits;
-            if amount(v, res) < need && spare >= command_cost(v, cmd, "credits") && ok(cmd) {
+            if v.amount(res) < need && spare >= v.command_cost(cmd, "credits") && ok(cmd) {
                 return cmd;
             }
         }
     }
-    if amount(v, "energy") >= command_cost(v, "cloud_compute", "energy") && ok("cloud_compute") {
+    if v.amount("energy") >= v.command_cost("cloud_compute", "energy") && ok("cloud_compute") {
         "cloud_compute"
     } else {
         "idle"

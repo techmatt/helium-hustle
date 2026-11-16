@@ -148,3 +148,14 @@ fn the_hash_ignores_name_and_spelling() {
     .unwrap();
     assert_ne!(a.hash(), c.hash());
 }
+
+#[test]
+fn content_check_refuses_unknown_ids_in_conditions() {
+    use crate::content::{content, Condition};
+    let mut c = content().clone();
+    assert!(c.check().is_ok());
+    let q = c.events.iter_mut().find(|e| matches!(e.condition, Condition::AllOf { .. })).unwrap();
+    let Condition::AllOf { sub_objectives } = &mut q.condition else { unreachable!() };
+    sub_objectives[0].condition = Condition::BuildingOwned { building: "no_such".into(), count: 1 };
+    assert!(c.check().is_err_and(|e| e.contains("condition names something unknown")));
+}

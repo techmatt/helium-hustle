@@ -1,4 +1,4 @@
-//! The experiment harness (docs/simulator.md, *Experiments*): a spec's grid of
+//! The experiment harness (docs/simulator.md, *Grids and specs*): a spec's grid of
 //! configs × variants × players over a seed range, every game on its own
 //! thread slot, results in game order whatever the thread count. Players play
 //! in game time; the spec's `humans` add real-time projections. `ladder` is
@@ -202,6 +202,39 @@ pub struct Results {
     pub wall_s: f64,
 }
 
+/// A Markdown table's head and rule: the `lead` columns (`"| Player | Human |"`), then
+/// one per milestone, by id.
+pub(crate) fn milestone_head(ms: &Milestones, lead: &str) -> String {
+    let mut head = lead.to_string();
+    let mut rule = String::from("|");
+    rule.push_str(&"---|".repeat(lead.matches('|').count() - 1));
+    for m in &ms.milestones {
+        let _ = write!(head, " {} |", m.id);
+        rule.push_str("---|");
+    }
+    format!("{head}\n{rule}")
+}
+
+/// `f(0..n)` on up to `threads` threads, each taking the next index as it frees;
+/// results in index order, so the output never depends on the thread count.
+pub(crate) fn par_map<T: Send>(n: usize, threads: usize, f: impl Fn(usize) -> T + Sync) -> Vec<T> {
+    let next = AtomicUsize::new(0);
+    let out: Mutex<Vec<Option<T>>> = Mutex::new((0..n).map(|_| None).collect());
+    std::thread::scope(|sc| {
+        for _ in 0..threads.clamp(1, n.max(1)) {
+            sc.spawn(|| loop {
+                let j = next.fetch_add(1, Ordering::SeqCst);
+                if j >= n {
+                    break;
+                }
+                let r = f(j);
+                out.lock().expect("no panics while held")[j] = Some(r);
+            });
+        }
+    });
+    out.into_inner().expect("threads joined").into_iter().map(|r| r.expect("every job ran")).collect()
+}
+
 /// Plays the grid on `threads` threads. `read` turns a config path into its
 /// text. With `stream`, a directory, each game's line goes to its
 /// `games.jsonl` as the game finishes (finish order; [`write_out`] rewrites
@@ -231,8 +264,6 @@ pub fn run(
     }
     let jobs: Vec<(usize, u64)> =
         (0..cells.len()).flat_map(|c| (0..spec.seeds).map(move |k| (c, spec.first_seed + k))).collect();
-    let next = AtomicUsize::new(0);
-    let out: Mutex<Vec<Option<Result<GameResult, String>>>> = Mutex::new(vec![None; jobs.len()]);
     let sink = match stream {
         Some(dir) => {
             std::fs::create_dir_all(dir).map_err(|e| format!("{dir}: {e}"))?;
@@ -266,37 +297,27 @@ pub fn run(
             Err(e) => eprintln!("[{done}/{}] {}: {e}", jobs.len(), cell.agent),
         }
     };
-    std::thread::scope(|sc| {
-        for _ in 0..threads.max(1) {
-            sc.spawn(|| loop {
-                let j = next.fetch_add(1, Ordering::SeqCst);
-                if j >= jobs.len() {
-                    break;
-                }
-                let (c, seed) = jobs[j];
-                let (cell, ci) = &cells[c];
-                let game = career::Game {
-                    config: &configs[*ci].2,
-                    seed,
-                    scenario: scenario.as_ref(),
-                    agent: &cell.spec,
-                    retirements: spec.retirements,
-                    max_ticks: spec.max_ticks,
-                    milestones: &l.milestones,
-                    objectives: &l.objectives,
-                    trace: false,
-                };
-                let r = career::play(&game);
-                streamed(cell, &r);
-                out.lock().expect("no panics while held")[j] = Some(r);
-            });
-        }
+    let out = par_map(jobs.len(), threads, |j| {
+        let (c, seed) = jobs[j];
+        let (cell, ci) = &cells[c];
+        let game = career::Game {
+            config: &configs[*ci].2,
+            seed,
+            scenario: scenario.as_ref(),
+            agent: &cell.spec,
+            retirements: spec.retirements,
+            max_ticks: spec.max_ticks,
+            milestones: &l.milestones,
+            objectives: &l.objectives,
+            trace: false,
+        };
+        let r = career::play(&game);
+        streamed(cell, &r);
+        r
     });
-    let mut out = out.into_inner().expect("threads joined");
     let mut grouped: Vec<(Cell, Vec<GameResult>)> = cells.iter().map(|(c, _)| (c.clone(), Vec::new())).collect();
-    for (j, (c, _)) in jobs.iter().enumerate() {
-        let r = out[j].take().expect("every job ran")?;
-        grouped[*c].1.push(r);
+    for ((c, _), r) in jobs.iter().zip(out) {
+        grouped[*c].1.push(r?);
     }
     Ok(Results { cells: grouped, wall_s: start.elapsed().as_secs_f64() })
 }
@@ -581,13 +602,7 @@ pub fn tables(sums: &[Summary], l: &Loaded) -> String {
         t,
         "\n## Milestones (medians: `t` career ticks, `r` retirements before it (run r+1), `d` that run's day; `k/n` when only k of n seeds reached it)\n"
     );
-    let mut head = String::from("| Player |");
-    let mut rule = String::from("|---|");
-    for m in &ms.milestones {
-        let _ = write!(head, " {} |", m.id);
-        rule.push_str("---|");
-    }
-    let _ = writeln!(t, "{head}\n{rule}");
+    let _ = writeln!(t, "{}", milestone_head(ms, "| Player |"));
     for s in sums {
         let mut line = format!("| {} |", row_label(&s.cell, multi));
         for m in &ms.milestones {
@@ -607,13 +622,7 @@ pub fn tables(sums: &[Summary], l: &Loaded) -> String {
             t,
             "\n## Real time (projected by a human model, configs/sim/humans.json: real minutes; medians for run 1 and milestones, means over finished runs)\n"
         );
-        let mut head = String::from("| Player | Human | Run 1 min | Run min | Min/dec |");
-        let mut rule = String::from("|---|---|---|---|---|");
-        for m in &ms.milestones {
-            let _ = write!(head, " {} |", m.id);
-            rule.push_str("---|");
-        }
-        let _ = writeln!(t, "{head}\n{rule}");
+        let _ = writeln!(t, "{}", milestone_head(ms, "| Player | Human | Run 1 min | Run min | Min/dec |"));
         for s in sums {
             for r in &s.real {
                 let mut line = format!(

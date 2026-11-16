@@ -45,10 +45,14 @@ the career log records it. A new run starts with no research.
   ([programs.md](programs.md)).
 - `load_per_execution`: replaces the config's units per Load, before
   `cargo_capacity_mult` ([shipments.md](shipments.md)).
+- `reveal_demand` (Market Awareness): the view shows each good's exact demand instead of
+  a tier (display only, [demand.md](demand.md)).
 
 Items with no effect unlock things: a command or building whose `requires` is
 `{"type": "research", ...}` is available only while that item is bought this run, and a
 project or quest can name it ([projects.md](projects.md), [events.md](events.md)).
+Speculator Analysis has no effect and nothing names it: buying it changes nothing (its
+description's burst forecast is not built).
 
 ## Actions
 

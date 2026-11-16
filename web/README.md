@@ -14,7 +14,7 @@ cd web
 npm ci                                       # once per worktree (~10 s)
 npm run dev                                  # builds the wasm (~45 s cold), then serves http://localhost:5173/
 npm run game -- --port 5320 --strictPort     # conductor's Run game: npm install, wasm, vite, each skipped if unchanged (~1 s)
-npm run wasm                                 # only rebuild web/src/wasm/ from crates/hh-wasm (~13 s warm, 0 if unchanged)
+npm run wasm                                 # only rebuild web/src/wasm/ from crates/hh-wasm (~5 s warm, 0 if unchanged)
 npm run check                                # typecheck (needs web/src/wasm/: npm run wasm first)
 npm run build                                # wasm + typecheck + static site in web/dist/
 npm run preview                              # serve web/dist/
@@ -26,8 +26,8 @@ npm run preview                              # serve web/dist/
   or kill by port (`netstat -ano | grep :<p>`, `taskkill //F //PID <pid>`).
 - **The wasm build:** `scripts/build-wasm.mjs` runs `wasm-pack build crates/hh-wasm
   --target web --release` into `web/src/wasm/` (git-ignored); `HH_WASM_PROFILE=dev` builds
-  unoptimized. It skips the build when a hash of its inputs (`crates/`, `content/`,
-  `scenarios/`, `Cargo.*`, the script) matches `web/src/wasm/.inputs`; `HH_WASM_FORCE=1`
+  unoptimized. It skips the build when a hash of its inputs (`crates/hh-core`,
+  `crates/hh-wasm`, `content/`, `scenarios/`, `Cargo.*`, the script) matches `web/src/wasm/.inputs`; `HH_WASM_FORCE=1`
   builds anyway.
 - **While the dev server runs**, editing `crates/`, `content/` or `scenarios/` rebuilds the
   wasm and reloads the page; a config edit reloads it. A failed rebuild keeps the last good
@@ -46,7 +46,7 @@ to save a PNG at each step worth seeing. About 45 s. It plays, in order:
    clock, run 2 (known tiles and resources still shown, not cheated).
 2. **Every panel**: cheats reach Research, Projects and Ideologies; all 11 tiles open; the
    cheated mark, a jump ahead and the replay check.
-3. Each speed's days per second, pause, click-to-buy (a green card's text buys, its −/+ and
+3. A program's frame at 10x and 50x, each speed's days per second, pause, click-to-buy (a green card's text buys, its −/+ and
    Sell 1 don't, space after a real click pauses and buys nothing, a grey card says why),
    a reload keeping the save, a save from another revision discarded, the scenarios and
    the replay check.
@@ -64,33 +64,27 @@ Any uncaught page error fails the run. Against a snapshot rather than the dev se
   on both, so a test that edits the save must do it after both.
 
 `npm run unit` checks the number formatting (`src/format.ts`). `node scripts/contrast.mjs`
-checks every text-on-background pair the theme tokens make, in both themes, at 4.5:1.
+checks the text-on-background pairs in its hand-kept `PAIRS` list, in both themes, at
+4.5:1: a new text or background token needs its pairs added there.
 
 ## QA checker
 
 `npm run qa` (`scripts/qa.mjs`) plays the game the way a player would, over several seeds,
 window widths and both themes, and checks the screen at each meaningful moment (a panel opened, a story
-text, a new quest, a launch, the run summary, run 2, a reload, the replay check). Findings
-list `docs/qa-findings.md` holds what hunts found. Per pass (a seed at a width), in one
+text, a new quest, a launch, the run summary, run 2, a reload, the replay check). Hunts'
+findings: `docs/qa-findings.md`. Per pass (a seed at a width), in one
 fresh headless browser: a first visit, a new game on the seed from the debug menu, run 1 at
 3x then 50x with every panel opened, retirement and the summary (keys pressed during it
 must not start the clock), run 2 at 200x, a reload, the replay check, the play log replayed
-by `hh-sim playlog` (needs `target/release/hh-sim`), and, on the first pass, a second tab
-(the first must stand down). Themes alternate pass by pass (picked in Options; the late
-panels again in the other, from the debug menu); a pass ends on every building's card
-(`?all-cards`, a display-only URL flag) in both. Real mouse and key probes:
+by `hh-sim playlog` (`HH_SIM`), and, on the first pass, a
+second tab (the first must stand down). Themes alternate pass by pass (picked in Options;
+the late panels again in the other, from the debug menu); a pass ends on every building's
+card (`?all-cards`, a display-only URL flag) in both. Real mouse and key probes:
 **click-to-buy** (click, Shift-click, double-click, a disabled control, Enter and space
 on a focused card, space after a click pauses, a grey card's hint, no text selected) and
 the **program frame** (one framed line at 3x, nothing moving; none and the span note at
-50x and 200x). The checks: **overflow** (clipped text without a tooltip holding it, text
-past its box, the window or a clipping column, a word broken across lines, table cells
-touching, a page wider than the window), **hidden** (a control's center covered, card text under its picture,
-the story banner covered), **contrast** (text on its solid background, 4.5:1, 3:1
-large), **text** (`undefined`, `NaN`, `[object …]`, `{name}`), **assets** (a failed
-image, a card picture missing, not 96 px or never shown, a font weight not bundled),
-**console** (page errors), **input** (a click slower than 300 ms to show; a probe's
-wrong count; a double-click on Continue reaching a card), **frame** (a gap over 250 ms),
-**memory** (heap growth over 40 MB, a save over 2 MB). Exit 1 on any finding.
+50x and 200x). The checks by kind (overflow, hidden, contrast, text, assets, console,
+input, frame, memory) are listed in the header of `scripts/qa.mjs`. Exit 1 on any finding.
 `HH_LONG=<minutes>` instead plays one career that long at 200x (summaries continued, a
 reload every 2 min) and logs heap, DOM size, save size and the worst frame each minute.
 
@@ -102,7 +96,7 @@ HH_PACE=120 HH_WIDTHS=1600 HH_URL=... npm run qa     # a first visit left at 1x 
 
 `HH_SEEDS` (default `11,12,13`), `HH_WIDTHS` (`1280,1920`), `HH_HEIGHT` (900), `HH_THEMES`
 (`light,dark`), `HH_RUN2` (run 2 days, 150), `HH_SPEED` (run 1's speed, 50; `3` for a
-person's pace), `HH_QA_OUT` (default `out/qa`, wiped): a PNG per moment in
+person's pace), `HH_SIM` (default `target/release/hh-sim`), `HH_QA_OUT` (default `out/qa`, wiped): a PNG per moment in
 `<out>/<seed>-<width>-<theme>/`, a contact sheet per pass, and
 `report.json`. Run it against a static build: an edit under a dev server reloads the page.
 
@@ -111,15 +105,17 @@ person's pace), `HH_QA_OUT` (default `out/qa`, wiped): a PNG per moment in
 Three columns and a status bar, as in the last Godot build:
 
 - **Left:** the title, the nav grid (tiles from `content/nav.json`; a dot marks a tile new
-  this run or whose panel holds something new), the speed buttons, Resources (amount / cap,
+  this run or whose panel holds something new; past nine tiles they go compact, icon beside
+  name), the speed buttons, Resources (amount / cap,
   change per day; processors assigned / total), each ideology axis's rank once Ideologies
   is unlocked, and the lunar horizon with the habitat at the foot.
 - **Middle:** the sky with the Earth, then the active panel. Buildings: the Land bar, a
-  collapsible section per category, cards (a 96 px picture beside the description and
-  per-day effects, ideology tag, stall, price with shortfalls in red, active/owned with
-  −/+, Sell 1, Sell All). A click on an affordable card (outlined in green), off its
-  controls, builds one (Shift: up to ten; ignored for 0.5 s after the summary or a story
-  text closes); any other card says why it can't. Then the other panels.
+  collapsible section per category, cards (a 96 px picture beside the description,
+  per-day effects and storage lines such as "+100 Boredom cap", ideology tag, stall, price
+  with shortfalls in red, active/owned with −/+, Sell 1, Sell All). A click on an
+  affordable card (outlined in green), off its controls, builds one (Shift: up to ten;
+  ignored for 0.5 s after the summary or a story text closes); any other card says why it
+  can't. Research cards work the same way: a click researches. Then the other panels.
 - **Right:** program tabs 1 to 5 with processors −/+ and Reset; a line per command with
   its progress, −/+/×, drag to reorder, its tint from today's outcome (ran, failed,
   skipped), and an accent frame (drawn so no text moves) on the line the next processor
@@ -205,10 +201,7 @@ actions to the last tick and checks the fingerprint logged there.
 
 ## Source
 
-`src/engine.ts` (typed wasm wrapper, the view's types), `src/clock.ts` (wall clock,
-speeds), `src/save.ts` (autosave), `src/store.ts` (the game in play: actions, ticking,
-saves, "new" markers, the run summary), `src/format.ts` (number display), `src/theme.ts`
-(the theme), `src/ui/` (`App.tsx` layout and status bar, `Left.tsx`, `Buildings.tsx`,
-`panels.tsx`, `Options.tsx`, `Right.tsx`, `common.tsx`, `art.tsx`, `buildingArt.ts`),
-`src/assets/` (images), `src/main.tsx` (entry).
-The config is `configs/baseline.json`, imported at build time.
+`src/store.ts` holds the game in play (actions, ticking, saves, "new" markers, the run
+summary), `src/playlog.ts` the play log's client half (the queue, sends to `/__playlog`,
+career ids), `src/ui/` the panels; each file's header says the rest. The config is
+`configs/baseline.json`, imported at build time.

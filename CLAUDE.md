@@ -112,10 +112,11 @@ when clean (always exit 0; about 7 s, up to a minute if it must build). Its chec
   name not through `libm`, an `#[allow]` of the ban, the ban's `deny` or a name dropped).
 - **balance:** a target the judge misses (`hh-sim balance`: milestones outside their run
   windows, run 1's length and real time; targets and judge in `docs/principles.md`).
+- **docs:** a doc (README, CLAUDE.md, web/README, `docs/`, `docs/rules/`) over 15 KB, or
+  inside the 1 KB margin below it.
 
-And two by hand:
+And one by hand:
 
-- **docs:** a doc over 15 KB (`wc -c README.md CLAUDE.md docs/*.md docs/rules/*.md web/README.md`).
 - **docs:** a rules change without its `docs/rules-history.md` row, or a `RULES_REVISION` bump
   without golden constants moved (or the reverse).
 

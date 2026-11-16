@@ -3,17 +3,27 @@
 // at speed, buying, programs, launches, every panel, retirement, the run summary, run 2,
 // a reload), captures a screenshot only at meaningful moments (a panel, a story text,
 // the run summary, a new quest), and checks each of them:
-//   overflow   text clipped by its box, or the page wider than the window
-//   hidden     a visible button or input whose center is covered by something else
-//   text       placeholder or broken text on screen (undefined, NaN, [object ...], {x})
+//   overflow   text clipped by its box with no tooltip holding it, text past its button or
+//              cell, off the right edge or cut off by a clipping column, table cells
+//              touching, a word broken across lines, a swatch alone on its line (its label
+//              below), a card body shorter than its picture, the page wider than the window
+//   hidden     a visible button or input whose center is covered by something else, card
+//              text under its picture, the story banner or notice covered
+//   text       placeholder or broken text on screen (undefined, NaN, [object ...], {x}),
+//              more than one program line framed, a frame on a program with no processor
 //   contrast   text against its solid background under 4.5:1 (3:1 large)
-//   assets     an image that failed to load, a building card picture missing or not 96 px
-//   console    any page error or console.error
-//   input      a click that took longer than INPUT_MS to show on screen
+//   assets     an image that failed to load; a building card picture missing, not 96 px or
+//              never shown; text in a bundled font at a weight or style it doesn't ship
+//   console    any page error or console.error, a failed replay check, a play log that
+//              `hh-sim playlog` doesn't reproduce
+//   input      a click that took longer than INPUT_MS to show on screen, a probe's wrong
+//              count (click-to-buy, the program frame), a double-click on Continue reaching
+//              a card
 //   frame      a frame gap over FRAME_MS while the page is visible
-//   memory     JS heap growth over the whole career past HEAP_GROWTH_MB
-// It writes `<out>/report.json`, one PNG per moment, and `<out>/contact-<seed>-<w>.png`
-// (a contact sheet of that pass). Exits 1 on any finding.
+//   memory     JS heap growth over a pass past HEAP_GROWTH_MB, a save over 2 MB
+// It writes `<out>/report.json`, one PNG per moment in `<out>/<seed>-<width>-<theme>/`, and
+// `<out>/contact-<seed>-<width>-<theme>.png` (a contact sheet of that pass). Exits 1 on any
+// finding.
 //   HH_URL     the page (default http://localhost:5173/)
 //   HH_SEEDS   comma-separated seeds (default 11,12,13)
 //   HH_WIDTHS  comma-separated window widths (default 1280,1920)
@@ -22,7 +32,12 @@
 //   HH_QA_OUT  output folder (default ../out/qa, wiped first)
 //   HH_RUN2    days of run 2 to play (default 150)
 //   HH_SPEED   run 1's speed (default 50; 3 for a real-speed pass)
+//   HH_SIM     the hh-sim that replays the play log (default target/release/hh-sim)
 //   HH_BROWSER a browser off the usual paths
+//   HH_PACE    <seconds>: instead, a first visit left at 1x that long, a shot every 15 s
+//              (`<out>/pace/`)
+//   HH_LONG    <minutes>: instead, one career that long at 200x, logging heap, DOM size,
+//              save size and the worst frame each minute (`<out>/long/`)
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -455,6 +470,9 @@ async function pass(seed, width, theme) {
       await speed(0);
     }
     await panel('buildings');
+    // Past the 0.5 s in which cards ignore pointer clicks after a story's OK or Continue
+    // (qa-findings #31): a probe right after a story would otherwise report a lost buy.
+    await sleep(600);
     const card = (sel) => evaluate(`document.querySelector(${q(sel)})?.dataset.id ?? null`);
     let id = await card('.card.building.can-buy');
     if (!id) return note('input', `card probe (${when}): no affordable card`);
@@ -645,7 +663,8 @@ async function pass(seed, width, theme) {
       const bs = await buildingsNow();
       const goal = ORDER.find(([id, n]) => bs[id] && bs[id].owned < n);
       if (goal && bs[goal[0]].buyable) {
-        await click(`[data-testid="buy-${goal[0]}"]`, `buy ${goal[0]}`);
+        // The run may end (a forced retirement's summary) between the read and the click.
+        if (await exists(`[data-testid="buy-${goal[0]}"]`)) await click(`[data-testid="buy-${goal[0]}"]`, `buy ${goal[0]}`);
         continue;
       }
       const credits = s.res.credits ?? 0;
@@ -807,7 +826,7 @@ async function pass(seed, width, theme) {
       await moments(await look());
       if (!(await exists('.nav-tile[data-nav="research"]'))) continue;
       await panel('research');
-      const buyable = await evaluate(`[...document.querySelectorAll('[data-testid^="research-"]:not([disabled])')].map((b) => b.dataset.testid)`);
+      const buyable = await evaluate(`[...document.querySelectorAll('.card.research[aria-disabled="false"]')].map((b) => b.dataset.testid)`);
       for (const t of buyable) await click(`[data-testid="${t}"]`, t);
     }
     for (const id of (await look()).nav) {
@@ -893,8 +912,13 @@ async function pass(seed, width, theme) {
     // A second tab on the same save: the first stands down with a notice.
     if (seed === seeds[0] && width === widths[0]) {
       const t = await send('Target.createTarget', { url });
-      await sleep(4000);
-      const told = await evaluate(`document.getElementById('notice')?.textContent ?? ''`);
+      // The new tab must load and save before this one hears of it: up to 10 s on a
+      // loaded box.
+      let told = '';
+      for (let i = 0; i < 20 && !/another tab/.test(told); i++) {
+        await sleep(500);
+        told = await evaluate(`document.getElementById('notice')?.textContent ?? ''`);
+      }
       if (!/another tab/.test(told)) note('input', `a second tab on the same game: the first was not told (${told})`);
       // Close it first: a headless background tab never paints, so no screenshot.
       await send('Target.closeTarget', { targetId: t.result?.targetId });

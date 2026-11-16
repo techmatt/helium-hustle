@@ -104,7 +104,9 @@
   color: var(--text);
   background: var(--page);
   --left: clamp(270px, 18vw, 440px);
-  --right: clamp(340px, 23vw, 560px);
+  /* Wide enough at 1280 px for a program line's full name ("Sell Cloud Compute") beside
+     its controls. */
+  --right: clamp(370px, calc(23vw + 30px), 590px);
   --status: 34px;
 }
 * {
@@ -365,6 +367,20 @@ ul.plain {
   gap: 6px;
   padding: 8px 1px;
 }
+/* Past nine tiles (Left.tsx): compact, icon beside the name, as many columns of at least
+   105 px as fit (two in the 270 px column at 1280 px, even beside its scrollbar), so a late
+   career's column needn't scroll. */
+.nav-grid.compact {
+  grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+}
+.nav-grid.compact .nav-tile {
+  flex-direction: row;
+  justify-content: flex-start;
+  gap: 6px;
+  padding: 4px 6px;
+  overflow-wrap: normal;
+  text-align: left;
+}
 /* Every tile state names its own text color: normal, hover, selected, selected + hover. */
 .nav-tile.active,
 .nav-tile.active:hover:not(:disabled) {
@@ -408,6 +424,14 @@ ul.plain {
   display: flex;
   gap: 4px;
   flex-wrap: wrap;
+}
+/* Six even buttons on one line, even in the 270 px column beside its scrollbar: a
+   second line would push a late career's column into scrolling. */
+.speeds button {
+  flex: 1 1 0;
+  min-width: 0;
+  padding-left: 0;
+  padding-right: 0;
 }
 .speeds button[aria-pressed='true'],
 .speeds button[aria-pressed='true']:hover,
@@ -655,14 +679,18 @@ tr.is-new td:first-child {
   margin-top: auto;
   padding-top: 4px;
 }
-.card.building.can-buy {
+/* A building or research card is its own Buy/Research button. */
+.card.building.can-buy,
+.card.research.can-buy {
   cursor: pointer;
   transition: background 0.1s;
 }
-.card.building.can-buy:hover {
+.card.building.can-buy:hover,
+.card.research.can-buy:hover {
   background: var(--ok-tint);
 }
-.card.building.can-buy:active {
+.card.building.can-buy:active,
+.card.research.can-buy:active {
   background: var(--hover);
 }
 .card.building button {

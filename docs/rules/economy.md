@@ -29,7 +29,7 @@ Launch Pads owned and pads are matched (shipments.md).
 `cost × cost_scaling ^ (owned − bonus) × discount_factor ^ rank`, the last factor only for a
 building with an `ideology` axis (that axis's rank; ideology.md). `bonus` counts free
 buildings granted at run start, so they don't raise the price. Whole powers use `Fx::pow_int`
-(see [the rounding rule](README.md)). A price past `Fx`'s range is shown as the maximum and is
+(see [the rounding rule](README.md#numbers)). A price past `Fx`'s range is shown as the maximum and is
 never affordable.
 
 **Buy** checks, in order: unlocked (its `requires` holds and, if an event enables it, that
@@ -127,4 +127,4 @@ A refused action changes nothing.
 - Candidate: a new Data Center's processor starts unassigned; losing processors unassigns
   from the last program first.
 - Candidate: cost curves use exact whole powers (`Fx::pow_int`), not `libm::pow` then floor
-  (1.15² = 1.3225, not 1.322499); see [the rounding rule](README.md).
+  (1.15² = 1.3225, not 1.322499); see [the rounding rule](README.md#numbers).

@@ -75,7 +75,9 @@ A config is JSON (`configs/baseline.json`):
 - **Config hash**: `Config::hash`, FNV-1a over the canonical resolved JSON, `name`
   excluded: `"100"` and `"100.000"` hash the same.
 - Every module in `modules::REGISTRY` must be in the config (`Rules::new` names the
-  missing ones); the tick plays them in `rules.rs`'s order, not config order.
+  missing ones). The tick plays them in the hand-written order of `Rules::tick`
+  (`rules.rs`), not config or `REGISTRY` order; `REGISTRY`'s order only orders config
+  checks and their errors.
 
 ## Modules and content
 
@@ -105,7 +107,8 @@ The modules are Arc 1's ([rules/README.md](rules/README.md)).
 Named starting states (`scenarios/*.json`, listed in `scenario.rs` `FILES`), laid over a
 new game: `{"name", "description", "start": {"tick", "resources", "buildings"}}`, every
 key required; a listed resource or building (owned and active) replaces the new game's
-value, the tick sets the run's day too, and processors gained go to the first program. Unknown ids are
+value, the tick sets the run's day too and shifts the run's burst and rival schedules by
+as much (they start from that day, not day 0), and processors gained go to the first program. Unknown ids are
 errors naming them. `hh-sim run --scenario NAME` (or `--scenario-file F`) and the web
 debug menu use them. A record carries its scenario in full, so a later edit to the file
 can't change an old record.
@@ -153,3 +156,6 @@ over the golden game: a refactor that only reshapes the view keeps the digest.
 the `career` (what persists across retirements) and the `run` (what a retirement resets,
 including the run's own `day`). Everything that affects play is in it; derived values
 (caps, modifiers, the active quest, processors' assignment limits) are recomputed from it.
+Granted resources (processors) are held in `run.resources` but are rewritten from the active
+buildings by `economy::refresh` whenever buildings change, so set the buildings, not the
+amount.

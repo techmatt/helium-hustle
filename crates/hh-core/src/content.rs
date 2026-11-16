@@ -55,7 +55,8 @@ pub struct Resource {
     pub name: String,
     /// Base storage cap; `None` is uncapped (boredom's cap is the boredom module's).
     pub cap: Option<Fx>,
-    /// Shown from the start; otherwise once a building making it is (or was ever) owned.
+    /// Shown from the start; otherwise once a building making it is or was owned, a
+    /// command making it was ever used, or some is held (`view.rs`).
     pub always_visible: bool,
 }
 
@@ -391,6 +392,23 @@ impl Content {
         Ok(c)
     }
 
+    /// Whether every id an event condition names (sub-objectives included) is real.
+    fn condition_ok(&self, c: &Condition) -> bool {
+        match c {
+            Condition::BuildingOwned { building, .. } => self.building(building).is_some(),
+            Condition::ResourceCumulative { resource, .. } => self.resource(resource).is_some(),
+            Condition::ResearchCompleted { research } => self.research_item(research).is_some(),
+            Condition::AllOf { sub_objectives } => sub_objectives.iter().all(|s| self.condition_ok(&s.condition)),
+            Condition::ShipmentCompleted { .. }
+            | Condition::Immediate
+            | Condition::Never
+            | Condition::IdeologyRankAny { .. }
+            | Condition::PersistentProjectCompletedAny
+            | Condition::DaysSurvived { .. }
+            | Condition::CreditsEarned { .. } => true,
+        }
+    }
+
     /// Ids unique across all content; every reference names something real.
     pub fn check(&self) -> Result<(), String> {
         let mut ids = BTreeSet::new();
@@ -456,6 +474,10 @@ impl Content {
             match &c.effect {
                 Some(CommandEffect::Promote { good }) => need(res(good), format!("{w}: unknown good")),
                 Some(CommandEffect::Fund { axis: a }) => need(axis(a), format!("{w}: unknown axis")),
+                Some(CommandEffect::Overclock { target, .. }) => need(
+                    self.buildings.iter().any(|b| b.category == *target),
+                    format!("{w}: overclock target {target:?} is no building category"),
+                ),
                 _ => {}
             }
         }
@@ -479,6 +501,8 @@ impl Content {
             if let Trigger::QuestComplete { quest: q } = &e.trigger {
                 need(quest(q), format!("{w}: trigger names unknown quest {q:?}"));
             }
+            need(e.category == "story" || e.category == "ongoing", format!("{w}: bad category {:?}", e.category));
+            need(self.condition_ok(&e.condition), format!("{w}: condition names something unknown"));
             for u in &e.unlocks {
                 let ok = match u {
                     Unlock::EnableBuilding { building } => bld(building),
@@ -492,6 +516,13 @@ impl Content {
             let w = format!("project {:?}", p.id);
             need(p.tier == "persistent" || p.tier == "personal", format!("{w}: bad tier"));
             need(p.costs.keys().all(|r| res(r)), format!("{w}: unknown cost resource"));
+            let unlock_ok = match &p.unlock {
+                ProjectUnlock::IdeologyRank { axis: a, .. } => axis(a),
+                ProjectUnlock::QuestActive { quest: q } => quest(q),
+                ProjectUnlock::ResearchCompleted { research: x } => research(x),
+                ProjectUnlock::EventUnlocked | ProjectUnlock::FlagSet { .. } => true,
+            };
+            need(unlock_ok, format!("{w}: bad unlock"));
             match &p.reward {
                 ProjectReward::Modifier { key, .. } => need(modifier(key), format!("{w}: unknown modifier")),
                 ProjectReward::StartingBuildings { buildings } => {
@@ -506,6 +537,12 @@ impl Content {
         }
         for a in &self.achievements {
             let w = format!("achievement {:?}", a.id);
+            if let AchievementCondition::ProducedInADay { resource: r, .. }
+            | AchievementCondition::Stockpile { resource: r, .. }
+            | AchievementCondition::ConsumedInADay { resource: r, .. } = &a.condition
+            {
+                need(res(r), format!("{w}: unknown resource {r:?}"));
+            }
             match &a.reward {
                 AchievementReward::Modifier { key, .. } => need(modifier(key), format!("{w}: unknown modifier")),
                 AchievementReward::BonusBuildings { building, .. } => {

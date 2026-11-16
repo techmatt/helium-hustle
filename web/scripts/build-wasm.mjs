@@ -5,10 +5,11 @@
 //   HH_WASM_FORCE=1       build even when nothing the wasm is built from has changed
 //
 // A build is skipped (in well under a second) when web/src/wasm/ already holds a build of
-// the same inputs: every file under crates/ (but target/ and pkg/), content/ and
-// scenarios/, the workspace Cargo.toml and Cargo.lock, this script and the profile,
-// hashed by content into web/src/wasm/.inputs. Even a no-change build costs ~11 s
-// (wasm-opt reruns every time), most of a warm start.
+// the same inputs: every file under crates/hh-core and crates/hh-wasm (but target/ and
+// pkg/), content/ and scenarios/, the workspace Cargo.toml and Cargo.lock, this script
+// and the profile,
+// hashed by content into web/src/wasm/.inputs. A build that runs costs most of a warm
+// start even when the Rust is unchanged (wasm-opt reruns every time).
 
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
@@ -40,7 +41,9 @@ function inputsHash() {
   const h = createHash('sha256');
   h.update(`profile ${profile}\n`);
   const list = [
-    ...['crates', 'content', 'scenarios'].flatMap((d) => files(join(repo, d))),
+    // The crates the wasm is built from (hh-wasm and the hh-core it depends on): an
+    // hh-sim edit needs no rebuild.
+    ...[join('crates', 'hh-core'), join('crates', 'hh-wasm'), 'content', 'scenarios'].flatMap((d) => files(join(repo, d))),
     join(repo, 'Cargo.toml'),
     join(repo, 'Cargo.lock'),
     fileURLToPath(import.meta.url),

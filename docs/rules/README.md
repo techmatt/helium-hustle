@@ -54,6 +54,8 @@ One tick is one in-game day. Each tick, in this order (`Rules::tick`, `rules.rs`
 12. **Ideology** bests are recorded in the career (ideology).
 13. The run's **day** count rises.
 14. Boredom at its cap **forces retirement**: the next run starts at once (career).
+15. The **activity feed** is cut to its newest `activity_kept` lines (events; display only).
+    The same trim ends every applied action.
 
 Player actions apply between ticks; an illegal one changes nothing. Actions are listed on
 the page of the module that takes them (`crates/hh-core/src/action.rs` has them all).
@@ -95,13 +97,13 @@ A modifier key's value is the product of every live source naming it, 1 with non
 
 | Key | Source | Applies to |
 |---|---|---|
-| `extractor_output_mult` | Deep Core Survey (Strategic project) | Regolith Excavator and Ice Extractor output |
+| `extractor_output_mult` | Deep Core Survey (Strategic project; unreachable, [projects.md](projects.md#port-notes)) | Regolith Excavator and Ice Extractor output |
 | `excavator_output_mult` | Strip Mining (achievement) | Regolith Excavator output |
 | `solar_output_mult` | Grid Recalibration (Strategic) | Solar Panel output |
 | `building_upkeep_mult` | Predictive Maintenance (Strategic) | every building's upkeep |
 | `promote_effectiveness_mult` | Market Cornering (Strategic) | Promote's demand effect |
 | `speculator_burst_interval_mult` | Speculator Dossier (Strategic) | days between speculator bursts |
-| `land_cost_mult` | Lunar Cartography (Long-Term) | land price |
+| `land_cost_mult` | Lunar Cartography (Long-Term; unreachable) | land price |
 | `storage_cap_mult` | Silicon Valley (achievement) | every cap but energy's (and boredom's) |
 | `shipment_credit_mult` | First Profit (achievement) | shipment payouts |
 | `cargo_capacity_mult` | Bulk Shipper (achievement) | cargo loaded per Load |

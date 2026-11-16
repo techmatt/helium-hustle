@@ -1,5 +1,6 @@
-//! The measuring commands: `ladder`, `experiment`, `compare`, `balance`,
-//! `agents`, `speed` (docs/simulator.md).
+//! The measuring commands: `ladder`, `experiment`, `compare`, `balance`, `trace`
+//! (with its state dump and line replay), `agents`, `speed` (docs/simulator.md).
+//! `lib.rs` dispatches these here, `vs-human` to `vs.rs`, and runs the rest itself.
 
 use std::fmt::Write as _;
 use std::time::Instant;
@@ -7,21 +8,13 @@ use std::time::Instant;
 use hh_core::{driver, play, Config, Session};
 
 use crate::experiment::{self, Spec, Variant};
-use crate::Fail;
+use crate::{usage, Fail, BALANCE, BASELINE, HUMANS, LADDER, MILESTONES};
 
 pub const COMMANDS: &[&str] = &["ladder", "experiment", "compare", "balance", "trace", "agents", "speed"];
 
-const LADDER: &str = "experiments/ladder.json";
-const BALANCE: &str = "experiments/balance.json";
-const HUMANS: &str = "configs/sim/humans.json";
-const MILESTONES: &str = "configs/sim/milestones.json";
-
+/// A file's text, the error a plain string (the form `experiment::load` takes).
 fn read(path: &str) -> Result<String, String> {
     std::fs::read_to_string(path).map_err(|e| format!("{path}: {e}"))
-}
-
-fn usage<T>(e: impl Into<String>) -> Result<T, Fail> {
-    Err(Fail::Usage(e.into()))
 }
 
 #[derive(Default)]
@@ -175,27 +168,22 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
             let l = g.load(g.spec(&path)?)?;
             let dir = g.out.clone().unwrap_or(format!("out/experiments/{}", l.spec.name));
             let res = experiment::run(&l, &read, g.threads, Some(&dir)).map_err(Fail::Usage)?;
-            let sums: Vec<_> =
-                res.cells.iter().map(|(c, games)| experiment::summarize(c, games, &l.milestones, &l.models())).collect();
+            let sums = summaries(&res, &l);
             let mut table = experiment::tables(&sums, &l);
             let _ = writeln!(table, "\n{}", speed_line());
             let _ = writeln!(table, "{}", wasm_speed_line());
             experiment::write_out(&dir, &l, &res, &sums, &table).map_err(Fail::Usage)?;
-            let bad = sums.iter().any(|s| !s.replay_ok);
             let out = format!(
                 "{} ({} games, {:.1} s wall)\n\n{table}\nwritten to {dir}/ (report.md, results.json, games.jsonl)\n",
                 l.spec.name,
                 res.cells.iter().map(|c| c.1.len()).sum::<usize>(),
                 res.wall_s
             );
-            if bad {
-                Err(Fail::Check(format!("{out}a game's record did not replay to its state")))
-            } else {
-                Ok(out)
-            }
+            replayed(&[&res], out)
         }
         "compare" => {
-            let a_path = g.config.clone().unwrap_or("configs/baseline.json".into());
+            g.only(cmd, true, true)?;
+            let a_path = g.config.clone().unwrap_or(BASELINE.into());
             let b_path = g.config_b.clone().unwrap_or(a_path.clone());
             if g.config_b.is_none() && g.set.is_empty() {
                 return usage("compare: give --config-b B or --set module.key=value");
@@ -219,9 +207,7 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
             let model = models.first().and_then(|(n, h)| Some((n.as_str(), (*h)?)));
             let mut t = experiment::compare_table(&ra, &rb, &la.milestones, (&a_path, &name_b), model);
             for (label, l, r) in [("A", &la, &ra), ("B", &lb, &rb)] {
-                let sums: Vec<_> =
-                    r.cells.iter().map(|(c, games)| experiment::summarize(c, games, &l.milestones, &l.models())).collect();
-                let _ = write!(t, "\n# Side {label}\n\n{}", experiment::tables(&sums, l));
+                let _ = write!(t, "\n# Side {label}\n\n{}", experiment::tables(&summaries(r, l), l));
             }
             if let Some(dir) = &g.out {
                 std::fs::create_dir_all(dir).map_err(|e| Fail::Usage(format!("{dir}: {e}")))?;
@@ -234,9 +220,7 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
             let path = g.spec.clone().unwrap_or(BALANCE.into());
             let l = g.load(g.spec(&path)?)?;
             let res = experiment::run(&l, &read, g.threads, None).map_err(Fail::Usage)?;
-            let sums: Vec<_> =
-                res.cells.iter().map(|(c, games)| experiment::summarize(c, games, &l.milestones, &l.models())).collect();
-            let lines = experiment::balance(&sums, &l.milestones);
+            let lines = experiment::balance(&summaries(&res, &l), &l.milestones);
             replayed(&[&res], lines.iter().map(|l| format!("{l}\n")).collect())
         }
         "trace" => {
@@ -294,7 +278,7 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
             for (tick, n) in notes {
                 let _ = writeln!(t, "{tick:>6}  # {n}");
             }
-            t.push_str(&crate::objectives::milestones(&sess));
+            t.push_str(&crate::objectives::career_log(&sess));
             let c = &sess.state.career;
             let _ = writeln!(
                 t,
@@ -311,6 +295,7 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
                 Err(Fail::Check(format!("{t}the game's record did not replay to its state")))
             }
         }
+        "agents" | "speed" if !args.is_empty() => usage(format!("{cmd} takes no options")),
         "agents" => Ok(crate::agents::RUNGS.iter().map(|(k, w)| format!("{k:<8} {w}\n")).collect()),
         "speed" => Ok(format!("{}\n", speed_line())),
         _ => usage(format!("unknown command {cmd:?}")),
@@ -403,6 +388,11 @@ pub fn day_lines(rec: &hh_core::Record) -> Result<Vec<(u64, String)>, String> {
     Ok(out)
 }
 
+/// Each cell's summary, in the results' cell order.
+fn summaries(r: &experiment::Results, l: &experiment::Loaded) -> Vec<experiment::Summary> {
+    r.cells.iter().map(|(c, games)| experiment::summarize(c, games, &l.milestones, &l.models())).collect()
+}
+
 /// `out`, or a check failure if any game's record didn't replay to its state.
 fn replayed(results: &[&experiment::Results], out: String) -> Result<String, Fail> {
     let bad = results.iter().flat_map(|r| r.cells.iter()).flat_map(|c| c.1.iter()).any(|g| !g.replay_ok);
@@ -416,7 +406,7 @@ fn replayed(results: &[&experiment::Results], out: String) -> Result<String, Fai
 /// Native engine speed: the golden game (the script reads a view each tick)
 /// and a plain advance of a new game.
 pub fn speed_line() -> String {
-    let Ok(c) = read("configs/baseline.json").and_then(|t| Config::from_json(&t)) else {
+    let Ok(c) = read(BASELINE).and_then(|t| Config::from_json(&t)) else {
         return "engine speed: configs/baseline.json not readable".into();
     };
     let t0 = Instant::now();

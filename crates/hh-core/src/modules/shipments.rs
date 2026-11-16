@@ -89,11 +89,9 @@ pub fn pad_active(g: &GameState, i: usize) -> bool {
 /// config's, times `cargo_capacity_mult`.
 pub fn load_amount(r: &Rules, g: &GameState) -> Fx {
     let mut per = r.p.shipments.load_per_execution;
-    for item in &content().research {
-        if let Some(ResearchEffect::LoadPerExecution { value }) = &item.effect {
-            if g.run.research.contains(&item.id) {
-                per = *value;
-            }
+    for effect in super::research::live_effects(g) {
+        if let ResearchEffect::LoadPerExecution { value } = effect {
+            per = *value;
         }
     }
     per * modifier(r, g, "cargo_capacity_mult")

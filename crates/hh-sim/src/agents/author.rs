@@ -39,7 +39,7 @@ use hh_core::content::Requirement;
 use hh_core::state::Entry;
 use hh_core::{Action, Fx, View};
 
-use super::builder::{Builder, BRIDGES};
+use super::builder::{Builder, BRIDGES, INPUT_BRIDGES};
 use super::{amount, cap, command_cost, command_unlocked, Agent, Knobs, Player};
 
 pub const KNOBS: &[&str] = &[
@@ -270,11 +270,6 @@ impl Author {
             wait_demand: k.get("wait_demand", 0) != 0,
             last_note: String::new(),
         }
-    }
-
-    /// The builder's ranking of unlocked buildings, best first.
-    pub fn ranked(&self, v: &View) -> Vec<(String, i64)> {
-        self.b.ranked(v)
     }
 
     /// Its look gaps (the oracle sets its own and its rollouts').
@@ -606,7 +601,7 @@ impl Author {
             }
             if let Some(b) = target.and_then(|t| v.buildings.iter().find(|b| b.id == t)) {
                 let mut spare = credits - keep;
-                for &(res, cmd) in &BRIDGES[..3] {
+                for &(res, cmd) in INPUT_BRIDGES {
                     let need = b.cost.get(res).copied().unwrap_or(Fx::ZERO) - amount(v, res);
                     let each = command_cost(v, cmd, "credits");
                     if need > Fx::ZERO && each > Fx::ZERO && command_unlocked(v, cmd) {
@@ -641,7 +636,7 @@ impl Author {
             // spare credits go, got the casual author its second processor
             // in run 1 but cost it the first shipment there (4 seeds).
             if let Some(b) = target.and_then(|t| v.buildings.iter().find(|b| b.id == t)) {
-                for &(res, cmd) in &BRIDGES[..3] {
+                for &(res, cmd) in INPUT_BRIDGES {
                     let need = b.cost.get(res).copied().unwrap_or(Fx::ZERO) - amount(v, res);
                     let made = v.buildings.iter().any(|x| x.active > 0 && x.produces.contains_key(res));
                     if need > Fx::ZERO && !made && command_unlocked(v, cmd) {

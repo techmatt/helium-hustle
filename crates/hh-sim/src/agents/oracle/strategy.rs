@@ -32,13 +32,7 @@ impl Strategy {
 /// unavailable now is skipped, not removed. Searched in this order (ties
 /// keep the first).
 pub fn strategies() -> Vec<Strategy> {
-    let trade = Directives {
-        research: Some("trade_promotion".into()),
-        market: true,
-        diversify: true,
-        main_last: true,
-        ..Directives::default()
-    };
+    let trade = trade();
     let row = |label: &str, dir: Directives| Strategy { label: label.into(), dir, funds: false };
     let mut out = vec![
         row("author", Directives::default()),
@@ -66,17 +60,24 @@ pub fn strategy_index(label: &str) -> Option<usize> {
 /// stronger Dream) and then its AI Consciousness project, trading meanwhile.
 pub fn campaign() -> (String, Directives) {
     let d = Directives {
-        research: Some("trade_promotion".into()),
-        market: true,
-        diversify: true,
-        main_last: true,
         sustain: true,
         axis: Some("humanist".into()),
         fund_procs: 2,
         project: Some("ai_consciousness".into()),
-        ..Directives::default()
+        ..trade()
     };
     ("open horizons".into(), d)
+}
+
+/// The `trade` row's goals, which most rows and the campaign build on.
+fn trade() -> Directives {
+    Directives {
+        research: Some("trade_promotion".into()),
+        market: true,
+        diversify: true,
+        main_last: true,
+        ..Directives::default()
+    }
 }
 
 /// Whether the Open Horizons quest is the one under way.

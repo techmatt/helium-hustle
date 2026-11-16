@@ -44,8 +44,7 @@ impl Params {
     }
 }
 
-/// What a command did when a processor ran it.
-pub use crate::state::LineOutcome as Outcome;
+use crate::state::LineOutcome;
 
 /// Empty programs with every processor on the first (a new run).
 pub fn new_programs(r: &Rules, processors: u32) -> Vec<Program> {
@@ -130,9 +129,9 @@ pub fn visible(g: &GameState, c: &Command) -> bool {
 /// scale modifier on both.
 pub fn flows(r: &Rules, g: &GameState, c: &Command) -> (BTreeMap<String, Fx>, BTreeMap<String, Fx>) {
     let mut costs = c.costs.clone();
-    for item in &content().research {
-        if let Some(ResearchEffect::CommandCostOverride { command, resource, value }) = &item.effect {
-            if command == &c.id && g.run.research.contains(&item.id) {
+    for effect in super::research::live_effects(g) {
+        if let ResearchEffect::CommandCostOverride { command, resource, value } = effect {
+            if command == &c.id {
                 costs.insert(resource.clone(), *value);
             }
         }
@@ -151,12 +150,10 @@ pub fn flows(r: &Rules, g: &GameState, c: &Command) -> (BTreeMap<String, Fx>, BT
 /// project's boredom modifiers replace it.
 pub fn boredom_cost(g: &GameState, c: &Command) -> Fx {
     let mut b = c.boredom;
-    for p in &content().projects {
-        if let ProjectReward::BoredomModifiers { command_boredom, .. } = &p.reward {
+    for reward in super::projects::live_rewards(g) {
+        if let ProjectReward::BoredomModifiers { command_boredom, .. } = reward {
             if let Some(v) = command_boredom.get(&c.id) {
-                if super::projects::completed(g, &p.id) {
-                    b = *v;
-                }
+                b = *v;
             }
         }
     }
@@ -164,28 +161,19 @@ pub fn boredom_cost(g: &GameState, c: &Command) -> Fx {
 }
 
 /// Runs one execution of a command (docs/rules/programs.md, *Running a command*).
-pub fn execute(r: &Rules, g: &mut GameState, c: &Command) -> Outcome {
+pub fn execute(r: &Rules, g: &mut GameState, c: &Command) -> LineOutcome {
     if !unlocked(g, c) {
-        return Outcome::Failed;
+        return LineOutcome::Failed;
     }
     let (costs, produces) = flows(r, g, c);
-    let all_capped = !produces.is_empty()
-        && produces
-            .keys()
-            .all(|res| super::economy::cap(r, g, res).is_some_and(|cap| g.amount(res) >= cap));
-    if all_capped {
-        return Outcome::Skipped;
+    if super::economy::all_capped(r, g, &produces) {
+        return LineOutcome::Skipped;
     }
-    let mut frac = Fx::ONE;
-    for (res, &need) in &costs {
-        if need > Fx::ZERO {
-            frac = frac.min(g.amount(res).max(Fx::ZERO) / need);
-        }
-    }
+    let frac = super::economy::input_fraction(g, &costs);
     // An effect command needs its full cost; a pure conversion runs at the
     // fraction its scarcest input allows.
     if frac <= Fx::ZERO || (c.effect.is_some() && frac < Fx::ONE) {
-        return Outcome::Failed;
+        return LineOutcome::Failed;
     }
     for (res, &v) in &costs {
         g.consume(res, v * frac);
@@ -220,7 +208,7 @@ pub fn execute(r: &Rules, g: &mut GameState, c: &Command) -> Outcome {
         Some(CommandEffect::DisruptSpeculators) => super::demand::disrupt(r, g),
         Some(CommandEffect::Fund { axis }) => super::ideology::fund(r, g, axis),
     }
-    Outcome::Ran
+    LineOutcome::Ran
 }
 
 /// Each program in order; each of its processors runs the line under the
@@ -250,11 +238,9 @@ pub fn run(r: &Rules, g: &mut GameState) {
 /// The overclock cap: the base, or a research item's raised cap.
 pub fn overclock_cap(r: &Rules, g: &GameState) -> Fx {
     let mut cap = r.p.programs.overclock_base_cap;
-    for item in &content().research {
-        if let Some(ResearchEffect::OverclockCap { value }) = &item.effect {
-            if g.run.research.contains(&item.id) {
-                cap = cap.max(*value);
-            }
+    for effect in super::research::live_effects(g) {
+        if let ResearchEffect::OverclockCap { value } = effect {
+            cap = cap.max(*value);
         }
     }
     cap

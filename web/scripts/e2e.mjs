@@ -1,17 +1,22 @@
 // Browser check: drives headless Edge or Chrome over the DevTools protocol (no
 // packages) against a served page.
-//   1. A fresh game played through the normal UI only (no debug menu): Boot Sequence,
-//      First Extraction and Proof of Concept, then retirement and into run 2.
-//   2. Every nav panel opens (the gated ones reached with the debug menu's cheats),
-//      a cheated game is marked, and its replay check passes.
-//   3. A program's lines in queue order at 10x and 50x, each speed's days per second, pause, a reload keeping the save, a save from
-//      another revision discarded, debug-menu scenarios.
+//   1. A fresh game through the normal UI only (no debug menu): a build order to the
+//      first pad loaded and launched (Q1 to Q3), retirement, the run summary holding the
+//      clock (a double-click on Continue buys nothing under it), run 2 (known tiles and
+//      resources still shown, not cheated), the career's play log on disk as a bot's.
+//   2. Every panel: cheats reach Research, Projects and Ideologies; all 11 tiles open;
+//      the cheated mark, a jump ahead and the replay check.
+//   3. A program's current-line frame at 10x and 50x, each speed's days per second,
+//      pause, click-to-buy (a green card's text buys, its −/+ and Sell 1 don't, space after
+//      a click pauses and buys nothing, a grey card says why), a reload keeping the save,
+//      a save from another revision discarded, the scenarios and the replay check.
 //   4. The theme: light by default; the Options and debug toggles switch it with no
 //      element moving, and a reload keeps it.
 // Any uncaught page error fails the run.
 //   HH_URL      the page (default http://localhost:5173/)
 //   HH_BROWSER  a browser off the usual paths
 //   HH_PROFILE  browser profile dir (default ../out/e2e-profile, wiped first)
+//   HH_SHOTS    <dir>: save a PNG of the page at each step worth seeing
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -480,10 +485,14 @@ try {
   const n = await noticeText();
   check(/rules revision 999/.test(n) && (await day()) < savedDay, `revision mismatch discards the save: ${n}`);
   await debugMenu();
+  // Paused: a scenario keeps the speed in play, and on a loaded box a day can pass
+  // between the start and the read.
+  await speed(0);
   await setValue('#scenario', 'at_cap');
   await click('#start-scenario');
   await panel('buildings');
-  check((await day()) === 100 && (await owned()) === '20', 'debug menu starts scenario at_cap');
+  const [capDay, capOwned] = [await day(), await owned()];
+  check(capDay === 100 && capOwned === '20', `debug menu starts scenario at_cap (day ${capDay}, ${capOwned} Solar Panels)`);
   await debugMenu();
   await click('#check-replay');
   check(/^Replay ok/.test(await noticeText()), `replay check: ${await noticeText()}`);

@@ -10,7 +10,6 @@
 //! was built, and when.
 
 use std::fmt::Write as _;
-use std::sync::Mutex;
 
 use serde::Serialize;
 
@@ -18,21 +17,11 @@ use crate::career::{self, Build, GameResult, RunResult};
 use crate::human::Humans;
 use crate::milestones::Milestones;
 use crate::playlog::{self, Log};
-use crate::Fail;
-
-const LADDER: &str = "experiments/ladder.json";
+use crate::{read, usage, Fail, HUMANS, LADDER, MILESTONES};
 
 /// A tick gap past which the same purchase counts as diverging in when: the
 /// larger of this and a quarter of the best player's tick.
 pub const WHEN_TICKS: u64 = 50;
-
-fn usage<T>(e: impl Into<String>) -> Result<T, Fail> {
-    Err(Fail::Usage(e.into()))
-}
-
-fn read(path: &str) -> Result<String, Fail> {
-    std::fs::read_to_string(path).map_err(|e| Fail::Usage(format!("{path}: {e}")))
-}
 
 /// A row: the human or a sim player, by name.
 #[derive(Debug, Clone, Serialize)]
@@ -180,13 +169,7 @@ pub fn report(rows: &[Row], div: &Divergence, ms: &Milestones, humans: &Humans, 
         );
     }
     let _ = writeln!(t, "\n## Milestones (`t` career tick, `r` retirements before it)\n");
-    let mut head = String::from("| Player |");
-    let mut rule = String::from("|---|");
-    for m in &ms.milestones {
-        let _ = write!(head, " {} |", m.id);
-        rule.push_str("---|");
-    }
-    let _ = writeln!(t, "{head}\n{rule}");
+    let _ = writeln!(t, "{}", crate::experiment::milestone_head(ms, "| Player |"));
     for r in rows {
         let mut line = format!("| {} |", r.name);
         for m in &ms.milestones {
@@ -204,13 +187,7 @@ pub fn report(rows: &[Row], div: &Divergence, ms: &Milestones, humans: &Humans, 
         t,
         "\n## Real time (the human's from the log's clock; a sim player's projected by a human model)\n"
     );
-    let mut head = String::from("| Player | Clock | Minutes | Min/dec | Run 1 min |");
-    let mut rule = String::from("|---|---|---|---|---|");
-    for m in &ms.milestones {
-        let _ = write!(head, " {} |", m.id);
-        rule.push_str("---|");
-    }
-    let _ = writeln!(t, "{head}\n{rule}");
+    let _ = writeln!(t, "{}", crate::experiment::milestone_head(ms, "| Player | Clock | Minutes | Min/dec | Run 1 min |"));
     for r in rows {
         let clocks: Vec<(String, Option<crate::human::Clock>)> = if r.game.own_clock.is_some() {
             vec![("log".into(), r.game.clock(None))]
@@ -296,8 +273,8 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     let (mut json, mut threads, mut ticks) = (false, 6usize, None::<u64>);
     let mut agents: Option<Vec<String>> = None;
     let mut models: Option<Vec<String>> = None;
-    let mut milestones = "configs/sim/milestones.json".to_string();
-    let mut human_models = "configs/sim/humans.json".to_string();
+    let mut milestones = MILESTONES.to_string();
+    let mut human_models = HUMANS.to_string();
     let mut it = args.iter();
     while let Some(a) = it.next() {
         let mut val = || it.next().cloned().ok_or_else(|| Fail::Usage(format!("{a} needs a value")));
@@ -346,35 +323,23 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     let log = Log::parse(&read(&path)?).map_err(|e| Fail::Usage(format!("{path}: {e}")))?;
     let h = playlog::replay(&log, &ms).map_err(|e| Fail::Check(format!("{path}: replay failed: {e}")))?;
     let span = ticks.unwrap_or(h.game.ticks).max(1);
-    let out: Mutex<Vec<Option<Result<GameResult, String>>>> = Mutex::new(vec![None; agents.len()]);
-    let next = std::sync::atomic::AtomicUsize::new(0);
-    std::thread::scope(|sc| {
-        for _ in 0..threads.clamp(1, agents.len()) {
-            sc.spawn(|| loop {
-                let j = next.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-                if j >= agents.len() {
-                    break;
-                }
-                let game = career::Game {
-                    config: &log.config,
-                    seed: log.seed,
-                    scenario: log.scenario.as_ref(),
-                    agent: crate::agents::named(&agents[j]).1,
-                    retirements: u32::MAX,
-                    max_ticks: span,
-                    milestones: &ms,
-                    objectives: &[],
-                    trace: false,
-                };
-                let r = career::play(&game);
-                out.lock().expect("no panics while held")[j] = Some(r);
-            });
-        }
+    let out = crate::experiment::par_map(agents.len(), threads, |j| {
+        career::play(&career::Game {
+            config: &log.config,
+            seed: log.seed,
+            scenario: log.scenario.as_ref(),
+            agent: crate::agents::named(&agents[j]).1,
+            retirements: u32::MAX,
+            max_ticks: span,
+            milestones: &ms,
+            objectives: &[],
+            trace: false,
+        })
     });
     let mut rows = vec![Row { name: "human".into(), spec: "log".into(), game: h.game.clone() }];
-    for (a, r) in agents.iter().zip(out.into_inner().expect("joined")) {
+    for (a, r) in agents.iter().zip(out) {
         let (name, spec) = crate::agents::named(a);
-        rows.push(Row { name: name.into(), spec: spec.into(), game: r.expect("ran").map_err(Fail::Usage)? });
+        rows.push(Row { name: name.into(), spec: spec.into(), game: r.map_err(Fail::Usage)? });
     }
     let b = 1 + best(&rows[1..]).expect("a player");
     let div = diverge(&rows[0].game, &rows[b].game, &rows[b].name);

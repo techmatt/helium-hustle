@@ -36,6 +36,12 @@ pub fn completed(g: &GameState, id: &str) -> bool {
     g.career.completed_projects.contains(id) || g.run.completed_projects.contains(id)
 }
 
+/// The rewards of every completed project, in content order (the order their
+/// multipliers apply in, so the products floor the same way everywhere).
+pub fn live_rewards(g: &GameState) -> impl Iterator<Item = &'static ProjectReward> + '_ {
+    content().projects.iter().filter(|p| completed(g, &p.id)).map(|p| &p.reward)
+}
+
 /// Fundable now (and not yet complete).
 pub fn unlocked(g: &GameState, p: &Project) -> bool {
     if completed(g, &p.id) {

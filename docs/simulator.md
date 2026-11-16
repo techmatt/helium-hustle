@@ -19,8 +19,7 @@ $S golden                                               # the golden game's fing
 ## Measuring play
 
 The simulator measures balance and pacing: sim players ([agents.md](agents.md)) play whole
-careers in game time, against the targets in [principles.md](principles.md); a human time model
-projects real minutes on the side.
+careers in game time, against the targets in [principles.md](principles.md).
 
 ```sh
 $S ladder                                     # the ladder: experiments/ladder.json (~11 s)
@@ -31,7 +30,7 @@ $S summarize out/experiments/ladder/games.jsonl      # each game's runs, milesto
 $S compare --config-b configs/other.json      # two configs, paired on the same seeds
 $S compare --set boredom.base_cap=500         # a param (or module.variant=name) against the base
 $S balance                                    # the judge's missed targets, as balance: lines (~5 s)
-$S trace --agents author --retirements 2      # one career: actions, the agent's notes (#), milestones
+$S trace --agents author --retirements 2      # one career: actions, the agent's notes (#), the career log
 $S trace --lines                              # ... and each day's program lines run, in queue order
 $S trace --agents oracle --first-seed 2 --at 1500   # the state at a tick: what walls a run in
 $S agents                                     # the ladder's rungs
@@ -42,10 +41,8 @@ $S vs-human C:/Code/gdrive-sync/helium-hustle/playlogs/<career>.jsonl  # the sim
 ```
 
 **A career.** At each look the player reads the view and acts, then says how many ticks to
-skip to its next look (`Agent::next_look`): it looks whenever a decision is useful and skips
-stretches that need none ([agents.md](agents.md#when-it-looks)); a forced retirement wakes it
-early. The game runs those ticks, measured tick by tick, and the career ends at the spec's
-`retirements` (or `max_ticks`). Results are ticks and **decisions** (looks that applied an
+skip to its next look (`Agent::next_look`, [agents.md](agents.md#when-it-looks)); a forced
+retirement wakes it early. The career ends at the spec's `retirements` (or `max_ticks`). Results are ticks and **decisions** (looks that applied an
 action). Real time is not part of play: a **human model** (`configs/sim/humans.json`,
 [principles.md](principles.md#players-and-human-models)) maps a career's looks to real minutes
 afterwards, so the same game reads under any model.
@@ -56,8 +53,7 @@ career with the same `Meter` (`career.rs`) as a sim player's (a decision: a tick
 human applied actions), so its tables are the ladder's for one human row; its real time is
 the log's wall clock (each tick reached at its share of the time between logged points;
 time paused before a tick counts toward it; time with the page closed doesn't count). Then
-where the time went: sessions, minutes played, hidden and closed, pauses, real minutes and
-ticks at each speed, actions applied and refused, panels opened. `--json` prints the
+where the time went (sessions, hidden and closed, pauses, each speed, actions, panels). `--json` prints the
 career's `GameResult` (the `games.jsonl` line a sim career writes) with the time use.
 
 ### Against a human
@@ -84,7 +80,7 @@ Grid options (`ladder`, `experiment`, `compare`, `balance`, `trace`) override th
 table), `--seeds N`, `--first-seed S`, `--retirements N`, `--max-ticks N`, `--config F`,
 `--set module.key=value` (repeatable; added to every variant), `--threads T` (default 6),
 `--human-models F`, `--milestones F`; `--out DIR` for `ladder`, `experiment` (default
-`out/experiments/<name>/`) and `compare`. `compare` and `balance` default to
+`out/experiments/<name>/`) and `compare`. `compare`, `balance` and `trace` default to
 `experiments/balance.json`'s grid; `compare` drops the spec's variants (side A is the plain
 config, side B `--config-b` and the `--set`s). `trace` plays the first cell's first seed.
 
@@ -120,24 +116,23 @@ sides' tables; `--out` writes `compare.md`.
 | Cmd boredom | Boredom's share from commands net of Dream, of all boredom gained (the rest is daily growth). |
 | Idle | Share of ticks with nothing to buy: no building and no research affordable. |
 | Piles at cap | Resources at their cap, as a share of ticks (top three, 5% or more). |
-| Overflow lost | Production lost to caps, as a share of production (top three). |
+| Overflow lost | Production lost to caps, as a share of production (top three, 5% or more). |
 | Ticks/s | Simulated ticks per wall second, agent and measurement included. |
 | Milestones | Per milestone, medians: career ticks (`t`), retirements before it (`r`; it fell in run r+1) and that run's day (`d`); `k/n` when only k of n seeds reached it. |
-| Run credits, Peak cr/day, Ships/run | Credits earned and shipments a finished run (means); each career's best 100-day credit rate (median over seeds). |
+| Run credits, Peak cr/day, Ships/run | Credits earned and shipments a finished run (means); each career's best credit rate over the milestones' longest `credit_rate` window, 100 days (median over seeds). |
 | Real time | With `humans`: per player and model, run 1's real minutes (median), a finished run's (mean), minutes a decision, and each milestone's minutes from the career's start (median). |
 | Run-1 objectives | With a spec's `objectives`: each objective's median run-1 day against its Godot window (`in`, `early`, `late`). |
 | Never built, never used | Buildings never owned and commands never run in any seed's career. |
 
-After the tables, the engine's speed natively and, with `crates/hh-wasm/pkg` built, in wasm.
+After `ladder`'s and `experiment`'s tables, the engine's speed natively and, with `crates/hh-wasm/pkg` built, in wasm.
 
 **Costs** (this machine, idle): the ladder (4 players × 3 seeds, careers of 20 retirements)
-about 11 s on 6 threads; `ceiling` about 20 minutes, set by the oracle's careers (about 30
-ticks a second, ~35,000 ticks a career: [agents.md](agents.md#the-oracle-oracle)); `balance`
+about 11 s on 6 threads; `ceiling` about 20 minutes, set by the oracle's careers
+([agents.md](agents.md#the-oracle-oracle)); `balance`
 (4 careers) about 5 s; `vs-human` on a 1,600-tick log a second. Other careers play
 4,000-20,000 ticks a second, slower the more often their
 player looks (random and the author every 5-10 ticks, the casual author every ~130): a view
-costs ~150-200 µs and an applied action invalidates it, a state copy ~15 µs, so a rollout
-that plays an agent is view-bound.
+(~150-200 µs) costs ten state copies, so a rollout that plays an agent is view-bound.
 
 ### Seeds
 
@@ -145,7 +140,7 @@ The **seed ledger**: a read that must not be tuned on (a baseline, a confirming 
 fresh seeds: `python scripts/seeds.py next N` prints the next N; `--take` also moves *Next
 free* past them (every seed below it counts as spent). The item records its range here and in
 its write-up. Before freezing a long read, every player and knob changed since its last full
-dev career plays one (011 spent a 75-minute read on an untried profile). **Dev seeds** 1-3 are for development, on/off checks and the standing specs
+dev career plays one. **Dev seeds** 1-3 are for development, on/off checks and the standing specs
 (`ladder.json`, `ceiling.json`, `balance.json` start at 1).
 
 Spent: 1-3 and 100-103 (005, development), 1000-1004 (005, the rev-2 baseline), 2000-2003
@@ -168,12 +163,12 @@ Next free: 3016
 | `--json` | off | One JSON line: hashes, fingerprint, `replay_ok`, the state. |
 
 `run` prints the tick, the run and its day, each resource (amount, cap, change over the
-next day), the buildings owned, the career's milestones (quests, achievements, projects,
-research, retirements, each with its tick, run and day), the final fingerprint and the
+next day), the buildings owned, the career log (`career log (tick, run, day):` quests,
+achievements, projects, research, retirements), the final fingerprint and the
 replay check: every game is replayed from its record and must equal the final state. Exit
 codes: 0 ok, 1 a failed replay or record check, 2 bad arguments or a bad config.
 
-`replay` prints each record's day and fingerprint, warns on another rules revision or a
+`replay` prints each record's final tick and fingerprint (`tick N, fingerprint F`), warns on another rules revision or a
 fingerprint that differs, and exits 1 on any warning or failure.
 
 ## Policies
@@ -184,13 +179,9 @@ view and act only through actions.
 
 - **`greedy`** buys every affordable building in content order. Under Arc 1 it earns
   nothing (no program runs), so from a new game it buys nothing.
-- **`script`** is a fixed Arc 1 opening, one decision a day: put free processors on Program
-  1; buy the next building in its build order (`driver.rs`), switching to a Solar Panel when the next building's energy upkeep would leave
-  less than a Cloud Compute spare, to a Storage Depot when a price exceeds a cap, and buying
-  land when short; then set Program 1 to one command: launch a full fuelled pad, buy fuel
-  for a full pad, load He-3, bridge the next building's missing titanium, regolith or ice
-  with a Buy command, else Sell Cloud Compute. It never researches, funds projects or
-  retires voluntarily.
+- **`script`** is a fixed Arc 1 opening, one decision a day (build order, Program 1's one
+  command and when it switches: `driver.rs`); it never researches, funds projects or retires
+  voluntarily.
 
 ## `objectives`
 
@@ -198,10 +189,7 @@ Plays one of the Godot optimizer's scenario files (`reference/scenarios/*.json`)
 script, limited to the scenario's available buildings and commands (Godot ids mapped to
 the port's), from a new game until the first run's forced retirement. It prints each
 objective's tick against its target window (`in`, `early`, `late`, `not hit`), when the
-scenario's end condition was met, and the milestones. Objective types: `building` (with
+scenario's end condition was met, and the career log. Objective types: `building` (with
 `count`), `resource` (stockpile `threshold`), `event` `shipment_complete` and
-`boredom_N`. A run takes about 0.2 s.
-
-Seed 1 (`run1_fresh.json`): QPower at tick 52, QExtract 157, the first shipment (QShipment)
-303, QAutomate 789, forced retirement 1572. The opening has no randomness, so other seeds
-match it until the first shipment.
+`boredom_N`. A run takes about 0.2 s. The opening has no randomness, so every seed plays the
+same until the first shipment.

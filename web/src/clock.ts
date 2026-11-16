@@ -8,7 +8,7 @@ export const SPEEDS = [0, 1, 3, 10, 50, 200] as const;
 export type Speed = (typeof SPEEDS)[number];
 
 /** Ticks per second at 1x. */
-export const TICKS_PER_SECOND = 1;
+const TICKS_PER_SECOND = 1;
 /** How often the clock asks to wake (browsers stretch this in background tabs). */
 const WAKE_MS = 100;
 

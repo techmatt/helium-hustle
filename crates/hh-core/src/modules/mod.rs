@@ -70,8 +70,8 @@ pub(crate) const fn param(
     ParamDef { name, kind, range, doc }
 }
 
-/// Every module, in the order the tick first plays them (`rules.rs` has the
-/// full order).
+/// Every module. This order only orders config checks and their errors; the tick
+/// plays modules in the fixed order of `Rules::tick` (`rules.rs`).
 pub static REGISTRY: &[&ModuleDef] = &[
     &boredom::DEF,
     &economy::DEF,

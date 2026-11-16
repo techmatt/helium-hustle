@@ -23,7 +23,7 @@ fn a_saved_record_replays() {
     let rec = format!("{dir}/scenario-record.json");
     run(&args(&["run", "--config", &c, "--scenario", "rich", "--ticks", "50", "--policy", "greedy", "--save", &rec])).unwrap();
     let out = run(&args(&["replay", &rec])).unwrap();
-    assert!(out.contains("day 50"), "{out}");
+    assert!(out.contains("tick 50"), "{out}");
 }
 
 #[test]
@@ -347,6 +347,13 @@ fn empty_lists_and_stray_options_are_usage_errors() {
     let mut a = grid("trace", "author", &[]);
     a.extend(["--out".to_string(), "x".to_string()]);
     assert!(matches!(run(&a), Err(Fail::Usage(_))), "{a:?}");
+    let mut a = grid("compare", "author", &[]);
+    a.push("--lines".to_string());
+    assert!(matches!(run(&a), Err(Fail::Usage(_))), "{a:?}");
+    for cmd in ["agents", "speed"] {
+        let a = args(&[cmd, "--threads", "2"]);
+        assert!(matches!(run(&a), Err(Fail::Usage(_))), "{a:?}");
+    }
     let mut a = grid("balance", "author", &[]);
     a.push("--lines".into());
     assert!(matches!(run(&a), Err(Fail::Usage(_))), "{a:?}");

@@ -49,23 +49,24 @@ pub fn visible(g: &GameState, item: &Research) -> bool {
 pub fn price(r: &Rules, g: &GameState, item: &Research) -> Fx {
     let mut c = item.cost * super::ideology::discount(r, g, "rationalist");
     if g.career.researched.contains(&item.id) {
-        for p in &content().projects {
-            if let ProjectReward::ResearchDiscount { mult } = &p.reward {
-                if super::projects::completed(g, &p.id) {
-                    c = c * *mult;
-                }
+        for reward in super::projects::live_rewards(g) {
+            if let ProjectReward::ResearchDiscount { mult } = reward {
+                c = c * *mult;
             }
         }
     }
     c
 }
 
+/// The effects of every research item done this run, in content order (the order
+/// their multipliers apply in, so the products floor the same way everywhere).
+pub fn live_effects(g: &GameState) -> impl Iterator<Item = &'static ResearchEffect> + '_ {
+    content().research.iter().filter(|item| g.run.research.contains(&item.id)).filter_map(|item| item.effect.as_ref())
+}
+
 /// A research item revealing exact demand is done this run.
 pub fn reveals_demand(g: &GameState) -> bool {
-    content()
-        .research
-        .iter()
-        .any(|item| matches!(item.effect, Some(ResearchEffect::RevealDemand)) && g.run.research.contains(&item.id))
+    live_effects(g).any(|e| matches!(e, ResearchEffect::RevealDemand))
 }
 
 /// Why `item` can't be bought now, if it can't.

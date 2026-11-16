@@ -7,10 +7,11 @@
 //!   "modules": { "<module>": { "variant": "<name>", "params": { "<param>": "<value>" } } } }
 //! ```
 //!
-//! **Every parameter must be given**: no defaults in code. Unknown, missing and
-//! wrong-kind keys are errors naming them (all of them, not just the first).
-//! `Fx` values are decimal strings (`"1.15"`), integers JSON integers.
-//! Modules play in registry order (`modules::REGISTRY`), not config order.
+//! **Every parameter must be given**: no defaults in code. Unknown, missing,
+//! wrong-kind and out-of-range keys are errors naming them (all of them, not just
+//! the first). `Fx` values are decimal strings (`"1.15"`), integers JSON integers.
+//! The tick plays modules in the fixed order of `Rules::tick` (`rules.rs`),
+//! whatever the config or registry order.
 
 use serde::{Deserialize, Serialize};
 use serde_json::Value;

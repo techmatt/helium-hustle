@@ -1,11 +1,10 @@
 // The Buildings panel: the Land bar, then a collapsible section per category of cards.
 
-import { useEffect, useRef, useState } from 'preact/hooks';
 import type { BuildingView, View } from '../engine';
 import { capitalize, num } from '../format';
-import { act, actAll, justMoved, seen, store, type Store } from '../store';
+import { act, actAll, seen, store, type Store } from '../store';
 import { buildingArt } from './buildingArt';
-import { AXIS_COLORS, CostRows, FlowLines, Section, Square, freshClass, name } from './common';
+import { AXIS_COLORS, CostRows, FlowLines, Section, Square, cardButton, freshClass, name, navShown, useHint } from './common';
 
 /** `?all-cards` in the URL (the QA checker's): every building's card, revealed or not, so
  * every card picture can be looked at. Display only; off in normal use. */
@@ -17,7 +16,7 @@ export function Buildings({ s }: { s: Store }) {
   const shown = v.buildings.filter((b) => b.visible || b.owned > 0 || ALL_CARDS);
   // Categories in content order of their first building.
   const categories = [...new Set(v.buildings.map((b) => b.category))];
-  const tags = v.nav.some((t) => t.id === 'ideologies' && t.visible);
+  const tags = navShown(v, 'ideologies');
   return (
     <div class="panel" data-panel="buildings">
       <h2>Buildings</h2>
@@ -66,17 +65,10 @@ function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: boolean; 
     const now = store.view.buildings.find((x) => x.id === b.id);
     if (now) act({ type: 'set_active', building: b.id, active: Math.max(0, Math.min(now.owned, now.active + by)) });
   };
-  // The card is the Buy button: a click anywhere but its own controls buys one, Shift
-  // buys up to ten. Each buy reads the engine's view now, not this render's, so two quick
-  // clicks buy two and a double-click buys what its two clicks would, never more.
-  const [hint, setHint] = useState<string | null>(null);
-  const hintTimer = useRef<number | undefined>(undefined);
-  const showHint = (text: string) => {
-    setHint(text);
-    clearTimeout(hintTimer.current);
-    hintTimer.current = window.setTimeout(() => setHint(null), 1800);
-  };
-  useEffect(() => () => clearTimeout(hintTimer.current), []);
+  // The card is the Buy button (`cardButton`): a click buys one, Shift up to ten. Each buy
+  // reads the engine's view now, not this render's, so two quick clicks buy two and a
+  // double-click buys what its two clicks would, never more.
+  const [hint, showHint] = useHint();
   const buy = (times: number) => {
     for (let i = 0; i < times; i++) {
       const now = store.view.buildings.find((x) => x.id === b.id);
@@ -87,15 +79,6 @@ function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: boolean; 
       if (!act(now.buy)) return;
     }
   };
-  const onClick = (e: MouseEvent) => {
-    // The card's own controls (−/+, Sell) keep their jobs.
-    if ((e.target as HTMLElement).closest('button, a, input, select, textarea, label')) return;
-    // The second click of a double-click on a story's OK or the summary's Continue lands
-    // on whatever slid under the pointer: not a buy. (Pointer clicks only: a click with
-    // no pointer behind it, detail 0, was aimed.)
-    if (e.detail > 0 && justMoved()) return;
-    buy(e.shiftKey ? 10 : 1);
-  };
   return (
     <div
       class={`card building ${b.affordable ? 'can-buy' : 'cannot-buy'}${freshClass(fresh, key)}`}
@@ -103,25 +86,10 @@ function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: boolean; 
       data-owned={b.owned}
       data-short={b.short.join(' ')}
       data-testid={`buy-${b.id}`}
-      role="button"
-      tabIndex={0}
       aria-disabled={!b.affordable}
       title={b.affordable ? 'Click to build one (Shift-click: up to 10)' : undefined}
       onMouseEnter={() => seen(key)}
-      onClick={onClick}
-      // A mouse press neither focuses the card nor selects text: focus would turn the next
-      // space (the pause key) into a second buy, and a double- or Shift-click would select
-      // text (its clicks still buy). Tab still focuses it for the keyboard.
-      onMouseDown={(e) => {
-        if (!(e.target as HTMLElement).closest('button, a, input, select, textarea, label')) e.preventDefault();
-      }}
-      onKeyDown={(e) => {
-        if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {
-          e.preventDefault();
-          e.stopPropagation(); // the space key is also pause
-          buy(e.shiftKey ? 10 : 1);
-        }
-      }}
+      {...cardButton(buy, 10)}
     >
       <div class="card-head">
         <h3>{b.name}</h3>
@@ -143,7 +111,7 @@ function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: boolean; 
           <div class="effects">
             <FlowLines v={v} amounts={b.produces} sign={1} />
             <FlowLines v={v} amounts={b.upkeep} sign={-1} />
-            <FlowLines v={v} amounts={b.stores} sign={1} suffix=" storage" />
+            <FlowLines v={v} amounts={b.stores} sign={1} suffix=" cap" />
             <FlowLines v={v} amounts={b.grants} sign={1} suffix="" />
           </div>
         </div>

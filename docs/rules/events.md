@@ -67,8 +67,9 @@ unlocks at the start of each run, so an unlocked building, panel or project stay
 after a retirement from day 0. One-off events still fire again during the run once their
 trigger and condition hold.
 
-`category` decides quest or one-off. `silent`, `title`, `summary` and `body` are text the
-engine doesn't read (body placeholders like `{rate}` are left as is).
+`category` decides quest or one-off. `silent` keeps a one-off event out of the activity
+feed and the view's event list (display only). `title`, `summary` and `body` are text no
+rule reads (the view fills a body's `{rate}` with the phase's boredom per day).
 
 **Activity feed** (display: no rule reads it). The run keeps a feed of what happened, by
 day: each completed quest, earned achievement, completed project and bought research (the
@@ -104,8 +105,11 @@ boredom phases 2 to 5).
 - Conflict: Dream's falling effectiveness. The boredom phase 3 to 5 events' text says Dream
   drops to 20/15/10%; the ruling is a flat Dream ([dream.md](dream.md)), so these events
   unlock nothing and their text stays as placeholder.
-- Conflict: Lunar Cartography and Deep Core Survey are `event_unlocked` projects, but no
-  event enables them: unreachable (candidate).
+- Conflict: Lunar Cartography and Deep Core Survey are unreachable ([projects.md](projects.md#port-notes)).
+- Candidate: Open Horizons (Q6). The ten years are reachable with Dream, but no player has
+  earned 100,000 credits in one run (its `credits_earned` sub-objective counts this run's),
+  so the quest, and milestone M14, is never met: the best run so far made 90,306 credits in
+  3,654 days ([011's write-up](../../experiments/results/011_oracle_planner/README.md)).
 - Conflict: Godot's milestones (`game_config.milestones`) were removed per the handoffs;
   not ported.
 - Candidate: quests ignore a `game_start` run filter, so the chain picks up where the

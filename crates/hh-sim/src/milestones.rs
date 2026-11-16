@@ -123,6 +123,9 @@ fn check(w: &When) -> Result<(), String> {
             Err(format!("unknown research {research}"))
         }
         When::Quest { quest } if !c.events.iter().any(|x| x.id == *quest) => Err(format!("unknown quest {quest}")),
+        When::ProjectCompleted { tier } if !c.projects.iter().any(|p| p.tier == *tier) => {
+            Err(format!("unknown project tier {tier}"))
+        }
         When::CreditRate { days: 0, .. } => Err("credit_rate days must be at least 1".into()),
         When::AllOf { of } => of.iter().try_for_each(check),
         _ => Ok(()),

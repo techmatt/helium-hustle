@@ -46,6 +46,10 @@ The checker that finds most of these is `web/scripts/qa.mjs` ([web/README.md](..
 | 34 | In a tight Resources table a one-word name ("Propellant", "Processors") wrapped below its color swatch, leaving the swatch alone on a line | The swatch stays with the name's first word | qa *overflow* (swatch alone on its line) |
 | 35 | The qa checker never audited Projects or Ideologies (its late phase ran on a fresh scenario whose quests can't open them) | The late phase plays on the pass's own career | |
 | 36 | Under automation (`bot_` careers) Options named the synced play-log folder while the lines went to `out/playlogs/`; the qa checker looked for the log there | The page asks the server for a bot's folder | qa *play log* |
+| 37 | Research cards had the green "can buy" outline, but only their Research button researched (Matt's ruling) | The card is the button, as a building card is (`cardButton` in `common.tsx`), with a hint when it can't | e2e *research*; qa late phase |
+| 38 | Late in a career at 1280 px the left column scrolled under 12 nav tiles (Matt's ruling) | Past nine tiles the nav turns compact: icon beside the name, columns of at least 120 px | |
+| 39 | At 1280 px the right column cut program line names short (Matt's ruling) | `--right` is 30 px wider | qa *overflow* |
+| 40 | "+100 Boredom storage" read as storing boredom (Matt's ruling) | Every card stores line reads "cap" ("+100 Boredom cap") | |
 
 ## Deferred (Matt's decisions)
 
@@ -59,12 +63,8 @@ The checker that finds most of these is `web/scripts/qa.mjs` ([web/README.md](..
 | Building cards show content rates, before modifiers and overclocks, without saying so | Effective per-copy rates in the view, or a "base" label |
 | Adversaries' dumps are counted from the 50 kept activity lines (now labeled "Recent dumps") | A per-run counter in run state (a state change: its own item) |
 | A save holds every action: at roughly 40,000 actions (tens of hours) it outgrows localStorage; the failure is now shown | Keep the record in the play log and only state plus a count in the save, or compress |
-| Research cards share the building cards' green "can buy" outline, but only their Research button buys: a click on the green card does nothing | Make a green research card click-to-research like buildings (the same card code), or drop the outline there |
-| Late in a career at 1280 px the left column (270 px) holds 12 tiles, 12 resources and the ideology rows: it scrolls, and names like "Circuit Boards" wrap to two lines | A wider left minimum (~300 px), or smaller nav tiles once there are more than 9; I'd shrink the tiles (icon beside the name) |
-| At 1280 px the right column (340 px, its scrollbar's room now always kept, #28) cuts most program line names short ("Sell Cloud Compute …", whole in the tooltip) | Widen `--right`'s minimum by ~30 px from the middle column, or move the line's −/+/× under a hover; I'd widen |
 | At 10x a late timer wake runs two days in one redraw and the frame skips a line (the e2e's "pointer walks the queue in order" failed once with a sweep running beside it) | Fine for a person; if it matters, frame from the days the redraw actually ran, not the nominal speed |
-| A card's storage line says "+100 Boredom storage" for the Recreation Dome (it raises the boredom cap; "storing boredom" reads as bad) | Label stores lines "cap" ("+100 Boredom cap", "+50 Energy cap"), matching the Resources table's amount / cap |
-| A building's "Output at cap" can sit beside its resource reading 0 (seen: 8 Excavators, Regolith 0 / 50, seed 32 run 2 day 493 at 50x): the stall is judged at the start of the day's production (`economy.rs` `resolve`), the amount shown at the day's end | A rules item: find what drew the stock from cap to 0 in a day, and whether the stall should be judged after consumption |
+| A building's "Output at cap" can sit beside its resource reading 0 (seen: 8 Excavators, Regolith 0 / 50, seed 32 run 2 day 493 at 50x): the stall is judged at the start of the day's production (`economy.rs` `resolve`), the amount shown at the day's end | A rules item, left for the balance work (Matt): find what drew the stock from cap to 0 in a day, and whether the stall should be judged after consumption |
 | The view's `{rate}` is display text built in `hh-core` (`view.rs`, `event_story`) | Fine as is; a general text-template step if more placeholders come |
 
 ## Won't fix

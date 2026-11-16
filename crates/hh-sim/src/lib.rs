@@ -51,11 +51,18 @@ pub enum Fail {
     Check(String),
 }
 
-fn usage<T>(e: impl Into<String>) -> Result<T, Fail> {
+/// Default files, relative to the repo root (the CLI runs from there).
+pub(crate) const BASELINE: &str = "configs/baseline.json";
+pub(crate) const MILESTONES: &str = "configs/sim/milestones.json";
+pub(crate) const HUMANS: &str = "configs/sim/humans.json";
+pub(crate) const LADDER: &str = "experiments/ladder.json";
+pub(crate) const BALANCE: &str = "experiments/balance.json";
+
+pub(crate) fn usage<T>(e: impl Into<String>) -> Result<T, Fail> {
     Err(Fail::Usage(e.into()))
 }
 
-fn read(path: &str) -> Result<String, Fail> {
+pub(crate) fn read(path: &str) -> Result<String, Fail> {
     std::fs::read_to_string(path).map_err(|e| Fail::Usage(format!("{path}: {e}")))
 }
 
@@ -77,7 +84,7 @@ struct Opts {
 
 fn parse(args: &[String]) -> Result<Opts, Fail> {
     let mut o = Opts {
-        config: "configs/baseline.json".into(),
+        config: BASELINE.into(),
         seed: 0,
         ticks: 1000,
         ticks_given: false,
@@ -170,7 +177,7 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
             objectives::run(path, &read(path)?, &c, o.seed, ticks).map_err(Fail::Usage)
         }
         "golden" => {
-            let c = load_config("configs/baseline.json")?;
+            let c = load_config(BASELINE)?;
             let mut s = Session::new(&c, hh_core::driver::GOLDEN_SEED, None).map_err(Fail::Usage)?;
             play(&mut s, hh_core::driver::GOLDEN_TICKS, hh_core::driver::GOLDEN_POLICY);
             Ok(format!(
@@ -236,7 +243,7 @@ fn run_game(o: &Opts) -> Result<String, Fail> {
         for b in v.buildings.iter().filter(|b| b.owned > 0) {
             let _ = writeln!(t, "  {:<20} {} owned, {} active", b.name, b.owned, b.active);
         }
-        t.push_str(&objectives::milestones(&s));
+        t.push_str(&objectives::career_log(&s));
         let _ = writeln!(t, "fingerprint {}", s.state.fingerprint());
         let _ = writeln!(t, "replay {}", if replay_ok { "ok" } else { "MISMATCH" });
         t
@@ -252,8 +259,8 @@ fn run_game(o: &Opts) -> Result<String, Fail> {
 /// human's play log and measures it as the ladder measures an agent.
 fn playlog_cmd(args: &[String]) -> Result<String, Fail> {
     let (mut path, mut json) = (None, false);
-    let mut milestones = "configs/sim/milestones.json".to_string();
-    let mut humans = "configs/sim/humans.json".to_string();
+    let mut milestones = MILESTONES.to_string();
+    let mut humans = HUMANS.to_string();
     let mut it = args.iter();
     while let Some(a) = it.next() {
         match a.as_str() {
@@ -298,7 +305,7 @@ fn playlog_cmd(args: &[String]) -> Result<String, Fail> {
 /// `hh-sim summarize GAMES.jsonl [--milestones F]`: a read's per-game tables.
 fn summarize_cmd(args: &[String]) -> Result<String, Fail> {
     let mut path = None;
-    let mut milestones = "configs/sim/milestones.json".to_string();
+    let mut milestones = MILESTONES.to_string();
     let mut it = args.iter();
     while let Some(a) = it.next() {
         match a.as_str() {
@@ -325,7 +332,7 @@ fn replay(paths: &[String]) -> Result<String, Fail> {
     for p in paths {
         match Record::from_json(&read(p)?).and_then(|r| r.replay()) {
             Ok((g, warnings)) => {
-                let _ = writeln!(out, "{p}: day {}, fingerprint {}", g.tick, g.fingerprint());
+                let _ = writeln!(out, "{p}: tick {}, fingerprint {}", g.tick, g.fingerprint());
                 for w in &warnings {
                     let _ = writeln!(out, "  warning: {w}");
                 }

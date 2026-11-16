@@ -5,15 +5,18 @@ import { SPEEDS } from '../clock';
 import { capitalize, num, perDay } from '../format';
 import { navHasNews, seen, setSpeed, type Store } from '../store';
 import { Horizon } from './art';
-import { Section, Square } from './common';
+import { Section, Square, navShown } from './common';
 
 export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: string) => void }) {
   const v = s.view;
   const tiles = v.nav.filter((t) => t.visible);
+  // Past nine tiles they turn compact (icon beside the name), so a late career's column
+  // still fits a 1280 px window without scrolling.
+  const compact = tiles.length > 9;
   return (
     <aside class="col-left">
       <h1 class="title">Helium Hustle</h1>
-      <nav class="nav-grid" aria-label="Panels">
+      <nav class={`nav-grid${compact ? ' compact' : ''}`} aria-label="Panels">
         {tiles.map((t) => (
           <button
             type="button"
@@ -25,7 +28,7 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
               open(t.id);
             }}
           >
-            <Square id={t.id} size={34} />
+            <Square id={t.id} size={compact ? 18 : 34} />
             <span>{t.name}</span>
             {navHasNews(t.id) && <span class="dot" title="Something new" />}
           </button>
@@ -95,7 +98,7 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
           </tbody>
         </table>
       </Section>
-      {v.nav.some((t) => t.id === 'ideologies' && t.visible) && (
+      {navShown(v, 'ideologies') && (
         <Section title="Ideology" testid="ideology-summary">
           <table class="res-table">
             <tbody>

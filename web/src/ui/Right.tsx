@@ -231,7 +231,7 @@ function tone(a: Activity): 'good' | 'bad' | 'info' {
   return 'good';
 }
 
-export function describe(v: View, a: Activity): string {
+function describe(v: View, a: Activity): string {
   switch (a.kind) {
     case 'shipment':
       return `${name(v, a.id)} × ${num(a.quantity ?? '0')} → ${num(a.amount ?? '0')} credits`;

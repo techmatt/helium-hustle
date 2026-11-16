@@ -18,7 +18,7 @@ use crate::fx::Fx;
 use crate::modifiers::modifier;
 use crate::modules::*;
 use crate::rules::Rules;
-use crate::state::{Activity, Entry, GameState, LastRun, LineOutcome, LogEntry, Overclock, Stall};
+use crate::state::{Activity, Entry, GameState, LastRun, LineOutcome, LogEntry, Overclock, RunStats, Stall};
 
 /// Text borrowed from the embedded content.
 pub type Text = &'static str;
@@ -253,7 +253,7 @@ pub struct RivalView {
     pub id: Text,
     pub name: Text,
     pub good: Text,
-    /// Dumps this run so far (from the activity feed's kept lines).
+    /// Dumps among the activity feed's kept lines (recent ones, not the run's total).
     pub dumps_seen: u32,
 }
 
@@ -307,16 +307,22 @@ pub struct NextRunView {
     pub ideology: Vec<AxisView>,
 }
 
-/// This run's running totals.
-#[derive(Debug, Clone, Serialize)]
-pub struct RunStatsView {
-    pub credits_earned: Fx,
-    pub shipments: u32,
-    pub buildings_built: u32,
-    pub research_completed: u32,
-    pub peak_energy: Fx,
-    /// Everything produced this run, by resource (before caps).
-    pub produced: BTreeMap<String, Fx>,
+/// Readers the play policies share (`driver.rs`, `hh-sim`'s agents).
+impl View {
+    /// A resource's amount (zero for an unknown id).
+    pub fn amount(&self, id: &str) -> Fx {
+        self.resources.iter().find(|r| r.id == id).map_or(Fx::ZERO, |r| r.amount)
+    }
+
+    /// How many of a building are owned (zero for an unknown id).
+    pub fn owned(&self, id: &str) -> u32 {
+        self.buildings.iter().find(|b| b.id == id).map_or(0, |b| b.owned)
+    }
+
+    /// What one run of a command costs in `res` (zero if nothing).
+    pub fn command_cost(&self, id: &str, res: &str) -> Fx {
+        self.commands.iter().find(|c| c.id == id).and_then(|c| c.costs.get(res).copied()).unwrap_or(Fx::ZERO)
+    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -362,7 +368,8 @@ pub struct View {
     pub next_run: NextRunView,
     /// The last finished run's summary, if any.
     pub last_run: Option<LastRun>,
-    pub run_stats: RunStatsView,
+    /// This run's running totals (the state's own).
+    pub run_stats: RunStats,
     pub boredom: BoredomView,
     /// Unlocked nav panels (retirement, projects, ideologies).
     pub panels: Vec<String>,
@@ -399,7 +406,6 @@ fn names() -> &'static BTreeMap<Text, Text> {
     })
 }
 
-const TIERS: &[&str] = &["LOW", "MEDIUM", "HIGH", "VERY HIGH"];
 
 fn progress(p: Option<(Fx, Fx)>) -> Option<ProgressView> {
     p.map(|(now, target)| ProgressView { now, target })
@@ -543,7 +549,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             Some(MarketView {
                 name: c.resource(&good).map_or(good.clone(), |x| x.name.clone()),
                 demand: aware.then_some(m.demand),
-                tier: TIERS[demand::tier(r, m.demand).min(TIERS.len() - 1)],
+                tier: demand::TIERS[demand::tier(r, m.demand)],
                 speculators: m.speculators_seen.then_some(m.speculators),
                 good,
             })
@@ -721,14 +727,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         },
         next_run,
         last_run: g.career.last_run.clone(),
-        run_stats: RunStatsView {
-            credits_earned: g.run.stats.credits_earned,
-            shipments: g.run.stats.shipments,
-            buildings_built: g.run.stats.buildings_built,
-            research_completed: g.run.stats.research_completed,
-            peak_energy: g.run.stats.peak_energy,
-            produced: g.run.stats.produced.clone(),
-        },
+        run_stats: g.run.stats.clone(),
         boredom: BoredomView {
             amount: g.amount(economy::BOREDOM),
             cap: boredom::cap(r, g),
@@ -752,7 +751,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 },
             })
             .collect(),
-        can_retire: g.run.enabled_panels.contains(career::RETIREMENT_PANEL),
+        can_retire: career::retire_blocker(g).is_none(),
         log: g.career.log.clone(),
         activity: g.run.activity.clone(),
         names: names(),

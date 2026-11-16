@@ -12,8 +12,8 @@ step of [the day](README.md#the-day); voluntary retirement happens between days.
 
 - *Run (resets):* the run's day, every resource (boredom included), buildings, land bought,
   programs, launch pads, loading priority, markets and speculators, bursts and rival
-  schedules, overclocks, research bought, ideology scores, strategic project rates, progress
-  and completions, events fired and the buildings, panels and projects they enabled, the
+  schedules, overclocks, research bought, ideology scores, every project's funding rates (Long-Term
+  ones too), strategic project progress and completions, events fired and the buildings, panels and projects they enabled, the
   boredom phase, run stats.
 - *Career (persists):* run number, retirements, lifetime totals (credits earned, shipments,
   days, buildings built, research completed), personal bests (longest run in days, most

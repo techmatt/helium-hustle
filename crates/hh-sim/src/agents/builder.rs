@@ -58,13 +58,17 @@ const MAKERS: &[(&str, &str)] = &[
     ("propellant", "electrolysis"),
 ];
 
-/// Commands that bridge a missing building input, by resource.
+/// Commands that bridge a missing resource, by resource: [`INPUT_BRIDGES`], then
+/// propellant (pads' fuel).
 pub const BRIDGES: &[(&str, &str)] = &[
     ("titanium", "buy_titanium"),
     ("regolith", "buy_regolith"),
     ("ice", "buy_ice"),
     ("propellant", "buy_propellant"),
 ];
+
+/// The bridges for a building's missing inputs (not propellant: pads burn it).
+pub const INPUT_BRIDGES: &[(&str, &str)] = &[("titanium", "buy_titanium"), ("regolith", "buy_regolith"), ("ice", "buy_ice")];
 
 #[derive(Debug, Clone)]
 pub struct Builder {
@@ -223,7 +227,7 @@ pub fn hand_command(v: &View, target: Option<&str>) -> &'static str {
     if let Some(id) = target {
         if let Some(b) = v.buildings.iter().find(|b| b.id == id) {
             let price_credits = b.cost.get("credits").copied().unwrap_or(Fx::ZERO);
-            for &(res, cmd) in &BRIDGES[..3] {
+            for &(res, cmd) in INPUT_BRIDGES {
                 let need = b.cost.get(res).copied().unwrap_or(Fx::ZERO);
                 if amount(v, res) < need && credits - price_credits >= command_cost(v, cmd, "credits") {
                     return cmd;

@@ -136,10 +136,16 @@ pub fn retire(r: &Rules, g: &mut GameState, forced: bool) {
     new_run(r, g);
 }
 
-/// Voluntary retirement (the Retire action): once the retirement panel is unlocked.
+/// Why the player can't retire now, if they can't: retiring needs the retirement panel
+/// unlocked. The view's `can_retire` and the Retire action both ask this.
+pub fn retire_blocker(g: &GameState) -> Option<&'static str> {
+    (!g.run.enabled_panels.contains(RETIREMENT_PANEL)).then_some("retire: not unlocked yet")
+}
+
+/// Voluntary retirement (the Retire action).
 pub fn retire_action(r: &Rules, g: &mut GameState) -> Result<(), String> {
-    if !g.run.enabled_panels.contains(RETIREMENT_PANEL) {
-        return Err("retire: not unlocked yet".into());
+    if let Some(e) = retire_blocker(g) {
+        return Err(e.into());
     }
     retire(r, g, false);
     Ok(())

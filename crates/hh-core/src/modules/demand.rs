@@ -140,6 +140,9 @@ impl Params {
         if !p.tier_bounds.windows(2).all(|w| w[0] < w[1]) {
             bad.push("tier_bounds must rise");
         }
+        if p.tier_bounds.len() != TIERS.len() - 1 {
+            bad.push("tier_bounds needs one bound between each two of the four tier labels (3)");
+        }
         if bad.is_empty() {
             Ok(p)
         } else {
@@ -357,8 +360,12 @@ pub fn disrupt(r: &Rules, g: &mut GameState) {
     }
 }
 
-/// The label shown before Market Awareness: the index of the first tier bound
-/// above `demand` (0 LOW, 1 MEDIUM, 2 HIGH, 3 VERY HIGH).
+/// The demand labels shown before Market Awareness, lowest first; the config's
+/// `tier_bounds` holds one bound between each two (checked at load).
+pub const TIERS: &[&str] = &["LOW", "MEDIUM", "HIGH", "VERY HIGH"];
+
+/// The label shown before Market Awareness: the index in [`TIERS`] of the first
+/// tier bound above `demand`.
 pub fn tier(r: &Rules, demand: Fx) -> usize {
     r.p.demand.tier_bounds.iter().filter(|&&b| demand >= b).count()
 }

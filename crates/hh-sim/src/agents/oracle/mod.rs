@@ -28,7 +28,7 @@
 //! open milestone's progress squared ([`super::progress`]: the pull grows as a goal
 //! nears). The milestones are the career's (the CLI's `--milestones`).
 //!
-//! **Runs.** At each strategy plan from day `min_run`, the oracle plays the
+//! **Runs.** Every `RETIRE_EVERY` (100) ticks from day `min_run`, the oracle plays the
 //! run out on a copy and retires once its average credits a day so far is
 //! the best the run will see (the prestige rule: a later day's average beats
 //! it by no more than `retire_margin` per mille), except while holding
@@ -70,6 +70,11 @@ const RETIRE_EVERY: u64 = 100;
 
 /// What the oracle has seen of the real game at its looks: credits earned by
 /// tick and goods launched, this run (for the history milestones).
+///
+/// Not `milestones::Tracker`, which judges the same milestones differently: a rate
+/// here is any stretch of at least `days` between looks (Tracker: an exact window of
+/// daily samples), and a good counts as launched when its saturation rises (Tracker:
+/// revenue rises or a pad starts cooling down). Merging them changes the oracle's play.
 #[derive(Debug, Clone, Default)]
 struct Looks {
     run: u32,
@@ -128,7 +133,7 @@ pub struct Oracle {
     hoard_at: Fx,
     /// One strategy only (its index in [`strategies`]), or -1 to search.
     pin: i64,
-    /// Try retiring at each strategy plan, from day `min_run` of a run.
+    /// Try retiring every `RETIRE_EVERY` ticks, from day `min_run` of a run.
     retire: bool,
     min_run: u64,
     /// It retires once no later day of the run (played out) beats its
@@ -166,7 +171,7 @@ impl Oracle {
         if usize::try_from(pin).is_ok_and(|i| i >= rows) {
             return Err(format!("agent oracle: strategy={pin} is past the table's {rows} rows (-1 searches them all)"));
         }
-        let profile = Profile::from_knob(k.get("profile", 0));
+        let profile = Profile::from_knob(k.get("profile", 0))?;
         let mut w = profile.weights();
         w.early = k.get("early", w.early).max(0);
         w.ideology = k.get("ideology", w.ideology).max(0);

@@ -57,6 +57,7 @@ fn the_views_can_apply_flags_agree_with_is_legal() {
         let (r, g) = (&s.rules, &s.state);
         let v = r.view(g);
         assert_eq!(v.can_buy_land, r.is_legal(g, &Action::BuyLand), "land at tick {}", g.tick);
+        assert_eq!(v.can_retire, r.is_legal(g, &Action::Retire), "retire at tick {}", g.tick);
         for b in &v.buildings {
             assert_eq!(b.affordable, r.is_legal(g, &buy(b.id)), "{} at tick {}", b.id, g.tick);
             checked[0] += b.affordable as u32;

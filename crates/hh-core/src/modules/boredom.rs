@@ -4,7 +4,7 @@
 
 use super::{param, ModuleDef, ParamKind as K, VariantDef};
 use crate::config::ModuleConfig;
-use crate::content::{content, ProjectReward, ResearchEffect};
+use crate::content::{ProjectReward, ResearchEffect};
 use crate::fx::Fx;
 use crate::rules::Rules;
 use crate::state::GameState;
@@ -60,19 +60,15 @@ pub fn cap(r: &Rules, g: &GameState) -> Fx {
 /// career's boredom resilience.
 pub fn multiplier(r: &Rules, g: &GameState) -> Fx {
     let mut m = Fx::ONE;
-    for item in &content().research {
-        if let Some(ResearchEffect::BoredomRateMultiplier { value }) = &item.effect {
-            if g.run.research.contains(&item.id) {
-                m = m * *value;
-            }
+    for effect in super::research::live_effects(g) {
+        if let ResearchEffect::BoredomRateMultiplier { value } = effect {
+            m = m * *value;
         }
     }
     m = m * super::ideology::discount(r, g, "humanist");
-    for p in &content().projects {
-        if let ProjectReward::BoredomModifiers { base_rate_mult, .. } = &p.reward {
-            if super::projects::completed(g, &p.id) {
-                m = m * *base_rate_mult;
-            }
+    for reward in super::projects::live_rewards(g) {
+        if let ProjectReward::BoredomModifiers { base_rate_mult, .. } = reward {
+            m = m * *base_rate_mult;
         }
     }
     m * super::career::boredom_resilience(r, g)

@@ -46,6 +46,11 @@ impl Record {
         if r.format != RECORD_FORMAT {
             return Err(format!("record format {:?}, expected {RECORD_FORMAT:?}", r.format));
         }
+        // A record read from outside may start games without `replay` (hh-sim's line
+        // replay): its scenario is checked here too.
+        if let Some(s) = &r.scenario {
+            s.check()?;
+        }
         Ok(r)
     }
 
@@ -144,7 +149,7 @@ impl Session {
         Record {
             format: RECORD_FORMAT.to_string(),
             rules_revision: RULES_REVISION,
-            config: self.rules.config.clone(),
+            config: (*self.rules.config).clone(),
             seed: self.state.seed,
             scenario: self.scenario.clone(),
             actions: self.actions.clone(),

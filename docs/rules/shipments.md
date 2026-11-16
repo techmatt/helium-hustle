@@ -24,8 +24,9 @@ good (then pad order), takes from its good's stockpile:
 `take = min(load amount, pad_cargo_capacity − cargo, stockpile)` (never below 0)
 
 where `load amount = load_per_execution × cargo_capacity_mult`. Bought research with a
-`load_per_execution` effect replaces the config value (Shipping Efficiency: 7). Earlier pads
-draw first, so a short stockpile fills the first pads and leaves later ones short. A partial
+`load_per_execution` effect replaces the config value (Shipping Efficiency: 7). Pads load
+in the loading-priority order of their good; pad order only breaks ties within a good, so a
+short stockpile fills that good's first pads and leaves its later ones short. A partial
 load is fine: the pad takes what there is.
 
 **Can launch.** A pad can launch when it is active, its cooldown is 0, it holds some cargo,

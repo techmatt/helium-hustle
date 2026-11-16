@@ -3,6 +3,7 @@
 //! apply between ticks through [`Rules::apply`].
 
 use std::collections::BTreeMap;
+use std::sync::Arc;
 
 use crate::action::Action;
 use crate::config::Config;
@@ -15,10 +16,12 @@ use crate::view::View;
 
 #[derive(Clone)]
 pub struct Rules {
-    pub config: Config,
+    /// Shared with every game it starts and every copy of it (`Session::fork`, the
+    /// oracle's rollouts), so neither copies the config.
+    pub config: Arc<Config>,
     pub config_hash: String,
-    /// Every module's params.
-    pub(crate) p: modules::Params,
+    /// Every module's params (shared by copies, as the config).
+    pub(crate) p: Arc<modules::Params>,
 }
 
 impl Rules {
@@ -26,9 +29,9 @@ impl Rules {
         config.check()?;
         let p = modules::Params::new(|id| config.module(id).cloned())?;
         Ok(Rules {
-            config: config.clone(),
+            config: Arc::new(config.clone()),
             config_hash: config.hash(),
-            p,
+            p: Arc::new(p),
         })
     }
 
@@ -48,7 +51,7 @@ impl Rules {
         }
         let mut g = GameState {
             seed,
-            config: std::sync::Arc::new(self.config.clone()),
+            config: Arc::clone(&self.config),
             tick: 0,
             career: Career { run_number: 1, ..Career::default() },
             run: Run::default(),
@@ -145,7 +148,7 @@ impl Rules {
     /// A state fits these rules: its config is this one and it holds every
     /// content resource and declared RNG stream.
     pub fn check_state(&self, g: &GameState) -> Result<(), String> {
-        if *g.config != self.config {
+        if *g.config != *self.config {
             return Err("state: its config differs from the rules'".into());
         }
         for r in &content().resources {

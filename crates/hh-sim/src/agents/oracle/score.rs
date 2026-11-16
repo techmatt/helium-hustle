@@ -47,15 +47,20 @@ pub enum Profile {
 }
 
 impl Profile {
-    /// The profile for knob value `n` (any other value: milestones).
-    pub fn from_knob(n: i64) -> Profile {
-        match n {
+    /// The profile for knob value `n`; a value outside 0-4 is a spec error.
+    pub fn from_knob(n: i64) -> Result<Profile, String> {
+        Ok(match n {
+            0 => Profile::Milestones,
             1 => Profile::Credits,
             2 => Profile::Ideology,
             3 => Profile::Builder,
             4 => Profile::Quests,
-            _ => Profile::Milestones,
-        }
+            _ => {
+                return Err(format!(
+                    "agent oracle: profile={n} is not 0-4 (0 milestones, 1 credits, 2 ideology, 3 builder, 4 quests)"
+                ))
+            }
+        })
     }
 
     pub fn name(self) -> &'static str {

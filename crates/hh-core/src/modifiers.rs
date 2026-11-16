@@ -17,9 +17,9 @@ pub fn modifier(r: &Rules, g: &GameState, key: &str) -> Fx {
             }
         }
     }
-    for p in &content().projects {
-        if let ProjectReward::Modifier { key: k, value } = &p.reward {
-            if k == key && crate::modules::projects::completed(g, &p.id) {
+    for reward in crate::modules::projects::live_rewards(g) {
+        if let ProjectReward::Modifier { key: k, value } = reward {
+            if k == key {
                 m = m * *value;
             }
         }

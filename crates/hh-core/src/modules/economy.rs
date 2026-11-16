@@ -82,6 +82,24 @@ impl Params {
 /// `resource`'s storage cap now: its base plus every active building's `store`
 /// effect, times `storage_cap_mult` for everything but energy. Boredom's is the
 /// boredom module's. `None` is uncapped.
+/// Whether every product is at or over its cap (nothing to make room for); never for
+/// no products. A building so is "output at cap"; a command so is skipped.
+pub fn all_capped(r: &Rules, g: &GameState, products: &Amounts) -> bool {
+    !products.is_empty() && products.keys().all(|res| cap(r, g, res).is_some_and(|c| g.amount(res) >= c))
+}
+
+/// The fraction of `needs` the stock covers, at most 1: the scarcest input's (a
+/// partial run of a building or a conversion command).
+pub fn input_fraction(g: &GameState, needs: &Amounts) -> Fx {
+    let mut frac = Fx::ONE;
+    for (res, &need) in needs {
+        if need > Fx::ZERO {
+            frac = frac.min(g.amount(res).max(Fx::ZERO) / need);
+        }
+    }
+    frac
+}
+
 pub fn cap(r: &Rules, g: &GameState, resource: &str) -> Option<Fx> {
     if resource == BOREDOM {
         return Some(super::boredom::cap(r, g));
@@ -338,9 +356,7 @@ pub fn resolve(r: &Rules, g: &mut GameState) {
             })
             .collect::<BTreeMap<_, _>>();
         let upk = b.upkeep.iter().map(|(res, &v)| (res.clone(), v.mul_int(n) * upkeep_mult)).collect();
-        let capped = !prod.is_empty()
-            && prod.keys().all(|res| cap(r, g, res).is_some_and(|c| g.amount(res) >= c));
-        if capped {
+        if all_capped(r, g, &prod) {
             g.run.today.stalls.insert(b.id.clone(), Stall::OutputCapped);
         }
         pending.push((b.id.clone(), prod, upk));
@@ -370,12 +386,7 @@ pub fn resolve(r: &Rules, g: &mut GameState) {
         }
     }
     for (id, prod, upk) in pending {
-        let mut frac = Fx::ONE;
-        for (res, &need) in &upk {
-            if need > Fx::ZERO {
-                frac = frac.min(g.amount(res).max(Fx::ZERO) / need);
-            }
-        }
+        let frac = input_fraction(g, &upk);
         g.run.today.stalls.insert(id, Stall::InputStarved);
         if frac <= Fx::ZERO {
             continue;

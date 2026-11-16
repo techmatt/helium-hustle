@@ -51,11 +51,6 @@ pub fn load(path: &str, text: &str) -> Result<Vec<Objective>, String> {
     Ok(sc.objectives)
 }
 
-/// Whether an objective holds now.
-pub fn holds(o: &Objective, s: &Session) -> Result<bool, String> {
-    met(o, s)
-}
-
 #[derive(Deserialize)]
 struct EndCondition {
     #[serde(rename = "type")]
@@ -76,7 +71,8 @@ fn fx(v: f64) -> Result<Fx, String> {
     Fx::parse(&format!("{v}")).map_err(|e| format!("threshold {v}: {e}"))
 }
 
-fn met(o: &Objective, s: &Session) -> Result<bool, String> {
+/// Whether an objective holds now.
+pub fn holds(o: &Objective, s: &Session) -> Result<bool, String> {
     let g = &s.state;
     Ok(match o.kind.as_str() {
         "building" => g.owned(&port_id(&o.value)) >= o.count.unwrap_or(1),
@@ -111,7 +107,7 @@ pub fn run(path: &str, text: &str, config: &Config, seed: u64, max_ticks: u64) -
             break;
         }
         for o in &sc.objectives {
-            if !hit.contains_key(&o.id) && met(o, &s)? {
+            if !hit.contains_key(&o.id) && holds(o, &s)? {
                 hit.insert(o.id.clone(), s.state.tick);
             }
         }
@@ -135,13 +131,14 @@ pub fn run(path: &str, text: &str, config: &Config, seed: u64, max_ticks: u64) -
     }
     let end = end_tick.map_or("not reached".to_string(), |k| format!("tick {k}"));
     let _ = writeln!(t, "end condition (boredom >= {}): {end}", sc.end_condition.threshold);
-    t.push_str(&milestones(&s));
+    t.push_str(&career_log(&s));
     Ok(t)
 }
 
 /// The career log: quests, achievements, projects, research, retirements, with ticks.
-pub fn milestones(s: &Session) -> String {
-    let mut t = String::from("milestones (tick, run, day):\n");
+/// (Not the M1-M14 milestones: those are `milestones.rs`.)
+pub fn career_log(s: &Session) -> String {
+    let mut t = String::from("career log (tick, run, day):\n");
     for e in &s.state.career.log {
         let what = if e.id.is_empty() { e.kind.clone() } else { format!("{} {}", e.kind, e.id) };
         let _ = writeln!(t, "  {:>6}  run {} day {:>5}  {what}", e.tick, e.run, e.day);

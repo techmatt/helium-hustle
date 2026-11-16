@@ -43,20 +43,10 @@ export function perDay(x: Fx | number, digits = 1): string {
   return `${n < 0 ? '−' : '+'}${shown}/day`;
 }
 
-/** A signed amount: "+5", "−2.5". */
-export function signed(x: Fx | number, digits = 1): string {
-  const n = typeof x === 'number' ? x : Number(x);
-  return `${n < 0 ? '−' : '+'}${num(Math.abs(n), digits)}`;
-}
-
 /** A multiplier: "×1.05". */
 export function mult(x: Fx | number): string {
   const n = typeof x === 'number' ? x : Number(x);
   return `×${trim(n.toFixed(3))}`;
-}
-
-export function pct(x: number): string {
-  return `${Math.round(x * 100)}%`;
 }
 
 export function capitalize(s: string): string {

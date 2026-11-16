@@ -1,6 +1,7 @@
-// Contrast check: every text color the UI draws over every background it can sit on,
-// in both themes, read from the token blocks in src/style.css. WCAG 2 ratio; fails
-// under 4.5:1. Prints one line per pair below 7:1 and exits 1 on any failure.
+// Contrast check: the text-on-background pairs in the hand-kept PAIRS list below, in both
+// themes, read from the token blocks in src/style.css. It checks only those pairs: a new
+// text or background token needs its pairs added there. WCAG 2 ratio; fails under 4.5:1.
+// Prints one line per pair below 7:1 and exits 1 on any failure.
 //   node scripts/contrast.mjs
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';

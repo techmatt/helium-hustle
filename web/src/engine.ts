@@ -293,14 +293,12 @@ export const engine = {
   resolveConfig: (config: string): { hash: string; config: unknown } => JSON.parse(wasm.resolve_config(config)),
   scenarios: (): Scenario[] => JSON.parse(wasm.scenarios()),
   newGame: (config: string, seed: string, scenario = ''): string => wasm.new_game(config, seed, scenario),
-  advance: (state: string, ticks: number): string => wasm.advance(state, ticks),
-  /** Like `advance`, but stops after a tick that retired the run; also returns the
-   * program lines run over those ticks. */
+  /** Plays up to `ticks` days, stopping after a tick that retired the run; also returns
+   * the program lines run over those ticks. */
   advanceRun: (state: string, ticks: number): { state: string; lines: LinesRun } =>
     JSON.parse(wasm.advance_run(state, ticks)),
   apply: (state: string, action: Action): string => wasm.apply(state, JSON.stringify(action)),
   view: (state: string): View => JSON.parse(wasm.view(state)),
   fingerprint: (state: string): string => wasm.fingerprint(state),
-  configHash: (state: string): string => wasm.config_hash(state),
   replay: (record: unknown): Replayed => JSON.parse(wasm.replay(JSON.stringify(record))),
 };

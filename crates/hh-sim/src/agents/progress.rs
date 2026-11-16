@@ -96,7 +96,9 @@ pub fn toward(r: &Rules, g: &hh_core::GameState, w: &When, seen: &Seen) -> Fx {
             let cost = content().research.iter().find(|x| x.id == *research).map_or(Fx::ONE, |x| x.cost);
             frac(g.amount("science"), cost).min(Fx::from_int(9).mul_ratio(1, 10))
         }
-        When::ProjectCompleted { .. } => persistent(g),
+        // Progress is read for Long-Term projects only (the only tier a milestone names).
+        When::ProjectCompleted { tier } if tier == "persistent" => persistent(g),
+        When::ProjectCompleted { .. } => Fx::ZERO,
         When::IdeologyRank { rank } => {
             let need = ideology::score_for_rank(r, *rank);
             let best = g.career.max_ideology_scores.values().copied().max().unwrap_or(Fx::ZERO);

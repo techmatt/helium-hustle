@@ -13,9 +13,10 @@ Checks:
 - platform-floats: a platform float function reaching hh-core past clippy (any
   call by name not through `libm::`, an `#[allow]` of the ban, the ban's `deny`
   removed, a name missing from clippy.toml).
-- balance: each target the judge misses (`hh-sim balance`: the author and the
-  casual author in game time, run 1's real time under the mixed human model,
-  2 seeds, careers of 20 retirements; docs/principles.md). A few seconds once the release build is current.
+- docs: a doc (README, CLAUDE.md, web/README, docs/, docs/rules/) over 15 KB, or
+  inside the 1 KB margin below it.
+- balance: each target the judge misses (`hh-sim balance` on experiments/balance.json,
+  the judge's one home; targets in docs/principles.md).
 """
 
 import json
@@ -159,7 +160,9 @@ def check_tunables(settings):
         if f in exempt:
             continue
         for ln, line in enumerate(code.splitlines(), 1):
-            if line.lstrip().startswith("#["):
+            # Attributes, and the rules revision itself (a version, not a tunable; a bump
+            # needs no exception moved).
+            if line.lstrip().startswith("#[") or re.match(r"\s*pub const RULES_REVISION\b", line):
                 continue
             for m in NUM.finditer(line):
                 report(f, ln, m.group(0), canonical(m.group(1)))
@@ -189,9 +192,10 @@ def check_floats():
             if re.search(r"\bnum_traits\b|\bextern\s+\"C\"|core::intrinsics|std::intrinsics", line):
                 warn("platform-floats", f"{f}:{ln}: a float path around the ban ({line.strip()})")
     toml = (CORE / "clippy.toml").read_text(encoding="utf-8")
-    for fn in FLOAT_FNS:
-        if f'"f64::{fn}"' not in toml:
-            warn("platform-floats", f"crates/hh-core/clippy.toml doesn't ban f64::{fn}")
+    for ty in ("f64", "f32"):
+        for fn in FLOAT_FNS:
+            if f'"{ty}::{fn}"' not in toml:
+                warn("platform-floats", f"crates/hh-core/clippy.toml doesn't ban {ty}::{fn}")
     cargo = (CORE / "Cargo.toml").read_text(encoding="utf-8")
     if not re.search(r'disallowed_methods\s*=\s*"deny"', cargo):
         warn("platform-floats", "crates/hh-core/Cargo.toml no longer denies clippy::disallowed_methods")
@@ -227,7 +231,8 @@ def check_parity():
     wasm_pin = pin(r"GOLDEN_FINGERPRINT = '([0-9a-f]{16})'", smoke)
     if native_pin is None or native_pin != wasm_pin:
         warn("parity", f"the golden pins disagree: hh-core {native_pin}, wasm-smoke {wasm_pin}")
-    r = run(["cargo", "run", "-q", "-p", "hh-sim", "--", "golden"])
+    # --release, as the balance check and set_golden.py: one build serves all three.
+    r = run(["cargo", "run", "-q", "--release", "-p", "hh-sim", "--", "golden"])
     m = re.search(r"fingerprint ([0-9a-f]{16})", r.stdout)
     if r.returncode != 0 or not m:
         warn("parity", f"native golden run failed: {(r.stderr or r.stdout).strip().splitlines()[-1:]}")
@@ -247,10 +252,27 @@ def check_parity():
         warn("parity", "native != wasm: " + "; ".join(l.removeprefix("FAIL ").strip() for l in fails))
 
 
+DOC_CAP = 15 * 1024
+DOC_MARGIN = 1024
+
+
+def check_docs():
+    """Each doc under about 15 KB (CLAUDE.md, *Docs rules*): over the cap is a warning,
+    and so is a doc inside the 1 KB margin the rules ask to leave free."""
+    docs = [ROOT / "README.md", ROOT / "CLAUDE.md", ROOT / "web" / "README.md",
+            *sorted((ROOT / "docs").glob("*.md")), *sorted((ROOT / "docs" / "rules").glob("*.md"))]
+    for p in docs:
+        n = p.stat().st_size
+        if n > DOC_CAP:
+            warn("docs", f"{rel(p)} is {n:,} B, over the 15 KB cap")
+        elif n > DOC_CAP - DOC_MARGIN:
+            warn("docs", f"{rel(p)} is {n:,} B, inside the 1 KB margin (trim it before adding)")
+
+
 def check_balance():
     """The judge's cells (experiments/balance.json) against the targets in
     configs/sim/milestones.json: `hh-sim balance` prints the `balance:` lines.
-    About 3 s once the release build is current."""
+    Its cost: docs/simulator.md, *Costs*."""
     r = run(["cargo", "run", "--release", "-q", "-p", "hh-sim", "--", "balance"], timeout=300)
     if r.returncode != 0:
         warn("balance", f"hh-sim balance failed: {(r.stderr or r.stdout).strip().splitlines()[-1:]}")
@@ -266,6 +288,7 @@ def main():
         settings = json.loads((ROOT / "scripts" / "warning_checks.json").read_text(encoding="utf-8"))
         check_tunables(settings)
         check_floats()
+        check_docs()
         if "--no-parity" not in sys.argv[1:]:
             check_parity()
         if "--no-balance" not in sys.argv[1:]:

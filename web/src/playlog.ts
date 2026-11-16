@@ -11,7 +11,7 @@
 
 import type { Scenario, Stamped } from './engine';
 
-export const FORMAT = 'hh-playlog/1';
+const FORMAT = 'hh-playlog/1';
 const ENDPOINT = '/__playlog';
 /** Send queued lines at most this often (and when the page is hidden or closed). */
 const FLUSH_MS = 2000;

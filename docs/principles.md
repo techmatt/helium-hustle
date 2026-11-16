@@ -1,9 +1,10 @@
 # Principles: targets and measures
 
 What the game should feel like, as numbers the simulator can check. The targets come from the
-design doc (quoted below); the measurable definitions, the players, human models and the judge are this
-repo's, in `configs/sim/` (data, not code). The simulator that reads them: [simulator.md](simulator.md);
-its players: [agents.md](agents.md).
+design doc (quoted below); the rest is this repo's: the milestones and human models are data in
+`configs/sim/`, the players are code (`crates/hh-sim/src/agents/`) with their specs in
+`experiments/*.json`, and the judge's cells are `experiments/balance.json`'s. The simulator that
+reads them: [simulator.md](simulator.md); its players: [agents.md](agents.md).
 
 ## Targets (design doc)
 

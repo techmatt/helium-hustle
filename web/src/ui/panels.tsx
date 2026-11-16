@@ -2,10 +2,10 @@
 // Ideologies, Adversaries, Stats, Story and Retirement. Each shows what the view has.
 
 import { useState } from 'preact/hooks';
-import type { Amounts, Fx, ProjectView, View } from '../engine';
+import type { Amounts, Fx, ProjectView, ResearchView, View } from '../engine';
 import { capitalize, mult, num, perDay } from '../format';
 import { act, seen, store, type Store } from '../store';
-import { Bar, FlowLines, Section, Square, freshClass, name } from './common';
+import { Bar, FlowLines, Section, Square, cardButton, freshClass, name, useHint } from './common';
 import { Quest, editProgram } from './Right';
 
 // ---- Commands ------------------------------------------------------------------
@@ -169,40 +169,57 @@ export function Research({ s }: { s: Store }) {
         return (
           <Section key={cat} title={cat} dark>
             <div class="cards">
-              {items.map((r) => {
-                const key = `research:${r.id}`;
-                return (
-                  <div
-                    key={r.id}
-                    class={`card research ${r.done ? 'done' : r.affordable ? 'can-buy' : 'cannot-buy'}${freshClass(s.fresh, key)}`}
-                    data-id={r.id}
-                    onMouseEnter={() => seen(key)}
-                  >
-                    <div class="card-head">
-                      <h3>{r.name}</h3>
-                      {r.done && <span class="ok">✓ Done</span>}
-                    </div>
-                    <p class="desc">{r.description}</p>
-                    {r.requires && !r.done && !v.research.find((x) => x.id === r.requires)?.done && (
-                      <p class="muted small">Needs {name(v, r.requires)} first.</p>
-                    )}
-                    {!r.done && (
-                      <div class="card-actions">
-                        <span>
-                          <Square id="science" /> {num(r.cost)} Science
-                        </span>
-                        <button type="button" data-testid={`research-${r.id}`} disabled={!r.affordable} onClick={() => act({ type: 'research', research: r.id })}>
-                          Research
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
+              {items.map((r) => (
+                <ResearchCard key={r.id} v={v} r={r} fresh={s.fresh} />
+              ))}
             </div>
           </Section>
         );
       })}
+    </div>
+  );
+}
+
+/** A research card is its Research button, like a building card (`cardButton`). */
+function ResearchCard({ v, r, fresh }: { v: View; r: ResearchView; fresh: Set<string> }) {
+  const key = `research:${r.id}`;
+  const [hint, showHint] = useHint();
+  const needs = r.requires && !v.research.find((x) => x.id === r.requires)?.done ? r.requires : null;
+  // Reads the engine's view now, not this render's: a double-click researches once.
+  const research = () => {
+    const now = store.view.research.find((x) => x.id === r.id);
+    if (!now || now.done) return;
+    if (!now.affordable) {
+      const req = now.requires && !store.view.research.find((x) => x.id === now.requires)?.done ? now.requires : null;
+      showHint(req ? `Needs ${name(store.view, req)} first.` : 'Short of Science.');
+      return;
+    }
+    act({ type: 'research', research: r.id });
+  };
+  return (
+    <div
+      class={`card research ${r.done ? 'done' : r.affordable ? 'can-buy' : 'cannot-buy'}${freshClass(fresh, key)}`}
+      data-id={r.id}
+      data-testid={`research-${r.id}`}
+      aria-disabled={!r.affordable}
+      title={r.affordable ? 'Click to research' : undefined}
+      onMouseEnter={() => seen(key)}
+      {...(r.done ? {} : cardButton(research))}
+    >
+      <div class="card-head">
+        <h3>{r.name}</h3>
+        {r.done && <span class="ok">✓ Done</span>}
+      </div>
+      <p class="desc">{r.description}</p>
+      {needs && !r.done && <p class="muted small">Needs {name(v, needs)} first.</p>}
+      {!r.done && (
+        <div class="card-actions">
+          <span>
+            <Square id="science" /> {num(r.cost)} Science
+          </span>
+          <span class={hint ? 'buy-hint short' : 'buy-hint muted'}>{hint ?? ''}</span>
+        </div>
+      )}
     </div>
   );
 }
