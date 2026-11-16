@@ -106,7 +106,8 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
       <ol class="lines">
         {entries.map((e, i) => {
           const outcome = span ? (spanOutcomes?.[i] ?? null) : p.outcomes[i];
-          const current = !span && i === p.entry;
+          // No processor on the program: no line runs next, so none is framed.
+          const current = !span && p.processors > 0 && i === p.entry;
           // Part way through its runs: that share; otherwise full once it ran today.
           const frac = current && p.step > 0 ? p.step / e.count : outcome ? 1 : 0;
           return (

@@ -3,14 +3,18 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { BuildingView, View } from '../engine';
 import { capitalize, num } from '../format';
-import { act, actAll, seen, store, type Store } from '../store';
+import { act, actAll, justMoved, seen, store, type Store } from '../store';
 import { buildingArt } from './buildingArt';
 import { AXIS_COLORS, CostRows, FlowLines, Section, Square, freshClass, name } from './common';
+
+/** `?all-cards` in the URL (the QA checker's): every building's card, revealed or not, so
+ * every card picture can be looked at. Display only; off in normal use. */
+const ALL_CARDS = new URLSearchParams(location.search).has('all-cards');
 
 export function Buildings({ s }: { s: Store }) {
   const v = s.view;
   const land = v.resources.find((r) => r.id === 'land');
-  const shown = v.buildings.filter((b) => b.visible || b.owned > 0);
+  const shown = v.buildings.filter((b) => b.visible || b.owned > 0 || ALL_CARDS);
   // Categories in content order of their first building.
   const categories = [...new Set(v.buildings.map((b) => b.category))];
   const tags = v.nav.some((t) => t.id === 'ideologies' && t.visible);
@@ -86,6 +90,10 @@ function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: boolean; 
   const onClick = (e: MouseEvent) => {
     // The card's own controls (−/+, Sell) keep their jobs.
     if ((e.target as HTMLElement).closest('button, a, input, select, textarea, label')) return;
+    // The second click of a double-click on a story's OK or the summary's Continue lands
+    // on whatever slid under the pointer: not a buy. (Pointer clicks only: a click with
+    // no pointer behind it, detail 0, was aimed.)
+    if (e.detail > 0 && justMoved()) return;
     buy(e.shiftKey ? 10 : 1);
   };
   return (
@@ -101,9 +109,11 @@ function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: boolean; 
       title={b.affordable ? 'Click to build one (Shift-click: up to 10)' : undefined}
       onMouseEnter={() => seen(key)}
       onClick={onClick}
-      // A double-click selects no text (its two clicks still buy two).
+      // A mouse press neither focuses the card nor selects text: focus would turn the next
+      // space (the pause key) into a second buy, and a double- or Shift-click would select
+      // text (its clicks still buy). Tab still focuses it for the keyboard.
       onMouseDown={(e) => {
-        if (e.detail > 1) e.preventDefault();
+        if (!(e.target as HTMLElement).closest('button, a, input, select, textarea, label')) e.preventDefault();
       }}
       onKeyDown={(e) => {
         if (e.target === e.currentTarget && (e.key === 'Enter' || e.key === ' ')) {

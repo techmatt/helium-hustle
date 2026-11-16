@@ -154,7 +154,17 @@ function tell(v: View, mode: 'load' | 'intro' | 'play'): void {
   }
 }
 
+/** When the screen last moved under the pointer by the player's own click (a story text
+ * dismissed, the run summary closed): what slides under the cursor is not what they
+ * clicked, so a building card ignores clicks for a moment after (`justMoved`). */
+let movedAt = -Infinity;
+const MOVED_MS = 500;
+export function justMoved(): boolean {
+  return performance.now() - movedAt < MOVED_MS;
+}
+
 export function dismissStory(): void {
+  movedAt = performance.now();
   const s = store.stories.shift();
   if (s) playlog.log('story_read', { id: s.id });
   emit();
@@ -383,6 +393,7 @@ export function togglePause(): void {
 /** Closes the retirement summary and plays on at the speed before it. */
 export function continueAfterRetirement(): void {
   if (stood_down) return;
+  movedAt = performance.now();
   store.summary = null;
   playlog.log('continue');
   setSpeed(speedBeforeSummary);

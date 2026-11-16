@@ -26,7 +26,6 @@ The checker that finds most of these is `web/scripts/qa.mjs` ([web/README.md](..
 | 14 | Adversaries' "Dumps this run" counted only dumps still in the 50 kept activity lines | Relabeled "Recent dumps" with a tooltip saying so | |
 | 15 | The building limit ("At its limit") was computed in the client | The view carries `at_limit` | |
 | 16 | A program line's name is cut short at 1280 px with no way to read it | The line's tooltip carries the whole name | qa *overflow* |
-
 | 17 | Ten content texts said what the game doesn't do: Overclock "cap +200%" (it is +50%, +100% with Overclock Boost), Arbitrage Engine "multiplies" decay, Bulk Shipper "cargo capacity", Research Lab "gated behind Fabricator", Storage Depot's Godot ids and missing propellant, Load Launch Pads "5 units", "fast cost scaling" on Data Center and Battery, the Fund command names, Dream Protocols' missing Helium-3 cost | Texts rewritten to the rules (`content/`; no play change, no revision bump) | |
 | 18 | Options showed literal backticks; a log folder the server can't write showed "recording" while every batch was dropped | Plain text; a 5xx keeps the lines and retries with Options saying NOT recording; a static host's non-JSON answer reads as no log server | |
 | 19 | Recent Activity's count (up to 50) didn't match the 40 lines shown | All kept lines shown | |
@@ -36,6 +35,17 @@ The checker that finds most of these is `web/scripts/qa.mjs` ([web/README.md](..
 | 23 | An autosave that failed (storage full) was silent | A notice says progress is no longer kept | |
 | 24 | Stats, Retirement and summary tables put their values in a different column per table | One value column | |
 | 25 | `hh-sim playlog` booked a jump ahead that a forced retirement stopped as ticks played at speed | Ticks from the jump's action to its `jump_end` count as jumped | |
+| 26 | A click on a building card left it focused, so the next space (the pause key) bought another and didn't pause | A mouse press neither focuses the card nor selects text; Tab still reaches it | e2e *space after a click*; qa *card probe* |
+| 27 | At 1280 to 1366 px, once Launch Pads and Retirement tiles showed (or at 768 px high), the left column grew a scrollbar: tile names broke mid-word ("Command s", "Retiremen t") and the resource rates were cut off at the column edge | The horizon art shrinks before the column scrolls; tiles fit their longest name beside a scrollbar; a long resource name wraps between words before a rate is cut | qa *overflow* (cut off by a column, word broken) |
+| 28 | Recent Activity outgrowing the window gave the right column a scrollbar mid-play, narrowing it: the program lines and their notes jumped | The right column always keeps the scrollbar's room | qa *program frame* (lines moved) |
+| 29 | A program with lines but no processor framed its first line as "the line the next processor runs" though nothing runs it | No frame without a processor | qa *text* (frame without a processor) |
+| 30 | Story banner titles, table headers, the Ideologies rank and CHEATED were drawn in IBM Plex Sans 700, which isn't bundled: the browser faked a smeared bold | Bold body text uses the bundled 600 | qa *assets* (font not bundled) |
+| 31 | A double-click on the summary's Continue (or a story's OK) sent its second click to whatever slid under the pointer, usually a building card: a buy, or a "Short of Credits." | A building card ignores pointer clicks for 0.5 s after the player closes the summary or a story text | qa *input* (double-click on Continue) |
+| 32 | With the late resources showing at 1280 px, a resource's amount and rate ran together ("43.6 / 50−0.2/day") | A fixed gap between the Resources table's cells | qa *overflow* (table cells touch) |
+| 33 | Launch Pads' loading priority arrows sat wherever each good's name ended, a ragged column | The rows share one grid | |
+| 34 | In a tight Resources table a one-word name ("Propellant", "Processors") wrapped below its color swatch, leaving the swatch alone on a line | The swatch stays with the name's first word | qa *overflow* (swatch alone on its line) |
+| 35 | The qa checker never audited Projects or Ideologies (its late phase ran on a fresh scenario whose quests can't open them) | The late phase plays on the pass's own career | |
+| 36 | Under automation (`bot_` careers) Options named the synced play-log folder while the lines went to `out/playlogs/`; the qa checker looked for the log there | The page asks the server for a bot's folder | qa *play log* |
 
 ## Deferred (Matt's decisions)
 
@@ -49,6 +59,12 @@ The checker that finds most of these is `web/scripts/qa.mjs` ([web/README.md](..
 | Building cards show content rates, before modifiers and overclocks, without saying so | Effective per-copy rates in the view, or a "base" label |
 | Adversaries' dumps are counted from the 50 kept activity lines (now labeled "Recent dumps") | A per-run counter in run state (a state change: its own item) |
 | A save holds every action: at roughly 40,000 actions (tens of hours) it outgrows localStorage; the failure is now shown | Keep the record in the play log and only state plus a count in the save, or compress |
+| Research cards share the building cards' green "can buy" outline, but only their Research button buys: a click on the green card does nothing | Make a green research card click-to-research like buildings (the same card code), or drop the outline there |
+| Late in a career at 1280 px the left column (270 px) holds 12 tiles, 12 resources and the ideology rows: it scrolls, and names like "Circuit Boards" wrap to two lines | A wider left minimum (~300 px), or smaller nav tiles once there are more than 9; I'd shrink the tiles (icon beside the name) |
+| At 1280 px the right column (340 px, its scrollbar's room now always kept, #28) cuts most program line names short ("Sell Cloud Compute …", whole in the tooltip) | Widen `--right`'s minimum by ~30 px from the middle column, or move the line's −/+/× under a hover; I'd widen |
+| At 10x a late timer wake runs two days in one redraw and the frame skips a line (the e2e's "pointer walks the queue in order" failed once with a sweep running beside it) | Fine for a person; if it matters, frame from the days the redraw actually ran, not the nominal speed |
+| A card's storage line says "+100 Boredom storage" for the Recreation Dome (it raises the boredom cap; "storing boredom" reads as bad) | Label stores lines "cap" ("+100 Boredom cap", "+50 Energy cap"), matching the Resources table's amount / cap |
+| A building's "Output at cap" can sit beside its resource reading 0 (seen: 8 Excavators, Regolith 0 / 50, seed 32 run 2 day 493 at 50x): the stall is judged at the start of the day's production (`economy.rs` `resolve`), the amount shown at the day's end | A rules item: find what drew the stock from cap to 0 in a day, and whether the stall should be judged after consumption |
 | The view's `{rate}` is display text built in `hh-core` (`view.rs`, `event_story`) | Fine as is; a general text-template step if more placeholders come |
 
 ## Won't fix

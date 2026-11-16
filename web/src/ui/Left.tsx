@@ -1,5 +1,6 @@
 // Left column: title, nav grid, speed controls, Resources and Ideology, the horizon.
 
+import { Fragment } from 'preact';
 import { SPEEDS } from '../clock';
 import { capitalize, num, perDay } from '../format';
 import { navHasNews, seen, setSpeed, type Store } from '../store';
@@ -69,9 +70,24 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
                 return (
                   <tr key={r.id} data-res={r.id} data-amount={r.amount} class={s.fresh.has(`resource:${r.id}`) ? 'is-new' : ''} onMouseEnter={() => seen(`resource:${r.id}`)}>
                     <td>
-                      <Square id={r.id} /> {r.name}
+                      {/* A long name may wrap when the column is tight, but only between
+                          words ("Helium-3" stays whole), and the swatch stays with the
+                          first word. */}
+                      {r.name.split(' ').map((w, i) => (
+                        <Fragment key={i}>
+                          {i > 0 && ' '}
+                          <span class="word">
+                            {i === 0 && (
+                              <>
+                                <Square id={r.id} />{' '}
+                              </>
+                            )}
+                            {w}
+                          </span>
+                        </Fragment>
+                      ))}
                     </td>
-                    <td class={`num ${r.id !== 'boredom' && (full ? 'at-cap' : empty ? 'empty' : '')}`}>{shown}</td>
+                    <td class={`num ${r.id === 'boredom' ? '' : full ? 'at-cap' : empty ? 'empty' : ''}`}>{shown}</td>
                     <td class={`num rate ${r.id === 'processors' || r.id === 'land' ? '' : rateNum > 0 ? 'pos' : rateNum < 0 ? 'neg' : ''}`}>{rate}</td>
                   </tr>
                 );

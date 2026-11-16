@@ -322,8 +322,20 @@ try {
   await sleep(600);
   check((await day()) === paused1 && (await run()) === 2, `the run summary pauses the game (run 2, day ${paused1})`);
   await shot('run-summary');
-  await click('[data-testid="continue"]');
-  await sleep(1000);
+  // A real double-click on Continue over the Buildings panel: its second click lands on
+  // whatever the summary covered, and must not reach a card.
+  await click('.nav-tile[data-nav="buildings"]');
+  {
+    const owned = `[...document.querySelectorAll('.card.building')].reduce((n, c) => n + Number(c.dataset.owned), 0)`;
+    const o0 = await evaluate(owned);
+    const p = await evaluate(`(() => { const r = document.querySelector('[data-testid="continue"]').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+    for (const clickCount of [1, 2])
+      for (const type of ['mousePressed', 'mouseReleased']) await send('Input.dispatchMouseEvent', { type, x: p.x, y: p.y, button: 'left', clickCount });
+    await sleep(200);
+    const hint = await evaluate(`[...document.querySelectorAll('.buy-hint.short')].map((h) => h.textContent).join(' ')`);
+    check((await evaluate(owned)) === o0 && !hint, `a double-click on Continue buys nothing under it (${o0} -> ${await evaluate(owned)}${hint ? `, "${hint}"` : ''})`);
+  }
+  await sleep(800);
   check((await run()) === 2 && (await day()) > 0 && !(await exists('[data-testid="summary"]')), `run 2 plays on (day ${await day()}; run 1 lasted ${runDays} days)`);
   check(await exists('#speeds button[data-speed="50"][aria-pressed="true"]'), 'Continue restores the speed before the summary');
   check(await navVisible('retirement') && await navVisible('launch_pads'), 'known nav tiles stay visible in run 2');
@@ -428,8 +440,24 @@ try {
   check((await owned()) === after, `the card's −/+ buttons buy nothing (${await owned()})`);
   await click('.card.building[data-id="solar_panel"] button.sell[title^="Sell one"]');
   check(Number(await owned()) === Number(after) - 1, `the card's Sell 1 sells one and buys none (${after} -> ${await owned()})`);
+  // A real mouse press on the card, then space: the pause key, not a second buy (a press
+  // must not leave the card focused).
+  {
+    const p = await evaluate(`(() => { const e = document.querySelector('.card.building[data-id="solar_panel"] .desc'); e.scrollIntoView({ block: 'center' }); const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+    const n0 = Number(await owned());
+    const buyable = await exists('.card.building[data-id="solar_panel"].can-buy');
+    for (const type of ['mousePressed', 'mouseReleased']) await send('Input.dispatchMouseEvent', { type, x: p.x, y: p.y, button: 'left', clickCount: 1 });
+    await sleep(150);
+    const n1 = Number(await owned());
+    for (const type of ['keyDown', 'keyUp']) await send('Input.dispatchKeyEvent', { type, key: ' ', code: 'Space', text: type === 'keyDown' ? ' ' : undefined, windowsVirtualKeyCode: 32 });
+    await sleep(150);
+    const sp = await evaluate(`document.querySelector('#speeds button[aria-pressed="true"]')?.dataset.speed`);
+    check((!buyable || n1 === n0 + 1) && Number(await owned()) === n1 && sp !== '0', `space after a click on a card resumes the clock and buys nothing (${n0} -> ${n1} -> ${await owned()}, speed ${sp})`);
+    await speed(0);
+    if (Number(await owned()) > n0) await click('.card.building[data-id="solar_panel"] button.sell[title^="Sell one"]');
+  }
   const kept = await owned();
-  const grey = await evaluate(`document.querySelector('.card.building.cannot-buy')?.dataset.id ?? null`);
+  const grey =await evaluate(`document.querySelector('.card.building.cannot-buy')?.dataset.id ?? null`);
   if (grey) {
     const greyOwned = () => evaluate(`document.querySelector('.card.building[data-id="${grey}"]').dataset.owned`);
     const g0 = await greyOwned();

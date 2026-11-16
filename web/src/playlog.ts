@@ -198,7 +198,9 @@ export function flushOnLeave(): void {
 /** Asks the server where logs go (shown in Options), and starts the flush timer. */
 export async function start(): Promise<void> {
   try {
-    const r = await fetch(ENDPOINT);
+    // A browser under automation logs as a bot, which the server files elsewhere: ask
+    // for that folder, so Options names the one the lines really go to.
+    const r = await fetch(navigator.webdriver ? `${ENDPOINT}?career=bot_` : ENDPOINT);
     if (r.status === 404) status = 'off';
     else if (r.ok) {
       // A static host may answer with its index page: no log server there.
