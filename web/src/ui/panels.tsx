@@ -58,6 +58,7 @@ export function Commands({ s, program }: { s: Store; program: number }) {
 export function LaunchPads({ s }: { s: Store }) {
   const v = s.view;
   const goods = v.loading_priority;
+  const propellant = v.resources.find((r) => r.id === 'propellant')?.amount ?? '0';
   const swap = (i: number, j: number) => {
     const next = [...store.view.loading_priority];
     [next[i], next[j]] = [next[j], next[i]];
@@ -108,10 +109,20 @@ export function LaunchPads({ s }: { s: Store }) {
         {v.pads.length === 0 && <p class="muted">No Launch Pads owned this run.</p>}
         <div class="cards">
           {v.pads.map((p, i) => (
-            <div class={`card pad${p.active ? '' : ' idle'}`} key={i} data-pad={i} data-cargo={p.cargo}>
+            <div
+              class={`card pad${p.active ? '' : ' idle'}${p.ready ? ' ready' : ''}`}
+              key={i}
+              data-pad={i}
+              data-cargo={p.cargo}
+              data-ready={p.ready}
+            >
               <div class="card-head">
                 <h3>Pad {i + 1}</h3>
-                <span class="muted">{p.active ? (p.paused ? 'paused' : 'loading') : 'inactive'}</span>
+                {p.ready ? (
+                  <span class="pad-status pad-ready">Ready</span>
+                ) : (
+                  <span class="pad-status muted">{p.active ? (p.paused ? 'paused' : 'loading') : 'inactive'}</span>
+                )}
               </div>
               <label>
                 Cargo{' '}
@@ -127,13 +138,23 @@ export function LaunchPads({ s }: { s: Store }) {
                 </select>
               </label>
               <Bar frac={Number(p.cargo) / Number(p.capacity)} label={`${num(p.cargo)} / ${num(p.capacity)}`} />
+              {/* The shared Propellant pool against one launch's burn. */}
+              <div class={`pad-fuel ${p.fueled ? 'pos' : 'neg'}`} data-testid={`fuel-${i}`} data-fueled={p.fueled}>
+                {/* Short, the pool is rounded down: 19.96 must not read as 20 / 20. */}
+                Fuel {num(p.fueled ? propellant : Math.floor(Number(propellant) * 10 + 1e-6) / 10)} / {num(p.fuel)} Propellant
+              </div>
               <div class="muted small">
-                Each Load Launch Pads run loads up to {num(p.load)} {name(v, p.good)} · a launch burns {num(p.fuel)} Propellant
+                Each Load Launch Pads run loads up to {num(p.load)} {name(v, p.good)} · a launch burns the fuel from the shared pool
                 {p.cooldown > 0 ? ` · cooling down ${p.cooldown} days` : ''}
               </div>
               <div>Would pay {num(p.payout)} credits now</div>
               <div class="card-actions">
-                <button type="button" data-testid={`launch-${i}`} disabled={!p.can_launch} onClick={() => act({ type: 'launch', pad: i })}>
+                <button
+                  type="button"
+                  class={p.ready ? 'go' : undefined}
+                  data-testid={`launch-${i}`}
+                  disabled={!p.can_launch}
+                  onClick={() => act({ type: 'launch', pad: i })}>
                   Launch
                 </button>
                 <button type="button" class="tiny" onClick={() => act({ type: 'set_pad_paused', pad: i, paused: !p.paused })}>

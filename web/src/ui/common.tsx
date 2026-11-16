@@ -2,8 +2,8 @@
 
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import type { Amounts, View } from '../engine';
-import { num } from '../format';
+import type { Amounts, Fx, View } from '../engine';
+import { num, perDay } from '../format';
 import { justMoved } from '../store';
 
 /** Placeholder icon colors (real art is a later round). */
@@ -63,28 +63,88 @@ export function Bar({ frac, tone = 'green', label }: { frac: number; tone?: stri
   );
 }
 
-/** A header that folds its body; open by default. */
+/** How long an open section must be on screen before its unread items count as read. */
+const READ_MS = 1000;
+
+/** A header that folds its body; open by default. With `unread`, the header carries an
+ * unread count (like unread mail), and `onRead` runs once the section has been open and on
+ * screen, with the page visible, for about a second; a folded section keeps its count. */
 export function Section({
   title,
   children,
   open: initial = true,
   dark = false,
   testid,
+  unread = 0,
+  onRead,
 }: {
   title: ComponentChildren;
   children: ComponentChildren;
   open?: boolean;
   dark?: boolean;
   testid?: string;
+  unread?: number;
+  onRead?: () => void;
 }) {
   const [open, setOpen] = useState(initial);
+  const body = useRef<HTMLDivElement>(null);
+  const [onScreen, setOnScreen] = useState(false);
+  const read = useRef(onRead);
+  read.current = onRead;
+  const tracks = onRead !== undefined;
+  useEffect(() => {
+    const el = body.current;
+    if (!open || !tracks || !el) {
+      setOnScreen(false);
+      return;
+    }
+    const io = new IntersectionObserver(([e]) => setOnScreen(e.isIntersecting));
+    io.observe(el);
+    return () => io.disconnect();
+  }, [open, tracks]);
+  const pending = open && onScreen && unread > 0;
+  useEffect(() => {
+    if (!pending) return;
+    // Seen time counts only while the page is visible.
+    let seenMs = 0;
+    const step = 250;
+    const t = window.setInterval(() => {
+      if (document.visibilityState === 'visible') seenMs += step;
+      if (seenMs >= READ_MS) {
+        clearInterval(t);
+        read.current?.();
+      }
+    }, step);
+    return () => clearInterval(t);
+  }, [pending]);
   return (
-    <section class={`fold ${dark ? 'fold-dark' : ''}`} data-testid={testid}>
+    <section class={`fold ${dark ? 'fold-dark' : ''}`} data-testid={testid} data-unread={tracks ? unread : undefined}>
       <button type="button" class="fold-head" aria-expanded={open} onClick={() => setOpen(!open)}>
         <span class="caret">{open ? '▼' : '▶'}</span> {title}
+        {unread > 0 && (
+          <span class="unread" title={`${unread} unread`}>
+            {unread}
+          </span>
+        )}
       </button>
-      {open && <div class="fold-body">{children}</div>}
+      {open && (
+        <div class="fold-body" ref={body}>
+          {children}
+        </div>
+      )}
     </section>
+  );
+}
+
+/** A resource's net rate while it sits at its cap: muted, marked capped (the surplus the
+ * cap throws away). `compact` (the narrow Resources column, where several can be capped
+ * at once): "+6" and a small "cap" tag, no wider than an ordinary "+0.2/day". */
+export function CappedRate({ net, compact = false }: { net: Fx; compact?: boolean }) {
+  const rate = perDay(net);
+  return (
+    <span class={`capped-rate${compact ? ' compact' : ''}`} title={`At its cap: ${rate} is lost each day`} data-capped>
+      {compact ? rate.replace('/day', '') : rate} <span class="cap-mark">{compact ? 'cap' : '(capped)'}</span>
+    </span>
   );
 }
 

@@ -137,23 +137,72 @@ function track(v: View, reset: boolean): void {
   }
 }
 
-/** Story texts already shown this page session (quests that became active, one-off
- * events that fired), so each shows once. */
+/** Quest texts already shown this page session, so each shows once. */
 const toldStories = new Set<string>();
 
-/** Queues the text of a quest that just became active or an event that just fired. On
- * load nothing is queued; a brand-new game queues its first quest (`intro`). */
+/** Queues the text of a main-story quest that just became active. On load nothing is
+ * queued; a brand-new game queues its first quest (`intro`). Other events (boredom beats,
+ * side story) are never queued here: they land in the right column's Events sections as
+ * unread items (`eventItems`), so nothing stands in front of the main quest. */
 function tell(v: View, mode: 'load' | 'intro' | 'play'): void {
-  // A quest opens once a career; a one-off event fires again in each run it fires in.
-  const items: [string, StoryView][] = [
-    ...(v.quest ? [[v.quest.id, v.quest] as [string, StoryView]] : []),
-    ...v.event_texts.map((e) => [`${v.run}:${e.id}`, e] as [string, StoryView]),
-  ];
-  for (const [key, e] of items) {
-    if (toldStories.has(key)) continue;
-    toldStories.add(key);
-    if (mode === 'play' || (mode === 'intro' && e.id === v.quest?.id)) store.stories.push(e);
+  // A quest opens once a career.
+  const q = v.quest;
+  if (!q || toldStories.has(q.id)) return;
+  toldStories.add(q.id);
+  if (mode !== 'load') store.stories.push(q);
+}
+
+// ---- unread events -------------------------------------------------------------------
+
+/** The right column's Events sections that count unread items. */
+export type EventSection = 'story' | 'completed' | 'activity';
+
+/** Each Events section's items now, as keys stable while the item stays listed: this
+ * run's event texts, the completed quests, this run's activity feed (a repeated line
+ * numbered by its occurrence). */
+export function eventItems(v: View): Record<EventSection, string[]> {
+  const n = new Map<string, number>();
+  return {
+    story: v.event_texts.map((e) => `${v.run}:${e.id}`),
+    completed: v.story.map((e) => e.id),
+    activity: v.activity.map((a) => {
+      const base = `${v.run}:${a.day}:${a.kind}:${a.id}`;
+      const i = n.get(base) ?? 0;
+      n.set(base, i + 1);
+      return `${base}:${i}`;
+    }),
+  };
+}
+
+/** Events items already read (UI only, like the "new" markers): what is listed when the
+ * page loads counts as read; anything later is unread until its section has been open
+ * and on screen for a moment (`markRead`). */
+const readItems = new Set<string>();
+
+function baselineRead(v: View): void {
+  readItems.clear();
+  for (const keys of Object.values(eventItems(v))) for (const k of keys) readItems.add(k);
+}
+
+export function unreadIn(v: View, section: EventSection): string[] {
+  return eventItems(v)[section].filter((k) => !readItems.has(k));
+}
+
+/** Marks `keys` (a section's unread items when it was seen) read. */
+export function markRead(keys: string[]): void {
+  let changed = false;
+  for (const k of keys) {
+    if (!readItems.has(k)) {
+      readItems.add(k);
+      changed = true;
+    }
   }
+  // A long career's feed keys pile up: keep only what is still listed.
+  if (readItems.size > 2000) {
+    const now = new Set(Object.values(eventItems(store.view)).flat());
+    for (const k of readItems) if (!now.has(k)) readItems.delete(k);
+  }
+  if (changed) emit();
 }
 
 /** When the screen last moved under the pointer by the player's own click (a story text
@@ -222,6 +271,7 @@ function refresh(reset = false, story: 'load' | 'intro' | 'play' = reset ? 'load
     save();
   }
   track(v, reset);
+  if (reset) baselineRead(v);
   tell(v, story);
   emit();
 }

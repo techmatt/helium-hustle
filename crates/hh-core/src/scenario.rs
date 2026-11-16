@@ -22,6 +22,7 @@ use crate::state::{GameState, Holding};
 const FILES: &[(&str, &str)] = &[
     ("rich.json", include_str!("../../../scenarios/rich.json")),
     ("at_cap.json", include_str!("../../../scenarios/at_cap.json")),
+    ("pad_loading.json", include_str!("../../../scenarios/pad_loading.json")),
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -20,10 +20,9 @@ npm run build                                # wasm + typecheck + static site in
 npm run preview                              # serve web/dist/
 ```
 
-- **Under a launcher that kills by pid** (conductor's `start`): `npm`, `npx` and `npm run
-  game` start the server as a grandchild that killing the pid's tree can leave listening:
-  start `node node_modules/vite/bin/vite.js --port <p> --strictPort` after `npm run wasm`,
-  or kill by port (`netstat -ano | grep :<p>`, `taskkill //F //PID <pid>`).
+- **Under a launcher that kills by pid** (conductor's `start`): `npm`/`npx` leave the server
+  as a grandchild a tree kill can miss: start `node node_modules/vite/bin/vite.js
+  [preview] --port <p> --strictPort`, or kill by port (`netstat -ano`, `taskkill //F //PID`).
 - **The wasm build:** `scripts/build-wasm.mjs` runs `wasm-pack build crates/hh-wasm
   --target web --release` into `web/src/wasm/` (git-ignored); `HH_WASM_PROFILE=dev` builds
   unoptimized. It skips the build when a hash of its inputs (`crates/hh-core`,
@@ -53,6 +52,8 @@ to save a PNG at each step worth seeing. About 45 s. It plays, in order:
 4. **The theme:** the game opens light; the Options and debug-menu toggles switch it with
    every element's box unchanged (to 0.01 px); a reload keeps it. Shots
    `theme-<light|dark>-<buildings|commands>.png`.
+5. **Readability** (before 4): capped rate, affordable header, `pad_loading`'s pad short
+   of fuel then Ready, a boredom beat under the pinned quest, Story's unread count.
 
 Any uncaught page error fails the run. Against a snapshot rather than the dev server:
 `npm run build && npx vite preview --port 61873 --strictPort`, then
@@ -106,23 +107,31 @@ Three columns and a status bar, as in the last Godot build:
 
 - **Left:** the title, the nav grid (tiles from `content/nav.json`; a dot marks a tile new
   this run or whose panel holds something new; past nine tiles they go compact, icon beside
-  name), the speed buttons, Resources (amount / cap,
-  change per day; processors assigned / total), each ideology axis's rank once Ideologies
+  name; a green dot on Launch Pads while a pad is ready), the speed buttons, Resources
+  (amount / cap, change per day, at its cap the surplus thrown away, muted: "+9
+  CAP"; processors assigned / total), each ideology axis's rank once Ideologies
   is unlocked, and the lunar horizon with the habitat at the foot.
-- **Middle:** the sky with the Earth, then the active panel. Buildings: the Land bar, a
+- **Middle:** the sky with the Earth, the main quest's text when it opens (the only story
+  banner), then the active panel. Buildings: the Land bar, a
   collapsible section per category, cards (a 96 px picture beside the description,
   per-day effects and storage lines such as "+100 Boredom cap", ideology tag, stall, price
   with shortfalls in red, active/owned with −/+, Sell 1, Sell All). A click on an
-  affordable card (outlined in green), off its controls, builds one (Shift: up to ten;
+  affordable card (outlined in green, its name row tinted), off its controls, builds one (Shift: up to ten;
   ignored for 0.5 s after the summary or a story text closes); any other card says why it
-  can't. Research cards work the same way: a click researches. Then the other panels.
-- **Right:** program tabs 1 to 5 with processors −/+ and Reset; a line per command with
+  can't. Research cards work the same way: a click researches. A pad card's fuel line is
+  red while the shared Propellant is short of a launch; full and fueled, it reads a green
+  Ready. Then the other panels.
+- **Right:** the main quest in its own slot at the top, which nothing else takes; program
+  tabs 1 to 5 with processors −/+ and Reset; a line per command with
   its progress, −/+/×, drag to reorder, its tint from today's outcome (ran, failed,
   skipped), and an accent frame (drawn so no text moves) on the line the next processor
   runs (none without a processor). Above 10x one redraw covers several days, so each line
-  shows its outcome over them (`advance_run`'s `lines`) with no frame. Below, Events: the
-  active quest, completed quests, and Recent Activity (green good, red bad, blue news).
-- **Bottom:** day and run, the cheated mark, Boredom and Energy bars with their rates.
+  shows its outcome over them (`advance_run`'s `lines`) with no frame. Below, Events:
+  Story (this run's event texts: boredom beats, side story), completed quests, and Recent
+  Activity (green good, red bad, blue news), each with an unread count (UI state),
+  cleared once the section is open and on screen for about a second.
+- **Bottom:** day and run, the cheated mark, Boredom and Energy bars with their rates
+  (capped as in Resources).
 - **Run summary:** when a run ends a summary covers the screen, the clock stopped until
   Continue.
 
@@ -136,12 +145,10 @@ hovered or opened.
 Earthrise, light (the default) or dark, picked in Options and in the debug menu and
 remembered in `localStorage` `hh.theme` (`index.html` applies it before the first paint).
 The two are 1:1: the same markup, layout and art; only the color tokens at the top of
-`src/style.css` differ (surfaces, lines, text, muted text, accent, positive/negative,
-selection, bar fills, horizon fills). A token block holds colors only, so switching moves
+`src/style.css` differ. A token block holds colors only, so switching moves
 nothing (the e2e checks it). Resource and nav swatches keep their true colors in both; an
 ideology axis drawn as text uses its `axis-<id>` class, which has a readable variant per
-theme. Fonts are bundled (`@fontsource`): Rajdhani for headings, IBM Plex Sans for body
-text, IBM Plex Mono for numbers. Building pictures: `src/assets/buildings/<id>.webp`
+theme. Fonts are bundled (`@fontsource`, named in `src/style.css`). Building pictures: `src/assets/buildings/<id>.webp`
 (one per building, both themes; 192 px shown at 96 px; `src/ui/buildingArt.ts`; made by
 `experiments/results/020_building_card_art/`). The rest of the art is inline SVG in
 `src/ui/art.tsx`; the sky over the center column (`.sky`) is the home for a later live

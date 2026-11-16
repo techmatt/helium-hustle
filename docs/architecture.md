@@ -126,10 +126,12 @@ can't change an old record.
 ## The view
 
 `Rules::view` (`view.rs`) gives everything a client shows and can do: resources (amount,
-cap, change over the next day, visible), buildings (price, what's short, buyable, unlocked,
+cap, change over the next day, the same before the end-of-tick clamp so a capped
+resource's surplus shows, visible), buildings (price, what's short, buyable, unlocked,
 visible, stall, description, ideology tag, content rates per copy, the action that buys
 one), land (price, per purchase, buyable), commands, programs (with each line's outcome
-today), pads (fuel, cargo per load, payout, can launch), the run's totals, markets (demand
+today), pads (fuel, whether the shared Propellant covers it, cargo per load, payout, can launch,
+ready: full and can launch), the run's totals, markets (demand
 once Market Awareness is researched, else a tier), research, ideology (with the scores of
 this rank and the next), projects, the active quest (with countable progress), quest and
 event texts, achievements, rivals, live overclocks and modifiers, boredom (cap, rate,

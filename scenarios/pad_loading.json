@@ -1,0 +1,9 @@
+{
+  "name": "pad_loading",
+  "description": "Day 190, a Launch Pad and 19.4 Propellant (a launch burns 20): load it, then top up the fuel. Boredom's phase 2 begins at day 200.",
+  "start": {
+    "tick": 190,
+    "resources": { "credits": "100", "energy": "100", "he3": "20", "propellant": "19.4" },
+    "buildings": { "solar_panel": 10, "launch_pad": 1 }
+  }
+}

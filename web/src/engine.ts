@@ -31,6 +31,8 @@ export interface ResourceView {
   amount: Fx;
   cap: Fx | null;
   per_day: Fx;
+  /** `per_day` before the cap cuts it: at its cap, the surplus thrown away. */
+  net_per_day: Fx;
   visible: boolean;
 }
 
@@ -104,6 +106,10 @@ export interface PadView {
   load: Fx;
   payout: Fx;
   can_launch: boolean;
+  /** The shared Propellant pool holds a launch's `fuel`. */
+  fueled: boolean;
+  /** Full and able to launch now. */
+  ready: boolean;
 }
 
 export interface MarketView {

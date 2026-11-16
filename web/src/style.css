@@ -32,6 +32,7 @@
   --fill-gray: #c4beb4;
   --fill-blue: #93bce9;
   --ok-tint: #eaf5ee;
+  --ok-head: #d3ecdb;
   --bad-tint: #fbecea;
   --skip-tint: #efede8;
   --on-neg: #ffffff;
@@ -78,6 +79,7 @@
   --fill-gray: #4f4c55;
   --fill-blue: #2d5a92;
   --ok-tint: #1e2c24;
+  --ok-head: #213a2b;
   --bad-tint: #2f2120;
   --skip-tint: #26262c;
   --on-neg: #16161a;
@@ -933,6 +935,119 @@ tr.is-new td:first-child {
 }
 .act-info {
   color: var(--info);
+}
+
+/* ---- readability: quest pin, unread counts, pad readiness, capped rates ---- */
+/* The main quest's own slot at the top of the right column. */
+.quest-pin {
+  border: 1px solid var(--line);
+  border-left: 4px solid var(--accent);
+  border-radius: 4px;
+  background: var(--banner);
+  margin-bottom: 8px;
+}
+.quest-pin-label {
+  font-family: var(--font-head);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--accent-text);
+  padding: 2px 6px 0;
+}
+/* An unread count in a section header, like unread mail. */
+.fold-head .unread {
+  display: inline-block;
+  margin-left: 6px;
+  min-width: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--neg);
+  color: var(--on-neg);
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-size: 11px;
+  letter-spacing: 0;
+  line-height: 16px;
+  text-align: center;
+}
+.event-item {
+  padding: 4px 6px;
+  border-left: 3px solid transparent;
+}
+.event-item + .event-item {
+  border-top: 1px solid var(--line);
+}
+.event-item.is-unread,
+.events li.is-unread {
+  border-left-color: var(--accent);
+}
+.events li.is-unread {
+  border-left: 3px solid var(--accent);
+  padding-left: 3px;
+}
+.event-title {
+  font-weight: 600;
+}
+.event-body {
+  font-size: 13px;
+}
+/* Launch readiness. */
+.pad-fuel {
+  font-family: var(--font-mono);
+  font-size: 13px;
+}
+.pad-status.pad-ready {
+  color: var(--pos);
+  font-weight: 700;
+}
+.card.pad.ready {
+  border-color: var(--pos);
+  box-shadow: inset 0 0 0 1px var(--pos);
+}
+button.go,
+button.go:hover:not(:disabled) {
+  background: var(--fill-green);
+  border-color: var(--pos);
+  color: var(--text);
+  font-weight: 600;
+}
+/* Beside the "new" dot, clear of the icon in both tile layouts. */
+.nav-tile .dot.dot-ready {
+  right: 17px;
+  background: var(--pos);
+}
+/* An affordable building's name row is tinted (every card's head has the same box, so a
+   card turning affordable moves nothing). */
+.card.building .card-head {
+  margin: -8px -10px 0;
+  padding: 6px 10px 4px;
+  border-radius: 3px 3px 0 0;
+}
+.card.building.can-buy .card-head {
+  background: var(--ok-head);
+}
+/* The tinted head would cover the card's "new" edge: it draws its own. */
+.card.building.is-new .card-head {
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+/* A capped resource's net rate: the surplus the cap throws away. */
+.capped-rate {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.cap-mark {
+  font-size: 0.85em;
+}
+/* In the narrow Resources column the marker is a small "cap" tag. */
+.capped-rate.compact .cap-mark {
+  font-family: var(--font-body);
+  font-size: 9px;
+  text-transform: uppercase;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+  padding: 0 2px;
+  vertical-align: 1px;
 }
 
 /* ---- modal ---- */

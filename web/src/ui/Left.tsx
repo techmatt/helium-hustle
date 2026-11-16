@@ -1,11 +1,11 @@
 // Left column: title, nav grid, speed controls, Resources and Ideology, the horizon.
 
-import { Fragment } from 'preact';
+import { Fragment, type ComponentChildren } from 'preact';
 import { SPEEDS } from '../clock';
 import { capitalize, num, perDay } from '../format';
 import { navHasNews, seen, setSpeed, type Store } from '../store';
 import { Horizon } from './art';
-import { Section, Square, navShown } from './common';
+import { CappedRate, Section, Square, navShown } from './common';
 
 export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: string) => void }) {
   const v = s.view;
@@ -13,6 +13,7 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
   // Past nine tiles they turn compact (icon beside the name), so a late career's column
   // still fits a 1280 px window without scrolling.
   const compact = tiles.length > 9;
+  const padReady = v.pads.some((p) => p.ready);
   return (
     <aside class="col-left">
       <h1 class="title">Helium Hustle</h1>
@@ -31,6 +32,7 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
             <Square id={t.id} size={compact ? 18 : 34} />
             <span>{t.name}</span>
             {navHasNews(t.id) && <span class="dot" title="Something new" />}
+            {t.id === 'launch_pads' && padReady && <span class="dot dot-ready" data-testid="pads-ready" title="A pad is ready to launch" />}
           </button>
         ))}
       </nav>
@@ -62,14 +64,17 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
                 const full = cap !== null && amt >= cap;
                 const empty = amt <= 0;
                 let shown = r.cap === null ? num(r.amount) : `${num(r.amount)} / ${num(r.cap)}`;
-                let rate = perDay(r.per_day);
+                // At its cap the change reads 0; the surplus the cap throws away still shows,
+                // muted and marked.
+                const capped = full && r.id !== 'boredom' && Number(r.net_per_day) > Number(r.per_day);
+                let rate: ComponentChildren = capped ? <CappedRate net={r.net_per_day} compact /> : perDay(r.per_day);
                 if (r.id === 'processors') {
                   shown = `${v.processors - v.processors_free} / ${v.processors}`;
                   rate = `${v.processors_free} free`;
                 }
                 if (r.id === 'land') rate = 'free';
                 // Boredom rising is bad news: its rate reads the other way round.
-                const rateNum = Number(r.per_day) * (r.id === 'boredom' ? -1 : 1);
+                const rateNum = capped ? 0 : Number(r.per_day) * (r.id === 'boredom' ? -1 : 1);
                 return (
                   <tr key={r.id} data-res={r.id} data-amount={r.amount} class={s.fresh.has(`resource:${r.id}`) ? 'is-new' : ''} onMouseEnter={() => seen(`resource:${r.id}`)}>
                     <td>

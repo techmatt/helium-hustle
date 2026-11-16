@@ -16,7 +16,7 @@ import {
 } from '../store';
 import { Sky } from './art';
 import { Buildings } from './Buildings';
-import { Bar, Section, navShown } from './common';
+import { Bar, CappedRate, Section, navShown } from './common';
 import { Left } from './Left';
 import { Options } from './Options';
 import {
@@ -135,6 +135,12 @@ function StatusBar({ s }: { s: Store }) {
   const v = s.view;
   const energy = v.resources.find((r) => r.id === 'energy');
   const bored = v.resources.find((r) => r.id === 'boredom');
+  // At its cap: the surplus thrown away, muted and marked (as in Resources).
+  const energyCapped =
+    energy !== undefined &&
+    energy.cap !== null &&
+    Number(energy.amount) >= Number(energy.cap) &&
+    Number(energy.net_per_day) > Number(energy.per_day);
   return (
     <footer class="status">
       <span id="day" class="status-day">
@@ -157,7 +163,9 @@ function StatusBar({ s }: { s: Store }) {
         tone="blue"
         label={`${num(energy?.amount ?? '0')} / ${num(energy?.cap ?? '0')}`}
       />
-      <span class="status-rate">{perDay(energy?.per_day ?? '0')}</span>
+      <span class="status-rate" data-testid="energy-rate">
+        {energyCapped ? <CappedRate net={energy.net_per_day} /> : perDay(energy?.per_day ?? '0')}
+      </span>
     </footer>
   );
 }

@@ -10,6 +10,11 @@
 //      pause, click-to-buy (a green card's text buys, its −/+ and Sell 1 don't, space after
 //      a click pauses and buys nothing, a grey card says why), a reload keeping the save,
 //      a save from another revision discarded, the scenarios and the replay check.
+//   5. (Run before 4.) Readability: a capped resource's positive rate (Resources and the
+//      status bar), an affordable card's tinted header, scenario pad_loading's full pad
+//      short on fuel then Ready (green Launch, border, nav dot), and a boredom beat that
+//      leaves the main quest pinned and counts unread in a folded Story until it is open
+//      and on screen for a second. Shots read-*.png.
 //   4. The theme: light by default; the Options and debug toggles switch it with no
 //      element moving, and a reload keeps it.
 // Any uncaught page error fails the run.
@@ -279,6 +284,107 @@ async function playToFirstShipment() {
   return false;
 }
 
+/** Section 5, from scenario at_cap (paused, cheats on; `grant` from section 2). Shots
+ * `read-*.png`. Leaves a notice up (the replay check's) for section 4. */
+async function readability(grant) {
+  // Income at cap: Energy at 100 / 100 under 20 Solar Panels still shows its surplus.
+  const capped = await evaluate(`document.querySelector('tr[data-res="energy"] [data-capped]')?.textContent ?? ''`);
+  check(/^\+[\d.]+ cap$/.test(capped), `a capped resource shows its positive rate: "${capped}"`);
+  const bar = await evaluate(`document.querySelector('[data-testid="energy-rate"]').textContent`);
+  check(/^\+[\d.]+\/day \(capped\)$/.test(bar), `the status bar's Energy rate too: "${bar}"`);
+  // Affordable vs not: only the affordable card's name row is tinted.
+  await debugMenu();
+  // (20 Solar Panels hold all the land: free some too.)
+  await grant('credits', '5000');
+  await grant('land', '10');
+  await grant('titanium', '20');
+  await grant('regolith', '50');
+  await panel('buildings');
+  const heads = await evaluate(`(() => {
+    const bg = (sel) => { const h = document.querySelector(sel + ' .card-head'); return h ? getComputedStyle(h).backgroundColor : null; };
+    const card = (sel) => { const c = document.querySelector(sel); return c ? getComputedStyle(c).backgroundColor : null; };
+    return { yes: bg('.card.building.can-buy'), no: bg('.card.building.cannot-buy'), body: card('.card.building.can-buy') };
+  })()`);
+  check(!!heads.yes && !!heads.no && heads.yes !== heads.no && heads.yes !== heads.body, `an affordable card's header is tinted, the card body isn't: ${JSON.stringify(heads)}`);
+  await shot('read-capped-and-cards');
+
+  // A pad short on fuel, then Ready; a boredom beat fires on the way (day 200).
+  await debugMenu();
+  await setValue('#scenario', 'pad_loading');
+  await click('#start-scenario');
+  const quest = await evaluate(`document.querySelector('[data-testid="quest-pin"] [data-testid="quest"]')?.dataset.quest ?? null`);
+  check(!!quest, `the main quest has its pinned slot: ${quest}`);
+  // Fold Story: a folded section keeps its count.
+  await click('[data-testid="events-story"] .fold-head');
+  const lines = await evaluate(`[...document.querySelectorAll('.lines li')].map((li) => li.dataset.command)`);
+  await runOnly('load_pads', lines);
+  // Helium-3 caps at 20 and a load moves 5: top it up and play 4 days, 5 times.
+  await debugMenu();
+  for (let i = 0; i < 5; i++) {
+    await grant('he3', '20');
+    await setValue('#cheat-days', '4');
+    await click('#cheat-jump');
+    await sleep(100);
+  }
+  await panel('launch_pads');
+  await waitFor(`Number(document.querySelector('[data-pad="0"]')?.dataset.cargo ?? 0) >= 100`, 'the pad full', 3000);
+  await sleep(200);
+  const short = await evaluate(`(() => {
+    const p = document.querySelector('[data-pad="0"]');
+    return { fuel: p.querySelector('[data-testid="fuel-0"]').textContent, fueled: p.querySelector('[data-testid="fuel-0"]').dataset.fueled,
+      status: p.querySelector('.pad-status').textContent, ready: p.classList.contains('ready'),
+      go: p.querySelector('[data-testid="launch-0"]').classList.contains('go'), dot: !!document.querySelector('[data-testid="pads-ready"]') };
+  })()`);
+  check(short.fuel === 'Fuel 19.4 / 20 Propellant' && short.fueled === 'false' && short.status !== 'Ready' && !short.ready && !short.go && !short.dot,
+    `a full pad short on fuel: red fuel line, not Ready: ${JSON.stringify(short)}`);
+  // The pads are the panel's last section: scroll only the middle column to them.
+  const toPads = `document.querySelector('.col-mid').scrollTop = 1e6`;
+  await evaluate(toPads);
+  // The boredom beat: in Story, unread; the quest still pinned and no banner over it.
+  const beat = await evaluate(`(() => ({
+    pin: document.querySelector('[data-testid="quest-pin"] [data-testid="quest"]')?.dataset.quest ?? null,
+    banner: document.querySelector('[data-testid="story-banner"]')?.dataset.story ?? null,
+    unread: Number(document.querySelector('[data-testid="events-story"]').dataset.unread),
+    head: document.querySelector('[data-testid="events-story"] .fold-head').textContent,
+    // Story is folded: the beat's line in Recent Activity says it fired.
+    beat: [...document.querySelectorAll('[data-testid="events-activity"] li[data-kind="event"]')].some((e) => /Boredom Rising/.test(e.textContent)),
+    slot: [...document.querySelectorAll('[data-testid="quest-pin"] [data-quest]')].map((e) => e.dataset.quest),
+  }))()`);
+  // Q1 completes on the way (Q2 opens): the slot holds the active quest and nothing else;
+  // a banner may still hold the scenario's quest texts (quests only, never the beat).
+  check(/^q/.test(beat.pin ?? '') && beat.slot.length === 1 && beat.beat && !(beat.banner ?? '').startsWith('boredom') && beat.unread >= 1,
+    `a boredom beat fired: the quest stays pinned, Story counts it unread: ${JSON.stringify(beat)}`);
+  await shot('read-pad-short-story-unread');
+  await debugMenu();
+  await grant('propellant', '0.6');
+  await panel('launch_pads');
+  await evaluate(toPads);
+  await sleep(200);
+  const ready = await evaluate(`(() => {
+    const p = document.querySelector('[data-pad="0"]');
+    return { fuel: p.querySelector('[data-testid="fuel-0"]').textContent, fueled: p.querySelector('[data-testid="fuel-0"]').dataset.fueled,
+      status: p.querySelector('.pad-status').textContent, ready: p.classList.contains('ready'),
+      go: p.querySelector('[data-testid="launch-0"]').classList.contains('go'), dot: !!document.querySelector('[data-testid="pads-ready"]') };
+  })()`);
+  check(ready.fuel === 'Fuel 20 / 20 Propellant' && ready.fueled === 'true' && ready.status === 'Ready' && ready.ready && ready.go && ready.dot,
+    `fuel enough: Ready, green Launch, green border, nav dot: ${JSON.stringify(ready)}`);
+  // Unfold Story: its count clears after about a second on screen, with no click on an item.
+  await click('[data-testid="events-story"] .fold-head');
+  await sleep(300);
+  const early = Number(await evaluate(`document.querySelector('[data-testid="events-story"]').dataset.unread`));
+  await shot('read-pad-ready-story-open');
+  await waitFor(`document.querySelector('[data-testid="events-story"]').dataset.unread === '0'`, 'Story read', 4000);
+  check(early >= 1, `Story's count holds for a moment once open (${early}), then clears`);
+  check(
+    (await evaluate(`document.querySelector('[data-testid="quest-pin"] [data-testid="quest"]')?.dataset.quest ?? null`)) === beat.pin,
+    'the quest is still pinned after Story is read',
+  );
+  await shot('read-story-read');
+  await debugMenu();
+  await click('#check-replay');
+  check(/^Replay ok/.test(await noticeText()), `replay check after the readability steps: ${await noticeText()}`);
+}
+
 try {
   await send('Page.enable');
   await send('Runtime.enable');
@@ -496,6 +602,9 @@ try {
   await debugMenu();
   await click('#check-replay');
   check(/^Replay ok/.test(await noticeText()), `replay check: ${await noticeText()}`);
+
+  // ---- 5. readability: capped income, affordable headers, pad readiness, quest pin ----
+  await readability(grant);
 
   // ---- 4. the theme: light by default; the Options toggle switches it, moving nothing ----
   const theme = () => evaluate('document.documentElement.dataset.theme');

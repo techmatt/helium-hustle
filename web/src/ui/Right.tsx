@@ -5,12 +5,19 @@ import { useState } from 'preact/hooks';
 import type { Activity, Entry, View } from '../engine';
 import { num } from '../format';
 import { daysPerWake } from '../clock';
-import { act, store, type Store } from '../store';
+import { act, eventItems, markRead, store, unreadIn, type EventSection, type Store } from '../store';
 import { Bar, Section, name } from './common';
 
 export function Right({ s, program, setProgram }: { s: Store; program: number; setProgram: (i: number) => void }) {
   return (
     <aside class="col-right">
+      {/* The main-story quest's own slot: nothing else is ever drawn here. */}
+      {s.view.quest && (
+        <div class="quest-pin" data-testid="quest-pin">
+          <div class="quest-pin-label">Main quest</div>
+          <Quest v={s.view} />
+        </div>
+      )}
       <Programs s={s} program={program} setProgram={setProgram} />
       <Events v={s.view} />
     </aside>
@@ -164,28 +171,61 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
   );
 }
 
+/** Events other than the main quest, each section with its unread count. */
 function Events({ v }: { v: View }) {
-  const q = v.quest;
-  const recent = [...v.activity].reverse();
+  const keys = eventItems(v);
+  const unread = (sec: EventSection) => unreadIn(v, sec);
+  const story = unread('story');
+  const completed = unread('completed');
+  const activity = unread('activity');
+  // Newest first.
+  const texts = v.event_texts.map((e, i) => ({ e, key: keys.story[i] })).reverse();
+  const recent = v.activity.map((a, i) => ({ a, key: keys.activity[i] })).reverse();
   return (
     <div class="events" data-testid="events">
       <h2>Events</h2>
-      <Section title={`Story${q ? ' (1)' : ''}`} dark testid="events-story">
-        {q && <Quest v={v} />}
+      <Section
+        title={`Story (${texts.length})`}
+        dark
+        testid="events-story"
+        unread={story.length}
+        onRead={() => markRead(story)}
+      >
+        {texts.length === 0 && <p class="muted hint">No events this run yet.</p>}
+        {texts.map(({ e, key }) => (
+          <div key={key} class={`event-item${story.includes(key) ? ' is-unread' : ''}`} data-event={e.id}>
+            <div class="event-title">{e.title}</div>
+            <div class="muted">{e.summary}</div>
+            <div class="event-body">{e.body}</div>
+          </div>
+        ))}
       </Section>
-      <Section title={`Completed (${v.story.length})`} dark open={false} testid="events-completed">
+      <Section
+        title={`Completed (${v.story.length})`}
+        dark
+        open={false}
+        testid="events-completed"
+        unread={completed.length}
+        onRead={() => markRead(completed)}
+      >
         <ul class="plain">
           {v.story.map((e) => (
-            <li key={e.id} data-quest={e.id}>
+            <li key={e.id} data-quest={e.id} class={completed.includes(e.id) ? 'is-unread' : ''}>
               ✓ {e.title}
             </li>
           ))}
         </ul>
       </Section>
-      <Section title={`Recent Activity (${recent.length})`} dark testid="events-activity">
+      <Section
+        title={`Recent Activity (${recent.length})`}
+        dark
+        testid="events-activity"
+        unread={activity.length}
+        onRead={() => markRead(activity)}
+      >
         <ul class="plain activity">
-          {recent.map((a, i) => (
-            <li key={`${a.day}-${a.kind}-${a.id}-${i}`} class={`act-${tone(a)}`} data-kind={a.kind}>
+          {recent.map(({ a, key }) => (
+            <li key={key} class={`act-${tone(a)}`} data-kind={a.kind}>
               Day {num(a.day)}: {describe(v, a)}
             </li>
           ))}

@@ -18,8 +18,8 @@ function tokens(selector) {
 
 // [text, backgrounds]: a #hex is a fixed color, anything else a token.
 const PAIRS = [
-  ['text', ['page', 'panel', 'card', 'banner', 'strip', 'strip-hover', 'hover', 'disabled', 'skip-tint', 'ok-tint', 'bad-tint', 'sky', 'track', 'fill-green', 'fill-red', 'fill-gray', 'fill-blue']],
-  ['muted', ['page', 'panel', 'card', 'banner', 'strip', 'hover', 'disabled', 'skip-tint', 'ok-tint']],
+  ['text', ['page', 'panel', 'card', 'banner', 'strip', 'strip-hover', 'hover', 'disabled', 'skip-tint', 'ok-tint', 'ok-head', 'bad-tint', 'sky', 'track', 'fill-green', 'fill-red', 'fill-gray', 'fill-blue']],
+  ['muted', ['page', 'panel', 'card', 'banner', 'strip', 'hover', 'disabled', 'skip-tint', 'ok-tint', 'ok-head']],
   ['accent-text', ['panel', 'card', 'banner', 'hover']],
   ['pos', ['page', 'panel', 'card', 'ok-tint', 'skip-tint', 'hover']],
   ['neg', ['page', 'panel', 'card', 'bad-tint', 'hover', 'ok-tint', 'disabled']],

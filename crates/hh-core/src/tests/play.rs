@@ -299,6 +299,35 @@ fn shipments_load_launch_pay_and_cool_down() {
 }
 
 #[test]
+fn the_view_shows_pad_readiness_and_the_rate_a_cap_throws_away() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    own(&mut g, "launch_pad", 1);
+    own(&mut g, "solar_panel", 3);
+    // Full but short of fuel: not fueled, not ready.
+    g.run.pads[0].cargo = r.p.shipments.pad_cargo_capacity;
+    set(&mut g, "propellant", "19.4");
+    let p = &r.view(&g).pads[0];
+    assert!(!p.fueled && !p.ready && !p.can_launch);
+    // Fuel enough: ready; part loaded, it can launch but isn't ready.
+    set(&mut g, "propellant", "20");
+    let p = &r.view(&g).pads[0];
+    assert!(p.fueled && p.ready);
+    g.run.pads[0].cargo = f("5");
+    let p = &r.view(&g).pads[0];
+    assert!(p.fueled && p.can_launch && !p.ready);
+    // Energy at its cap: the change is 0, the net rate the surplus.
+    set(&mut g, "energy", "0");
+    let below = r.view(&g).resources.iter().find(|x| x.id == "energy").unwrap().clone();
+    let cap = below.cap.unwrap();
+    set(&mut g, "energy", &cap.to_string());
+    let at = r.view(&g).resources.iter().find(|x| x.id == "energy").unwrap().clone();
+    assert!(at.net_per_day > Fx::ZERO, "solar makes a surplus: {:?}", at.net_per_day);
+    assert_eq!(at.per_day, Fx::ZERO);
+    assert_eq!(below.net_per_day, below.per_day, "below its cap nothing is cut");
+}
+
+#[test]
 fn demand_stays_in_its_band_and_moves() {
     let r = rules();
     let mut g = r.new_game(7);

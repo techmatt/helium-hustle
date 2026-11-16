@@ -32,6 +32,9 @@ pub struct ResourceView {
     pub cap: Option<Fx>,
     /// Change over the next day if nothing else is done.
     pub per_day: Fx,
+    /// The same change before the end-of-tick clamp: at its cap, the surplus the
+    /// cap throws away shows here, where `per_day` reads 0.
+    pub net_per_day: Fx,
     pub visible: bool,
 }
 
@@ -151,6 +154,10 @@ pub struct PadView {
     /// Credits it would fetch launched now.
     pub payout: Fx,
     pub can_launch: bool,
+    /// The shared Propellant pool holds a launch's `fuel`.
+    pub fueled: bool,
+    /// Full and able to launch now.
+    pub ready: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -472,6 +479,12 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 amount: g.amount(&res.id),
                 cap: economy::cap(r, g, &res.id),
                 per_day: if same_run { next.amount(&res.id) - g.amount(&res.id) } else { Fx::ZERO },
+                net_per_day: if same_run {
+                    next.amount(&res.id) - g.amount(&res.id)
+                        + next.run.today.overflow.get(&res.id).copied().unwrap_or(Fx::ZERO)
+                } else {
+                    Fx::ZERO
+                },
                 visible: res.always_visible || made_by_owned || made_by_used || g.amount(&res.id) > Fx::ZERO,
             }
         })
@@ -624,6 +637,8 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                     load: shipments::load_amount(r, g),
                     payout: shipments::payout(r, g, i),
                     can_launch: shipments::can_launch(r, g, i),
+                    fueled: g.amount(shipments::PROPELLANT) >= r.p.shipments.fuel_per_pad,
+                    ready: p.cargo >= r.p.shipments.pad_cargo_capacity && shipments::can_launch(r, g, i),
                 }
             })
             .collect(),
