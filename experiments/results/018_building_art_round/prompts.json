@@ -1,0 +1,68 @@
+{
+  "preamble": "Building art for a sci-fi idle game about an AI running helium-3 mining on the Moon. Near-future, clean and plausible lunar engineering: modular hulls in white and light grey with orange safety accents, grey lunar regolith ground. No people, no vehicles other than the subject, no text, letters, numbers, logos or UI anywhere.",
+  "closing": "Exactly one building, nothing else built nearby. It must read as a small game thumbnail: a strong simple silhouette, its function obvious at a glance.",
+  "styles": {
+    "iso": {
+      "label": "Isometric diorama",
+      "cut": true,
+      "shape": "square, 1:1",
+      "style": "Style: a stylized isometric game building sprite, like a city-builder or tycoon game's building art, true isometric 3/4 view from above. The building sits as a miniature diorama on its own small rounded square patch of grey regolith ground with a couple of small craters and rocks, the patch's edge showing a thin slice of soil.",
+      "emphasis": "Hand-painted game art, never a photograph or a photoreal 3D render: clean shapes, crisp dark outlines, soft cel shading with a warm top-left light, gentle saturated accents, no texture noise.",
+      "framing": "Fully transparent background (alpha) around the diorama: no sky, no backdrop, no cast shadow beyond the patch. The patch and building fill about 80% of the image, centered, nothing cut off at the edges."
+    },
+    "poster": {
+      "label": "Retro-futurist poster",
+      "cut": false,
+      "shape": "landscape, 3:2",
+      "style": "Style: a mid-century retro-futurist space-age travel poster (1950s and 60s screenprint), strictly five flat ink colors and nothing else: deep navy sky, cream, burnt orange, teal and one warm grey. Bold graphic simplification into big geometric shapes, a large stylized crescent Earth in the sky, the ground as a few flat stepped bands, hard-edged flat shadows. The building keeps its shape but takes the poster's palette, not realistic colors.",
+      "emphasis": "A printed screenprint poster, never a photograph, never a painting, never a 3D render: perfectly flat ink areas with no shading gradients and no brush texture, crisp hard edges, a light paper grain and slight ink misregistration.",
+      "framing": "Keep the building compact and centered: entirely inside the middle two-thirds of the width and the middle half of the height, so the image can be cropped to a wide 3:1 banner or to a square. Only plain ground and sky outside that box; the scene fills the frame edge to edge with no border."
+    },
+    "flat": {
+      "label": "Flat painted (the poster prompt's first try)",
+      "cut": false,
+      "shape": "landscape, 3:2",
+      "style": "Style: a retro-futurist space-age travel poster from the 1950s and 60s, flat painted shapes in a limited palette of about six colors (deep navy-black sky, cream, warm orange, teal, two greys), silkscreen texture, bold graphic simplification, a big Earth or a few stars in the black sky, long flat-color shadows on the ground.",
+      "emphasis": "A printed poster illustration, never a photograph or a 3D render: flat inks, no gradients except a few simple bands, slight print grain and misregistration.",
+      "framing": "Keep the building compact and centered: entirely inside the middle two-thirds of the width and the middle half of the height, so the image can be cropped to a wide 3:1 banner or to a square. Only plain ground and sky outside that box; the scene fills the frame edge to edge with no border."
+    },
+    "painterly": {
+      "label": "Painterly lunar concept art",
+      "cut": false,
+      "shape": "landscape, 3:2",
+      "style": "Style: painterly lunar concept art for a game, loose confident brushwork. A black sky, a harsh low sun from the side, long hard black shadows across bright grey regolith, a small blue Earth low on the horizon.",
+      "emphasis": "A hand-painted illustration, never a photograph or a photoreal 3D render: visible brush strokes, simplified forms, large readable masses of light and shadow, crisp detail only on the building, loose ground and sky.",
+      "framing": "Keep the building compact and centered: entirely inside the middle two-thirds of the width and the middle half of the height, so the image can be cropped to a wide 3:1 banner or to a square. Only plain ground and sky outside that box, the small Earth inside that box too; the scene fills the frame edge to edge with no border."
+    },
+    "lowpoly": {
+      "label": "Stylized low-poly",
+      "cut": true,
+      "shape": "square, 1:1",
+      "style": "Style: a stylized low-poly game model, chunky faceted geometry with flat-shaded triangles, a soft pastel-leaning palette (off-white hulls, warm orange accents, slate-blue panels), seen from a 3/4 view above. The building stands on a small low-poly disc of grey regolith.",
+      "emphasis": "Toy-like stylized game art, never a photograph or a realistic render: flat-shaded facets, no textures, no reflections, simple ambient light from the upper left.",
+      "framing": "Fully transparent background (alpha) around the model: no sky, no backdrop, no cast shadow beyond its disc. The model and disc fill about 80% of the image, centered, nothing cut off at the edges."
+    },
+    "pixel": {
+      "label": "Pixel art",
+      "cut": false,
+      "shape": "landscape, 3:2",
+      "style": "Style: detailed pixel art from a modern 16-bit-inspired strategy game, seen from a slight 3/4 angle. A black starry sky with a small pixel Earth, grey cratered regolith ground, a limited palette of about 24 colors with hand-placed dithering and clean pixel clusters.",
+      "emphasis": "True pixel art, never a photograph, never a painting, never a 3D render: every edge on a visible square pixel grid (as if drawn at 240 by 160 and scaled up with nearest-neighbor), no anti-aliasing, no blur, no gradients except dithering.",
+      "framing": "Keep the building compact and centered: entirely inside the middle two-thirds of the width and the middle half of the height, so the image can be cropped to a wide 3:1 banner or to a square. Only plain ground and sky outside that box, the small Earth inside that box too; the scene fills the frame edge to edge with no border."
+    },
+    "cutaway": {
+      "label": "Technical cutaway",
+      "cut": false,
+      "shape": "landscape, 3:2",
+      "style": "Style: an illustrated technical cutaway like a vintage sci-fi technical manual, crisp ink linework with flat watercolor washes. The building is cut open to show its interior machinery and the ground is cut as a cross-section, showing the layers of regolith beneath it, against a black starry sky.",
+      "emphasis": "An ink-and-wash illustration, never a photograph or a 3D render: confident line weights, flat color washes, a few cool and warm accents, no labels, callouts or annotations.",
+      "framing": "Keep the building compact and centered: entirely inside the middle two-thirds of the width and the middle half of the height, so the image can be cropped to a wide 3:1 banner or to a square. Only plain ground and sky outside that box; the scene fills the frame edge to edge with no border."
+    }
+  },
+  "buildings": {
+    "solar_panel": "a Solar Panel array: a few rows of tilted dark-blue photovoltaic panels on a light metal frame, a small inverter box and a cable running away.",
+    "excavator": "a Regolith Excavator: a squat tracked lunar digging machine with a bucket wheel at its front biting into a grey regolith slope, a small heap of dug regolith beside it.",
+    "smelter": "a Smelter: a compact furnace building with a squat cylindrical furnace, a glowing orange pour of molten titanium, pipes and a short radiator stack (no smoke: the Moon has no air).",
+    "data_center": "a Data Center: a low armored server bunker half buried in regolith, rows of glowing blue status lights on server racks visible through an open bay, radiator fins on its roof."
+  }
+}
