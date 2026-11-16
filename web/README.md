@@ -104,7 +104,8 @@ Three columns and a status bar, as in the last Godot build:
   change per day; processors assigned / total), each ideology axis's rank once Ideologies
   is unlocked, and the lunar horizon with the habitat at the foot.
 - **Middle:** the sky with the Earth on top, then the active panel. Buildings: the Land bar,
-  a collapsible section per category, cards (description, per-day effects, ideology tag,
+  a collapsible section per category, cards (a 96 px painted picture beside the
+  description and per-day effects, ideology tag,
   stall, price with shortfalls in red, active/owned with −/+, Sell 1, Sell All). A click on
   an affordable card (outlined in green), off its controls, builds one (Shift: up to ten);
   any other card buys nothing and briefly says why. Then Commands, Launch Pads, Research,
@@ -134,7 +135,11 @@ selection, bar fills, horizon fills). A token block holds colors only, so switch
 nothing (the e2e checks it). Resource and nav swatches keep their true colors in both; an
 ideology axis drawn as text uses its `axis-<id>` class, which has a readable variant per
 theme. Fonts are bundled (`@fontsource`): Rajdhani for headings, IBM Plex Sans for body
-text, IBM Plex Mono for numbers. The art is inline SVG in `src/ui/art.tsx`; the sky over
+text, IBM Plex Mono for numbers. The building pictures are painted cut-outs (one per
+building, the same file in both themes): `src/assets/buildings/<id>.webp`, 192 px
+squares shown at 96 px, looked up by `src/ui/buildingArt.ts` (a building with no file
+shows none), drawn and cut by `experiments/results/020_building_card_art/`. The rest of
+the art is inline SVG in `src/ui/art.tsx`; the sky over
 the center column (`.sky`) is the home for a later live view of the base: replace what it
 draws, keep its box.
 
@@ -197,5 +202,6 @@ actions to the last tick and checks the fingerprint logged there.
 speeds), `src/save.ts` (autosave), `src/store.ts` (the game in play: actions, ticking,
 saves, "new" markers, the run summary), `src/format.ts` (number display), `src/theme.ts`
 (the theme), `src/ui/` (`App.tsx` layout and status bar, `Left.tsx`, `Buildings.tsx`,
-`panels.tsx`, `Options.tsx`, `Right.tsx`, `common.tsx`, `art.tsx`), `src/main.tsx` (entry).
+`panels.tsx`, `Options.tsx`, `Right.tsx`, `common.tsx`, `art.tsx`, `buildingArt.ts`),
+`src/assets/` (images), `src/main.tsx` (entry).
 The config is `configs/baseline.json`, imported at build time.

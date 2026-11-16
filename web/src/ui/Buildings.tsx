@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'preact/hooks';
 import type { BuildingView, View } from '../engine';
 import { capitalize, num } from '../format';
 import { act, actAll, seen, store, type Store } from '../store';
+import { buildingArt } from './buildingArt';
 import { AXIS_COLORS, CostRows, FlowLines, Section, Square, freshClass, name } from './common';
 
 export function Buildings({ s }: { s: Store }) {
@@ -54,6 +55,7 @@ function whyNot(v: View, b: BuildingView): string {
 
 function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: boolean; fresh: Set<string> }) {
   const key = `building:${b.id}`;
+  const art = buildingArt(b.id);
   const atLimit = b.at_limit;
   // From the engine's count now, not this render's: quick clicks must each count.
   const setActive = (by: number) => {
@@ -123,12 +125,18 @@ function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: boolean; 
           +
         </button>
       </div>
-      <p class="desc">{b.description}</p>
-      <div class="effects">
-        <FlowLines v={v} amounts={b.produces} sign={1} />
-        <FlowLines v={v} amounts={b.upkeep} sign={-1} />
-        <FlowLines v={v} amounts={b.stores} sign={1} suffix=" storage" />
-        <FlowLines v={v} amounts={b.grants} sign={1} suffix="" />
+      {/* The picture sits under the title, beside the description and flows. */}
+      <div class="card-body">
+        {art && <img class="card-art" src={art} alt="" width={96} height={96} draggable={false} />}
+        <div class="card-text">
+          <p class="desc">{b.description}</p>
+          <div class="effects">
+            <FlowLines v={v} amounts={b.produces} sign={1} />
+            <FlowLines v={v} amounts={b.upkeep} sign={-1} />
+            <FlowLines v={v} amounts={b.stores} sign={1} suffix=" storage" />
+            <FlowLines v={v} amounts={b.grants} sign={1} suffix="" />
+          </div>
+        </div>
       </div>
       {tags && b.ideology && (
         <span class="tag" style={{ background: AXIS_COLORS[b.ideology] }}>

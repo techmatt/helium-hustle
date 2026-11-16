@@ -566,6 +566,26 @@ tr.is-new td:first-child {
   margin: 0;
   color: var(--muted);
 }
+/* A building card's picture: a 96 px cut-out on the card color, beside its text. */
+.card-body {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+.card-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.card-art {
+  flex: none;
+  width: 96px;
+  height: 96px;
+  object-fit: contain;
+  user-select: none;
+}
 .flow {
   display: flex;
   align-items: center;

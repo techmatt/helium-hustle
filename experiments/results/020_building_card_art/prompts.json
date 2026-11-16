@@ -1,0 +1,32 @@
+{
+  "preamble": "Building art for a sci-fi idle game about an AI running helium-3 mining on the Moon. Near-future, clean and plausible lunar engineering: modular hulls in white and light grey with orange safety trim, grey lunar regolith ground. No people, no vehicles other than the subject, no text, letters, numbers, logos or UI anywhere.",
+  "painterly": "Style: painterly lunar concept art for a game. Hard, harsh lunar sunlight with no atmosphere: crisp light, deep black-brown shadows, painted surfaces with visible brush strokes, large readable masses of light and shadow. A hand-painted illustration, never a photograph, never a photoreal 3D render, never a clean vector or cel-shaded sprite, never pixel art.",
+  "touch": "Loose confident brushwork, painted surfaces, crisp detail only on the building, no outlines. The building seen at a natural 3/4 angle from slightly above, standing on a small irregular patch of grey regolith with a couple of rocks, its long shadow falling on that patch.",
+  "sun": "One sun for every building in the set: a single hard white sun, low, from the left of the image, so walls facing left are brightly lit, walls facing right are in deep shade, and every shadow falls toward the right.",
+  "cut_framing": "Fully transparent background (alpha) around the building and its ground patch: no sky, no backdrop, no Earth, no shadow beyond the patch. The patch and building fill about 80% of the image, centered, nothing cut off at the edges.",
+  "closing": "Exactly one building, nothing else built nearby. It must read as a small game thumbnail: a strong simple silhouette, its function obvious at a glance.",
+  "reused": {
+    "solar_panel": "art/buildings/r2/raw/cut34-solar_panel.png",
+    "excavator": "art/buildings/r2/raw/cut34-excavator.png",
+    "smelter": "art/buildings/r2/raw/cut34-smelter.png",
+    "data_center": "art/buildings/r2/raw/cut34-data_center.png"
+  },
+  "buildings": {
+    "data_center": "a Data Center: a low armored white server bunker with orange trim, half buried in regolith, rows of glowing blue status lights on server racks visible through an open bay, radiator fins on its roof.",
+    "solar_panel": "a Solar Panel array: a few rows of tilted dark-blue photovoltaic panels on a light metal frame, a small white inverter box with orange trim.",
+    "excavator": "a Regolith Excavator: a squat tracked lunar digging machine, white hull with orange trim, a bucket wheel at its front biting into a small mound of regolith, a little heap of dug regolith beside it.",
+    "ice_extractor": "an Ice Extractor: a compact white drilling rig with orange trim on a shadowed crater floor, a tall drill mast boring down into the ground, a patch of pale blue-white frost and ice around the borehole, a small hopper heaped with pale blue chunks of dug ice.",
+    "smelter": "a Smelter: a compact white furnace building with orange trim, a squat cylindrical furnace, a glowing orange pour of molten titanium, pipes and a short radiator stack (no smoke: the Moon has no air).",
+    "refinery": "a Helium-3 Refinery: a tall white processing column with orange trim beside a rotating drum kiln that heats regolith, a hopper of grey regolith feeding the drum, and two round pressure tanks for the extracted helium gas with orange bands, linked by pipes.",
+    "fabricator": "a Fabricator: a clean white factory module with orange trim and an open bay, inside it a robotic arm placing small green circuit boards on a short conveyor, a neat stack of green circuit boards at the bay door, thick power cables running in.",
+    "electrolysis": "an Electrolysis Plant: a row of tall white cylindrical electrolysis cells with orange trim, thick pipes from a small pale blue ice hopper into them, and two big white propellant tanks (one marked with a blue band, one with an orange band) fed from the cells (no vapor, smoke or steam anywhere: the Moon has no air).",
+    "launch_pad": "a Launch Pad: a round flat concrete landing pad with orange edge markings and blast scorch, a slim white cargo rocket with orange trim standing upright on it, a short steel service gantry beside the rocket.",
+    "research_lab": "a Research Lab: a white domed laboratory module with orange trim and warm lit windows, a slender instrument mast with a small telescope and sensors on its roof, a little airlock door, cables to a small science instrument on a tripod beside it.",
+    "battery": "a Battery bank: a cluster of squat white battery cabinets with orange trim, chunky cooling fins, thick cables between them, rows of bright green charge-level lights glowing on their fronts.",
+    "storage_depot": "a Storage Depot: a half-cylinder white storage hangar with orange trim and a wide open door, stacked white and orange cargo crates beside it, and two short silos for bulk materials.",
+    "arbitrage_engine": "an Arbitrage Engine: a compact white trading station with orange trim, a large steerable dish antenna on top pointed up at the sky, server cabinets beneath it with racks of glowing amber lights, a small fast-blinking beacon.",
+    "fuel_cell": "a Fuel Cell Array: two fat white propellant tanks with orange bands feeding by pipes into a row of stacked white fuel-cell cabinets with orange trim, glowing warm yellow power lights and heavy power cables leading out.",
+    "microwave_receiver": "a Microwave Receiver: a rectenna for power beamed from orbit: a wide open lattice of bright silver wire mesh, see-through so the ground shows through it, stretched on a white truss frame with orange trim and angled up to the sky, with rows of small antenna stubs along it (clearly not solar panels: no glass, no dark cells), a small white converter hut with orange trim at its edge, and a faint pale-yellow column of beamed light coming straight down onto the grid from above.",
+    "recreation_dome": "a Recreation Dome: a transparent glass geodesic dome on a white base ring with orange trim, inside it green trees and a little garden lit warm, a small white entry airlock tunnel."
+  }
+}
