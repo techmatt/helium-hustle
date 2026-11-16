@@ -1,0 +1,48 @@
+{
+  "preamble": "Building art for a sci-fi idle game about an AI running helium-3 mining on the Moon. Near-future, clean and plausible lunar engineering: modular hulls in white and light grey with orange safety trim, grey lunar regolith ground. No people, no vehicles other than the subject, no text, letters, numbers, logos or UI anywhere.",
+  "painterly": "Style: painterly lunar concept art for a game. Hard, harsh lunar sunlight with no atmosphere: crisp light, deep black-brown shadows, painted surfaces with visible brush strokes, large readable masses of light and shadow. A hand-painted illustration, never a photograph, never a photoreal 3D render, never a clean vector or cel-shaded sprite, never pixel art.",
+  "sun": "One sun for every building in the set: a single hard white sun, low, from the left of the image, so walls facing left are brightly lit, walls facing right are in deep shade, and every shadow falls toward the right.",
+  "closing": "Exactly one building, nothing else built nearby. It must read as a small game thumbnail: a strong simple silhouette, its function obvious at a glance.",
+  "guides": {
+    "std": { "width": 820, "center_y": 650, "slab": 46 },
+    "large": { "width": 960, "center_y": 640, "slab": 40 }
+  },
+  "variants": {
+    "loose": {
+      "label": "Painterly iso, loose",
+      "guide": "std",
+      "note": "As painterly as the fixed camera allows: loose brushwork on the building too, lost edges in shadow, impressionistic detail.",
+      "touch": "Rendered as a traditional oil or gouache painting, pushed as far as it will go while the building stays recognizable: thick, visible, directional brush strokes and palette-knife marks on every surface including the building's hull, color shifting within each wall (warm and cool greys, reflected warm light in the shadows), edges that dissolve into the shadows, detail suggested with a few dabs rather than modelled, no outlines at all, and the patch's regolith and soil edge laid in with a few broad, ragged strokes rather than a clean slab. It must look like a painter's quick plein-air oil sketch of a model on a table. Absolutely not a clean 3D model or a game sprite: no smooth gradients, no crisp bevels, no uniform flat surfaces, no tidy geometry.",
+      "shadow": "Shadows are long and hard and stay on the patch."
+    },
+    "crisp": {
+      "label": "Painterly iso, legible",
+      "guide": "std",
+      "note": "Painted surfaces, but firmer edges and kept detail, for reading at 96 px.",
+      "touch": "Painted, not drawn: brush texture and painted light on every surface, but the silhouette is clean and firm, the edges between lit and shaded walls are sharp, and the key details (panels, wheels, the glowing pour, the status lights) are kept clear and readable. No black outlines. Like a polished painted concept sheet of a game asset.",
+      "shadow": "Shadows are medium length and hard and stay on the patch."
+    },
+    "long": {
+      "label": "Painterly iso, big patch, long shadows",
+      "guide": "large",
+      "note": "A larger patch and a very low sun: long raking shadows across more ground, a moodier read.",
+      "touch": "Loose but controlled brushwork, painted surfaces, no outlines. The sun is only a few degrees above the horizon: the building casts a long, dramatic, raking black shadow, at least three times as long as the building is tall, stretching across the wide patch, and the ground's small craters and rocks each throw their own long shadow streak, so much of the patch is in deep shadow.",
+      "shadow": "The long shadows all run the same way, toward the patch's right corner, and stop at the patch's edge."
+    },
+    "cut34": {
+      "label": "Control: painterly cut-out, natural 3/4",
+      "guide": null,
+      "note": "No fixed camera: each building at its own natural 3/4 view from slightly above, on a small irregular patch of regolith, cut out.",
+      "touch": "Loose confident brushwork, painted surfaces, crisp detail only on the building, no outlines. The building seen at a natural 3/4 angle from slightly above, standing on a small irregular patch of grey regolith with a couple of rocks, its long shadow falling on that patch.",
+      "shadow": ""
+    }
+  },
+  "iso_camera": "The attached picture is a placement guide, not a style reference. Camera: exactly the guide's fixed isometric camera, the classic city-builder 2:1 angle: the ground diamond is twice as wide as it is tall, vertical edges stay vertical and parallel, no perspective. The grey diamond is the top of the building's square patch of lunar ground and the brown bands are that patch's soil edge, lit on the left and shaded on the right: paint the patch exactly in that position, size and shape, as regolith with a couple of small craters and rocks. The building stands on the patch, its footprint inside the diamond, and may rise above it; nothing extends past the diamond's left or right corner or below the soil edge. The white is empty space: in the output it is fully transparent (alpha), no sky, no backdrop, no Earth.",
+  "cut_framing": "Fully transparent background (alpha) around the building and its ground patch: no sky, no backdrop, no Earth, no shadow beyond the patch. The patch and building fill about 80% of the image, centered, nothing cut off at the edges.",
+  "buildings": {
+    "solar_panel": "a Solar Panel array: a few rows of tilted dark-blue photovoltaic panels on a light metal frame, a small white inverter box with orange trim.",
+    "excavator": "a Regolith Excavator: a squat tracked lunar digging machine, white hull with orange trim, a bucket wheel at its front biting into a small mound of regolith, a little heap of dug regolith beside it.",
+    "smelter": "a Smelter: a compact white furnace building with orange trim, a squat cylindrical furnace, a glowing orange pour of molten titanium, pipes and a short radiator stack (no smoke: the Moon has no air).",
+    "data_center": "a Data Center: a low armored white server bunker with orange trim, half buried in regolith, rows of glowing blue status lights on server racks visible through an open bay, radiator fins on its roof."
+  }
+}
