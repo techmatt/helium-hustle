@@ -98,7 +98,7 @@ pub fn new_run(r: &Rules, g: &mut GameState) {
     g.career.owned_buildings.extend(owned);
     super::events::reapply(g);
     super::economy::refresh(g);
-    let procs = super::programs::processors(g);
+    let procs = super::programs::capacity(g);
     g.run.programs = super::programs::new_programs(r, procs);
     super::demand::init(r, g);
     g.run.boredom_phase = super::boredom::phase(r, 0);

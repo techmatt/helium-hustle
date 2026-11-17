@@ -675,12 +675,24 @@ try {
     }
     for (const p of ['buildings', 'commands']) {
       await panel(p);
+      // From the top: a scroll left by an earlier step is not the theme's doing.
+      await evaluate(`document.querySelector('.col-mid').scrollTop = 0`);
       await sleep(200);
       looks[`${t} ${p}`] = await layout();
       await shot(`theme-${t}-${p}`);
     }
   }
-  for (const p of ['buildings', 'commands']) check(looks[`light ${p}`] === looks[`dark ${p}`], `${p}: the same layout in both themes`);
+  // On a mismatch, name the first element that differs (or the count that does).
+  const firstDiff = async (a, b) => {
+    const [x, y] = [JSON.parse(a), JSON.parse(b)];
+    const i = x.findIndex((v, k) => v !== y[k]);
+    const what = await evaluate(`(() => { const e = [...document.querySelectorAll('body *')][${Math.max(0, i)}]; return e ? e.tagName + '.' + e.className + ' "' + (e.textContent || '').trim().slice(0, 40) + '"' : '?'; })()`);
+    return ` (${x.length} vs ${y.length} elements; first difference #${i}: ${x[i]} vs ${y[i]}, now ${what})`;
+  };
+  for (const p of ['buildings', 'commands']) {
+    const same = looks[`light ${p}`] === looks[`dark ${p}`];
+    check(same, `${p}: the same layout in both themes${same ? '' : await firstDiff(looks[`light ${p}`], looks[`dark ${p}`])}`);
+  }
   await load(url);
   check((await theme()) === 'dark', 'a reload keeps the dark theme');
   await speed(0);

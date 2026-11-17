@@ -40,7 +40,7 @@ pub static DEF: ModuleDef = ModuleDef {
             param("burst_growth", K::Fx, Some(("1", "10")), "each burst this run multiplies the next one's size by this"),
             param("disrupt_min", K::Fx, Some(("0", "1000")), "fewest speculators one Disrupt removes"),
             param("disrupt_max", K::Fx, Some(("0", "1000")), "most speculators one Disrupt removes"),
-            param("arbitrage_decay_per_engine", K::Fx, Some(("0", "1000")), "speculators each active Arbitrage Engine removes from every pool per day"),
+            param("arbitrage_decay_per_engine", K::Fx, Some(("0", "1000")), "speculators each working (active, upkeep paid) Arbitrage Engine removes from every pool per day"),
             param("promote_effect", K::Fx, Some(("0", "10")), "demand one Promote adds, before promote_effectiveness_mult"),
             param("promote_decay", K::Fx, Some(("0", "10")), "promote effect lost per day"),
             param("promote_speculator_dampening", K::Fx, Some(("0", "1")), "a Promote multiplies its good's speculator pool by this"),
@@ -262,7 +262,7 @@ pub fn update(r: &Rules, g: &mut GameState) {
     let mut engines = 0i64;
     for b in &content().buildings {
         if b.effects.iter().any(|e| matches!(e, BuildingEffect::SpeculatorDecay)) {
-            engines += g.active(&b.id) as i64;
+            engines += g.working(&b.id) as i64;
         }
     }
     let flat = p.arbitrage_decay_per_engine.mul_int(engines) * nat;

@@ -2,7 +2,7 @@
 
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import type { Amounts, Fx, ShortView, View } from '../engine';
+import type { Amounts, FlowRow, Fx, ShortView, View } from '../engine';
 import { num, perDay } from '../format';
 import { justMoved } from '../store';
 import { Chip } from './icons';
@@ -101,8 +101,10 @@ export function Section({
  * at once): "+6" and a small "cap" tag, no wider than an ordinary "+0.2/day". */
 export function CappedRate({ net, compact = false, spare = false }: { net: Fx; compact?: boolean; spare?: boolean }) {
   const rate = perDay(net);
+  const amt = num(Math.abs(Number(net)));
+  const title = spare ? `At its cap: ${amt} a day of spare power goes unused` : `At its cap: ${amt} a day is lost`;
   return (
-    <span class={`capped-rate${compact ? ' compact' : ''}${spare ? ' spare' : ''}`} title={`At its cap: ${rate} is lost each day`} data-capped>
+    <span class={`capped-rate${compact ? ' compact' : ''}${spare ? ' spare' : ''}`} title={title} data-capped>
       {compact ? rate.replace('/day', '') : rate} <span class="cap-mark">{compact ? 'cap' : '(capped)'}</span>
     </span>
   );
@@ -130,20 +132,44 @@ export function FlowLines({ v, amounts, sign, suffix = '/day' }: { v: View; amou
   );
 }
 
+/** What a short source had, never shown equal to what it needed ("needs 150, had 150"
+ * for 149.6): floored to two decimals then, or "under" the need. */
+export function hadText(s: ShortView): string {
+  return numBelow(s.had, s.need);
+}
+
+/** `num(x)`, but an `x` under `limit` never reads equal to it ("2,000 / 2,000" for
+ * 1,999.6): floored to two decimals then, or "under" the limit. */
+export function numBelow(x: Fx | number, limit: Fx | number): string {
+  const shown = num(limit);
+  if (Number(x) >= Number(limit) || num(x) !== shown) return num(x);
+  // Past 10,000 the suffix form stays: "under 20K", not "19,996 / 20K".
+  if (Math.abs(Number(limit)) >= 10_000) return `under ${shown}`;
+  const h = (Math.floor(Number(x) * 100) / 100).toLocaleString('en-US', { maximumFractionDigits: 2 });
+  return h !== shown ? h : `under ${shown}`;
+}
+
 /** A shortfall's short form, "needs ⚡2, had 0" (the chip for the resource). */
 export function ShortNote({ v, s }: { v: View; s: ShortView }) {
   return (
     <span class="short-note">
       needs <ResChip v={v} id={s.resource} />
-      {num(s.need)}, had {num(s.had)}
+      {num(s.need)}, had {hadText(s)}
     </span>
   );
 }
 
+/** The share a short building or line ran at, floored (99.6% must not read 100%), the
+ * same everywhere it shows: card status, tooltip, breakdown. */
+export function ranPercent(ran: Fx): string {
+  const p = Math.floor(Number(ran) * 100 + 1e-9);
+  return p < 1 ? '<1%' : `${p}%`;
+}
+
 /** A shortfall in full words, for tooltips. */
 export function shortText(v: View, s: ShortView): string {
-  const ran = Number(s.ran) > 0 ? `ran at ${Math.round(Number(s.ran) * 100)}%` : 'did not run';
-  return `${s.label} ${ran}: needed ${num(s.need)} ${name(v, s.resource)}, had ${num(s.had)}`;
+  const ran = Number(s.ran) > 0 ? `ran at ${ranPercent(s.ran)}` : 'did not run';
+  return `${s.label} ${ran}: needed ${num(s.need)} ${name(v, s.resource)}, had ${hadText(s)}`;
 }
 
 /** A signed amount for a breakdown cell ("+5", "−2"; blank for none). */
@@ -156,9 +182,13 @@ function signed(x: number): string {
  * day's and (with `avg`) the rolling average's; then who went short of it. */
 export function Breakdown({ v, id, avg = false }: { v: View; id: string; avg?: boolean }) {
   const b = v.breakdown.find((x) => x.resource === id);
-  if (!b) return <p class="muted breakdown-empty">Nothing moved it the last day.</p>;
+  const shows = (r: FlowRow) =>
+    !!signed(Number(r.produced) - Number(r.consumed)) || (avg && !!signed(Number(r.avg_produced) - Number(r.avg_consumed)));
+  if (!b || (!b.rows.some(shows) && b.shorts.length === 0)) return <p class="muted breakdown-empty">Nothing moved it the last day.</p>;
   return (
     <div class="breakdown" data-breakdown={id}>
+      {/* Only a shortfall to show (nothing moved): no empty table under its header. */}
+      {b.rows.some(shows) && (
       <table class="breakdown-table">
         <thead>
           <tr>
@@ -171,23 +201,28 @@ export function Breakdown({ v, id, avg = false }: { v: View; id: string; avg?: b
           {b.rows.map((r) => {
             const day = Number(r.produced) - Number(r.consumed);
             const mean = Number(r.avg_produced) - Number(r.avg_consumed);
-            const tone = (day || mean) > 0 ? 'pos' : 'neg';
+            // A row whose every shown cell rounds to nothing says nothing: left out.
+            if (!shows(r)) return null;
+            // Each cell its own color: a source's average can run the other way. Boredom
+            // rising is bad news, as its Resources rate reads.
+            const tone = (x: number) => ((id === 'boredom' ? -x : x) > 0 ? 'pos' : 'neg');
             return (
               <tr key={r.source} data-source={r.source} class={r.source === 'cap' ? 'lost' : ''}>
                 <td>{r.label}</td>
-                <td class={`num ${tone}`}>{signed(day)}</td>
-                {avg && <td class={`num ${tone}`}>{signed(mean)}</td>}
+                <td class={`num ${tone(day)}`}>{signed(day)}</td>
+                {avg && <td class={`num ${tone(mean)}`}>{signed(mean)}</td>}
               </tr>
             );
           })}
         </tbody>
       </table>
+      )}
       {b.shorts.length > 0 && (
         <ul class="plain breakdown-shorts">
           {b.shorts.map((s) => (
             <li key={s.source} title={shortText(v, s)} data-short={s.source}>
               <span class="neg">Short:</span> {s.label}
-              {Number(s.ran) > 0 ? ` at ${Math.round(Number(s.ran) * 100)}%` : ''} · <ShortNote v={v} s={s} />
+              {Number(s.ran) > 0 ? ` at ${ranPercent(s.ran)}` : ''} · <ShortNote v={v} s={s} />
             </li>
           ))}
         </ul>

@@ -66,33 +66,30 @@ checks the text-on-background pairs in its hand-kept `PAIRS` list, in both theme
 
 ## QA checker
 
-`npm run qa` (`scripts/qa.mjs`) plays the game the way a player would, over several seeds,
-window widths and both themes, and checks the screen at each meaningful moment (a panel opened, a story
-text, a new quest, a launch, the run summary, run 2, a reload, the replay check). Hunts'
-findings: `docs/qa-findings.md`. Per pass (a seed at a width), in one
-fresh headless browser: a first visit, a new game on the seed from the debug menu, run 1 at
-3x then 50x with every panel opened, retirement and the summary (keys pressed during it
-must not start the clock), run 2 at 200x, a reload, the replay check, the play log replayed
-by `hh-sim playlog` (`HH_SIM`), and, on the first pass, a
-second tab (the first must stand down). Themes alternate pass by pass (picked in Options;
-the late panels again in the other, from the debug menu); a pass ends on every building's
-card (`?all-cards`, a display-only URL flag) in both. Real mouse and key probes of
-click-to-buy and the program frame. The checks by kind (overflow, hidden, contrast, text, assets, console,
-input, frame, memory) are listed in the header of `scripts/qa.mjs`. Exit 1 on any finding.
-`HH_LONG=<minutes>` instead plays one career that long at 200x (summaries continued, a
-reload every 2 min) and logs heap, DOM size, save size and the worst frame each minute.
+`npm run qa` (`scripts/qa.mjs`) plays the game as a player would, over seeds, widths and
+both themes, and audits the screen at each meaningful moment (a panel, a story text, a new
+quest, a launch, the summary, a reload). Hunts' findings: `docs/qa-findings.md`. Per pass
+(a seed at a width), in a fresh headless browser: a first visit, a new game on the seed,
+run 1 at 3x then 50x with every panel, retirement and the summary (keys must not start the
+clock), run 2 at 200x, a reload, the replay check, the play log replayed by `hh-sim
+playlog`, a second tab and site data blocked (first pass only). At run 1's end and in every
+debug scenario (each played, its panels audited): every Resources row's breakdown opened
+and closed, Stats' breakdowns; program lines dragged; in `late_unlocks`, a loaded
+pad switched to another good (the stockpile gains what its tooltip promised) and Recent
+Activity's unread count (counts while folded, clears once read). The late panels again in
+the other theme; every building's card (`?all-cards`, a display-only URL flag) in both.
+Real mouse and key probes of click-to-buy and the program frame. The checks by kind and
+the `HH_*` settings are in the script's header. Exit 1 on any finding. `HH_LONG=<minutes>`
+plays one career that long at 200x, logging heap, DOM, save size and worst frame a minute.
 
 ```sh
 npm run build && npx vite preview --port 0          # a static build: dev-server reloads break a pass
-HH_URL=http://localhost:<port>/ npm run qa           # ~1 min a pass; 3 seeds x 2 widths ~6 min
+HH_URL=http://localhost:<port>/ npm run qa           # ~1.3 min a pass; 3 seeds x 2 widths ~8 min
 HH_PACE=120 HH_WIDTHS=1600 HH_URL=... npm run qa     # a first visit left at 1x for 2 min, a shot every 15 s
 ```
 
-`HH_SEEDS` (default `11,12,13`), `HH_WIDTHS` (`1280,1920`), `HH_HEIGHT` (900), `HH_THEMES`
-(`light,dark`), `HH_RUN2` (run 2 days, 150), `HH_SPEED` (run 1's speed, 50; `3` for a
-person's pace), `HH_SIM` (default `target/release/hh-sim`), `HH_QA_OUT` (default `out/qa`, wiped): a PNG per moment in
-`<out>/<seed>-<width>-<theme>/`, a contact sheet per pass, and
-`report.json`. Run it against a static build: an edit under a dev server reloads the page.
+Output (`HH_QA_OUT`, default `out/qa`, wiped): a PNG per moment in
+`<out>/<seed>-<width>-<theme>/`, a contact sheet per pass, and `report.json`.
 
 ## The screen
 
@@ -110,12 +107,12 @@ Three columns and a status bar, as in the last Godot build:
   banner), then the active panel. Buildings: the Land bar (green and click-to-buy like a card
   when affordable), a collapsible section per category, cards (a 96 px picture beside the
   description, per-day effects and storage lines, ideology tag, a status row always kept
-  ("running at 67% · ⚡ short"), price with shortfalls in red, active/owned with −/+, Sell 1,
+  ("running at 66% · ⚡ short · 1 of 3 working": effects come from paid copies), price with shortfalls in red, active/owned with −/+, Sell 1,
   Sell All). A click on an affordable card (outlined in green, its name row tinted), off its
   controls, builds one (Shift: up to ten; ignored for 0.5 s after the summary or a story
   text closes); any other card says why it can't. Research cards work the same way. Pad
   cards tint their head: green Ready (full and fueled), yellow Paused, red full but short of
-  fuel. Stats ends on every resource's breakdown, last day and rolling average.
+  fuel; a full pad still cooling down says when it is ready. Stats ends on every resource's breakdown, last day and rolling average.
 - **Right:** the main quest in its own slot at the top, which nothing else takes; program
   tabs 1 to 5 with processors −/+ and Reset; a line per command with
   its progress, −/+/×, drag to reorder, its tint from today's outcome (ran, failed,
@@ -126,7 +123,7 @@ Three columns and a status bar, as in the last Godot build:
   Activity (green good, red bad, blue news), each with an unread count (UI state),
   cleared once the section is open and on screen for about a second.
 - **Bottom:** day and run, the cheated mark, Boredom and Energy bars with their rates
-  (capped as in Resources).
+  (capped as in Resources; "cap tomorrow" the day before a forced retirement).
 - **Run summary:** when a run ends a summary covers the screen, the clock stopped until
   Continue.
 

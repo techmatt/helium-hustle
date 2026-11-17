@@ -1,8 +1,8 @@
 # Demand (module `demand`, variant `arc1`)
 
 Each tradeable good ([shipments.md](shipments.md)) has a market whose **demand** scales what a
-launch pays. Demand is set once a day, after buildings run and before programs run their
-commands; speculator bursts and rival dumps land after pads cool down
+launch pays. Demand is set once a day, after boredom grows and expired overclocks drop and
+before any building produces or program runs its commands; speculator bursts and rival dumps land after pads cool down
 ([the day](README.md#the-day)). So whatever commands do today (launches, Promote, Disrupt)
 shows in demand tomorrow.
 
@@ -33,7 +33,7 @@ clamped to −1..1, times `noise_amplitude`. All fixed point; no floats.
 **Daily update**, before demand is set, for every good:
 
 1. Pool decay: `n −= n × speculator_decay × N + arbitrage_decay_per_engine × E × N`, floored
-   at 0, where `E` counts active buildings with the `speculator_decay` effect (Arbitrage Engine).
+   at 0, where `E` counts working (active, upkeep paid) buildings with the `speculator_decay` effect (Arbitrage Engine).
 2. `promote −= promote_decay`, `rival_pressure −= rival_decay`, `saturation −=
    saturation_decay`, each floored at 0 (linear fades).
 
@@ -104,7 +104,7 @@ commands they need their full cost. Loading priority, which Disrupt reads, is se
 | `burst_growth` | 1.1 | Each burst this run multiplies the next one's size by this. |
 | `disrupt_min` | 1 | Fewest speculators one Disrupt removes. |
 | `disrupt_max` | 3 | Most speculators one Disrupt removes. |
-| `arbitrage_decay_per_engine` | 0.04 | Speculators each active Arbitrage Engine removes from every pool per day. |
+| `arbitrage_decay_per_engine` | 0.04 | Speculators each working (active, upkeep paid) Arbitrage Engine removes from every pool per day. |
 | `promote_effect` | 0.03 | Demand one Promote adds, before `promote_effectiveness_mult`. |
 | `promote_decay` | 0.001 | Promote effect lost per day. |
 | `promote_speculator_dampening` | 0.9 | A Promote multiplies its good's pool by this. |

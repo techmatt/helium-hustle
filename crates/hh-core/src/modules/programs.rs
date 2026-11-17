@@ -55,17 +55,49 @@ pub fn new_programs(r: &Rules, processors: u32) -> Vec<Program> {
     ps
 }
 
+/// Processors working now: the processors resource, granted by the working
+/// (upkeep-paid) copies. A day runs at most this many.
 pub fn processors(g: &GameState) -> u32 {
     u32::try_from(g.amount(PROCESSORS).floor_int().max(0)).unwrap_or(u32::MAX)
+}
+
+/// Processors the active buildings grant, paid or not: what programs may have
+/// assigned. A day short of upkeep runs fewer ([`running`]) but keeps them.
+pub fn capacity(g: &GameState) -> u32 {
+    let mut total = Fx::ZERO;
+    for b in &content().buildings {
+        for e in &b.effects {
+            if let crate::content::BuildingEffect::Grant { resource, amount } = e {
+                if resource == PROCESSORS {
+                    total += amount.mul_int(i64::from(g.active(&b.id)));
+                }
+            }
+        }
+    }
+    u32::try_from(total.floor_int().max(0)).unwrap_or(u32::MAX)
 }
 
 pub fn assigned(g: &GameState) -> u32 {
     g.run.programs.iter().map(|p| p.processors).sum()
 }
 
-/// Processors lost (a Data Center sold or disabled) come off the last programs first.
+/// How many of each program's assigned processors run today: all, unless fewer
+/// are working than assigned, when the shortfall comes off the last programs first.
+pub fn running(g: &GameState) -> Vec<u32> {
+    let mut short = assigned(g).saturating_sub(processors(g));
+    let mut out: Vec<u32> = g.run.programs.iter().map(|p| p.processors).collect();
+    for n in out.iter_mut().rev() {
+        let cut = short.min(*n);
+        *n -= cut;
+        short -= cut;
+    }
+    out
+}
+
+/// Processors lost (a Data Center sold or switched off) come off the last
+/// programs first; ones only unpaid stay assigned ([`running`]).
 pub fn trim_processors(g: &mut GameState) {
-    let mut over = assigned(g).saturating_sub(processors(g));
+    let mut over = assigned(g).saturating_sub(capacity(g));
     for p in g.run.programs.iter_mut().rev() {
         let take = over.min(p.processors);
         p.processors -= take;
@@ -78,20 +110,20 @@ fn program_mut(g: &mut GameState, program: u32) -> Result<&mut Program, String> 
     g.run
         .programs
         .get_mut(program as usize)
-        .ok_or_else(|| format!("program {program}: there are {n} (0-based)"))
+        .ok_or_else(|| format!("Program {}: there are {n}", program + 1))
 }
 
 /// Replaces a program's queue; its pointer restarts at the top.
 pub fn set_program(r: &Rules, g: &mut GameState, program: u32, entries: &[Entry]) -> Result<(), String> {
     if entries.len() > r.p.programs.max_entries {
-        return Err(format!("program {program}: at most {} lines", r.p.programs.max_entries));
+        return Err(format!("Program {}: at most {} lines", program + 1, r.p.programs.max_entries));
     }
     for e in entries {
         if content().command(&e.command).is_none() {
-            return Err(format!("program {program}: unknown command {:?}", e.command));
+            return Err(format!("Program {}: unknown command {:?}", program + 1, e.command));
         }
         if e.count == 0 {
-            return Err(format!("program {program}: {} runs 0 times", e.command));
+            return Err(format!("Program {}: {} runs 0 times", program + 1, e.command));
         }
     }
     let p = program_mut(g, program)?;
@@ -105,13 +137,14 @@ pub fn set_program(r: &Rules, g: &mut GameState, program: u32, entries: &[Entry]
     Ok(())
 }
 
-/// Sets how many processors run a program (all programs together: at most the processors there are).
+/// Sets how many processors run a program (all programs together: at most the
+/// active buildings grant, paid or not).
 pub fn set_processors(g: &mut GameState, program: u32, n: u32) -> Result<(), String> {
-    let total = processors(g);
+    let total = capacity(g);
     let others = assigned(g) - program_mut(g, program)?.processors;
     let free = total.saturating_sub(others);
     if n > free {
-        return Err(format!("program {program}: {n} processors, but only {free} free"));
+        return Err(format!("Program {}: {n} processors, but only {free} free", program + 1));
     }
     program_mut(g, program)?.processors = n;
     Ok(())
@@ -227,9 +260,10 @@ pub fn execute(r: &Rules, g: &mut GameState, c: &Command, src: &str, short: &str
 /// shared pointer, which then advances (a failed or skipped line too),
 /// wrapping at the end.
 pub fn run(r: &Rules, g: &mut GameState) {
+    let running = running(g);
     for i in 0..g.run.programs.len() {
         let src = format!("program:{i}");
-        for _ in 0..g.run.programs[i].processors {
+        for _ in 0..running[i] {
             let p = &g.run.programs[i];
             let Some(e) = p.entries.get(p.entry as usize) else {
                 break;

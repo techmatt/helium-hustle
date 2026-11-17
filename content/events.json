@@ -75,7 +75,7 @@
         },
         {
           "id": "persistent_project",
-          "label": "Complete a persistent project",
+          "label": "Complete a Long-Term project",
           "condition": {"type": "persistent_project_completed_any"}
         },
         {
@@ -85,7 +85,7 @@
         },
         {
           "id": "credits_100k",
-          "label": "Earn 100,000 credits in one lifetime",
+          "label": "Earn 100,000 credits in one run",
           "condition": {"type": "credits_earned", "amount": "100000"}
         }
       ]

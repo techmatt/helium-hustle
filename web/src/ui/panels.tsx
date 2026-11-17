@@ -6,7 +6,7 @@ import { useState } from 'preact/hooks';
 import type { Fx, ProjectView, ResearchView, View } from '../engine';
 import { capitalize, mult, num, perDay } from '../format';
 import { act, seen, store, type Store } from '../store';
-import { Bar, Breakdown, FlowLines, ResChip, Section, cardButton, freshClass, name, useHint } from './common';
+import { Bar, Breakdown, FlowLines, ResChip, Section, cardButton, freshClass, name, numBelow, useHint } from './common';
 import { Chip } from './icons';
 import { Quest, editProgram } from './Right';
 
@@ -85,7 +85,8 @@ export function LaunchPads({ s }: { s: Store }) {
                   <ResChip v={v} id={m.good} /> {m.name}
                 </td>
                 <td>{m.demand !== null ? `${num(Number(m.demand) * 100, 0)}% (${m.tier})` : m.tier}</td>
-                <td>{m.speculators !== null ? num(m.speculators, 0) : '—'}</td>
+                {/* Under 10, a decimal: a pool of 0.4 still draws Disrupt Speculators first. */}
+                <td>{m.speculators !== null ? num(m.speculators, Number(m.speculators) < 10 ? 1 : 0) : '—'}</td>
               </tr>
             ))}
           </tbody>
@@ -115,8 +116,19 @@ export function LaunchPads({ s }: { s: Store }) {
             // red full but short of fuel, neutral loading or idle.
             const full = Number(p.cargo) >= Number(p.capacity);
             const ready = p.ready && !p.paused;
-            const state = !p.active ? 'idle' : p.paused ? 'paused' : ready ? 'ready' : full && !p.fueled ? 'blocked' : 'loading';
-            const label = { idle: 'inactive', paused: 'Paused', ready: 'Ready', blocked: 'Full: no fuel', loading: 'loading' }[state];
+            // Full and fueled but still cooling down from its last launch: not loading.
+            const state = !p.active
+              ? 'idle'
+              : p.paused
+                ? 'paused'
+                : ready
+                  ? 'ready'
+                  : full && !p.fueled
+                    ? 'blocked'
+                    : full && p.cooldown > 0
+                      ? 'cooling'
+                      : 'loading';
+            const label = { idle: p.unpaid ? 'idle: upkeep unpaid' : 'inactive', paused: 'Paused', ready: 'Ready', blocked: 'Full: no fuel', cooling: `Full: ready in ${p.cooldown} day${p.cooldown === 1 ? '' : 's'}`, loading: 'loading' }[state];
             return (
             <div
               class={`card pad pad-${state}${p.active ? '' : ' idle'}${ready ? ' ready' : ''}`}
@@ -128,7 +140,7 @@ export function LaunchPads({ s }: { s: Store }) {
             >
               <div class="card-head">
                 <h3>Pad {i + 1}</h3>
-                <span class={`pad-status${ready ? ' pad-ready' : state === 'idle' || state === 'loading' ? ' muted' : ''}`}>{label}</span>
+                <span class={`pad-status${ready ? ' pad-ready' : p.unpaid ? ' neg' : state === 'idle' || state === 'loading' || state === 'cooling' ? ' muted' : ''}`}>{label}</span>
               </div>
               <label
                 title={
@@ -151,7 +163,11 @@ export function LaunchPads({ s }: { s: Store }) {
                   ))}
                 </select>
               </label>
-              <Bar frac={Number(p.cargo) / Number(p.capacity)} label={`${num(p.cargo)} / ${num(p.capacity)}`} />
+              {/* Short of full, the cargo is rounded down: 99.96 must not read 100 / 100. */}
+              <Bar
+                frac={Number(p.cargo) / Number(p.capacity)}
+                label={`${numBelow(p.cargo, p.capacity)} / ${num(p.capacity)}`}
+              />
               {/* The shared Propellant pool against one launch's burn. */}
               <div class={`pad-fuel ${p.fueled ? 'pos' : 'neg'}`} data-testid={`fuel-${i}`} data-fueled={p.fueled}>
                 {/* Short, the pool is rounded down: 19.96 must not read as 20 / 20. */}
@@ -159,7 +175,7 @@ export function LaunchPads({ s }: { s: Store }) {
               </div>
               <div class="muted small">
                 Each Load Launch Pads run loads up to {num(p.load)} {name(v, p.good)} · a launch burns the fuel from the shared pool
-                {p.cooldown > 0 ? ` · cooling down ${p.cooldown} days` : ''}
+                {p.cooldown > 0 ? ` · cooling down ${p.cooldown} day${p.cooldown === 1 ? '' : 's'}` : ''}
               </div>
               <div>
                 Would pay <ResChip v={v} id="credits" /> {num(p.payout)} credits now
@@ -173,7 +189,12 @@ export function LaunchPads({ s }: { s: Store }) {
                   onClick={() => act({ type: 'launch', pad: i })}>
                   Launch
                 </button>
-                <button type="button" class="tiny" onClick={() => act({ type: 'set_pad_paused', pad: i, paused: !p.paused })}>
+                <button
+                  type="button"
+                  class="tiny"
+                  title={p.paused ? undefined : 'A paused pad neither loads nor launches through Launch Full Pads; Launch still works'}
+                  onClick={() => act({ type: 'set_pad_paused', pad: i, paused: !p.paused })}
+                >
                   {p.paused ? 'Resume loading' : 'Pause loading'}
                 </button>
               </div>
@@ -229,7 +250,13 @@ function ResearchCard({ v, r, fresh }: { v: View; r: ResearchView; fresh: Set<st
     if (!now || now.done) return;
     if (!now.affordable) {
       const req = now.requires && !store.view.research.find((x) => x.id === now.requires)?.done ? now.requires : null;
-      showHint(req ? `Needs ${name(store.view, req)} first.` : 'Short of Science.');
+      // How much more, never "0 more" (199.96 held shows as 200 beside a 200 price).
+      const sci = Number(store.view.resources.find((x) => x.id === 'science')?.amount ?? 0);
+      const more = Number(now.cost) - sci;
+      // Rounded up, so the gap never reads smaller than it is (whole from 100 up, as num shows).
+      const up = more >= 100 ? Math.ceil(more) : Math.ceil(more * 10) / 10;
+      const short = more > 0 ? ` (${more < 0.1 ? 'under 0.1' : num(up)} more)` : '';
+      showHint(req ? `Needs ${name(store.view, req)} first.` : `Short of Science${short}.`);
       return;
     }
     act({ type: 'research', research: r.id });
@@ -267,7 +294,7 @@ function ResearchCard({ v, r, fresh }: { v: View; r: ResearchView; fresh: Set<st
 export function Projects({ s }: { s: Store }) {
   const v = s.view;
   const tiers: [string, string, string][] = [
-    ['persistent', 'Long-Term', 'Progress and completion carry across retirements.'],
+    ['persistent', 'Long-Term', 'Progress and completion carry across retirements; funding rates reset, so set them again each run.'],
     ['personal', 'Strategic', 'This run only: progress resets on retirement.'],
   ];
   return (
@@ -317,7 +344,7 @@ function Project({ v, p, fresh }: { v: View; p: ProjectView; fresh: Set<string> 
               <span class="proj-res">
                 <ResChip v={v} id={res} /> {name(v, res)}
               </span>
-              <Bar frac={Number(got) / Number(cost)} label={`${num(got)} / ${num(cost)}`} />
+              <Bar frac={Number(got) / Number(cost)} label={`${numBelow(got, cost)} / ${num(cost)}`} />
               <span class="proj-rate">{num(rate)}/day</span>
               <button type="button" class="tiny" disabled={Number(rate) <= 0} onClick={() => step(res, -1)}>
                 −
@@ -412,7 +439,7 @@ export function Adversaries({ s }: { s: Store }) {
                 <td>
                   <ResChip v={v} id={m.good} /> {m.name}
                 </td>
-                <td>{m.speculators !== null ? `${num(m.speculators, 0)} speculators` : 'none seen'}</td>
+                <td>{m.speculators !== null ? `${num(m.speculators, Number(m.speculators) < 10 ? 1 : 0)} speculators` : 'none seen'}</td>
               </tr>
             ))}
           </tbody>
@@ -483,10 +510,10 @@ export function Stats({ s }: { s: Store }) {
             ['Shipments (finished runs)', c.lifetime_shipments],
             ['Buildings built (finished runs)', c.lifetime_buildings_built],
             ['Research completed (finished runs)', c.lifetime_research_completed],
-            ['Longest run', `${num(c.best_run_days)} days`],
-            ['Best run credits', num(c.best_run_credits)],
-            ['Best run shipments', c.best_run_shipments],
-            ['Peak energy production', perDay(c.peak_power)],
+            ['Longest run (finished runs)', `${num(c.best_run_days)} days`],
+            ['Best run credits (finished runs)', num(c.best_run_credits)],
+            ['Best run shipments (finished runs)', c.best_run_shipments],
+            ['Peak energy production (finished runs)', perDay(c.peak_power)],
           ]}
         />
       </Section>
@@ -497,7 +524,7 @@ export function Stats({ s }: { s: Store }) {
           <Rows rows={mods.map(([k, x]) => [k.replace(/_/g, ' '), mult(x)])} />
         )}
         {v.overclocks.length > 0 && (
-          <Rows rows={v.overclocks.map((o, i) => [`Overclock ${i + 1}: ${o.target}`, `+${num(Number(o.bonus) * 100)}% until day ${o.until_day}`])} />
+          <Rows rows={v.overclocks.map((o, i) => [`Overclock ${i + 1}: ${o.target}`, `+${num(Number(o.bonus) * 100)}% through day ${o.until_day - 1}`])} />
         )}
       </Section>
     </div>
@@ -603,7 +630,7 @@ export function Retirement({ s }: { s: Store }) {
     <div class="panel" data-panel="retirement">
       <h2>Retirement</h2>
       <p class="muted">
-        Retiring ends this run: buildings, resources, research and Strategic projects reset. The career keeps its
+        Retiring ends this run: buildings, resources, research, Strategic projects and every project's funding rates reset. The career keeps its
         bests, achievements, Long-Term projects, quests and what you have seen. Boredom at its cap retires you anyway.
       </p>
       <Section title={`This run (day ${num(v.day)})`}>

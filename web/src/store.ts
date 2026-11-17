@@ -8,7 +8,7 @@ import baselineConfig from '../../configs/baseline.json?raw';
 import { Clock, SPEEDS, type Speed } from './clock';
 import { engine, type Action, type LastRun, type LinesRun, type Scenario, type Stamped, type StoryView, type View } from './engine';
 import * as playlog from './playlog';
-import { clearSave, loadSave, SAVE_KEY, writeSave } from './save';
+import { clearSave, loadSave, SAVE_KEY, storageGet, storageSet, writeSave } from './save';
 
 /** wasm's `advance_run` takes a u32 tick count; larger catch-ups go in chunks. */
 const MAX_CHUNK = 1_000_000;
@@ -78,7 +78,7 @@ export const store: Store = {
   summary: null,
   fresh: new Set(),
   stories: [],
-  cheatsEnabled: localStorage.getItem(CHEATS_KEY) === '1',
+  cheatsEnabled: storageGet(CHEATS_KEY) === '1',
   seed: '0',
   scenario: null,
   actionCount: 0,
@@ -129,10 +129,19 @@ function track(v: View, reset: boolean): void {
     for (const k of revealed(v)) baseline.add(k);
     return;
   }
-  for (const k of revealed(v)) {
+  const now = new Set(revealed(v));
+  for (const k of now) {
     if (!baseline.has(k)) {
       baseline.add(k);
       store.fresh.add(k);
+    }
+  }
+  // Hidden again before it was looked at (a research card whose condition lapsed): its
+  // marker goes, and a later reveal counts as new again.
+  for (const k of store.fresh) {
+    if (!now.has(k)) {
+      store.fresh.delete(k);
+      baseline.delete(k);
     }
   }
 }
@@ -145,7 +154,14 @@ const toldStories = new Set<string>();
  * side story) are never queued here: they land in the right column's Events sections as
  * unread items (`eventItems`), so nothing stands in front of the main quest. */
 function tell(v: View, mode: 'load' | 'intro' | 'play'): void {
-  // A quest opens once a career.
+  // A quest opens once a career. In play, one that opened and completed between two
+  // redraws (the engine closes quests in a chain within one day) is told too, in order;
+  // at a load or a new game's start, what is already completed was told before.
+  for (const q of v.story) {
+    if (toldStories.has(q.id)) continue;
+    toldStories.add(q.id);
+    if (mode === 'play') store.stories.push(q);
+  }
   const q = v.quest;
   if (!q || toldStories.has(q.id)) return;
   toldStories.add(q.id);
@@ -313,8 +329,9 @@ function save(): void {
     stories: store.stories,
     page: playlog.pageId,
   });
-  // Said once until a save lands again: the game is no longer being kept.
-  if (failed && !saveFailed) store.notice = `Autosave failed (${failed}): progress since is not kept in this browser.`;
+  // Said until a save lands again (an action's success clears the notice line, so a save
+  // that fails again says it again): the game is no longer being kept.
+  if (failed && (!saveFailed || store.notice === null)) store.notice = `Autosave failed (${failed}): progress since is not kept in this browser.`;
   saveFailed = failed !== null;
 }
 
@@ -405,6 +422,9 @@ export function act(action: Action): boolean {
     setNotice(ANOTHER_TAB);
     return false;
   }
+  // The run summary covers the screen: a key on a card still focused behind it must not
+  // play into the new run unseen.
+  if (store.summary) return false;
   const run = store.view.run;
   clock.wake(); // settle the ticks owed so the action lands between the right ticks
   if (store.view.run !== run) {
@@ -467,7 +487,7 @@ export function continueAfterRetirement(): void {
 export function setCheatsEnabled(on: boolean): void {
   playlog.log('debug', { what: 'cheats', on });
   store.cheatsEnabled = on;
-  localStorage.setItem(CHEATS_KEY, on ? '1' : '0');
+  storageSet(CHEATS_KEY, on ? '1' : '0');
   emit();
 }
 
@@ -530,7 +550,7 @@ function standDown(): void {
 /** The page that wrote the save now, if it says. */
 function readSavePage(): string | undefined {
   try {
-    return (JSON.parse(localStorage.getItem(SAVE_KEY) ?? 'null') as { page?: string } | null)?.page;
+    return (JSON.parse(storageGet(SAVE_KEY) ?? 'null') as { page?: string } | null)?.page;
   } catch {
     return undefined;
   }

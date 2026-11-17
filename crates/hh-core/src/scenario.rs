@@ -106,12 +106,12 @@ impl Scenario {
             if n == 0 {
                 g.run.buildings.remove(b);
             } else {
-                g.run.buildings.insert(b.clone(), Holding { owned: n, active: n, bonus: 0, free: n });
+                g.run.buildings.insert(b.clone(), Holding { owned: n, active: n, bonus: 0, free: n, unpaid: 0 });
                 g.career.owned_buildings.insert(b.clone());
             }
         }
         crate::modules::economy::refresh(g);
-        let free = crate::modules::programs::processors(g) - crate::modules::programs::assigned(g);
+        let free = crate::modules::programs::capacity(g) - crate::modules::programs::assigned(g);
         if let Some(p) = g.run.programs.first_mut() {
             p.processors += free;
         }

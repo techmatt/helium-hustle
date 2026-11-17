@@ -157,7 +157,10 @@ function StatusBar({ s }: { s: Store }) {
       )}
       <span class="status-label">Boredom</span>
       <Bar frac={Number(v.boredom.amount) / Number(v.boredom.cap)} tone="red" label={`${num(v.boredom.amount)} / ${num(v.boredom.cap)}`} />
-      <span class="status-rate">{perDay(bored?.per_day ?? '0', 2)}</span>
+      <span class="status-rate">
+        {/* The day that retires the run has no rate to show: say what comes. */}
+        {v.retires_next ? <span class="neg">cap tomorrow</span> : perDay(bored?.per_day ?? '0', 2)}
+      </span>
       <span class="status-label">Energy</span>
       <Bar
         frac={Number(energy?.amount ?? 0) / Number(energy?.cap ?? 1)}
@@ -165,7 +168,7 @@ function StatusBar({ s }: { s: Store }) {
         label={`${num(energy?.amount ?? '0')} / ${num(energy?.cap ?? '0')}`}
       />
       <span class="status-rate" data-testid="energy-rate">
-        {energyCapped ? <CappedRate net={energy.net_per_day} spare /> : perDay(energy?.per_day ?? '0')}
+        {v.retires_next ? '—' : energyCapped ? <CappedRate net={energy.net_per_day} spare /> : perDay(energy?.per_day ?? '0')}
       </span>
     </footer>
   );

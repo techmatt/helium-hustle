@@ -128,11 +128,11 @@ pub fn cap(r: &Rules, g: &GameState, resource: &str) -> Option<Fx> {
     Some(if resource == ENERGY { cap } else { cap * modifier(r, g, "storage_cap_mult") })
 }
 
-/// The sum of active buildings' `store` effects on `resource`.
+/// The sum of working buildings' `store` effects on `resource`.
 pub fn stored(g: &GameState, resource: &str) -> Fx {
     let mut total = Fx::ZERO;
     for b in &content().buildings {
-        let n = g.active(&b.id);
+        let n = g.working(&b.id);
         for e in &b.effects {
             if let BuildingEffect::Store { resource: res, amount } = e {
                 if res == resource && n > 0 {
@@ -246,7 +246,10 @@ pub fn sell(g: &mut GameState, id: &str) -> Result<(), String> {
     let paid = h.owned > h.free;
     h.owned -= 1;
     h.free = h.free.min(h.owned);
+    let was = h.active;
     h.active = h.active.min(h.owned);
+    // A copy taken out of service is an unpaid one first: the paid ones keep working.
+    h.unpaid = h.unpaid.saturating_sub(was - h.active);
     h.bonus = h.bonus.min(h.owned);
     if h.owned == 0 {
         g.run.buildings.remove(&b.id);
@@ -267,6 +270,8 @@ pub fn set_active(g: &mut GameState, id: &str, active: u32) -> Result<(), String
         return Err(format!("set active {}: only {owned} owned", b.name));
     }
     if let Some(h) = g.run.buildings.get_mut(&b.id) {
+        // Copies switched off are unpaid ones first: the paid ones keep working.
+        h.unpaid = h.unpaid.saturating_sub(h.active.saturating_sub(active));
         h.active = active;
     }
     refresh(g);
@@ -313,8 +318,8 @@ pub fn buy_land(r: &Rules, g: &mut GameState) -> Result<(), String> {
     Ok(())
 }
 
-/// After any change to buildings: derived resources (processors) from active
-/// `grant` effects, launch pads matched to Launch Pads owned, and processor
+/// After any change to buildings (or to how many the day's pass paid):
+/// derived resources (processors) from working buildings' `grant` effects, launch pads matched to Launch Pads owned, and processor
 /// assignments trimmed to the processors there are (last program first).
 pub fn refresh(g: &mut GameState) {
     let mut granted: BTreeMap<String, Fx> = BTreeMap::new();
@@ -326,7 +331,7 @@ pub fn refresh(g: &mut GameState) {
         }
     }
     for b in &content().buildings {
-        let n = g.active(&b.id) as i64;
+        let n = g.working(&b.id) as i64;
         for e in &b.effects {
             if let BuildingEffect::Grant { resource, amount } = e {
                 *granted.get_mut(resource).expect("listed above") += amount.mul_int(n);
@@ -363,7 +368,17 @@ pub fn produce_free(r: &Rules, g: &mut GameState) -> Fx {
 /// pass where the rest run at the fraction their scarcest input allows
 /// (`input_starved`). `free_energy`: what [`produce_free`] made today.
 pub fn resolve(r: &Rules, g: &mut GameState, free_energy: Fx) {
+    // Who goes unpaid is decided afresh each day: the partial pass sets it below.
+    let before: Vec<u32> = g.run.buildings.values().map(|h| h.unpaid).collect();
+    for h in g.run.buildings.values_mut() {
+        h.unpaid = 0;
+    }
     let energy_made = free_energy + resolve_stage(r, g, false);
+    // Effects follow the copies paid for (processors, pads, caps, decay): from
+    // the next day on, as the effects are read after this pass.
+    if g.run.buildings.values().map(|h| h.unpaid).ne(before) {
+        refresh(g);
+    }
     let stats = &mut g.run.stats;
     stats.peak_energy = stats.peak_energy.max(energy_made);
 }
@@ -431,7 +446,16 @@ fn resolve_stage(r: &Rules, g: &mut GameState, free: bool) -> Fx {
         if let Some(s) = scarcest(g, &upk, frac) {
             g.run.today.shorts.insert(src.clone(), s);
         }
-        g.run.today.stalls.insert(id, Stall::InputStarved);
+        // An earlier partial building may have made what this one lacked: run in full,
+        // it is not starved.
+        if frac < Fx::ONE {
+            // Copies left unpaid: whole copies short of the fraction paid.
+            if let Some(h) = g.run.buildings.get_mut(&id) {
+                let paid = frac.mul_int(i64::from(h.active)).floor_int().clamp(0, i64::from(h.active));
+                h.unpaid = h.active - paid as u32;
+            }
+            g.run.today.stalls.insert(id, Stall::InputStarved);
+        }
         if frac <= Fx::ZERO {
             continue;
         }
@@ -508,6 +532,6 @@ pub fn starting_buildings(r: &Rules) -> BTreeMap<String, Holding> {
         .starting_buildings
         .iter()
         .filter(|(_, &n)| n > 0)
-        .map(|(id, &n)| (id.clone(), Holding { owned: n, active: n, bonus: 0, free: n }))
+        .map(|(id, &n)| (id.clone(), Holding { owned: n, active: n, bonus: 0, free: n, unpaid: 0 }))
         .collect()
 }

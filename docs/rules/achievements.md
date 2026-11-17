@@ -2,7 +2,7 @@
 
 Achievements are optional accomplishments, earned once per career, each with a permanent
 reward: a modifier or free buildings at the start of every run. Day conditions are checked
-at step 11 of [the day](README.md#the-day), after the clamp and the events; shipment
+at step 13 of [the day](README.md#the-day), after the clamp and the events; shipment
 conditions are checked at each launch.
 
 ## Rules

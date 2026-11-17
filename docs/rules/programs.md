@@ -12,12 +12,14 @@ lines (`command`, `count`: how many times the line runs before moving on), a sha
 (line and runs done of it) and a number of assigned processors. A new run gives every program
 an empty queue and puts all processors on the first program.
 
-**Processors** are the processors resource, floored to a whole number (economy.md: 1 per
-active Data Center). All programs together may hold at most that many. When processors are
-lost (a Data Center sold or set inactive), assignments are cut from the last program first. A
-processor gained mid-run (a new Data Center) starts unassigned.
+**Processors.** All programs together may hold at most the processors the *active* Data
+Centers grant (1 each, paid or not). When that drops (a Data Center sold or set inactive),
+assignments are cut from the last program first. A processor gained mid-run (a new Data
+Center) starts unassigned. Each day at most the processors resource (economy.md: 1 per
+*working*, upkeep-paid Data Center) runs: when fewer work than are assigned, the shortfall
+comes off the last programs first for that day, and their assignments stay.
 
-**Running** (each day): programs in order; for each processor assigned to a program, the line
+**Running** (each day): programs in order; for each running processor of a program, the line
 under its pointer is executed once, then the pointer advances whatever the outcome (ran,
 skipped or failed): the line's run count rises and, at its `count`, the pointer moves to the
 next line, wrapping to the first. A program with no lines does nothing. So a program with 3
@@ -59,7 +61,7 @@ pass. The factor multiplies production of every building of that category (econo
 | Action | Refused when |
 |---|---|
 | `set_program {program, entries}` | more than `max_entries` lines, an unknown command, a line with `count` 0, or no such program |
-| `set_processors {program, processors}` | no such program, or the other programs' processors plus this number exceed the processors there are |
+| `set_processors {program, processors}` | no such program, or the other programs' processors plus this number exceed what the active Data Centers grant |
 
 `set_program` replaces the whole queue and restarts its pointer at the top. A locked command
 may be queued; it fails when run. A refused action changes nothing.
@@ -101,6 +103,7 @@ overclock's `target`, `bonus`, `duration`) and `scale_modifier`. `content/resear
 - Candidate: output-cap skip for any command whose every product is capped (boredom is not a
   product).
 - Candidate: overclock: each execution is its own x(1 + 0.05) stack for 5 days
-  (x 1.03^rationalist rank, whole days), from the next building pass; the product is capped.
+  (x 1.03^rationalist rank, whole days), from the same day's building pass; the product is
+  capped.
 - Candidate: AI Consciousness Act's command boredom values replace the commands' own (0.1 to
   0.2).

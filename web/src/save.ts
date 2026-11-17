@@ -29,30 +29,52 @@ export interface Save {
   page?: string;
 }
 
+/** localStorage, which throws on every touch when the browser blocks site data: a read
+ * gives null, a removal does nothing, so the game still plays (unsaved, and saying so). */
+export function storageGet(key: string): string | null {
+  try {
+    return localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+export function storageSet(key: string, value: string): void {
+  try {
+    localStorage.setItem(key, value);
+  } catch {}
+}
+
+function storageRemove(key: string): void {
+  try {
+    localStorage.removeItem(key);
+  } catch {}
+}
+
 /** A save, or why one was dropped (with its career's play log id, to close it). */
 export type Loaded = { save: Save } | { discarded: string; careerId?: string } | null;
 
 /** The saved game, if it fits this engine and config; otherwise why it was dropped. */
 export function loadSave(revision: number, configHash: string): Loaded {
-  const raw = localStorage.getItem(SAVE_KEY);
+  const raw = storageGet(SAVE_KEY);
   if (raw === null) return null;
   let save: Save | null = null;
   try {
     save = JSON.parse(raw) as Save;
   } catch {}
   if (save === null || typeof save !== 'object' || typeof save.state !== 'string' || !Array.isArray(save.actions)) {
-    localStorage.removeItem(SAVE_KEY);
+    storageRemove(SAVE_KEY);
     return { discarded: 'The saved game could not be read, so a new game started.' };
   }
   if (save.revision !== revision) {
-    localStorage.removeItem(SAVE_KEY);
+    storageRemove(SAVE_KEY);
     return {
       discarded: `The saved game was from rules revision ${save.revision} (this is ${revision}), so a new game started.`,
       careerId: save.careerId,
     };
   }
   if (save.configHash !== configHash) {
-    localStorage.removeItem(SAVE_KEY);
+    storageRemove(SAVE_KEY);
     return {
       discarded: `The saved game used another config (${save.configHash}, this is ${configHash}), so a new game started.`,
       careerId: save.careerId,
@@ -73,5 +95,5 @@ export function writeSave(save: Save): string | null {
 }
 
 export function clearSave(): void {
-  localStorage.removeItem(SAVE_KEY);
+  storageRemove(SAVE_KEY);
 }

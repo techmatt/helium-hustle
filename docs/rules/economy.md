@@ -1,9 +1,9 @@
 # Economy (module `economy`, variant `arc1`)
 
 Resources, storage caps, buildings (buy, sell, set active), land, the daily building
-production and the end-of-day clamp. In [the day](README.md#the-day), buildings resolve
-right after boredom grows and expired overclocks drop, before demand and programs; the clamp
-runs late in the day, after shipments and bursts. Prices and amounts are `Fx`; counts
+production and the end-of-day clamp. In [the day](README.md#the-day), demand is set first;
+then upkeep-free buildings produce, programs run, and the buildings that take upkeep resolve
+on what is left; the clamp runs late in the day, after shipments and bursts. Prices and amounts are `Fx`; counts
 (owned, active, land bought) are integers.
 
 ## Rules
@@ -20,10 +20,17 @@ Propellant shows Propellant), or some is held now.
 Recreation Domes' `store`; see boredom.md). Caps bind only in the clamp: production during the
 day may run past a cap.
 
-**Processors** are derived: after any building change (buy, sell, set active, a new run) the
-processors resource is set to the sum of active buildings' `grant` effects (1 per active Data
-Center). Lost processors come off program assignments, last program first (programs.md);
-Launch Pads owned and pads are matched (shipments.md).
+**Working copies.** A building's effects (`grant`, `store`, a Launch Pad's pad,
+`speculator_decay`) come from its *working* copies: the active ones whose upkeep the last
+building pass paid. A type run at `frac` in the partial pass leaves `active −
+floor(active × frac)` copies unpaid until a later day's pass pays them, so a Data Center short
+of energy costs its processor from the next day (production is scaled by `frac` the same day).
+
+**Processors** are derived: after any building change (buy, sell, set active, a new run, a
+pass that changes how many are unpaid) the processors resource is set to the sum of working
+buildings' `grant` effects (1 per working Data Center); assignments are bounded by the active
+ones' grants, paid or not (programs.md). Launch Pads owned and pads are matched
+(shipments.md).
 
 **Price.** The next building of a type costs, per resource in its `cost`:
 `cost × cost_scaling ^ (owned − bonus) × discount_factor ^ rank`, the last factor only for a
@@ -68,7 +75,8 @@ building makes (Fuel Cell) reaches programs the next day, through the stock. Eac
    succeeds and any remain, so a type later in content order can feed an earlier one.
 4. **Partial pass:** each remaining type, in order, runs at `frac` = the least of
    `max(held, 0) / need` over its upkeep (at most 1), paying and producing that fraction, and
-   is marked `input_starved` (also when `frac` is 0 and it does nothing).
+   is marked `input_starved` (also when `frac` is 0 and it does nothing) unless an earlier
+   partial type made what it lacked and it ran in full.
 
 Energy produced by buildings in the day (gross) updates the run's peak energy (the career's
 `peak_power` takes it at retirement, [career.md](career.md)).

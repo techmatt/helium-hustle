@@ -688,6 +688,12 @@ tr.is-new td:first-child {
 .res-table tr.res-row.open td {
   background: var(--banner);
 }
+.res-table tr.res-row.no-breakdown {
+  cursor: default;
+}
+.res-table tr.res-row.no-breakdown:hover td {
+  background: none;
+}
 .res-table tr.res-breakdown td {
   padding: 2px 0 6px 10px;
   text-align: left;
@@ -1049,9 +1055,14 @@ tr.is-new td:first-child {
 .events li.is-unread {
   border-left-color: var(--accent);
 }
-.events li.is-unread {
-  border-left: 3px solid var(--accent);
+/* Every line keeps the accent edge's room, so being read changes a color, never a line's
+   wrap or the lines below it. */
+.events li {
+  border-left: 3px solid transparent;
   padding-left: 3px;
+}
+.events li.is-unread {
+  border-left-color: var(--accent);
 }
 .event-title {
   font-weight: 600;
@@ -1106,6 +1117,17 @@ button.go:hover:not(:disabled) {
 .nav-tile .dot.dot-ready {
   right: 17px;
   background: var(--pos);
+}
+/* A compact tile's name can run to its right edge: its dots sit on the tile's corners as
+   badges, the new dot top right and the ready dot bottom right, clear of the name. */
+.nav-grid.compact .nav-tile .dot {
+  top: -4px;
+  right: -4px;
+  box-shadow: 0 0 0 2px var(--panel);
+}
+.nav-grid.compact .nav-tile .dot.dot-ready {
+  top: auto;
+  bottom: -4px;
 }
 /* An affordable building's name row is tinted (every card's head has the same box, so a
    card turning affordable moves nothing). */

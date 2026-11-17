@@ -29,7 +29,7 @@
     "upkeep": {},
     "effects": [],
     "output_modifiers": ["solar_output_mult"],
-    "description": "Energy infrastructure. Titanium cost scales with the resource chain."
+    "description": "Energy infrastructure. Costs credits and titanium."
   },
   {
     "id": "excavator",
@@ -61,7 +61,7 @@
     "upkeep": {"energy": "2"},
     "effects": [],
     "output_modifiers": ["extractor_output_mult"],
-    "description": "Extracts ice from permafrost. Regolith cost teaches extraction dependency."
+    "description": "Extracts ice from permafrost. Costs credits and regolith."
   },
   {
     "id": "smelter",
@@ -125,7 +125,7 @@
     "upkeep": {"ice": "2", "energy": "1"},
     "effects": [],
     "output_modifiers": [],
-    "description": "Ice to propellant. Net -1 energy. Only propellant source."
+    "description": "Ice to propellant. Net -1 energy. The only lunar propellant source."
   },
   {
     "id": "launch_pad",

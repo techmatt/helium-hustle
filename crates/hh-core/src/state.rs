@@ -40,7 +40,10 @@ pub struct GameState {
 /// Buildings of one type: owned, of which `active` run, `bonus` were granted
 /// at run start by projects or achievements (they don't inflate the cost
 /// curve) and `free` took no land (starting and bonus copies: selling one
-/// refunds none).
+/// refunds none). `unpaid`: of the active ones, how many the last building
+/// pass left without their upkeep (`active − floor(active × fraction paid)`):
+/// they don't give their effects (grants, stores, pads, speculator decay)
+/// until a pass pays them.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Holding {
@@ -48,6 +51,7 @@ pub struct Holding {
     pub active: u32,
     pub bonus: u32,
     pub free: u32,
+    pub unpaid: u32,
 }
 
 /// One line of a program: run `command` `count` times before moving on.
@@ -346,6 +350,12 @@ impl GameState {
 
     pub fn active(&self, building: &str) -> u32 {
         self.run.buildings.get(building).map_or(0, |h| h.active)
+    }
+
+    /// Active copies whose upkeep the last building pass paid: the count a
+    /// building's effects (not its production, which the pass scales) come from.
+    pub fn working(&self, building: &str) -> u32 {
+        self.run.buildings.get(building).map_or(0, |h| h.active.saturating_sub(h.unpaid))
     }
 
     pub fn stream(&mut self, purpose: &str) -> &mut Stream {

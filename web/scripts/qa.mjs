@@ -322,6 +322,60 @@ const AUDIT = `(() => {
       if (tr.left < r.right - 1 && tr.right > r.left + 1 && tr.top < r.bottom - 1 && tr.bottom > r.top + 1 && !t.contains(img)) out.push({ kind: 'hidden', what: 'card text under its picture: ' + c.dataset.id + ' ' + t.className });
     }
   }
+  // A marker dot drawn over its tile's name.
+  for (const d of document.querySelectorAll('.nav-tile .dot')) {
+    const name = d.parentElement.querySelector(':scope > span:not(.dot)');
+    if (!shown(d) || !name) continue;
+    const a = d.getBoundingClientRect();
+    const range = document.createRange();
+    range.selectNodeContents(name);
+    for (const r of range.getClientRects()) if (r.width && a.left < r.right - 0.5 && a.right > r.left + 0.5 && a.top < r.bottom - 0.5 && a.bottom > r.top + 0.5) { out.push({ kind: 'hidden', what: 'a dot over the tile name: ' + label(d.parentElement) }); break; }
+  }
+  // A signed number colored against its sign: a "−3" in green, a "+3" in red.
+  for (const el of document.querySelectorAll('.pos, .neg')) {
+    // Boredom rising is bad news: its rate reads red by design.
+    if (!shown(el) || el.children.length || el.closest('[data-res="boredom"], [data-breakdown="boredom"]')) continue;
+    const t = el.textContent.trim();
+    if ((el.classList.contains('pos') && /^[−-]\\d/.test(t)) || (el.classList.contains('neg') && /^\\+\\d/.test(t)))
+      out.push({ kind: 'text', what: 'number colored against its sign: ' + label(el) + ' (' + el.className + ')' });
+  }
+  // Short, yet reading enough: "needs 150, had 150"; a bar reading "2,000 / 2,000" on an
+  // unfinished project or a pad not full.
+  for (const n of document.querySelectorAll('.short-note')) {
+    const m = n.textContent.match(/needs\\s*([\\d.,KMBT]+), had ([\\d.,KMBT]+)/);
+    if (shown(n) && m && m[1] === m[2]) out.push({ kind: 'text', what: 'short but reads equal: ' + label(n) });
+  }
+  for (const bar of document.querySelectorAll('.card.project .bar, .card.pad .bar')) {
+    const m = bar.querySelector('.bar-label')?.textContent.match(/^([\\d.,KMBT]+) \\/ ([\\d.,KMBT]+)$/);
+    const fill = parseFloat(bar.querySelector('.fill')?.style.width ?? '0');
+    if (shown(bar) && m && m[1] === m[2] && fill < 100) out.push({ kind: 'text', what: 'a bar reads full short of it: ' + label(bar.closest('.card')) });
+  }
+  // A breakdown row with nothing in any of its number cells.
+  for (const tr of document.querySelectorAll('.breakdown-table tbody tr')) {
+    if (shown(tr) && [...tr.querySelectorAll('td.num')].every((td) => !td.textContent.trim())) out.push({ kind: 'text', what: 'breakdown row with no numbers: ' + label(tr) });
+  }
+  // One quantity, two roundings: a card's "running at N%" against its tooltip's.
+  for (const s of document.querySelectorAll('[data-card-status][title]')) {
+    const a = s.textContent.match(/(<?\\d+)%/), b = s.getAttribute('title').match(/(<?\\d+)%/);
+    if (a && b && a[1] !== b[1]) out.push({ kind: 'text', what: 'card status says ' + a[0] + ', its tooltip ' + b[0] + ': ' + label(s.closest('.card')) });
+  }
+  // Pads: the head's state against the engine's flags it is read from.
+  for (const p of document.querySelectorAll('.card.pad')) {
+    const st = p.dataset.padState, launch = p.querySelector('[data-testid^="launch-"]');
+    if (st === 'ready' && launch?.disabled) out.push({ kind: 'text', what: 'pad reads Ready with Launch disabled: ' + label(p) });
+    const bar = p.querySelector('.bar-label')?.textContent.match(/([\\d.,]+)\\s*\\/\\s*([\\d.,]+)/);
+    if (st === 'loading' && bar && bar[1] === bar[2]) out.push({ kind: 'text', what: 'a full pad reads loading: ' + label(p) });
+  }
+  // Unread counts: a section's badge against the items it marks unread.
+  for (const sec of document.querySelectorAll('section[data-unread]')) {
+    const n = Number(sec.dataset.unread), badge = sec.querySelector('.fold-head .unread');
+    if (n > 0 && !badge) out.push({ kind: 'text', what: 'unread count ' + n + ' with no badge: ' + sec.dataset.testid });
+    if (badge && Number(badge.textContent) !== n) out.push({ kind: 'text', what: 'unread badge ' + badge.textContent + ' but ' + n + ' unread: ' + sec.dataset.testid });
+    const marked = sec.querySelectorAll('.is-unread').length;
+    if (sec.querySelector('.fold-body') && marked > n) out.push({ kind: 'text', what: marked + ' items marked unread but the count is ' + n + ': ' + sec.dataset.testid });
+  }
+  // The main quest has its own slot, and it shows whenever there is a quest.
+  if (document.querySelector('[data-testid="quest"]') && !document.querySelector('[data-testid="quest-pin"] [data-testid="quest"]')) out.push({ kind: 'text', what: 'the main quest drawn outside its slot' });
   // The program panel: at most one line framed as the current one.
   if (document.querySelectorAll('.lines li.current').length > 1) out.push({ kind: 'text', what: 'more than one program line framed as current' });
   if (/^\\D*0 assigned/.test(document.querySelector('.prog-procs span')?.textContent ?? '') && document.querySelector('.lines li.current')) out.push({ kind: 'text', what: 'a program with no processor frames a line as the one it runs next' });
@@ -560,10 +614,13 @@ async function pass(seed, width, theme) {
           n: lines.length, cur: lines.map((l, i) => l.classList.contains('current') ? i : -1).filter((i) => i >= 0),
           out: lines.filter((l) => /out-/.test(l.className)).length,
           span: !!document.querySelector('[data-testid="lines-span"]'),
+          // Note rows shown (a line keeps its row once a note has shown): a first note
+          // may grow its line once; any other move is a finding.
+          notes: document.querySelectorAll('.lines .line-why').length,
           box: lines.map((l) => { const a = l.getBoundingClientRect(), b = l.querySelector('.line-name').getBoundingClientRect(); return [a.top, a.height, b.left, b.top].map(Math.round).join(','); }).join(';') };
       })()`);
       if (!r.n) return;
-      boxes.push(r.box);
+      boxes.push(`${r.notes}#${r.box}`);
       running = r.running;
       tinted = Math.max(tinted, r.out);
       if (s > 10) {
@@ -571,10 +628,115 @@ async function pass(seed, width, theme) {
         if (!r.span) note('text', `program lines (${when}) at ${s}x: no "days per redraw" note`);
       } else if (r.running && r.cur.length !== 1) note('text', `program frame (${when}) at ${s}x: ${r.cur.length} lines framed`);
     }
-    if (new Set(boxes).size > 1) note('overflow', `program lines (${when}) at ${s}x moved as the frame walked`);
+    // Which boxes (line top, height, name left, name top per line) it went through.
+    // Moves among samples with the same note rows (a first note's row is allowed).
+    const byNotes = new Map();
+    for (const k of boxes) {
+      const [n, box] = k.split('#');
+      byNotes.set(n, (byNotes.get(n) ?? new Set()).add(box));
+    }
+    if ([...byNotes.values()].some((s) => s.size > 1)) note('overflow', `program lines (${when}) at ${s}x moved as the frame walked: ${[...new Set(boxes)].slice(0, 3).join(' | ')}; why: ${await evaluate(`[...document.querySelectorAll('.lines li')].map((l) => l.className + ' ' + (l.querySelector('[data-line-why]')?.textContent ?? '-')).join(' / ')`)}`);
     if (s > 10 && running && tinted === 0) note('text', `program lines (${when}) at ${s}x: no line tinted with what ran over the redraw`);
     await capture(`program-${s}x-${when}`);
     await speed(0);
+  };
+
+  /** Resources' breakdowns, paused: a click on each row opens its breakdown (one at a
+   * time; Processors has none) and a second closes it; Stats lists the breakdowns. A shot
+   * of Energy's and of the first with a shortfall (the engine test
+   * `every_days_breakdown_adds_up_…` checks the numbers). */
+  const breakdownProbe = async (when) => {
+    await speed(0);
+    const ids = await evaluate(`[...document.querySelectorAll('tr.res-row')].map((t) => t.dataset.res)`);
+    let shotShort = false;
+    for (const id of ids) {
+      // Processors' row opens nothing, so there is no change to time.
+      if (id === 'processors') await evaluate(`document.querySelector('tr.res-row[data-res="processors"]').click()`);
+      else await click(`tr.res-row[data-res="${id}"]`, `resource row ${id}`);
+      const r = await evaluate(`(() => {
+        const open = [...document.querySelectorAll('tr.res-breakdown')].map((t) => t.dataset.resBreakdown);
+        const b = document.querySelector('tr.res-breakdown .breakdown');
+        return { open, rows: b ? b.querySelectorAll('tbody tr').length : 0, shorts: b ? b.querySelectorAll('[data-short]').length : 0,
+          empty: !!document.querySelector('tr.res-breakdown .breakdown-empty') };
+      })()`);
+      if (id === 'processors') {
+        if (r.open.includes('processors')) note('input', `breakdown (${when}): Processors opened a breakdown`);
+        continue;
+      }
+      if (r.open.length !== 1 || r.open[0] !== id) note('input', `breakdown (${when}): a click on ${id} left open ${JSON.stringify(r.open)}`);
+      if (id === 'energy' || (r.shorts && !shotShort)) {
+        if (id !== 'energy') shotShort = true;
+        await capture(`breakdown-${id}-${when}`);
+      }
+    }
+    if (ids.length) {
+      const last = ids.filter((x) => x !== 'processors').at(-1);
+      if (last) {
+        await click(`tr.res-row[data-res="${last}"]`, `resource row ${last} again`);
+        if (await exists('tr.res-breakdown')) note('input', `breakdown (${when}): a second click on ${last} did not close it`);
+      }
+    }
+    // Stats: one breakdown per resource the engine reports, with the average column.
+    await panel('stats');
+    const stats = await evaluate(`[...document.querySelectorAll('[data-panel="stats"] .breakdown')].map((b) => b.dataset.breakdown)`);
+    if (!stats.length) note('text', `breakdown (${when}): Stats shows no resource breakdown`);
+    await capture(`stats-breakdown-${when}`);
+  };
+  /** Launch Pads: a loaded pad switched to another good returns what its tooltip said to
+   * the old good's stockpile (a cargo_lost line for the rest), and is empty after. */
+  const padProbe = async (when) => {
+    await speed(0);
+    if (!(await exists('.nav-tile[data-nav="launch_pads"]'))) return;
+    await panel('launch_pads');
+    const p = await evaluate(`(() => {
+      const c = [...document.querySelectorAll('.card.pad')].find((x) => Number(x.dataset.cargo) > 0);
+      if (!c) return null;
+      const sel = c.querySelector('select');
+      const t = c.querySelector('label[title]')?.getAttribute('title') ?? '';
+      const m = t.match(/returns ([\\d.,K]+) of the ([\\d.,K]+)/);
+      const other = [...sel.options].map((o) => o.value).find((g) => g !== sel.value);
+      return { pad: Number(c.dataset.pad), good: sel.value, other, returns: m ? Number(m[1].replace(/,/g, '')) : null, cargo: Number(c.dataset.cargo) };
+    })()`);
+    // The scenario starts with its pads loading; a played run may have none loaded now.
+    if (!p) return when === 'late_unlocks' ? note('input', `pad probe (${when}): no loaded pad to switch`) : undefined;
+    if (p.returns === null) return note('text', `pad probe (${when}): a loaded pad's cargo has no switch tooltip`);
+    const amt = (g) => evaluate(`Number(document.querySelector('tr[data-res="${g}"]')?.dataset.amount ?? 0)`);
+    const lost = () => evaluate(`document.querySelectorAll('[data-testid="events-activity"] li[data-kind="cargo_lost"]').length`);
+    const [a0, l0] = [await amt(p.good), await lost()];
+    await capture(`pad-before-switch-${when}`);
+    await setValue(`.card.pad[data-pad="${p.pad}"] select`, p.other);
+    await sleep(200);
+    const [a1, l1] = [await amt(p.good), await lost()];
+    const cargo = Number(await evaluate(`document.querySelector('.card.pad[data-pad="${p.pad}"]').dataset.cargo`));
+    if (Math.abs(a1 - a0 - p.returns) > 0.11) note('input', `pad probe (${when}): switching pad ${p.pad + 1} returned ${(a1 - a0).toFixed(2)} ${p.good}, its tooltip said ${p.returns}`);
+    if (cargo !== 0) note('input', `pad probe (${when}): pad ${p.pad + 1} holds ${cargo} after switching`);
+    if (p.returns < p.cargo - 0.01 && l1 !== l0 + 1) note('text', `pad probe (${when}): ${(p.cargo - p.returns).toFixed(2)} lost switching, but no cargo_lost line`);
+    await capture(`pad-after-switch-${when}`);
+    await setValue(`.card.pad[data-pad="${p.pad}"] select`, p.good);
+  };
+
+  /** Events' unread counts: Recent Activity folded counts what arrives while it is shut;
+   * opened and on screen for over a second, the count clears. */
+  const unreadProbe = async (when) => {
+    const sec = '[data-testid="events-activity"]';
+    const count = () => evaluate(`Number(document.querySelector('${sec}')?.dataset.unread ?? -1)`);
+    if (await evaluate(`document.querySelector('${sec} .fold-head').getAttribute('aria-expanded') === 'true'`)) await click(`${sec} .fold-head`, 'activity fold');
+    const n0 = await count();
+    await speed(50);
+    for (let i = 0; i < 40 && (await count()) <= n0; i++) await sleep(150);
+    await speed(0);
+    const n1 = await count();
+    if (n1 <= n0) return note('input', `unread (${when}): no activity arrived in ~6 s at 50x to count`);
+    await capture(`unread-folded-${when}`);
+    await click(`${sec} .fold-head`, 'activity fold');
+    await evaluate(`document.querySelector('${sec}').scrollIntoView({ block: 'start' })`);
+    // The lines' boxes while unread and once read: being read must move nothing.
+    const boxes = () => evaluate(`[...document.querySelectorAll('${sec} li')].map((l) => { const r = l.getBoundingClientRect(), t = document.createRange(); t.selectNodeContents(l); const c = t.getBoundingClientRect(); return [r.top, r.height, c.left].map(Math.round).join(','); }).join(';')`);
+    const unreadBoxes = await boxes();
+    await sleep(1800);
+    const n2 = await count();
+    if (n2 !== 0) note('input', `unread (${when}): Recent Activity open and on screen 1.8 s still counts ${n2} unread`);
+    else if ((await boxes()) !== unreadBoxes) note('overflow', `unread (${when}): Recent Activity's lines moved as they were read`);
   };
 
   try {
@@ -701,6 +863,10 @@ async function pass(seed, width, theme) {
     }
     await click('[data-testid="events-completed"] .fold-head', 'completed quests fold');
     await capture('run1-events-open');
+    if (!(await exists('[data-testid="summary"]'))) {
+      await breakdownProbe('run1');
+      await padProbe('run1');
+    }
     // Retire (unless boredom got there first), the summary, run 2.
     if (!(await exists('[data-testid="summary"]'))) {
       await panel('retirement');
@@ -754,6 +920,39 @@ async function pass(seed, width, theme) {
     const prog = await evaluate(`[...document.querySelectorAll('.lines li')].map((li) => li.dataset.command + ' ' + li.querySelector('.line-name').textContent.trim())`);
     const procs = await evaluate(`document.querySelector('.prog-procs span').textContent`);
     if (prog.length !== 1 || !/\(x2\)$/.test(prog[0]) || !/1 assigned/.test(procs)) note('input', `program 2 edits: ${JSON.stringify(prog)}, ${procs}`);
+    // Drag to reorder (HTML drag and drop, dispatched in the page): the last line dropped
+    // on the first moves it to the top.
+    await click('[data-testid="add-idle"]', 'add idle');
+    const order = () => evaluate(`[...document.querySelectorAll('.lines li')].map((li) => li.dataset.command).join(',')`);
+    const before = await order();
+    // A real drag renders between its events: dispatched one evaluate apart.
+    await evaluate(`(() => {
+      const lines = document.querySelectorAll('.lines li');
+      window.__qaDrag = new DataTransfer();
+      lines[lines.length - 1].dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: window.__qaDrag }));
+    })()`);
+    await sleep(100);
+    await evaluate(`(() => {
+      const lines = document.querySelectorAll('.lines li');
+      const dt = window.__qaDrag;
+      lines[0].dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt }));
+      lines[0].dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+      lines[lines.length - 1].dispatchEvent(new DragEvent('dragend', { bubbles: true, dataTransfer: dt }));
+    })()`);
+    await sleep(150);
+    const after = await order();
+    const want = before.split(',');
+    want.unshift(want.pop());
+    if (after !== want.join(',')) note('input', `program 2: dragging the last line to the top gave ${after}, not ${want.join(',')}`);
+    // A drag let go off the list, then something else dropped on a line: nothing moves.
+    await evaluate(`document.querySelectorAll('.lines li')[1].dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: new DataTransfer() }))`);
+    await sleep(100);
+    await evaluate(`document.querySelectorAll('.lines li')[1].dispatchEvent(new DragEvent('dragend', { bubbles: true, dataTransfer: new DataTransfer() }))`);
+    await sleep(100);
+    await evaluate(`document.querySelectorAll('.lines li')[0].dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: new DataTransfer() }))`);
+    await sleep(150);
+    if ((await order()) !== after) note('input', `program 2: a drop after a cancelled drag moved a line (${after} -> ${await order()})`);
+    await click('.lines li[data-line="0"] button[title="Remove"]', 'line × (the dragged one)');
     await speed(10);
     await sleep(600);
     await speed(0);
@@ -893,8 +1092,12 @@ async function pass(seed, width, theme) {
       // Reproduced, or not checkable yet (no checkpoint at the last tick so far): fine.
       if (!/final state reproduced|no fingerprint at its last tick/.test(r.stdout ?? '')) note('console', `hh-sim playlog ${file}: ${(r.stdout + r.stderr).slice(0, 300)}`);
     } else note('console', `play log not checked (career ${career || '-'}, dir ${logDir || '-'}, ${existsSync(sim) ? 'hh-sim found' : `no ${sim}`})`);
-    // Every debug-menu scenario, every panel it shows, a few days played.
+    // Every debug-menu scenario, every panel it shows, a few days played. The list is in
+    // the Debug fold, closed again once Options remounts: open it before reading.
+    await panel('options');
+    if (!(await exists('#scenario'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
     const scenarios = await evaluate(`[...document.querySelectorAll('#scenario option')].map((o) => o.value)`);
+    if (!scenarios.length) note('input', 'the debug menu listed no scenarios: none audited');
     for (const sc of scenarios) {
       await panel('options');
       if (!(await exists('#scenario'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
@@ -907,6 +1110,13 @@ async function pass(seed, width, theme) {
       for (const id of (await look()).nav) {
         await panel(id);
         await capture(`scenario-${sc}-${id}`);
+      }
+      // Every scenario's breakdowns (at_cap's lost-to-cap rows, rich's spending); the late
+      // panels' scenario also switches cargo on its loaded pads and reads unread counts.
+      await breakdownProbe(sc);
+      if (sc === 'late_unlocks') {
+        await padProbe(sc);
+        await unreadProbe(sc);
       }
     }
     // A second tab on the same save: the first stands down with a notice.
@@ -926,6 +1136,30 @@ async function pass(seed, width, theme) {
       // It sat behind the other tab meanwhile (headless keeps it "visible"): no frames is no gap.
       await evaluate(`window.__qaFrames && (window.__qaFrames.worst = 0)`);
       await capture('second-tab');
+    }
+    // Site data blocked (every localStorage touch throws): the game still loads and plays,
+    // and says nothing is being kept. First pass only.
+    if (seed === seeds[0] && width === widths[0]) {
+      const s = await send('Page.addScriptToEvaluateOnNewDocument', {
+        source: `Object.defineProperty(window, 'localStorage', { get() { throw new DOMException('blocked', 'SecurityError'); } });`,
+      });
+      try {
+        await evaluate('window.__stale = true');
+        await send('Page.navigate', { url });
+        await waitFor('!window.__stale', 'the navigation');
+        await waitFor(ready, 'the page with storage blocked', 15000);
+        await speed(10);
+        await sleep(1200);
+        await speed(0);
+        const said = await evaluate(`document.getElementById('notice')?.textContent ?? ''`);
+        if (!/Autosave failed/.test(said)) note('text', `storage blocked: no autosave notice (notice "${said.slice(0, 80)}")`);
+        await capture('storage-blocked');
+      } catch (e) {
+        note('console', `storage blocked: ${String(e).slice(0, 160)}`);
+      }
+      await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: s.result?.identifier });
+      while (b.errors.length) b.errors.shift(); // the blocked page's own warnings are expected
+      await load(); // storage back: the steps below write to it
     }
     // Every building's card (`?all-cards`), in both themes, screen by screen: the pictures
     // all load at 96 px and nothing on a card overflows or sits under its picture.

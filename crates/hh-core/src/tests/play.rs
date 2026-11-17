@@ -17,7 +17,7 @@ fn set(g: &mut GameState, res: &str, v: &str) {
 }
 
 fn own(g: &mut GameState, b: &str, n: u32) {
-    g.run.buildings.insert(b.into(), Holding { owned: n, active: n, bonus: 0, free: 0 });
+    g.run.buildings.insert(b.into(), Holding { owned: n, active: n, bonus: 0, free: 0, unpaid: 0 });
     economy::refresh(g);
 }
 
@@ -173,6 +173,57 @@ fn buildings_resolve_in_passes_with_partial_production() {
 }
 
 #[test]
+fn unpaid_upkeep_withholds_effects_from_the_next_day() {
+    // Three Data Centers want 6 energy; with none to spare they run at 0 and grant no
+    // processors once the day is done; paid again, they grant all three.
+    let r = rules();
+    let mut g = r.new_game(1);
+    g.run.buildings.clear();
+    own(&mut g, "data_center", 3);
+    assert_eq!(programs_processors(&g), 3);
+    set(&mut g, "energy", "0");
+    r.advance(&mut g, 1);
+    assert_eq!(g.run.buildings["data_center"].unpaid, 3);
+    assert_eq!(programs_processors(&g), 0);
+    // Unpaid, not gone: the program keeps its processor assigned, idle until paid.
+    assert_eq!((g.run.programs[0].processors, crate::modules::programs::running(&g)[0]), (1, 0));
+    // Half paid (3 of 6): floor(3 × 0.5) = 1 works.
+    set(&mut g, "energy", "3");
+    r.advance(&mut g, 1);
+    assert_eq!((g.run.buildings["data_center"].unpaid, programs_processors(&g)), (2, 1));
+    // Switching one off takes an unpaid copy: the paid one keeps its processor.
+    r.apply(&mut g, &Action::SetActive { building: "data_center".into(), active: 2 }).unwrap();
+    assert_eq!((g.run.buildings["data_center"].unpaid, programs_processors(&g)), (1, 1));
+    r.apply(&mut g, &Action::SetActive { building: "data_center".into(), active: 3 }).unwrap();
+    set(&mut g, "energy", "6");
+    r.advance(&mut g, 1);
+    assert_eq!((g.run.buildings["data_center"].unpaid, programs_processors(&g)), (0, 3));
+}
+
+fn programs_processors(g: &GameState) -> u32 {
+    crate::modules::programs::processors(g)
+}
+
+#[test]
+fn a_partial_pass_building_that_ran_in_full_is_not_starved() {
+    // The Fabricator, short of regolith, runs at 0.9 in the partial pass and makes the
+    // circuits the Research Lab (later in content order) lacked: the Lab runs in full and
+    // is neither stalled nor short.
+    let r = rules();
+    let mut g = r.new_game(1);
+    own(&mut g, "solar_panel", 4);
+    own(&mut g, "fabricator", 1);
+    own(&mut g, "research_lab", 1);
+    set(&mut g, "regolith", "0.9");
+    set(&mut g, "circuits", "0");
+    r.advance(&mut g, 1);
+    assert_eq!(g.run.today.stalls.get("fabricator"), Some(&Stall::InputStarved));
+    assert_eq!(g.run.today.flows["science"]["building:research_lab"].produced, f("1"));
+    assert_eq!(g.run.today.stalls.get("research_lab"), None);
+    assert!(!g.run.today.shorts.contains_key("building:research_lab"));
+}
+
+#[test]
 fn programs_are_paid_before_upkeep_and_the_breakdown_shows_who_went_short() {
     let r = rules();
     let mut g = r.start(1, Some(scenario("late_unlocks").unwrap()));
@@ -200,6 +251,48 @@ fn programs_are_paid_before_upkeep_and_the_breakdown_shows_who_went_short() {
     let net: Fx = energy.rows.iter().map(|x| x.produced - x.consumed).sum();
     assert!(net.max(-net) <= Fx::EPSILON, "{net}");
     assert!(g.run.flow_average["energy"]["building:solar_panel"].produced > Fx::ZERO);
+}
+
+#[test]
+#[ignore = "slow lane: three 900-day games checked day by day (~10 s)"]
+fn every_days_breakdown_adds_up_to_each_resources_change() {
+    // The breakdown is the player's answer to "where did it go": for every resource, every
+    // day (and the actions after it), its sources less its sinks less what the cap cut is
+    // the change in stock, but for the clamp lifting a rounding dip below zero.
+    let mut checked = 0;
+    for (seed, scenario) in [(5, None), (6, Some("late_unlocks")), (7, Some("rich"))] {
+        let sc = scenario.map(scenario_by);
+        let mut s = Session::new(&baseline(), seed, sc).unwrap();
+        for _ in 0..900 {
+            let before = s.state.clone();
+            // Greedy buys after its tick, so the day's flows hold both (the script acts
+            // before its tick, whose start clears the flows).
+            play(&mut s, 1, Policy::Greedy { every: 1 });
+            let g = &s.state;
+            if g.career.run_number != before.career.run_number {
+                continue;
+            }
+            for res in &crate::content::content().resources {
+                let flows = g.run.today.flows.get(&res.id);
+                let net: Fx = flows.map_or(Fx::ZERO, |m| m.values().map(|x| x.produced - x.consumed).sum());
+                let change = g.amount(&res.id) - before.amount(&res.id);
+                let off = net - change;
+                assert!(
+                    off.max(-off) <= f("0.000004"),
+                    "seed {seed} {scenario:?} day {}: {} flows net {net} but changed {change} ({:?})",
+                    g.run.day,
+                    res.id,
+                    flows
+                );
+                checked += 1;
+            }
+        }
+    }
+    assert!(checked > 1000);
+}
+
+fn scenario_by(id: &str) -> &'static Scenario {
+    scenario(id).unwrap()
 }
 
 #[test]
@@ -455,7 +548,10 @@ fn forced_retirement_starts_the_next_run_with_career_bonuses() {
     g.run.stats.credits_earned = f("5000");
     own(&mut g, "excavator", 1);
     set(&mut g, "boredom", "999.95");
+    // The view says the next day retires the run (its rates read 0).
+    assert!(r.view(&g).retires_next);
     r.advance(&mut g, 1);
+    assert!(!r.view(&g).retires_next);
     assert_eq!(g.career.run_number, 2);
     assert_eq!(g.career.retirements, 1);
     assert_eq!(g.run.day, 0);

@@ -2,12 +2,12 @@
 // Recent Activity).
 
 import type { ComponentChildren } from 'preact';
-import { useState } from 'preact/hooks';
+import { useRef, useState } from 'preact/hooks';
 import type { Activity, Entry, View } from '../engine';
 import { num } from '../format';
 import { daysPerWake } from '../clock';
 import { act, eventItems, markRead, store, unreadIn, type EventSection, type Store } from '../store';
-import { Bar, ResChip, Section, ShortNote, name, shortText } from './common';
+import { Bar, ResChip, Section, ShortNote, name, ranPercent, shortText } from './common';
 import { Chip } from './icons';
 
 export function Right({ s, program, setProgram }: { s: Store; program: number; setProgram: (i: number) => void }) {
@@ -37,8 +37,13 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
   const v = s.view;
   const p = v.programs[program];
   const [drag, setDrag] = useState<number | null>(null);
+  // Lines that have shown a note ("needs …") since this program's lines last changed keep
+  // the note's row, so a note coming and going day to day moves no line below it.
+  const noted = useRef<{ key: string; lines: Set<number> }>({ key: '', lines: new Set() });
   if (!p) return null;
   const entries = p.entries;
+  const notedKey = `${v.run}:${program}:${entries.map((e) => `${e.command}x${e.count}`).join(',')}`;
+  if (noted.current.key !== notedKey) noted.current = { key: notedKey, lines: new Set() };
   // Above 10x one redraw covers several days: the pointer and "ran today" of the last
   // of them would hop around the queue (even backward), so each line instead shows what
   // it did over those days, with no pointer.
@@ -80,7 +85,9 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
       </div>
       <div class="prog-procs">
         <span>
-          ⚙ {p.processors} assigned ({v.processors_free} free)
+          ⚙ {p.processors} assigned
+          {p.running < p.processors && <span class="neg" title="Data Centers short of upkeep: the rest wait until it is paid">, {p.running} running</span>} (
+          {v.processors_free} free)
         </span>
         <button
           type="button"
@@ -115,14 +122,16 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
       <ol class="lines">
         {entries.map((e, i) => {
           const outcome = span ? (spanOutcomes?.[i] ?? null) : p.outcomes[i];
-          // No processor on the program: no line runs next, so none is framed.
-          const current = !span && p.processors > 0 && i === p.entry;
+          // No processor running the program: no line runs next, so none is framed.
+          const current = !span && p.running > 0 && i === p.entry;
           // Part way through its runs: that share; otherwise full once it ran today.
           const frac = current && p.step > 0 ? p.step / e.count : outcome ? 1 : 0;
           // A failed line says why (today's last run of it); the tooltip has it in full.
-          const why = outcome === 'failed' ? (p.shorts[i] ?? null) : null;
+          // A conversion that ran part way says so too, as a starved building does.
+          const why = outcome === 'failed' || outcome === 'ran' ? (p.shorts[i] ?? null) : null;
           // A command locked again (used in an earlier run) fails with no input short.
           const locked = outcome === 'failed' && !why && v.commands.find((c) => c.id === e.command)?.unlocked === false;
+          if (why || locked) noted.current.lines.add(i);
           return (
             <li
               key={`${i}-${e.command}`}
@@ -134,6 +143,9 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
                 setDrag(i);
                 ev.dataTransfer?.setData('text/plain', String(i));
               }}
+              // A drag let go off the list (or cancelled) is over: a later drop of anything
+              // else on a line must not move the line it started from.
+              onDragEnd={() => setDrag(null)}
               onDragOver={(ev) => ev.preventDefault()}
               onDrop={(ev) => {
                 ev.preventDefault();
@@ -172,9 +184,21 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
               <button type="button" class="tiny" title="Remove" onClick={() => editProgram(program, (now) => now.filter((_, j) => j !== i))}>
                 ×
               </button>
+              {!(why || locked) && noted.current.lines.has(i) && (
+                <span class="line-why" aria-hidden="true">
+                  {' '}
+                </span>
+              )}
               {(why || locked) && (
                 <span class="line-why" data-line-why>
-                  {why ? <ShortNote v={v} s={why} /> : 'locked this run'}
+                  {why ? (
+                    <>
+                      {Number(why.ran) > 0 ? `ran at ${ranPercent(why.ran)} · ` : ''}
+                      <ShortNote v={v} s={why} />
+                    </>
+                  ) : (
+                    'locked this run'
+                  )}
                 </span>
               )}
             </li>
@@ -239,7 +263,7 @@ function Events({ v }: { v: View }) {
       >
         <ul class="plain activity">
           {recent.map(({ a, key }) => (
-            <li key={key} class={`act-${tone(a)}`} data-kind={a.kind}>
+            <li key={key} class={`act-${tone(a)}${activity.includes(key) ? ' is-unread' : ''}`} data-kind={a.kind}>
               Day {num(a.day)}: {describe(v, a)}
             </li>
           ))}

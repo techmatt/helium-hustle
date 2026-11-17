@@ -2,7 +2,7 @@
 
 Events are the quest chain ("Breadcrumbs", the `story` rows, in file order) and one-off
 events (the `ongoing` rows). Each has a trigger, a condition and unlock effects that open
-buildings, panels, projects or flags. Events are checked at step 10 of
+buildings, panels, projects or flags. Events are checked at step 12 of
 [the day](README.md#the-day), after the clamp; their unlocks are re-applied at the start
 of every run.
 

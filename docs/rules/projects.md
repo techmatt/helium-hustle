@@ -4,7 +4,7 @@ Projects are large builds funded a little each day: the player sets, per project
 resource, how much the project takes per day, and it completes once every cost is paid.
 Long-Term projects keep their progress across retirements and reward every later run;
 Strategic ones start over each run and reward the rest of it. Funding drains after
-programs run, step 6 of [the day](README.md#the-day).
+programs and buildings run, step 8 of [the day](README.md#the-day).
 
 ## Rules
 
@@ -22,7 +22,7 @@ run, so a Long-Term project must be funded again after a retirement (its progres
 | `unlock` | Holds when |
 |---|---|
 | `event_unlocked` | an event's `enable_project` enabled it this run (seen events re-apply at run start, [events.md](events.md)) |
-| `ideology_rank` | the career's best rank on `axis` is at least `rank` (bests are recorded at step 12, so it opens the day after the rank is reached; [ideology.md](ideology.md)) |
+| `ideology_rank` | the career's best rank on `axis` is at least `rank` (bests are recorded at step 14, so it opens the day after the rank is reached; [ideology.md](ideology.md)) |
 | `quest_active` | the quest is active now or completed in any run |
 | `research_completed` | the item is bought this run ([research.md](research.md)) |
 | `flag_set` | the career flag is set |

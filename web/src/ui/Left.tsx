@@ -4,7 +4,7 @@ import { Fragment, type ComponentChildren } from 'preact';
 import { SPEEDS } from '../clock';
 import { capitalize, num, perDay } from '../format';
 import { navHasNews, seen, setSpeed, type Store } from '../store';
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import { Breakdown, CappedRate, Section, navShown } from './common';
 import { Chip, Horizon, NavIcon } from './icons';
 
@@ -27,6 +27,11 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
   const padReady = v.pads.some((p) => p.ready && !p.paused);
   // The one resource row expanded to its breakdown, if any.
   const [expanded, setExpanded] = useState<string | null>(null);
+  // A resource hidden (a new run) closes its breakdown, so it never reopens by itself.
+  const expandedShown = v.resources.some((r) => r.visible && r.id === expanded);
+  useEffect(() => {
+    if (expanded !== null && !expandedShown) setExpanded(null);
+  }, [expanded, expandedShown]);
   return (
     <aside class="col-left">
       <h1 class="title">Helium Hustle</h1>
@@ -83,23 +88,28 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
                 let rate: ComponentChildren = capped ? <CappedRate net={r.net_per_day} compact spare={r.id === 'energy'} /> : perDay(r.per_day);
                 if (r.id === 'processors') {
                   shown = `${v.processors - v.processors_free} / ${v.processors}`;
-                  rate = `${v.processors_free} free`;
+                  // Data Centers short of upkeep: fewer run than are assigned.
+                  rate = v.processors_running < v.processors - v.processors_free ? `${v.processors_running} running` : `${v.processors_free} free`;
                 }
                 if (r.id === 'land') rate = 'free';
+                // The next day retires the run: its rates (all 0) say nothing.
+                else if (v.retires_next && r.id !== 'processors') rate = '—';
                 // Boredom rising is bad news: its rate reads the other way round.
                 // A rate too small to show reads "0/day", uncolored.
                 const rateNum = capped || rate === '0/day' ? 0 : Number(r.per_day) * (r.id === 'boredom' ? -1 : 1);
                 const isOpen = expanded === r.id;
+                // Processors are counted from buildings, not made or spent: no breakdown.
+                const opens = r.id !== 'processors';
                 return (
                   <Fragment key={r.id}>
                   <tr
                     data-res={r.id}
                     data-amount={r.amount}
-                    class={`res-row${isOpen ? ' open' : ''}${s.fresh.has(`resource:${r.id}`) ? ' is-new' : ''}`}
-                    title={isOpen ? 'Click to close' : 'Click for where it comes from and goes'}
-                    aria-expanded={isOpen}
+                    class={`res-row${opens ? '' : ' no-breakdown'}${isOpen ? ' open' : ''}${s.fresh.has(`resource:${r.id}`) ? ' is-new' : ''}`}
+                    title={!opens ? 'Processors come from buildings; each runs a program' : isOpen ? 'Click to close' : 'Click for where it comes from and goes'}
+                    aria-expanded={opens ? isOpen : undefined}
                     onMouseEnter={() => seen(`resource:${r.id}`)}
-                    onClick={() => setExpanded(isOpen ? null : r.id)}
+                    onClick={() => opens && setExpanded(isOpen ? null : r.id)}
                   >
                     <td>
                       {/* A long name may wrap when the column is tight, but only between
@@ -148,7 +158,8 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
                   <td>Rank {a.rank}</td>
                   <td class="num muted">
                     {Number(a.score) < 0 ? '−' : ''}
-                    {num(Math.abs(Number(a.score)))} / {num(a.next_rank_score)}
+                    {num(Math.abs(Number(a.score)))} / {Number(a.score) < 0 ? '−' : ''}
+                    {num(a.next_rank_score)}
                   </td>
                 </tr>
               ))}

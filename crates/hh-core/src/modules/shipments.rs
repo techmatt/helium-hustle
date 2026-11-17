@@ -80,9 +80,9 @@ pub fn sync_pads(g: &mut GameState) {
     }
 }
 
-/// A pad runs if it is among the first `active` Launch Pads.
+/// A pad runs if it is among the first working Launch Pads (active, upkeep paid).
 pub fn pad_active(g: &GameState, i: usize) -> bool {
-    i < g.active(LAUNCH_PAD) as usize
+    i < g.working(LAUNCH_PAD) as usize
 }
 
 /// Units one Load puts on a pad: the research value if bought, else the
@@ -183,9 +183,9 @@ pub fn launch_action(r: &Rules, g: &mut GameState, pad: u32) -> Result<(), Strin
 /// `cargo_lost` activity line says so.
 pub fn set_pad_good(r: &Rules, g: &mut GameState, pad: u32, good: &str) -> Result<(), String> {
     if !r.p.shipments.base_values.contains_key(good) {
-        return Err(format!("pad {pad}: {good:?} is not a tradeable good"));
+        return Err(format!("pad {}: {good:?} is not a tradeable good", pad + 1));
     }
-    let p = g.run.pads.get_mut(pad as usize).ok_or_else(|| format!("pad {pad}: no such pad"))?;
+    let p = g.run.pads.get_mut(pad as usize).ok_or_else(|| format!("pad {}: no such pad", pad + 1))?;
     if p.good == good {
         return Ok(());
     }
@@ -211,7 +211,7 @@ pub fn switch_returns(r: &Rules, g: &GameState, i: usize) -> Fx {
 }
 
 pub fn set_pad_paused(g: &mut GameState, pad: u32, paused: bool) -> Result<(), String> {
-    let p = g.run.pads.get_mut(pad as usize).ok_or_else(|| format!("pad {pad}: no such pad"))?;
+    let p = g.run.pads.get_mut(pad as usize).ok_or_else(|| format!("pad {}: no such pad", pad + 1))?;
     p.paused = paused;
     Ok(())
 }

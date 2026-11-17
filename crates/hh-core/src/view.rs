@@ -48,6 +48,8 @@ pub struct BuildingView {
     pub ideology: Option<Text>,
     pub owned: u32,
     pub active: u32,
+    /// Active copies whose upkeep the last pass paid: the ones giving effects.
+    pub working: u32,
     pub bonus: u32,
     pub max_count: Option<u32>,
     /// Price of the next one (`Fx::MAX` past the number range).
@@ -95,7 +97,10 @@ pub struct CommandView {
 #[derive(Debug, Clone, Serialize)]
 pub struct ProgramView {
     pub entries: Vec<Entry>,
+    /// Assigned processors.
     pub processors: u32,
+    /// Of those, the ones running: fewer while Data Centers go unpaid.
+    pub running: u32,
     /// The line the next processor runs, and runs done of it.
     pub entry: u32,
     pub step: u32,
@@ -150,6 +155,8 @@ pub struct PadView {
     pub good: String,
     pub paused: bool,
     pub active: bool,
+    /// Switched on, but its Launch Pad's upkeep went unpaid: idle until paid.
+    pub unpaid: bool,
     pub cargo: Fx,
     pub capacity: Fx,
     pub cooldown: u32,
@@ -356,8 +363,12 @@ pub struct View {
     pub can_buy_land: bool,
     pub commands: Vec<CommandView>,
     pub programs: Vec<ProgramView>,
+    /// Processors the active buildings grant (what can be assigned).
     pub processors: u32,
     pub processors_free: u32,
+    /// Assigned processors running today: fewer than assigned while Data
+    /// Centers go unpaid (the shortfall off the last programs first).
+    pub processors_running: u32,
     pub pads: Vec<PadView>,
     pub loading_priority: Vec<String>,
     pub markets: Vec<MarketView>,
@@ -393,6 +404,9 @@ pub struct View {
     /// The nav grid's tiles (`content/nav.json`), in order, each shown or not.
     pub nav: Vec<NavView>,
     pub can_retire: bool,
+    /// The next day ends this run (boredom reaches its cap): the per-day rates,
+    /// read from that day, are 0 and say nothing.
+    pub retires_next: bool,
     pub log: Vec<LogEntry>,
     /// The run's activity feed, oldest first.
     pub activity: Vec<Activity>,
@@ -668,6 +682,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 ideology: b.ideology.as_deref(),
                 owned: h.owned,
                 active: h.active,
+                working: h.active.saturating_sub(h.unpaid),
                 bonus: h.bonus,
                 max_count: b.max_count,
                 cost,
@@ -750,7 +765,8 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         buy_power_mult: career::buy_power_mult(r, &after),
         ideology: axes(r, &after),
     };
-    let procs = programs::processors(g);
+    let procs = programs::capacity(g);
+    let running = programs::running(g);
     View {
         tick: g.tick,
         day: g.run.day,
@@ -771,6 +787,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             .map(|(i, (p, outcomes))| ProgramView {
                 entries: p.entries.clone(),
                 processors: p.processors,
+                running: running[i],
                 entry: p.entry,
                 step: p.step,
                 outcomes,
@@ -784,6 +801,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             .collect(),
         processors: procs,
         processors_free: procs.saturating_sub(programs::assigned(g)),
+        processors_running: running.iter().sum(),
         pads: (0..g.run.pads.len())
             .map(|i| {
                 let p = &g.run.pads[i];
@@ -791,6 +809,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                     good: p.good.clone(),
                     paused: p.paused,
                     active: shipments::pad_active(g, i),
+                    unpaid: i < g.active(shipments::LAUNCH_PAD) as usize && !shipments::pad_active(g, i),
                     cargo: p.cargo,
                     capacity: r.p.shipments.pad_cargo_capacity,
                     cooldown: p.cooldown,
@@ -888,7 +907,9 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 dumps_seen: g.run.activity.iter().filter(|a| a.kind == "rival_dump" && a.id == rv.id).count() as u32,
             })
             .collect(),
-        overclocks: g.run.overclocks.clone(),
+        // Only those the next day still applies: one whose last day has passed lingers in
+        // state until the next tick drops it.
+        overclocks: g.run.overclocks.iter().filter(|o| o.until_day > g.run.day).cloned().collect(),
         modifiers: MODIFIER_KEYS.iter().map(|&k| (k, modifier(r, g, k))).collect(),
         career: CareerView {
             retirements: g.career.retirements,
@@ -933,6 +954,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             })
             .collect(),
         can_retire: career::retire_blocker(g).is_none(),
+        retires_next: !same_run,
         log: g.career.log.clone(),
         activity: g.run.activity.clone(),
         breakdown: breakdown(g),

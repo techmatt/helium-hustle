@@ -15,8 +15,9 @@ resource, or an empty map, is a config load error.
 holds a good, a paused flag, its cargo and a cooldown in days. Whenever buildings change, pads
 are matched to the count: a new pad carries the first good in the loading priority, empty and
 ready; selling a Launch Pad drops the last pad, cargo and all. A pad is **active** while its
-index is below the number of active Launch Pads ([economy.md](economy.md)): switching Launch
-Pads off idles the last pads, which keep their cargo.
+index is below the number of working Launch Pads (active, upkeep paid:
+[economy.md](economy.md)): switching Launch Pads off, or leaving their upkeep unpaid, idles
+the last pads, which keep their cargo.
 
 **Loading** (Load Launch Pads). Every active, unpaused pad, in loading-priority order of its
 good (then pad order), takes from its good's stockpile:
@@ -106,6 +107,7 @@ Modifiers read ([README.md](README.md)): `cargo_capacity_mult` (Bulk Shipper ach
 - Candidate: the 10-day launch cooldown is the handoff's number; the data has none.
 - Candidate: a manual launch needs only some cargo (not a full pad) and fuel, and works on a
   paused pad.
-- Candidate: a pad's good can change only while it is empty or already carries that good.
+- Ruling (revision 4): a loaded pad may switch goods; its cargo returns to the stockpile up
+  to the cap and the rest is lost.
 - Candidate: `shipment_completed` events and the shipments-this-run achievement count this
   run's shipments.

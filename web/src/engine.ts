@@ -44,6 +44,8 @@ export interface BuildingView {
   ideology: string | null;
   owned: number;
   active: number;
+  /** Active copies whose upkeep the last pass paid: the ones giving effects. */
+  working: number;
   bonus: number;
   max_count: number | null;
   cost: Amounts;
@@ -111,7 +113,10 @@ export type LineOutcome = 'ran' | 'skipped' | 'failed';
 
 export interface ProgramView {
   entries: Entry[];
+  /** Assigned processors. */
   processors: number;
+  /** Of those, the ones running: fewer while Data Centers go unpaid. */
+  running: number;
   entry: number;
   step: number;
   outcomes: (LineOutcome | null)[];
@@ -130,6 +135,8 @@ export interface PadView {
   good: string;
   paused: boolean;
   active: boolean;
+  /** Switched on, but its Launch Pad's upkeep went unpaid: idle until paid. */
+  unpaid: boolean;
   cargo: Fx;
   capacity: Fx;
   cooldown: number;
@@ -288,6 +295,8 @@ export interface View {
   programs: ProgramView[];
   processors: number;
   processors_free: number;
+  /** Assigned processors running today (fewer while Data Centers go unpaid). */
+  processors_running: number;
   pads: PadView[];
   loading_priority: string[];
   markets: MarketView[];
@@ -312,6 +321,8 @@ export interface View {
   panels: string[];
   nav: { id: string; name: string; visible: boolean }[];
   can_retire: boolean;
+  /** The next day ends this run (boredom at its cap): the per-day rates read 0. */
+  retires_next: boolean;
   log: LogEntry[];
   activity: Activity[];
   breakdown: BreakdownView[];

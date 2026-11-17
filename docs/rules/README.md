@@ -1,6 +1,6 @@
 # Rules
 
-The rules as implemented, rules revision **5** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **6** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
 The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
@@ -121,8 +121,8 @@ and in every later run; Strategic ones for the rest of their run.
 ## Not built
 
 Dream Echo (Dream is the flat variant), saved program loadouts, block/skip toggles, the
-Stats panel's per-source rate tracking and lifetime source totals, rolling overflow
-averages, and playtest telemetry. The view reports what the UI needs for progressive
+Stats panel's lifetime source totals (the last day's and a rolling average's per-source
+breakdown is built: economy), and playtest telemetry. The view reports what the UI needs for progressive
 disclosure (`visible` flags, nav tiles); the "new" markers are the UI's own, not state
 ([web/README.md](../../web/README.md)).
 

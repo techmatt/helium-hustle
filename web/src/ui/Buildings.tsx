@@ -4,7 +4,7 @@ import type { BuildingView, View } from '../engine';
 import { capitalize, num } from '../format';
 import { act, actAll, seen, store, type Store } from '../store';
 import { buildingArt } from './buildingArt';
-import { CostRows, FlowLines, ResChip, Section, cardButton, freshClass, name, navShown, shortText, useHint } from './common';
+import { CostRows, FlowLines, ResChip, Section, cardButton, freshClass, name, navShown, ranPercent, shortText, useHint } from './common';
 import { Chip } from './icons';
 
 /** `?all-cards` in the URL (the QA checker's): every building's card, revealed or not, so
@@ -136,7 +136,11 @@ function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: boolean; 
       <div class="card-status" data-card-status title={b.starved ? shortText(v, b.starved) : undefined}>
         {b.starved ? (
           <span class="stall stall-input_starved">
-            running at {Math.floor(Number(b.starved.ran) * 100)}% · <ResChip v={v} id={b.starved.resource} /> short
+            {Number(b.starved.ran) > 0 ? `running at ${ranPercent(b.starved.ran)}` : 'not running'} · <ResChip v={v} id={b.starved.resource} /> short
+            {/* Effects (a processor, a pad, decay) come only from the copies paid for; a
+                producer's output is already scaled by the share paid, so only an
+                effect-only building says how many work. */}
+            {b.working < b.active && Object.keys(b.produces).length === 0 && ` · ${b.working} of ${b.active} working`}
           </span>
         ) : b.stall === 'input_starved' ? (
           <span class="stall stall-input_starved">Short of inputs</span>
