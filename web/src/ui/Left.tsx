@@ -4,8 +4,8 @@ import { Fragment, type ComponentChildren } from 'preact';
 import { SPEEDS } from '../clock';
 import { capitalize, num, perDay } from '../format';
 import { navHasNews, seen, setSpeed, type Store } from '../store';
-import { Horizon } from './art';
-import { CappedRate, Section, Square, navShown } from './common';
+import { CappedRate, Section, navShown } from './common';
+import { Chip, Horizon, NavIcon } from './icons';
 
 /** The Resources panel's first group, in this order; every other resource follows in a
  * second group, in the engine's order. Display order only. */
@@ -39,7 +39,7 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
               open(t.id);
             }}
           >
-            <Square id={t.id} size={compact ? 18 : 34} />
+            <NavIcon id={t.id} compact={compact} />
             <span>{t.name}</span>
             {navHasNews(t.id) && <span class="dot" title="Something new" />}
             {t.id === 'launch_pads' && padReady && <span class="dot dot-ready" data-testid="pads-ready" title="A pad is ready to launch" />}
@@ -98,7 +98,7 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
                           <span class="word">
                             {i === 0 && (
                               <>
-                                <Square id={r.id} />{' '}
+                                <Chip id={r.id} title={r.name} />{' '}
                               </>
                             )}
                             {w}
@@ -121,7 +121,9 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
             <tbody>
               {v.ideology.map((a) => (
                 <tr key={a.axis}>
-                  <td class={`axis-${a.axis}`}>{capitalize(a.axis)}</td>
+                  <td class={`axis-${a.axis}`}>
+                    <Chip id={a.axis} title={capitalize(a.axis)} /> {capitalize(a.axis)}
+                  </td>
                   <td>Rank {a.rank}</td>
                   <td class="num muted">
                     {Number(a.score) < 0 ? '−' : ''}
@@ -133,7 +135,7 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
           </table>
         </Section>
       )}
-      <Horizon />
+      <Horizon v={v} />
     </aside>
   );
 }

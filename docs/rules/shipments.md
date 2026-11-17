@@ -68,8 +68,9 @@ cooled down) and the default loading priority.
   full. Illegal if there is no such pad, or it can't launch (inactive, cooling down, empty, or
   propellant below `fuel_per_pad`).
 - **`set_pad_good { pad, good }`**: sets the good a pad carries. Illegal if the good is not
-  tradeable, the pad doesn't exist, or the pad holds cargo of another good (setting the same
-  good again is allowed).
+  tradeable or the pad doesn't exist; setting the same good again does nothing. A loaded pad
+  switching goods returns its cargo to that good's stockpile, up to the stockpile's cap; the
+  rest is lost, and a Recent Activity line (`cargo_lost`) says how much.
 - **`set_pad_paused { pad, paused }`**: pauses or resumes a pad. A paused pad keeps its good
   and cargo; Load and Launch Full Pads skip it. Illegal only for a missing pad.
 - **`set_loading_priority { goods }`**: replaces the loading priority. Illegal unless the list

@@ -328,6 +328,31 @@ fn the_view_shows_pad_readiness_and_the_rate_a_cap_throws_away() {
 }
 
 #[test]
+fn switching_a_loaded_pads_cargo_returns_it_up_to_the_cap() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    own(&mut g, "launch_pad", 1);
+    let good = g.run.pads[0].good.clone();
+    let other = if good == "he3" { "titanium" } else { "he3" };
+    let cap = economy::cap(&r, &g, other).unwrap();
+    // Room for all of it: back to the stockpile, nothing lost, no line.
+    set(&mut g, &good, "0");
+    g.run.pads[0].cargo = f("5");
+    let lines = g.run.activity.len();
+    r.apply(&mut g, &Action::SetPadGood { pad: 0, good: other.into() }).unwrap();
+    assert_eq!((g.amount(&good), g.run.pads[0].cargo, g.run.pads[0].good.as_str()), (f("5"), Fx::ZERO, other));
+    assert_eq!(g.run.activity.len(), lines);
+    // Two short of the cap: two return, the rest is lost and a line says so.
+    g.run.pads[0].cargo = f("12");
+    set(&mut g, other, &(cap - f("2")).to_string());
+    r.apply(&mut g, &Action::SetPadGood { pad: 0, good: good.clone() }).unwrap();
+    assert_eq!(g.amount(other), cap);
+    let a = g.run.activity.last().unwrap();
+    assert_eq!((a.kind.as_str(), a.id.as_str(), a.amount, a.quantity), ("cargo_lost", other, Some(f("1")), Some(f("10"))));
+    assert_eq!(g.run.pads[0].cargo, Fx::ZERO);
+}
+
+#[test]
 fn demand_stays_in_its_band_and_moves() {
     let r = rules();
     let mut g = r.new_game(7);

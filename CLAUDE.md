@@ -74,7 +74,8 @@ Locked by Matt: a change to any of these is his decision, not an implementation 
   `cargo clippy --workspace --all-targets` clean.
 - **Background any step over ~30 seconds** (builds, tests, sims, servers) and wait on the real
   process (the `cargo`, `node` or test binary), never on a launcher that returns before the work
-  is done. A fresh worktree's first build takes minutes: give it its time.
+  is done. A fresh worktree's first build takes minutes: give it its time. A fresh worktree
+  has no `web/node_modules`: run `npm ci` in `web/` before the first web build or check.
 - **Browser checks, sweeps and e2e run against `vite preview`** (a static build), never the dev
   server: its watcher rebuilds the wasm and reloads the page on any `crates/` edit.
 - **One cargo at a time in a target dir.** Parallel helpers need their own `CARGO_TARGET_DIR`.

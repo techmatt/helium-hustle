@@ -212,7 +212,7 @@
     "upkeep": {"energy": "3"},
     "effects": [{"type": "speculator_decay"}],
     "output_modifiers": [],
-    "description": "Clears speculators from every market faster each day. Nationalist-aligned."
+    "description": "Clears speculators from every market faster each day."
   },
   {
     "id": "fuel_cell",
@@ -228,7 +228,7 @@
     "upkeep": {"propellant": "3"},
     "effects": [],
     "output_modifiers": [],
-    "description": "Converts propellant into energy. High output per unit but propellant-hungry. Nationalist-aligned."
+    "description": "Converts propellant into energy. High output per unit but propellant-hungry."
   },
   {
     "id": "microwave_receiver",

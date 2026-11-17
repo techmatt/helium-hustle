@@ -1,6 +1,6 @@
-// The Earthrise art, drawn inline: the Earth in the sky over the center column and the
-// lunar horizon with the habitat at the foot of the left column. Its fills come from the
-// theme tokens in style.css (the Earth keeps its own true colors in both themes).
+// The Earthrise art, drawn inline: the Earth in the sky over the center column (the
+// lunar horizon at the foot of the left column is a picture: icons.tsx). The Earth keeps
+// its own true colors in both themes.
 //
 // The sky is the home for a later live view of the base (Flash/3D): replace what <Sky>
 // draws and keep its box (style.css `.sky`), so nothing else on the page moves.
@@ -63,28 +63,6 @@ function Earth() {
         <path fill="#fff" opacity="0.55" d="M96 30c10-4 22-2 30 2-8 4-20 4-30-2z" />
         <rect x="0" y="0" width="200" height="200" fill="url(#hh-night)" />
       </g>
-    </svg>
-  );
-}
-
-/** Two rolling regolith layers with craters, a domed habitat, a mast and a lit window. */
-export function Horizon() {
-  return (
-    <svg class="horizon" viewBox="0 0 300 140" preserveAspectRatio="xMidYMax slice" aria-hidden="true">
-      <path class="far" d="M0 78C40 64 70 72 104 66S170 52 210 62 270 70 300 60V140H0Z" />
-      <ellipse class="crater" cx="62" cy="78" rx="12" ry="2.5" />
-      <ellipse class="crater" cx="244" cy="70" rx="9" ry="2" />
-      <ellipse class="crater" cx="150" cy="66" rx="6" ry="1.5" />
-      <path class="near" d="M0 106C50 94 100 104 160 100S250 92 300 98V140H0Z" />
-      <ellipse class="crater" cx="40" cy="116" rx="18" ry="4" />
-      <ellipse class="crater" cx="110" cy="128" rx="11" ry="2.8" />
-      <ellipse class="crater" cx="272" cy="122" rx="14" ry="3.2" />
-      <line class="metal" x1="232" y1="98" x2="232" y2="58" />
-      <line class="metal" x1="226" y1="66" x2="238" y2="66" />
-      <circle class="lamp" cx="232" cy="56" r="2.4" />
-      <path class="dome" d="M150 101a14 11 0 0 1 28 0z" />
-      <path class="dome" d="M172 101a26 21 0 0 1 52 0z" />
-      <rect class="lamp" x="194" y="88" width="8" height="5" rx="1" />
     </svg>
   );
 }

@@ -17,6 +17,7 @@ import {
 import { Sky } from './art';
 import { Buildings } from './Buildings';
 import { Bar, CappedRate, Section, navShown } from './common';
+import { Chip } from './icons';
 import { Left } from './Left';
 import { Options } from './Options';
 import {
@@ -227,7 +228,9 @@ function Summary({ s }: { s: Store }) {
                 .filter((a) => Number(a.score) > 0)
                 .map((a) => (
                   <tr key={a.axis}>
-                    <td>{capitalize(a.axis)} head start</td>
+                    <td>
+                      <Chip id={a.axis} title={capitalize(a.axis)} /> {capitalize(a.axis)} head start
+                    </td>
                     <td class="num">
                       score {num(a.score)} (rank {a.rank})
                     </td>

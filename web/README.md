@@ -144,13 +144,14 @@ Earthrise, light (the default) or dark, picked in Options and in the debug menu 
 remembered in `localStorage` `hh.theme` (`index.html` applies it before the first paint).
 The two are 1:1: the same markup, layout and art; only the color tokens at the top of
 `src/style.css` differ. A token block holds colors only, so switching moves
-nothing (the e2e checks it). Resource and nav swatches keep their true colors in both; an
-ideology axis drawn as text uses its `axis-<id>` class, which has a readable variant per
-theme. Fonts are bundled (`@fontsource`, named in `src/style.css`). Building pictures: `src/assets/buildings/<id>.webp`
-(one per building, both themes; 192 px shown at 96 px; `src/ui/buildingArt.ts`; made by
-`experiments/results/020_building_card_art/`). The rest of the art is inline SVG in
-`src/ui/art.tsx`; the sky over the center column (`.sky`) is the home for a later live
-view of the base: replace what it draws, keep its box.
+nothing (the e2e checks it). Chips (resources, ideology axes, rivals) keep their true
+colors in both; an ideology axis drawn as text uses its `axis-<id>` class, which has a
+readable variant per theme. Fonts are bundled (`@fontsource`, named in `src/style.css`).
+Building pictures: `src/assets/buildings/<id>.webp` (one per building, both themes; 192 px
+shown at 96 px; `src/ui/buildingArt.ts`; made by `experiments/results/020_building_card_art/`).
+Chips, nav icons, horizon: `src/ui/icons.tsx` over `src/assets/{chips,nav,horizon}/`
+(`experiments/results/027_art_in_game/`). The sky (`src/ui/art.tsx`, `.sky`) is the home
+for a later live base view: replace what it draws, keep its box.
 
 ## Using it
 

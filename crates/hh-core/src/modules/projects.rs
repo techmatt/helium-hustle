@@ -74,7 +74,8 @@ pub fn set_rate(r: &Rules, g: &mut GameState, id: &str, resource: &str, rate: Fx
         return Err(format!("project {}: not available", p.name));
     }
     if !p.costs.contains_key(resource) {
-        return Err(format!("project {}: takes no {resource}", p.name));
+        let shown = content().resource(resource).map_or(resource, |x| x.name.as_str());
+        return Err(format!("project {}: takes no {shown}", p.name));
     }
     if rate.is_negative() || rate > r.p.projects.max_drain_rate {
         return Err(format!("project {}: rate must be 0..={}", p.name, r.p.projects.max_drain_rate));

@@ -1,12 +1,14 @@
 // Right column: program tabs (processors, command lines) and Events (Story, Completed,
 // Recent Activity).
 
+import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import type { Activity, Entry, View } from '../engine';
 import { num } from '../format';
 import { daysPerWake } from '../clock';
 import { act, eventItems, markRead, store, unreadIn, type EventSection, type Store } from '../store';
-import { Bar, Section, name } from './common';
+import { Bar, ResChip, Section, name } from './common';
+import { Chip } from './icons';
 
 export function Right({ s, program, setProgram }: { s: Store; program: number; setProgram: (i: number) => void }) {
   return (
@@ -151,6 +153,9 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
               {/* The current line is marked by its frame (style.css `.line.current`), never by
                   text in the name, so no line's text moves as the pointer walks. */}
               <span class="line-name">
+                {Object.keys(v.commands.find((c) => c.id === e.command)?.produces ?? {}).map((res) => (
+                  <ResChip key={res} v={v} id={res} />
+                ))}{' '}
                 {name(v, e.command)} (x{e.count})
               </span>
               <Bar frac={frac} tone={outcome === 'failed' ? 'red' : outcome === 'skipped' ? 'gray' : 'green'} />
@@ -266,21 +271,39 @@ export function Quest({ v }: { v: View }) {
 }
 
 function tone(a: Activity): 'good' | 'bad' | 'info' {
-  if (a.kind === 'speculator_burst' || a.kind === 'rival_dump') return 'bad';
+  if (a.kind === 'speculator_burst' || a.kind === 'rival_dump' || a.kind === 'cargo_lost') return 'bad';
   if (a.kind === 'event') return 'info';
   return 'good';
 }
 
-function describe(v: View, a: Activity): string {
+function describe(v: View, a: Activity): ComponentChildren {
   switch (a.kind) {
     case 'shipment':
-      return `${name(v, a.id)} × ${num(a.quantity ?? '0')} → ${num(a.amount ?? '0')} credits`;
+      return (
+        <>
+          <ResChip v={v} id={a.id} /> {name(v, a.id)} × {num(a.quantity ?? '0')} → <ResChip v={v} id="credits" /> {num(a.amount ?? '0')} credits
+        </>
+      );
     case 'speculator_burst':
-      return `Speculator surge: ${num(a.amount ?? '0')} speculators target ${name(v, a.id)}`;
+      return (
+        <>
+          Speculator surge: {num(a.amount ?? '0')} speculators target <ResChip v={v} id={a.id} /> {name(v, a.id)}
+        </>
+      );
     case 'rival_dump': {
       const r = v.rivals.find((x) => x.id === a.id);
-      return `${name(v, a.id)} flooded the ${r ? name(v, r.good) : '?'} market`;
+      return (
+        <>
+          <Chip id={a.id} title={name(v, a.id)} /> {name(v, a.id)} flooded the {r ? <ResChip v={v} id={r.good} /> : null} {r ? name(v, r.good) : '?'} market
+        </>
+      );
     }
+    case 'cargo_lost':
+      return (
+        <>
+          Pad {num(a.amount ?? '0')}: <ResChip v={v} id={a.id} /> {num(a.quantity ?? '0')} {name(v, a.id)} lost switching cargo (stockpile full)
+        </>
+      );
     case 'quest':
       return `Quest complete: ${name(v, a.id)}`;
     case 'achievement':

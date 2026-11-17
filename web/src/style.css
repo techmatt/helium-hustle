@@ -43,13 +43,7 @@
   --axis-rationalist: #1f5fa8;
   --backdrop: rgb(33 31 27 / 45%);
   --shadow: rgb(0 0 0 / 22%);
-  /* The art: the lunar horizon and the sky the Earth hangs in. */
-  --hz-far: #dcd6cb;
-  --hz-near: #cbc3b5;
-  --hz-crater: #b8af9f;
-  --hz-dome: #eeebe4;
-  --hz-metal: #8f877a;
-  --hz-glow: #f5a524;
+  /* The art: the sky the Earth hangs in. */
   --star: transparent;
   --sky: #e9e6df;
 }
@@ -91,12 +85,6 @@
   --axis-rationalist: #8ab4f8;
   --backdrop: rgb(0 0 0 / 60%);
   --shadow: rgb(0 0 0 / 50%);
-  --hz-far: #34343b;
-  --hz-near: #28282e;
-  --hz-crater: #1f1f24;
-  --hz-dome: #4a4a52;
-  --hz-metal: #77737c;
-  --hz-glow: #f5a524;
   --star: rgb(255 255 255 / 55%);
   --sky: #111114;
 }
@@ -405,13 +393,16 @@ ul.plain {
   border-radius: 50%;
   background: var(--accent);
 }
-.sq {
+/* A chip icon (icons.tsx): true colors in both themes; its own faint edge keeps pale ones
+   (Energy, Ice) visible on white. */
+.chip {
   display: inline-block;
   flex: none;
-  vertical-align: -1px;
-  border-radius: 2px;
-  /* True colors always; the edge keeps pale ones (Energy, Ice) visible on white. */
-  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 18%);
+  vertical-align: -2px;
+}
+.nav-icon {
+  display: block;
+  flex: none;
 }
 .speed {
   border-top: 1px solid var(--line);
@@ -491,37 +482,21 @@ ul.plain {
   color: var(--neg);
 }
 .horizon {
-  display: block;
+  display: flex;
+  align-items: flex-end;
+  overflow: hidden;
   /* The art gives way first (.col-left > .horizon shrinks, to nothing if need be)
      before the column needs a scrollbar, whose width squeezes the tiles and clips
-     the rates. */
+     the rates; it loses its top first (the sky), keeping the ground. */
   min-height: 0;
   margin: auto -8px 0;
   padding-top: 12px;
   width: calc(100% + 16px);
-  height: 150px;
 }
-.horizon .far {
-  fill: var(--hz-far);
-}
-.horizon .near {
-  fill: var(--hz-near);
-}
-.horizon .crater {
-  fill: var(--hz-crater);
-}
-.horizon .dome {
-  fill: var(--hz-dome);
-  stroke: var(--hz-metal);
-  stroke-width: 1.5;
-}
-.horizon .metal {
-  fill: none;
-  stroke: var(--hz-metal);
-  stroke-width: 2;
-}
-.horizon .lamp {
-  fill: var(--hz-glow);
+.horizon img {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 /* ---- folds ---- */
@@ -670,12 +645,8 @@ tr.is-new td:first-child {
   align-items: center;
   gap: 6px;
 }
-.tag {
-  align-self: flex-start;
-  color: #fff;
-  font-size: 12px;
-  padding: 1px 6px;
-  border-radius: 3px;
+.ideology-badge {
+  display: inline-flex;
 }
 .stall {
   align-self: flex-start;

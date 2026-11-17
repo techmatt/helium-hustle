@@ -166,7 +166,9 @@ pub struct Activity {
     pub day: u64,
     /// `shipment` (id: the good, quantity: cargo, amount: credits),
     /// `speculator_burst` (id: the good, amount: speculators added),
-    /// `rival_dump` (id: the rival), `event` (a one-off event), and the
+    /// `rival_dump` (id: the rival), `event` (a one-off event),
+    /// `cargo_lost` (id: the good, quantity: lost, amount: the pad's 1-based
+    /// number: cargo a switch returned past the stockpile's cap), and the
     /// career log's kinds (`quest`, `achievement`, `project`, `research`).
     pub kind: String,
     pub id: String,

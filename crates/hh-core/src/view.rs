@@ -158,6 +158,9 @@ pub struct PadView {
     pub fueled: bool,
     /// Full and able to launch now.
     pub ready: bool,
+    /// Cargo a switch to another good would return to the stockpile (the
+    /// rest is lost over its cap).
+    pub switch_returns: Fx,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -650,6 +653,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                     can_launch: shipments::can_launch(r, g, i),
                     fueled: g.amount(shipments::PROPELLANT) >= r.p.shipments.fuel_per_pad,
                     ready: p.cargo >= r.p.shipments.pad_cargo_capacity && shipments::can_launch(r, g, i),
+                    switch_returns: shipments::switch_returns(r, g, i),
                 }
             })
             .collect(),

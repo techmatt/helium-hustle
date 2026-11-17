@@ -110,6 +110,8 @@ export interface PadView {
   fueled: boolean;
   /** Full and able to launch now. */
   ready: boolean;
+  /** Cargo a switch to another good would return (the rest is lost over its cap). */
+  switch_returns: Fx;
 }
 
 export interface MarketView {

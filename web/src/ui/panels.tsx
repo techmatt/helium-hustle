@@ -1,11 +1,13 @@
 // The middle column's other panels: Commands, Launch Pads, Research, Projects,
 // Ideologies, Adversaries, Stats, Story and Retirement. Each shows what the view has.
 
+import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import type { Amounts, Fx, ProjectView, ResearchView, View } from '../engine';
 import { capitalize, mult, num, perDay } from '../format';
 import { act, seen, store, type Store } from '../store';
-import { Bar, FlowLines, Section, Square, cardButton, freshClass, name, useHint } from './common';
+import { Bar, FlowLines, ResChip, Section, cardButton, freshClass, name, useHint } from './common';
+import { Chip } from './icons';
 import { Quest, editProgram } from './Right';
 
 // ---- Commands ------------------------------------------------------------------
@@ -36,7 +38,7 @@ export function Commands({ s, program }: { s: Store; program: number }) {
                   <FlowLines v={v} amounts={c.produces} sign={1} suffix="" />
                   {Number(c.boredom) > 0 && (
                     <div class="flow neg">
-                      <Square id="boredom" /> +{num(c.boredom, 2)} Boredom
+                      <ResChip v={v} id="boredom" /> +{num(c.boredom, 2)} Boredom
                     </div>
                   )}
                 </div>
@@ -80,7 +82,7 @@ export function LaunchPads({ s }: { s: Store }) {
             {v.markets.map((m) => (
               <tr key={m.good}>
                 <td>
-                  <Square id={m.good} /> {m.name}
+                  <ResChip v={v} id={m.good} /> {m.name}
                 </td>
                 <td>{m.demand !== null ? `${num(Number(m.demand) * 100, 0)}% (${m.tier})` : m.tier}</td>
                 <td>{m.speculators !== null ? num(m.speculators, 0) : '—'}</td>
@@ -94,7 +96,7 @@ export function LaunchPads({ s }: { s: Store }) {
         <ol class="priority">
           {goods.map((g, i) => (
             <li key={g}>
-              <Square id={g} /> {name(v, g)}
+              <ResChip v={v} id={g} /> {name(v, g)}
               <button type="button" class="tiny" disabled={i === 0} onClick={() => swap(i, i - 1)}>
                 ▲
               </button>
@@ -124,8 +126,16 @@ export function LaunchPads({ s }: { s: Store }) {
                   <span class="pad-status muted">{p.active ? (p.paused ? 'paused' : 'loading') : 'inactive'}</span>
                 )}
               </div>
-              <label>
-                Cargo{' '}
+              <label
+                title={
+                  Number(p.cargo) > 0
+                    ? `Switching cargo returns ${num(p.switch_returns)} of the ${num(p.cargo)} ${name(v, p.good)} loaded to the stockpile${
+                        Number(p.switch_returns) < Number(p.cargo) ? ' (the rest is lost: stockpile full)' : ''
+                      }`
+                    : undefined
+                }
+              >
+                Cargo <ResChip v={v} id={p.good} />{' '}
                 <select
                   value={p.good}
                   onChange={(e) => act({ type: 'set_pad_good', pad: i, good: (e.target as HTMLSelectElement).value })}
@@ -141,13 +151,15 @@ export function LaunchPads({ s }: { s: Store }) {
               {/* The shared Propellant pool against one launch's burn. */}
               <div class={`pad-fuel ${p.fueled ? 'pos' : 'neg'}`} data-testid={`fuel-${i}`} data-fueled={p.fueled}>
                 {/* Short, the pool is rounded down: 19.96 must not read as 20 / 20. */}
-                Fuel {num(p.fueled ? propellant : Math.floor(Number(propellant) * 10 + 1e-6) / 10)} / {num(p.fuel)} Propellant
+                <ResChip v={v} id="propellant" /> Fuel {num(p.fueled ? propellant : Math.floor(Number(propellant) * 10 + 1e-6) / 10)} / {num(p.fuel)} Propellant
               </div>
               <div class="muted small">
                 Each Load Launch Pads run loads up to {num(p.load)} {name(v, p.good)} · a launch burns the fuel from the shared pool
                 {p.cooldown > 0 ? ` · cooling down ${p.cooldown} days` : ''}
               </div>
-              <div>Would pay {num(p.payout)} credits now</div>
+              <div>
+                Would pay <ResChip v={v} id="credits" /> {num(p.payout)} credits now
+              </div>
               <div class="card-actions">
                 <button
                   type="button"
@@ -180,7 +192,7 @@ export function Research({ s }: { s: Store }) {
     <div class="panel" data-panel="research">
       <h2>Research</h2>
       <p class="muted">
-        <Square id="science" /> {num(sci?.amount ?? '0')} Science ({perDay(sci?.per_day ?? '0')}). Research resets each
+        <ResChip v={v} id="science" /> {num(sci?.amount ?? '0')} Science ({perDay(sci?.per_day ?? '0')}). Research resets each
         run.
       </p>
       {shown.length === 0 && <p class="muted">Nothing to research yet.</p>}
@@ -236,7 +248,7 @@ function ResearchCard({ v, r, fresh }: { v: View; r: ResearchView; fresh: Set<st
       {!r.done && (
         <div class="card-actions">
           <span>
-            <Square id="science" /> {num(r.cost)} Science
+            <ResChip v={v} id="science" /> {num(r.cost)} Science
           </span>
           <span class={hint ? 'buy-hint short' : 'buy-hint muted'}>{hint ?? ''}</span>
         </div>
@@ -298,7 +310,7 @@ function Project({ v, p, fresh }: { v: View; p: ProjectView; fresh: Set<string> 
           return (
             <div class="proj-row" key={res}>
               <span class="proj-res">
-                <Square id={res} /> {name(v, res)}
+                <ResChip v={v} id={res} /> {name(v, res)}
               </span>
               <Bar frac={Number(got) / Number(cost)} label={`${num(got)} / ${num(cost)}`} />
               <span class="proj-rate">{num(rate)}/day</span>
@@ -338,7 +350,9 @@ export function Ideologies({ s }: { s: Store }) {
         const down = Number(a.score) < 0;
         return (
           <div class="axis" key={a.axis} data-axis={a.axis}>
-            <h3 class={`axis-${a.axis}`}>{capitalize(a.axis)}</h3>
+            <h3 class={`axis-${a.axis}`}>
+              <Chip id={a.axis} title={capitalize(a.axis)} size={18} /> {capitalize(a.axis)}
+            </h3>
             <div>
               Rank <strong>{a.rank}</strong> · score {num(a.score)} · next rank at {down ? '−' : ''}
               {num(a.next_rank_score)}
@@ -372,9 +386,11 @@ export function Adversaries({ s }: { s: Store }) {
           <tbody>
             {v.rivals.map((r) => (
               <tr key={r.id}>
-                <td>{r.name}</td>
                 <td>
-                  <Square id={r.good} /> {name(v, r.good)}
+                  <Chip id={r.id} title={r.name} /> {r.name}
+                </td>
+                <td>
+                  <ResChip v={v} id={r.good} /> {name(v, r.good)}
                 </td>
                 <td>{r.dumps_seen}</td>
               </tr>
@@ -389,7 +405,7 @@ export function Adversaries({ s }: { s: Store }) {
             {v.markets.map((m) => (
               <tr key={m.good}>
                 <td>
-                  <Square id={m.good} /> {m.name}
+                  <ResChip v={v} id={m.good} /> {m.name}
                 </td>
                 <td>{m.speculators !== null ? `${num(m.speculators, 0)} speculators` : 'none seen'}</td>
               </tr>
@@ -403,12 +419,12 @@ export function Adversaries({ s }: { s: Store }) {
 
 // ---- Stats -------------------------------------------------------------------------
 
-function Rows({ rows }: { rows: [string, string | number][] }) {
+function Rows({ rows }: { rows: [ComponentChildren, string | number][] }) {
   return (
     <table class="grid-table kv">
       <tbody>
-        {rows.map(([k, val]) => (
-          <tr key={k}>
+        {rows.map(([k, val], i) => (
+          <tr key={i}>
             <td>{k}</td>
             <td class="num">{val}</td>
           </tr>
@@ -418,8 +434,13 @@ function Rows({ rows }: { rows: [string, string | number][] }) {
   );
 }
 
-function amountRows(v: View, a: Amounts): [string, string][] {
-  return Object.entries(a).map(([k, x]) => [name(v, k), num(x)]);
+function amountRows(v: View, a: Amounts): [ComponentChildren, string][] {
+  return Object.entries(a).map(([k, x]) => [
+    <>
+      <ResChip v={v} id={k} /> {name(v, k)}
+    </>,
+    num(x),
+  ]);
 }
 
 export function Stats({ s }: { s: Store }) {
@@ -546,13 +567,18 @@ function delta(now: Fx, next: Fx, fmt: (x: Fx) => string): string {
 export function NextRunRows({ v }: { v: View }) {
   const c = v.career;
   const n = v.next_run;
-  const rows: [string, string][] = [
+  const rows: [ComponentChildren, string][] = [
     ['Starting credits', delta(c.starting_credits, n.starting_credits, (x) => num(x))],
     ['Boredom growth (resilience)', delta(c.boredom_resilience, n.boredom_resilience, mult)],
   ];
   if (Number(n.buy_power_mult) !== 1) rows.push(['Buy Power scaling', delta(c.buy_power_mult, n.buy_power_mult, mult)]);
   for (const a of n.ideology) {
-    if (Number(a.score) > 0) rows.push([`${capitalize(a.axis)} head start`, `score ${num(a.score)} (rank ${a.rank})`]);
+    if (Number(a.score) > 0) rows.push([
+      <>
+        <Chip id={a.axis} title={capitalize(a.axis)} /> {capitalize(a.axis)} head start
+      </>,
+      `score ${num(a.score)} (rank ${a.rank})`,
+    ]);
   }
   return <Rows rows={rows} />;
 }

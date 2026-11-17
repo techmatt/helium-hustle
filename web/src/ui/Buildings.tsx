@@ -4,7 +4,8 @@ import type { BuildingView, View } from '../engine';
 import { capitalize, num } from '../format';
 import { act, actAll, seen, store, type Store } from '../store';
 import { buildingArt } from './buildingArt';
-import { AXIS_COLORS, CostRows, FlowLines, Section, Square, cardButton, freshClass, name, navShown, useHint } from './common';
+import { CostRows, FlowLines, ResChip, Section, cardButton, freshClass, name, navShown, useHint } from './common';
+import { Chip } from './icons';
 
 /** `?all-cards` in the URL (the QA checker's): every building's card, revealed or not, so
  * every card picture can be looked at. Display only; off in normal use. */
@@ -21,7 +22,7 @@ export function Buildings({ s }: { s: Store }) {
     <div class="panel" data-panel="buildings">
       <h2>Buildings</h2>
       <div class={`land-bar${v.can_buy_land ? ' can-buy' : ''}`} data-testid="land-bar">
-        <Square id="land" size={16} />
+        <ResChip v={v} id="land" size={16} />
         <strong>Land</strong>
         <span class="muted">{num(land?.amount ?? '0')} free</span>
         <span class="land-offer">
@@ -93,6 +94,11 @@ function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: boolean; 
     >
       <div class="card-head">
         <h3>{b.name}</h3>
+        {tags && b.ideology && (
+          <span class="ideology-badge" data-ideology={b.ideology}>
+            <Chip id={b.ideology} title={capitalize(b.ideology)} size={18} />
+          </span>
+        )}
         <span class="owned" title="active / owned">
           ({b.active}/{b.owned})
         </span>
@@ -116,11 +122,6 @@ function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: boolean; 
           </div>
         </div>
       </div>
-      {tags && b.ideology && (
-        <span class="tag" style={{ background: AXIS_COLORS[b.ideology] }}>
-          {capitalize(b.ideology)}
-        </span>
-      )}
       {b.stall && (
         <span class={`stall stall-${b.stall}`}>{b.stall === 'input_starved' ? 'Short of inputs' : 'Output at cap'}</span>
       )}
@@ -134,7 +135,7 @@ function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: boolean; 
             <tbody>
               <tr class={b.short.includes('land') ? 'short' : ''}>
                 <td>
-                  <Square id="land" /> {name(v, 'land')}
+                  <ResChip v={v} id="land" /> {name(v, 'land')}
                 </td>
                 <td class="num">{b.land}</td>
               </tr>

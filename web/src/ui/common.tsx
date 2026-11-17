@@ -1,55 +1,15 @@
-// Small shared pieces: placeholder icons, bars, collapsible sections, amount lists.
+// Small shared pieces: resource chips, bars, collapsible sections, amount lists.
 
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Amounts, Fx, View } from '../engine';
 import { num, perDay } from '../format';
 import { justMoved } from '../store';
+import { Chip } from './icons';
 
-/** Placeholder icon colors (real art is a later round). */
-const RESOURCE_COLORS: Record<string, string> = {
-  energy: '#f5d000',
-  regolith: '#8b5a2b',
-  ice: '#aee9ff',
-  he3: '#7b7bff',
-  titanium: '#c4c4c4',
-  circuits: '#35c4a4',
-  propellant: '#4aa3f0',
-  credits: '#2ecc40',
-  science: '#b388ff',
-  land: '#4caf50',
-  boredom: '#8a8a8a',
-  processors: '#d63ad6',
-};
-
-const NAV_COLORS: Record<string, string> = {
-  buildings: '#4aa3f0',
-  commands: '#f0a020',
-  launch_pads: '#f08c1e',
-  research: '#8a5cf0',
-  projects: '#2ecc71',
-  ideologies: '#e84c4c',
-  adversaries: '#c93030',
-  stats: '#66d0d0',
-  story: '#f5d000',
-  retirement: '#9b4dd6',
-  options: '#9aa0a8',
-};
-
-/** True axis colors, behind white text (an ideology tag). As text, an axis takes its
- * class (`axis-<id>` in style.css), which has a readable variant per theme. */
-export const AXIS_COLORS: Record<string, string> = {
-  nationalist: '#c62828',
-  humanist: '#2e7d32',
-  rationalist: '#1565c0',
-};
-
-export function color(id: string): string {
-  return RESOURCE_COLORS[id] ?? NAV_COLORS[id] ?? '#999';
-}
-
-export function Square({ id, size = 12 }: { id: string; size?: number }) {
-  return <span class="sq" style={{ background: color(id), width: `${size}px`, height: `${size}px` }} />;
+/** A resource's chip, its name as the tooltip. */
+export function ResChip({ v, id, size }: { v: View; id: string; size?: number }) {
+  return <Chip id={id} title={name(v, id)} size={size} />;
 }
 
 /** A fill bar; `frac` is clamped to 0..1. */
@@ -163,7 +123,7 @@ export function FlowLines({ v, amounts, sign, suffix = '/day' }: { v: View; amou
     <>
       {Object.entries(amounts).map(([res, amt]) => (
         <div class={`flow ${sign < 0 ? 'neg' : 'pos'}`} key={res}>
-          <Square id={res} /> {`${sign < 0 ? '−' : '+'}${num(amt)} ${name(v, res)}${suffix}`}
+          <ResChip v={v} id={res} /> {`${sign < 0 ? '−' : '+'}${num(amt)} ${name(v, res)}${suffix}`}
         </div>
       ))}
     </>
@@ -178,7 +138,7 @@ export function CostRows({ v, cost, short }: { v: View; cost: Amounts; short: st
         {Object.entries(cost).map(([res, amt]) => (
           <tr key={res} class={short.includes(res) ? 'short' : ''}>
             <td>
-              <Square id={res} /> {name(v, res)}
+              <ResChip v={v} id={res} /> {name(v, res)}
             </td>
             <td class="num">{num(amt)}</td>
           </tr>

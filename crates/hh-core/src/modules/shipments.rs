@@ -168,26 +168,44 @@ pub fn launch(r: &Rules, g: &mut GameState, i: usize) {
 pub fn launch_action(r: &Rules, g: &mut GameState, pad: u32) -> Result<(), String> {
     let i = pad as usize;
     if i >= g.run.pads.len() {
-        return Err(format!("launch: no pad {pad}"));
+        return Err(format!("launch: no pad {}", pad + 1));
     }
     if !can_launch(r, g, i) {
-        return Err(format!("launch: pad {pad} can't launch (inactive, cooling down, empty or no fuel)"));
+        return Err(format!("launch: pad {} can't launch (inactive, cooling down, empty or no fuel)", pad + 1));
     }
     launch(r, g, i);
     Ok(())
 }
 
-/// Sets the good a pad carries; only an empty pad can change.
+/// Sets the good a pad carries. A loaded pad switching goods returns its cargo
+/// to the stockpile; what exceeds the stockpile's cap is lost, and a
+/// `cargo_lost` activity line says so.
 pub fn set_pad_good(r: &Rules, g: &mut GameState, pad: u32, good: &str) -> Result<(), String> {
     if !r.p.shipments.base_values.contains_key(good) {
         return Err(format!("pad {pad}: {good:?} is not a tradeable good"));
     }
     let p = g.run.pads.get_mut(pad as usize).ok_or_else(|| format!("pad {pad}: no such pad"))?;
-    if p.cargo > Fx::ZERO && p.good != good {
-        return Err(format!("pad {pad}: unload it first (it carries {})", p.good));
+    if p.good == good {
+        return Ok(());
     }
+    let (old, cargo) = (p.good.clone(), p.cargo);
+    let back = switch_returns(r, g, pad as usize);
+    let p = &mut g.run.pads[pad as usize];
     p.good = good.to_string();
+    p.cargo = Fx::ZERO;
+    g.add(&old, back);
+    if cargo > back {
+        g.activity("cargo_lost", &old, Some(Fx::from_int(i64::from(pad) + 1)), Some(cargo - back));
+    }
     Ok(())
+}
+
+/// How much of pad `i`'s cargo a switch to another good returns to the
+/// stockpile: all of it, up to the room under the stockpile's cap.
+pub fn switch_returns(r: &Rules, g: &GameState, i: usize) -> Fx {
+    let p = &g.run.pads[i];
+    let room = super::economy::cap(r, g, &p.good).map_or(p.cargo, |c| (c - g.amount(&p.good)).max(Fx::ZERO));
+    p.cargo.min(room)
 }
 
 pub fn set_pad_paused(g: &mut GameState, pad: u32, paused: bool) -> Result<(), String> {
