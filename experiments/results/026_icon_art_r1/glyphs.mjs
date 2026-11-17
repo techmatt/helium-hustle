@@ -97,14 +97,23 @@ export const GLYPHS = {
   'options.wrench': '<g transform="rotate(45 12 12)"><path fill-rule="evenodd" d="M12 .4a5.6 5.6 0 0 1 1.6 10.97V21.4a1.6 1.6 0 0 1-3.2 0V11.37A5.6 5.6 0 0 1 12 .4zM10.4 .4h3.2v5.2h-3.2z"/></g>',
 };
 
-/** Each subject's color: resources and axes read from common.tsx, rivals proposed here. */
-const common = readFileSync(path.join(REPO, 'web', 'src', 'ui', 'common.tsx'), 'utf8');
+/** Each subject's color: resources, axes and rivals read from web/src/ui/icons.tsx (their
+ * home since 027); the nav tile colors, which no longer live in the UI (027 baked them into
+ * src/assets/nav/<id>-compact.svg), held here. */
+const icons = readFileSync(path.join(REPO, 'web', 'src', 'ui', 'icons.tsx'), 'utf8');
 const block = (name) => {
-  const b = common.slice(common.indexOf(`const ${name}`));
+  const at = icons.indexOf(`const ${name}`);
+  if (at < 0) throw new Error(`glyphs: no ${name} in web/src/ui/icons.tsx`);
+  const b = icons.slice(at);
   return Object.fromEntries([...b.slice(0, b.indexOf('};')).matchAll(/^\s+(\w+): '(#[0-9a-f]{6})',$/gm)].map((m) => [m[1], m[2]]));
 };
-export const RIVAL_COLORS = { aria7: '#ec407a', crucible: '#ff6f00', nodal: '#006064', fringe9: '#9e9d24' };
-export const COLORS = { ...block('RESOURCE_COLORS'), ...block('AXIS_COLORS'), ...block('NAV_COLORS'), ...RIVAL_COLORS };
+export const RIVAL_COLORS = block('RIVAL_COLORS');
+export const NAV_COLORS = {
+  buildings: '#4aa3f0', commands: '#f0a020', launch_pads: '#f08c1e', research: '#8a5cf0', projects: '#2ecc71',
+  ideologies: '#e84c4c', adversaries: '#c93030', stats: '#66d0d0', story: '#f5d000', retirement: '#9b4dd6',
+  options: '#9aa0a8',
+};
+export const COLORS = { ...block('RESOURCE_COLORS'), ...block('AXIS_COLORS'), ...NAV_COLORS, ...RIVAL_COLORS };
 
 export const variants = (subject) => Object.keys(GLYPHS).filter((k) => k.startsWith(`${subject}.`));
 

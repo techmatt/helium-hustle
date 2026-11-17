@@ -18,7 +18,8 @@ AXES = [("nationalist", "Nationalist"), ("humanist", "Humanist"), ("rationalist"
 glyphs_src = (HERE / "glyphs.mjs").read_text(encoding="utf-8")
 SUBJ = re.search(r"export const SUBJ = \{([^}]*)\}", (HERE / "mock.mjs").read_text(encoding="utf-8")).group(1)
 SUBJ = set(re.findall(r"(\w+): '[\w.]+'", SUBJ))
-RIVAL_COLORS = dict(re.findall(r"(\w+): '(#[0-9a-f]{6})'", re.search(r"RIVAL_COLORS = \{([^}]*)\}", glyphs_src).group(1)))
+icons_src = (REPO / "web" / "src" / "ui" / "icons.tsx").read_text(encoding="utf-8")  # the rival colors' home since 027
+RIVAL_COLORS = dict(re.findall(r"(\w+): '(#[0-9a-f]{6})'", re.search(r"RIVAL_COLORS: Record<string, string> = \{([^}]*)\}", icons_src).group(1)))
 
 # One line per glyph variant: what it shows.
 WHAT = {

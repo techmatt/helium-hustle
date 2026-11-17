@@ -11,9 +11,8 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { GLYPHS } from '../026_icon_art_r1/glyphs.mjs';
 import { chip as chip025 } from '../025_nav_horizon_art_r1/glyphs.mjs';
-import { chip as chip026 } from '../026_icon_art_r1/glyphs.mjs';
+import { GLYPHS, NAV_COLORS, chip as chip026 } from '../026_icon_art_r1/glyphs.mjs';
 
 const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..', '..');
 const ASSETS = path.join(REPO, 'web', 'src', 'assets');
@@ -30,12 +29,6 @@ const NAV = {
   buildings: 'chip', commands: 'chip', launch_pads: 'chip', research: 'chip', projects: 'projects.crane',
   ideologies: 'chip', adversaries: 'adversaries.drone', stats: 'chip', story: 'chip',
   retirement: 'retirement.chair', options: 'options.wrench',
-};
-// The nav tile colors (the squares the UI drew before 027).
-const NAV_COLORS = {
-  buildings: '#4aa3f0', commands: '#f0a020', launch_pads: '#f08c1e', research: '#8a5cf0', projects: '#2ecc71',
-  ideologies: '#e84c4c', adversaries: '#c93030', stats: '#66d0d0', story: '#f5d000', retirement: '#9b4dd6',
-  options: '#9aa0a8',
 };
 
 const xmlns = (svg) => svg.replace('<svg ', '<svg xmlns="http://www.w3.org/2000/svg" ').replace(/ width="100%" height="100%"/, '');

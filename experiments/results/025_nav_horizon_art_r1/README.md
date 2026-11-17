@@ -16,7 +16,9 @@ From the repo root (Node 24, system Chrome, Python with Pillow; `npm ci` in `web
    strips of all three stages are cut at the bare draw's band. Originals into `art/nav_horizon/raw/`.
 2. `python …/process.py`: the painterly icons trimmed square, the card art crops (from
    `art/buildings/set/<id>_cut.png`) and the horizon strips, into `art/nav_horizon/`.
-3. `node …/mock.mjs` (about 15 s) and `python …/picker.py`.
+3. `node …/mock.mjs` (about 15 s) and `python …/picker.py`. `mock.mjs` reads the UI as it
+   stood then (`NAV_COLORS` in `web/src/ui/common.tsx`, the inline `<Horizon>` SVG in
+   `art.tsx`); 027 removed both, so run it from a checkout of commit `0828be0`.
 
 `glyphs.mjs` holds the flat glyphs (24-unit SVG paths), drawn by hand.
 
