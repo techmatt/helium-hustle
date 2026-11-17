@@ -85,6 +85,7 @@ pub fn grow(r: &Rules, g: &mut GameState) {
     g.run.boredom_phase = phase(r, g.run.day);
     let v = rate(r, g);
     g.add(BOREDOM, v);
+    g.track("growth", BOREDOM, v, Fx::ZERO);
 }
 
 /// Boredom reached its cap: the run must end (checked after the tick's clamp).

@@ -110,7 +110,7 @@ pub fn drain(g: &mut GameState) {
             if take == Fx::ZERO {
                 continue;
             }
-            g.consume(&res, take);
+            g.consume("projects", &res, take);
             let book = if p.persistent() { &mut g.career.project_progress } else { &mut g.run.project_progress };
             *book.entry(p.id.clone()).or_default().entry(res.clone()).or_insert(Fx::ZERO) += take;
         }

@@ -36,6 +36,8 @@ pub fn relief(r: &Rules, g: &GameState) -> Fx {
 
 /// Flat Dream: boredom falls by [`relief`], not below zero.
 pub fn dream(r: &Rules, g: &mut GameState) {
-    let v = g.amount(BOREDOM) - relief(r, g);
-    g.run.resources.insert(BOREDOM.to_string(), v.max(Fx::ZERO));
+    let was = g.amount(BOREDOM);
+    let v = (was - relief(r, g)).max(Fx::ZERO);
+    g.run.resources.insert(BOREDOM.to_string(), v);
+    g.track("dream", BOREDOM, Fx::ZERO, was - v);
 }

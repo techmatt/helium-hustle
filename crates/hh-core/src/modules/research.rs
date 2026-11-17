@@ -95,6 +95,7 @@ pub fn buy(r: &Rules, g: &mut GameState, id: &str) -> Result<(), String> {
     }
     let cost = price(r, g, item);
     *g.run.resources.get_mut(SCIENCE).expect("content has science") -= cost;
+    g.track("research", SCIENCE, Fx::ZERO, cost);
     g.run.research.insert(item.id.clone());
     g.career.researched.insert(item.id.clone());
     g.run.stats.research_completed += 1;

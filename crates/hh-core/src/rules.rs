@@ -81,12 +81,16 @@ impl Rules {
     /// One day, in this order (docs/rules/README.md, *The day*).
     fn tick(&self, g: &mut GameState) {
         g.tick += 1;
+        economy::fold_flow_average(self, g);
         g.run.today = Default::default();
         boredom::grow(self, g);
         programs::expire_overclocks(g);
-        economy::resolve(self, g);
         demand::update(self, g);
+        // Programs are paid before buildings that take upkeep, from the stock
+        // and what the upkeep-free buildings made today.
+        let free_energy = economy::produce_free(self, g);
         programs::run(self, g);
+        economy::resolve(self, g, free_energy);
         projects::drain(g);
         shipments::tick(g);
         demand::bursts(self, g);

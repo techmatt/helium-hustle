@@ -7,7 +7,7 @@ import type { Activity, Entry, View } from '../engine';
 import { num } from '../format';
 import { daysPerWake } from '../clock';
 import { act, eventItems, markRead, store, unreadIn, type EventSection, type Store } from '../store';
-import { Bar, ResChip, Section, name } from './common';
+import { Bar, ResChip, Section, ShortNote, name, shortText } from './common';
 import { Chip } from './icons';
 
 export function Right({ s, program, setProgram }: { s: Store; program: number; setProgram: (i: number) => void }) {
@@ -119,6 +119,10 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
           const current = !span && p.processors > 0 && i === p.entry;
           // Part way through its runs: that share; otherwise full once it ran today.
           const frac = current && p.step > 0 ? p.step / e.count : outcome ? 1 : 0;
+          // A failed line says why (today's last run of it); the tooltip has it in full.
+          const why = outcome === 'failed' ? (p.shorts[i] ?? null) : null;
+          // A command locked again (used in an earlier run) fails with no input short.
+          const locked = outcome === 'failed' && !why && v.commands.find((c) => c.id === e.command)?.unlocked === false;
           return (
             <li
               key={`${i}-${e.command}`}
@@ -145,7 +149,7 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
                   : outcome
                     ? `last run today: ${outcome}`
                     : 'not run today'
-              }`}
+              }${why ? `. ${shortText(v, why)}` : locked ? '. Locked this run.' : ''}`}
             >
               <span class="grip" aria-hidden>
                 ⠿
@@ -168,6 +172,11 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
               <button type="button" class="tiny" title="Remove" onClick={() => editProgram(program, (now) => now.filter((_, j) => j !== i))}>
                 ×
               </button>
+              {(why || locked) && (
+                <span class="line-why" data-line-why>
+                  {why ? <ShortNote v={v} s={why} /> : 'locked this run'}
+                </span>
+              )}
             </li>
           );
         })}

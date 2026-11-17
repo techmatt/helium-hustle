@@ -107,14 +107,14 @@ fn grid(cmd: &str, agents: &str, extra: &[&str]) -> Vec<String> {
 /// One that changes play updates them and says so; a rules change moves them
 /// all. Copy them from the failing assertion (or the test's `games.jsonl`).
 const PINNED: &[(&str, u64, &str)] = &[
-    ("random", 1, "9debab9793aeeb84"),
-    ("random", 2, "8e52cb5aab7e8bfd"),
-    ("greedy", 1, "12a7901f142cfc47"),
-    ("greedy", 2, "3f543fbd2f76c618"),
-    ("author", 1, "79d8e49185ce1941"),
-    ("author", 2, "4be3835f4746ea04"),
-    ("casual", 1, "04f0193eb9c8805f"),
-    ("casual", 2, "ce0546983f3594cb"),
+    ("random", 1, "1a4ec7ca8712e6e0"),
+    ("random", 2, "19fc43a80e66c673"),
+    ("greedy", 1, "3dc5addbafcf6e8b"),
+    ("greedy", 2, "5d5fe459b1488334"),
+    ("author", 1, "b266752477586b71"),
+    ("author", 2, "a6b8bcc15a80b1bf"),
+    ("casual", 1, "e5d655992069776a"),
+    ("casual", 2, "e055256f003b70a5"),
 ];
 
 #[test]
@@ -286,7 +286,7 @@ fn the_oracle_plays_on_copies_and_its_game_replays() {
     let half = fingerprints.len() / 2;
     assert_eq!(fingerprints[..half], fingerprints[half..]);
     // Seeds 1 and 2 of the oracle, then of the pinned one.
-    assert_eq!(fingerprints[..half], ["eb78a1bdbf1c6a7b", "35263767a808849e", "941def33435f5bce", "cc4d1aedd9df7372"]);
+    assert_eq!(fingerprints[..half], ["ef26eeb474cbea69", "51f6dd96d420418b", "7dcadb08b730af63", "e92063fa59c19318"]);
 }
 
 /// `trace --at T` prints the state at career tick T: what walls a run in.

@@ -23,9 +23,11 @@ const PAIRS = [
   // The Resources panel's green rates (small mono figures) and the status bar's spare
   // Energy, both on the panel: held to 7:1.
   ['pos-text', ['panel'], 7],
-  ['text', ['page', 'panel', 'card', 'banner', 'strip', 'strip-hover', 'hover', 'disabled', 'skip-tint', 'ok-tint', 'ok-head', 'bad-tint', 'sky', 'track', 'fill-green', 'fill-red', 'fill-gray', 'fill-blue']],
+  // A Ready pad's status on its tinted head.
+  ['pos-text', ['ok-head']],
+  ['text', ['page', 'panel', 'card', 'banner', 'strip', 'strip-hover', 'hover', 'disabled', 'skip-tint', 'ok-tint', 'ok-head', 'warn-head', 'bad-tint', 'sky', 'track', 'fill-green', 'fill-red', 'fill-gray', 'fill-blue']],
   ['muted', ['page', 'panel', 'card', 'banner', 'strip', 'hover', 'disabled', 'skip-tint', 'ok-tint', 'ok-head']],
-  ['accent-text', ['panel', 'card', 'banner', 'hover']],
+  ['accent-text', ['panel', 'card', 'banner', 'hover', 'warn-head']],
   ['pos', ['page', 'panel', 'card', 'ok-tint', 'skip-tint', 'hover']],
   ['neg', ['page', 'panel', 'card', 'bad-tint', 'hover', 'ok-tint', 'disabled']],
   ['info', ['panel', 'card', 'banner']],

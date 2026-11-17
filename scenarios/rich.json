@@ -4,6 +4,8 @@
   "start": {
     "tick": 0,
     "resources": { "credits": "1000", "titanium": "20", "regolith": "50" },
-    "buildings": {}
+    "buildings": {},
+    "panels": [],
+    "programs": []
   }
 }

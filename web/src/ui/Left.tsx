@@ -4,7 +4,8 @@ import { Fragment, type ComponentChildren } from 'preact';
 import { SPEEDS } from '../clock';
 import { capitalize, num, perDay } from '../format';
 import { navHasNews, seen, setSpeed, type Store } from '../store';
-import { CappedRate, Section, navShown } from './common';
+import { useState } from 'preact/hooks';
+import { Breakdown, CappedRate, Section, navShown } from './common';
 import { Chip, Horizon, NavIcon } from './icons';
 
 /** The Resources panel's first group, in this order; every other resource follows in a
@@ -23,7 +24,9 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
   // Past nine tiles they turn compact (icon beside the name), so a late career's column
   // still fits a 1280 px window without scrolling.
   const compact = tiles.length > 9;
-  const padReady = v.pads.some((p) => p.ready);
+  const padReady = v.pads.some((p) => p.ready && !p.paused);
+  // The one resource row expanded to its breakdown, if any.
+  const [expanded, setExpanded] = useState<string | null>(null);
   return (
     <aside class="col-left">
       <h1 class="title">Helium Hustle</h1>
@@ -86,8 +89,18 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
                 // Boredom rising is bad news: its rate reads the other way round.
                 // A rate too small to show reads "0/day", uncolored.
                 const rateNum = capped || rate === '0/day' ? 0 : Number(r.per_day) * (r.id === 'boredom' ? -1 : 1);
+                const isOpen = expanded === r.id;
                 return (
-                  <tr key={r.id} data-res={r.id} data-amount={r.amount} class={s.fresh.has(`resource:${r.id}`) ? 'is-new' : ''} onMouseEnter={() => seen(`resource:${r.id}`)}>
+                  <Fragment key={r.id}>
+                  <tr
+                    data-res={r.id}
+                    data-amount={r.amount}
+                    class={`res-row${isOpen ? ' open' : ''}${s.fresh.has(`resource:${r.id}`) ? ' is-new' : ''}`}
+                    title={isOpen ? 'Click to close' : 'Click for where it comes from and goes'}
+                    aria-expanded={isOpen}
+                    onMouseEnter={() => seen(`resource:${r.id}`)}
+                    onClick={() => setExpanded(isOpen ? null : r.id)}
+                  >
                     <td>
                       {/* A long name may wrap when the column is tight, but only between
                           words ("Helium-3" stays whole), and the swatch stays with the
@@ -109,6 +122,14 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
                     <td class={`num ${r.id === 'boredom' ? '' : full ? 'at-cap' : empty ? 'empty' : ''}`}>{shown}</td>
                     <td class={`num rate ${r.id === 'processors' || r.id === 'land' ? '' : rateNum > 0 ? 'pos' : rateNum < 0 ? 'neg' : ''}`}>{rate}</td>
                   </tr>
+                  {isOpen && (
+                    <tr class="res-breakdown" data-res-breakdown={r.id}>
+                      <td colSpan={3}>
+                        <Breakdown v={v} id={r.id} />
+                      </td>
+                    </tr>
+                  )}
+                  </Fragment>
                 );
               })}
           </tbody>

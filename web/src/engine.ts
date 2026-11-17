@@ -59,7 +59,36 @@ export interface BuildingView {
   unlocked: boolean;
   visible: boolean;
   stall: 'input_starved' | 'output_capped' | null;
+  /** Ran below full capacity today: the input it was short of. */
+  starved: ShortView | null;
   buy: Action;
+}
+
+/** Who ran short the last day, and of what. */
+export interface ShortView {
+  source: string;
+  label: string;
+  resource: string;
+  need: Fx;
+  had: Fx;
+  /** The fraction it ran at (0: not at all). */
+  ran: Fx;
+}
+
+/** One source's line in a resource's breakdown: the last day and the rolling average. */
+export interface FlowRow {
+  source: string;
+  label: string;
+  produced: Fx;
+  consumed: Fx;
+  avg_produced: Fx;
+  avg_consumed: Fx;
+}
+
+export interface BreakdownView {
+  resource: string;
+  rows: FlowRow[];
+  shorts: ShortView[];
 }
 
 export interface CommandView {
@@ -86,6 +115,8 @@ export interface ProgramView {
   entry: number;
   step: number;
   outcomes: (LineOutcome | null)[];
+  /** Per line, the input it was short of the last time it ran today. */
+  shorts: (ShortView | null)[];
 }
 
 /** The program lines run over a span of days: per program, per line in queue order,
@@ -283,6 +314,9 @@ export interface View {
   can_retire: boolean;
   log: LogEntry[];
   activity: Activity[];
+  breakdown: BreakdownView[];
+  /** Days in the breakdown's rolling average. */
+  flow_average_days: number;
   names: Record<string, string>;
 }
 

@@ -50,8 +50,12 @@ lowers the next price. Starting buildings count toward the price (they are not `
 `land_base_cost × land_cost_scaling ^ land_bought × land_cost_mult × discount_factor ^ nationalist rank`
 credits and gives `land_per_purchase` land. `land_bought` counts this run's purchases.
 
-**Daily resolution** (`resolve`), over building types in content order, each type's active
-copies together:
+**Daily resolution**, over building types in content order, each type's active copies
+together, in two stages around the programs ([the day](README.md#the-day)): first the
+types that take no upkeep (`produce_free`: Solar Panels), then programs run and pay, then
+the types that take upkeep (`resolve`) on what is left. So programs are paid before any
+building's upkeep, from the stock and the upkeep-free production; energy an upkeep
+building makes (Fuel Cell) reaches programs the next day, through the stock. Each stage:
 
 1. Each type's production is `produces × active × output factor`, where the output factor is
    the overclock factor for its `category` (programs.md) times each of its
@@ -72,6 +76,18 @@ Energy produced by buildings in the day (gross) updates the run's peak energy (t
 **Clamp** (end of the day): every capped resource over its cap is cut to it, the excess
 recorded as the day's overflow; every resource below zero (left by `upkeep_epsilon`) is
 raised to zero.
+
+**Breakdown** (display only, no rule reads it): every change to a resource in play (not
+cheats, run setup, derived processors or the clamp's lift of a rounding dip) is recorded
+under its source for the day (`today.flows`: each building type, each program, pad
+loading and switch returns, launches, building and land purchases, sales, research,
+projects, boredom growth, Dream, and `cap`, the clamp's cut). Player actions after a
+tick count in that day. Who ran short is recorded too (`today.shorts`): a building type
+in the partial pass, or a program line short of a cost (failed, or a conversion run part
+way): the scarcest input, the need, what there was and the fraction run. At each tick's
+start the day folds into a rolling average, `avg += (day − avg) / flow_average_days`
+(a source new to it starts at its day's value; a step too small to move it lands on the
+day's value, so a quiet source reaches zero and drops out). The view's `breakdown` lists both per resource, sources first.
 
 **New run:** resources from `starting_resources`, buildings from `starting_buildings` (owned
 and active, no land taken), then run-start bonus buildings from projects and achievements
@@ -98,6 +114,7 @@ A refused action changes nothing.
 | `land_cost_scaling` | 1.5 | Each land purchase multiplies the next one's price by this. |
 | `land_per_purchase` | 15 | Land gained per purchase. |
 | `upkeep_epsilon` | 0.001 | A building pays full upkeep if short by no more than this. |
+| `flow_average_days` | 20 | Days in the breakdown's rolling average (display only). |
 
 ## Content
 

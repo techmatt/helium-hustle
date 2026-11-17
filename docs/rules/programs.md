@@ -2,8 +2,8 @@
 
 Program tabs (command queues), the processors that run them, command execution and
 overclocks. In [the day](README.md#the-day), expired overclocks drop before the building
-pass, and programs run after the building pass and demand update, before projects drain and
-shipments move.
+pass, and programs run after the demand update and the upkeep-free buildings' production,
+before every building that takes upkeep (programs are paid first), projects and shipments.
 
 ## Rules
 
@@ -45,9 +45,9 @@ last time it ran) is kept for display (the UI colors the line); no rule reads it
    Disrupt (demand.md), Fund (ideology.md), Overclock (below).
 
 **Overclock.** Each execution adds its own stack on its `target` building category for
-`floor(duration × overclock_duration_factor ^ rationalist rank)` days, live from the next
-day's building pass: a stack run on day `d` lasts while the day is below
-`d + 1 + days`. A category's overclock factor is the product of `1 + bonus` over its live
+`floor(duration × overclock_duration_factor ^ rationalist rank)` days, live from the same
+day's pass of the buildings that take upkeep (every overclock target, extraction and
+processing, does): a stack run on day `d` lasts while the day is below `d + days`. A category's overclock factor is the product of `1 + bonus` over its live
 stacks, capped at the overclock cap: `overclock_base_cap`, or the highest `overclock_cap`
 among researched items if higher. Expired stacks are dropped at the start of each building
 pass. The factor multiplies production of every building of that category (economy.md).

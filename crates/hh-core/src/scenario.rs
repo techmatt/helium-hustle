@@ -5,23 +5,26 @@
 //!
 //! ```json
 //! { "name": "rich", "description": "...",
-//!   "start": { "tick": 0, "resources": { "credits": "1000" }, "buildings": { "solar_panel": 3 } } }
+//!   "start": { "tick": 0, "resources": { "credits": "1000" }, "buildings": { "solar_panel": 3 },
+//!              "panels": [], "programs": [[{ "command": "idle", "count": 1 }]] } }
 //! ```
 //!
-//! Every key is required (`resources` and `buildings` may be empty); a listed
-//! resource or building replaces the new game's value, the rest stay.
+//! Every key is required (`resources`, `buildings`, `panels` and `programs` may
+//! be empty); a listed resource or building replaces the new game's value, the
+//! rest stay; panels add to the run's; programs replace queues from the first.
 
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
-use crate::content::content;
+use crate::content::{content, NavCondition};
 use crate::fx::Fx;
-use crate::state::{GameState, Holding};
+use crate::state::{Entry, GameState, Holding};
 
 const FILES: &[(&str, &str)] = &[
     ("rich.json", include_str!("../../../scenarios/rich.json")),
     ("at_cap.json", include_str!("../../../scenarios/at_cap.json")),
+    ("late_unlocks.json", include_str!("../../../scenarios/late_unlocks.json")),
     ("pad_loading.json", include_str!("../../../scenarios/pad_loading.json")),
 ];
 
@@ -31,6 +34,11 @@ pub struct Start {
     pub tick: u64,
     pub resources: BTreeMap<String, Fx>,
     pub buildings: BTreeMap<String, u32>,
+    /// Nav panels enabled this run (`projects`, `ideologies`, `retirement`:
+    /// the nav tiles shown by a panel).
+    pub panels: Vec<String>,
+    /// Program queues from the first program on (the rest stay empty).
+    pub programs: Vec<Vec<Entry>>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -60,6 +68,18 @@ impl Scenario {
         for b in self.start.buildings.keys() {
             if c.building(b).is_none() {
                 errors.push(format!("start.buildings.{b}: unknown building"));
+            }
+        }
+        for p in &self.start.panels {
+            if !c.nav.iter().any(|t| matches!(&t.visible, NavCondition::Panel { panel } if panel == p)) {
+                errors.push(format!("start.panels: {p:?} is no nav tile's panel"));
+            }
+        }
+        for (i, entries) in self.start.programs.iter().enumerate() {
+            for e in entries {
+                if c.command(&e.command).is_none() || e.count == 0 {
+                    errors.push(format!("start.programs[{i}]: bad line {:?} x{}", e.command, e.count));
+                }
             }
         }
         if errors.is_empty() {
@@ -94,6 +114,10 @@ impl Scenario {
         let free = crate::modules::programs::processors(g) - crate::modules::programs::assigned(g);
         if let Some(p) = g.run.programs.first_mut() {
             p.processors += free;
+        }
+        g.run.enabled_panels.extend(self.start.panels.iter().cloned());
+        for (p, entries) in g.run.programs.iter_mut().zip(&self.start.programs) {
+            p.entries = entries.clone();
         }
     }
 }

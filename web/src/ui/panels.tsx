@@ -3,10 +3,10 @@
 
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
-import type { Amounts, Fx, ProjectView, ResearchView, View } from '../engine';
+import type { Fx, ProjectView, ResearchView, View } from '../engine';
 import { capitalize, mult, num, perDay } from '../format';
 import { act, seen, store, type Store } from '../store';
-import { Bar, FlowLines, ResChip, Section, cardButton, freshClass, name, useHint } from './common';
+import { Bar, Breakdown, FlowLines, ResChip, Section, cardButton, freshClass, name, useHint } from './common';
 import { Chip } from './icons';
 import { Quest, editProgram } from './Right';
 
@@ -110,21 +110,25 @@ export function LaunchPads({ s }: { s: Store }) {
       <Section title={`Pads (${v.pads.length})`}>
         {v.pads.length === 0 && <p class="muted">No Launch Pads owned this run.</p>}
         <div class="cards">
-          {v.pads.map((p, i) => (
+          {v.pads.map((p, i) => {
+            // The head's tint: green Ready, yellow paused (a paused full pad reads Paused),
+            // red full but short of fuel, neutral loading or idle.
+            const full = Number(p.cargo) >= Number(p.capacity);
+            const ready = p.ready && !p.paused;
+            const state = !p.active ? 'idle' : p.paused ? 'paused' : ready ? 'ready' : full && !p.fueled ? 'blocked' : 'loading';
+            const label = { idle: 'inactive', paused: 'Paused', ready: 'Ready', blocked: 'Full: no fuel', loading: 'loading' }[state];
+            return (
             <div
-              class={`card pad${p.active ? '' : ' idle'}${p.ready ? ' ready' : ''}`}
+              class={`card pad pad-${state}${p.active ? '' : ' idle'}${ready ? ' ready' : ''}`}
               key={i}
               data-pad={i}
               data-cargo={p.cargo}
-              data-ready={p.ready}
+              data-ready={ready}
+              data-pad-state={state}
             >
               <div class="card-head">
                 <h3>Pad {i + 1}</h3>
-                {p.ready ? (
-                  <span class="pad-status pad-ready">Ready</span>
-                ) : (
-                  <span class="pad-status muted">{p.active ? (p.paused ? 'paused' : 'loading') : 'inactive'}</span>
-                )}
+                <span class={`pad-status${ready ? ' pad-ready' : state === 'idle' || state === 'loading' ? ' muted' : ''}`}>{label}</span>
               </div>
               <label
                 title={
@@ -163,7 +167,7 @@ export function LaunchPads({ s }: { s: Store }) {
               <div class="card-actions">
                 <button
                   type="button"
-                  class={p.ready ? 'go' : undefined}
+                  class={ready ? 'go' : undefined}
                   data-testid={`launch-${i}`}
                   disabled={!p.can_launch}
                   onClick={() => act({ type: 'launch', pad: i })}>
@@ -174,7 +178,8 @@ export function LaunchPads({ s }: { s: Store }) {
                 </button>
               </div>
             </div>
-          ))}
+            );
+          })}
         </div>
       </Section>
     </div>
@@ -434,15 +439,6 @@ function Rows({ rows }: { rows: [ComponentChildren, string | number][] }) {
   );
 }
 
-function amountRows(v: View, a: Amounts): [ComponentChildren, string][] {
-  return Object.entries(a).map(([k, x]) => [
-    <>
-      <ResChip v={v} id={k} /> {name(v, k)}
-    </>,
-    num(x),
-  ]);
-}
-
 export function Stats({ s }: { s: Store }) {
   const v = s.view;
   const c = v.career;
@@ -462,8 +458,21 @@ export function Stats({ s }: { s: Store }) {
           ]}
         />
       </Section>
-      <Section title="Produced this run">
-        <Rows rows={amountRows(v, v.run_stats.produced)} />
+      <Section title="Resource breakdown" testid="stats-breakdown">
+        <p class="muted hint">
+          Per day, by source (+) and sink (−): the last day, and a rolling average over about {v.flow_average_days} days. Each day
+          Solar Panels produce, programs are paid next, and buildings with upkeep share what is left.
+        </p>
+        <div class="breakdown-grid">
+          {v.breakdown.map((b) => (
+            <div class="breakdown-card" key={b.resource}>
+              <h4>
+                <ResChip v={v} id={b.resource} /> {name(v, b.resource)}
+              </h4>
+              <Breakdown v={v} id={b.resource} avg />
+            </div>
+          ))}
+        </div>
       </Section>
       <Section title="Career">
         <Rows

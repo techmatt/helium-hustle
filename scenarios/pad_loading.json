@@ -4,6 +4,8 @@
   "start": {
     "tick": 190,
     "resources": { "credits": "100", "energy": "100", "he3": "20", "propellant": "19.4" },
-    "buildings": { "solar_panel": 10, "launch_pad": 1 }
+    "buildings": { "solar_panel": 10, "launch_pad": 1 },
+    "panels": [],
+    "programs": []
   }
 }

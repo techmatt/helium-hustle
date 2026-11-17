@@ -17,7 +17,8 @@
         "land_base_cost": "200",
         "land_cost_scaling": "1.5",
         "land_per_purchase": "15",
-        "upkeep_epsilon": "0.001"
+        "upkeep_epsilon": "0.001",
+        "flow_average_days": 20
       }
     },
     "demand": {

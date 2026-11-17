@@ -100,6 +100,8 @@ pub fn set_program(r: &Rules, g: &mut GameState, program: u32, entries: &[Entry]
     p.step = 0;
     // Today's line outcomes named the old lines.
     g.run.today.lines.remove(&program);
+    let prefix = format!("program:{program}:");
+    g.run.today.shorts.retain(|k, _| !k.starts_with(&prefix));
     Ok(())
 }
 
@@ -160,8 +162,10 @@ pub fn boredom_cost(g: &GameState, c: &Command) -> Fx {
     b
 }
 
-/// Runs one execution of a command (docs/rules/programs.md, *Running a command*).
-pub fn execute(r: &Rules, g: &mut GameState, c: &Command) -> LineOutcome {
+/// Runs one execution of a command (docs/rules/programs.md, *Running a
+/// command*). `src` names the program for the breakdown; a run short of an
+/// input notes it under `short`.
+pub fn execute(r: &Rules, g: &mut GameState, c: &Command, src: &str, short: &str) -> LineOutcome {
     if !unlocked(g, c) {
         return LineOutcome::Failed;
     }
@@ -172,18 +176,26 @@ pub fn execute(r: &Rules, g: &mut GameState, c: &Command) -> LineOutcome {
     let frac = super::economy::input_fraction(g, &costs);
     // An effect command needs its full cost; a pure conversion runs at the
     // fraction its scarcest input allows.
-    if frac <= Fx::ZERO || (c.effect.is_some() && frac < Fx::ONE) {
+    let failed = frac <= Fx::ZERO || (c.effect.is_some() && frac < Fx::ONE);
+    if frac < Fx::ONE {
+        let ran = if failed { Fx::ZERO } else { frac };
+        if let Some(s) = super::economy::scarcest(g, &costs, ran) {
+            g.run.today.shorts.insert(short.to_string(), s);
+        }
+    }
+    if failed {
         return LineOutcome::Failed;
     }
     for (res, &v) in &costs {
-        g.consume(res, v * frac);
+        g.consume(src, res, v * frac);
     }
     for (res, &v) in &produces {
-        g.produce(res, v * frac);
+        g.produce(src, res, v * frac);
     }
     let b = boredom_cost(g, c);
     if b > Fx::ZERO {
         g.add(BOREDOM, b);
+        g.track(src, BOREDOM, b, Fx::ZERO);
     }
     g.career.used_commands.insert(c.id.clone());
     if let Some(f) = &c.sets_flag {
@@ -195,13 +207,13 @@ pub fn execute(r: &Rules, g: &mut GameState, c: &Command) -> LineOutcome {
         Some(CommandEffect::LaunchFullPads) => super::shipments::launch_full(r, g),
         Some(CommandEffect::Dream) => super::dream::dream(r, g),
         Some(CommandEffect::Overclock { target, bonus, duration }) => {
-            // Live from the next building pass for `duration` days (times the
-            // Rationalist duration bonus, whole days).
+            // Live from today's building pass (after programs) for
+            // `duration` days (times the Rationalist duration bonus, whole days).
             let days = Fx::from_int(*duration as i64) * super::ideology::overclock_duration(r, g);
             g.run.overclocks.push(Overclock {
                 target: target.clone(),
                 bonus: *bonus,
-                until_day: g.run.day + 1 + days.floor_int().max(0) as u64,
+                until_day: g.run.day + days.floor_int().max(0) as u64,
             });
         }
         Some(CommandEffect::Promote { good }) => super::demand::promote(r, g, good),
@@ -216,6 +228,7 @@ pub fn execute(r: &Rules, g: &mut GameState, c: &Command) -> LineOutcome {
 /// wrapping at the end.
 pub fn run(r: &Rules, g: &mut GameState) {
     for i in 0..g.run.programs.len() {
+        let src = format!("program:{i}");
         for _ in 0..g.run.programs[i].processors {
             let p = &g.run.programs[i];
             let Some(e) = p.entries.get(p.entry as usize) else {
@@ -223,7 +236,10 @@ pub fn run(r: &Rules, g: &mut GameState) {
             };
             let c = content().command(&e.command).expect("set_program checked");
             let line = p.entry;
-            let outcome = execute(r, g, c);
+            let short = format!("{src}:{line}");
+            // The line's note is today's last run's.
+            g.run.today.shorts.remove(&short);
+            let outcome = execute(r, g, c, &src, &short);
             g.run.today.lines.entry(i as u32).or_default().insert(line, outcome);
             let p = &mut g.run.programs[i];
             p.step += 1;

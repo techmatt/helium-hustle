@@ -115,6 +115,7 @@ pub fn load(r: &Rules, g: &mut GameState) {
         let take = per.min(cap - g.run.pads[i].cargo).min(g.amount(&good)).max(Fx::ZERO);
         if take > Fx::ZERO {
             *g.run.resources.get_mut(&good).expect("content good") -= take;
+            g.track("pads", &good, Fx::ZERO, take);
             g.run.pads[i].cargo += take;
         }
     }
@@ -149,11 +150,11 @@ pub fn payout(r: &Rules, g: &GameState, i: usize) -> Fx {
 /// starts the cooldown.
 pub fn launch(r: &Rules, g: &mut GameState, i: usize) {
     let fuel = r.p.shipments.fuel_per_pad;
-    g.consume(PROPELLANT, fuel);
+    g.consume("launch", PROPELLANT, fuel);
     let pay = payout(r, g, i);
     let good = g.run.pads[i].good.clone();
     let demand = g.run.markets.get(&good).map_or(Fx::ZERO, |m| m.demand);
-    g.produce(CREDITS, pay);
+    g.produce("launch", CREDITS, pay);
     g.run.stats.shipments += 1;
     let cargo = g.run.pads[i].cargo;
     g.activity("shipment", &good, Some(pay), Some(cargo));
@@ -194,6 +195,7 @@ pub fn set_pad_good(r: &Rules, g: &mut GameState, pad: u32, good: &str) -> Resul
     p.good = good.to_string();
     p.cargo = Fx::ZERO;
     g.add(&old, back);
+    g.track("pads", &old, back, Fx::ZERO);
     if cargo > back {
         g.activity("cargo_lost", &old, Some(Fx::from_int(i64::from(pad) + 1)), Some(cargo - back));
     }

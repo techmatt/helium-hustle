@@ -4,7 +4,7 @@ import type { BuildingView, View } from '../engine';
 import { capitalize, num } from '../format';
 import { act, actAll, seen, store, type Store } from '../store';
 import { buildingArt } from './buildingArt';
-import { CostRows, FlowLines, ResChip, Section, cardButton, freshClass, name, navShown, useHint } from './common';
+import { CostRows, FlowLines, ResChip, Section, cardButton, freshClass, name, navShown, shortText, useHint } from './common';
 import { Chip } from './icons';
 
 /** `?all-cards` in the URL (the QA checker's): every building's card, revealed or not, so
@@ -21,7 +21,17 @@ export function Buildings({ s }: { s: Store }) {
   return (
     <div class="panel" data-panel="buildings">
       <h2>Buildings</h2>
-      <div class={`land-bar${v.can_buy_land ? ' can-buy' : ''}`} data-testid="land-bar">
+      {/* The whole row buys land, like a green building card (the engine's view at click
+          time, so quick clicks each count once). */}
+      <div
+        class={`land-bar${v.can_buy_land ? ' can-buy' : ''}`}
+        data-testid="land-bar"
+        aria-disabled={!v.can_buy_land}
+        title={v.can_buy_land ? 'Click to buy land' : undefined}
+        {...cardButton(() => {
+          if (store.view.can_buy_land) act({ type: 'buy_land' });
+        })}
+      >
         <ResChip v={v} id="land" size={16} />
         <strong>Land</strong>
         <span class="muted">{num(land?.amount ?? '0')} free</span>
@@ -122,9 +132,18 @@ function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: boolean; 
           </div>
         </div>
       </div>
-      {b.stall && (
-        <span class={`stall stall-${b.stall}`}>{b.stall === 'input_starved' ? 'Short of inputs' : 'Output at cap'}</span>
-      )}
+      {/* The status row's space is always kept, so a card never jumps as a stall comes and goes. */}
+      <div class="card-status" data-card-status title={b.starved ? shortText(v, b.starved) : undefined}>
+        {b.starved ? (
+          <span class="stall stall-input_starved">
+            running at {Math.floor(Number(b.starved.ran) * 100)}% · <ResChip v={v} id={b.starved.resource} /> short
+          </span>
+        ) : b.stall === 'input_starved' ? (
+          <span class="stall stall-input_starved">Short of inputs</span>
+        ) : b.stall === 'output_capped' ? (
+          <span class="stall stall-output_capped">Output at cap</span>
+        ) : null}
+      </div>
       <hr />
       {atLimit ? (
         <p class="muted">At its limit ({b.max_count}).</p>

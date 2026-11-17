@@ -134,7 +134,7 @@ fn huge_processor_counts_are_refused_not_wrapped() {
 fn a_late_scenario_schedules_from_its_own_day() {
     let r = rules();
     let s = Scenario::from_json(
-        r#"{"name":"x","description":"","start":{"tick":1000,"resources":{},"buildings":{}}}"#,
+        r#"{"name":"x","description":"","start":{"tick":1000,"resources":{},"buildings":{},"panels":[],"programs":[]}}"#,
     )
     .unwrap();
     let g = r.start(1, Some(&s));
@@ -170,6 +170,36 @@ fn buildings_resolve_in_passes_with_partial_production() {
     assert_eq!(g.amount("regolith"), Fx::ZERO);
     assert_eq!(g.run.today.stalls.get("refinery"), Some(&Stall::InputStarved));
     assert_eq!(g.run.today.stalls.get("smelter"), None);
+}
+
+#[test]
+fn programs_are_paid_before_upkeep_and_the_breakdown_shows_who_went_short() {
+    let r = rules();
+    let mut g = r.start(1, Some(scenario("late_unlocks").unwrap()));
+    let v = r.view(&g);
+    assert_eq!(v.nav.iter().filter(|t| t.visible).count(), v.nav.len(), "every tile open");
+    r.advance(&mut g, 3);
+    let v = r.view(&g);
+    // Load Launch Pads ran on the Solar Panels' power; a building with upkeep went short.
+    assert_eq!(v.programs[0].outcomes[0], Some(crate::state::LineOutcome::Ran));
+    // Buy Titanium on 10 credits ran at half on day 1 (a conversion runs part way), then
+    // fails and says why.
+    assert_eq!(v.programs[0].outcomes[1], Some(crate::state::LineOutcome::Failed));
+    let why = v.programs[0].shorts[1].as_ref().unwrap();
+    assert_eq!((why.resource.as_str(), why.need, why.had, why.ran), ("credits", f("20"), Fx::ZERO, Fx::ZERO));
+    assert!(g.run.pads.iter().any(|p| p.cargo > Fx::ZERO));
+    let starved: Vec<_> = v.buildings.iter().filter_map(|b| b.starved.as_ref()).collect();
+    assert!(!starved.is_empty() && starved.iter().all(|s| s.ran < Fx::ONE && s.resource == "energy"));
+    let energy = v.breakdown.iter().find(|b| b.resource == "energy").unwrap();
+    let row = |src: &str| energy.rows.iter().find(|x| x.source == src).unwrap();
+    assert_eq!(row("building:solar_panel").produced, f("30"));
+    assert_eq!(row("program:0").consumed, f("2"));
+    assert_eq!(energy.shorts.len(), starved.len());
+    // Every unit made is accounted for: sources less sinks is the change in stock (none:
+    // a short day spends it all), but for the clamp lifting a rounding dip below zero.
+    let net: Fx = energy.rows.iter().map(|x| x.produced - x.consumed).sum();
+    assert!(net.max(-net) <= Fx::EPSILON, "{net}");
+    assert!(g.run.flow_average["energy"]["building:solar_panel"].produced > Fx::ZERO);
 }
 
 #[test]
@@ -609,7 +639,7 @@ fn a_tampered_record_warns_or_fails() {
 fn extreme_starts_neither_panic_nor_wrap() {
     // A price past Fx's range is shown as Fx::MAX and never affordable.
     let s = Scenario::from_json(
-        r#"{"name":"x","description":"","start":{"tick":0,"resources":{"credits":"9223372036000"},"buildings":{"solar_panel":4294967295}}}"#,
+        r#"{"name":"x","description":"","start":{"tick":0,"resources":{"credits":"9223372036000"},"buildings":{"solar_panel":4294967295},"panels":[],"programs":[]}}"#,
     )
     .unwrap();
     let r = rules();
@@ -638,10 +668,10 @@ fn a_bad_rng_seed_is_an_error_not_a_panic() {
 fn scenarios_load_and_bad_ones_are_named() {
     assert!(scenarios().len() >= 2);
     let e = Scenario::from_json(
-        r#"{"name":"x","description":"","start":{"tick":0,"resources":{"helium":"1"},"buildings":{"mine":1}}}"#,
+        r#"{"name":"x","description":"","start":{"tick":0,"resources":{"helium":"1"},"buildings":{"mine":1},"panels":["shop"],"programs":[]}}"#,
     )
     .unwrap_err();
-    assert!(e.contains("start.resources.helium") && e.contains("start.buildings.mine"), "{e}");
+    assert!(e.contains("start.resources.helium") && e.contains("start.buildings.mine") && e.contains("\"shop\""), "{e}");
     let e = Scenario::from_json(r#"{"name":"x","description":"","start":{"tick":0,"resources":{}}}"#)
         .unwrap_err();
     assert!(e.contains("buildings"), "{e}");

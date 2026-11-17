@@ -2,7 +2,7 @@
 
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import type { Amounts, Fx, View } from '../engine';
+import type { Amounts, Fx, ShortView, View } from '../engine';
 import { num, perDay } from '../format';
 import { justMoved } from '../store';
 import { Chip } from './icons';
@@ -127,6 +127,72 @@ export function FlowLines({ v, amounts, sign, suffix = '/day' }: { v: View; amou
         </div>
       ))}
     </>
+  );
+}
+
+/** A shortfall's short form, "needs ⚡2, had 0" (the chip for the resource). */
+export function ShortNote({ v, s }: { v: View; s: ShortView }) {
+  return (
+    <span class="short-note">
+      needs <ResChip v={v} id={s.resource} />
+      {num(s.need)}, had {num(s.had)}
+    </span>
+  );
+}
+
+/** A shortfall in full words, for tooltips. */
+export function shortText(v: View, s: ShortView): string {
+  const ran = Number(s.ran) > 0 ? `ran at ${Math.round(Number(s.ran) * 100)}%` : 'did not run';
+  return `${s.label} ${ran}: needed ${num(s.need)} ${name(v, s.resource)}, had ${num(s.had)}`;
+}
+
+/** A signed amount for a breakdown cell ("+5", "−2"; blank for none). */
+function signed(x: number): string {
+  const shown = num(Math.abs(x));
+  return shown === '0' ? '' : `${x < 0 ? '−' : '+'}${shown}`;
+}
+
+/** A resource's breakdown: each source (+) and sink (−) per day, net per source, the last
+ * day's and (with `avg`) the rolling average's; then who went short of it. */
+export function Breakdown({ v, id, avg = false }: { v: View; id: string; avg?: boolean }) {
+  const b = v.breakdown.find((x) => x.resource === id);
+  if (!b) return <p class="muted breakdown-empty">Nothing moved it the last day.</p>;
+  return (
+    <div class="breakdown" data-breakdown={id}>
+      <table class="breakdown-table">
+        <thead>
+          <tr>
+            <th />
+            <th class="num">Last day</th>
+            {avg && <th class="num">Avg {v.flow_average_days}d</th>}
+          </tr>
+        </thead>
+        <tbody>
+          {b.rows.map((r) => {
+            const day = Number(r.produced) - Number(r.consumed);
+            const mean = Number(r.avg_produced) - Number(r.avg_consumed);
+            const tone = (day || mean) > 0 ? 'pos' : 'neg';
+            return (
+              <tr key={r.source} data-source={r.source} class={r.source === 'cap' ? 'lost' : ''}>
+                <td>{r.label}</td>
+                <td class={`num ${tone}`}>{signed(day)}</td>
+                {avg && <td class={`num ${tone}`}>{signed(mean)}</td>}
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+      {b.shorts.length > 0 && (
+        <ul class="plain breakdown-shorts">
+          {b.shorts.map((s) => (
+            <li key={s.source} title={shortText(v, s)} data-short={s.source}>
+              <span class="neg">Short:</span> {s.label}
+              {Number(s.ran) > 0 ? ` at ${Math.round(Number(s.ran) * 100)}%` : ''} · <ShortNote v={v} s={s} />
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 

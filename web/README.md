@@ -45,19 +45,15 @@ to save a PNG at each step worth seeing. About 45 s. It plays, in order:
    clock, run 2 (known tiles and resources still shown, not cheated).
 2. **Every panel**: cheats reach Research, Projects and Ideologies; all 11 tiles open; the
    cheated mark, a jump ahead and the replay check.
-3. A program's frame at 10x and 50x, each speed's days per second, pause, click-to-buy (a green card's text buys, its −/+ and
-   Sell 1 don't, space after a real click pauses and buys nothing, a grey card says why),
-   a reload keeping the save, a save from another revision discarded, the scenarios and
-   the replay check.
-4. **The theme:** the game opens light; the Options and debug-menu toggles switch it with
-   every element's box unchanged (to 0.01 px); a reload keeps it. Shots
-   `theme-<light|dark>-<buildings|commands>.png`.
-5. **Readability** (before 4; header of `scripts/e2e.mjs`): capped rates, Resources'
-   groups, affordable cards and Land, a pad short of fuel then Ready, Story.
+3. A program's frame at 10x and 50x, each speed's days per second, pause, click-to-buy
+   (details in the script's header), a reload keeping the save, a save from another
+   revision discarded, the scenarios and the replay check.
+4. **The theme:** the toggles switch it with every element's box unchanged (to 0.01 px);
+   a reload keeps it.
+5. **Readability** (before 4): capped rates, Resources' groups, affordable cards and Land,
+   a pad short of fuel then Ready, Story.
 
-Any uncaught page error fails the run. Against a snapshot rather than the dev server:
-`npm run build && npx vite preview --port 61873 --strictPort`, then
-`HH_URL=http://localhost:61873/ npm run e2e`.
+Any uncaught page error fails the run. Run it against `vite preview` (CLAUDE.md).
 
 - Edge needs an **absolute** `--user-data-dir`: given a relative one it hands the page to
   the Edge already running and exits (the script resolves it).
@@ -107,22 +103,23 @@ Three columns and a status bar, as in the last Godot build:
   name; a green dot on Launch Pads while a pad is ready), the speed buttons, Resources
   (Energy, Credits, Land, Boredom, Processors, then a second group of the rest; amount /
   cap, change per day, at its cap the surplus thrown away, muted, or green for Energy's
-  spare power: "+9 CAP"; processors assigned / total), each ideology axis's rank once Ideologies
-  is unlocked, and the lunar horizon with the habitat at the foot.
+  spare power: "+9 CAP"; processors assigned / total; a click on a row opens its breakdown
+  in place, one at a time: last day's sources and sinks, who went short), each ideology
+  axis's rank once Ideologies is unlocked, and the lunar horizon with the habitat at the foot.
 - **Middle:** the sky with the Earth, the main quest's text when it opens (the only story
-  banner), then the active panel. Buildings: the Land bar (green like a card when affordable), a
-  collapsible section per category, cards (a 96 px picture beside the description,
-  per-day effects and storage lines such as "+100 Boredom cap", ideology tag, stall, price
-  with shortfalls in red, active/owned with −/+, Sell 1, Sell All). A click on an
-  affordable card (outlined in green, its name row tinted), off its controls, builds one (Shift: up to ten;
-  ignored for 0.5 s after the summary or a story text closes); any other card says why it
-  can't. Research cards work the same way: a click researches. A pad card's fuel line is
-  red while the shared Propellant is short of a launch; full and fueled, it reads a green
-  Ready. Then the other panels.
+  banner), then the active panel. Buildings: the Land bar (green and click-to-buy like a card
+  when affordable), a collapsible section per category, cards (a 96 px picture beside the
+  description, per-day effects and storage lines, ideology tag, a status row always kept
+  ("running at 67% · ⚡ short"), price with shortfalls in red, active/owned with −/+, Sell 1,
+  Sell All). A click on an affordable card (outlined in green, its name row tinted), off its
+  controls, builds one (Shift: up to ten; ignored for 0.5 s after the summary or a story
+  text closes); any other card says why it can't. Research cards work the same way. Pad
+  cards tint their head: green Ready (full and fueled), yellow Paused, red full but short of
+  fuel. Stats ends on every resource's breakdown, last day and rolling average.
 - **Right:** the main quest in its own slot at the top, which nothing else takes; program
   tabs 1 to 5 with processors −/+ and Reset; a line per command with
   its progress, −/+/×, drag to reorder, its tint from today's outcome (ran, failed,
-  skipped), and an accent frame (drawn so no text moves) on the line the next processor
+  skipped; a failed line says why under its name: "needs ⚡2, had 0"), and an accent frame (drawn so no text moves) on the line the next processor
   runs (none without a processor). Above 10x one redraw covers several days, so each line
   shows its outcome over them (`advance_run`'s `lines`) with no frame. Below, Events:
   Story (this run's event texts: side story, and the latest boredom phase only), completed quests, and Recent

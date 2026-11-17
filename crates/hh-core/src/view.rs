@@ -18,7 +18,7 @@ use crate::fx::Fx;
 use crate::modifiers::modifier;
 use crate::modules::*;
 use crate::rules::Rules;
-use crate::state::{Activity, Entry, GameState, LastRun, LineOutcome, LogEntry, Overclock, RunStats, Stall};
+use crate::state::{Activity, Entry, Flow, GameState, LastRun, LineOutcome, LogEntry, Overclock, RunStats, Short, Stall};
 
 /// Text borrowed from the embedded content.
 pub type Text = &'static str;
@@ -73,6 +73,9 @@ pub struct BuildingView {
     pub visible: bool,
     /// Its stall today, if any.
     pub stall: Option<Stall>,
+    /// Ran below full capacity today: the input it was short of and the
+    /// fraction it ran at.
+    pub starved: Option<ShortView>,
     /// The action that buys one.
     pub buy: Action,
 }
@@ -98,6 +101,9 @@ pub struct ProgramView {
     pub step: u32,
     /// What each line did the last time it ran today (`None`: not run today).
     pub outcomes: Vec<Option<LineOutcome>>,
+    /// Per line, the input it was short of the last time it ran today
+    /// (failed, or a conversion run part way), if it was.
+    pub shorts: Vec<Option<ShortView>>,
 }
 
 /// The program lines run over a span of days (a client drawing once per
@@ -390,10 +396,140 @@ pub struct View {
     pub log: Vec<LogEntry>,
     /// The run's activity feed, oldest first.
     pub activity: Vec<Activity>,
+    /// Each resource's flows by source for the last day (and the rolling
+    /// average), and who went short of it; resources with none are left out.
+    pub breakdown: Vec<BreakdownView>,
+    /// Days in the breakdown's rolling average.
+    pub flow_average_days: i64,
     /// Display names by content id (resources, buildings, commands, research,
     /// projects, achievements, rivals, and events by title). Content only, so
     /// built once.
     pub names: &'static BTreeMap<Text, Text>,
+}
+
+/// One source's line in a resource's breakdown: the last day's flows and the
+/// rolling average's.
+#[derive(Debug, Clone, Serialize)]
+pub struct FlowRow {
+    /// The state's source key (`building:<id>`, `program:<n>`, `cap`, ...).
+    pub source: String,
+    pub label: String,
+    pub produced: Fx,
+    pub consumed: Fx,
+    pub avg_produced: Fx,
+    pub avg_consumed: Fx,
+}
+
+/// Who ran short the last day, and of what (`state::Short`, labeled).
+#[derive(Debug, Clone, Serialize)]
+pub struct ShortView {
+    pub source: String,
+    pub label: String,
+    pub resource: String,
+    pub need: Fx,
+    pub had: Fx,
+    /// The fraction it ran at (0: not at all).
+    pub ran: Fx,
+}
+
+/// A resource's breakdown: its sources and sinks (sources first, each side
+/// largest first; `cap` is what the clamp cut), and who went short of it.
+#[derive(Debug, Clone, Serialize)]
+pub struct BreakdownView {
+    pub resource: Text,
+    pub rows: Vec<FlowRow>,
+    pub shorts: Vec<ShortView>,
+}
+
+/// A breakdown source's display label.
+fn source_label(g: &GameState, source: &str) -> String {
+    let names = names();
+    let mut parts = source.split(':');
+    match (parts.next(), parts.next(), parts.next()) {
+        (Some("building"), Some(id), _) => names.get(id).copied().unwrap_or(id).to_string(),
+        (Some("program"), Some(n), line) => {
+            let n: usize = n.parse().unwrap_or(0);
+            match line.and_then(|l| l.parse::<usize>().ok()) {
+                Some(l) => {
+                    let cmd = g.run.programs.get(n).and_then(|p| p.entries.get(l)).map_or("", |e| e.command.as_str());
+                    format!("Program {}, line {}: {}", n + 1, l + 1, names.get(cmd).copied().unwrap_or(cmd))
+                }
+                None => format!("Program {}", n + 1),
+            }
+        }
+        (Some(k), _, _) => match k {
+            "pads" => "Pad loading",
+            "launch" => "Launches",
+            "buy" => "Buildings bought",
+            "sell" => "Buildings sold",
+            "land" => "Land bought",
+            "research" => "Research",
+            "projects" => "Projects",
+            "growth" => "Daily growth",
+            "dream" => "Dream",
+            "cap" => "Lost to cap",
+            other => other,
+        }
+        .to_string(),
+        _ => source.to_string(),
+    }
+}
+
+fn short_view(g: &GameState, source: &str, s: &Short) -> ShortView {
+    ShortView {
+        source: source.to_string(),
+        label: source_label(g, source),
+        resource: s.resource.clone(),
+        need: s.need,
+        had: s.had,
+        ran: s.ran,
+    }
+}
+
+/// Every resource with a flow (the last day's or the average's) or a shortfall.
+fn breakdown(g: &GameState) -> Vec<BreakdownView> {
+    let (today, avg) = (&g.run.today.flows, &g.run.flow_average);
+    content()
+        .resources
+        .iter()
+        .filter_map(|res| {
+            let mut sources: Vec<&String> =
+                today.get(&res.id).into_iter().chain(avg.get(&res.id)).flat_map(|m| m.keys()).collect();
+            sources.sort();
+            sources.dedup();
+            let get = |m: &BTreeMap<String, BTreeMap<String, Flow>>, s: &String| {
+                m.get(&res.id).and_then(|x| x.get(s)).copied().unwrap_or_default()
+            };
+            let mut rows: Vec<FlowRow> = sources
+                .into_iter()
+                .map(|s| {
+                    let (d, a) = (get(today, s), get(avg, s));
+                    FlowRow {
+                        source: s.clone(),
+                        label: source_label(g, s),
+                        produced: d.produced,
+                        consumed: d.consumed,
+                        avg_produced: a.produced,
+                        avg_consumed: a.consumed,
+                    }
+                })
+                .collect();
+            // Sources (net in) first, then sinks, each largest first.
+            rows.sort_by_key(|r| {
+                let net = (r.produced - r.consumed, r.avg_produced - r.avg_consumed);
+                (net.0 <= Fx::ZERO && net.1 <= Fx::ZERO, std::cmp::Reverse((net.0.max(-net.0), net.1.max(-net.1))))
+            });
+            let shorts: Vec<ShortView> = g
+                .run
+                .today
+                .shorts
+                .iter()
+                .filter(|(_, s)| s.resource == res.id)
+                .map(|(k, s)| short_view(g, k, s))
+                .collect();
+            (!rows.is_empty() || !shorts.is_empty()).then_some(BreakdownView { resource: &res.id, rows, shorts })
+        })
+        .collect()
 }
 
 /// The view's `names`: later content kinds win an id shared with an earlier one.
@@ -547,6 +683,10 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 unlocked: economy::unlocked(g, b),
                 visible: economy::visible(g, b),
                 stall: g.run.today.stalls.get(&b.id).copied(),
+                starved: {
+                    let k = format!("building:{}", b.id);
+                    g.run.today.shorts.get(&k).map(|s| short_view(g, &k, s))
+                },
                 buy: Action::Buy { building: b.id.clone() },
             }
         })
@@ -627,12 +767,19 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             .programs
             .iter()
             .zip(LinesRun::today(g).lines)
-            .map(|(p, outcomes)| ProgramView {
+            .enumerate()
+            .map(|(i, (p, outcomes))| ProgramView {
                 entries: p.entries.clone(),
                 processors: p.processors,
                 entry: p.entry,
                 step: p.step,
                 outcomes,
+                shorts: (0..p.entries.len())
+                    .map(|l| {
+                        let k = format!("program:{i}:{l}");
+                        g.run.today.shorts.get(&k).map(|s| short_view(g, &k, s))
+                    })
+                    .collect(),
             })
             .collect(),
         processors: procs,
@@ -788,6 +935,8 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         can_retire: career::retire_blocker(g).is_none(),
         log: g.career.log.clone(),
         activity: g.run.activity.clone(),
+        breakdown: breakdown(g),
+        flow_average_days: r.p.economy.flow_average_days,
         names: names(),
     }
 }

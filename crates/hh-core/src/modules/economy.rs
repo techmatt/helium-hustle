@@ -10,7 +10,7 @@ use crate::content::{content, Amounts, Building, BuildingEffect, Requirement};
 use crate::fx::Fx;
 use crate::modifiers::modifier;
 use crate::rules::Rules;
-use crate::state::{GameState, Holding, Stall};
+use crate::state::{Flow, GameState, Holding, Short, Stall};
 
 pub const ENERGY: &str = "energy";
 pub const CREDITS: &str = "credits";
@@ -30,6 +30,7 @@ pub static DEF: ModuleDef = ModuleDef {
             param("land_cost_scaling", K::Fx, Some(("1", "10")), "each land purchase multiplies the next one's price by this"),
             param("land_per_purchase", K::Fx, Some(("0", "1000000")), "land gained per purchase"),
             param("upkeep_epsilon", K::Fx, Some(("0", "1")), "a building pays full upkeep if short by no more than this"),
+            param("flow_average_days", K::Int, Some(("1", "1000")), "days in the resource breakdown's rolling average (display only)"),
         ],
         rng: &[],
     }],
@@ -43,6 +44,7 @@ pub struct Params {
     pub land_cost_scaling: Fx,
     pub land_per_purchase: Fx,
     pub upkeep_epsilon: Fx,
+    pub flow_average_days: i64,
 }
 
 impl Params {
@@ -75,6 +77,7 @@ impl Params {
             land_cost_scaling: mc.fx("land_cost_scaling"),
             land_per_purchase: mc.fx("land_per_purchase"),
             upkeep_epsilon: mc.fx("upkeep_epsilon"),
+            flow_average_days: mc.int("flow_average_days"),
         })
     }
 }
@@ -98,6 +101,22 @@ pub fn input_fraction(g: &GameState, needs: &Amounts) -> Fx {
         }
     }
     frac
+}
+
+/// The input that limits a run of `needs` to `ran` (its first scarcest, in id
+/// order), for the breakdown's shortfalls.
+pub fn scarcest(g: &GameState, needs: &Amounts, ran: Fx) -> Option<Short> {
+    let mut best: Option<(Fx, Short)> = None;
+    for (res, &need) in needs {
+        if need > Fx::ZERO {
+            let had = g.amount(res).max(Fx::ZERO);
+            let f = had / need;
+            if f < Fx::ONE && best.as_ref().is_none_or(|(b, _)| f < *b) {
+                best = Some((f, Short { resource: res.clone(), need, had, ran }));
+            }
+        }
+    }
+    best.map(|(_, s)| s)
 }
 
 pub fn cap(r: &Rules, g: &GameState, resource: &str) -> Option<Fx> {
@@ -202,8 +221,10 @@ pub fn buy(r: &Rules, g: &mut GameState, id: &str) -> Result<(), String> {
     }
     for (res, c) in price(r, g, b) {
         *g.run.resources.get_mut(&res).expect("content checked") -= c;
+        g.track("buy", &res, Fx::ZERO, c);
     }
     *g.run.resources.get_mut(LAND).expect("content has land") -= Fx::from_int(b.land as i64);
+    g.track("buy", LAND, Fx::ZERO, Fx::from_int(b.land as i64));
     let h = g.run.buildings.entry(b.id.clone()).or_default();
     h.owned += 1;
     h.active += 1;
@@ -232,6 +253,7 @@ pub fn sell(g: &mut GameState, id: &str) -> Result<(), String> {
     }
     if paid {
         g.add(LAND, Fx::from_int(b.land as i64));
+        g.track("sell", LAND, Fx::from_int(b.land as i64), Fx::ZERO);
     }
     refresh(g);
     Ok(())
@@ -285,6 +307,8 @@ pub fn buy_land(r: &Rules, g: &mut GameState) -> Result<(), String> {
     let price = land_price(r, g);
     *g.run.resources.get_mut(CREDITS).expect("content has credits") -= price;
     g.add(LAND, r.p.economy.land_per_purchase);
+    g.track("land", CREDITS, Fx::ZERO, price);
+    g.track("land", LAND, r.p.economy.land_per_purchase, Fx::ZERO);
     g.run.land_bought += 1;
     Ok(())
 }
@@ -326,12 +350,27 @@ fn output_factor(r: &Rules, g: &GameState, b: &Building) -> Fx {
     f
 }
 
-/// The day's building production, in content order (docs/rules/economy.md,
-/// *Daily resolution*): passes in which every building that can pay its full
-/// upkeep (within `upkeep_epsilon`) pays and produces, repeated while any
-/// succeeds; then one pass where the rest run at the fraction their scarcest
-/// input allows (`input_starved`).
-pub fn resolve(r: &Rules, g: &mut GameState) {
+/// Buildings that take no upkeep produce (the day's first stage, before
+/// programs pay); returns the energy they made, for [`resolve`].
+pub fn produce_free(r: &Rules, g: &mut GameState) -> Fx {
+    resolve_stage(r, g, true)
+}
+
+/// The day's building production after programs, in content order
+/// (docs/rules/economy.md, *Daily resolution*): of the buildings that take
+/// upkeep, passes in which every one that can pay its full upkeep (within
+/// `upkeep_epsilon`) pays and produces, repeated while any succeeds; then one
+/// pass where the rest run at the fraction their scarcest input allows
+/// (`input_starved`). `free_energy`: what [`produce_free`] made today.
+pub fn resolve(r: &Rules, g: &mut GameState, free_energy: Fx) {
+    let energy_made = free_energy + resolve_stage(r, g, false);
+    let stats = &mut g.run.stats;
+    stats.peak_energy = stats.peak_energy.max(energy_made);
+}
+
+/// One stage of the building pass: the upkeep-free buildings (`free`) or the
+/// rest. Returns the energy made.
+fn resolve_stage(r: &Rules, g: &mut GameState, free: bool) -> Fx {
     let eps = r.p.economy.upkeep_epsilon;
     let upkeep_mult = modifier(r, g, "building_upkeep_mult");
     let science = super::ideology::bonus(r, g, "rationalist");
@@ -340,7 +379,7 @@ pub fn resolve(r: &Rules, g: &mut GameState) {
     let mut pending: Vec<(String, Amounts, Amounts)> = Vec::new();
     for b in &content().buildings {
         let n = g.active(&b.id) as i64;
-        if n == 0 {
+        if n == 0 || b.upkeep.is_empty() != free {
             continue;
         }
         let f = output_factor(r, g, b);
@@ -366,11 +405,12 @@ pub fn resolve(r: &Rules, g: &mut GameState) {
         let mut retry = Vec::new();
         for (id, prod, upk) in pending {
             if upk.iter().all(|(res, &need)| g.amount(res) >= need - eps) {
+                let src = format!("building:{id}");
                 for (res, &v) in &upk {
-                    g.consume(res, v);
+                    g.consume(&src, res, v);
                 }
                 for (res, &v) in &prod {
-                    g.produce(res, v);
+                    g.produce(&src, res, v);
                     if res == ENERGY {
                         energy_made += v;
                     }
@@ -387,22 +427,25 @@ pub fn resolve(r: &Rules, g: &mut GameState) {
     }
     for (id, prod, upk) in pending {
         let frac = input_fraction(g, &upk);
+        let src = format!("building:{id}");
+        if let Some(s) = scarcest(g, &upk, frac) {
+            g.run.today.shorts.insert(src.clone(), s);
+        }
         g.run.today.stalls.insert(id, Stall::InputStarved);
         if frac <= Fx::ZERO {
             continue;
         }
         for (res, &v) in &upk {
-            g.consume(res, v * frac);
+            g.consume(&src, res, v * frac);
         }
         for (res, &v) in &prod {
-            g.produce(res, v * frac);
+            g.produce(&src, res, v * frac);
             if res == ENERGY {
                 energy_made += v * frac;
             }
         }
     }
-    let stats = &mut g.run.stats;
-    stats.peak_energy = stats.peak_energy.max(energy_made);
+    energy_made
 }
 
 /// The end-of-tick clamp, the only place caps bind: anything over its cap is
@@ -418,6 +461,7 @@ pub fn clamp(r: &Rules, g: &mut GameState) {
                 let over = *v - c;
                 *v = c;
                 g.run.today.overflow.insert(id.clone(), over);
+                g.track("cap", &id, Fx::ZERO, over);
             }
         }
         let v = g.run.resources.get_mut(&id).expect("listed");
@@ -425,6 +469,37 @@ pub fn clamp(r: &Rules, g: &mut GameState) {
             *v = Fx::ZERO;
         }
     }
+}
+
+/// Folds the day just ended (`today.flows`) into the rolling average:
+/// `avg += (day − avg) / flow_average_days` for every source already in it, a
+/// source absent from the day counting zero; a source new to it starts at its
+/// day's value. A step too small to move the average lands on the day's value,
+/// so a source gone quiet reaches zero and drops out. Display only.
+pub fn fold_flow_average(r: &Rules, g: &mut GameState) {
+    let n = r.p.economy.flow_average_days;
+    let step = |avg: Fx, day: Fx| {
+        let next = avg + (day - avg).mul_ratio(1, n);
+        if next == avg { day } else { next }
+    };
+    let today = &g.run.today.flows;
+    let avg = &mut g.run.flow_average;
+    for (res, a) in avg.iter_mut() {
+        let day = today.get(res);
+        for (src, f) in a.iter_mut() {
+            let d = day.and_then(|d| d.get(src)).copied().unwrap_or_default();
+            *f = Flow { produced: step(f.produced, d.produced), consumed: step(f.consumed, d.consumed) };
+        }
+        a.retain(|_, f| *f != Flow::default());
+    }
+    // A source new to the average starts at its day's value, not ramping up from zero.
+    for (res, by) in today {
+        let a = avg.entry(res.clone()).or_default();
+        for (src, &d) in by {
+            a.entry(src.clone()).or_insert(d);
+        }
+    }
+    avg.retain(|_, a| !a.is_empty());
 }
 
 /// The building holding for a new run (the config's starting buildings).

@@ -359,7 +359,8 @@ async function readability(grant) {
       status: p.querySelector('.pad-status').textContent, ready: p.classList.contains('ready'),
       go: p.querySelector('[data-testid="launch-0"]').classList.contains('go'), dot: !!document.querySelector('[data-testid="pads-ready"]') };
   })()`);
-  check(short.fuel === 'Fuel 19.4 / 20 Propellant' && short.fueled === 'false' && short.status !== 'Ready' && !short.ready && !short.go && !short.dot,
+  // The chip's <title> ("Propellant") leads the line's text.
+  check(short.fuel.endsWith('Fuel 19.4 / 20 Propellant') &&short.fueled === 'false' && short.status !== 'Ready' && !short.ready && !short.go && !short.dot,
     `a full pad short on fuel: red fuel line, not Ready: ${JSON.stringify(short)}`);
   // The pads are the panel's last section: scroll only the middle column to them.
   const toPads = `document.querySelector('.col-mid').scrollTop = 1e6`;
@@ -390,7 +391,7 @@ async function readability(grant) {
       status: p.querySelector('.pad-status').textContent, ready: p.classList.contains('ready'),
       go: p.querySelector('[data-testid="launch-0"]').classList.contains('go'), dot: !!document.querySelector('[data-testid="pads-ready"]') };
   })()`);
-  check(ready.fuel === 'Fuel 20 / 20 Propellant' && ready.fueled === 'true' && ready.status === 'Ready' && ready.ready && ready.go && ready.dot,
+  check(ready.fuel.endsWith('Fuel 20 / 20 Propellant') &&ready.fueled === 'true' && ready.status === 'Ready' && ready.ready && ready.go && ready.dot,
     `fuel enough: Ready, green Launch, green border, nav dot: ${JSON.stringify(ready)}`);
   // Unfold Story: its count clears after about a second on screen, with no click on an item.
   await click('[data-testid="events-story"] .fold-head');

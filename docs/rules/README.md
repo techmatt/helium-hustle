@@ -1,6 +1,6 @@
 # Rules
 
-The rules as implemented, rules revision **4** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **5** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
 The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
@@ -39,22 +39,26 @@ Every module plays; each is one page. A config must name all of them.
 
 One tick is one in-game day. Each tick, in this order (`Rules::tick`, `rules.rs`):
 
-1. **Boredom** grows by the phase rate (boredom).
-2. **Overclocks** past their last day expire (programs).
-3. **Buildings** resolve: full passes, then partial production (economy).
+1. Yesterday's flows fold into the breakdown's rolling average and the day's record
+   clears (economy; display only).
+2. **Boredom** grows by the phase rate (boredom).
+3. **Overclocks** past their last day expire (programs).
 4. **Demand** decays its forces and is set for the day (demand).
-5. **Programs** run: each processor one command step (programs, with shipments, demand,
-   ideology and dream for their commands' effects).
-6. **Projects** drain their funding (projects).
-7. **Pads** cool down (shipments).
-8. **Speculator bursts and rival dumps** when due (demand).
-9. **Clamp**: every resource cut to its cap (overflow counted) and lifted to zero (economy).
-10. **Quests and events** check their conditions (events).
-11. **Achievements** check the day's flows and stockpiles (achievements).
-12. **Ideology** bests are recorded in the career (ideology).
-13. The run's **day** count rises.
-14. Boredom at its cap **forces retirement**: the next run starts at once (career).
-15. The **activity feed** is cut to its newest `activity_kept` lines (events; display only).
+5. **Upkeep-free buildings** (Solar Panels) produce (economy).
+6. **Programs** run, paid first: each processor one command step (programs, with
+   shipments, demand, ideology and dream for their commands' effects).
+7. **Buildings that take upkeep** resolve on what is left: full passes, then partial
+   production (economy).
+8. **Projects** drain their funding (projects).
+9. **Pads** cool down (shipments).
+10. **Speculator bursts and rival dumps** when due (demand).
+11. **Clamp**: every resource cut to its cap (overflow counted) and lifted to zero (economy).
+12. **Quests and events** check their conditions (events).
+13. **Achievements** check the day's flows and stockpiles (achievements).
+14. **Ideology** bests are recorded in the career (ideology).
+15. The run's **day** count rises.
+16. Boredom at its cap **forces retirement**: the next run starts at once (career).
+17. The **activity feed** is cut to its newest `activity_kept` lines (events; display only).
     The same trim ends every applied action.
 
 Player actions apply between ticks; an illegal one changes nothing. Actions are listed on

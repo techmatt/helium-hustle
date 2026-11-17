@@ -145,6 +145,34 @@ pub struct Today {
     /// What each program line did the last time a processor ran it today:
     /// program -> line -> outcome.
     pub lines: BTreeMap<u32, BTreeMap<u32, LineOutcome>>,
+    /// Every flow by resource, then by source (display: the resource
+    /// breakdown). Sources: `building:<id>`, `program:<n>` (0-based), `pads`
+    /// (loading and switch returns), `launch`, `buy`, `sell`, `land`,
+    /// `research`, `projects`, `growth` (boredom), `dream`, `cap` (overflow).
+    /// Player actions after the day's tick count in it too.
+    pub flows: BTreeMap<String, BTreeMap<String, Flow>>,
+    /// Who ran short, by source (`building:<id>`, `program:<n>:<line>`): the
+    /// input that limited it, the last time it ran today.
+    pub shorts: BTreeMap<String, Short>,
+}
+
+/// One source's share of a resource's flow.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Flow {
+    pub produced: Fx,
+    pub consumed: Fx,
+}
+
+/// A building or command that ran short: its scarcest input, what a full run
+/// needed of it and what there was, and the fraction it ran at (0: not at all).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Short {
+    pub resource: String,
+    pub need: Fx,
+    pub had: Fx,
+    pub ran: Fx,
 }
 
 /// What a command did when a processor ran it.
@@ -218,6 +246,9 @@ pub struct Run {
     pub boredom_phase: u32,
     pub stats: RunStats,
     pub today: Today,
+    /// Each day's `today.flows` folded into a rolling average over the
+    /// economy's `flow_average_days` (display only: no rule reads it).
+    pub flow_average: BTreeMap<String, BTreeMap<String, Flow>>,
     /// The run's activity feed, oldest first (display only: no rule reads it).
     pub activity: Vec<Activity>,
 }
@@ -329,11 +360,30 @@ impl GameState {
         *a = a.saturating_add(v);
     }
 
-    /// Adds production: the resource, today's flow and the run's total.
-    pub(crate) fn produce(&mut self, resource: &str, v: Fx) {
+    /// Counts a flow in today's breakdown under `source` (display only).
+    pub(crate) fn track(&mut self, source: &str, resource: &str, produced: Fx, consumed: Fx) {
+        if produced == Fx::ZERO && consumed == Fx::ZERO {
+            return;
+        }
+        let flows = &mut self.run.today.flows;
+        if !flows.contains_key(resource) {
+            flows.insert(resource.to_string(), BTreeMap::new());
+        }
+        let by = flows.get_mut(resource).expect("inserted");
+        if !by.contains_key(source) {
+            by.insert(source.to_string(), Flow::default());
+        }
+        let f = by.get_mut(source).expect("inserted");
+        f.produced = f.produced.saturating_add(produced);
+        f.consumed = f.consumed.saturating_add(consumed);
+    }
+
+    /// Adds production: the resource, today's flow (by source) and the run's total.
+    pub(crate) fn produce(&mut self, source: &str, resource: &str, v: Fx) {
         if v <= Fx::ZERO {
             return;
         }
+        self.track(source, resource, v, Fx::ZERO);
         self.add(resource, v);
         let t = self.run.today.produced.entry(resource.to_string()).or_insert(Fx::ZERO);
         *t = t.saturating_add(v);
@@ -346,10 +396,11 @@ impl GameState {
 
     /// Takes a resource (it may dip a hair below zero within the upkeep
     /// tolerance; the end-of-tick clamp lifts it) and counts today's use.
-    pub(crate) fn consume(&mut self, resource: &str, v: Fx) {
+    pub(crate) fn consume(&mut self, source: &str, resource: &str, v: Fx) {
         if v <= Fx::ZERO {
             return;
         }
+        self.track(source, resource, Fx::ZERO, v);
         let a = self.run.resources.entry(resource.to_string()).or_insert(Fx::ZERO);
         *a -= v;
         let t = self.run.today.consumed.entry(resource.to_string()).or_insert(Fx::ZERO);
