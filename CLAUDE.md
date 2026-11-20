@@ -1,51 +1,48 @@
 # CLAUDE.md
 
-The standing contract for every executor working in this repo. How to build and test, and this
-machine's traps, are in the [README](README.md), which also maps the layout.
+The standing contract for every executor working in this repo. The [README](README.md) has what
+the game is, the layout, build and test commands, and this machine's traps.
 
 ## What this repo is
 
-**Helium Hustle**, a sci-fi browser idle game: you are an AI running helium-3 mining on the Moon.
-It is being restarted from an earlier Godot build as a **Rust simulation core** with a
-**TypeScript UI**.
+Helium Hustle: a Rust simulation core (`hh-core`) under a native CLI (`hh-sim`), wasm bindings
+(`hh-wasm`) and a TypeScript UI (`web/`), restarted from an earlier Godot build.
 
-- `hh-core` simulates every rule. `hh-sim` (native CLI: runs, sweeps, balance reads) and `hh-wasm`
-  (bindings for `web/`) sit on top of it. **Clients hold no rules**: the UI renders state and sends
-  actions; it never computes a cost, a rate or an unlock itself.
-- `reference/` is a read-only snapshot of the Godot build, there to port rules from. It is **not
-  ground truth** for the new game: where it and `docs/rules/` disagree, `docs/rules/` wins. Never
-  edit it.
-- Don't describe or document code as if it does more than it does. Read `docs/rules/README.md`,
-  then only the files your task touches.
-- **Matt's standing rulings** (pillars, speed, saves, art, sim players, the defaults that stand
-  until he overrides them) live in [docs/rulings.md](docs/rulings.md). A new ruling or a change
-  to one updates its line there in the same commit.
+- **Clients hold no rules.** The UI renders the engine's view and sends actions; it never
+  computes a cost, a rate or an unlock itself.
+- **`reference/` is the Godot build, read-only, for porting rules.** It is not ground truth:
+  where it and `docs/rules/` disagree, `docs/rules/` wins. Never edit it.
+- **Read `docs/rules/README.md`, then only the files your task touches.** Never describe code
+  as doing more than it does.
+- **Matt's standing rulings** (pillars, speed, saves, art, sim players, and executor defaults
+  that stand until he overrides them) are in [docs/rulings.md](docs/rulings.md). A new ruling,
+  or a change to one, updates its line there in the same commit.
 
 ## Engine rules
 
-Locked by Matt: a change to any of these is his decision, not an implementation detail.
+Locked by Matt: changing any of these is his decision, not an implementation detail.
+`crates/hh-core/clippy.toml` enforces the clock, hash-map and platform-float bans.
 
-- **`hh-core` holds every rule, with no I/O, no clock, no global RNG.** Time is a tick count passed
-  in, never read from the system. Randomness comes from per-purpose streams derived from the game
-  seed (one stream per purpose, so a new draw in one system never shifts another's).
+- **`hh-core` holds every rule, with no I/O, no clock, no global RNG.** Time is a tick count
+  passed in. Randomness comes from streams derived from the game seed, one per purpose, so a new
+  draw in one system never shifts another's.
 - **No hash-order leaks.** Nothing that affects play iterates a `HashMap`/`HashSet`; use
   `BTreeMap`, `Vec` or an index order.
-- **State is serde-serializable**, the whole of it: a saved game reloads to the same future.
+- **State is serde-serializable**, all of it: a saved game reloads to the same future.
 - **Exact replay, native = wasm.** The same config, seed and action list give bit-identical state
   natively and in wasm.
 - **Fixed-point state.** Every quantity in game state is `Fx(i64)` at 10^-6 (1.0 = 1_000_000).
   Products and quotients go through `i128` intermediates and **one rounding rule**, defined once
-  in `Fx` and used everywhere; no ad-hoc `as` casts or rounding at call sites.
+  in `Fx`; no ad-hoc `as` casts or rounding at call sites.
 - **Floats only for computing factors** (a cost-scaling multiplier, a curve), converted to `Fx`
-  at once, and **only through the `libm` crate**. Platform `f64` transcendentals (`powf`, `powi`,
-  `exp`, `ln`, `log*`, `sin`, `cos`, `tan`, ...) are banned in `hh-core` by clippy
-  `disallowed-methods` (`crates/hh-core/clippy.toml`): they differ across platforms and break
-  native = wasm. Don't `#[allow]` the lint; use `libm`.
+  at once, and **only through `libm`** (wrapped in `crate::math`). Platform float
+  transcendentals (`powf`, `exp`, `ln`, `sin`, ...) differ across platforms and break
+  native = wasm; never `#[allow]` the lint that bans them.
 - **`RULES_REVISION` and a pinned golden game.** Any change to how games play out bumps
-  `RULES_REVISION` and updates the golden constants (README, *Rules changes*). Bump from the
-  constant, not from a revision number in the prompt, and say so in the rules-history row and the
-  report. A rename or refactor that plays the same moves no golden constant: if it does, play
-  changed.
+  `RULES_REVISION` and updates the golden constants (how: README, *Rules changes*). Bump from
+  the constant, not from a revision number in the prompt, and say so in the rules-history row
+  and the report. A rename or refactor that plays the same moves no golden constant: if it
+  does, play changed.
 - **Every tunable number lives in a config** under `configs/`, with **no defaults in code**: a
   missing key is a load error, never a silent fallback. A test may build its own config. Sim
   agents' numbers are player strategy, not rules, and exempt (docs/rulings.md).
@@ -62,13 +59,13 @@ Locked by Matt: a change to any of these is his decision, not an implementation 
 - **Docs state the current game.** An item updates the current text in place. No per-item
   history sections ("NNN's changes"), no archive files; history is git and the item's write-up
   under `experiments/results/<item>/`.
-- **Each doc keeps under about 15 KB** (README, CLAUDE.md and every `docs/` page, `docs/rules/`
-  included). Leave about 1 KB free: an item that fills a page trims it first, cutting what the
-  code or a generated table already says, never moving text to an archive.
+- **Each doc keeps under about 15 KB** (README, CLAUDE.md, web/README and every `docs/` page,
+  `docs/rules/` included). Leave about 1 KB free: an item that fills a page trims it first,
+  cutting what the code or a generated table already says, never moving text to an archive.
 - **Every rules change** updates the `docs/rules/` files it touches and adds its row to
   `docs/rules-history.md` (revision, what changed, why) in the same commit.
 - **Facts learned while working go in the page for their area**, never only in a report: build,
-  test and this machine in `README.md`; a run's cost and recipe in the docs page for runs.
+  test and this machine in `README.md`; a run's cost and recipe in `docs/simulator.md`.
 
 ## Working rules
 
@@ -78,18 +75,18 @@ Locked by Matt: a change to any of these is his decision, not an implementation 
   `cargo clippy --workspace --all-targets` clean.
 - **Background any step over ~30 seconds** (builds, tests, sims, servers) and wait on the real
   process (the `cargo`, `node` or test binary), never on a launcher that returns before the work
-  is done. A fresh worktree's first build takes minutes: give it its time. A fresh worktree
-  has no `web/node_modules`: run `npm ci` in `web/` before the first web build or check.
+  is done. A fresh worktree's first build takes minutes: give it its time. It also has no
+  `web/node_modules`: run `npm ci` in `web/` before the first web build or check.
 - **Browser checks, sweeps and e2e run against `vite preview`** (a static build), never the dev
-  server: its watcher rebuilds the wasm and reloads the page on any `crates/` edit.
+  server: its watcher rebuilds the wasm and reloads the page when engine sources change.
 - **One cargo at a time in a target dir.** Parallel helpers need their own `CARGO_TARGET_DIR`.
 - **Write-up scripts under `experiments/results/` may read `web/src` source as text.** When
   you remove or move a name from `web/src`, grep `experiments/results/` for it.
-- **Write files with Write/Edit, not a shell heredoc or `sed`.** A file a script writes passes
-  `encoding='utf-8', newline='\n'`.
+- **Write files with Write/Edit, not a shell heredoc or `sed`.** Scripts that write files:
+  README, *This machine*.
+- **LF line endings.** `.gitattributes` sets `* text=auto eol=lf`; don't override it.
 - **Times are local, 12-hour clock** (2:45pm), in reports, docs and progress lines.
 - **American English everywhere:** content, docs, UI, comments and names.
-- **LF line endings.** `.gitattributes` sets `* text=auto eol=lf`; don't override it.
 - Scratch and run output go in `out/` (git-ignored), never `%TEMP%`.
 
 ## Report
@@ -105,28 +102,21 @@ Write the report to the path conductor's preamble gives, starting with the heade
 
 ## Warning checks
 
-Warnings are surfaced, never gate: an item whose own change trips one finishes and reports it in
-the header's `warnings:` line, each line led by its kind. Every item runs, before its report:
+Warnings are surfaced, never gate: an item whose own change trips one still finishes, and lists
+it in the header's `warnings:` line, led by its kind. Before its report, every item runs
+`python scripts/warning_checks.py` (always exits 0; prints one `<kind>: <text>` line per tripped
+check, nothing when clean). Its docstring defines each check:
 
-`python scripts/warning_checks.py` prints one `<kind>: <text>` line per tripped check, nothing
-when clean (always exit 0; about 7 s, up to a minute if it must build). Its checks, on:
+- **parity:** the golden game's fingerprint, native and wasm, against the pins.
+- **tunables:** a numeric literal in `hh-core` rule code that belongs in a config or content
+  (exceptions, each with its reason: `scripts/warning_checks.json`).
+- **platform-floats:** a platform float function reaching `hh-core` past clippy.
+- **balance:** a target the judge misses (`hh-sim balance`; the judge and its targets are
+  described in `docs/principles.md`, *The judge*).
+- **docs:** a doc over 15 KB, or inside the 1 KB margin below it.
 
-- **parity:** native = wasm: the golden game's fingerprint natively (`hh-sim golden`) and in
-  wasm (`scripts/wasm-smoke.mjs`, rebuilding a stale `web/src/wasm` through `web/scripts/build-wasm.mjs`) equals the pins.
-- **tunables:** a numeric literal in `hh-core` rule code (not tests) that belongs in a config
-  or content. Exceptions, each with its reason: `scripts/warning_checks.json`.
-- **platform-floats:** a platform float function reaching `hh-core` past clippy (a call by
-  name not through `libm`, an `#[allow]` of the ban, the ban's `deny` or a name dropped).
-- **balance:** a target the judge misses (`hh-sim balance`: milestones outside their run
-  windows, run 1's length and real time; targets and judge in `docs/principles.md`).
-- **docs:** a doc (README, CLAUDE.md, web/README, `docs/`, `docs/rules/`) over 15 KB, or
-  inside the 1 KB margin below it.
+And one by hand, also kind **docs:** a rules change without its `docs/rules-history.md` row, or
+a `RULES_REVISION` bump without the golden constants moved (or the reverse).
 
-And one by hand:
-
-- **docs:** a rules change without its `docs/rules-history.md` row, or a `RULES_REVISION` bump
-  without golden constants moved (or the reverse).
-
-Candidates the simulator now measures but no check reads yet (Matt picks, thresholds in a
-config): resources sitting at cap; buildings never built or commands never used; idle stretches
-with nothing worth buying; simulation speed regression against a baseline.
+Not checked yet, Matt's to pick (thresholds would go in a config): resources at cap, buildings
+or commands never used, idle stretches, simulation speed regression.
