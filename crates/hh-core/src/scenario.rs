@@ -107,7 +107,7 @@ impl Scenario {
             if n == 0 {
                 g.run.buildings.remove(b);
             } else {
-                g.run.buildings.insert(b.clone(), Holding { owned: n, active: n, bonus: 0, free: n, unpaid: 0 });
+                g.run.buildings.insert(b.clone(), Holding::starting(n));
                 g.career.owned_buildings.insert(b.clone());
             }
         }

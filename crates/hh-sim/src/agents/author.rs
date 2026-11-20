@@ -9,8 +9,8 @@
 //!
 //! | Program | Template | Processors |
 //! |---|---|---|
-//! | 1 main, `gap <= hand_gap` | a plan to the next look: `launch_pads` if a pad is full; `buy_propellant` × the fuel short when a pad is within 25 of full; `load_pads` × the loads that would move cargo; `buy_*` × the target's missing titanium, regolith or ice, as far as credits past its price go; then `cloud_compute` × 2 × `max_gap` × processors | the rest |
-//! | 1 main, longer gaps | a standing cycle: `load_pads × loads, launch_pads, cloud_compute × loads, buy_propellant × fuel`, `buy_*` for target inputs no building makes | the rest |
+//! | 1 main, `gap <= hand_gap` | a plan to the next look: `launch_pads` if a pad is full; `buy_propellant` × the fuel short when a pad is within 25 of full; `load_pads` × the loads that would move cargo, at most `loads`; `buy_*` × the target's missing titanium, regolith or ice, as far as credits past its price go; then `cloud_compute` × 2 × `max_gap` × processors | the rest |
+//! | 1 main, longer gaps | a standing cycle: `load_pads × loads, launch_pads, cloud_compute × loads, buy_propellant × fuel`, `buy_*` × the target's missing inputs no building makes, at most `loads` | the rest |
 //! | 2 dream | `dream` | 1 while boredom is past `dream_at`% of its cap and the run still builds |
 //! | 3 fund | `fund_<axis>`: the first axis (humanist, rationalist, nationalist) whose persistent project isn't done | 1 when 3 or more are left |
 //! | 4 market | `promote_<good>` for each pad good, `disrupt_speculators` | 1 when 3 or more are left |
@@ -38,10 +38,11 @@
 
 use hh_core::content::Requirement;
 use hh_core::state::{Clause, Cmp, Condition, Entry, Join, Joined, Op, Reading};
+use hh_core::view::PadView;
 use hh_core::{Action, Fx, View};
 
 use super::builder::{Builder, BRIDGES, INPUT_BRIDGES};
-use super::{amount, cap, command_cost, command_unlocked, Agent, Knobs, Player};
+use super::{amount, cap, command_cost, command_unlocked, credits_price, made, Agent, Knobs, Player};
 
 pub const KNOBS: &[&str] = &[
     "decay", "starved", "reserve", "buys", "compute", "dream_at", "stale_days", "project_rate", "fund", "market",
@@ -89,15 +90,17 @@ pub const PROJECTS: &[&str] = &[
     "grid_recalibration",
 ];
 
-/// Ideology axes in funding order, each with its rank-5 persistent project.
+/// Ideology axes in funding order, each with its rank-5 persistent project
+/// (mirrors content/projects.json; the order is strategy).
 const AXES: &[(&str, &str)] = &[
     ("humanist", "ai_consciousness"),
     ("rationalist", "research_archive"),
     ("nationalist", "microwave_power"),
 ];
 
-/// Tradeable goods by base value, dearest first (baseline: circuits 15, He-3
-/// 10, titanium 6, propellant 4).
+/// Tradeable goods by base value, dearest first (mirrors configs/baseline.json
+/// `base_values`: circuits 15, He-3 10, titanium 6, propellant 4; the view
+/// shows no prices).
 const DEAREST: &[&str] = &["circuits", "he3", "titanium", "propellant"];
 
 const MAIN: usize = 0;
@@ -340,7 +343,7 @@ impl Author {
             let other = self.b.ranked(v).into_iter().map(|(id, _)| id).find(|id| {
                 *id != t
                     && v.buildings.iter().any(|b| {
-                        b.id == *id && b.affordable && b.cost.get("credits").copied().unwrap_or(Fx::ZERO) <= spare
+                        b.id == *id && b.affordable && credits_price(b) <= spare
                     })
                     && self.b.resolve(v, id) == id.as_str()
             });
@@ -367,7 +370,7 @@ impl Author {
                     continue;
                 }
                 let bridged = BRIDGES.iter().any(|(r, c)| r == res && command_unlocked(v, c));
-                let made = v.buildings.iter().any(|x| x.active > 0 && x.produces.contains_key(res));
+                let made = made(v, res);
                 if bridged || made {
                     continue;
                 }
@@ -569,101 +572,22 @@ impl Author {
         // Main: by hand while looks come often, else a standing cycle.
         let filler = if self.compute { "cloud_compute" } else { "idle" };
         want[main] = if gap <= self.hand_gap {
-            // A plan for the next gap: what is due now, then filler to the next look.
-            let mut lines = Vec::new();
-            let credits = amount(v, "credits");
-            let keep = target.map_or(Fx::ZERO, |t| price(v, t, "credits"));
-            if let Some(pad) = pads.first() {
-                let full = pad.cargo >= pad.capacity;
-                // Launch into good demand: HIGH or better, or MEDIUM once
-                // the good piles at its cap (waiting would waste it).
-                let tier = v.markets.iter().find(|m| m.good == pad.good).map_or("", |m| m.tier);
-                let piled = cap(v, &pad.good).is_some_and(|c| amount(v, &pad.good) >= c);
-                let good_demand = match tier {
-                    "HIGH" | "VERY HIGH" => true,
-                    "MEDIUM" => piled || !self.wait_demand,
-                    _ => !self.wait_demand,
-                };
-                if full && pad.can_launch && good_demand {
-                    lines.push(e("launch_pads", 1));
-                }
-                let short = (pad.fuel - amount(v, "propellant")).floor_int();
-                let fuel_cost = command_cost(v, "buy_propellant", "credits");
-                let near = pad.cargo + Fx::from_int(25) >= pad.capacity;
-                if near && short > 0 && fuel_cost > Fx::ZERO {
-                    let n = short.min((credits / fuel_cost).floor_int());
-                    if n > 0 {
-                        lines.push(e("buy_propellant", n as u32));
-                    }
-                }
-                // Loads worth running (a partial load still counts).
-                let per = pad.load.floor_int().max(1);
-                let stock = (amount(v, &pad.good).floor_int() + per - 1) / per;
-                let room = ((pad.capacity - pad.cargo).floor_int() + per - 1) / per;
-                if !full && stock > 0 && room > 0 {
-                    lines.push(e("load_pads", stock.min(room).min(20) as u32));
-                }
-            }
-            if let Some(b) = target.and_then(|t| v.buildings.iter().find(|b| b.id == t)) {
-                let mut spare = credits - keep;
-                for &(res, cmd) in INPUT_BRIDGES {
-                    let need = b.cost.get(res).copied().unwrap_or(Fx::ZERO) - amount(v, res);
-                    let each = command_cost(v, cmd, "credits");
-                    if need > Fx::ZERO && each > Fx::ZERO && command_unlocked(v, cmd) {
-                        let n = need.floor_int().saturating_add(1).min((spare / each).floor_int());
-                        if n > 0 {
-                            lines.push(e(cmd, n as u32));
-                            spare -= each.mul_int(n);
-                        }
-                    }
-                }
-            }
             // Twice what reaches the latest next look; a constant, so the text
             // changes only when what is due does.
             let fill = (2 * self.max_gap.max(gap) * u64::from(left.max(1))).min(1000) as u32;
-            lines.push(e(filler, fill));
-            lines
+            hand_plan(v, &pads, target, filler, fill, self.wait_demand, self.loads)
         } else {
-            // A standing cycle that ships and earns unattended: it earns
-            // before it spends, so a cycle started broke still pays its way.
-            let mut lines = Vec::new();
-            let shipping = pads.first().filter(|_| command_unlocked(v, "load_pads"));
-            if shipping.is_some() {
-                lines.push(e("load_pads", self.loads));
-                lines.push(e("launch_pads", 1));
-            }
-            lines.push(e(filler, self.loads));
-            if let Some(pad) = shipping {
-                lines.push(e("buy_propellant", pad.fuel.floor_int().max(1) as u32));
-            }
-            // Bridges for the target's inputs no building makes (a cap stops
-            // the overbuy). Bridging what a building makes too, as far as
-            // spare credits go, got the casual author its second processor
-            // in run 1 but cost it the first shipment there (4 seeds).
-            if let Some(b) = target.and_then(|t| v.buildings.iter().find(|b| b.id == t)) {
-                for &(res, cmd) in INPUT_BRIDGES {
-                    let need = b.cost.get(res).copied().unwrap_or(Fx::ZERO) - amount(v, res);
-                    let made = v.buildings.iter().any(|x| x.active > 0 && x.produces.contains_key(res));
-                    if need > Fx::ZERO && !made && command_unlocked(v, cmd) {
-                        lines.push(e(cmd, need.floor_int().saturating_add(1).min(20) as u32));
-                    }
-                }
-            }
-            lines
+            standing_cycle(v, &pads, target, filler, self.loads)
         };
         // Dream, while the run still builds.
         let bored = v.boredom.amount.mul_int(100) >= v.boredom.cap.mul_int(self.dream_at);
         let building = v.day.saturating_sub(self.built_day) < self.stale_days;
         if self.dir.sustain {
-            // Enough Dream to outpace growth and a command's boredom a
-            // processor (relief 2, before the Humanist bonus) once boredom
-            // passes a third of its cap; one more past two thirds.
+            // Holding boredom down: Dream from a third of the cap
+            // ([`sustain_dreamers`] processors).
             let third = v.boredom.amount.mul_int(3) >= v.boredom.cap;
-            let two = v.boredom.amount.mul_int(3) >= v.boredom.cap.mul_int(2);
             if third && command_unlocked(v, "dream") && left > 1 && dream < want.len() {
-                let cmds = Fx::from_int(i64::from(total)).mul_ratio(1, 5);
-                let need = (v.boredom.rate + cmds).mul_ratio(1, 2).floor_int() as u32 + 1 + u32::from(two);
-                let n = need.min(left - 1);
+                let n = sustain_dreamers(v, total).min(left - 1);
                 want[dream] = vec![e("dream", 1)];
                 procs[dream] = n;
                 left -= n;
@@ -683,11 +607,7 @@ impl Author {
                 left -= n;
             }
         } else if self.fund && left > 2 && FUND < want.len() {
-            let axis = AXES
-                .iter()
-                .find(|(_, proj)| !v.projects.iter().any(|p| p.id == *proj && p.completed))
-                .map(|(a, _)| *a);
-            if let Some(axis) = axis {
+            if let Some(axis) = own_axis(v) {
                 let cmd = format!("fund_{axis}");
                 if command_unlocked(v, &cmd) {
                     want[FUND] = vec![e(&cmd, 1)];
@@ -696,18 +616,8 @@ impl Author {
                 }
             }
         }
-        // Market: promote what ships, disrupt speculators.
         if self.dir.market_runs(self.market, left) && !pads.is_empty() && MARKET < want.len() {
-            let mut lines = Vec::new();
-            for pad in &pads {
-                let cmd = format!("promote_{}", pad.good);
-                if command_unlocked(v, &cmd) && !lines.iter().any(|l: &Entry| l.command_id() == Some(cmd.as_str())) {
-                    lines.push(e(&cmd, 1));
-                }
-            }
-            if command_unlocked(v, "disrupt_speculators") {
-                lines.push(e("disrupt_speculators", 1));
-            }
+            let lines = market_program(v, &pads);
             if !lines.is_empty() {
                 want[MARKET] = lines;
                 procs[MARKET] = 1;
@@ -800,8 +710,139 @@ impl Author {
     }
 }
 
-/// Keeps the sooner of `soon` and `t`; a `t` of 0 (it holds already, yet this
-/// look didn't act on it) gives no reason to look again sooner.
+/// The main program while looks come often (`gap <= hand_gap`): a plan for the
+/// next gap, what is due now, then `fill` of the filler to the next look.
+/// `load_pads` and each bridge buy are capped at `loads` (the knob).
+fn hand_plan(
+    v: &View,
+    pads: &[&PadView],
+    target: Option<&str>,
+    filler: &str,
+    fill: u32,
+    wait_demand: bool,
+    loads: u32,
+) -> Vec<Entry> {
+    let e = Entry::command;
+    let mut lines = Vec::new();
+    let credits = amount(v, "credits");
+    let keep = target.map_or(Fx::ZERO, |t| price(v, t, "credits"));
+    if let Some(pad) = pads.first() {
+        let full = pad.cargo >= pad.capacity;
+        // Launch into good demand: HIGH or better, or MEDIUM once
+        // the good piles at its cap (waiting would waste it).
+        let tier = v.markets.iter().find(|m| m.good == pad.good).map_or("", |m| m.tier);
+        let piled = cap(v, &pad.good).is_some_and(|c| amount(v, &pad.good) >= c);
+        let good_demand = match tier {
+            "HIGH" | "VERY HIGH" => true,
+            "MEDIUM" => piled || !wait_demand,
+            _ => !wait_demand,
+        };
+        if full && pad.can_launch && good_demand {
+            lines.push(e("launch_pads", 1));
+        }
+        let short = (pad.fuel - amount(v, "propellant")).floor_int();
+        let fuel_cost = command_cost(v, "buy_propellant", "credits");
+        // Strategy: fuel once the pad is within 25 cargo of full.
+        let near = pad.cargo + Fx::from_int(25) >= pad.capacity;
+        if near && short > 0 && fuel_cost > Fx::ZERO {
+            let n = short.min((credits / fuel_cost).floor_int());
+            if n > 0 {
+                lines.push(e("buy_propellant", n as u32));
+            }
+        }
+        // Loads worth running (a partial load still counts).
+        let per = pad.load.floor_int().max(1);
+        let stock = (amount(v, &pad.good).floor_int() + per - 1) / per;
+        let room = ((pad.capacity - pad.cargo).floor_int() + per - 1) / per;
+        if !full && stock > 0 && room > 0 {
+            lines.push(e("load_pads", stock.min(room).min(i64::from(loads)) as u32));
+        }
+    }
+    if let Some(b) = target.and_then(|t| v.buildings.iter().find(|b| b.id == t)) {
+        let mut spare = credits - keep;
+        for &(res, cmd) in INPUT_BRIDGES {
+            let need = b.cost.get(res).copied().unwrap_or(Fx::ZERO) - amount(v, res);
+            let each = command_cost(v, cmd, "credits");
+            if need > Fx::ZERO && each > Fx::ZERO && command_unlocked(v, cmd) {
+                let n = need.floor_int().saturating_add(1).min((spare / each).floor_int());
+                if n > 0 {
+                    lines.push(e(cmd, n as u32));
+                    spare -= each.mul_int(n);
+                }
+            }
+        }
+    }
+    lines.push(e(filler, fill));
+    lines
+}
+
+/// The main program for longer gaps: a standing cycle that ships and earns
+/// unattended. It earns before it spends, so a cycle started broke still pays
+/// its way.
+fn standing_cycle(v: &View, pads: &[&PadView], target: Option<&str>, filler: &str, loads: u32) -> Vec<Entry> {
+    let e = Entry::command;
+    let mut lines = Vec::new();
+    let shipping = pads.first().filter(|_| command_unlocked(v, "load_pads"));
+    if shipping.is_some() {
+        lines.push(e("load_pads", loads));
+        lines.push(e("launch_pads", 1));
+    }
+    lines.push(e(filler, loads));
+    if let Some(pad) = shipping {
+        lines.push(e("buy_propellant", pad.fuel.floor_int().max(1) as u32));
+    }
+    // Bridges for the target's inputs no building makes (`loads` caps the
+    // overbuy). Bridging what a building makes too, as far as spare credits
+    // go, got the casual author its second processor in run 1 but cost it
+    // the first shipment there (4 seeds).
+    if let Some(b) = target.and_then(|t| v.buildings.iter().find(|b| b.id == t)) {
+        for &(res, cmd) in INPUT_BRIDGES {
+            let need = b.cost.get(res).copied().unwrap_or(Fx::ZERO) - amount(v, res);
+            let made = made(v, res);
+            if need > Fx::ZERO && !made && command_unlocked(v, cmd) {
+                lines.push(e(cmd, need.floor_int().saturating_add(1).min(i64::from(loads)) as u32));
+            }
+        }
+    }
+    lines
+}
+
+/// Dream processors while holding boredom down (`sustain`): enough to
+/// outpace growth and a command's boredom a processor once boredom passes a
+/// third of its cap; one more past two thirds.
+fn sustain_dreamers(v: &View, total: u32) -> u32 {
+    let two = v.boredom.amount.mul_int(3) >= v.boredom.cap.mul_int(2);
+    // An allowance of 0.2 boredom a processor a tick (mirrors no one value:
+    // twice Cloud Compute's 0.1, content/commands.json).
+    let cmds = Fx::from_int(i64::from(total)).mul_ratio(1, 5);
+    // Halved: Dream's relief is 2 a processor (mirrors configs/baseline.json
+    // `dream.relief`, before the Humanist bonus).
+    (v.boredom.rate + cmds).mul_ratio(1, 2).floor_int() as u32 + 1 + u32::from(two)
+}
+
+/// The author's own axis to fund: the first in [`AXES`] whose persistent
+/// project isn't done.
+fn own_axis(v: &View) -> Option<&'static str> {
+    AXES.iter().find(|(_, proj)| !v.projects.iter().any(|p| p.id == *proj && p.completed)).map(|(a, _)| *a)
+}
+
+/// The market program: promote what ships, disrupt speculators (empty when
+/// none is unlocked).
+fn market_program(v: &View, pads: &[&PadView]) -> Vec<Entry> {
+    let e = Entry::command;
+    let mut lines = Vec::new();
+    for pad in pads {
+        let cmd = format!("promote_{}", pad.good);
+        if command_unlocked(v, &cmd) && !lines.iter().any(|l: &Entry| l.command_id() == Some(cmd.as_str())) {
+            lines.push(e(&cmd, 1));
+        }
+    }
+    if command_unlocked(v, "disrupt_speculators") {
+        lines.push(e("disrupt_speculators", 1));
+    }
+    lines
+}
+
 /// The construction program for `b`: land when it is short of it and the
 /// credits are there, then one more `b` once its credits and its scarcest
 /// other input are in stock, then a filler line for the days neither holds.
@@ -819,7 +860,7 @@ fn construction(v: &View, b: &hh_core::view::BuildingView, filler: &str) -> Vec<
         lines.push(Entry::new(Op::If { when: Condition { first: short, rest } }));
         lines.push(Entry::new(Op::BuyLand {}).indent());
     }
-    let credits = b.cost.get("credits").copied().unwrap_or(Fx::ZERO);
+    let credits = credits_price(b);
     // The other input furthest from its price (as a share of it).
     let other = b
         .cost
@@ -833,6 +874,8 @@ fn construction(v: &View, b: &hh_core::view::BuildingView, filler: &str) -> Vec<
     lines
 }
 
+/// Keeps the sooner of `soon` and `t`; a `t` of 0 (it holds already, yet this
+/// look didn't act on it) gives no reason to look again sooner.
 fn sooner(soon: &mut u64, t: u64) {
     if t > 0 {
         *soon = (*soon).min(t);

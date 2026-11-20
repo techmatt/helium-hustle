@@ -82,9 +82,6 @@ impl Params {
     }
 }
 
-/// `resource`'s storage cap now: its base plus every active building's `store`
-/// effect, times `storage_cap_mult` for everything but energy. Boredom's is the
-/// boredom module's. `None` is uncapped.
 /// Whether every product is at or over its cap (nothing to make room for); never for
 /// no products. A building so is "output at cap"; a command so is skipped.
 pub fn all_capped(r: &Rules, g: &GameState, products: &Amounts) -> bool {
@@ -119,6 +116,9 @@ pub fn scarcest(g: &GameState, needs: &Amounts, ran: Fx) -> Option<Short> {
     best.map(|(_, s)| s)
 }
 
+/// `resource`'s storage cap now: its base plus every working (active, upkeep-paid)
+/// building's `store` effect, times `storage_cap_mult` for everything but energy.
+/// Boredom's is the boredom module's. `None` is uncapped.
 pub fn cap(r: &Rules, g: &GameState, resource: &str) -> Option<Fx> {
     if resource == BOREDOM {
         return Some(super::boredom::cap(r, g));
@@ -321,6 +321,23 @@ pub fn buy_land(r: &Rules, g: &mut GameState) -> Result<(), String> {
 /// After any change to buildings (or to how many the day's pass paid):
 /// derived resources (processors) from working buildings' `grant` effects, launch pads matched to Launch Pads owned, and processor
 /// assignments trimmed to the processors there are (last program first).
+/// The sum of every building's `grant` of `resource`, times `count(building)`
+/// copies: working copies for the amount held, active ones for processor
+/// assignment limits.
+pub fn grants(resource: &str, count: impl Fn(&str) -> u32) -> Fx {
+    let mut total = Fx::ZERO;
+    for b in &content().buildings {
+        for e in &b.effects {
+            if let BuildingEffect::Grant { resource: r, amount } = e {
+                if r == resource {
+                    total += amount.mul_int(i64::from(count(&b.id)));
+                }
+            }
+        }
+    }
+    total
+}
+
 pub fn refresh(g: &mut GameState) {
     let mut granted: BTreeMap<String, Fx> = BTreeMap::new();
     for b in &content().buildings {
@@ -330,13 +347,8 @@ pub fn refresh(g: &mut GameState) {
             }
         }
     }
-    for b in &content().buildings {
-        let n = g.working(&b.id) as i64;
-        for e in &b.effects {
-            if let BuildingEffect::Grant { resource, amount } = e {
-                *granted.get_mut(resource).expect("listed above") += amount.mul_int(n);
-            }
-        }
+    for (res, v) in &mut granted {
+        *v = grants(res, |id| g.working(id));
     }
     for (res, v) in granted {
         g.run.resources.insert(res, v);
@@ -532,6 +544,6 @@ pub fn starting_buildings(r: &Rules) -> BTreeMap<String, Holding> {
         .starting_buildings
         .iter()
         .filter(|(_, &n)| n > 0)
-        .map(|(id, &n)| (id.clone(), Holding { owned: n, active: n, bonus: 0, free: n, unpaid: 0 }))
+        .map(|(id, &n)| (id.clone(), Holding::starting(n)))
         .collect()
 }

@@ -227,6 +227,26 @@ fn balance_prints_only_balance_lines() {
     assert!(!out.is_empty() && out.lines().all(|l| l.starts_with("balance: ")), "{out}");
 }
 
+/// A judge's spec with no human model says run 1's real time went unjudged
+/// (balance.json's `humans` is the model's one home), never drops it silently.
+#[test]
+fn balance_without_a_human_model_says_so() {
+    let dir = root("out/hh-sim-tests/no-humans");
+    std::fs::create_dir_all(&dir).unwrap();
+    let mut spec: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(root("experiments/balance.json")).unwrap()).unwrap();
+    spec.as_object_mut().unwrap().remove("humans");
+    spec["configs"] = serde_json::json!([baseline()]);
+    let path = format!("{dir}/spec.json");
+    std::fs::write(&path, spec.to_string()).unwrap();
+    let mut a = grid("balance", "author", &[]);
+    a[1] = path;
+    let at = a.iter().position(|x| x == "--humans").unwrap();
+    a.drain(at..at + 2);
+    let out = run(&a).unwrap();
+    assert!(out.contains("balance: run 1's real time not judged: the spec names no human model, author"), "{out}");
+}
+
 #[test]
 fn bad_grids_are_usage_errors() {
     for (agents, extra) in [
@@ -389,8 +409,14 @@ fn trace_lines_show_the_queue_in_order() {
 /// can't differ between native and wasm builds (docs/agents.md).
 #[test]
 fn agents_use_no_floats_or_hash_maps() {
-    // Every file under `agents/`, subfolders (`oracle/`) included.
-    let mut dirs = vec![std::path::PathBuf::from(format!("{}/src/agents", env!("CARGO_MANIFEST_DIR")))];
+    // Every file under `agents/`, subfolders (`oracle/`) included, and
+    // `milestones.rs`, whose `Tracker` the oracle's decisions run through.
+    let src = format!("{}/src", env!("CARGO_MANIFEST_DIR"));
+    let mut dirs = vec![std::path::PathBuf::from(format!("{src}/agents"))];
+    let tracker = std::fs::read_to_string(format!("{src}/milestones.rs")).unwrap();
+    for banned in ["f64", "f32", "HashMap", "HashSet", "to_f64", "from_f64"] {
+        assert!(!tracker.contains(banned), "milestones.rs uses {banned}");
+    }
     let mut files = 0;
     while let Some(dir) = dirs.pop() {
         for entry in std::fs::read_dir(&dir).unwrap() {

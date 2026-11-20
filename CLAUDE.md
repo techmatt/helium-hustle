@@ -17,6 +17,9 @@ It is being restarted from an earlier Godot build as a **Rust simulation core** 
   edit it.
 - Don't describe or document code as if it does more than it does. Read `docs/rules/README.md`,
   then only the files your task touches.
+- **Matt's standing rulings** (pillars, speed, saves, art, sim players, the defaults that stand
+  until he overrides them) live in [docs/rulings.md](docs/rulings.md). A new ruling or a change
+  to one updates its line there in the same commit.
 
 ## Engine rules
 
@@ -44,7 +47,8 @@ Locked by Matt: a change to any of these is his decision, not an implementation 
   report. A rename or refactor that plays the same moves no golden constant: if it does, play
   changed.
 - **Every tunable number lives in a config** under `configs/`, with **no defaults in code**: a
-  missing key is a load error, never a silent fallback. A test may build its own config.
+  missing key is a load error, never a silent fallback. A test may build its own config. Sim
+  agents' numbers are player strategy, not rules, and exempt (docs/rulings.md).
 - **Mechanics are modules, alternatives are variants, content is data.** A new system (shipments,
   boredom, research) is a module; another way of doing one is a variant chosen in the config;
   buildings, commands, research, events and the like are rows in `content/`, not code.
@@ -108,7 +112,7 @@ the header's `warnings:` line, each line led by its kind. Every item runs, befor
 when clean (always exit 0; about 7 s, up to a minute if it must build). Its checks, on:
 
 - **parity:** native = wasm: the golden game's fingerprint natively (`hh-sim golden`) and in
-  wasm (`scripts/wasm-smoke.mjs`, rebuilding a stale `crates/hh-wasm/pkg`) equals the pins.
+  wasm (`scripts/wasm-smoke.mjs`, rebuilding a stale `web/src/wasm` through `web/scripts/build-wasm.mjs`) equals the pins.
 - **tunables:** a numeric literal in `hh-core` rule code (not tests) that belongs in a config
   or content. Exceptions, each with its reason: `scripts/warning_checks.json`.
 - **platform-floats:** a platform float function reaching `hh-core` past clippy (a call by

@@ -41,12 +41,19 @@ pub fn persistent(g: &hh_core::GameState) -> Fx {
             if g.career.completed_projects.contains(&p.id) {
                 return Fx::ONE;
             }
-            let total = p.costs.values().fold(Fx::ZERO, |s, x| s + *x);
-            let paid = g.career.project_progress.get(&p.id).map_or(Fx::ZERO, |m| m.values().fold(Fx::ZERO, |s, x| s + *x));
+            let (paid, total) = paid(g, p);
             frac(paid, total)
         })
         .max()
         .unwrap_or(Fx::ZERO)
+}
+
+/// A project's paid amount so far in the career and its total cost, summed over
+/// its resources.
+pub fn paid(g: &hh_core::GameState, p: &hh_core::content::Project) -> (Fx, Fx) {
+    let total = p.costs.values().fold(Fx::ZERO, |s, x| s + *x);
+    let paid = g.career.project_progress.get(&p.id).map_or(Fx::ZERO, |m| m.values().fold(Fx::ZERO, |s, x| s + *x));
+    (paid, total)
 }
 
 /// Progress toward a quest condition (a sub-objective's, or the quest's own).

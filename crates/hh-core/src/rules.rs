@@ -134,7 +134,8 @@ impl Rules {
         Ok(())
     }
 
-    /// Whether `a` would apply now.
+    /// Whether `a` would apply now (tests and debugging: it applies to a copy; the
+    /// view uses each module's blocker functions instead).
     pub fn is_legal(&self, g: &GameState, a: &Action) -> bool {
         self.apply(&mut g.clone(), a).is_ok()
     }

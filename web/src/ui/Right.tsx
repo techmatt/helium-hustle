@@ -7,10 +7,11 @@ import type { Activity, Entry, View } from '../engine';
 import { num } from '../format';
 import { daysPerWake } from '../clock';
 import { act, eventItems, markRead, store, unreadIn, type EventSection, type Store } from '../store';
-import { Bar, ResChip, Section, ShortNote, name, ranPercent, shortText } from './common';
+import { Quest, ResChip, Section, ShortNote, name, shortText } from './common';
 import { Chip } from './icons';
-import { AddLogic, LogicBody, OUTCOME_TEXT, lineText } from './ProgramLogic';
+import { AddLogic, LogicBody, OUTCOME_TEXT, ProgramLine, lineText } from './ProgramLogic';
 import { canIndent, moveLines, removeLine, setIndent } from './programEdit';
+import { editProgram } from './programStore';
 
 export function Right({ s, program, setProgram }: { s: Store; program: number; setProgram: (i: number) => void }) {
   return (
@@ -26,13 +27,6 @@ export function Right({ s, program, setProgram }: { s: Store; program: number; s
       <Events v={s.view} />
     </aside>
   );
-}
-
-/** Rewrites a program's lines from what the engine holds now (not the last render:
- * two quick clicks must both land). */
-export function editProgram(program: number, edit: (entries: Entry[]) => Entry[]): void {
-  const now = store.view.programs[program]?.entries ?? [];
-  act({ type: 'set_program', program, entries: edit(now) });
 }
 
 function Programs({ s, program, setProgram }: { s: Store; program: number; setProgram: (i: number) => void }) {
@@ -181,65 +175,24 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
               </li>
             );
           }
-          const frac = current && p.step > 0 ? p.step / e.count : outcome ? 1 : 0;
-          // A failed line says why (today's last run of it); the tooltip has it in full.
-          // A conversion that ran part way says so too, as a starved building does.
-          const why = outcome === 'failed' || outcome === 'ran' ? (p.shorts[i] ?? null) : null;
-          // A command locked again (used in an earlier run) fails with no input short.
-          const locked = outcome === 'failed' && !why && v.commands.find((c) => c.id === e.command)?.unlocked === false;
-          if (why || locked) noted.current.lines.add(i);
           return (
-            <li
+            <ProgramLine
               key={`${i}-${e.command}`}
-              class={rowClass}
-              data-line={i}
-              data-command={e.command}
-              {...dragProps}
-              // The name can be cut short at narrow widths: the tooltip carries it whole.
-              title={`${lineText(v, e)}: ${ranText}${why ? `. ${shortText(v, why)}` : locked ? '. Locked this run.' : ''}`}
-            >
-              <span class="grip" aria-hidden>
-                ⠿
-              </span>
-              {/* The current line is marked by its frame (style.css `.line.current`), never by
-                  text in the name, so no line's text moves as the pointer walks. */}
-              <span class="line-name">
-                {Object.keys(v.commands.find((c) => c.id === e.command)?.produces ?? {}).map((res) => (
-                  <ResChip key={res} v={v} id={res} />
-                ))}{' '}
-                {name(v, e.command)} (x{e.count})
-              </span>
-              <Bar frac={frac} tone={outcome === 'failed' ? 'red' : outcome === 'skipped' ? 'gray' : 'green'} />
-              <button type="button" class="tiny" disabled={e.count <= 1} onClick={() => bump(i, -1)}>
-                −
-              </button>
-              <button type="button" class="tiny" onClick={() => bump(i, 1)}>
-                +
-              </button>
-              <span class="line-buttons">
-                {indent}
-                <button type="button" class="tiny" title="Remove" onClick={() => remove(i)}>
-                  ×
-                </button>
-              </span>
-              {!(why || locked) && noted.current.lines.has(i) && (
-                <span class="line-why" aria-hidden="true">
-                  {' '}
-                </span>
-              )}
-              {(why || locked) && (
-                <span class="line-why" data-line-why>
-                  {why ? (
-                    <>
-                      {Number(why.ran) > 0 ? `ran at ${ranPercent(why.ran)} · ` : ''}
-                      <ShortNote v={v} s={why} />
-                    </>
-                  ) : (
-                    'locked this run'
-                  )}
-                </span>
-              )}
-            </li>
+              v={v}
+              e={e}
+              i={i}
+              outcome={outcome}
+              current={current}
+              step={p.step}
+              short={p.shorts[i] ?? null}
+              ranText={ranText}
+              rowClass={rowClass}
+              drag={dragProps}
+              indent={indent}
+              noted={noted.current.lines}
+              bump={(by) => bump(i, by)}
+              remove={() => remove(i)}
+            />
           );
         })}
       </ol>
@@ -308,36 +261,6 @@ function Events({ v }: { v: View }) {
           ))}
         </ul>
       </Section>
-    </div>
-  );
-}
-
-export function Quest({ v }: { v: View }) {
-  const q = v.quest;
-  if (!q) return null;
-  const subs = q.sub_objectives;
-  const done = subs.filter((x) => x.done).length;
-  return (
-    <div class="quest" data-testid="quest" data-quest={q.id}>
-      <div class="quest-title">
-        {q.title}
-        {subs.length > 0 && ` [${done}/${subs.length}]`}
-      </div>
-      <div class="quest-summary">{q.summary}</div>
-      {q.progress && subs.length === 0 && (
-        <Bar frac={Number(q.progress.now) / Number(q.progress.target)} label={`${num(q.progress.now)} / ${num(q.progress.target)}`} />
-      )}
-      {subs.map((x) => (
-        <div key={x.id} class={`sub ${x.done ? 'done' : ''}`}>
-          {x.done ? '✓' : '○'} {x.label}
-          {!x.done && x.progress && (
-            <span class="muted">
-              {' '}
-              {num(x.progress.now)} / {num(x.progress.target)}
-            </span>
-          )}
-        </div>
-      ))}
     </div>
   );
 }

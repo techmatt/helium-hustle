@@ -66,9 +66,11 @@ every later run; Strategic: the rest of the run):
 
 ## Params
 
-| Param | Baseline | Meaning |
-|---|---|---|
-| `max_drain_rate` | 30 | Most of one resource a project may take per day (0 to 1,000,000). |
+<!-- params:projects -->
+| Param | Baseline | Range | Meaning |
+|---|---|---|---|
+| `max_drain_rate` | 30 | 0 to 1000000 | Most of one resource a project may take per day. |
+<!-- /params -->
 
 ## Content
 
@@ -78,9 +80,7 @@ Godot placeholders.
 
 ## Port notes
 
-- Conflict: Microwave Receiver flag. The building requires `microwave_power_active`; the
-  Microwave Power Initiative sets `microwave_power_completed`. The engine uses one flag,
-  `microwave_power_completed` (otherwise the building is unreachable).
+- Conflict: Microwave Receiver flag: see [economy.md](economy.md#port-notes).
 - Conflict: Foundation Grant's unlock. The handoffs have QShipment enable it; the data has
   QMarket (`qmarket_awareness`) enable it and the Projects panel. The engine uses the data.
 - Conflict: Lunar Cartography and Deep Core Survey unlock by `event_unlocked`, but no

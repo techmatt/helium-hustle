@@ -13,7 +13,7 @@
     "preview": "vite preview",
     "e2e": "node scripts/e2e.mjs",
     "qa": "node scripts/qa.mjs",
-    "unit": "node scripts/unit.mjs"
+    "unit": "node scripts/unit.mjs && node scripts/contrast.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

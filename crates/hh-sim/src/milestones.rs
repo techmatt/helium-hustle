@@ -62,16 +62,34 @@ pub struct Run1 {
     pub minutes: Run1Minutes,
 }
 
+/// The model is the judge's spec's first human model
+/// (`experiments/balance.json` `humans`, its one home).
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Run1Minutes {
-    pub human: String,
     pub band: [u64; 2],
     /// The players it's read for (by name).
     pub players: Vec<String>,
 }
 
-/// The judge's cells (players, seeds) are `experiments/balance.json`'s.
+/// The judge's own thresholds (`hh-sim balance`).
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Judge {
+    /// A milestone reached by at most this percent of the seeds is late.
+    pub late_percent: u64,
+}
+
+/// When `vs-human` counts the same purchase as parted in time: more than
+/// the larger of `when_ticks` and `when_percent` of the best player's tick.
+#[derive(Debug, Clone, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct VsHuman {
+    pub when_ticks: u64,
+    pub when_percent: u64,
+}
+
+/// The judge's cells (players, seeds, human model) are `experiments/balance.json`'s.
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Milestones {
@@ -79,6 +97,8 @@ pub struct Milestones {
     pub doc: String,
     pub milestones: Vec<Milestone>,
     pub run1: Run1,
+    pub judge: Judge,
+    pub vs_human: VsHuman,
 }
 
 impl Milestones {

@@ -1,3 +1,5 @@
+// Frozen: reads web/src as it stood at commit 1186cc1 (RESOURCE_COLORS has since moved to
+// icons.tsx, so on today's tree every chip renders #999). Run it in a worktree at 1186cc1.
 // `node mock.mjs [<building> …]`: one picker image per building, its card in Earthrise light
 // and dark side by side, with the shipped picture (web/src/assets/buildings/<id>.webp) as
 // the 96 px thumbnail, screenshotted at 2x device pixels into

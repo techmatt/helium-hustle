@@ -9,6 +9,7 @@ use super::super::Player;
 use super::score::Profile;
 use super::{Oracle, HORIZON};
 
+/// The ideology axes (mirrors the game's `fund_<axis>` commands, content/commands.json).
 const AXES: &[&str] = &["humanist", "rationalist", "nationalist"];
 
 /// A run strategy: standing goals, with the label `trace` notes show.

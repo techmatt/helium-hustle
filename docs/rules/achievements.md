@@ -44,11 +44,11 @@ None: achievements are checked by the engine.
 
 ## Params
 
-The variant has none (`"params": {}`): conditions and rewards are content.
+<!-- params:achievements -->
+The `arc1` variant has no params (`"params": {}`).
+<!-- /params -->
 
-| Param | Baseline | Meaning |
-|---|---|---|
-| (none) | | Everything is in `content/achievements.json`. |
+Conditions and rewards are content (`content/achievements.json`).
 
 ## Content
 

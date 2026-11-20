@@ -1,6 +1,8 @@
 // Edits to a program's line list that keep its shape one the engine accepts (an indented
 // line sits under an `if` or another indented line; an `if` is never indented). The engine
 // still checks every `set_program`: these only build the list a drag or a button meant.
+// Pure (type imports only), so scripts/unit.mjs runs them under Node; the store call that
+// sends an edit is in programStore.ts.
 
 import type { Entry, Reading } from '../engine';
 
@@ -12,19 +14,22 @@ export function blockLen(es: Entry[], i: number): number {
   return n;
 }
 
+/** Whether line `e` may sit indented under `above`: it isn't an `if`, and `above` is an
+ * `if` or in a body. */
+function fitsUnder(e: Entry | undefined, above: Entry | undefined): boolean {
+  return e?.op !== 'if' && !!above && (above.op === 'if' || !!above.indented);
+}
+
 /** Whether a line at `i` may be indented: the line above is an `if` or in a body. */
 export function canIndent(es: Entry[], i: number): boolean {
-  const above = es[i - 1];
-  return es[i]?.op !== 'if' && !!above && (above.op === 'if' || !!above.indented);
+  return fitsUnder(es[i], es[i - 1]);
 }
 
 /** Un-indents whatever lost its `if`. */
 export function tidy(es: Entry[]): Entry[] {
   const out: Entry[] = [];
   for (const e of es) {
-    const above = out[out.length - 1];
-    const ok = e.op !== 'if' && !!above && (above.op === 'if' || !!above.indented);
-    out.push(e.indented && !ok ? { ...e, indented: false } : e);
+    out.push(e.indented && !fitsUnder(e, out[out.length - 1]) ? { ...e, indented: false } : e);
   }
   return out;
 }

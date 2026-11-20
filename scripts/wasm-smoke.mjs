@@ -2,7 +2,8 @@
 // hh-core's driver, `play_golden`) and checks it reaches the golden fingerprint
 // `golden_game` pins natively (crates/hh-core/src/tests/mod.rs); then plays the same
 // record again step by step through the JSON API (new_game, advance, apply) and replays it.
-// Usage (after `wasm-pack build crates/hh-wasm --target web`):
+// Runs the page's own build, web/src/wasm. Usage (after `node web/scripts/build-wasm.mjs`,
+// which skips when its inputs are unchanged):
 //   node scripts/wasm-smoke.mjs            exit 0 ok, 1 on any mismatch
 import { readFileSync } from 'node:fs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -18,7 +19,7 @@ const SEED = '18446744073709551615';
 const TICKS = 2000;
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const pkg = path.join(root, 'crates', 'hh-wasm', 'pkg');
+const pkg = path.join(root, 'web', 'src', 'wasm');
 const m = await import(pathToFileURL(path.join(pkg, 'hh_wasm.js')).href);
 await m.default({ module_or_path: readFileSync(path.join(pkg, 'hh_wasm_bg.wasm')) });
 

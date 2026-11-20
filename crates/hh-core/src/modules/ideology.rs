@@ -99,6 +99,8 @@ pub fn score_for_continuous_rank(r: &Rules, rank: Fx) -> Fx {
 }
 
 pub fn score(g: &GameState, axis: &str) -> Fx {
+    // An unknown axis would silently score 0: catch a typo at a call site in tests.
+    debug_assert!(AXES.contains(&axis), "unknown ideology axis {axis:?}");
     g.run.ideology.get(axis).copied().unwrap_or(Fx::ZERO)
 }
 

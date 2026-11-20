@@ -24,7 +24,7 @@
 // It writes `<out>/report.json`, one PNG per moment in `<out>/<seed>-<width>-<theme>/`, and
 // `<out>/contact-<seed>-<width>-<theme>.png` (a contact sheet of that pass). Exits 1 on any
 // finding.
-//   HH_URL     the page (default http://localhost:5173/)
+//   HH_URL     the page, required: a `vite preview` of a static build (README)
 //   HH_SEEDS   comma-separated seeds (default 11,12,13)
 //   HH_WIDTHS  comma-separated window widths (default 1280,1920)
 //   HH_HEIGHT  the window height (default 900)
@@ -38,13 +38,15 @@
 //              (`<out>/pace/`)
 //   HH_LONG    <minutes>: instead, one career that long at 200x, logging heap, DOM size,
 //              save size and the worst frame each minute (`<out>/long/`)
-import { spawn, spawnSync } from 'node:child_process';
+// The DevTools harness (launch, waitFor, load, panel...) is scripts/cdp.mjs.
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { READY, driver, launch as launchBrowser, pageUrl, q, sleep } from './cdp.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const url = process.env.HH_URL ?? 'http://localhost:5173/';
+const url = pageUrl('qa');
 const seeds = (process.env.HH_SEEDS ?? '11,12,13').split(',').map((s) => s.trim()).filter(Boolean);
 const widths = (process.env.HH_WIDTHS ?? '1280,1920').split(',').map(Number).filter(Boolean);
 const outDir = resolve(process.env.HH_QA_OUT ?? resolve(here, '../../out/qa'));
@@ -58,86 +60,12 @@ const FRAME_MS = 250;
 const HEAP_GROWTH_MB = 40;
 const HEIGHT = Number(process.env.HH_HEIGHT ?? 900);
 
-const browsers = [
-  process.env.HH_BROWSER,
-  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-  'C:/Program Files/Google/Chrome/Application/chrome.exe',
-  '/usr/bin/google-chrome',
-  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-].filter(Boolean);
-const exe = browsers.find((b) => existsSync(b));
-if (!exe) throw new Error('no browser found: set HH_BROWSER');
 rmSync(outDir, { recursive: true, force: true });
 mkdirSync(outDir, { recursive: true });
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
-/** A headless browser with one page, driven over CDP. */
-async function launch(width) {
-  const port = 9800 + Math.floor(Math.random() * 500);
-  const profile = resolve(here, '../../out/qa-profile', String(port));
-  rmSync(profile, { recursive: true, force: true });
-  mkdirSync(profile, { recursive: true });
-  const proc = spawn(exe, [
-    '--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`,
-    // navigator.webdriver: the page files its play logs as a bot's.
-    '--enable-automation', `--window-size=${width},${HEIGHT}`, '--no-first-run', '--no-default-browser-check',
-    '--enable-precise-memory-info', 'about:blank',
-  ], { stdio: 'ignore' });
-  let page;
-  for (let i = 0; i < 150 && !page; i++) {
-    await sleep(200);
-    const targets = await fetch(`http://127.0.0.1:${port}/json/list`).then((r) => r.json()).catch(() => []);
-    page = targets.find((t) => t.type === 'page');
-  }
-  if (!page) throw new Error(`${exe} exposed no page on port ${port}`);
-  const ws = new WebSocket(page.webSocketDebuggerUrl);
-  await new Promise((r) => ws.addEventListener('open', r, { once: true }));
-  let nextId = 1;
-  const pending = new Map();
-  const errors = [];
-  ws.addEventListener('message', (ev) => {
-    const msg = JSON.parse(ev.data);
-    if (msg.id && pending.has(msg.id)) {
-      pending.get(msg.id)(msg);
-      pending.delete(msg.id);
-    } else if (msg.method === 'Runtime.exceptionThrown') {
-      errors.push(msg.params.exceptionDetails?.exception?.description ?? msg.params.exceptionDetails?.text);
-    } else if (msg.method === 'Runtime.consoleAPICalled' && msg.params.type === 'error') {
-      errors.push(msg.params.args.map((a) => a.value ?? a.description).join(' '));
-    } else if (msg.method === 'Log.entryAdded' && msg.params.entry.level === 'error') {
-      errors.push(`${msg.params.entry.source}: ${msg.params.entry.text} ${msg.params.entry.url ?? ''}`);
-    }
-  });
-  // Every call has a deadline: a hung page fails the pass instead of the whole sweep.
-  const send = (method, params = {}) =>
-    new Promise((r, reject) => {
-      const id = nextId++;
-      const timer = setTimeout(() => {
-        pending.delete(id);
-        reject(new Error(`${method}: no answer in 30 s`));
-      }, 30_000);
-      pending.set(id, (msg) => {
-        clearTimeout(timer);
-        r(msg);
-      });
-      ws.send(JSON.stringify({ id, method, params }));
-    });
-  const evaluate = async (expr) => {
-    const r = await send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
-    if (r.result?.exceptionDetails) throw new Error(`${expr.slice(0, 200)}: ${JSON.stringify(r.result.exceptionDetails).slice(0, 400)}`);
-    return r.result?.result?.value;
-  };
-  await send('Page.enable');
-  await send('Runtime.enable');
-  await send('Log.enable');
-  await send('Emulation.setDeviceMetricsOverride', { width, height: HEIGHT, deviceScaleFactor: 1, mobile: false });
-  const close = () => {
-    ws.close();
-    if (process.platform === 'win32') spawnSync('taskkill', ['/T', '/F', '/PID', String(proc.pid)], { stdio: 'ignore' });
-    else proc.kill();
-  };
-  return { send, evaluate, errors, close };
-}
+/** A headless browser with one page at `width` x HEIGHT, its failed loads collected too. */
+const launch = (width) =>
+  launchBrowser({ width, height: HEIGHT, emulate: true, log: true, portBase: 9800, profileRoot: resolve(here, '../../out/qa-profile'), args: ['--enable-precise-memory-info'] });
 
 // ---- the checks, run in the page at each moment ------------------------------------
 
@@ -421,25 +349,8 @@ async function pass(seed, width, theme) {
   const seenFindings = new Set();
   const artSeen = new Set();
   let moment = 0;
-  const q = (sel) => JSON.stringify(sel);
-  const waitFor = async (expr, what, ms = 10000) => {
-    for (const end = Date.now() + ms; Date.now() < end; await sleep(80)) if (await evaluate(expr)) return;
-    throw new Error(`timed out waiting for ${what}`);
-  };
-  const ready = `/^Day \\d/.test(document.getElementById('day')?.textContent ?? '') && !!document.querySelector('.nav-tile')`;
-  const load = async () => {
-    await evaluate('window.__stale = true');
-    await send('Page.navigate', { url });
-    await waitFor('!window.__stale', 'the navigation');
-    await waitFor(ready, 'the page', 30000);
-    await sleep(500);
-    await evaluate(FRAMES);
-  };
-  const exists = (sel) => evaluate(`!!document.querySelector(${q(sel)})`);
-  const day = async () => Number((await evaluate(`document.getElementById('day').textContent`)).replace(/\D/g, ''));
-  const run = async () => Number((await evaluate(`document.getElementById('run').textContent`)).replace(/\D/g, ''));
   /** Clicks and times how long the screen takes to change (a render after the click). */
-  const click = async (sel, what = sel) => {
+  const timedClick = async (sel, what = sel) => {
     const ms = await evaluate(`new Promise((done) => {
       const b = document.querySelector(${q(sel)});
       if (!b) return done(-1);
@@ -457,16 +368,11 @@ async function pass(seed, width, theme) {
     if (ms < 0) throw new Error(`nothing to click at ${sel}`);
     if (ms > INPUT_MS) note('input', `${what} took ${Math.round(ms)} ms to show`);
   };
-  const setValue = (sel, value) =>
-    evaluate(`(() => {
-      const el = document.querySelector(${q(sel)});
-      el.value = ${q(value)};
-      el.dispatchEvent(new Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true }));
-    })()`);
-  const speed = (s) => click(`#speeds button[data-speed="${s}"]`, `speed ${s}`);
-  const panel = async (id) => {
-    await click(`.nav-tile[data-nav="${id}"]`, `panel ${id}`);
-    await waitFor(`!!document.querySelector('[data-panel="${id}"]')`, `the ${id} panel`, 3000);
+  const page = driver(b, { url, poll: 80, readyMs: 30000, click: timedClick });
+  const { waitFor, exists, day, run, click, setValue, speed, panel } = page;
+  const load = async () => {
+    await page.load();
+    await evaluate(FRAMES);
   };
   const note = (kind, what) => {
     const key = `${kind}:${what.replace(/\d+(\.\d+)?/g, '#')}`;
@@ -1147,7 +1053,7 @@ async function pass(seed, width, theme) {
         await evaluate('window.__stale = true');
         await send('Page.navigate', { url });
         await waitFor('!window.__stale', 'the navigation');
-        await waitFor(ready, 'the page with storage blocked', 15000);
+        await waitFor(READY, 'the page with storage blocked', 15000);
         await speed(10);
         await sleep(1200);
         await speed(0);
@@ -1169,7 +1075,7 @@ async function pass(seed, width, theme) {
       await evaluate('window.__stale = true');
       await send('Page.navigate', { url: allUrl });
       await waitFor('!window.__stale', 'the navigation');
-      await waitFor(ready, 'the page', 30000);
+      await waitFor(READY, 'the page', 30000);
       await speed(0);
       await panel('buildings');
       await waitFor(`[...document.images].every((i) => i.complete)`, 'the card pictures');
@@ -1247,7 +1153,6 @@ async function longRun(minutes) {
   const { evaluate, send } = b;
   const findings = [];
   const rows = [];
-  const ready = `/^Day \\d/.test(document.getElementById('day')?.textContent ?? '') && !!document.querySelector('.nav-tile')`;
   const until = async (expr, ms = 30000) => {
     for (const end = Date.now() + ms; Date.now() < end; await sleep(100)) if (await evaluate(expr)) return true;
     return false;
@@ -1257,7 +1162,7 @@ async function longRun(minutes) {
     await evaluate('window.__stale = true');
     await send('Page.navigate', { url });
     await until('!window.__stale');
-    await until(ready);
+    await until(READY);
     await evaluate(FRAMES);
   };
   await open();

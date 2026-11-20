@@ -1,0 +1,93 @@
+# Standing rulings
+
+Matt's standing decisions about the game and the project, as they hold now. A ruling marked
+**locked** changes only by Matt's decision; one marked **default** is an executor's pick that
+stands until Matt overrides it. Engine and docs rules that bind every item are in
+[CLAUDE.md](../CLAUDE.md); this page is the why behind several of them and the calls that are
+not code rules. A new ruling, or a change to one, updates its line here in place.
+
+## Game
+
+- **Pillars (locked).** Plans beat waiting: the game is solved by clever plans, manual early and
+  programs later at high speed ("unlimited speed" is about 200x for now). Programs are the core
+  identity. Boredom is a speed governor. No loss: stages are wins, and a finale is far off. No
+  offline time: the game advances only while it runs in the browser. Numbers grow naturally.
+- **Speed.** Decisions happen at 1-3x with brief bursts to 5-20x. 200x comes later, once
+  programs can automate more, behind tech not yet in the game.
+- **Run-1 real time.** 1x stays 1 tick a second; the 25-35 real-minute target for run 1 is what
+  moves ([principles.md](principles.md)).
+- **Tuning.** Every number is open. Matt plays the UI build and decides where fine-tuning
+  starts. A better main story quest is designed later.
+- **Placeholder content.** Many thresholds, texts and numbers are placeholders. Don't spend
+  items adjusting them (reachability, wording) until content is designed for real; bug hunts
+  and QA may list them, not fix them.
+- **Rules port picks (004, defaults).** The starting-credits bonus is 0.02 of the best run
+  (`career.credits_bonus_fraction`), not the Godot build's /100. Ideology ranks are geometric,
+  100 × 1.5^(n−1) (`rank_base_score`, `rank_growth`), not the data's `rank_thresholds`. Lunar
+  Cartography and Deep Core Survey stay unreachable until the narrative pass. The boredom cap is
+  1000 plus 100 per Recreation Dome. Invented numbers (demand base, noise, coupling, cooldowns)
+  are config candidates.
+
+## Engine and numbers
+
+- **Architecture (locked).** `hh-core` holds every rule: no I/O, clock or global RNG, serde
+  state, exact replay, native = wasm, a rules revision and a pinned golden game. `hh-sim`,
+  `hh-wasm` and `web/` sit on top. `web/` is Vite + TypeScript; libraries and frameworks are
+  chosen by fit, with no constraint (Preact since 006). Configs hold every number, with no
+  defaults in code.
+- **Numbers (locked).** State is fixed point, `Fx(i64)` at 10^-6, with `i128` intermediates and
+  one rounding rule (floor; overflow panics). Floats only for factors, through `libm`; platform
+  `f64`/`f32` transcendentals are banned in `hh-core`. `Fx` stays opaque so its width can
+  change. Counts (buildings owned, ticks) are integers, not `Fx`. Whole powers use exact
+  `Fx::pow_int`; `libm` only for fractional powers.
+- **Agent code is player code (022, default).** Sim agents' numbers (knob defaults, weights,
+  caps) are strategy, not rules, so CLAUDE.md's "no defaults in code" does not cover them; a
+  number that mirrors a config or content value says so in a comment.
+
+## Saves
+
+- **Saves (locked).** A localStorage autosave tagged with the rules revision and config hash,
+  discarded on a mismatch, never migrated. Named scenario starts in the debug menu double as
+  sim starting states.
+- **Breaking changes.** No saves are live, so a rules change needs no caution: err on the side
+  of breaking things, keep save handling minimal, and add no compatibility code for old saves
+  until the game is more stable.
+
+## Simulation and measurement
+
+- **Sim players.** The default sim player is independent of game speed: it acts whenever a
+  decision is useful and skips ahead through stretches that need none. Attention and speed are a
+  separate, occasional human model that maps ticks to real minutes ([agents.md](agents.md)).
+- **View (009, default).** `per_day` and `next_run` keep playing a day or a retirement on a
+  copy (exact; they show the next day, not the last). Sim players keep the full view.
+- **Oracle (013, defaults).** The oracle lives in `experiments/ceiling.json` (~20 min, the
+  author beside it as a reference row); `hh-sim ladder` stays fast and `vs-human` excludes the
+  oracle; its strategies are a fixed table; it takes `--milestones`. Its `Looks` and
+  `milestones::Tracker` judge history milestones differently: the next oracle item moves it to
+  `Tracker` semantics and re-pins.
+- **Warning checks.** On: native = wasm parity, tunables in code, platform floats in `hh-core`,
+  docs over 15 KB, balance (`hh-sim balance`, judged on the author and casual players), and by
+  hand a rules change without its history row or golden move (CLAUDE.md, *Warning checks*).
+
+## Art and UI
+
+- **Art direction (2026-11-15): B "Earthrise".** Warm grey regolith surfaces, an amber accent,
+  Earth in the sky over the work area, a lunar horizon with the habitat at the foot of the left
+  column. The layout is kept. Resource colors are never hidden. A **light theme** for debugging
+  stays, 1:1 with dark: same layout, markup and art, only color tokens swap. "Flash"/3D (a live
+  view of the base growing) comes later; plan a home for it, build later.
+- **Building art (2026-11-16).** Cards use painterly cut-outs at each building's natural 3/4
+  view (019's `cut34`: no fixed camera, a small irregular regolith patch, transparent
+  background), as a 96 px thumbnail cropped tight on the building, under the title beside the
+  description and flows. A later "base grows" view uses the crisp painterly isometric set
+  (019's `crisp`: fixed 2:1 camera and patch guide, one sun). The icon styles of icon_style_r1
+  were all rejected.
+- **Icons (025-027).** One icon module, `web/src/ui/icons.tsx`, over
+  `web/src/assets/{chips,nav,horizon}/`, so a new style swaps files only. Painterly nav icons at
+  normal size (compact tiles use chips or glyphs); the earthlight horizon; chip icons (color
+  square, knocked-out glyph, name as tooltip) for every resource, ideology axis and rival,
+  everywhere they appear. Rival colors: ARIA-7 `#ec407a`, CRUCIBLE `#ff6f00`, NODAL `#006064`,
+  FRINGE-9 `#9e9d24`.
+- **Chip colors (028, default).** Resource, axis and rival chip colors stay TS maps in
+  `icons.tsx` (the chip needs the hex for its ink-contrast choice, and they are the same in
+  both themes); only the axis text colors are CSS tokens.

@@ -1,3 +1,5 @@
+// Frozen: reads web/src as it stood at commit 0828be0 (NAV_COLORS and the <Horizon> SVG are
+// gone from common.tsx and art.tsx, so on today's tree it throws). Run it in a worktree at 0828be0.
 // `node mock.mjs`: the picker images for nav_horizon_art_r1, screenshotted at 2x device
 // pixels into art/pickers/nav_horizon_art_r1/ under the real web/src/style.css and fonts
 // (020's mock: the two theme token blocks scoped to a class so both sit on one page).

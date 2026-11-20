@@ -564,9 +564,16 @@ impl Content {
                 }
             }
         }
+        // The engine sets this one itself (programs.md, *Unlock*).
+        set.insert(crate::modules::programs::LOGIC_FLAG);
         for b in &self.buildings {
             if let Requirement::Flag { flag } = &b.requires {
                 need(set.contains(flag.as_str()), format!("building {:?}: nothing sets flag {flag:?}", b.id));
+            }
+        }
+        for c in &self.commands {
+            if let Requirement::Flag { flag } = &c.requires {
+                need(set.contains(flag.as_str()), format!("command {:?}: nothing sets flag {flag:?}", c.id));
             }
         }
         for p in &self.projects {
@@ -597,6 +604,19 @@ impl Content {
                     need(shown, format!("event {:?}: no nav tile shows panel {panel:?}", e.id));
                 }
             }
+        }
+        // The ids hh-core names in code (docs/rules/README.md, *Content*).
+        {
+            use crate::modules::{career, economy as e, shipments as s};
+            for r in [e::ENERGY, e::CREDITS, e::LAND, e::PROCESSORS, e::BOREDOM, e::SCIENCE, s::PROPELLANT] {
+                need(res(r), format!("engine resource {r:?} missing from content"));
+            }
+            need(bld(s::LAUNCH_PAD), format!("engine building {:?} missing from content", s::LAUNCH_PAD));
+            let retire = self
+                .nav
+                .iter()
+                .any(|t| matches!(&t.visible, NavCondition::Panel { panel } if panel == career::RETIREMENT_PANEL));
+            need(retire, format!("no nav tile shows the engine's panel {:?}", career::RETIREMENT_PANEL));
         }
         if errors.is_empty() {
             Ok(())

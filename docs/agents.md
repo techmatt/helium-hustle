@@ -19,6 +19,8 @@ against: [principles.md](principles.md); how they're run: [simulator.md](simulat
 - **Spec syntax:** `[name=]kind[:knob=value,...]`, integer knobs (`author:hand_gap=0,compute=0`);
   a name labels a player (`casual=author:min_gap=120`, the ladder's casual player); an
   unknown knob is an error.
+- **Agent code is player code:** its numbers are strategy, not rules, so CLAUDE.md's "no
+  defaults in code" doesn't bind it; a number that mirrors game data says so in a comment.
 - **Pinned games.** An agent edit changes how a player plays, not the game: no
   `RULES_REVISION` bump. Agent edits are guarded by the pinned games (`PINNED` and the
   oracle's, in `crates/hh-sim/tests/cli.rs`): a refactor keeps them.
@@ -62,8 +64,8 @@ How it writes the main program depends on the gap to its next look (*When it loo
 
 | Program | Template | Processors |
 |---|---|---|
-| 1, gap ≤ `hand_gap` | a plan to the next look: `launch_pads` if a pad is full and fuelled (with `wait_demand=1`, only into HIGH demand or better, MEDIUM once the good piles at its cap); `buy_propellant` × the fuel short when a pad is within 25 of full; `load_pads` × the loads that would move cargo; `buy_*` × the target's missing titanium, regolith or ice as far as spare credits go; then `cloud_compute` × 2 × `max_gap` × processors | the rest |
-| 1, longer gaps | a standing cycle that earns before it spends: `load_pads × loads`, `launch_pads`, `cloud_compute × loads`, `buy_propellant × fuel`, `buy_*` for target inputs no building makes | the rest |
+| 1, gap ≤ `hand_gap` | a plan to the next look: `launch_pads` if a pad is full and fuelled (with `wait_demand=1`, only into HIGH demand or better, MEDIUM once the good piles at its cap); `buy_propellant` × the fuel short when a pad is within 25 of full; `load_pads` × the loads that would move cargo, at most `loads`; `buy_*` × the target's missing titanium, regolith or ice as far as spare credits go; then `cloud_compute` × 2 × `max_gap` × processors | the rest |
+| 1, longer gaps | a standing cycle that earns before it spends: `load_pads × loads`, `launch_pads`, `cloud_compute × loads`, `buy_propellant × fuel`, `buy_*` × the target's missing inputs no building makes, at most `loads` | the rest |
 | 2 | `dream` | 1 while boredom is past `dream_at`% of its cap and the run still builds |
 | 3 | `fund_<axis>`: the first of humanist, rationalist, nationalist whose persistent project isn't done | 1 when 3 or more are left |
 | 4 | `promote_<good>` per pad good, `disrupt_speculators` | 1 when 3 or more are left |

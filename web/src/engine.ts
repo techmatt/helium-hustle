@@ -34,6 +34,8 @@ export interface ResourceView {
   /** `per_day` before the cap cuts it: at its cap, the surplus thrown away. */
   net_per_day: Fx;
   visible: boolean;
+  /** The debug grant cheat may grant it. */
+  grantable: boolean;
 }
 
 export interface BuildingView {
@@ -289,14 +291,6 @@ export interface Activity {
   quantity?: Fx;
 }
 
-export interface LogEntry {
-  tick: number;
-  run: number;
-  day: number;
-  kind: string;
-  id: string;
-}
-
 export interface CareerView {
   retirements: number;
   best_run_days: number;
@@ -351,9 +345,7 @@ export interface View {
   quest: QuestView | null;
   completed_quests: string[];
   story: StoryView[];
-  events: string[];
   event_texts: StoryView[];
-  achievements: string[];
   achievement_list: AchievementView[];
   rivals: { id: string; name: string; good: string; dumps_seen: number }[];
   overclocks: { target: string; bonus: Fx; until_day: number }[];
@@ -363,12 +355,10 @@ export interface View {
   last_run: LastRun | null;
   run_stats: RunStats;
   boredom: { amount: Fx; cap: Fx; rate: Fx; phase: number; phases: number };
-  panels: string[];
   nav: { id: string; name: string; visible: boolean }[];
   can_retire: boolean;
   /** The next day ends this run (boredom at its cap): the per-day rates read 0. */
   retires_next: boolean;
-  log: LogEntry[];
   activity: Activity[];
   breakdown: BreakdownView[];
   /** Days in the breakdown's rolling average. */

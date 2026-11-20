@@ -18,7 +18,17 @@ use crate::fx::Fx;
 use crate::modifiers::modifier;
 use crate::modules::*;
 use crate::rules::Rules;
-use crate::state::{Activity, Condition as When, Entry, Flow, GameState, Op, Reading, LastRun, LineOutcome, LogEntry, Overclock, RunStats, Short, Stall};
+use crate::state::{Activity, GameState, LastRun, Overclock, RunStats, Stall};
+
+use crate::modules::programs as program_rules;
+use breakdown::{breakdown, short_view};
+
+mod breakdown;
+// The programs panel; the game's own programs module is `program_rules` here.
+mod programs;
+
+pub use breakdown::{BreakdownView, FlowRow, ShortView};
+pub use programs::{ClauseView, ConditionView, LinesRun, ProgramView, ReadingView};
 
 /// Text borrowed from the embedded content.
 pub type Text = &'static str;
@@ -36,6 +46,8 @@ pub struct ResourceView {
     /// cap throws away shows here, where `per_day` reads 0.
     pub net_per_day: Fx,
     pub visible: bool,
+    /// The debug grant cheat may grant it (`cheat::grantable`).
+    pub grantable: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -92,136 +104,6 @@ pub struct CommandView {
     pub costs: BTreeMap<String, Fx>,
     pub produces: BTreeMap<String, Fx>,
     pub boredom: Fx,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct ProgramView {
-    pub entries: Vec<Entry>,
-    /// Assigned processors.
-    pub processors: u32,
-    /// Of those, the ones running: fewer while Data Centers go unpaid.
-    pub running: u32,
-    /// The line the next processor runs, and runs done of it.
-    pub entry: u32,
-    pub step: u32,
-    /// What each line did the last time it ran today (`None`: not run today).
-    pub outcomes: Vec<Option<LineOutcome>>,
-    /// Per line, the input it was short of the last time it ran today
-    /// (failed, or a conversion run part way), if it was.
-    pub shorts: Vec<Option<ShortView>>,
-    /// Per line, an `if` or `wait until` line's condition as it reads now.
-    pub conditions: Vec<Option<ConditionView>>,
-}
-
-/// A condition now: whether it holds, and each clause's reading (`None`:
-/// nothing to read) and whether that clause holds.
-#[derive(Debug, Clone, Serialize)]
-pub struct ConditionView {
-    pub holds: bool,
-    pub clauses: Vec<ClauseView>,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct ClauseView {
-    pub value: Option<Fx>,
-    pub holds: bool,
-}
-
-/// A reading a condition may use now, with its display label.
-#[derive(Debug, Clone, Serialize)]
-pub struct ReadingView {
-    pub reading: Reading,
-    pub label: String,
-    pub value: Option<Fx>,
-}
-
-fn condition_view(r: &Rules, g: &GameState, c: &When) -> ConditionView {
-    let clause = |cl: &crate::state::Clause| ClauseView {
-        value: programs::reading(r, g, &cl.reading),
-        holds: programs::clause_holds(r, g, cl),
-    };
-    ConditionView {
-        holds: programs::holds(r, g, c),
-        clauses: std::iter::once(&c.first).chain(c.rest.as_ref().map(|j| &j.clause)).map(clause).collect(),
-    }
-}
-
-/// The readings on offer: what the player can see now. Amount, percent of cap
-/// (capped ones) and last-day rate per visible resource (land and processors:
-/// amount only); a count per visible building; the day; pads ready once there
-/// is a pad; demand per good once exact demand is revealed.
-fn readings(r: &Rules, g: &GameState, resources: &[ResourceView], buildings: &[BuildingView]) -> Vec<ReadingView> {
-    let mut out = Vec::new();
-    let mut add = |reading: Reading, label: String| {
-        let value = programs::reading(r, g, &reading);
-        out.push(ReadingView { reading, label, value });
-    };
-    for res in resources.iter().filter(|x| x.visible) {
-        let id = res.id.to_string();
-        let stock = id != economy::LAND && id != economy::PROCESSORS;
-        let label = if id == economy::LAND { "Land free" } else { res.name };
-        add(Reading::Amount { resource: id.clone() }, label.to_string());
-        if res.cap.is_some() {
-            add(Reading::Percent { resource: id.clone() }, format!("{} %", res.name));
-        }
-        if stock && id != economy::BOREDOM {
-            add(Reading::Rate { resource: id }, format!("{} rate", res.name));
-        }
-    }
-    for b in buildings.iter().filter(|b| b.visible) {
-        add(Reading::Count { building: b.id.to_string() }, format!("{} count", b.name));
-    }
-    add(Reading::Day, "Day".to_string());
-    if !g.run.pads.is_empty() {
-        add(Reading::PadsReady, "Pads ready".to_string());
-    }
-    if research::reveals_demand(g) {
-        let names = names();
-        for good in g.run.markets.keys() {
-            let name = names.get(good.as_str()).copied().unwrap_or(good);
-            add(Reading::Demand { good: good.clone() }, format!("{name} demand"));
-        }
-    }
-    out
-}
-
-/// The program lines run over a span of days (a client drawing once per
-/// several days, or a trace): per program, per line in queue order, its
-/// outcome the last time it ran in the span (`None`: not run). Noted after
-/// each tick from that day's outcomes; the span holds no actions, so line
-/// indices name the same lines throughout. Display only, like the view.
-#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize)]
-pub struct LinesRun {
-    pub days: u64,
-    pub lines: Vec<Vec<Option<LineOutcome>>>,
-}
-
-impl LinesRun {
-    /// Adds the day `g` just played.
-    pub fn note(&mut self, g: &GameState) {
-        self.days += 1;
-        let programs = &g.run.programs;
-        // A retirement in the span leaves new (empty) programs: fit to the queues now.
-        self.lines.resize(programs.len(), Vec::new());
-        for (i, p) in programs.iter().enumerate() {
-            let row = &mut self.lines[i];
-            row.resize(p.entries.len(), None);
-            if let Some(today) = g.run.today.lines.get(&(i as u32)) {
-                for (&line, &o) in today {
-                    if let Some(slot) = row.get_mut(line as usize) {
-                        *slot = Some(o);
-                    }
-                }
-            }
-        }
-    }
-
-    /// The day `g` just played alone.
-    pub fn today(g: &GameState) -> LinesRun {
-        let mut l = LinesRun::default();
-        l.note(g);
-        l
-    }
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -459,12 +341,10 @@ pub struct View {
     pub completed_quests: Vec<Text>,
     /// The completed quests' texts, in chain order.
     pub story: Vec<StoryView>,
-    /// One-off events fired this run, in content order.
-    pub events: Vec<Text>,
-    /// Their texts, in content order, but of the boredom-phase events only the latest
-    /// phase's: each phase supersedes the last (the earlier ones stay in `activity`).
+    /// The texts of the one-off events fired this run, in content order, but of the
+    /// boredom-phase events only the latest phase's: each phase supersedes the last
+    /// (the earlier ones stay in `activity`).
     pub event_texts: Vec<StoryView>,
-    pub achievements: Vec<String>,
     /// Every achievement, earned or not, in content order.
     pub achievement_list: Vec<AchievementView>,
     pub rivals: Vec<RivalView>,
@@ -479,15 +359,12 @@ pub struct View {
     /// This run's running totals (the state's own).
     pub run_stats: RunStats,
     pub boredom: BoredomView,
-    /// Unlocked nav panels (retirement, projects, ideologies).
-    pub panels: Vec<String>,
     /// The nav grid's tiles (`content/nav.json`), in order, each shown or not.
     pub nav: Vec<NavView>,
     pub can_retire: bool,
     /// The next day ends this run (boredom reaches its cap): the per-day rates,
     /// read from that day, are 0 and say nothing.
     pub retires_next: bool,
-    pub log: Vec<LogEntry>,
     /// The run's activity feed, oldest first.
     pub activity: Vec<Activity>,
     /// Each resource's flows by source for the last day (and the rolling
@@ -499,138 +376,6 @@ pub struct View {
     /// projects, achievements, rivals, and events by title). Content only, so
     /// built once.
     pub names: &'static BTreeMap<Text, Text>,
-}
-
-/// One source's line in a resource's breakdown: the last day's flows and the
-/// rolling average's.
-#[derive(Debug, Clone, Serialize)]
-pub struct FlowRow {
-    /// The state's source key (`building:<id>`, `program:<n>`, `cap`, ...).
-    pub source: String,
-    pub label: String,
-    pub produced: Fx,
-    pub consumed: Fx,
-    pub avg_produced: Fx,
-    pub avg_consumed: Fx,
-}
-
-/// Who ran short the last day, and of what (`state::Short`, labeled).
-#[derive(Debug, Clone, Serialize)]
-pub struct ShortView {
-    pub source: String,
-    pub label: String,
-    pub resource: String,
-    pub need: Fx,
-    pub had: Fx,
-    /// The fraction it ran at (0: not at all).
-    pub ran: Fx,
-}
-
-/// A resource's breakdown: its sources and sinks (sources first, each side
-/// largest first; `cap` is what the clamp cut), and who went short of it.
-#[derive(Debug, Clone, Serialize)]
-pub struct BreakdownView {
-    pub resource: Text,
-    pub rows: Vec<FlowRow>,
-    pub shorts: Vec<ShortView>,
-}
-
-/// A breakdown source's display label.
-fn source_label(g: &GameState, source: &str) -> String {
-    let names = names();
-    let mut parts = source.split(':');
-    match (parts.next(), parts.next(), parts.next()) {
-        (Some("building"), Some(id), _) => names.get(id).copied().unwrap_or(id).to_string(),
-        (Some("program"), Some(n), line) => {
-            let n: usize = n.parse().unwrap_or(0);
-            match line.and_then(|l| l.parse::<usize>().ok()) {
-                Some(l) => {
-                    let what = match g.run.programs.get(n).and_then(|p| p.entries.get(l)).map(|e| &e.op) {
-                        Some(Op::Command { command, .. }) => names.get(command.as_str()).copied().unwrap_or(command).to_string(),
-                        Some(Op::Build { building, .. }) => {
-                            format!("Build {}", names.get(building.as_str()).copied().unwrap_or(building))
-                        }
-                        Some(Op::BuyLand {}) => "Buy Land".to_string(),
-                        _ => String::new(),
-                    };
-                    format!("Program {}, line {}: {}", n + 1, l + 1, what)
-                }
-                None => format!("Program {}", n + 1),
-            }
-        }
-        (Some(k), _, _) => match k {
-            "pads" => "Pad loading",
-            "launch" => "Launches",
-            "buy" => "Buildings bought",
-            "sell" => "Buildings sold",
-            "land" => "Land bought",
-            "research" => "Research",
-            "projects" => "Projects",
-            "growth" => "Daily growth",
-            "dream" => "Dream",
-            "cap" => "Lost to cap",
-            other => other,
-        }
-        .to_string(),
-        _ => source.to_string(),
-    }
-}
-
-fn short_view(g: &GameState, source: &str, s: &Short) -> ShortView {
-    ShortView {
-        source: source.to_string(),
-        label: source_label(g, source),
-        resource: s.resource.clone(),
-        need: s.need,
-        had: s.had,
-        ran: s.ran,
-    }
-}
-
-/// Every resource with a flow (the last day's or the average's) or a shortfall.
-fn breakdown(g: &GameState) -> Vec<BreakdownView> {
-    let (today, avg) = (&g.run.today.flows, &g.run.flow_average);
-    content()
-        .resources
-        .iter()
-        .filter_map(|res| {
-            let mut sources: Vec<&String> =
-                today.get(&res.id).into_iter().chain(avg.get(&res.id)).flat_map(|m| m.keys()).collect();
-            sources.sort();
-            sources.dedup();
-            let get = |m: &BTreeMap<String, BTreeMap<String, Flow>>, s: &String| {
-                m.get(&res.id).and_then(|x| x.get(s)).copied().unwrap_or_default()
-            };
-            let mut rows: Vec<FlowRow> = sources
-                .into_iter()
-                .map(|s| {
-                    let (d, a) = (get(today, s), get(avg, s));
-                    FlowRow {
-                        source: s.clone(),
-                        label: source_label(g, s),
-                        produced: d.produced,
-                        consumed: d.consumed,
-                        avg_produced: a.produced,
-                        avg_consumed: a.consumed,
-                    }
-                })
-                .collect();
-            // Sources (net in) first, then sinks, each largest first.
-            rows.sort_by_key(|r| {
-                let net = (r.produced - r.consumed, r.avg_produced - r.avg_consumed);
-                (net.0 <= Fx::ZERO && net.1 <= Fx::ZERO, std::cmp::Reverse((net.0.max(-net.0), net.1.max(-net.1))))
-            });
-            let shorts: Vec<ShortView> = g
-                .run
-                .today
-                .shorts
-                .iter()
-                .filter(|(_, s)| s.resource == res.id)
-                .map(|(k, s)| short_view(g, k, s))
-                .collect();
-            (!rows.is_empty() || !shorts.is_empty()).then_some(BreakdownView { resource: &res.id, rows, shorts })
-        })
-        .collect()
 }
 
 /// The view's `names`: later content kinds win an id shared with an earlier one.
@@ -737,6 +482,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                     Fx::ZERO
                 },
                 visible: res.always_visible || made_by_owned || made_by_used || g.amount(&res.id) > Fx::ZERO,
+                grantable: crate::cheat::grantable(&res.id),
             }
         })
         .collect();
@@ -769,7 +515,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 ideology: b.ideology.as_deref(),
                 owned: h.owned,
                 active: h.active,
-                working: h.active.saturating_sub(h.unpaid),
+                working: g.working(&b.id),
                 bonus: h.bonus,
                 max_count: b.max_count,
                 cost,
@@ -797,16 +543,16 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         .commands
         .iter()
         .map(|cmd| {
-            let (costs, produces) = programs::flows(r, g, cmd);
+            let (costs, produces) = program_rules::flows(r, g, cmd);
             CommandView {
                 id: &cmd.id,
                 name: &cmd.name,
                 description: &cmd.description,
-                unlocked: programs::unlocked(g, cmd),
-                visible: programs::visible(g, cmd),
+                unlocked: program_rules::unlocked(g, cmd),
+                visible: program_rules::visible(g, cmd),
                 costs,
                 produces,
-                boredom: programs::boredom_cost(g, cmd),
+                boredom: program_rules::boredom_cost(g, cmd),
             }
         })
         .collect();
@@ -852,9 +598,9 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         buy_power_mult: career::buy_power_mult(r, &after),
         ideology: axes(r, &after),
     };
-    let procs = programs::capacity(g);
-    let running = programs::running(g);
-    let readings = readings(r, g, &resources, &buildings);
+    let procs = program_rules::capacity(g);
+    let running = program_rules::running(g);
+    let readings = programs::readings(r, g, &resources, &buildings);
     View {
         tick: g.tick,
         day: g.run.day,
@@ -866,40 +612,12 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         land_per_purchase: r.p.economy.land_per_purchase,
         can_buy_land: economy::land_blocker(r, g).is_none(),
         commands,
-        programs: g
-            .run
-            .programs
-            .iter()
-            .zip(LinesRun::today(g).lines)
-            .enumerate()
-            .map(|(i, (p, outcomes))| ProgramView {
-                entries: p.entries.clone(),
-                processors: p.processors,
-                running: running[i],
-                entry: p.entry,
-                step: p.step,
-                outcomes,
-                shorts: (0..p.entries.len())
-                    .map(|l| {
-                        let k = format!("program:{i}:{l}");
-                        g.run.today.shorts.get(&k).map(|s| short_view(g, &k, s))
-                    })
-                    .collect(),
-                conditions: p
-                    .entries
-                    .iter()
-                    .map(|e| match &e.op {
-                        Op::If { when } | Op::WaitUntil { when } => Some(condition_view(r, g, when)),
-                        _ => None,
-                    })
-                    .collect(),
-            })
-            .collect(),
-        program_logic: programs::logic_unlocked(g),
+        programs: programs::programs(r, g, &running),
+        program_logic: program_rules::logic_unlocked(g),
         logic_unlock_processors: r.p.programs.logic_unlock_processors,
         readings,
         processors: procs,
-        processors_free: procs.saturating_sub(programs::assigned(g)),
+        processors_free: procs.saturating_sub(program_rules::assigned(g)),
         processors_running: running.iter().sum(),
         pads: (0..g.run.pads.len())
             .map(|i| {
@@ -917,7 +635,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                     payout: shipments::payout(r, g, i),
                     can_launch: shipments::can_launch(r, g, i),
                     fueled: g.amount(shipments::PROPELLANT) >= r.p.shipments.fuel_per_pad,
-                    ready: p.cargo >= r.p.shipments.pad_cargo_capacity && shipments::can_launch(r, g, i),
+                    ready: shipments::ready(r, g, i),
                     switch_returns: shipments::switch_returns(r, g, i),
                 }
             })
@@ -967,12 +685,6 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             .map(|e| e.id.as_str())
             .collect(),
         story: c.events.iter().filter(|e| g.career.completed_quests.contains(&e.id)).map(story).collect(),
-        events: c
-            .events
-            .iter()
-            .filter(|e| !e.is_quest() && !e.silent && g.run.events.contains(&e.id))
-            .map(|e| e.id.as_str())
-            .collect(),
         event_texts: c
             .events
             .iter()
@@ -983,7 +695,6 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             })
             .map(|e| event_story(r, g, e))
             .collect(),
-        achievements: g.career.achievements.iter().cloned().collect(),
         achievement_list: c
             .achievements
             .iter()
@@ -1036,7 +747,6 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             phase: boredom::phase(r, g.run.day),
             phases: r.p.boredom.phase_days.len() as u32,
         },
-        panels: g.run.enabled_panels.iter().cloned().collect(),
         nav: c
             .nav
             .iter()
@@ -1054,7 +764,6 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             .collect(),
         can_retire: career::retire_blocker(g).is_none(),
         retires_next: !same_run,
-        log: g.career.log.clone(),
         activity: g.run.activity.clone(),
         breakdown: breakdown(g),
         flow_average_days: r.p.economy.flow_average_days,

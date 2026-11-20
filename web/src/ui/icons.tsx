@@ -6,7 +6,9 @@
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { View } from '../engine';
 
-/** Chip colors: resources, ideology axes (true colors) and rival AIs. */
+/** Chip colors: resources, ideology axes (true colors) and rival AIs.
+ * experiments/results/026_icon_art_r1/glyphs.mjs reads these three maps as text (the
+ * name, then `  id: '#rrggbb',` lines up to `};`) to bake the chip SVGs: keep the shape. */
 const RESOURCE_COLORS: Record<string, string> = {
   energy: '#f5d000',
   regolith: '#8b5a2b',
@@ -24,7 +26,7 @@ const RESOURCE_COLORS: Record<string, string> = {
 
 /** True axis colors, behind white text or ink. As text, an axis takes its class
  * (`axis-<id>` in style.css), which has a readable variant per theme. */
-export const AXIS_COLORS: Record<string, string> = {
+const AXIS_COLORS: Record<string, string> = {
   nationalist: '#c62828',
   humanist: '#2e7d32',
   rationalist: '#1565c0',

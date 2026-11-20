@@ -14,6 +14,7 @@ pub mod human;
 pub mod lab;
 pub mod milestones;
 pub mod objectives;
+pub mod params;
 pub mod playlog;
 pub mod summary;
 pub mod vs;
@@ -24,6 +25,7 @@ pub const USAGE: &str = "usage:
   hh-sim show [--config F]
   hh-sim scenarios
   hh-sim golden
+  hh-sim params [--config F] [--write]             each module's param table from the registry (--write: into docs/rules/)
   hh-sim objectives SCENARIO.json [--config F] [--seed S] [--ticks N]
   hh-sim ladder [SPEC.json] [GRID]                 the agent ladder in game time (default experiments/ladder.json)
   hh-sim experiment SPEC.json [GRID]               any spec
@@ -62,8 +64,21 @@ pub(crate) fn usage<T>(e: impl Into<String>) -> Result<T, Fail> {
     Err(Fail::Usage(e.into()))
 }
 
+/// The default `--threads` of the commands that run careers in parallel.
+pub(crate) const THREADS: usize = 6;
+
+/// A file's text, the error a plain string (the form `experiment::load` takes).
+pub(crate) fn read_text(path: &str) -> Result<String, String> {
+    std::fs::read_to_string(path).map_err(|e| format!("{path}: {e}"))
+}
+
 pub(crate) fn read(path: &str) -> Result<String, Fail> {
-    std::fs::read_to_string(path).map_err(|e| Fail::Usage(format!("{path}: {e}")))
+    read_text(path).map_err(Fail::Usage)
+}
+
+/// A comma-separated list, empty pieces dropped.
+pub(crate) fn list(s: &str) -> Vec<String> {
+    s.split(',').filter(|x| !x.is_empty()).map(String::from).collect()
 }
 
 fn load_config(path: &str) -> Result<Config, Fail> {
@@ -144,6 +159,9 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     }
     if cmd == "vs-human" {
         return vs::run(rest);
+    }
+    if cmd == "params" {
+        return params::run(rest);
     }
     if cmd == "summarize" {
         return summarize_cmd(rest);

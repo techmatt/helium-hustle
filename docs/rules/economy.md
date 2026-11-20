@@ -15,8 +15,8 @@ a building making it is owned or was in any run, a command making it was ever us
 Propellant shows Propellant), or some is held now.
 
 **Caps.** A capped resource's cap is its content `cap` plus the `store` effects of every
-*active* building on it (per copy), times the modifier `storage_cap_mult`; energy's cap skips
-`storage_cap_mult`. Boredom's cap is the boredom module's (`boredom.base_cap` plus active
+*working* building on it (per copy; see *Working copies*), times the modifier `storage_cap_mult`; energy's cap skips
+`storage_cap_mult`. Boredom's cap is the boredom module's (`boredom.base_cap` plus working
 Recreation Domes' `store`; see boredom.md). Caps bind only in the clamp: production during the
 day may run past a cap.
 
@@ -114,15 +114,17 @@ A refused action changes nothing.
 
 ## Params
 
-| Param | Baseline | Meaning |
-|---|---|---|
-| `starting_resources` | energy 100, land 30 | Resources at the start of every run, by id. |
-| `starting_buildings` | solar_panel 1, data_center 1 | Buildings owned and active at the start of every run. |
-| `land_base_cost` | 200 | Credits for the first land purchase. |
-| `land_cost_scaling` | 1.5 | Each land purchase multiplies the next one's price by this. |
-| `land_per_purchase` | 15 | Land gained per purchase. |
-| `upkeep_epsilon` | 0.001 | A building pays full upkeep if short by no more than this. |
-| `flow_average_days` | 20 | Days in the breakdown's rolling average (display only). |
+<!-- params:economy -->
+| Param | Baseline | Range | Meaning |
+|---|---|---|---|
+| `starting_resources` | energy 100, land 30 | 0 to 1000000000 | Resources at the start of every run, by id. |
+| `starting_buildings` | data_center 1, solar_panel 1 | 0 to 1000 | Buildings owned (and active) at the start of every run. |
+| `land_base_cost` | 200 | 0 to 1000000000 | Credits for the first land purchase. |
+| `land_cost_scaling` | 1.5 | 1 to 10 | Each land purchase multiplies the next one's price by this. |
+| `land_per_purchase` | 15 | 0 to 1000000 | Land gained per purchase. |
+| `upkeep_epsilon` | 0.001 | 0 to 1 | A building pays full upkeep if short by no more than this. |
+| `flow_average_days` | 20 | 1 to 1000 | Days in the resource breakdown's rolling average (display only). |
+<!-- /params -->
 
 ## Content
 
@@ -130,6 +132,11 @@ A refused action changes nothing.
 `category`, `ideology`, `requires`, `land`, `cost`, `cost_scaling`, `max_count`, `produces`,
 `upkeep`, `effects` (`grant`, `store`, `speculator_decay` for demand.md) and
 `output_modifiers`.
+
+Six resource ids are fixed in code (`economy.rs` constants), named by content rows:
+`energy` (its cap skips `storage_cap_mult`; its output counts toward peak power),
+`credits` (prices, payouts, credits earned), `land`, `processors` (assigned, not stocked),
+`boredom` (its cap is the boredom module's) and `science` (Rationalist bonus, research).
 
 ## Port notes
 
@@ -141,9 +148,7 @@ A refused action changes nothing.
   project sets `microwave_power_completed`; the engine uses the one flag
   `microwave_power_completed` (else unreachable). Handoffs say it produces energy; the data
   has no production (it enables Buy Power, programs.md). The engine takes the data.
-- Conflict: Arbitrage Engine. Its content effect `spec_decay` 2.0 disagrees with
-  `game_config`'s 0.04 per building; the engine uses the flat 0.04 (demand.md), and the
-  content effect `speculator_decay` is a marker.
+- Conflict: Arbitrage Engine's `spec_decay`: see [demand.md](demand.md#port-notes).
 - Conflict: the data's Arbitrage Engine requires research `market_analysis`, which is not a
   research id (Market Analysis is a category); the engine requires `market_awareness`.
 - Candidate: starting buildings take no land and selling one refunds none; they still count

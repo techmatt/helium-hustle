@@ -9,6 +9,8 @@ use crate::rules::Rules;
 use crate::state::GameState;
 
 pub fn modifier(r: &Rules, g: &GameState, key: &str) -> Fx {
+    // An unknown key would silently read 1: catch a typo at a call site in tests.
+    debug_assert!(crate::content::MODIFIER_KEYS.contains(&key), "unknown modifier key {key:?}");
     let mut m = Fx::ONE;
     for a in &content().achievements {
         if let AchievementReward::Modifier { key: k, value } = &a.reward {

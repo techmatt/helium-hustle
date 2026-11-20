@@ -1,9 +1,6 @@
+use super::f;
 use crate::fx::Fx;
 use crate::math;
-
-fn f(s: &str) -> Fx {
-    Fx::parse(s).unwrap()
-}
 
 #[test]
 fn parses_and_prints_exactly() {

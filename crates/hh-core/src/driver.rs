@@ -212,6 +212,9 @@ fn choose_command(v: &View, goal: Option<&str>, allowed: &Allowed) -> &'static s
             return "launch_pads";
         }
         let fuel = v.command_cost("buy_propellant", "credits");
+        // The 20 Propellant and 5 cargo below stay literal: they are this
+        // script's own thresholds, not rules, and reading the view's
+        // `pad.fuel` or `pad.load` instead would move the golden game.
         if full && v.amount("propellant") < Fx::from_int(20) && credits >= fuel && ok("buy_propellant") {
             return "buy_propellant";
         }

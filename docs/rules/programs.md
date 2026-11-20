@@ -116,12 +116,14 @@ hold command lines only. A refused action changes nothing.
 
 ## Params
 
-| Param | Baseline | Meaning |
-|---|---|---|
-| `program_count` | 5 | Program tabs. |
-| `max_entries` | 64 | Most lines in one program. |
-| `overclock_base_cap` | 1.5 | The most an overclock multiplies output, before research. |
-| `logic_unlock_processors` | 2 | Working processors that first open `if`, `wait until`, `build` and `buy land`. |
+<!-- params:programs -->
+| Param | Baseline | Range | Meaning |
+|---|---|---|---|
+| `program_count` | 5 | 1 to 100 | Program tabs. |
+| `max_entries` | 64 | 1 to 10000 | Most lines in one program. |
+| `overclock_base_cap` | 1.5 | 1 to 100 | The most an overclock multiplies output, before research. |
+| `logic_unlock_processors` | 2 | 0 to 1000 | Working processors that first open if, wait until, build and buy land (a career first). |
+<!-- /params -->
 
 The overclock duration bonus `overclock_duration_factor` is an ideology param (ideology.md).
 
@@ -141,7 +143,7 @@ overclock's `target`, `bonus`, `duration`) and `scale_modifier`. `content/resear
   takes the data (Fabricators cost ice before Ice Extractors exist).
 - Conflict: research `unlocks_commands` duplicates each command's `requires`; it is dropped,
   and the command's `requires` is the one home.
-- Conflict: Microwave Receiver produces nothing; owning one unlocks Buy Power (economy.md).
+- Conflict: Microwave Receiver produces nothing; owning one unlocks Buy Power ([economy.md](economy.md#port-notes)).
 - Conflict: Load per execution (5) appears in both the command effect and `game_config`;
   it lives once in config (shipments.md). Likewise Promote's 0.03 and Disrupt's 1-3
   (demand.md).

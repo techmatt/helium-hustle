@@ -23,9 +23,11 @@ None of its own: Dream is queued in a program (`set_program`, programs.md).
 
 ## Params
 
-| Param | Baseline | Meaning |
-|---|---|---|
-| `relief` | 2 | Boredom removed per Dream, before the Humanist bonus. |
+<!-- params:dream -->
+| Param | Baseline | Range | Meaning |
+|---|---|---|---|
+| `relief` | 2 | 0 to 1000000 | Boredom removed per Dream, before the Humanist bonus. |
+<!-- /params -->
 
 ## Content
 

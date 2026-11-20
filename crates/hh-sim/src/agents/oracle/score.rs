@@ -207,8 +207,7 @@ fn projects(g: &GameState) -> Fx {
             if g.career.completed_projects.contains(&p.id) {
                 return s + Fx::ONE;
             }
-            let total = p.costs.values().fold(Fx::ZERO, |s, x| s + *x);
-            let paid = g.career.project_progress.get(&p.id).map_or(Fx::ZERO, |m| m.values().fold(Fx::ZERO, |s, x| s + *x));
+            let (paid, total) = crate::agents::progress::paid(g, p);
             s + if total > Fx::ZERO { paid / total } else { Fx::ZERO }
         })
 }

@@ -1,10 +1,12 @@
-// A program's lines that aren't commands (if, wait until, build, buy land): their editors
-// and the buttons that add them. Every option, value and true/false mark is the view's.
+// A program's lines: a command line's row (ProgramLine), the editors of the lines that
+// aren't commands (if, wait until, build, buy land) and the buttons that add them. Every
+// option, value and true/false mark is the view's.
 
+import type { ComponentChildren, LiHTMLAttributes } from 'preact';
 import { useState } from 'preact/hooks';
-import type { Clause, Cmp, Condition, ConditionView, Entry, LineOutcome, Reading, View } from '../engine';
+import type { Clause, Cmp, Condition, ConditionView, Entry, LineOutcome, Reading, ShortView, View } from '../engine';
 import { num } from '../format';
-import { name } from './common';
+import { Bar, ResChip, ShortNote, name, ranPercent, shortText } from './common';
 import { sameReading } from './programEdit';
 
 const CMPS: [Cmp, string][] = [
@@ -160,6 +162,94 @@ function ConditionEdit({ v, when, now, set }: { v: View; when: Condition; now: C
       </select>
       {rest && <ClauseEdit v={v} c={rest.clause} now={now?.clauses[1]} set={(clause) => set({ ...when, rest: { ...rest, clause } })} />}
     </>
+  );
+}
+
+/**
+ * One command line's row: its chips and name, progress bar, count −/+ and why it failed.
+ * The caller (Right.tsx `Programs`) gives what it shares with the logic lines: the row's
+ * class, drag handlers, tooltip tail (`ranText`) and indent button. `noted` holds the lines
+ * that have shown a note since the program's lines last changed: such a line keeps the
+ * note's row, so a note coming and going day to day moves no line below it.
+ */
+export function ProgramLine(props: {
+  v: View;
+  e: Extract<Entry, { op: 'command' }>;
+  i: number;
+  outcome: LineOutcome | null;
+  /** Framed: the next line to run. */
+  current: boolean;
+  /** Runs done of the current line. */
+  step: number;
+  short: ShortView | null;
+  ranText: string;
+  rowClass: string;
+  drag: LiHTMLAttributes<HTMLLIElement>;
+  indent: ComponentChildren;
+  noted: Set<number>;
+  bump: (by: number) => void;
+  remove: () => void;
+}) {
+  const { v, e, i, outcome, current, step, short, ranText, rowClass, drag, indent, noted, bump, remove } = props;
+  const frac = current && step > 0 ? step / e.count : outcome ? 1 : 0;
+  // A failed line says why (today's last run of it); the tooltip has it in full.
+  // A conversion that ran part way says so too, as a starved building does.
+  const why = outcome === 'failed' || outcome === 'ran' ? short : null;
+  const command = v.commands.find((c) => c.id === e.command);
+  // A command locked again (used in an earlier run) fails with no input short.
+  const locked = outcome === 'failed' && !why && command?.unlocked === false;
+  if (why || locked) noted.add(i);
+  return (
+    <li
+      class={rowClass}
+      data-line={i}
+      data-command={e.command}
+      {...drag}
+      // The name can be cut short at narrow widths: the tooltip carries it whole.
+      title={`${lineText(v, e)}: ${ranText}${why ? `. ${shortText(v, why)}` : locked ? '. Locked this run.' : ''}`}
+    >
+      <span class="grip" aria-hidden>
+        ⠿
+      </span>
+      {/* The current line is marked by its frame (style.css `.line.current`), never by
+          text in the name, so no line's text moves as the pointer walks. */}
+      <span class="line-name">
+        {Object.keys(command?.produces ?? {}).map((res) => (
+          <ResChip key={res} v={v} id={res} />
+        ))}{' '}
+        {name(v, e.command)} (x{e.count})
+      </span>
+      <Bar frac={frac} tone={outcome === 'failed' ? 'red' : outcome === 'skipped' ? 'gray' : 'green'} />
+      <button type="button" class="tiny" disabled={e.count <= 1} onClick={() => bump(-1)}>
+        −
+      </button>
+      <button type="button" class="tiny" onClick={() => bump(1)}>
+        +
+      </button>
+      <span class="line-buttons">
+        {indent}
+        <button type="button" class="tiny" title="Remove" onClick={remove}>
+          ×
+        </button>
+      </span>
+      {!(why || locked) && noted.has(i) && (
+        <span class="line-why" aria-hidden="true">
+          {' '}
+        </span>
+      )}
+      {(why || locked) && (
+        <span class="line-why" data-line-why>
+          {why ? (
+            <>
+              {Number(why.ran) > 0 ? `ran at ${ranPercent(why.ran)} · ` : ''}
+              <ShortNote v={v} s={why} />
+            </>
+          ) : (
+            'locked this run'
+          )}
+        </span>
+      )}
+    </li>
   );
 }
 

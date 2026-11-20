@@ -8,14 +8,9 @@ use std::time::Instant;
 use hh_core::{driver, play, Config, Session};
 
 use crate::experiment::{self, Spec, Variant};
-use crate::{usage, Fail, BALANCE, BASELINE, HUMANS, LADDER, MILESTONES};
+use crate::{list, read, read_text, usage, Fail, BALANCE, BASELINE, HUMANS, LADDER, MILESTONES, THREADS};
 
 pub const COMMANDS: &[&str] = &["ladder", "experiment", "compare", "balance", "trace", "agents", "speed"];
-
-/// A file's text, the error a plain string (the form `experiment::load` takes).
-fn read(path: &str) -> Result<String, String> {
-    std::fs::read_to_string(path).map_err(|e| format!("{path}: {e}"))
-}
 
 #[derive(Default)]
 struct Grid {
@@ -58,7 +53,7 @@ pub fn agent_list(s: &str) -> Vec<String> {
 
 fn parse(args: &[String]) -> Result<Grid, Fail> {
     let mut g = Grid {
-        threads: 6,
+        threads: THREADS,
         human_models: HUMANS.into(),
         milestones: MILESTONES.into(),
         ..Default::default()
@@ -66,7 +61,6 @@ fn parse(args: &[String]) -> Result<Grid, Fail> {
     let mut it = args.iter();
     while let Some(a) = it.next() {
         let mut val = |name: &str| it.next().cloned().ok_or_else(|| Fail::Usage(format!("{name} needs a value")));
-        let list = |s: String| s.split(',').filter(|x| !x.is_empty()).map(String::from).collect::<Vec<_>>();
         fn num<T: std::str::FromStr>(name: &str, v: String) -> Result<T, Fail> {
             v.parse().map_err(|_| Fail::Usage(format!("bad {name} {v:?}")))
         }
@@ -74,7 +68,7 @@ fn parse(args: &[String]) -> Result<Grid, Fail> {
             "--lines" => g.lines = true,
             "--at" => g.at = Some(num(a, val(a)?)?),
             "--agents" => g.agents = Some(agent_list(&val(a)?)),
-            "--humans" => g.humans = Some(list(val(a)?)),
+            "--humans" => g.humans = Some(list(&val(a)?)),
             "--seeds" => g.seeds = Some(num(a, val(a)?)?),
             "--first-seed" => g.first_seed = Some(num(a, val(a)?)?),
             "--retirements" => g.retirements = Some(num(a, val(a)?)?),
@@ -100,7 +94,7 @@ fn parse(args: &[String]) -> Result<Grid, Fail> {
 impl Grid {
     /// The spec at `path` with the grid's overrides.
     fn spec(&self, path: &str) -> Result<Spec, Fail> {
-        let mut s = Spec::from_json(&read(path).map_err(Fail::Usage)?).map_err(|e| Fail::Usage(format!("{path}: {e}")))?;
+        let mut s = Spec::from_json(&read(path)?).map_err(|e| Fail::Usage(format!("{path}: {e}")))?;
         if let Some(v) = &self.agents {
             s.agents = v.clone();
         }
@@ -147,9 +141,9 @@ impl Grid {
     fn load(&self, spec: Spec) -> Result<experiment::Loaded, Fail> {
         experiment::load(
             spec,
-            &read(&self.human_models).map_err(Fail::Usage)?,
-            &read(&self.milestones).map_err(Fail::Usage)?,
-            &read,
+            &read(&self.human_models)?,
+            &read(&self.milestones)?,
+            &read_text,
         )
             .map_err(Fail::Usage)
     }
@@ -167,7 +161,7 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
             g.only(cmd, true, false)?;
             let l = g.load(g.spec(&path)?)?;
             let dir = g.out.clone().unwrap_or(format!("out/experiments/{}", l.spec.name));
-            let res = experiment::run(&l, &read, g.threads, Some(&dir)).map_err(Fail::Usage)?;
+            let res = experiment::run(&l, &read_text, g.threads, Some(&dir)).map_err(Fail::Usage)?;
             let sums = summaries(&res, &l);
             let mut table = experiment::tables(&sums, &l);
             let _ = writeln!(table, "\n{}", speed_line());
@@ -200,8 +194,8 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
             sb.variants = vec![Variant { name: "b".into(), set: g.set.clone() }];
             let la = g.load(sa)?;
             let lb = g.load(sb)?;
-            let ra = experiment::run(&la, &read, g.threads, None).map_err(Fail::Usage)?;
-            let rb = experiment::run(&lb, &read, g.threads, None).map_err(Fail::Usage)?;
+            let ra = experiment::run(&la, &read_text, g.threads, None).map_err(Fail::Usage)?;
+            let rb = experiment::run(&lb, &read_text, g.threads, None).map_err(Fail::Usage)?;
             let name_b = if g.set.is_empty() { b_path.clone() } else { format!("{b_path} {}", g.set.join(" ")) };
             let models = la.models();
             let model = models.first().and_then(|(n, h)| Some((n.as_str(), (*h)?)));
@@ -219,7 +213,7 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
             g.only(cmd, false, false)?;
             let path = g.spec.clone().unwrap_or(BALANCE.into());
             let l = g.load(g.spec(&path)?)?;
-            let res = experiment::run(&l, &read, g.threads, None).map_err(Fail::Usage)?;
+            let res = experiment::run(&l, &read_text, g.threads, None).map_err(Fail::Usage)?;
             let lines = experiment::balance(&summaries(&res, &l), &l.milestones);
             replayed(&[&res], lines.iter().map(|l| format!("{l}\n")).collect())
         }
@@ -228,7 +222,7 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
             let path = g.spec.clone().unwrap_or(BALANCE.into());
             let l = g.load(g.spec(&path)?)?;
             let s = &l.spec;
-            let (config, scenario) = experiment::first_cell(s, &read).map_err(Fail::Usage)?;
+            let (config, scenario) = experiment::first_cell(s, &read_text).map_err(Fail::Usage)?;
             // With --at, the career runs to that tick whatever its retirements.
             let game = crate::career::Game {
                 config: &config,
@@ -407,7 +401,7 @@ fn replayed(results: &[&experiment::Results], out: String) -> Result<String, Fai
 /// Native engine speed: the golden game (the script reads a view each tick)
 /// and a plain advance of a new game.
 pub fn speed_line() -> String {
-    let Ok(c) = read(BASELINE).and_then(|t| Config::from_json(&t)) else {
+    let Ok(c) = read_text(BASELINE).and_then(|t| Config::from_json(&t)) else {
         return "engine speed: configs/baseline.json not readable".into();
     };
     let t0 = Instant::now();
@@ -424,8 +418,8 @@ pub fn speed_line() -> String {
 
 /// The same read in wasm, by `node scripts/wasm-speed.mjs` when the package is built.
 pub fn wasm_speed_line() -> String {
-    if !std::path::Path::new("crates/hh-wasm/pkg/hh_wasm_bg.wasm").exists() {
-        return "engine speed, wasm: not measured (build crates/hh-wasm/pkg: README, Build and test)".into();
+    if !std::path::Path::new("web/src/wasm/hh_wasm_bg.wasm").exists() {
+        return "engine speed, wasm: not measured (build web/src/wasm: node web/scripts/build-wasm.mjs)".into();
     }
     match std::process::Command::new("node").arg("scripts/wasm-speed.mjs").output() {
         Ok(o) if o.status.success() => String::from_utf8_lossy(&o.stdout).trim().to_string(),

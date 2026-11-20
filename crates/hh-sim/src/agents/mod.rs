@@ -175,18 +175,25 @@ pub fn build(player: &str, seed: u64, ms: &Milestones) -> Result<Box<dyn Agent>,
     }
 }
 
-// Shared view readers (the first three are `View`'s own, shared with `driver.rs`).
+// Shared view readers (`amount` and `command_cost` wrap `View`'s own, shared with
+// `driver.rs`).
 
 pub fn amount(v: &View, id: &str) -> Fx {
     v.amount(id)
 }
 
-pub fn cap(v: &View, id: &str) -> Option<Fx> {
-    v.resources.iter().find(|r| r.id == id).and_then(|r| r.cap)
+/// A building's next credits price (0 if it costs none).
+pub fn credits_price(b: &hh_core::view::BuildingView) -> Fx {
+    b.cost.get("credits").copied().unwrap_or(Fx::ZERO)
 }
 
-pub fn owned(v: &View, id: &str) -> u32 {
-    v.owned(id)
+/// Whether some active building makes `res`.
+pub fn made(v: &View, res: &str) -> bool {
+    v.buildings.iter().any(|x| x.active > 0 && x.produces.contains_key(res))
+}
+
+pub fn cap(v: &View, id: &str) -> Option<Fx> {
+    v.resources.iter().find(|r| r.id == id).and_then(|r| r.cap)
 }
 
 pub fn command_unlocked(v: &View, id: &str) -> bool {
@@ -195,10 +202,6 @@ pub fn command_unlocked(v: &View, id: &str) -> bool {
 
 pub fn command_cost(v: &View, id: &str, res: &str) -> Fx {
     v.command_cost(id, res)
-}
-
-pub fn researched(v: &View, id: &str) -> bool {
-    v.research.iter().any(|r| r.id == id && r.done)
 }
 
 /// Whole ticks for `have` to reach `need` growing `rate` a day: 0 if it

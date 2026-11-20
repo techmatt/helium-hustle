@@ -62,11 +62,12 @@ description's burst forecast is not built).
 
 ## Params
 
-The variant has none (`"params": {}`): every number is on the content rows.
+<!-- params:research -->
+The `arc1` variant has no params (`"params": {}`).
+<!-- /params -->
 
-| Param | Baseline | Meaning |
-|---|---|---|
-| (none) | | Costs, visibility thresholds and effect values are in `content/research.json`. |
+Every number is on the content rows: costs, visibility thresholds and effect values are in
+`content/research.json`.
 
 `ideology.discount_factor` (0.97) sets the Rationalist discount ([ideology.md](ideology.md)).
 

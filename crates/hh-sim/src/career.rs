@@ -16,6 +16,11 @@ use hh_core::{content, Action, Config, Scenario, Session};
 use serde::Serialize;
 
 use crate::agents::{self, Player};
+
+/// The career log's latest retirement, chosen or forced.
+fn last_retirement(g: &hh_core::GameState) -> Option<&hh_core::state::LogEntry> {
+    g.career.log.iter().rev().find(|e| e.kind == "retired" || e.kind == "forced_retirement")
+}
 use crate::human::{Clock, Human};
 use crate::milestones::{capped, Hit, Milestones, Tracker, When};
 use crate::objectives::{self, Objective};
@@ -39,7 +44,9 @@ pub struct Game<'a> {
 #[derive(Debug, Clone, Serialize)]
 pub struct RunResult {
     pub run: u32,
-    pub days: u64,
+    /// Its length in ticks (games.jsonl before 032 called it `days`).
+    #[serde(alias = "days")]
+    pub ticks: u64,
     pub forced: bool,
     /// Career ticks at its start and its end.
     pub start_tick: u64,
@@ -235,10 +242,9 @@ impl<'a> Meter<'a> {
             if !self.hits.contains_key(&m.id) && self.tracker.met(&m.when, s) {
                 let g = &s.state;
                 let (run, day) = match (&m.when, ended) {
-                    (_, Some(r)) => (r.run, r.days),
+                    (_, Some(r)) => (r.run, r.ticks),
                     (When::Retirements { .. }, None) => {
-                        let e = g.career.log.iter().rev().find(|e| e.kind == "retired" || e.kind == "forced_retirement");
-                        e.map_or((g.career.run_number, g.run.day), |e| (e.run, e.day))
+                        last_retirement(g).map_or((g.career.run_number, g.run.day), |e| (e.run, e.day))
                     }
                     _ => (g.career.run_number, g.run.day),
                 };
@@ -247,12 +253,13 @@ impl<'a> Meter<'a> {
         }
     }
 
-    /// The run under way, as it stands (`days` from the state, not a log entry).
-    fn run_so_far(&mut self, s: &Session, run: u32, days: u64, forced: bool, best: f64) -> RunResult {
+    /// The run under way, as it stands (`ticks` from the state's run day, not
+    /// a log entry).
+    fn run_so_far(&mut self, s: &Session, run: u32, ticks: u64, forced: bool, best: f64) -> RunResult {
         let t = &self.totals;
         RunResult {
             run,
-            days,
+            ticks,
             forced,
             start_tick: self.run_start,
             end_tick: s.state.tick,
@@ -271,11 +278,11 @@ impl<'a> Meter<'a> {
 
     /// A retirement (forced in a tick, or chosen at a look) closes a run.
     fn close(&mut self, s: &Session) -> Option<RunResult> {
-        let e = s.state.career.log.iter().rev().find(|e| e.kind == "retired" || e.kind == "forced_retirement").cloned();
+        let e = last_retirement(&s.state).cloned();
         let best = self.tracker.take_best_rate().to_f64();
-        if let Some(e) = e {
-            let r = self.run_so_far(s, e.run, e.day, e.kind == "forced_retirement", best);
-            self.runs.push(r);
+        let ended = e.map(|e| self.run_so_far(s, e.run, e.day, e.kind == "forced_retirement", best));
+        if let Some(r) = &ended {
+            self.runs.push(r.clone());
         }
         self.growth = 0.0;
         self.cmd = 0.0;
@@ -284,7 +291,8 @@ impl<'a> Meter<'a> {
         self.actions = 0;
         self.run_start = s.state.tick;
         self.last_run = s.state.career.run_number;
-        self.runs.last().cloned()
+        // No retirement entry: nothing ended (never an older run's result).
+        ended
     }
 
     /// After a round of `actions` actions between ticks (0: a look that

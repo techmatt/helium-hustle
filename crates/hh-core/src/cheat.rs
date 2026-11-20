@@ -9,13 +9,19 @@ use crate::modules::economy::{self, BOREDOM, PROCESSORS};
 use crate::rules::Rules;
 use crate::state::GameState;
 
+/// The grant cheat may grant this content resource: not processors (they
+/// come from Data Centers) nor boredom (set it instead).
+pub fn grantable(resource: &str) -> bool {
+    resource != PROCESSORS && resource != BOREDOM
+}
+
 pub fn apply(r: &Rules, g: &mut GameState, c: &Cheat) -> Result<(), String> {
     match c {
         Cheat::Grant { resource, amount } => {
             if content().resource(resource).is_none() {
                 return Err(format!("cheat: unknown resource {resource:?}"));
             }
-            if resource == PROCESSORS || resource == BOREDOM {
+            if !grantable(resource) {
                 return Err(format!("cheat: can't grant {resource} (processors come from Data Centers; set boredom instead)"));
             }
             if *amount < Fx::ZERO {

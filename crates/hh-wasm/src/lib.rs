@@ -122,8 +122,8 @@ pub fn apply(state_json: &str, action_json: &str) -> Result<String, JsValue> {
     Ok(g.to_json())
 }
 
-/// Display data (`hh_core::View`): resources with caps and rates, buildings
-/// with their next price, whether affordable, and the action that buys one.
+/// Display data (`hh_core::View`, docs/architecture.md *The view*): everything a
+/// client shows and can do.
 #[wasm_bindgen]
 pub fn view(state_json: &str) -> Result<String, JsValue> {
     let (r, g) = load(state_json)?;

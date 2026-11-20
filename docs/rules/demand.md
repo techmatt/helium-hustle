@@ -84,36 +84,38 @@ commands they need their full cost. Loading priority, which Disrupt reads, is se
 
 ## Params
 
-| Param | Baseline | Meaning |
-|---|---|---|
-| `min_demand` | 0.01 | Demand floor. |
-| `max_demand` | 1 | Demand ceiling before `demand_ceiling` modifiers. |
-| `base_demand` | 0.5 | Demand with every force at zero. |
-| `noise_amplitude` | 0.45 | The noise term's largest swing either way. |
-| `noise_freq_min` | 0.018 | Lowest per-good noise frequency (cycles per day). |
-| `noise_freq_max` | 0.05 | Highest per-good noise frequency. |
-| `noise_octave_freqs` | 1, 2.137, 4.581, 9.719 | Each octave's frequency multiplier. |
-| `noise_octave_gains` | 1, 0.5, 0.25, 0.125 | Each octave's weight. |
-| `speculator_max_suppression` | 0.5 | Demand a pool suppresses as it grows without bound. |
-| `speculator_half_point` | 50 | Pool size that suppresses half the maximum. |
-| `speculator_decay` | 0.006 | Fraction of each pool gone per day. |
-| `burst_interval_min` | 150 | Fewest days between speculator bursts. |
-| `burst_interval_max` | 250 | Most days between speculator bursts. |
-| `burst_size_min` | 20 | Smallest burst before growth. |
-| `burst_size_max` | 50 | Largest burst before growth. |
-| `burst_growth` | 1.1 | Each burst this run multiplies the next one's size by this. |
-| `disrupt_min` | 1 | Fewest speculators one Disrupt removes. |
-| `disrupt_max` | 3 | Most speculators one Disrupt removes. |
-| `arbitrage_decay_per_engine` | 0.04 | Speculators each working (active, upkeep paid) Arbitrage Engine removes from every pool per day. |
-| `promote_effect` | 0.03 | Demand one Promote adds, before `promote_effectiveness_mult`. |
-| `promote_decay` | 0.001 | Promote effect lost per day. |
-| `promote_speculator_dampening` | 0.9 | A Promote multiplies its good's pool by this. |
-| `rival_decay` | 0.003 | Rival pressure lost per day. |
-| `saturation_min` | 0.1 | Least demand a launch takes from its good. |
-| `saturation_max` | 0.2 | Most demand a launch takes from its good. |
-| `saturation_decay` | 0.005 | Launch saturation lost per day. |
-| `coupling_fraction` | 0.1 | Share of the other goods' promote effect a good gains. |
-| `tier_bounds` | 0.25, 0.5, 0.75 | Bounds between the LOW / MEDIUM / HIGH / VERY HIGH labels. |
+<!-- params:demand -->
+| Param | Baseline | Range | Meaning |
+|---|---|---|---|
+| `min_demand` | 0.01 | 0 to 10 | Demand floor. |
+| `max_demand` | 1 | 0 to 10 | Demand ceiling before `demand_ceiling` modifiers. |
+| `base_demand` | 0.5 | 0 to 10 | Demand with every force at zero. |
+| `noise_amplitude` | 0.45 | 0 to 10 | The noise term's largest swing either way. |
+| `noise_freq_min` | 0.018 | 0 to 100 | Lowest per-good noise frequency (cycles per day). |
+| `noise_freq_max` | 0.05 | 0 to 100 | Highest per-good noise frequency. |
+| `noise_octave_freqs` | 1, 2.137, 4.581, 9.719 | 0 to 1000 | Each octave's frequency multiplier. |
+| `noise_octave_gains` | 1, 0.5, 0.25, 0.125 | 0 to 1000 | Each octave's weight. |
+| `speculator_max_suppression` | 0.5 | 0 to 10 | Demand a pool suppresses as it grows without bound. |
+| `speculator_half_point` | 50 | 0.000001 to 1000000 | Pool size that suppresses half the maximum. |
+| `speculator_decay` | 0.006 | 0 to 1 | Fraction of each pool gone per day. |
+| `burst_interval_min` | 150 | 1 to 100000 | Fewest days between speculator bursts. |
+| `burst_interval_max` | 250 | 1 to 100000 | Most days between speculator bursts. |
+| `burst_size_min` | 20 | 0 to 1000000 | Smallest burst before growth. |
+| `burst_size_max` | 50 | 0 to 1000000 | Largest burst before growth. |
+| `burst_growth` | 1.1 | 1 to 10 | Each burst this run multiplies the next one's size by this. |
+| `disrupt_min` | 1 | 0 to 1000 | Fewest speculators one Disrupt removes. |
+| `disrupt_max` | 3 | 0 to 1000 | Most speculators one Disrupt removes. |
+| `arbitrage_decay_per_engine` | 0.04 | 0 to 1000 | Speculators each working (active, upkeep paid) Arbitrage Engine removes from every pool per day. |
+| `promote_effect` | 0.03 | 0 to 10 | Demand one Promote adds, before `promote_effectiveness_mult`. |
+| `promote_decay` | 0.001 | 0 to 10 | Promote effect lost per day. |
+| `promote_speculator_dampening` | 0.9 | 0 to 1 | A Promote multiplies its good's speculator pool by this. |
+| `rival_decay` | 0.003 | 0 to 10 | Rival pressure lost per day. |
+| `saturation_min` | 0.1 | 0 to 10 | Least demand a launch takes from its good. |
+| `saturation_max` | 0.2 | 0 to 10 | Most demand a launch takes from its good. |
+| `saturation_decay` | 0.005 | 0 to 10 | Launch saturation lost per day. |
+| `coupling_fraction` | 0.1 | 0 to 10 | Share of the other goods' promote effect a good gains. |
+| `tier_bounds` | 0.25, 0.5, 0.75 | 0 to 10 | Demand bounds between the LOW / MEDIUM / HIGH / VERY HIGH labels. |
+<!-- /params -->
 
 Load checks: one gain per octave with a positive sum, each `*_min` at most its `*_max`, rising
 `tier_bounds`. Modifiers read ([README.md](README.md)): `demand_ceiling`,

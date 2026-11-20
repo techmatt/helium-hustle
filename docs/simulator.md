@@ -35,7 +35,8 @@ $S trace --lines                              # ... and each day's program lines
 $S trace --agents oracle --first-seed 2 --at 1500   # the state at a tick: what walls a run in
 $S agents                                     # the ladder's rungs
 $S speed                                      # native engine speed
-node scripts/wasm-speed.mjs                   # the same in wasm (needs crates/hh-wasm/pkg)
+node scripts/wasm-speed.mjs                   # the same in wasm (on web/src/wasm)
+$S params --write                             # docs/rules param tables from REGISTRY (a test fails when stale)
 $S playlog C:/Code/gdrive-sync/helium-hustle/playlogs/<career>.jsonl   # a human's career (--json: one line)
 $S vs-human C:/Code/gdrive-sync/helium-hustle/playlogs/<career>.jsonl  # the sim players beside it
 ```
@@ -68,7 +69,7 @@ a decision. Then the human against the **best player** (most milestones, then mo
 earned): buildings and commands only one side used, and where the human first parted from it,
 matching the two build orders purchase by purchase, run by run (a purchase in a run's last
 tick counts in the next run): first in **when** (the same building more than 50 ticks or a
-quarter of the player's tick apart) and first in **what** (a different building, or one side
+quarter of the player's tick apart: `vs_human` in `configs/sim/milestones.json`) and first in **what** (a different building, or one side
 bought nothing), with each side's next five purchases. `--json`: one line, every row's
 `GameResult` and the divergence. Exit 1 if the log doesn't replay to its fingerprint.
 
@@ -98,7 +99,8 @@ spec, revision, content hash and each cell's summary); `games.jsonl` (a line a g
 measure, each run's ticks and decisions, every building bought, the career's best ranks,
 projects, quests, sub-objectives and achievements at the end, its cell, the fingerprint and
 `replay_ok`), appended as each game finishes, with a progress line on stderr, and rewritten in
-game order at the end: `summarize` reads it, a read still running included. The milestones
+game order at the end: `summarize` reads it, a read still running included (a run's length is
+`ticks`; files before 032 say `days`, still read). The milestones
 (`--milestones`) are the oracle's too. Every command exits 1 if a game's record doesn't
 replay to its state.
 `compare` prints the paired table (B minus A on the same seeds, mean difference and its
@@ -124,7 +126,7 @@ sides' tables; `--out` writes `compare.md`.
 | Run-1 objectives | With a spec's `objectives`: each objective's median run-1 day against its Godot window (`in`, `early`, `late`). |
 | Never built, never used | Buildings never owned and commands never run in any seed's career. |
 
-After `ladder`'s and `experiment`'s tables, the engine's speed natively and, with `crates/hh-wasm/pkg` built, in wasm.
+After `ladder`'s and `experiment`'s tables, the engine's speed natively and, with `web/src/wasm` built, in wasm.
 
 **Costs** (this machine, idle): the ladder (4 players × 3 seeds, careers of 20 retirements)
 about 11 s on 6 threads; `ceiling` about 20 minutes, set by the oracle's careers
@@ -156,7 +158,7 @@ Next free: 3016
 |---|---|---|
 | `--config F` | `configs/baseline.json` | The game config. |
 | `--seed S` | `0` | Any `u64`. |
-| `--ticks N` | `1000` (`objectives`: `5000`) | Days to run (from the scenario's start tick, if any); for `objectives`, the most to play. |
+| `--ticks N` | `1000` (`objectives`: `5000`) | Ticks to run (from the scenario's start tick, if any); for `objectives`, the most to play. |
 | `--policy P` | `idle` | `idle`; `greedy` (each tick, buy each affordable building); `greedy:every=N`; `script`. |
 | `--scenario NAME` / `--scenario-file F` | none | Lay a scenario over the new game. |
 | `--save F` | | Write the game's record (`hh-record/1`). |

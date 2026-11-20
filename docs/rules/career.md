@@ -71,14 +71,16 @@ count at retirement is its length (a forced retirement counts the tick it happen
 
 ## Params
 
-| Param | Baseline | Meaning |
-|---|---|---|
-| `credits_bonus_fraction` | 0.02 | Starting credits: this fraction of the best run's credits earned (floored to whole credits). |
-| `boredom_resilience_base` | 0.995 | Boredom growth multiplier per resilience period of the longest run. |
-| `boredom_resilience_period` | 400 | Days of the longest run per resilience step. |
-| `ideology_headstart_fraction` | 0.2 | Each axis starts at this fraction of the career's best (continuous) rank. |
-| `buy_power_peak_threshold` | 100 | Peak energy per day above which Buy Power scales. |
-| `buy_power_per_energy` | 0.01 | Buy Power scaling per unit of peak energy over the threshold. |
+<!-- params:career -->
+| Param | Baseline | Range | Meaning |
+|---|---|---|---|
+| `credits_bonus_fraction` | 0.02 | 0 to 10 | Starting credits: this fraction of the best run's credits earned (whole credits). |
+| `boredom_resilience_base` | 0.995 | 0.000001 to 1 | Boredom growth multiplier per resilience period of the longest run. |
+| `boredom_resilience_period` | 400 | 1 to 1000000 | Days of the longest run per resilience step. |
+| `ideology_headstart_fraction` | 0.2 | 0 to 1 | Each axis starts at this fraction of the career's best (continuous) rank. |
+| `buy_power_peak_threshold` | 100 | 0 to 1000000 | Peak energy production per day above which Buy Power scales. |
+| `buy_power_per_energy` | 0.01 | 0 to 10 | Buy Power scaling per unit of peak production over the threshold. |
+<!-- /params -->
 
 The starting resources and buildings are economy params (`configs/baseline.json`).
 
@@ -87,6 +89,8 @@ The starting resources and buildings are economy params (`configs/baseline.json`
 `content/events.json` `enable_nav_panel: retirement` (Proof of Concept);
 `content/projects.json` `starting_buildings` rewards; `content/achievements.json`
 `bonus_buildings` rewards; `content/commands.json` `scale_modifier: buy_power_mult` (Buy Power).
+The panel id `retirement` is fixed in code (`career::RETIREMENT_PANEL`: retiring needs it
+enabled), and so is the modifier key `buy_power_mult` (`modifiers.rs` adds the career's part).
 
 ## Port notes
 

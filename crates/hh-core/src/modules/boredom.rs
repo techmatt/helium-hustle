@@ -50,7 +50,8 @@ pub fn phase(r: &Rules, day: u64) -> u32 {
     r.p.boredom.phase_days.iter().filter(|&&d| d <= day).count() as u32
 }
 
-/// The boredom cap: the base plus every active building's `store` on boredom.
+/// The boredom cap: the base plus every working (active, upkeep-paid) building's
+/// `store` on boredom.
 pub fn cap(r: &Rules, g: &GameState) -> Fx {
     r.p.boredom.base_cap + super::economy::stored(g, BOREDOM)
 }

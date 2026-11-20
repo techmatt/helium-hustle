@@ -1,20 +1,8 @@
-use super::baseline;
+use super::{baseline, f, rules, set};
 use crate::driver::{play, Policy};
 use crate::modules::{economy, ideology};
 use crate::state::{Entry, Holding, Stall};
 use crate::{scenario, scenarios, Action, Fx, GameState, Record, Rules, Scenario, Session};
-
-fn f(s: &str) -> Fx {
-    Fx::parse(s).unwrap()
-}
-
-fn rules() -> Rules {
-    Rules::new(&baseline()).unwrap()
-}
-
-fn set(g: &mut GameState, res: &str, v: &str) {
-    g.run.resources.insert(res.into(), f(v));
-}
 
 fn own(g: &mut GameState, b: &str, n: u32) {
     g.run.buildings.insert(b.into(), Holding { owned: n, active: n, bonus: 0, free: 0, unpaid: 0 });
@@ -605,6 +593,12 @@ fn cheats_apply_through_actions_mark_the_game_and_replay() {
     assert_eq!(s.state.amount("titanium"), f("20"));
     assert!(s.apply(&cheat(crate::Cheat::Grant { resource: "processors".into(), amount: f("1") })).is_err());
     assert!(s.apply(&cheat(crate::Cheat::Grant { resource: "credits".into(), amount: f("-1") })).is_err());
+    // The view's `grantable` is the grant's legality.
+    for res in r.view(&s.state).resources {
+        let mut g = s.state.clone();
+        let ok = crate::cheat::apply(&r, &mut g, &crate::Cheat::Grant { resource: res.id.into(), amount: f("1") }).is_ok();
+        assert_eq!(res.grantable, ok, "{}", res.id);
+    }
     s.apply(&cheat(crate::Cheat::SetBoredom { amount: f("400") })).unwrap();
     assert_eq!(s.state.amount("boredom"), f("400"));
     s.apply(&cheat(crate::Cheat::JumpAhead { days: 30 })).unwrap();
@@ -685,9 +679,8 @@ fn story_lists_only_the_latest_boredom_phase() {
     }
     let v = r.view(&g);
     let ids: Vec<&str> = v.event_texts.iter().map(|s| s.id).collect();
-    // The one-off beat stays; phase 3 supersedes phase 2 (still in `events`).
+    // The one-off beat stays; phase 3 supersedes phase 2 (still fired in the state).
     assert_eq!(ids, ["propellant_discovery", "boredom_phase_3"]);
-    assert!(v.events.contains(&"boredom_phase_2"));
 }
 
 #[test]

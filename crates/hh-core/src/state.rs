@@ -54,6 +54,14 @@ pub struct Holding {
     pub unpaid: u32,
 }
 
+impl Holding {
+    /// `n` copies owned and active that took no land: a run's starting buildings
+    /// or a scenario's.
+    pub fn starting(n: u32) -> Holding {
+        Holding { owned: n, active: n, bonus: 0, free: n, unpaid: 0 }
+    }
+}
+
 /// One line of a program: an instruction, and whether it sits in the body of
 /// the `if` above it (one level: a body can't hold another `if`).
 /// JSON: `{"op": "command", "command": "idle", "count": 1}`, with
@@ -280,7 +288,7 @@ pub struct Overclock {
 pub enum Stall {
     /// Ran at partial capacity: an upkeep input was short.
     InputStarved,
-    /// Every output was at its cap when the tick began (it still produced).
+    /// Every output was at its cap when its building stage began (it still produced).
     OutputCapped,
 }
 

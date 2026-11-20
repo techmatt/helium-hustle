@@ -34,7 +34,7 @@ completed AI Consciousness Act gives it), and Dream takes boredom away, never be
 [programs.md](programs.md) and [dream.md](dream.md). Boredom is never a command product, so
 it never causes the output-cap skip.
 
-**Cap.** `cap = base_cap + Σ store(boredom)` over *active* buildings: each active Recreation
+**Cap.** `cap = base_cap + Σ store(boredom)` over *working* buildings (active, upkeep paid): each working Recreation
 Dome adds its content `store` of 100. The `storage_cap_mult` modifier does not apply to
 boredom. The cap is computed on demand, so buying, selling or idling a dome moves it at once.
 
@@ -54,14 +54,17 @@ None. Boredom moves only through the day and commands.
 
 ## Params
 
-| Param | Baseline | Meaning |
-|---|---|---|
-| `phase_days` | 0, 200, 500, 1000, 2000 | The run day each phase starts. Must start at 0 and rise; one per rate (a load error otherwise). |
-| `phase_rates` | 0.1, 0.2, 0.5, 1, 3 | Boredom per day in each phase, before the multiplier. |
-| `base_cap` | 1000 | The cap before Recreation Domes. |
+<!-- params:boredom -->
+| Param | Baseline | Range | Meaning |
+|---|---|---|---|
+| `phase_days` | 0, 200, 500, 1000, 2000 | 0 to 1000000 | The run day each phase starts (first 0, rising). |
+| `phase_rates` | 0.1, 0.2, 0.5, 1, 3 | 0 to 1000 | Boredom per day in each phase, before modifiers. |
+| `base_cap` | 1000 | 1 to 1000000 | The boredom cap before Recreation Domes. |
+<!-- /params -->
 
-At baseline with no modifiers a run has 20 + 60 + 250 = 330 boredom by day 1000 and
-reaches 1000 on day 1670; command boredom brings it sooner.
+`phase_days` must start at 0 and rise, one per rate (a load error otherwise). At baseline
+with no modifiers a run has 20 + 60 + 250 = 330 boredom by day 1000 and reaches 1000 on day
+1670; command boredom brings it sooner.
 
 ## Content
 

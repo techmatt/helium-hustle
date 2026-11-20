@@ -12,6 +12,42 @@ export function ResChip({ v, id, size }: { v: View; id: string; size?: number })
   return <Chip id={id} title={name(v, id)} size={size} />;
 }
 
+/** Whether a resource going up is bad news (Boredom): its rates read the other way round. */
+export function risingIsBad(id: string): boolean {
+  return id === 'boredom';
+}
+
+/** The main-story quest: title, summary, and its progress or sub-objectives. */
+export function Quest({ v }: { v: View }) {
+  const q = v.quest;
+  if (!q) return null;
+  const subs = q.sub_objectives;
+  const done = subs.filter((x) => x.done).length;
+  return (
+    <div class="quest" data-testid="quest" data-quest={q.id}>
+      <div class="quest-title">
+        {q.title}
+        {subs.length > 0 && ` [${done}/${subs.length}]`}
+      </div>
+      <div class="quest-summary">{q.summary}</div>
+      {q.progress && subs.length === 0 && (
+        <Bar frac={Number(q.progress.now) / Number(q.progress.target)} label={`${num(q.progress.now)} / ${num(q.progress.target)}`} />
+      )}
+      {subs.map((x) => (
+        <div key={x.id} class={`sub ${x.done ? 'done' : ''}`}>
+          {x.done ? '✓' : '○'} {x.label}
+          {!x.done && x.progress && (
+            <span class="muted">
+              {' '}
+              {num(x.progress.now)} / {num(x.progress.target)}
+            </span>
+          )}
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /** A fill bar; `frac` is clamped to 0..1. */
 export function Bar({ frac, tone = 'green', label }: { frac: number; tone?: string; label?: string }) {
   const f = Math.max(0, Math.min(1, Number.isFinite(frac) ? frac : 0));
@@ -205,7 +241,7 @@ export function Breakdown({ v, id, avg = false }: { v: View; id: string; avg?: b
             if (!shows(r)) return null;
             // Each cell its own color: a source's average can run the other way. Boredom
             // rising is bad news, as its Resources rate reads.
-            const tone = (x: number) => ((id === 'boredom' ? -x : x) > 0 ? 'pos' : 'neg');
+            const tone = (x: number) => ((risingIsBad(id) ? -x : x) > 0 ? 'pos' : 'neg');
             return (
               <tr key={r.source} data-source={r.source} class={r.source === 'cap' ? 'lost' : ''}>
                 <td>{r.label}</td>

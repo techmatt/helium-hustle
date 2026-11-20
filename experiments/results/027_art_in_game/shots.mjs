@@ -1,95 +1,26 @@
 // 027's screenshot set: the art in the game at 1280 x 800, light and dark. Drives headless
-// Edge or Chrome over the DevTools protocol (web/scripts/e2e.mjs's way, no packages)
+// Edge or Chrome over the DevTools protocol (web/scripts/cdp.mjs, the e2e's harness)
 // against a served static build.
-//   HH_URL  the page (default http://localhost:60550/)
+//   HH_URL  the page, required (a `vite preview`, web/README.md)
 //   OUT     where the PNGs go (default experiments/results/027_art_in_game/shots)
 // Native tooltips (an SVG <title>) never paint in a screenshot: the tooltip shot draws a
 // stand-in box holding the chip's <title> text, marked as such in the README.
-import { spawn } from 'node:child_process';
-import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { READY, capture, driver, launch, pageUrl, q, sleep } from '../../../web/scripts/cdp.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const url = process.env.HH_URL ?? 'http://localhost:60550/';
+const url = pageUrl('shots', 'node experiments/results/027_art_in_game/shots.mjs');
 const OUT = resolve(process.env.OUT ?? resolve(here, 'shots'));
 mkdirSync(OUT, { recursive: true });
-const exe = [
-  'C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe',
-  'C:/Program Files/Google/Chrome/Application/chrome.exe',
-].find((b) => existsSync(b));
-const port = 9300 + Math.floor(Math.random() * 500);
-const profile = resolve(here, '../../../out/027_art_in_game/profile', String(port));
-rmSync(profile, { recursive: true, force: true });
-mkdirSync(profile, { recursive: true });
-const proc = spawn(exe, ['--headless=new', `--remote-debugging-port=${port}`, `--user-data-dir=${profile}`, '--enable-automation',
-  '--window-size=1280,800', '--no-first-run', '--no-default-browser-check', 'about:blank'], { stdio: 'ignore' });
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-let page;
-for (let i = 0; i < 150 && !page; i++) {
-  await sleep(200);
-  const t = await fetch(`http://127.0.0.1:${port}/json/list`).then((r) => r.json()).catch(() => []);
-  page = t.find((x) => x.type === 'page');
-}
-const ws = new WebSocket(page.webSocketDebuggerUrl);
-await new Promise((r) => ws.addEventListener('open', r, { once: true }));
-let nextId = 1;
-const pending = new Map();
-ws.addEventListener('message', (ev) => {
-  const m = JSON.parse(ev.data);
-  if (m.id && pending.has(m.id)) {
-    pending.get(m.id)(m);
-    pending.delete(m.id);
-  }
-});
-const send = (method, params = {}) => new Promise((r) => {
-  const id = nextId++;
-  pending.set(id, r);
-  ws.send(JSON.stringify({ id, method, params }));
-});
-const evaluate = async (expr) => {
-  const r = await send('Runtime.evaluate', { expression: expr, awaitPromise: true, returnByValue: true });
-  if (r.result?.exceptionDetails) throw new Error(`${expr}: ${JSON.stringify(r.result.exceptionDetails)}`);
-  return r.result?.result?.value;
-};
-const q = (s) => JSON.stringify(s);
-const exists = (sel) => evaluate(`!!document.querySelector(${q(sel)})`);
-const click = async (sel) => {
-  if (!(await evaluate(`(() => { const b = document.querySelector(${q(sel)}); if (!b) return false; b.click(); return true; })()`)))
-    throw new Error(`nothing to click at ${sel}`);
-};
-const setValue = (sel, v) => evaluate(`(() => { const el = document.querySelector(${q(sel)}); el.value = ${q(v)};
-  el.dispatchEvent(new Event(el.tagName === 'SELECT' ? 'change' : 'input', { bubbles: true })); })()`);
-const waitFor = async (expr, what, ms = 10000) => {
-  for (const end = Date.now() + ms; Date.now() < end; await sleep(100)) if (await evaluate(expr)) return;
-  throw new Error(`timed out waiting for ${what}`);
-};
-const ready = `/^Day \\d/.test(document.getElementById('day')?.textContent ?? '') && !!document.querySelector('.nav-tile')`;
-const load = async () => {
-  await evaluate('window.__stale = true');
-  await send('Page.navigate', { url });
-  await waitFor('!window.__stale', 'navigation');
-  await waitFor(ready, 'the page');
-  await sleep(500);
-};
-const speed = (s) => click(`#speeds button[data-speed="${s}"]`);
-const panel = async (id) => {
-  await click(`.nav-tile[data-nav="${id}"]`);
-  await waitFor(`!!document.querySelector('[data-panel="${id}"]')`, `the ${id} panel`, 3000);
-};
-const debugMenu = async () => {
-  await panel('options');
-  if (!(await exists('#scenario'))) await click('[data-testid="debug"] .fold-head');
-};
-const cheats = async () => {
-  await debugMenu();
-  if (!(await exists('[data-testid="cheats"]'))) await click('#cheats-toggle');
-};
+const b = await launch({ width: 1280, height: 800, emulate: true, profileRoot: resolve(here, '../../../out/027_art_in_game/profile') });
+const { evaluate } = b;
+const page = driver(b, { url });
+const { waitFor, exists, click, setValue, load, speed, panel, debugMenu, cheats } = page;
 const grant = async (res, amount) => {
   await cheats();
-  await setValue('#cheat-resource', res);
-  await setValue('#cheat-amount', amount);
-  await click('#cheat-grant');
+  await page.grant(res, amount);
 };
 const rect = (sel) => evaluate(`(() => { const r = document.querySelector(${q(sel)}).getBoundingClientRect();
   return { x: r.x, y: r.y, width: r.width, height: r.height }; })()`);
@@ -97,28 +28,23 @@ const rect = (sel) => evaluate(`(() => { const r = document.querySelector(${q(se
 const shot = async (name, sel, { scale = 1, pad = 4 } = {}) => {
   const r = await rect(sel);
   const clip = { x: Math.max(0, r.x - pad), y: Math.max(0, r.y - pad), width: r.width + 2 * pad, height: r.height + 2 * pad, scale };
-  const s = await send('Page.captureScreenshot', { format: 'png', clip, captureBeyondViewport: true });
-  writeFileSync(resolve(OUT, `${name}.png`), Buffer.from(s.result.data, 'base64'));
+  await capture(b, resolve(OUT, `${name}.png`), { clip, captureBeyondViewport: true });
   console.log(`shot ${name}`);
 };
 const full = async (name) => {
-  const s = await send('Page.captureScreenshot', { format: 'png' });
-  writeFileSync(resolve(OUT, `${name}.png`), Buffer.from(s.result.data, 'base64'));
+  await capture(b, resolve(OUT, `${name}.png`));
   console.log(`shot ${name}`);
 };
 const stage = () => evaluate(`document.querySelector('.horizon')?.dataset.stage`);
 
-await send('Emulation.setDeviceMetricsOverride', { width: 1280, height: 800, deviceScaleFactor: 1, mobile: false });
-await send('Page.enable');
-await send('Page.navigate', { url });
-await waitFor(ready, 'the page');
+await load();
 
 for (const theme of ['light', 'dark']) {
   await evaluate(`localStorage.clear(); localStorage.setItem('hh.theme', ${q(theme)})`);
   await load();
   await debugMenu();
   await click('#new-game');
-  await waitFor(ready, 'a new game');
+  await waitFor(READY, 'a new game');
   await speed(0);
   await panel('buildings');
   // A fresh game: normal nav tiles, Resources, the bare horizon.
@@ -132,15 +58,16 @@ for (const theme of ['light', 'dark']) {
   await debugMenu();
   await setValue('#scenario', 'pad_loading');
   await click('#start-scenario');
-  await waitFor(ready, 'the scenario');
+  await waitFor(READY, 'the scenario');
   await speed(0);
   if ((await stage()) !== 'pad') throw new Error(`a pad: horizon ${await stage()}`);
   await shot(`${theme}-horizon-pad`, '.horizon');
   await panel('commands');
   await click('[data-testid="add-load_pads"]');
   await speed(1);
-  await waitFor(`Number(document.querySelector('[data-pad="0"]')?.dataset.cargo ?? 0) > 0 || !!document.querySelector('.card.pad[data-cargo]:not([data-cargo="0"])')`, 'cargo', 3000).catch(() => {});
-  await sleep(2500);
+  // The pad card (only in its panel) reports its cargo.
+  await panel('launch_pads');
+  await waitFor(`Number(document.querySelector('[data-pad="0"]')?.dataset.cargo ?? 0) > 0`, 'cargo on the pad', 10000);
   await speed(0);
   await grant('propellant', '5');
   await panel('launch_pads');
@@ -187,10 +114,7 @@ for (const theme of ['light', 'dark']) {
   await click('[data-testid="research-geopolitical_intelligence"]');
   await jump(2);
   await waitFor(`!!document.querySelector('.nav-tile[data-nav="ideologies"]')`, 'Ideologies', 3000);
-  await cheats();
-  await setValue('#cheat-days', '200');
-  await click('#cheat-jump');
-  await sleep(300);
+  await jump(200);
   await shot(`${theme}-nav-compact`, '.nav-grid', { scale: 2 });
   await panel('buildings');
   await full(`${theme}-late-1280`);
@@ -218,6 +142,5 @@ for (const theme of ['light', 'dark']) {
   await shot(`${theme}-ideology-summary`, '[data-testid="ideology-summary"]', { scale: 2 });
 }
 
-ws.close();
-proc.kill();
+b.close();
 console.log('done');

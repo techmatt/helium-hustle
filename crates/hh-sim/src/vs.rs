@@ -15,13 +15,9 @@ use serde::Serialize;
 
 use crate::career::{self, Build, GameResult, RunResult};
 use crate::human::Humans;
-use crate::milestones::Milestones;
+use crate::milestones::{Milestones, VsHuman};
 use crate::playlog::{self, Log};
-use crate::{read, usage, Fail, HUMANS, LADDER, MILESTONES};
-
-/// A tick gap past which the same purchase counts as diverging in when: the
-/// larger of this and a quarter of the best player's tick.
-pub const WHEN_TICKS: u64 = 50;
+use crate::{list, read, usage, Fail, HUMANS, LADDER, MILESTONES, THREADS};
 
 /// A row: the human or a sim player, by name.
 #[derive(Debug, Clone, Serialize)]
@@ -59,8 +55,8 @@ fn by_run(builds: &[Build], run: u32) -> Vec<&Build> {
 }
 
 /// Matches the two build orders purchase by purchase, run by run, up to the
-/// runs both played.
-pub fn diverge(human: &GameResult, best: &GameResult, best_name: &str) -> Divergence {
+/// runs both played; `at` says how far apart in time counts as parting.
+pub fn diverge(human: &GameResult, best: &GameResult, best_name: &str, at: &VsHuman) -> Divergence {
     let mut d = Divergence { best: best_name.to_string(), ..Default::default() };
     let runs = (human.runs.len() + 1).min(best.runs.len() + 1) as u32;
     let next = |v: &[&Build], k: usize| v.iter().skip(k).take(5).map(|b| (*b).clone()).collect::<Vec<_>>();
@@ -81,7 +77,7 @@ pub fn diverge(human: &GameResult, best: &GameResult, best_name: &str) -> Diverg
             };
             match (x, y) {
                 (Some(x), Some(y)) if x.building == y.building => {
-                    let far = WHEN_TICKS.max(y.tick.saturating_sub(best.start_tick) / 4);
+                    let far = at.when_ticks.max(y.tick.saturating_sub(best.start_tick) * at.when_percent / 100);
                     if d.when.is_none() && x.tick.abs_diff(y.tick) > far {
                         d.when = Some(part());
                     }
@@ -159,7 +155,7 @@ pub fn report(rows: &[Row], div: &Divergence, ms: &Milestones, humans: &Humans, 
             r.name,
             g.ticks,
             g.retirements,
-            runs_line(g, |r| r.days.to_string()),
+            runs_line(g, |r| r.ticks.to_string()),
             runs_line(g, |r| format!("{:.0}", r.credits_earned)),
             runs_line(g, |r| r.decisions.to_string()),
             g.decisions,
@@ -240,7 +236,8 @@ pub fn report(rows: &[Row], div: &Divergence, ms: &Milestones, humans: &Humans, 
                 );
             }
             None => {
-                let _ = writeln!(t, "- First apart in when: never, before the build orders part (within {WHEN_TICKS} ticks or a quarter of the tick).");
+                let VsHuman { when_ticks, when_percent } = &ms.vs_human;
+                let _ = writeln!(t, "- First apart in when: never, before the build orders part (within {when_ticks} ticks or {when_percent}% of the tick).");
             }
         }
         match &div.what {
@@ -270,7 +267,7 @@ pub fn report(rows: &[Row], div: &Divergence, ms: &Milestones, humans: &Humans, 
 /// [--threads T] [--milestones F] [--human-models F]`.
 pub fn run(args: &[String]) -> Result<String, Fail> {
     let mut path = None;
-    let (mut json, mut threads, mut ticks) = (false, 6usize, None::<u64>);
+    let (mut json, mut threads, mut ticks) = (false, THREADS, None::<u64>);
     let mut agents: Option<Vec<String>> = None;
     let mut models: Option<Vec<String>> = None;
     let mut milestones = MILESTONES.to_string();
@@ -278,11 +275,10 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     let mut it = args.iter();
     while let Some(a) = it.next() {
         let mut val = || it.next().cloned().ok_or_else(|| Fail::Usage(format!("{a} needs a value")));
-        let list = |s: String| s.split(',').filter(|x| !x.is_empty()).map(String::from).collect::<Vec<_>>();
         match a.as_str() {
             "--json" => json = true,
             "--agents" => agents = Some(crate::lab::agent_list(&val()?)),
-            "--humans" => models = Some(list(val()?)),
+            "--humans" => models = Some(list(&val()?)),
             "--ticks" => ticks = Some(val()?.parse().map_err(|_| Fail::Usage("bad --ticks".into()))?),
             "--threads" => threads = val()?.parse().map_err(|_| Fail::Usage("bad --threads".into()))?,
             "--milestones" => milestones = val()?,
@@ -291,6 +287,9 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
             f if path.is_none() => path = Some(f.to_string()),
             f => return usage(format!("vs-human: one log at a time (also given {f:?})")),
         }
+    }
+    if threads == 0 {
+        return usage("--threads must be at least 1");
     }
     let Some(path) = path else { return usage("vs-human: give a play log") };
     // The ladder's players and human models unless given; never the oracle by
@@ -342,7 +341,7 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
         rows.push(Row { name: name.into(), spec: spec.into(), game: r.map_err(Fail::Usage)? });
     }
     let b = 1 + best(&rows[1..]).expect("a player");
-    let div = diverge(&rows[0].game, &rows[b].game, &rows[b].name);
+    let div = diverge(&rows[0].game, &rows[b].game, &rows[b].name, &ms.vs_human);
     let replay_bad = rows.iter().any(|r| !r.game.replay_ok);
     let text = if json {
         serde_json::json!({

@@ -87,9 +87,11 @@ None: events are checked each day.
 
 Triggers, conditions and unlocks are content (`content/events.json`).
 
-| Param | Baseline | Meaning |
-|---|---|---|
-| `activity_kept` | 50 | Lines of the run's activity feed kept, newest first out last (display only). |
+<!-- params:events -->
+| Param | Baseline | Range | Meaning |
+|---|---|---|---|
+| `activity_kept` | 50 | 1 to 100000 | Lines of the run's activity feed kept (newest; display only). |
+<!-- /params -->
 
 ## Content
 
@@ -110,6 +112,9 @@ boredom phases 2 to 5).
   earned 100,000 credits in one run (its `credits_earned` sub-objective counts this run's),
   so the quest, and milestone M14, is never met: the best run so far made 90,306 credits in
   3,654 days ([011's write-up](../../experiments/results/011_oracle_planner/README.md)).
+- Candidate: Q6's own `enable_building recreation_dome` never matters: the silent
+  `recreation_dome_unlock` enables it when Q5 completes, the moment Q6 starts. It stays in
+  the data (dropping it moves the content hash).
 - Conflict: Godot's milestones (`game_config.milestones`) were removed per the handoffs;
   not ported.
 - Candidate: quests ignore a `game_start` run filter, so the chain picks up where the

@@ -10,7 +10,7 @@ use crate::content::{content, Command, CommandEffect, ProjectReward, ResearchEff
 use crate::fx::Fx;
 use crate::modifiers::modifier;
 use crate::rules::Rules;
-use crate::state::{Clause, Cmp, Condition, Entry, GameState, Join, Joined, Op, Overclock, Program, Reading};
+use crate::state::{Clause, Cmp, Condition, Entry, GameState, Join, Joined, LineOutcome, Op, Overclock, Program, Reading};
 
 use super::economy::{BOREDOM, PROCESSORS};
 
@@ -47,8 +47,6 @@ impl Params {
     }
 }
 
-use crate::state::LineOutcome;
-
 /// Empty programs with every processor on the first (a new run).
 pub fn new_programs(r: &Rules, processors: u32) -> Vec<Program> {
     let mut ps = vec![Program::default(); r.p.programs.program_count];
@@ -67,16 +65,7 @@ pub fn processors(g: &GameState) -> u32 {
 /// Processors the active buildings grant, paid or not: what programs may have
 /// assigned. A day short of upkeep runs fewer ([`running`]) but keeps them.
 pub fn capacity(g: &GameState) -> u32 {
-    let mut total = Fx::ZERO;
-    for b in &content().buildings {
-        for e in &b.effects {
-            if let crate::content::BuildingEffect::Grant { resource, amount } = e {
-                if resource == PROCESSORS {
-                    total += amount.mul_int(i64::from(g.active(&b.id)));
-                }
-            }
-        }
-    }
+    let total = super::economy::grants(PROCESSORS, |id| g.active(id));
     u32::try_from(total.floor_int().max(0)).unwrap_or(u32::MAX)
 }
 
@@ -124,7 +113,7 @@ pub fn set_program(r: &Rules, g: &mut GameState, program: u32, entries: &[Entry]
     let n = program + 1;
     let c = content();
     let clause = |cl: &Clause| -> Result<(), String> {
-        let known = |res: &str| c.resources.iter().any(|x| x.id == res);
+        let known = |res: &str| c.resource(res).is_some();
         match &cl.reading {
             Reading::Amount { resource } | Reading::Percent { resource } | Reading::Rate { resource } => {
                 known(resource).then_some(()).ok_or_else(|| format!("Program {n}: unknown resource {resource:?}"))
@@ -337,10 +326,7 @@ pub fn reading(r: &Rules, g: &GameState, what: &Reading) -> Option<Fx> {
         Reading::Count { building } => Some(Fx::from_int(i64::from(g.owned(building)))),
         Reading::Day => Some(Fx::from_int(i64::try_from(g.run.day).unwrap_or(i64::MAX))),
         Reading::PadsReady => {
-            let full = r.p.shipments.pad_cargo_capacity;
-            let n = (0..g.run.pads.len())
-                .filter(|&i| g.run.pads[i].cargo >= full && super::shipments::can_launch(r, g, i))
-                .count();
+            let n = (0..g.run.pads.len()).filter(|&i| super::shipments::ready(r, g, i)).count();
             Some(Fx::from_int(n as i64))
         }
         Reading::Demand { good } => {
@@ -538,7 +524,7 @@ pub fn overclock_factor(r: &Rules, g: &GameState, category: &str) -> Fx {
     f.min(overclock_cap(r, g))
 }
 
-/// Drops expired overclocks (start of the building pass).
+/// Drops expired overclocks (early in the day, before demand and the building pass).
 pub fn expire_overclocks(g: &mut GameState) {
     let day = g.run.day;
     g.run.overclocks.retain(|o| o.until_day > day);

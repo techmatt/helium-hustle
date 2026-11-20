@@ -105,9 +105,10 @@ The modules are Arc 1's ([rules/README.md](rules/README.md)).
 ## Scenarios
 
 Named starting states (`scenarios/*.json`, listed in `scenario.rs` `FILES`), laid over a
-new game: `{"name", "description", "start": {"tick", "resources", "buildings"}}`, every
-key required; a listed resource or building (owned and active) replaces the new game's
-value, the tick sets the run's day too and shifts the run's burst and rival schedules by
+new game: `{"name", "description", "start": {"tick", "resources", "buildings", "panels",
+"programs"}}`, every key required; a listed resource or building (owned and active) replaces
+the new game's value, panels add to the run's enabled panels, programs replace queues from the
+first (command lines only), the tick sets the run's day too and shifts the run's burst and rival schedules by
 as much (they start from that day, not day 0), and processors gained go to the first program. Unknown ids are
 errors naming them. `hh-sim run --scenario NAME` (or `--scenario-file F`) and the web
 debug menu use them. A record carries its scenario in full, so a later edit to the file
@@ -125,9 +126,10 @@ can't change an old record.
 
 ## The view
 
-`Rules::view` (`view.rs`) gives everything a client shows and can do: resources (amount,
-cap, change over the next day, the same before the end-of-tick clamp so a capped
-resource's surplus shows, visible), buildings (price, what's short, buyable, unlocked,
+`Rules::view` (`view.rs`; the programs and breakdown parts in `view/`) gives everything a
+client shows and can do: resources (amount, cap, change over the next day, the same before
+the end-of-tick clamp so a capped resource's surplus shows, visible, grantable by the
+debug grant), buildings (price, what's short, buyable, unlocked,
 visible, stall, description, ideology tag, content rates per copy, the action that buys
 one), land (price, per purchase, buyable), commands, programs (with each line's outcome
 today and each condition's live value; the readings a condition may use), pads (fuel, whether the shared Propellant covers it, cargo per load, payout, can launch,
@@ -137,7 +139,8 @@ this rank and the next), projects, the active quest (with countable progress), q
 event texts (of the boredom phases, only the latest), achievements, rivals, live overclocks and modifiers, boredom (cap, rate,
 phase), the nav tiles (`content/nav.json`), the career's bests, the next run's bonuses if
 the run retired now (`career::retire` on a copy), the last finished run's summary, the
-run's activity feed, display names by id, the cheat mark and the career log. Clients
+run's activity feed, each resource's flow breakdown, display names by id and the cheat
+mark. Clients
 compute no rule; an agent reads the same view. The change per day comes from playing one
 day on a copy. The view is never read by the rules and isn't in the state, fingerprint or
 replay.
@@ -158,6 +161,6 @@ over the golden game: a refactor that only reshapes the view keeps the digest.
 the `career` (what persists across retirements) and the `run` (what a retirement resets,
 including the run's own `day`). Everything that affects play is in it; derived values
 (caps, modifiers, the active quest, processors' assignment limits) are recomputed from it.
-Granted resources (processors) are held in `run.resources` but are rewritten from the active
+Granted resources (processors) are held in `run.resources` but are rewritten from the working (active, upkeep-paid)
 buildings by `economy::refresh` whenever buildings change, so set the buildings, not the
 amount.

@@ -44,8 +44,10 @@ function engineWatch(): Plugin {
       server.watcher.add(dirs);
       const onChange = (file: string) => {
         const f = resolve(file);
-        if (f.startsWith(resolve(repo, 'configs'))) server.ws.send({ type: 'full-reload' });
-        else if (/[\\/](crates|content|scenarios)[\\/]/.test(f) && !/[\\/](pkg|target)[\\/]/.test(f) && /\.(rs|json|toml)$/.test(f))
+        // The page reads configs/baseline.json and the wasm of hh-core + hh-wasm (with
+        // content/ and scenarios/ embedded): an hh-sim or configs/sim edit changes neither.
+        if (f === resolve(repo, 'configs', 'baseline.json')) server.ws.send({ type: 'full-reload' });
+        else if (/[\\/](crates[\\/]hh-(core|wasm)|content|scenarios)[\\/]/.test(f) && !/[\\/](pkg|target)[\\/]/.test(f) && /\.(rs|json|toml)$/.test(f))
           rebuild(server);
       };
       server.watcher.on('change', onChange);

@@ -127,11 +127,16 @@ pub fn can_launch(r: &Rules, g: &GameState, i: usize) -> bool {
     pad_active(g, i) && p.cooldown == 0 && p.cargo > Fx::ZERO && g.amount(PROPELLANT) >= r.p.shipments.fuel_per_pad
 }
 
+/// A pad is ready: full and able to launch now. The one rule behind Launch Full
+/// Pads, the `pads_ready` reading and the view's Ready badge.
+pub fn ready(r: &Rules, g: &GameState, i: usize) -> bool {
+    g.run.pads[i].cargo >= r.p.shipments.pad_cargo_capacity && can_launch(r, g, i)
+}
+
 /// Launch Full Pads: every active, unpaused, full pad that can launch does, in pad order.
 pub fn launch_full(r: &Rules, g: &mut GameState) {
     for i in 0..g.run.pads.len() {
-        let p = &g.run.pads[i];
-        if !p.paused && p.cargo >= r.p.shipments.pad_cargo_capacity && can_launch(r, g, i) {
+        if !g.run.pads[i].paused && ready(r, g, i) {
             launch(r, g, i);
         }
     }

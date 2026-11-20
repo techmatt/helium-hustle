@@ -6,9 +6,9 @@ import { useState } from 'preact/hooks';
 import type { Fx, ProjectView, ResearchView, View } from '../engine';
 import { capitalize, mult, num, perDay } from '../format';
 import { act, seen, store, type Store } from '../store';
-import { Bar, Breakdown, FlowLines, ResChip, Section, cardButton, freshClass, name, numBelow, useHint } from './common';
+import { Bar, Breakdown, FlowLines, Quest, ResChip, Section, cardButton, freshClass, name, numBelow, useHint } from './common';
 import { Chip } from './icons';
-import { Quest, editProgram } from './Right';
+import { editProgram } from './programStore';
 
 // ---- Commands ------------------------------------------------------------------
 

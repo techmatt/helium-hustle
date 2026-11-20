@@ -5,7 +5,7 @@ import { SPEEDS } from '../clock';
 import { capitalize, num, perDay } from '../format';
 import { navHasNews, seen, setSpeed, type Store } from '../store';
 import { useEffect, useState } from 'preact/hooks';
-import { Breakdown, CappedRate, Section, navShown } from './common';
+import { Breakdown, CappedRate, Section, navShown, risingIsBad } from './common';
 import { Chip, Horizon, NavIcon } from './icons';
 
 /** The Resources panel's first group, in this order; every other resource follows in a
@@ -17,6 +17,10 @@ function resourceGroups<R extends { id: string }>(shown: R[]): R[][] {
   const rest = shown.filter((r) => !FIRST_GROUP.includes(r.id));
   return [first, rest].filter((g) => g.length > 0);
 }
+
+/** Below this window height Ideology starts folded, so a late career's column fits
+ * without scrolling (at 768 px it was about one row over); a click opens it. */
+const IDEOLOGY_OPEN_MIN_HEIGHT = 800;
 
 export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: string) => void }) {
   const v = s.view;
@@ -96,7 +100,7 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
                 else if (v.retires_next && r.id !== 'processors') rate = '—';
                 // Boredom rising is bad news: its rate reads the other way round.
                 // A rate too small to show reads "0/day", uncolored.
-                const rateNum = capped || rate === '0/day' ? 0 : Number(r.per_day) * (r.id === 'boredom' ? -1 : 1);
+                const rateNum = capped || rate === '0/day' ? 0 : Number(r.per_day) * (risingIsBad(r.id) ? -1 : 1);
                 const isOpen = expanded === r.id;
                 // Processors are counted from buildings, not made or spent: no breakdown.
                 const opens = r.id !== 'processors';
@@ -147,7 +151,7 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
         </table>
       </Section>
       {navShown(v, 'ideologies') && (
-        <Section title="Ideology" testid="ideology-summary">
+        <Section title="Ideology" testid="ideology-summary" open={window.innerHeight >= IDEOLOGY_OPEN_MIN_HEIGHT}>
           <table class="res-table">
             <tbody>
               {v.ideology.map((a) => (

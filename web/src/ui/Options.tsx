@@ -149,7 +149,7 @@ function Debug({ s }: { s: Store }) {
             <input id="cheat-amount" size={8} value={amount} onInput={(e) => setAmount((e.target as HTMLInputElement).value)} />{' '}
             <select id="cheat-resource" value={res} onChange={(e) => setRes((e.target as HTMLSelectElement).value)}>
               {v.resources
-                .filter((r) => r.id !== 'processors' && r.id !== 'boredom')
+                .filter((r) => r.grantable)
                 .map((r) => (
                   <option key={r.id} value={r.id}>
                     {r.name}

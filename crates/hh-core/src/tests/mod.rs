@@ -15,9 +15,22 @@ pub(crate) fn baseline() -> Config {
     Config::from_json(BASELINE).expect("baseline loads")
 }
 
+pub(crate) fn rules() -> crate::Rules {
+    crate::Rules::new(&baseline()).unwrap()
+}
+
+pub(crate) fn f(s: &str) -> crate::Fx {
+    crate::Fx::parse(s).unwrap()
+}
+
+/// Sets `res`'s amount in the run.
+pub(crate) fn set(g: &mut crate::GameState, res: &str, v: &str) {
+    g.run.resources.insert(res.into(), f(v));
+}
+
 // The golden constants: update all three together on a `RULES_REVISION` bump
-// (and `GOLDEN_*` in scripts/wasm-smoke.mjs), copying the failing assertion's
-// left side.
+// with `python scripts/set_golden.py` (it also sets `GOLDEN_*` in
+// scripts/wasm-smoke.mjs); never type them (README, *Rules changes*).
 const GOLDEN_REVISION: u32 = 7;
 const GOLDEN_FINGERPRINT: &str = "191c49a24d0457ff";
 const GOLDEN_CONTENT_HASH: &str = "1bb305eca42caf60";

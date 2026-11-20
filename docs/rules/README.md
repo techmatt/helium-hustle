@@ -18,7 +18,8 @@ retirement, and the career keeps what you learned for the next run.
 
 ## Modules
 
-Every module plays; each is one page. A config must name all of them.
+Every module plays; each is one page. A config must name all of them. Each page's *Params*
+table is generated from `REGISTRY` and the baseline (`hh-sim params --write`; a test fails when stale).
 
 | Module | Variant | Page | What |
 |---|---|---|---|
@@ -72,6 +73,11 @@ research (11), events (14, seven of them the quest chain), projects (11), achiev
 rivals (4), and the UI's nav tiles (`nav.json`, 11: when each panel's tile shows; display
 only). Ids are unique across all files but `nav.json`, whose ids are panel names.
 Buildings resolve in file order; quests chain in file order.
+
+A few content ids are fixed in code, each listed in its page's *Content*: resources
+([economy.md](economy.md), [shipments.md](shipments.md)), `launch_pad`, the `retirement`
+panel ([career.md](career.md)), the ideology axes ([ideology.md](ideology.md)) and the
+modifier keys (`content::MODIFIER_KEYS`, [Modifiers](#modifiers)).
 
 The port renamed the Godot data's short ids: `eng` energy, `reg` regolith, `ti` titanium,
 `cir` circuits, `prop` propellant, `cred` credits, `sci` science, `proc` processors, `panel`

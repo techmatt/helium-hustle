@@ -3,7 +3,7 @@
 // text or background token needs its pairs added there. WCAG 2 ratio; fails under 4.5:1
 // (or a pair's own higher minimum).
 // Prints one line per pair below 7:1 and exits 1 on any failure.
-//   node scripts/contrast.mjs
+//   node scripts/contrast.mjs   (npm run unit runs it after unit.mjs)
 import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';

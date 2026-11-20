@@ -88,15 +88,17 @@ be checked.
 
 The balance warnings (`python scripts/warning_checks.py`, `balance:` lines) read the `author`
 and `casual` players ([agents.md](agents.md)), 2 seeds, careers of 20 retirements, real time
-under the `mixed` model (`experiments/balance.json`, the judge's one home). A line is written
-for:
+under the `mixed` model (`experiments/balance.json`, the judge's one home: its first `humans`
+entry is the model; the bands and thresholds are `configs/sim/milestones.json`'s). A line is
+written for:
 
 - a milestone whose median run falls outside its window, or that half or fewer of the seeds
-  reached, or that no seed reached in a career long enough to reach it;
+  reached (`judge.late_percent`), or that no seed reached in a career long enough to reach it;
 - a run-1 milestone (M1, M2) whose median day falls outside its day window;
 - run 1's median length outside its player's band (`author` 800–1,100 ticks, `casual`
   1,300–1,700);
-- the author's run 1 outside 25–35 real minutes under `mixed`.
+- the author's run 1 outside 25–35 real minutes under `mixed`, or not judged because the spec
+  names no human model.
 
 The run-1 bands are keyed by player: "played well" is the author, "played casually" the casual
 author. The 30-minute band is read for the author only: the `mixed` model bursts through every

@@ -83,13 +83,15 @@ its own, the propellant is the launch's).
 
 ## Params
 
-| Param | Baseline | Meaning |
-|---|---|---|
-| `base_values` | He-3 10, titanium 6, circuits 15, propellant 4 | The tradeable goods and each one's credits per unit at demand 1. |
-| `pad_cargo_capacity` | 100 | Cargo a pad holds when full. |
-| `fuel_per_pad` | 20 | Propellant burned per launch. |
-| `load_per_execution` | 5 | Units Load Launch Pads puts on each pad, before research. |
-| `launch_cooldown` | 10 | Days after a launch before the pad can launch again. |
+<!-- params:shipments -->
+| Param | Baseline | Range | Meaning |
+|---|---|---|---|
+| `base_values` | circuits 15, he3 10, propellant 4, titanium 6 | 0 to 1000000 | The tradeable goods and each one's credits per unit at demand 1. |
+| `pad_cargo_capacity` | 100 | 1 to 1000000 | Cargo a pad holds when full. |
+| `fuel_per_pad` | 20 | 0 to 1000000 | Propellant burned per launch. |
+| `load_per_execution` | 5 | 0 to 1000000 | Units Load Launch Pads puts on each pad, before research. |
+| `launch_cooldown` | 10 | 0 to 100000 | Days after a launch before the pad can launch again. |
+<!-- /params -->
 
 Modifiers read ([README.md](README.md)): `cargo_capacity_mult` (Bulk Shipper achievement),
 `shipment_credit_mult` (First Profit achievement).
@@ -99,6 +101,8 @@ Modifiers read ([README.md](README.md)): `cargo_capacity_mult` (Bulk Shipper ach
 - `content/buildings.json`: `launch_pad` (one pad each). `content/commands.json`: `load_pads`
   (effect `load_pads`), `launch_pads` (effect `launch_full_pads`).
 - `content/research.json`: rows with a `load_per_execution` effect (`shipping_efficiency`).
+- Fixed ids in code (`shipments.rs` constants): building `launch_pad` (one pad per copy)
+  and resource `propellant` (the fuel a launch burns).
 
 ## Port notes
 

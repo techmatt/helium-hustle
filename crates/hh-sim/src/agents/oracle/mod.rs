@@ -303,12 +303,6 @@ impl Agent for Oracle {
         self.base.next_look(p).max(1)
     }
 
-    fn new_run(&mut self, p: &mut Player) {
-        self.base.dir = Directives::default();
-        self.next_plan = p.state().tick;
-        self.next_strategy = p.state().tick;
-    }
-
     fn note(&self) -> String {
         format!("{} [{} plans, {} rollouts] {}", self.profile.name(), self.plans, self.rollouts, self.note)
     }

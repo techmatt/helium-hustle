@@ -66,16 +66,18 @@ Geopolitical Intelligence research.
 
 ## Params
 
-| Param | Baseline | Meaning |
-|---|---|---|
-| `rank_base_score` | 100 | Score rank 1 costs. |
-| `rank_growth` | 1.5 | Each rank costs this times the one before. |
-| `max_rank` | 99 | Highest rank either way. |
-| `fund_push` | 1 | Score a Fund command adds to its axis. |
-| `fund_cross_penalty` | 0.5 | Fraction of the push taken from each other axis. |
-| `bonus_factor` | 1.05 | Per-rank multiplier on bonuses (demand, speculator decay, Dream, science). |
-| `discount_factor` | 0.97 | Per-rank multiplier on costs and boredom growth. |
-| `overclock_duration_factor` | 1.03 | Per Rationalist rank multiplier on overclock duration. |
+<!-- params:ideology -->
+| Param | Baseline | Range | Meaning |
+|---|---|---|---|
+| `rank_base_score` | 100 | 0.000001 to 1000000 | Score rank 1 costs. |
+| `rank_growth` | 1.5 | 1.000001 to 10 | Each rank costs this times the one before. |
+| `max_rank` | 99 | 1 to 1000 | Highest rank either way. |
+| `fund_push` | 1 | 0 to 1000 | Score a Fund command adds to its axis. |
+| `fund_cross_penalty` | 0.5 | 0 to 10 | Fraction of the push taken from each other axis. |
+| `bonus_factor` | 1.05 | 0.000001 to 10 | Per-rank multiplier on bonuses (demand, Dream, science, speculator decay). |
+| `discount_factor` | 0.97 | 0.000001 to 10 | Per-rank multiplier on costs and boredom growth. |
+| `overclock_duration_factor` | 1.03 | 0.000001 to 10 | Per Rationalist rank multiplier on overclock duration. |
+<!-- /params -->
 
 ## Content
 

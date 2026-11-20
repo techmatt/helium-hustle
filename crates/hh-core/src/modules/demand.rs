@@ -253,7 +253,7 @@ fn burst_interval(r: &Rules, g: &mut GameState) -> u64 {
     (Fx::from_int(days as i64) * m).floor_int().max(1) as u64
 }
 
-/// The daily demand update (after buildings): pools decay (proportionally,
+/// The daily demand update (before any building or program runs): pools decay (proportionally,
 /// plus each Arbitrage Engine's flat amount, both times the Nationalist
 /// bonus), promote, rival pressure and saturation fade, then demand is set.
 pub fn update(r: &Rules, g: &mut GameState) {

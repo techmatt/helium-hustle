@@ -1,28 +1,16 @@
 //! Program instructions beyond commands: `if` blocks, `wait until`, `build`
 //! and `buy land` (docs/rules/programs.md).
 
-use super::baseline;
+use super::{f, rules, set};
 use crate::modules::{economy, programs};
 use crate::state::{Clause, Cmp, Condition, Entry, GameState, Holding, Join, Joined, LineOutcome as O, Op, Reading};
 use crate::{Action, Fx, Rules};
-
-fn f(s: &str) -> Fx {
-    Fx::parse(s).unwrap()
-}
-
-fn rules() -> Rules {
-    Rules::new(&baseline()).unwrap()
-}
 
 /// A new game with the instructions unlocked.
 fn game(r: &Rules) -> GameState {
     let mut g = r.new_game(1);
     g.career.flags.insert(programs::LOGIC_FLAG.into());
     g
-}
-
-fn set(g: &mut GameState, res: &str, v: &str) {
-    g.run.resources.insert(res.into(), f(v));
 }
 
 fn clause(reading: Reading, cmp: Cmp, v: &str) -> Clause {

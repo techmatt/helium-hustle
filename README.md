@@ -19,25 +19,24 @@ implemented (the Godot build's Arc 1, ported): [docs/rules/](docs/rules/README.m
 |---|---|
 | `crates/hh-core` | The rules engine: every rule, fixed-point state, no I/O, no clock, no global RNG (CLAUDE.md, *Engine rules*). |
 | `crates/hh-sim` | Native CLI ([docs/simulator.md](docs/simulator.md)): runs a seed, replays records; agents ([docs/agents.md](docs/agents.md)) play careers in game time against the targets ([docs/principles.md](docs/principles.md)): the ladder, experiments, compare, balance, a human's play log beside them (`vs-human`). |
-| `configs/sim/` | The simulator's data: human time models (real minutes from a career's looks) and the milestones with their targets. |
-| `experiments/` | Experiment specs (`ladder.json`, `ceiling.json` the oracle's, `balance.json` the judge's); `results/<item>/` holds an item's write-up and working papers when it left any (bug hunts record into `docs/qa-findings.md`). A read's `games.jsonl`: `hh-sim summarize`. |
 | `crates/hh-wasm` | wasm-bindgen bindings for `web/`, JSON in and out. |
-| `web/` | The browser UI ([web/README.md](web/README.md)). Renders the engine's view, sends actions, holds no rules. |
+| `web/` | The browser UI ([web/README.md](web/README.md)). Renders the engine's view, sends actions, holds no rules. `web/src/engine.ts` mirrors hh-core's `View` by hand, and hh-sim reads view fields the page doesn't: grep both before dropping or renaming one. |
 | `configs/` | Game configs: modules, variants and every tunable number. No defaults in code. |
-| `content/` | Game data (resources, buildings, commands, research, events, projects, achievements, rivals), embedded in `hh-core`. |
+| `configs/sim/` | The simulator's data: human time models (real minutes from a career's looks) and the milestones with their targets. |
+| `content/` | Game data (resources, buildings, commands, research, events, projects, achievements, rivals, nav), embedded in `hh-core`. |
 | `scenarios/` | Named starting states for the sim and the web debug menu, embedded in `hh-core`. |
+| `experiments/` | Experiment specs (`ladder.json`, `ceiling.json` the oracle's, `balance.json` the judge's); `results/<item>/` holds an item's write-up and working papers when it left any (bug hunts record into `docs/qa-findings.md`). A read's `games.jsonl`: `hh-sim summarize`. |
 | `scripts/` | `wasm-smoke.mjs` (native = wasm), `wasm-speed.mjs` (engine speed in wasm), `warning_checks.py` (CLAUDE.md, *Warning checks*), `set_golden.py` (re-pins the golden game), `seeds.py` (fresh seeds from the ledger, [docs/simulator.md](docs/simulator.md) *Seeds*). |
-| `docs/` | The current game: `docs/rules/` (rules as implemented), `docs/rules-history.md`. |
+| `docs/` | `rules/` (the rules as implemented) and `rules-history.md`; `rulings.md` (Matt's standing rulings); `architecture.md`; `principles.md` (targets and the judge); `simulator.md` and `agents.md` (hh-sim); `qa-findings.md` (bug hunts). |
 | `reference/` | The Godot snapshot ([reference/README.md](reference/README.md)). Never edited. |
-| `art/` | Generated art and picker images: a link to the main checkout's `art/`, shared by every worktree and never committed. The scripts that draw it are committed with their item's write-up in `experiments/results/<item>/`. Painted art is drawn by Codex CLI's image tool on Matt's ChatGPT login (no API key), 37–97 s a draw, 3–4 at once: recipe in [018's write-up](experiments/results/018_building_art_round/README.md); drawing against a fixed guide image (`codex exec -i`, isometric patches) in [019's](experiments/results/019_painterly_iso_round/README.md); the shipped building card pictures (draw, cut to WebP, picker) in [020's](experiments/results/020_building_card_art/README.md). |
+| `art/` | Generated art and picker images: a link to the main checkout's `art/`, shared by every worktree and never committed. The scripts that draw it are committed with their item's write-up in `experiments/results/<item>/`. Painted art is drawn by Codex CLI's image tool on Matt's ChatGPT login (no API key), 37–97 s a draw, 3–4 at once: recipe in [018's write-up](experiments/results/018_building_art_round/README.md); drawing against a fixed guide image (`codex exec -i`, isometric patches) in [019's](experiments/results/019_painterly_iso_round/README.md); the shipped building card pictures (draw, cut to WebP, picker) in [020's](experiments/results/020_building_card_art/README.md). **What ships** is in `web/src/assets/`: painted art cut to WebP (020's `process.py`, 027's `images.py`), and chip and compact-nav glyphs as SVG written by 027's `export.mjs` from [026's `glyphs.mjs`](experiments/results/026_icon_art_r1/) (which reads `icons.tsx`'s color maps as text, and holds the nav colors). `art/pickers/` holds mock-ups only. |
 | `out/` | Scratch and run output, git-ignored. |
 
-**Two wasm builds**, both git-ignored. `crates/hh-wasm/pkg/` (`wasm-pack build crates/hh-wasm
---target web`) is the one `scripts/wasm-smoke.mjs` (the parity check) and
-`scripts/wasm-speed.mjs` load; `warning_checks.py` rebuilds it when it is older than the engine
-sources. `web/src/wasm/` is the page's, built by `web/scripts/build-wasm.mjs`, which skips the
-build when a hash of its inputs is unchanged ([web/README.md](web/README.md)). Neither updates
-the other.
+**One wasm build**, `web/src/wasm/` (git-ignored), by `node web/scripts/build-wasm.mjs`
+(needs only node and wasm-pack, not `web/node_modules`), which skips the build when a hash of
+its inputs is unchanged ([web/README.md](web/README.md)). The page, `scripts/wasm-smoke.mjs`
+(the parity check) and `scripts/wasm-speed.mjs` all load it; `warning_checks.py` runs the build
+script first.
 
 ## Toolchain
 
@@ -60,9 +59,10 @@ cargo clippy --workspace --all-targets       # must stay clean; ~7 s
 cargo run -q -p hh-sim -- run --seed 1 --ticks 365 --policy script
 cargo run -q --release -p hh-sim -- objectives reference/scenarios/run1_fresh.json   # ~0.2 s
 cargo run -q --release -p hh-sim -- ladder   # the agent ladder, 12 careers: ~11 s on 6 threads (the oracle's ceiling.json: ~20 min)
-wasm-pack build crates/hh-wasm --target web  # -> crates/hh-wasm/pkg (git-ignored); ~22 s cold, ~5 s warm
-node scripts/wasm-smoke.mjs                  # native = wasm: needs the pkg above (not web's copy); ~1 s
+node web/scripts/build-wasm.mjs              # -> web/src/wasm (git-ignored); ~80 s cold, <1 s when inputs are unchanged
+node scripts/wasm-smoke.mjs                  # native = wasm on that build; ~1 s
 python scripts/warning_checks.py             # warning checks, incl. parity and balance (rebuilds stale builds); ~7 s, up to a minute cold
+python scripts/warning_checks.py --no-parity --no-balance   # static checks only (tunables, floats, docs), no builds; ~1 s
 cd web && npm ci && npm run dev              # the browser UI at http://localhost:5173/ (web/README.md)
 cd web && npm run wasm && npm run check      # type-check alone: a fresh worktree has no web/src/wasm until `npm run wasm` (~80 s)
 ```

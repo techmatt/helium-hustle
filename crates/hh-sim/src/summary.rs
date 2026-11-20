@@ -22,13 +22,14 @@ pub fn tables(games: &[Value], ms: &Milestones) -> String {
     };
     let num = |v: &Value| v.as_f64().unwrap_or(0.0);
     let _ = writeln!(t, "## Runs ({} games; `+` the run under way at the end)\n", games.len());
-    let _ = writeln!(t, "| Player | Seed | Run | Days | Credits | Cr/day | Ships | Built | Research | Ended |");
+    let _ = writeln!(t, "| Player | Seed | Run | Ticks | Credits | Cr/day | Ships | Built | Research | Ended |");
     let _ = writeln!(t, "|---|---|---|---|---|---|---|---|---|---|");
     for g in games {
         let runs = g["runs"].as_array().cloned().unwrap_or_default();
         let current = g["current"].as_object().map(|_| g["current"].clone());
         for (r, under_way) in runs.iter().map(|r| (r, false)).chain(current.iter().map(|r| (r, true))) {
-            let days = num(&r["days"]);
+            // A run's length: `days` in games.jsonl written before 032.
+            let ticks = num(if r["ticks"].is_null() { &r["days"] } else { &r["ticks"] });
             let credits = num(&r["credits_earned"]);
             let ended = if under_way {
                 "-"
@@ -39,12 +40,12 @@ pub fn tables(games: &[Value], ms: &Milestones) -> String {
             };
             let _ = writeln!(
                 t,
-                "| {} | {} | {}{} | {days:.0} | {credits:.0} | {:.1} | {} | {} | {} | {ended} |",
+                "| {} | {} | {}{} | {ticks:.0} | {credits:.0} | {:.1} | {} | {} | {} | {ended} |",
                 who(g),
                 g["seed"],
                 r["run"],
                 if under_way { "+" } else { "" },
-                if days > 0.0 { credits / days } else { 0.0 },
+                if ticks > 0.0 { credits / ticks } else { 0.0 },
                 r["shipments"],
                 r["buildings_built"],
                 r["research"],

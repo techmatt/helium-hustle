@@ -28,22 +28,23 @@ npm run preview                              # serve web/dist/
   unoptimized. It skips the build when a hash of its inputs (`crates/hh-core`,
   `crates/hh-wasm`, `content/`, `scenarios/`, `Cargo.*`, the script) matches `web/src/wasm/.inputs`; `HH_WASM_FORCE=1`
   builds anyway.
-- **While the dev server runs**, editing `crates/`, `content/` or `scenarios/` rebuilds the
-  wasm and reloads the page; a config edit reloads it. A failed rebuild keeps the last good
+- **While the dev server runs**, editing `crates/hh-core`, `crates/hh-wasm`, `content/` or
+  `scenarios/` rebuilds the wasm and reloads the page; a `configs/baseline.json` edit reloads it. A failed rebuild keeps the last good
   engine; the error is in the dev server's terminal.
 
 ## Browser check
 
 `npm run e2e` (`scripts/e2e.mjs`) drives headless Edge or Chrome over the DevTools
-protocol (no packages) against a served page: `HH_URL` (default
-`http://localhost:5173/`), `HH_BROWSER` for a browser off the usual paths, `HH_SHOTS=<dir>`
-to save PNGs. About 45 s. It plays, in order:
+protocol (no packages; the harness, shared with qa, is `scripts/cdp.mjs`) against a
+served page: `HH_URL`, required (it exits naming `vite preview` when unset),
+`HH_BROWSER` for a browser off the usual paths, `HH_SHOTS=<dir>` to save PNGs. About
+45 s. It plays, in order:
 
 1. **A fresh game through the normal UI only** (no debug menu): a build order, Program 1
    switched between Sell Cloud Compute and the bridging buys, the first pad loaded and
    launched (Q1 to Q3, around day 400 at 50x); retirement, the run summary holding the
    clock, run 2 (known tiles and resources still shown, not cheated).
-2. **Every panel**: cheats reach Research, Projects and Ideologies; all 11 tiles open; the
+2. **Every panel**: cheats reach Research, Projects and Ideologies; every nav tile opens; the
    cheated mark, a jump ahead and the replay check.
 3. A program's frame at 10x and 50x, each speed's days per second, pause, click-to-buy, a reload keeping the save, a save from another
    revision discarded, the scenarios and the replay check; in `late_unlocks`, an `if` /
@@ -55,13 +56,19 @@ to save PNGs. About 45 s. It plays, in order:
 
 Any uncaught page error fails the run. Run it against `vite preview` (CLAUDE.md).
 
+- **Under load it flakes:** section 3's 10x pointer walk (`programOrder`) fails when a
+  cargo build runs beside the browser (late timer wakes run two days a redraw). Rerun it
+  alone.
+- **The late UI for screenshots:** `experiments/results/027_art_in_game/shots.mjs` reaches
+  it from scenario `pad_loading` with cheats (grants, buys, jumps; ~20 s). Cheat grants
+  don't count toward `resource_cumulative` quests: build producers and jump instead.
 - Edge needs an **absolute** `--user-data-dir`: given a relative one it hands the page to
   the Edge already running and exits (the script resolves it).
 - On leaving a page the browser fires `pagehide`, then `visibilitychange`; the page saves
   on both, so a test that edits the save must do it after both.
 
-`npm run unit` checks the number formatting (`src/format.ts`). `node scripts/contrast.mjs`
-checks the text-on-background pairs in its hand-kept `PAIRS` list, in both themes, at
+`npm run unit` checks the number formatting (`src/format.ts`), then `scripts/contrast.mjs`
+the text-on-background pairs in its hand-kept `PAIRS` list, in both themes, at
 4.5:1 (7:1 for `pos-text`, the Resources rates' green): a new token needs its pairs there.
 
 ## QA checker
@@ -72,7 +79,7 @@ quest, a launch, the summary, a reload). Hunts' findings: `docs/qa-findings.md`.
 (a seed at a width), in a fresh headless browser: a first visit, a new game on the seed,
 run 1 at 3x then 50x with every panel, retirement and the summary (keys must not start the
 clock), run 2 at 200x, a reload, the replay check, the play log replayed by `hh-sim
-playlog`, a second tab and site data blocked (first pass only). At run 1's end and in every
+playlog` (a release build, or `HH_SIM`: a fresh worktree has none, so build it first), a second tab and site data blocked (first pass only). At run 1's end and in every
 debug scenario (each played, its panels audited): every Resources row's breakdown opened
 and closed, Stats' breakdowns; program lines dragged; in `late_unlocks`, a loaded
 pad switched to another good (the stockpile gains what its tooltip promised) and Recent
@@ -84,7 +91,7 @@ on any finding.
 
 ```sh
 npm run build && npx vite preview --port 0          # a static build: dev-server reloads break a pass
-HH_URL=http://localhost:<port>/ npm run qa           # ~1.3 min a pass; 3 seeds x 2 widths ~8 min
+HH_URL=http://localhost:<port>/ npm run qa           # required, as for e2e; ~1.3 min a pass, ~8 min in all
 ```
 
 Output (`HH_QA_OUT`, default `out/qa`, wiped): a PNG per moment in
@@ -101,24 +108,22 @@ Three columns and a status bar:
   cap, change per day, at its cap the surplus thrown away, muted, or green for Energy's
   spare power: "+9 CAP"; processors assigned / total; a click on a row opens its breakdown
   in place, one at a time: last day's sources and sinks, who went short), each ideology
-  axis's rank once Ideologies is unlocked, and the lunar horizon with the habitat at the foot.
+  axis's rank once Ideologies is unlocked (folded at first in a window under 800 px high),
+  and the lunar horizon with the habitat at the foot.
 - **Middle:** the sky with the Earth, the main quest's text when it opens (the only story
   banner), then the active panel. Buildings: the Land bar (green and click-to-buy like a card
-  when affordable), a collapsible section per category, cards (a 96 px picture beside the
-  description, per-day effects and storage lines, ideology tag, a status row always kept
-  ("running at 66% · ⚡ short · 1 of 3 working": effects come from paid copies), price with shortfalls in red, active/owned with −/+, Sell 1,
-  Sell All). A click on an affordable card (outlined in green, its name row tinted), off its
+  when affordable), a collapsible section per category, cards (`Buildings.tsx`: picture,
+  effects, a status row always kept, price with shortfalls in red, −/+ and Sell). A click on an affordable card (outlined in green, its name row tinted), off its
   controls, builds one (Shift: up to ten; ignored for 0.5 s after the summary or a story
   text closes); any other card says why it can't. Research cards work the same way. Pad
-  cards tint their head: green Ready (full and fueled), yellow Paused, red full but short of
-  fuel; a full pad still cooling down says when it is ready. Stats ends on every resource's breakdown, last day and rolling average.
+  cards tint their head: green Ready, yellow Paused, red full but short of fuel. Stats ends
+  on every resource's breakdown, last day and rolling average.
 - **Right:** the main quest in its own slot at the top, which nothing else takes; program
   tabs 1 to 5 with processors −/+ and Reset; a line per instruction, dragged to reorder
   (an `if` takes its body), tinted by today's outcome (a failed line says why: "needs ⚡2,
   had 0"), the next line to run in an accent frame. Once unlocked, Add: If, Wait until,
-  Build, Buy Land (`ProgramLogic.tsx`): a condition is dropdowns (reading, comparison,
-  and/or) and a number, each clause showing its live value and ✓/✗; body lines sit
-  indented under a bar (⇥/⇤, or a drop on a body line); a false `if` greys with its body.
+  Build, Buy Land (`ProgramLogic.tsx`): conditions as dropdowns, each clause with its live
+  value and ✓/✗; body lines indented under the `if` (⇥/⇤), greyed with it when false.
   Above 10x a redraw covers several days: each line shows its outcome over them
   (`advance_run`'s `lines`), no frame. Below, Events: Story (side story and the latest
   boredom phase), completed quests, and Recent Activity (green good, red bad, blue news),
@@ -184,17 +189,14 @@ be replayed exactly and set against the sim players (`hh-sim playlog`, `hh-sim v
   retries, and Options says it is NOT recording; a malformed batch (400) is dropped.
 - **One file per career:** `<local start time>_<random tag>_seed-<seed>.jsonl`. A new game
   or a discarded save closes the old file with a `career_end` line and starts a new one.
-- **Header** (first line): `format` `hh-playlog/1`, `career`, `rules_revision`,
-  `config_hash`, the resolved `config`, `seed`, `scenario`, `engine`, `prior_actions` (a
-  log begun mid-career), and `commit` (HEAD, `+dirty` if uncommitted), stamped by the server.
-- **Every other line:** `id` (unique; a resent line is read once), `t` (wall-clock ms),
-  `kind`, `tick`, `run`, `day`, `speed`, and by kind: `session_start` (how: save, new,
-  discarded), `session_end`, `hidden`, `visible`, `speed` (`from`), `action` (applied at
-  `tick`: the game's record), `rejected` (the engine's `error`), `refused` (the run ended
-  first), `panel`, `program_tab`, `retirement` (`ended`, `forced`, `days`), `continue`,
-  `story_read`, `new_game`, `debug` (cheats, replay checks), `checkpoint` (`fingerprint`,
-  every 10 s while playing, at retirements, when hidden or closed), `jump_end` (after a
-  jump ahead) and `career_end` (`reason`; `offline` when written at a later visit).
+- **Lines** (`src/playlog.ts` has the format): a header (format `hh-playlog/1`, career,
+  revision, config hash and config, seed, scenario, `prior_actions`, and `commit`, HEAD
+  with `+dirty`, stamped by the server), then one line per happening, each with a unique
+  `id` (a resent line is read once) and a `kind`: `action` (the game's record),
+  `checkpoint` (the fingerprint, every 10 s while playing, at retirements, when hidden or
+  closed), `session_start`/`_end`, `hidden`, `visible`, `speed`, `rejected`, `refused`,
+  `panel`, `program_tab`, `retirement`, `continue`, `story_read`, `new_game`, `debug`,
+  `jump_end`, `career_end` (`reason`; `offline` when written at a later visit).
 
 `hh-sim playlog <file>` replays the header's config, seed and scenario with the logged
 actions to the last tick and checks the fingerprint logged there.

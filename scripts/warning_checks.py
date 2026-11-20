@@ -7,7 +7,8 @@ tripped check and nothing when clean; always exits 0 (warnings never gate).
 Checks:
 - parity: the golden game's fingerprint natively (`hh-sim golden`) and in wasm
   (`scripts/wasm-smoke.mjs`) both equal the pinned constants, and the pins agree.
-  Rebuilds the wasm package first when it is older than the engine sources.
+  Builds the page's wasm (web/src/wasm, `web/scripts/build-wasm.mjs`) first; that
+  script skips the build when its inputs are unchanged.
 - tunables: numeric literals in hh-core rule code (not tests) other than those
   `scripts/warning_checks.json` allows: they belong in a config or content.
 - platform-floats: a platform float function reaching hh-core past clippy (any
@@ -211,18 +212,6 @@ def run(cmd, **kw):
         return subprocess.CompletedProcess(cmd, 127, "", f"{cmd[0]}: {e}")
 
 
-def newest(paths):
-    best = 0.0
-    for base in paths:
-        if base.is_file():
-            best = max(best, base.stat().st_mtime)
-        elif base.is_dir():
-            for p in base.rglob("*"):
-                if p.is_file():
-                    best = max(best, p.stat().st_mtime)
-    return best
-
-
 def check_parity():
     core_tests = (SRC / "tests" / "mod.rs").read_text(encoding="utf-8")
     smoke = (ROOT / "scripts" / "wasm-smoke.mjs").read_text(encoding="utf-8")
@@ -238,14 +227,13 @@ def check_parity():
         warn("parity", f"native golden run failed: {(r.stderr or r.stdout).strip().splitlines()[-1:]}")
     elif m.group(1) != native_pin:
         warn("parity", f"native golden fingerprint {m.group(1)}, pinned {native_pin} (a rules change without its golden update?)")
-    wasm = ROOT / "crates" / "hh-wasm" / "pkg" / "hh_wasm_bg.wasm"
-    sources = [CORE, ROOT / "crates" / "hh-wasm" / "src", ROOT / "crates" / "hh-wasm" / "Cargo.toml",
-               ROOT / "content", ROOT / "scenarios", ROOT / "Cargo.toml", ROOT / "Cargo.lock"]
-    if not wasm.exists() or wasm.stat().st_mtime < newest(sources):
-        b = run(["wasm-pack", "build", "crates/hh-wasm", "--target", "web", "--release"])
-        if b.returncode != 0:
-            warn("parity", "wasm build failed: " + " ".join(b.stderr.strip().splitlines()[-2:]))
-            return
+    # The page's build, web/src/wasm: build-wasm.mjs skips in under a second when a hash
+    # of its inputs is unchanged, and needs only node and wasm-pack (no web/node_modules).
+    b = run(["node", "web/scripts/build-wasm.mjs"])
+    if b.returncode != 0:
+        tail = (b.stderr.strip() or b.stdout.strip()).splitlines()[-2:]
+        warn("parity", "wasm build failed: " + " ".join(tail))
+        return
     s = run(["node", "scripts/wasm-smoke.mjs"])
     if s.returncode != 0:
         fails = [l for l in s.stdout.splitlines() if l.startswith("FAIL")] or s.stderr.strip().splitlines()[-1:]

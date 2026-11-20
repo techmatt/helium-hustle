@@ -19,17 +19,17 @@
 //! runs one command on the first program with every processor, chosen afresh
 //! each look ([`hand_command`]). It funds no project and never retires.
 
-use std::collections::BTreeMap;
+use std::collections::BTreeSet;
 
 use hh_core::state::Entry;
 use hh_core::{Action, Fx, View};
 
-use super::{amount, command_cost, command_unlocked, Agent, Knobs, Player};
+use super::{amount, command_cost, command_unlocked, credits_price, Agent, Knobs, Player};
 
 pub const KNOBS: &[&str] = &["decay", "starved", "reserve", "buys", "min_gap", "max_gap"];
 
 /// Base weights (points) and the percent kept per copy owned, by building id.
-/// A building not listed scores 0.
+/// A building not listed scores 0. Strategy, hand-tuned: they mirror no game value.
 pub const WEIGHTS: &[(&str, i64, i64)] = &[
     ("data_center", 90, 85),
     ("refinery", 70, 70),
@@ -49,7 +49,8 @@ pub const WEIGHTS: &[(&str, i64, i64)] = &[
     ("battery", 0, 50),
 ];
 
-/// The building that makes a starved input.
+/// The building that makes a starved input (mirrors content/buildings.json
+/// `produces`).
 const MAKERS: &[(&str, &str)] = &[
     ("energy", "solar_panel"),
     ("regolith", "excavator"),
@@ -59,7 +60,7 @@ const MAKERS: &[(&str, &str)] = &[
 ];
 
 /// Commands that bridge a missing resource, by resource: [`INPUT_BRIDGES`], then
-/// propellant (pads' fuel).
+/// propellant (pads' fuel). Mirrors content/commands.json's `buy_*` commands.
 pub const BRIDGES: &[(&str, &str)] = &[
     ("titanium", "buy_titanium"),
     ("regolith", "buy_regolith"),
@@ -93,13 +94,13 @@ impl Builder {
     /// Unlocked buildings by score, best first (ties in content order);
     /// zero scores dropped.
     pub fn ranked(&self, v: &View) -> Vec<(String, i64)> {
-        let mut starved: BTreeMap<&str, bool> = BTreeMap::new();
+        let mut starved: BTreeSet<&str> = BTreeSet::new();
         for b in &v.buildings {
             if b.active > 0 && b.stall == Some(hh_core::state::Stall::InputStarved) {
                 for (res, need) in b.upkeep {
                     let short = amount(v, res) < need.mul_int(b.active as i64);
                     if short {
-                        starved.insert(res.as_str(), true);
+                        starved.insert(res.as_str());
                     }
                 }
             }
@@ -118,7 +119,7 @@ impl Builder {
             if capped {
                 s = 0;
             }
-            if MAKERS.iter().any(|(res, maker)| *maker == b.id && starved.contains_key(res)) {
+            if MAKERS.iter().any(|(res, maker)| *maker == b.id && starved.contains(res)) {
                 s += s * self.starved / 100;
             }
             // A good piling up at its cap with no pad to ship it.
@@ -187,7 +188,7 @@ impl Builder {
         let v = p.view();
         let Some(b) = v.buildings.iter().find(|b| b.id == id) else { return false };
         if amount(v, "land") < Fx::from_int(b.land as i64) {
-            let price_credits = b.cost.get("credits").copied().unwrap_or(Fx::ZERO);
+            let price_credits = credits_price(b);
             if amount(v, "credits") >= v.land_price + price_credits {
                 let _ = p.apply(&Action::BuyLand);
             }
@@ -226,7 +227,7 @@ pub fn hand_command(v: &View, target: Option<&str>) -> &'static str {
     }
     if let Some(id) = target {
         if let Some(b) = v.buildings.iter().find(|b| b.id == id) {
-            let price_credits = b.cost.get("credits").copied().unwrap_or(Fx::ZERO);
+            let price_credits = credits_price(b);
             for &(res, cmd) in INPUT_BRIDGES {
                 let need = b.cost.get(res).copied().unwrap_or(Fx::ZERO);
                 if amount(v, res) < need && credits - price_credits >= command_cost(v, cmd, "credits") {
@@ -266,7 +267,7 @@ fn buyable_with_land(v: &View, b: &hh_core::view::BuildingView) -> bool {
         return true;
     }
     let short_land = amount(v, "land") < Fx::from_int(b.land as i64);
-    let credits = b.cost.get("credits").copied().unwrap_or(Fx::ZERO);
+    let credits = credits_price(b);
     short_land
         && b.unlocked
         && amount(v, "credits") >= v.land_price + credits

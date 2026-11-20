@@ -1,8 +1,8 @@
 /* Earthrise, light and dark. Desktop, 1280 to 2560 px wide.
    The two themes are 1:1: everything below the two token blocks is shared, and a token
    block sets colors only (never a size, a font or a width), so switching moves nothing.
-   scripts/contrast.mjs checks every text pair the tokens make at 4.5:1: a new text or
-   background token goes in its list. */
+   scripts/contrast.mjs checks the text-on-background pairs in its hand-kept PAIRS list, both
+   themes, at 4.5:1: a new text or background token needs its pairs added there. */
 :root,
 :root[data-theme='light'] {
   color-scheme: light;
