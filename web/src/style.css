@@ -953,8 +953,82 @@ tr.is-new td:first-child {
 .line.out-failed {
   background: var(--bad-tint);
 }
-.line.out-skipped {
+.line.out-skipped,
+.line.out-false,
+.line.out-jumped,
+.line.out-done {
   background: var(--skip-tint);
+}
+.line.out-true {
+  background: var(--ok-tint);
+}
+.line.out-waiting {
+  background: var(--warn-head);
+}
+.line.out-jumped,
+.line.out-done {
+  color: var(--muted);
+}
+/* A body line of the `if` above: set in under a bar. */
+.line.indented {
+  margin-left: 16px;
+  box-shadow: -4px 0 0 var(--line);
+}
+.line.indented.current {
+  box-shadow: inset 4px 0 0 var(--accent), 0 0 0 1px var(--accent);
+}
+/* If, Wait until, Build, Buy Land: the editor takes the row, wrapping when narrow. */
+.line.logic {
+  grid-template-columns: 14px 1fr auto;
+}
+.line-logic {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 3px 4px;
+  min-width: 0;
+}
+.line-logic select,
+.line-logic input {
+  font: inherit;
+  font-size: 12px;
+  padding: 1px 2px;
+  max-width: 130px;
+  background: var(--card);
+  color: inherit;
+  border: 1px solid var(--line);
+  border-radius: 3px;
+}
+.line-logic input {
+  width: 58px;
+}
+.line-logic .clause,
+.line-logic .up-to {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+}
+.cond-now {
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.cond-now.is-true {
+  color: var(--pos);
+}
+.cond-now.is-false {
+  color: var(--muted);
+}
+.line-buttons {
+  display: inline-flex;
+  gap: 4px;
+}
+.add-logic {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin: 0 0 12px;
 }
 /* The line the next processor runs: an accent ring with a thick left edge, drawn by
    box-shadow so nothing in the line moves (its background still shows the outcome). */

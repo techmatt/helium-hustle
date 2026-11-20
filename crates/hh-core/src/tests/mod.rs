@@ -2,6 +2,7 @@
 
 mod config;
 mod fx;
+mod logic;
 mod play;
 mod rng;
 
@@ -17,8 +18,8 @@ pub(crate) fn baseline() -> Config {
 // The golden constants: update all three together on a `RULES_REVISION` bump
 // (and `GOLDEN_*` in scripts/wasm-smoke.mjs), copying the failing assertion's
 // left side.
-const GOLDEN_REVISION: u32 = 6;
-const GOLDEN_FINGERPRINT: &str = "939946de73816d0c";
+const GOLDEN_REVISION: u32 = 7;
+const GOLDEN_FINGERPRINT: &str = "191c49a24d0457ff";
 const GOLDEN_CONTENT_HASH: &str = "1bb305eca42caf60";
 
 pub(crate) fn golden_session() -> Session {

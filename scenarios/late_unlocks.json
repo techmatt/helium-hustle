@@ -6,6 +6,6 @@
     "resources": { "credits": "10", "energy": "0", "he3": "40", "regolith": "30", "titanium": "10", "circuits": "3", "propellant": "40", "science": "20" },
     "buildings": { "solar_panel": 6, "data_center": 2, "excavator": 3, "refinery": 1, "smelter": 1, "fabricator": 1, "launch_pad": 2, "research_lab": 1 },
     "panels": ["projects", "ideologies", "retirement"],
-    "programs": [[{ "command": "load_pads", "count": 1 }, { "command": "buy_titanium", "count": 1 }]]
+    "programs": [[{ "op": "command", "command": "load_pads", "count": 1 }, { "op": "command", "command": "buy_titanium", "count": 1 }]]
   }
 }

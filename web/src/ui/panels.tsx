@@ -14,7 +14,7 @@ import { Quest, editProgram } from './Right';
 
 export function Commands({ s, program }: { s: Store; program: number }) {
   const v = s.view;
-  const add = (id: string) => editProgram(program, (now) => [...now, { command: id, count: 1 }]);
+  const add = (id: string) => editProgram(program, (now) => [...now, { op: 'command', command: id, count: 1 }]);
   return (
     <div class="panel" data-panel="commands">
       <h2>Commands</h2>

@@ -9,6 +9,8 @@ import { daysPerWake } from '../clock';
 import { act, eventItems, markRead, store, unreadIn, type EventSection, type Store } from '../store';
 import { Bar, ResChip, Section, ShortNote, name, ranPercent, shortText } from './common';
 import { Chip } from './icons';
+import { AddLogic, LogicBody, OUTCOME_TEXT, lineText } from './ProgramLogic';
+import { canIndent, moveLines, removeLine, setIndent } from './programEdit';
 
 export function Right({ s, program, setProgram }: { s: Store; program: number; setProgram: (i: number) => void }) {
   return (
@@ -42,7 +44,7 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
   const noted = useRef<{ key: string; lines: Set<number> }>({ key: '', lines: new Set() });
   if (!p) return null;
   const entries = p.entries;
-  const notedKey = `${v.run}:${program}:${entries.map((e) => `${e.command}x${e.count}`).join(',')}`;
+  const notedKey = `${v.run}:${program}:${JSON.stringify(entries)}`;
   if (noted.current.key !== notedKey) noted.current = { key: notedKey, lines: new Set() };
   // Above 10x one redraw covers several days: the pointer and "ran today" of the last
   // of them would hop around the queue (even backward), so each line instead shows what
@@ -52,19 +54,16 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
   const spanOutcomes = s.lines?.lines[program];
   const move = (from: number, to: number) => {
     if (from === to) return;
-    editProgram(program, (now) => {
-      const next = [...now];
-      const [e] = next.splice(from, 1);
-      next.splice(to, 0, e);
-      return next;
-    });
+    editProgram(program, (now) => moveLines(now, from, to));
   };
+  const setLine = (i: number, e: Entry) => editProgram(program, (now) => now.map((x, j) => (j === i ? e : x)));
+  const remove = (i: number) => editProgram(program, (now) => removeLine(now, i));
   const procs = (by: number) => {
     const now = store.view.programs[program]?.processors ?? 0;
     act({ type: 'set_processors', program, processors: Math.max(0, now + by) });
   };
   const bump = (i: number, by: number) =>
-    editProgram(program, (now) => now.map((x, j) => (j === i ? { ...x, count: Math.max(1, x.count + by) } : x)));
+    editProgram(program, (now) => now.map((x, j) => (j === i && x.op === 'command' ? { ...x, count: Math.max(1, x.count + by) } : x)));
   return (
     <div class="programs" data-testid="programs">
       <div class="prog-tabs" role="tablist">
@@ -125,6 +124,63 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
           // No processor running the program: no line runs next, so none is framed.
           const current = !span && p.running > 0 && i === p.entry;
           // Part way through its runs: that share; otherwise full once it ran today.
+          const rowClass = `line ${outcome ? `out-${outcome}` : ''} ${current ? 'current' : ''} ${e.indented ? 'indented' : ''}`;
+          const dragProps = {
+            draggable: true,
+            onDragStart: (ev: DragEvent) => {
+              setDrag(i);
+              ev.dataTransfer?.setData('text/plain', String(i));
+            },
+            // A drag let go off the list (or cancelled) is over: a later drop of anything
+            // else on a line must not move the line it started from.
+            onDragEnd: () => setDrag(null),
+            onDragOver: (ev: DragEvent) => ev.preventDefault(),
+            onDrop: (ev: DragEvent) => {
+              ev.preventDefault();
+              if (drag !== null) move(drag, i);
+              setDrag(null);
+            },
+          };
+          const ranText = span
+            ? outcome
+              ? `last run since the last redraw: ${OUTCOME_TEXT[outcome]}`
+              : 'not run since the last redraw'
+            : outcome
+              ? `last run today: ${OUTCOME_TEXT[outcome]}`
+              : 'not run today';
+          // In or out of the `if` above (a drag onto a body line does the same).
+          const indent = e.op !== 'if' && (e.indented || canIndent(entries, i)) && (
+            <button
+              type="button"
+              class="tiny"
+              title={e.indented ? 'Move out of the if block' : 'Move into the if block above'}
+              onClick={() => editProgram(program, (now) => setIndent(now, i, !now[i]?.indented))}
+            >
+              {e.indented ? '⇤' : '⇥'}
+            </button>
+          );
+          if (e.op !== 'command') {
+            const why = outcome === 'failed' ? (p.shorts[i] ?? null) : null;
+            return (
+              <li key={`${i}-${e.op}`} class={`${rowClass} logic`} data-line={i} data-op={e.op} {...dragProps} title={`${lineText(v, e)}: ${ranText}${why ? `. ${shortText(v, why)}` : ''}`}>
+                <span class="grip" aria-hidden>
+                  ⠿
+                </span>
+                <LogicBody v={v} e={e} now={p.conditions[i] ?? null} set={(x) => setLine(i, x)} />
+                <span class="line-buttons">
+                  {indent}
+                  <button type="button" class="tiny" title="Remove" onClick={() => remove(i)}>
+                    ×
+                  </button>
+                </span>
+                {why && (
+                  <span class="line-why" data-line-why>
+                    <ShortNote v={v} s={why} />
+                  </span>
+                )}
+              </li>
+            );
+          }
           const frac = current && p.step > 0 ? p.step / e.count : outcome ? 1 : 0;
           // A failed line says why (today's last run of it); the tooltip has it in full.
           // A conversion that ran part way says so too, as a starved building does.
@@ -135,33 +191,12 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
           return (
             <li
               key={`${i}-${e.command}`}
-              class={`line ${outcome ? `out-${outcome}` : ''} ${current ? 'current' : ''}`}
+              class={rowClass}
               data-line={i}
               data-command={e.command}
-              draggable
-              onDragStart={(ev) => {
-                setDrag(i);
-                ev.dataTransfer?.setData('text/plain', String(i));
-              }}
-              // A drag let go off the list (or cancelled) is over: a later drop of anything
-              // else on a line must not move the line it started from.
-              onDragEnd={() => setDrag(null)}
-              onDragOver={(ev) => ev.preventDefault()}
-              onDrop={(ev) => {
-                ev.preventDefault();
-                if (drag !== null) move(drag, i);
-                setDrag(null);
-              }}
+              {...dragProps}
               // The name can be cut short at narrow widths: the tooltip carries it whole.
-              title={`${name(v, e.command)} (x${e.count}): ${
-                span
-                  ? outcome
-                    ? `last run since the last redraw: ${outcome}`
-                    : 'not run since the last redraw'
-                  : outcome
-                    ? `last run today: ${outcome}`
-                    : 'not run today'
-              }${why ? `. ${shortText(v, why)}` : locked ? '. Locked this run.' : ''}`}
+              title={`${lineText(v, e)}: ${ranText}${why ? `. ${shortText(v, why)}` : locked ? '. Locked this run.' : ''}`}
             >
               <span class="grip" aria-hidden>
                 ⠿
@@ -181,9 +216,12 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
               <button type="button" class="tiny" onClick={() => bump(i, 1)}>
                 +
               </button>
-              <button type="button" class="tiny" title="Remove" onClick={() => editProgram(program, (now) => now.filter((_, j) => j !== i))}>
-                ×
-              </button>
+              <span class="line-buttons">
+                {indent}
+                <button type="button" class="tiny" title="Remove" onClick={() => remove(i)}>
+                  ×
+                </button>
+              </span>
               {!(why || locked) && noted.current.lines.has(i) && (
                 <span class="line-why" aria-hidden="true">
                   {' '}
@@ -205,6 +243,7 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
           );
         })}
       </ol>
+      <AddLogic v={v} add={(e) => editProgram(program, (now) => [...now, e])} />
     </div>
   );
 }
@@ -345,6 +384,9 @@ function describe(v: View, a: Activity): ComponentChildren {
       return `Researched ${name(v, a.id)}`;
     case 'project':
       return `Project complete: ${name(v, a.id)}`;
+    case 'unlock':
+      // The one unlock logged so far: the program instructions (`program_logic`).
+      return 'Programs can now use If, Wait until, Build and Buy Land';
     default:
       return name(v, a.id);
   }

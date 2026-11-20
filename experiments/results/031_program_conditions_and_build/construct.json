@@ -1,0 +1,12 @@
+{
+  "name": "construct",
+  "note": "031: the author and the casual player with their construction program (Program 5: if / build / buy land) against the same players without it (construct=0, which plays as revision 6's did), paired on seeds 101-108, careers of 5 retirements.",
+  "configs": ["configs/baseline.json"],
+  "agents": ["author", "author0=author:construct=0", "casual=author:min_gap=120", "casual0=author:min_gap=120,construct=0"],
+  "humans": ["mixed"],
+  "seeds": 8,
+  "first_seed": 101,
+  "retirements": 5,
+  "max_ticks": 60000,
+  "objectives": "reference/scenarios/run1_fresh.json"
+}

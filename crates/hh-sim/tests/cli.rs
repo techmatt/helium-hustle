@@ -107,14 +107,14 @@ fn grid(cmd: &str, agents: &str, extra: &[&str]) -> Vec<String> {
 /// One that changes play updates them and says so; a rules change moves them
 /// all. Copy them from the failing assertion (or the test's `games.jsonl`).
 const PINNED: &[(&str, u64, &str)] = &[
-    ("random", 1, "fcd1fa66de6b4aa0"),
-    ("random", 2, "4a9974e667dff0db"),
-    ("greedy", 1, "37988625b0a5e753"),
-    ("greedy", 2, "606c8f47d0054dcc"),
-    ("author", 1, "60e590de0a4007e0"),
-    ("author", 2, "4dc44e32a9070514"),
-    ("casual", 1, "ad1bde3980d0a94a"),
-    ("casual", 2, "a4d159ee6d60c91d"),
+    ("random", 1, "14aab5c78e8b197b"),
+    ("random", 2, "fa12dcbdf90982a4"),
+    ("greedy", 1, "29a0d314f1f8cc84"),
+    ("greedy", 2, "baeccef720df2fc7"),
+    ("author", 1, "883435f561001384"),
+    ("author", 2, "e8e71fff6d5ef036"),
+    ("casual", 1, "05882797baff687b"),
+    ("casual", 2, "0282af205cc77438"),
 ];
 
 #[test]
@@ -286,7 +286,7 @@ fn the_oracle_plays_on_copies_and_its_game_replays() {
     let half = fingerprints.len() / 2;
     assert_eq!(fingerprints[..half], fingerprints[half..]);
     // Seeds 1 and 2 of the oracle, then of the pinned one.
-    assert_eq!(fingerprints[..half], ["5a4e0f072cc6f786", "cf878f344e02dfc5", "5672294ae6c3ee71", "159639fcfb14fb04"]);
+    assert_eq!(fingerprints[..half], ["2696caf392ce38f0", "afbd27f607b958bc", "2be78d26f471547b", "bb826b637c7c3772"]);
 }
 
 /// `trace --at T` prints the state at career tick T: what walls a run in.
@@ -367,7 +367,7 @@ fn trace_lines_show_the_queue_in_order() {
     use hh_core::{state::Entry, Action, Config, Session};
     let c = Config::from_json(&std::fs::read_to_string(baseline()).unwrap()).unwrap();
     let mut s = Session::new(&c, 3, None).unwrap();
-    let e = |c: &str, n| Entry { command: c.into(), count: n };
+    let e = Entry::command;
     let entries = vec![e("idle", 2), e("cloud_compute", 1), e("idle", 3)];
     s.apply(&Action::SetProgram { program: 0, entries }).unwrap();
     s.advance(7);

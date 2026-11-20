@@ -95,6 +95,7 @@ impl Rules {
         shipments::tick(g);
         demand::bursts(self, g);
         economy::clamp(self, g);
+        programs::note_day_net(g);
         events::check(self, g);
         achievements::check(g);
         ideology::track(self, g);

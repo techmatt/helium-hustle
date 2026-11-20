@@ -6,7 +6,7 @@
 //! ```json
 //! { "name": "rich", "description": "...",
 //!   "start": { "tick": 0, "resources": { "credits": "1000" }, "buildings": { "solar_panel": 3 },
-//!              "panels": [], "programs": [[{ "command": "idle", "count": 1 }]] } }
+//!              "panels": [], "programs": [[{ "op": "command", "command": "idle", "count": 1 }]] } }
 //! ```
 //!
 //! Every key is required (`resources`, `buildings`, `panels` and `programs` may
@@ -77,8 +77,9 @@ impl Scenario {
         }
         for (i, entries) in self.start.programs.iter().enumerate() {
             for e in entries {
-                if c.command(&e.command).is_none() || e.count == 0 {
-                    errors.push(format!("start.programs[{i}]: bad line {:?} x{}", e.command, e.count));
+                // A scenario's programs skip `set_program`: command lines only.
+                if e.indented || e.command_id().is_none_or(|id| c.command(id).is_none()) || e.count() == 0 {
+                    errors.push(format!("start.programs[{i}]: bad line {:?}", e.describe()));
                 }
             }
         }

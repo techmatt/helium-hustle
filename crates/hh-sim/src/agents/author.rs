@@ -14,6 +14,7 @@
 //! | 2 dream | `dream` | 1 while boredom is past `dream_at`% of its cap and the run still builds |
 //! | 3 fund | `fund_<axis>`: the first axis (humanist, rationalist, nationalist) whose persistent project isn't done | 1 when 3 or more are left |
 //! | 4 market | `promote_<good>` for each pad good, `disrupt_speculators` | 1 when 3 or more are left |
+//! | 5 construction (`construct`) | `if Land free < its land and Credits >= the land price` / `buy land` (only while short of land); `if Credits >= its price and <its scarcest other input> >= its price` / `build <target> up to owned + 1`; then the filler × 1 | 1 when 2 or more are left, once `if` and `build` are unlocked (never under the oracle's `main_last`, which puts the main program in that slot) |
 //!
 //! A program is rewritten only when its text changes (a rewrite restarts its
 //! pointer), or, for the main plan, to run its due lines again once the
@@ -36,7 +37,7 @@
 //! `author` and `casual` rungs, they change nothing.
 
 use hh_core::content::Requirement;
-use hh_core::state::Entry;
+use hh_core::state::{Clause, Cmp, Condition, Entry, Join, Joined, Op, Reading};
 use hh_core::{Action, Fx, View};
 
 use super::builder::{Builder, BRIDGES, INPUT_BRIDGES};
@@ -44,7 +45,7 @@ use super::{amount, cap, command_cost, command_unlocked, Agent, Knobs, Player};
 
 pub const KNOBS: &[&str] = &[
     "decay", "starved", "reserve", "buys", "compute", "dream_at", "stale_days", "project_rate", "fund", "market",
-    "hand_gap", "loads", "pause", "wait_demand", "min_gap", "max_gap",
+    "hand_gap", "loads", "pause", "wait_demand", "min_gap", "max_gap", "construct",
 ];
 
 /// Research, first wanted first.
@@ -103,6 +104,7 @@ const MAIN: usize = 0;
 const DREAM: usize = 1;
 const FUND: usize = 2;
 const MARKET: usize = 3;
+const BUILD: usize = 4;
 
 /// Goals a planner sets on top of the author's own choices (the oracle,
 /// docs/agents.md). Unset, the author plays as itself.
@@ -226,6 +228,8 @@ pub struct Author {
     project_rate: Fx,
     fund: bool,
     market: bool,
+    /// Writes the construction program (Program 5) once the game allows it.
+    construct: bool,
     /// Buildings built this run at the last look, and the day that count last rose.
     built: u32,
     built_day: u64,
@@ -257,6 +261,7 @@ impl Author {
             project_rate: Fx::from_int(k.get("project_rate", 3).max(0)),
             fund: k.get("fund", 1) != 0,
             market: k.get("market", 1) != 0,
+            construct: k.get("construct", 1) != 0,
             built: 0,
             built_day: 0,
             run: 0,
@@ -555,7 +560,7 @@ impl Author {
         let mut want: Vec<Vec<Entry>> = vec![Vec::new(); v.programs.len()];
         let mut procs = vec![0u32; v.programs.len()];
         let mut left = total;
-        let e = |c: &str, n: u32| Entry { command: c.to_string(), count: n };
+        let e = Entry::command;
         let pads: Vec<_> = v.pads.iter().filter(|p| p.active).collect();
         // Holding boredom down, Dream runs first (programs run in order), so
         // loading can't take the He-3 and energy it needs.
@@ -696,7 +701,7 @@ impl Author {
             let mut lines = Vec::new();
             for pad in &pads {
                 let cmd = format!("promote_{}", pad.good);
-                if command_unlocked(v, &cmd) && !lines.iter().any(|l: &Entry| l.command == cmd) {
+                if command_unlocked(v, &cmd) && !lines.iter().any(|l: &Entry| l.command_id() == Some(cmd.as_str())) {
                     lines.push(e(&cmd, 1));
                 }
             }
@@ -709,10 +714,19 @@ impl Author {
                 left -= 1;
             }
         }
+        // Construction: buy the target the day it comes within reach, between
+        // looks. Its `if`s are free, so the processor computes on other days.
+        if self.construct && v.program_logic && left > 1 && BUILD < want.len() && BUILD != main {
+            if let Some(b) = target.and_then(|t| v.buildings.iter().find(|b| b.id == t && b.unlocked)) {
+                want[BUILD] = construction(v, b, filler);
+                procs[BUILD] = 1;
+                left -= 1;
+            }
+        }
         procs[main] = left;
         let hand = gap <= self.hand_gap;
         let due: u64 = if hand {
-            want[main].iter().filter(|l| l.command != filler).map(|l| u64::from(l.count)).sum()
+            want[main].iter().filter(|l| l.command_id() != Some(filler)).map(|l| u64::from(l.count())).sum()
         } else {
             0
         };
@@ -728,7 +742,7 @@ impl Author {
         };
         let idle_same = |i: usize| {
             let p = &v.programs[i];
-            let left_steps = p.entries.last().map_or(0, |l| u64::from(l.count.saturating_sub(p.step)));
+            let left_steps = p.entries.last().map_or(0, |l| u64::from(l.count().saturating_sub(p.step)));
             hand && i == main
                 && due == 0
                 && in_filler(i)
@@ -788,6 +802,37 @@ impl Author {
 
 /// Keeps the sooner of `soon` and `t`; a `t` of 0 (it holds already, yet this
 /// look didn't act on it) gives no reason to look again sooner.
+/// The construction program for `b`: land when it is short of it and the
+/// credits are there, then one more `b` once its credits and its scarcest
+/// other input are in stock, then a filler line for the days neither holds.
+fn construction(v: &View, b: &hh_core::view::BuildingView, filler: &str) -> Vec<Entry> {
+    let at_least = |resource: &str, value: Fx| Clause {
+        reading: Reading::Amount { resource: resource.to_string() },
+        cmp: Cmp::Ge,
+        value,
+    };
+    let mut lines = Vec::new();
+    let land = Fx::from_int(i64::from(b.land));
+    if amount(v, "land") < land {
+        let short = Clause { reading: Reading::Amount { resource: "land".to_string() }, cmp: Cmp::Lt, value: land };
+        let rest = Some(Joined { join: Join::And, clause: at_least("credits", v.land_price) });
+        lines.push(Entry::new(Op::If { when: Condition { first: short, rest } }));
+        lines.push(Entry::new(Op::BuyLand {}).indent());
+    }
+    let credits = b.cost.get("credits").copied().unwrap_or(Fx::ZERO);
+    // The other input furthest from its price (as a share of it).
+    let other = b
+        .cost
+        .iter()
+        .filter(|(res, _)| res.as_str() != "credits")
+        .min_by_key(|(res, &need)| if need > Fx::ZERO { (amount(v, res) / need).steps() } else { i64::MAX });
+    let rest = other.map(|(res, &need)| Joined { join: Join::And, clause: at_least(res, need) });
+    lines.push(Entry::new(Op::If { when: Condition { first: at_least("credits", credits), rest } }));
+    lines.push(Entry::new(Op::Build { building: b.id.to_string(), up_to: Some(b.owned + 1) }).indent());
+    lines.push(Entry::command(filler, 1));
+    lines
+}
+
 fn sooner(soon: &mut u64, t: u64) {
     if t > 0 {
         *soon = (*soon).min(t);

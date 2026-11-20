@@ -1,6 +1,6 @@
 # Rules
 
-The rules as implemented, rules revision **6** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **7** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
 The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
@@ -25,7 +25,7 @@ Every module plays; each is one page. A config must name all of them.
 | `boredom` | `phased` | [boredom.md](boredom.md) | Growth by phase of the run's day, the cap, forced retirement. |
 | `economy` | `arc1` | [economy.md](economy.md) | Resources, caps, buildings and their daily resolution, land. |
 | `demand` | `arc1` | [demand.md](demand.md) | Demand per tradeable good: noise, speculators, rivals, saturation, Promote. |
-| `programs` | `arc1` | [programs.md](programs.md) | Programs, processors, running commands, overclocks. |
+| `programs` | `arc1` | [programs.md](programs.md) | Programs, processors, instructions (`if` blocks, `build`), running commands, overclocks. |
 | `dream` | `flat` | [dream.md](dream.md) | What Dream does to boredom. |
 | `projects` | `drain` | [projects.md](projects.md) | Long-Term and Strategic projects, funded over time. |
 | `shipments` | `arc1` | [shipments.md](shipments.md) | Launch pads, loading, launching, payouts. |
@@ -45,14 +45,15 @@ One tick is one in-game day. Each tick, in this order (`Rules::tick`, `rules.rs`
 3. **Overclocks** past their last day expire (programs).
 4. **Demand** decays its forces and is set for the day (demand).
 5. **Upkeep-free buildings** (Solar Panels) produce (economy).
-6. **Programs** run, paid first: each processor one command step (programs, with
-   shipments, demand, ideology and dream for their commands' effects).
+6. **Programs** run, paid first: each processor one step (programs, with shipments,
+   demand, ideology and dream for their commands' effects, economy for `build`).
 7. **Buildings that take upkeep** resolve on what is left: full passes, then partial
    production (economy).
 8. **Projects** drain their funding (projects).
 9. **Pads** cool down (shipments).
 10. **Speculator bursts and rival dumps** when due (demand).
-11. **Clamp**: every resource cut to its cap (overflow counted) and lifted to zero (economy).
+11. **Clamp**: every resource cut to its cap (overflow counted) and lifted to zero (economy);
+    the day's net flows are kept for the programs' `rate` reading.
 12. **Quests and events** check their conditions (events).
 13. **Achievements** check the day's flows and stockpiles (achievements).
 14. **Ideology** bests are recorded in the career (ideology).

@@ -18,7 +18,7 @@ use crate::fx::Fx;
 use crate::modifiers::modifier;
 use crate::modules::*;
 use crate::rules::Rules;
-use crate::state::{Activity, Entry, Flow, GameState, LastRun, LineOutcome, LogEntry, Overclock, RunStats, Short, Stall};
+use crate::state::{Activity, Condition as When, Entry, Flow, GameState, Op, Reading, LastRun, LineOutcome, LogEntry, Overclock, RunStats, Short, Stall};
 
 /// Text borrowed from the embedded content.
 pub type Text = &'static str;
@@ -109,6 +109,80 @@ pub struct ProgramView {
     /// Per line, the input it was short of the last time it ran today
     /// (failed, or a conversion run part way), if it was.
     pub shorts: Vec<Option<ShortView>>,
+    /// Per line, an `if` or `wait until` line's condition as it reads now.
+    pub conditions: Vec<Option<ConditionView>>,
+}
+
+/// A condition now: whether it holds, and each clause's reading (`None`:
+/// nothing to read) and whether that clause holds.
+#[derive(Debug, Clone, Serialize)]
+pub struct ConditionView {
+    pub holds: bool,
+    pub clauses: Vec<ClauseView>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ClauseView {
+    pub value: Option<Fx>,
+    pub holds: bool,
+}
+
+/// A reading a condition may use now, with its display label.
+#[derive(Debug, Clone, Serialize)]
+pub struct ReadingView {
+    pub reading: Reading,
+    pub label: String,
+    pub value: Option<Fx>,
+}
+
+fn condition_view(r: &Rules, g: &GameState, c: &When) -> ConditionView {
+    let clause = |cl: &crate::state::Clause| ClauseView {
+        value: programs::reading(r, g, &cl.reading),
+        holds: programs::clause_holds(r, g, cl),
+    };
+    ConditionView {
+        holds: programs::holds(r, g, c),
+        clauses: std::iter::once(&c.first).chain(c.rest.as_ref().map(|j| &j.clause)).map(clause).collect(),
+    }
+}
+
+/// The readings on offer: what the player can see now. Amount, percent of cap
+/// (capped ones) and last-day rate per visible resource (land and processors:
+/// amount only); a count per visible building; the day; pads ready once there
+/// is a pad; demand per good once exact demand is revealed.
+fn readings(r: &Rules, g: &GameState, resources: &[ResourceView], buildings: &[BuildingView]) -> Vec<ReadingView> {
+    let mut out = Vec::new();
+    let mut add = |reading: Reading, label: String| {
+        let value = programs::reading(r, g, &reading);
+        out.push(ReadingView { reading, label, value });
+    };
+    for res in resources.iter().filter(|x| x.visible) {
+        let id = res.id.to_string();
+        let stock = id != economy::LAND && id != economy::PROCESSORS;
+        let label = if id == economy::LAND { "Land free" } else { res.name };
+        add(Reading::Amount { resource: id.clone() }, label.to_string());
+        if res.cap.is_some() {
+            add(Reading::Percent { resource: id.clone() }, format!("{} %", res.name));
+        }
+        if stock && id != economy::BOREDOM {
+            add(Reading::Rate { resource: id }, format!("{} rate", res.name));
+        }
+    }
+    for b in buildings.iter().filter(|b| b.visible) {
+        add(Reading::Count { building: b.id.to_string() }, format!("{} count", b.name));
+    }
+    add(Reading::Day, "Day".to_string());
+    if !g.run.pads.is_empty() {
+        add(Reading::PadsReady, "Pads ready".to_string());
+    }
+    if research::reveals_demand(g) {
+        let names = names();
+        for good in g.run.markets.keys() {
+            let name = names.get(good.as_str()).copied().unwrap_or(good);
+            add(Reading::Demand { good: good.clone() }, format!("{name} demand"));
+        }
+    }
+    out
 }
 
 /// The program lines run over a span of days (a client drawing once per
@@ -363,6 +437,12 @@ pub struct View {
     pub can_buy_land: bool,
     pub commands: Vec<CommandView>,
     pub programs: Vec<ProgramView>,
+    /// `if`, `wait until`, `build` and `buy land` may be queued (a career
+    /// first: the first day `logic_unlock_processors` processors work).
+    pub program_logic: bool,
+    pub logic_unlock_processors: u32,
+    /// The readings a condition may use now.
+    pub readings: Vec<ReadingView>,
     /// Processors the active buildings grant (what can be assigned).
     pub processors: u32,
     pub processors_free: u32,
@@ -465,8 +545,15 @@ fn source_label(g: &GameState, source: &str) -> String {
             let n: usize = n.parse().unwrap_or(0);
             match line.and_then(|l| l.parse::<usize>().ok()) {
                 Some(l) => {
-                    let cmd = g.run.programs.get(n).and_then(|p| p.entries.get(l)).map_or("", |e| e.command.as_str());
-                    format!("Program {}, line {}: {}", n + 1, l + 1, names.get(cmd).copied().unwrap_or(cmd))
+                    let what = match g.run.programs.get(n).and_then(|p| p.entries.get(l)).map(|e| &e.op) {
+                        Some(Op::Command { command, .. }) => names.get(command.as_str()).copied().unwrap_or(command).to_string(),
+                        Some(Op::Build { building, .. }) => {
+                            format!("Build {}", names.get(building.as_str()).copied().unwrap_or(building))
+                        }
+                        Some(Op::BuyLand {}) => "Buy Land".to_string(),
+                        _ => String::new(),
+                    };
+                    format!("Program {}, line {}: {}", n + 1, l + 1, what)
                 }
                 None => format!("Program {}", n + 1),
             }
@@ -625,7 +712,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             _ => None,
         })
         .max();
-    let resources = c
+    let resources: Vec<ResourceView> = c
         .resources
         .iter()
         .map(|res| {
@@ -653,7 +740,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             }
         })
         .collect();
-    let buildings = c
+    let buildings: Vec<BuildingView> = c
         .buildings
         .iter()
         .map(|b| {
@@ -767,6 +854,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
     };
     let procs = programs::capacity(g);
     let running = programs::running(g);
+    let readings = readings(r, g, &resources, &buildings);
     View {
         tick: g.tick,
         day: g.run.day,
@@ -797,8 +885,19 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                         g.run.today.shorts.get(&k).map(|s| short_view(g, &k, s))
                     })
                     .collect(),
+                conditions: p
+                    .entries
+                    .iter()
+                    .map(|e| match &e.op {
+                        Op::If { when } | Op::WaitUntil { when } => Some(condition_view(r, g, when)),
+                        _ => None,
+                    })
+                    .collect(),
             })
             .collect(),
+        program_logic: programs::logic_unlocked(g),
+        logic_unlock_processors: r.p.programs.logic_unlock_processors,
+        readings,
         processors: procs,
         processors_free: procs.saturating_sub(programs::assigned(g)),
         processors_running: running.iter().sum(),

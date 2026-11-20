@@ -64,6 +64,7 @@ wasm-pack build crates/hh-wasm --target web  # -> crates/hh-wasm/pkg (git-ignore
 node scripts/wasm-smoke.mjs                  # native = wasm: needs the pkg above (not web's copy); ~1 s
 python scripts/warning_checks.py             # warning checks, incl. parity and balance (rebuilds stale builds); ~7 s, up to a minute cold
 cd web && npm ci && npm run dev              # the browser UI at http://localhost:5173/ (web/README.md)
+cd web && npm run wasm && npm run check      # type-check alone: a fresh worktree has no web/src/wasm until `npm run wasm` (~80 s)
 ```
 
 **Test lanes.** `cargo test --workspace` is the fast lane and the default: run it after

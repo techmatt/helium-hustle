@@ -22,7 +22,7 @@ fn own(g: &mut GameState, b: &str, n: u32) {
 }
 
 fn program(r: &Rules, g: &mut GameState, cmds: &[(&str, u32)]) {
-    let entries = cmds.iter().map(|(c, n)| Entry { command: c.to_string(), count: *n }).collect();
+    let entries = cmds.iter().map(|(c, n)| Entry::command(c, *n)).collect();
     r.apply(g, &Action::SetProgram { program: 0, entries }).unwrap();
 }
 
@@ -369,7 +369,7 @@ fn programs_run_and_show_their_lines_in_queue_order_day_after_day() {
         own(&mut g, "data_center", procs);
         r.apply(&mut g, &Action::SetProcessors { program: 0, processors: procs }).unwrap();
         program(&r, &mut g, &queue);
-        let names: Vec<_> = queue.iter().map(|&(c, n)| Entry { command: c.into(), count: n }).collect();
+        let names: Vec<_> = queue.iter().map(|&(c, n)| Entry::command(c, n)).collect();
         let mut span = LinesRun::default();
         for day in 0..20usize {
             r.advance(&mut g, 1);

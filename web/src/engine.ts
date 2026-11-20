@@ -104,12 +104,51 @@ export interface CommandView {
   boredom: Fx;
 }
 
-export interface Entry {
-  command: string;
-  count: number;
+export type Cmp = 'lt' | 'le' | 'gt' | 'ge' | 'eq';
+
+/** What a condition reads (hh-core `state::Reading`). */
+export type Reading =
+  | { kind: 'amount' | 'percent' | 'rate'; resource: string }
+  | { kind: 'count'; building: string }
+  | { kind: 'day' }
+  | { kind: 'pads_ready' }
+  | { kind: 'demand'; good: string };
+
+export interface Clause {
+  reading: Reading;
+  cmp: Cmp;
+  value: Fx;
 }
 
-export type LineOutcome = 'ran' | 'skipped' | 'failed';
+export interface Condition {
+  first: Clause;
+  rest: { join: 'and' | 'or'; clause: Clause } | null;
+}
+
+/** A program instruction (hh-core `state::Op`). */
+export type Op =
+  | { op: 'command'; command: string; count: number }
+  | { op: 'build'; building: string; up_to: number | null }
+  | { op: 'buy_land' }
+  | { op: 'if'; when: Condition }
+  | { op: 'wait_until'; when: Condition };
+
+/** A program line: an instruction, `indented` in the body of the `if` above it. */
+export type Entry = Op & { indented?: boolean };
+
+export type LineOutcome = 'ran' | 'skipped' | 'failed' | 'true' | 'false' | 'jumped' | 'waiting' | 'done';
+
+export interface ConditionView {
+  holds: boolean;
+  clauses: { value: Fx | null; holds: boolean }[];
+}
+
+/** A reading a condition may use now, with its display label and value. */
+export interface ReadingView {
+  reading: Reading;
+  label: string;
+  value: Fx | null;
+}
 
 export interface ProgramView {
   entries: Entry[];
@@ -122,6 +161,8 @@ export interface ProgramView {
   outcomes: (LineOutcome | null)[];
   /** Per line, the input it was short of the last time it ran today. */
   shorts: (ShortView | null)[];
+  /** Per line, an `if` or `wait until` line's condition as it reads now. */
+  conditions: (ConditionView | null)[];
 }
 
 /** The program lines run over a span of days: per program, per line in queue order,
@@ -293,6 +334,10 @@ export interface View {
   can_buy_land: boolean;
   commands: CommandView[];
   programs: ProgramView[];
+  /** `if`, `wait until`, `build` and `buy land` may be queued (a career first). */
+  program_logic: boolean;
+  logic_unlock_processors: number;
+  readings: ReadingView[];
   processors: number;
   processors_free: number;
   /** Assigned processors running today (fewer while Data Centers go unpaid). */

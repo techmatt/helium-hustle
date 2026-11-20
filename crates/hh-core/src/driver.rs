@@ -197,7 +197,7 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
         v = s.rules.view(&s.state);
     }
     let pick = choose_command(&v, goal.map(|(id, _)| *id), allowed);
-    let want = vec![Entry { command: pick.to_string(), count: 1 }];
+    let want = vec![Entry::command(pick, 1)];
     if v.programs[0].entries != want {
         s.apply(&Action::SetProgram { program: 0, entries: want }).expect("a known command");
     }

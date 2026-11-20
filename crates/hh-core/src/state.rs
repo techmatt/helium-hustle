@@ -54,12 +54,173 @@ pub struct Holding {
     pub unpaid: u32,
 }
 
-/// One line of a program: run `command` `count` times before moving on.
+/// One line of a program: an instruction, and whether it sits in the body of
+/// the `if` above it (one level: a body can't hold another `if`).
+/// JSON: `{"op": "command", "command": "idle", "count": 1}`, with
+/// `"indented": true` for a body line.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Entry {
+    #[serde(flatten)]
+    pub op: Op,
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub indented: bool,
+}
+
+impl Entry {
+    /// A top-level line.
+    pub fn new(op: Op) -> Entry {
+        Entry { op, indented: false }
+    }
+
+    /// A top-level command line run `count` times before moving on.
+    pub fn command(command: &str, count: u32) -> Entry {
+        Entry::new(Op::Command { command: command.to_string(), count })
+    }
+
+    /// The same instruction in the body of the `if` above.
+    pub fn indent(mut self) -> Entry {
+        self.indented = true;
+        self
+    }
+
+    /// The command this line runs, if it is a command line.
+    pub fn command_id(&self) -> Option<&str> {
+        match &self.op {
+            Op::Command { command, .. } => Some(command),
+            _ => None,
+        }
+    }
+
+    /// How many times a command line runs before moving on (1 for the rest).
+    pub fn count(&self) -> u32 {
+        match &self.op {
+            Op::Command { count, .. } => *count,
+            _ => 1,
+        }
+    }
+
+    /// The line as terse text with content ids (traces and logs, not the UI).
+    pub fn describe(&self) -> String {
+        let text = match &self.op {
+            Op::Command { command, count } => format!("{command} x{count}"),
+            Op::Build { building, up_to: None } => format!("build {building}"),
+            Op::Build { building, up_to: Some(n) } => format!("build {building} up to {n}"),
+            Op::BuyLand {} => "buy land".to_string(),
+            Op::If { when } => format!("if {}", when.describe()),
+            Op::WaitUntil { when } => format!("wait until {}", when.describe()),
+        };
+        if self.indented { format!("> {text}") } else { text }
+    }
+}
+
+impl Condition {
+    pub fn describe(&self) -> String {
+        let clause = |c: &Clause| {
+            let reading = match &c.reading {
+                Reading::Amount { resource } => resource.clone(),
+                Reading::Percent { resource } => format!("{resource} %"),
+                Reading::Rate { resource } => format!("{resource} rate"),
+                Reading::Count { building } => format!("{building} count"),
+                Reading::Day => "day".to_string(),
+                Reading::PadsReady => "pads ready".to_string(),
+                Reading::Demand { good } => format!("{good} demand"),
+            };
+            let cmp = match c.cmp {
+                Cmp::Lt => "<",
+                Cmp::Le => "<=",
+                Cmp::Gt => ">",
+                Cmp::Ge => ">=",
+                Cmp::Eq => "=",
+            };
+            format!("{reading} {cmp} {}", c.value)
+        };
+        match &self.rest {
+            None => clause(&self.first),
+            Some(j) => {
+                let join = if j.join == Join::And { "and" } else { "or" };
+                format!("{} {join} {}", clause(&self.first), clause(&j.clause))
+            }
+        }
+    }
+}
+
+/// A program instruction. The set grows: a new kind is a new variant here and
+/// its arm in `programs::step`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "op", rename_all = "snake_case", deny_unknown_fields)]
+pub enum Op {
+    /// Run `command` `count` times before moving on (a processor step each).
+    Command { command: String, count: u32 },
+    /// Buy one `building` (a processor step). With `up_to`, free and passed
+    /// over once that many are owned.
+    Build { building: String, up_to: Option<u32> },
+    /// Buy land (a processor step). A struct variant, so a stray key is refused.
+    BuyLand {},
+    /// Free. True: the indented lines below run. False: the pointer jumps past them.
+    If { when: Condition },
+    /// Free. Holds the pointer until true.
+    WaitUntil { when: Condition },
+}
+
+/// One clause, or two joined by `and` / `or`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
-pub struct Entry {
-    pub command: String,
-    pub count: u32,
+pub struct Condition {
+    pub first: Clause,
+    pub rest: Option<Joined>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Joined {
+    pub join: Join,
+    pub clause: Clause,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Join {
+    And,
+    Or,
+}
+
+/// `<reading> <cmp> <value>`.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Clause {
+    pub reading: Reading,
+    pub cmp: Cmp,
+    pub value: Fx,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Cmp {
+    Lt,
+    Le,
+    Gt,
+    Ge,
+    Eq,
+}
+
+/// What a condition reads (docs/rules/programs.md, *Readings*).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
+pub enum Reading {
+    /// A resource's amount (land: the land free; boredom too).
+    Amount { resource: String },
+    /// Its amount as a percent of its cap (no cap: the clause is false).
+    Percent { resource: String },
+    /// What it made less what it used over the last full day.
+    Rate { resource: String },
+    /// How many of a building are owned.
+    Count { building: String },
+    /// The run's day.
+    Day,
+    /// Pads full and able to launch now.
+    PadsReady,
+    /// A good's demand (needs exact demand revealed).
+    Demand { good: String },
 }
 
 /// A program tab: a command queue, the processors assigned to it and its
@@ -188,6 +349,16 @@ pub enum LineOutcome {
     Skipped,
     /// Locked, or short of its costs.
     Failed,
+    /// An `if` or `wait until` whose condition held.
+    True,
+    /// An `if` whose condition didn't hold: its body was jumped.
+    False,
+    /// A body line jumped with its false `if` (and not run earlier today).
+    Jumped,
+    /// A `wait until` holding the pointer.
+    Waiting,
+    /// A `build ... up to N` with N owned: passed over, free.
+    Done,
 }
 
 /// One line of the run's activity feed (the UI's Recent Activity): what
@@ -201,7 +372,8 @@ pub struct Activity {
     /// `rival_dump` (id: the rival), `event` (a one-off event),
     /// `cargo_lost` (id: the good, quantity: lost, amount: the pad's 1-based
     /// number: cargo a switch returned past the stockpile's cap), and the
-    /// career log's kinds (`quest`, `achievement`, `project`, `research`).
+    /// career log's kinds (`quest`, `achievement`, `project`, `research`,
+    /// `unlock`: a career first, id the flag it set).
     pub kind: String,
     pub id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -253,6 +425,10 @@ pub struct Run {
     /// Each day's `today.flows` folded into a rolling average over the
     /// economy's `flow_average_days` (display only: no rule reads it).
     pub flow_average: BTreeMap<String, BTreeMap<String, Flow>>,
+    /// Per resource, what the last full day made less what it used (its
+    /// `today.produced − today.consumed`; purchases, loading and caps aside):
+    /// the `rate` reading of program conditions.
+    pub day_net: BTreeMap<String, Fx>,
     /// The run's activity feed, oldest first (display only: no rule reads it).
     pub activity: Vec<Activity>,
 }
@@ -275,7 +451,7 @@ pub struct LogEntry {
     pub tick: u64,
     pub run: u32,
     pub day: u64,
-    /// `quest`, `achievement`, `project`, `research`, `retired`, `forced_retirement`.
+    /// `quest`, `achievement`, `project`, `research`, `unlock`, `retired`, `forced_retirement`.
     pub kind: String,
     pub id: String,
 }

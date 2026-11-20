@@ -10,6 +10,11 @@
     },
     "exceptions": [
       {
+        "file": "crates/hh-core/src/modules/programs.rs",
+        "literal": "100",
+        "why": "a unit, not a tunable: the percent reading of a program condition is amount / cap x 100"
+      },
+      {
         "file": "crates/hh-core/src/view.rs",
         "literal": "2",
         "why": "display only: an event text's {rate} shows two decimal places"

@@ -328,7 +328,7 @@ fn state_at(s: &Session, note: &str) -> String {
         );
     }
     for p in v.programs.iter().filter(|p| !p.entries.is_empty()) {
-        let lines: Vec<String> = p.entries.iter().map(|e| format!("{} x{}", e.command, e.count)).collect();
+        let lines: Vec<String> = p.entries.iter().map(|e| e.describe()).collect();
         let _ = writeln!(t, "  program procs {}: {}", p.processors, lines.join(", "));
     }
     for m in &v.markets {
@@ -373,7 +373,8 @@ pub fn day_lines(rec: &hh_core::Record) -> Result<Vec<(u64, String)>, String> {
                 .enumerate()
                 .filter_map(|(i, o)| {
                     let o = (*o)?;
-                    let cmd = &g.run.programs[p].entries[i].command;
+                    let e = &g.run.programs[p].entries[i];
+                    let cmd = e.command_id().map_or_else(|| e.describe(), str::to_string);
                     Some(format!("{i} {cmd} {}", serde_json::to_value(o).expect("json").as_str().unwrap_or("?")))
                 })
                 .collect();

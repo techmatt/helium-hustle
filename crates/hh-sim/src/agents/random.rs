@@ -77,7 +77,7 @@ impl Agent for Random {
             let mut entries = Vec::new();
             for _ in 0..lines {
                 if let Some(c) = self.pick(&commands) {
-                    entries.push(Entry { command: c, count: 1 + self.rng.below(3) });
+                    entries.push(Entry::command(&c, 1 + self.rng.below(3)));
                 }
             }
             options.push(Action::SetProgram { program: self.rng.below(programs), entries });

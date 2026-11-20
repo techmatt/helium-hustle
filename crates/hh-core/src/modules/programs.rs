@@ -10,7 +10,7 @@ use crate::content::{content, Command, CommandEffect, ProjectReward, ResearchEff
 use crate::fx::Fx;
 use crate::modifiers::modifier;
 use crate::rules::Rules;
-use crate::state::{Entry, GameState, Overclock, Program};
+use crate::state::{Clause, Cmp, Condition, Entry, GameState, Join, Joined, Op, Overclock, Program, Reading};
 
 use super::economy::{BOREDOM, PROCESSORS};
 
@@ -22,6 +22,7 @@ pub static DEF: ModuleDef = ModuleDef {
             param("program_count", K::Int, Some(("1", "100")), "program tabs"),
             param("max_entries", K::Int, Some(("1", "10000")), "most lines in one program"),
             param("overclock_base_cap", K::Fx, Some(("1", "100")), "the most an overclock multiplies output, before research"),
+            param("logic_unlock_processors", K::Int, Some(("0", "1000")), "working processors that first open if, wait until, build and buy land (a career first)"),
         ],
         rng: &[],
     }],
@@ -32,6 +33,7 @@ pub struct Params {
     pub program_count: usize,
     pub max_entries: usize,
     pub overclock_base_cap: Fx,
+    pub logic_unlock_processors: u32,
 }
 
 impl Params {
@@ -40,6 +42,7 @@ impl Params {
             program_count: mc.int("program_count") as usize,
             max_entries: mc.int("max_entries") as usize,
             overclock_base_cap: mc.fx("overclock_base_cap"),
+            logic_unlock_processors: mc.int("logic_unlock_processors") as u32,
         })
     }
 }
@@ -118,12 +121,69 @@ pub fn set_program(r: &Rules, g: &mut GameState, program: u32, entries: &[Entry]
     if entries.len() > r.p.programs.max_entries {
         return Err(format!("Program {}: at most {} lines", program + 1, r.p.programs.max_entries));
     }
-    for e in entries {
-        if content().command(&e.command).is_none() {
-            return Err(format!("Program {}: unknown command {:?}", program + 1, e.command));
+    let n = program + 1;
+    let c = content();
+    let clause = |cl: &Clause| -> Result<(), String> {
+        let known = |res: &str| c.resources.iter().any(|x| x.id == res);
+        match &cl.reading {
+            Reading::Amount { resource } | Reading::Percent { resource } | Reading::Rate { resource } => {
+                known(resource).then_some(()).ok_or_else(|| format!("Program {n}: unknown resource {resource:?}"))
+            }
+            Reading::Count { building } => {
+                c.building(building).map(|_| ()).ok_or_else(|| format!("Program {n}: unknown building {building:?}"))
+            }
+            Reading::Day | Reading::PadsReady => Ok(()),
+            Reading::Demand { good } => {
+                if !g.run.markets.contains_key(good) {
+                    return Err(format!("Program {n}: {good:?} is not a traded good"));
+                }
+                if !super::research::reveals_demand(g) {
+                    return Err(format!("Program {n}: demand can't be read yet"));
+                }
+                Ok(())
+            }
         }
-        if e.count == 0 {
-            return Err(format!("Program {}: {} runs 0 times", program + 1, e.command));
+    };
+    let condition = |when: &Condition| -> Result<(), String> {
+        clause(&when.first)?;
+        when.rest.as_ref().map_or(Ok(()), |j| clause(&j.clause))
+    };
+    // Whether the line above is an `if` or in a body: only then may a line be indented.
+    let mut in_block = false;
+    for e in entries {
+        if !matches!(e.op, Op::Command { .. }) && !logic_unlocked(g) {
+            return Err(format!("Program {n}: only commands can be queued yet"));
+        }
+        if e.indented && !in_block {
+            return Err(format!("Program {n}: an indented line needs an if above it"));
+        }
+        in_block = e.indented;
+        match &e.op {
+            Op::Command { command, count } => {
+                if c.command(command).is_none() {
+                    return Err(format!("Program {n}: unknown command {command:?}"));
+                }
+                if *count == 0 {
+                    return Err(format!("Program {n}: {command} runs 0 times"));
+                }
+            }
+            Op::Build { building, up_to } => {
+                if c.building(building).is_none() {
+                    return Err(format!("Program {n}: unknown building {building:?}"));
+                }
+                if *up_to == Some(0) {
+                    return Err(format!("Program {n}: build {building} up to 0"));
+                }
+            }
+            Op::BuyLand {} => {}
+            Op::If { when } => {
+                if e.indented {
+                    return Err(format!("Program {n}: an if can't sit inside another if"));
+                }
+                condition(when)?;
+                in_block = true;
+            }
+            Op::WaitUntil { when } => condition(when)?,
         }
     }
     let p = program_mut(g, program)?;
@@ -256,31 +316,201 @@ pub fn execute(r: &Rules, g: &mut GameState, c: &Command, src: &str, short: &str
     LineOutcome::Ran
 }
 
-/// Each program in order; each of its processors runs the line under the
-/// shared pointer, which then advances (a failed or skipped line too),
-/// wrapping at the end.
+/// The career flag that opens every instruction but plain commands.
+pub const LOGIC_FLAG: &str = "program_logic";
+
+/// `if`, `wait until`, `build` and `buy land` are open: a career first, kept
+/// across retirements.
+pub fn logic_unlocked(g: &GameState) -> bool {
+    g.career.flags.contains(LOGIC_FLAG)
+}
+
+/// What a reading reads now (`None`: nothing to read, the clause is false).
+pub fn reading(r: &Rules, g: &GameState, what: &Reading) -> Option<Fx> {
+    match what {
+        Reading::Amount { resource } => Some(g.amount(resource)),
+        Reading::Percent { resource } => {
+            let cap = super::economy::cap(r, g, resource).filter(|c| *c > Fx::ZERO)?;
+            Some((g.amount(resource) / cap).mul_int(PERCENT))
+        }
+        Reading::Rate { resource } => Some(g.run.day_net.get(resource).copied().unwrap_or(Fx::ZERO)),
+        Reading::Count { building } => Some(Fx::from_int(i64::from(g.owned(building)))),
+        Reading::Day => Some(Fx::from_int(i64::try_from(g.run.day).unwrap_or(i64::MAX))),
+        Reading::PadsReady => {
+            let full = r.p.shipments.pad_cargo_capacity;
+            let n = (0..g.run.pads.len())
+                .filter(|&i| g.run.pads[i].cargo >= full && super::shipments::can_launch(r, g, i))
+                .count();
+            Some(Fx::from_int(n as i64))
+        }
+        Reading::Demand { good } => {
+            if !super::research::reveals_demand(g) {
+                return None;
+            }
+            g.run.markets.get(good).map(|m| m.demand)
+        }
+    }
+}
+
+/// A percent reading is this many at the cap.
+const PERCENT: i64 = 100;
+
+pub fn clause_holds(r: &Rules, g: &GameState, c: &Clause) -> bool {
+    let Some(v) = reading(r, g, &c.reading) else {
+        return false;
+    };
+    match c.cmp {
+        Cmp::Lt => v < c.value,
+        Cmp::Le => v <= c.value,
+        Cmp::Gt => v > c.value,
+        Cmp::Ge => v >= c.value,
+        Cmp::Eq => v == c.value,
+    }
+}
+
+pub fn holds(r: &Rules, g: &GameState, c: &Condition) -> bool {
+    let first = clause_holds(r, g, &c.first);
+    match &c.rest {
+        None => first,
+        Some(Joined { join: Join::And, clause }) => first && clause_holds(r, g, clause),
+        Some(Joined { join: Join::Or, clause }) => first || clause_holds(r, g, clause),
+    }
+}
+
+/// Records the day's net flow per resource for the `rate` reading (end of
+/// each day, after the clamp).
+pub fn note_day_net(g: &mut GameState) {
+    let t = &g.run.today;
+    let mut net = t.produced.clone();
+    for (res, &v) in &t.consumed {
+        *net.entry(res.clone()).or_insert(Fx::ZERO) -= v;
+    }
+    g.run.day_net = net;
+}
+
+/// Buys one building for a program line: fails as the Buy action is refused,
+/// noting what it was short of.
+fn build(r: &Rules, g: &mut GameState, building: &str, short: &str) -> LineOutcome {
+    let b = content().building(building).expect("set_program checked");
+    if super::economy::unlocked(g, b) && !super::economy::at_limit(g, b) {
+        let land = Fx::from_int(i64::from(b.land));
+        let mut needs = super::economy::price(r, g, b);
+        if g.amount(super::economy::LAND) < land {
+            needs = BTreeMap::from([(super::economy::LAND.to_string(), land)]);
+        }
+        if let Some(s) = super::economy::scarcest(g, &needs, Fx::ZERO) {
+            g.run.today.shorts.insert(short.to_string(), s);
+        }
+    }
+    match super::economy::buy(r, g, building) {
+        Ok(()) => LineOutcome::Ran,
+        Err(_) => LineOutcome::Failed,
+    }
+}
+
+fn buy_land(r: &Rules, g: &mut GameState, short: &str) -> LineOutcome {
+    let needs = BTreeMap::from([(super::economy::CREDITS.to_string(), super::economy::land_price(r, g))]);
+    if let Some(s) = super::economy::scarcest(g, &needs, Fx::ZERO) {
+        g.run.today.shorts.insert(short.to_string(), s);
+    }
+    match super::economy::buy_land(r, g) {
+        Ok(()) => LineOutcome::Ran,
+        Err(_) => LineOutcome::Failed,
+    }
+}
+
+/// The line after `line`'s body: the first unindented line below it (wrapping).
+fn past_body(p: &Program, line: usize) -> usize {
+    let mut j = line + 1;
+    while p.entries.get(j).is_some_and(|e| e.indented) {
+        j += 1;
+    }
+    j % p.entries.len()
+}
+
+/// One processor's step of program `i`: free lines (an `if`, a passed `wait
+/// until`, a `build ... up to N` that is done) are passed over until a line
+/// that costs the step runs. A `wait until` not yet true, or a whole loop of
+/// free lines, idles the step.
+fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
+    let n = g.run.programs[i].entries.len();
+    for _ in 0..n {
+        let p = &g.run.programs[i];
+        let line = p.entry as usize;
+        let op = p.entries[line].op.clone();
+        let short = format!("{src}:{line}");
+        // The line's note is today's last run's.
+        g.run.today.shorts.remove(&short);
+        let mark = |g: &mut GameState, l: usize, o: LineOutcome| {
+            g.run.today.lines.entry(i as u32).or_default().insert(l as u32, o);
+        };
+        let next = (line + 1) % n;
+        // (outcome, where the pointer goes, whether the step is spent)
+        let (outcome, to, spent) = match &op {
+            Op::If { when } => {
+                if holds(r, g, when) {
+                    (LineOutcome::True, next, false)
+                } else {
+                    let to = past_body(&g.run.programs[i], line);
+                    let end = if to > line { to } else { n };
+                    // A body line that ran earlier today keeps that outcome.
+                    for l in line + 1..end {
+                        g.run.today.lines.entry(i as u32).or_default().entry(l as u32).or_insert(LineOutcome::Jumped);
+                    }
+                    (LineOutcome::False, to, false)
+                }
+            }
+            Op::WaitUntil { when } => {
+                if holds(r, g, when) {
+                    (LineOutcome::True, next, false)
+                } else {
+                    mark(g, line, LineOutcome::Waiting);
+                    return;
+                }
+            }
+            Op::Build { building, up_to: Some(most) } if g.owned(building) >= *most => {
+                (LineOutcome::Done, next, false)
+            }
+            Op::Build { building, .. } => (build(r, g, building, &short), next, true),
+            Op::BuyLand {} => (buy_land(r, g, &short), next, true),
+            Op::Command { command, count } => {
+                let c = content().command(command).expect("set_program checked");
+                let outcome = execute(r, g, c, src, &short);
+                let p = &mut g.run.programs[i];
+                p.step += 1;
+                if p.step < *count {
+                    mark(g, line, outcome);
+                    return;
+                }
+                (outcome, next, true)
+            }
+        };
+        mark(g, line, outcome);
+        let p = &mut g.run.programs[i];
+        p.step = 0;
+        p.entry = to as u32;
+        if spent {
+            return;
+        }
+    }
+}
+
+/// Each program in order; each of its processors takes one step of it from
+/// the shared pointer ([`step`]). The first day `logic_unlock_processors`
+/// processors work latches the career's [`LOGIC_FLAG`].
 pub fn run(r: &Rules, g: &mut GameState) {
+    if !logic_unlocked(g) && processors(g) >= r.p.programs.logic_unlock_processors {
+        g.career.flags.insert(LOGIC_FLAG.to_string());
+        g.note("unlock", LOGIC_FLAG);
+    }
     let running = running(g);
     for i in 0..g.run.programs.len() {
         let src = format!("program:{i}");
         for _ in 0..running[i] {
-            let p = &g.run.programs[i];
-            let Some(e) = p.entries.get(p.entry as usize) else {
+            if g.run.programs[i].entries.is_empty() {
                 break;
-            };
-            let c = content().command(&e.command).expect("set_program checked");
-            let line = p.entry;
-            let short = format!("{src}:{line}");
-            // The line's note is today's last run's.
-            g.run.today.shorts.remove(&short);
-            let outcome = execute(r, g, c, &src, &short);
-            g.run.today.lines.entry(i as u32).or_default().insert(line, outcome);
-            let p = &mut g.run.programs[i];
-            p.step += 1;
-            if p.step >= p.entries[p.entry as usize].count {
-                p.step = 0;
-                p.entry = (p.entry + 1) % p.entries.len() as u32;
             }
+            step(r, g, i, &src);
         }
     }
 }

@@ -37,7 +37,7 @@ npm run preview                              # serve web/dist/
 `npm run e2e` (`scripts/e2e.mjs`) drives headless Edge or Chrome over the DevTools
 protocol (no packages) against a served page: `HH_URL` (default
 `http://localhost:5173/`), `HH_BROWSER` for a browser off the usual paths, `HH_SHOTS=<dir>`
-to save a PNG at each step worth seeing. About 45 s. It plays, in order:
+to save PNGs. About 45 s. It plays, in order:
 
 1. **A fresh game through the normal UI only** (no debug menu): a build order, Program 1
    switched between Sell Cloud Compute and the bridging buys, the first pad loaded and
@@ -45,9 +45,9 @@ to save a PNG at each step worth seeing. About 45 s. It plays, in order:
    clock, run 2 (known tiles and resources still shown, not cheated).
 2. **Every panel**: cheats reach Research, Projects and Ideologies; all 11 tiles open; the
    cheated mark, a jump ahead and the replay check.
-3. A program's frame at 10x and 50x, each speed's days per second, pause, click-to-buy
-   (details in the script's header), a reload keeping the save, a save from another
-   revision discarded, the scenarios and the replay check.
+3. A program's frame at 10x and 50x, each speed's days per second, pause, click-to-buy, a reload keeping the save, a save from another
+   revision discarded, the scenarios and the replay check; in `late_unlocks`, an `if` /
+   `build` / `wait until` program written through the editor, which then builds.
 4. **The theme:** the toggles switch it with every element's box unchanged (to 0.01 px);
    a reload keeps it.
 5. **Readability** (before 4): capped rates, Resources' groups, affordable cards and Land,
@@ -79,13 +79,12 @@ pad switched to another good (the stockpile gains what its tooltip promised) and
 Activity's unread count (counts while folded, clears once read). The late panels again in
 the other theme; every building's card (`?all-cards`, a display-only URL flag) in both.
 Real mouse and key probes of click-to-buy and the program frame. The checks by kind and
-the `HH_*` settings are in the script's header. Exit 1 on any finding. `HH_LONG=<minutes>`
-plays one career that long at 200x, logging heap, DOM, save size and worst frame a minute.
+the `HH_*` settings (`HH_PACE`, `HH_LONG` among them) are in the script's header. Exit 1
+on any finding.
 
 ```sh
 npm run build && npx vite preview --port 0          # a static build: dev-server reloads break a pass
 HH_URL=http://localhost:<port>/ npm run qa           # ~1.3 min a pass; 3 seeds x 2 widths ~8 min
-HH_PACE=120 HH_WIDTHS=1600 HH_URL=... npm run qa     # a first visit left at 1x for 2 min, a shot every 15 s
 ```
 
 Output (`HH_QA_OUT`, default `out/qa`, wiped): a PNG per moment in
@@ -93,7 +92,7 @@ Output (`HH_QA_OUT`, default `out/qa`, wiped): a PNG per moment in
 
 ## The screen
 
-Three columns and a status bar, as in the last Godot build:
+Three columns and a status bar:
 
 - **Left:** the title, the nav grid (tiles from `content/nav.json`; a dot marks a tile new
   this run or whose panel holds something new; past nine tiles they go compact, icon beside
@@ -114,14 +113,16 @@ Three columns and a status bar, as in the last Godot build:
   cards tint their head: green Ready (full and fueled), yellow Paused, red full but short of
   fuel; a full pad still cooling down says when it is ready. Stats ends on every resource's breakdown, last day and rolling average.
 - **Right:** the main quest in its own slot at the top, which nothing else takes; program
-  tabs 1 to 5 with processors −/+ and Reset; a line per command with
-  its progress, −/+/×, drag to reorder, its tint from today's outcome (ran, failed,
-  skipped; a failed line says why under its name: "needs ⚡2, had 0"), and an accent frame (drawn so no text moves) on the line the next processor
-  runs (none without a processor). Above 10x one redraw covers several days, so each line
-  shows its outcome over them (`advance_run`'s `lines`) with no frame. Below, Events:
-  Story (this run's event texts: side story, and the latest boredom phase only), completed quests, and Recent
-  Activity (green good, red bad, blue news), each with an unread count (UI state),
-  cleared once the section is open and on screen for about a second.
+  tabs 1 to 5 with processors −/+ and Reset; a line per instruction, dragged to reorder
+  (an `if` takes its body), tinted by today's outcome (a failed line says why: "needs ⚡2,
+  had 0"), the next line to run in an accent frame. Once unlocked, Add: If, Wait until,
+  Build, Buy Land (`ProgramLogic.tsx`): a condition is dropdowns (reading, comparison,
+  and/or) and a number, each clause showing its live value and ✓/✗; body lines sit
+  indented under a bar (⇥/⇤, or a drop on a body line); a false `if` greys with its body.
+  Above 10x a redraw covers several days: each line shows its outcome over them
+  (`advance_run`'s `lines`), no frame. Below, Events: Story (side story and the latest
+  boredom phase), completed quests, and Recent Activity (green good, red bad, blue news),
+  each with an unread count, cleared once open and on screen for about a second.
 - **Bottom:** day and run, the cheated mark, Boredom and Energy bars with their rates
   (capped as in Resources; "cap tomorrow" the day before a forced retirement).
 - **Run summary:** when a run ends a summary covers the screen, the clock stopped until
@@ -136,9 +137,8 @@ hovered or opened.
 
 Earthrise, light (the default) or dark, picked in Options and in the debug menu and
 remembered in `localStorage` `hh.theme` (`index.html` applies it before the first paint).
-The two are 1:1: the same markup, layout and art; only the color tokens at the top of
-`src/style.css` differ. A token block holds colors only, so switching moves
-nothing (the e2e checks it). Chips (resources, ideology axes, rivals) keep their true
+The two share markup, layout and art; only the color tokens atop `src/style.css` differ,
+so switching moves nothing (the e2e checks it). Chips (resources, ideology axes, rivals) keep their true
 colors in both; an ideology axis drawn as text uses its `axis-<id>` class, which has a
 readable variant per theme. Fonts are bundled (`@fontsource`, named in `src/style.css`).
 Building pictures: `src/assets/buildings/<id>.webp` (one per building, both themes; 192 px
