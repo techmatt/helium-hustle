@@ -1,5 +1,7 @@
 # 025: nav tile icons and the lunar horizon, candidates
 
+> Archived (034): `art/pickers/` now lives at `C:\Code\gdrive-sync\helium-hustle\archive\art\pickers\`.
+
 Picker `nav_horizon_art_r1` (`art/pickers/nav_horizon_art_r1/manifest.json`, the shared,
 uncommitted `art/` folder). Nothing goes into the UI here.
 

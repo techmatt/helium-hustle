@@ -1,5 +1,7 @@
 # 019: building art, round 2: painterly isometric
 
+> Archived (034): `art/pickers/` now lives at `C:\Code\gdrive-sync\helium-hustle\archive\art\pickers\`.
+
 Matt's r1 picks (painterly lunar concept art, a 96 px thumbnail under the title, cut out on
 the card color, a "base grows" view worth pursuing) tried as one set of images for both the
 cards and a base view: painterly rendering locked to one 2:1 isometric camera, one patch

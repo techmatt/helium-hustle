@@ -1,5 +1,7 @@
 # 017: icon style round 1
 
+> Archived (034): `art/pickers/` now lives at `C:\Code\gdrive-sync\helium-hustle\archive\art\pickers\`.
+
 `make_icons.py` draws seven subjects (nav tiles Buildings, Commands, Research; buildings
 Solar Panel, Regolith Excavator, Smelter, Data Center) as SVG in four styles, plus the picker
 `icon_style_r1`. Output goes to the shared, uncommitted `art/` folder:

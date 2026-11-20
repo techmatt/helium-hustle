@@ -1,0 +1,182 @@
+{
+ "main total": {
+  "bytes": 245546397,
+  "files": 3015,
+  "links": []
+ },
+ "main/.cargo": {
+  "bytes": 363,
+  "files": 1,
+  "links": []
+ },
+ "main/.git": {
+  "bytes": 17540149,
+  "files": 794,
+  "links": []
+ },
+ "main/.gitattributes": {
+  "bytes": 86,
+  "files": 1,
+  "links": []
+ },
+ "main/.gitignore": {
+  "bytes": 169,
+  "files": 1,
+  "links": []
+ },
+ "main/CLAUDE.md": {
+  "bytes": 7823,
+  "files": 1,
+  "links": []
+ },
+ "main/Cargo.lock": {
+  "bytes": 6431,
+  "files": 1,
+  "links": []
+ },
+ "main/Cargo.toml": {
+  "bytes": 652,
+  "files": 1,
+  "links": []
+ },
+ "main/LICENSE": {
+  "bytes": 1089,
+  "files": 1,
+  "links": []
+ },
+ "main/README.md": {
+  "bytes": 8615,
+  "files": 1,
+  "links": []
+ },
+ "main/art": {
+  "bytes": 134435219,
+  "files": 213,
+  "links": []
+ },
+ "main/configs": {
+  "bytes": 8929,
+  "files": 3,
+  "links": []
+ },
+ "main/content": {
+  "bytes": 38082,
+  "files": 9,
+  "links": []
+ },
+ "main/crates": {
+  "bytes": 627365,
+  "files": 66,
+  "links": []
+ },
+ "main/docs": {
+  "bytes": 148144,
+  "files": 20,
+  "links": []
+ },
+ "main/experiments": {
+  "bytes": 13856536,
+  "files": 150,
+  "links": []
+ },
+ "main/reference": {
+  "bytes": 144368,
+  "files": 21,
+  "links": []
+ },
+ "main/scenarios": {
+  "bytes": 1788,
+  "files": 4,
+  "links": []
+ },
+ "main/scripts": {
+  "bytes": 23417,
+  "files": 6,
+  "links": []
+ },
+ "main/web": {
+  "bytes": 78697172,
+  "files": 1721,
+  "links": []
+ },
+ "main/web/node_modules": {
+  "bytes": 76347726,
+  "files": 1621,
+  "links": []
+ },
+ "main/web/src/wasm": {
+  "bytes": 1585180,
+  "files": 5,
+  "links": []
+ },
+ "main/web/dist": null,
+ "main/crates/hh-wasm/pkg": null,
+ "main/out": null,
+ "drive total": {
+  "bytes": 106559957,
+  "files": 344,
+  "links": []
+ },
+ "drive/archive": {
+  "bytes": 105292242,
+  "files": 335,
+  "links": []
+ },
+ "drive/playlogs": {
+  "bytes": 147920,
+  "files": 5,
+  "links": []
+ },
+ "drive/screenshots": {
+  "bytes": 1119795,
+  "files": 4,
+  "links": []
+ },
+ "worktrees total": {
+  "bytes": 31287647,
+  "files": 772,
+  "links": [
+   "C:\\Code\\helium-hustle-worktrees\\helium-hustle\\034_disk_cleanup\\art",
+   "C:\\Code\\helium-hustle-worktrees\\helium-hustle\\035_program_loadouts_and_rate\\art"
+  ]
+ },
+ "worktrees/034_disk_cleanup": {
+  "bytes": 15649470,
+  "files": 389,
+  "links": [
+   "C:\\Code\\helium-hustle-worktrees\\helium-hustle\\034_disk_cleanup\\art"
+  ]
+ },
+ "worktrees/034_disk_cleanup/target": null,
+ "worktrees/034_disk_cleanup/web/node_modules": null,
+ "worktrees/034_disk_cleanup/out": {
+  "bytes": 10391,
+  "files": 6,
+  "links": []
+ },
+ "worktrees/034_disk_cleanup/.git": {
+  "bytes": 62,
+  "files": 1,
+  "links": []
+ },
+ "worktrees/035_program_loadouts_and_rate": {
+  "bytes": 15638177,
+  "files": 383,
+  "links": [
+   "C:\\Code\\helium-hustle-worktrees\\helium-hustle\\035_program_loadouts_and_rate\\art"
+  ]
+ },
+ "worktrees/035_program_loadouts_and_rate/target": null,
+ "worktrees/035_program_loadouts_and_rate/web/node_modules": null,
+ "worktrees/035_program_loadouts_and_rate/out": null,
+ "worktrees/035_program_loadouts_and_rate/.git": {
+  "bytes": 75,
+  "files": 1,
+  "links": []
+ },
+ "control total": {
+  "bytes": 73733040,
+  "files": 889,
+  "links": []
+ }
+}

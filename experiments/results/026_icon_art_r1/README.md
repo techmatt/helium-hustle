@@ -1,5 +1,7 @@
 # 026: small chip icons, compact nav fallbacks, horizon progress on earthlight
 
+> Archived (034): `art/pickers/` now lives at `C:\Code\gdrive-sync\helium-hustle\archive\art\pickers\`.
+
 Picker `small_icons_r1` (`art/pickers/small_icons_r1/manifest.json`, the shared, uncommitted
 `art/` folder): 32 `many` rows, 116 options. Nothing goes into the UI here. 025's
 `nav_horizon_art_r1` files are untouched (its earthlight draw is read, never written).

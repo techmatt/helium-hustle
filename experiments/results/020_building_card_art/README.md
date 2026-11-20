@@ -1,5 +1,7 @@
 # 020: card art for every building
 
+> Archived (034): `art/pickers/` now lives at `C:\Code\gdrive-sync\helium-hustle\archive\art\pickers\`.
+
 Every building in `content/buildings.json` (16) drawn in 019's `cut34` style (painterly
 lunar concept art, each building at its own natural 3/4 view from slightly above, on a
 small irregular regolith patch, cut out; white hulls, orange trim, one hard sun from the

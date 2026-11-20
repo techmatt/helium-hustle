@@ -1,5 +1,8 @@
 # 018: building art, style round 1
 
+> Archived (034): `art/buildings/r1/` and `art/pickers/` now live under
+> `C:\Code\gdrive-sync\helium-hustle\archive\art\` at the same relative paths.
+
 Seven styles drawing the same four buildings (Solar Panel, Regolith Excavator, Smelter, Data
 Center), mocked onto the Buildings panel's cards in Earthrise light and dark, and the picker
 `building_art_r1`. Adapted from AIComplete's `tools/card-art/` scene route (copied and cut
