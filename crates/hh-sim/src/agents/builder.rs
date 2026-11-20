@@ -329,7 +329,8 @@ impl Agent for Greedy {
         let cmd = hand_command(v, target.as_deref());
         let want = vec![Entry::command(cmd, 1)];
         if v.programs[0].entries != want {
-            let _ = p.apply(&Action::SetProgram { program: 0, entries: want });
+            let name = format!("builder: {cmd}");
+            p.put_program(0, want, Some(&name));
         }
     }
 }

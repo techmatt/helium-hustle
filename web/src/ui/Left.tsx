@@ -5,7 +5,7 @@ import { SPEEDS } from '../clock';
 import { capitalize, num, perDay } from '../format';
 import { navHasNews, seen, setSpeed, type Store } from '../store';
 import { useEffect, useState } from 'preact/hooks';
-import { Breakdown, CappedRate, Section, navShown, risingIsBad } from './common';
+import { Breakdown, CappedRate, Section, ShortRate, navShown, risingIsBad } from './common';
 import { Chip, Horizon, NavIcon } from './icons';
 
 /** The Resources panel's first group, in this order; every other resource follows in a
@@ -85,11 +85,18 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
                 const full = cap !== null && amt >= cap;
                 const empty = amt <= 0;
                 let shown = r.cap === null ? num(r.amount) : `${num(r.amount)} / ${num(r.cap)}`;
-                // At its cap the change reads 0; the surplus the cap throws away still shows,
-                // muted and marked.
-                // Capped Energy's surplus is spare power, good news: it shows green.
-                const capped = full && r.id !== 'boredom' && Number(r.net_per_day) > Number(r.per_day);
-                let rate: ComponentChildren = capped ? <CappedRate net={r.net_per_day} compact spare={r.id === 'energy'} /> : perDay(r.per_day);
+                // The rate is the engine's (a program's `rate` reading, for tomorrow). At its
+                // cap it reads the surplus the cap throws away, muted and marked; capped
+                // Energy's surplus is spare power, good news: it shows green. Short, it reads
+                // the demand left unmet, marked.
+                const capped = r.id !== 'boredom' && Number(r.overflow) > 0;
+                let rate: ComponentChildren = capped ? (
+                  <CappedRate net={r.per_day} lost={r.overflow} compact spare={r.id === 'energy'} />
+                ) : Number(r.unmet) > 0 ? (
+                  <ShortRate rate={r.per_day} unmet={r.unmet} change={r.change_per_day} compact />
+                ) : (
+                  perDay(r.per_day)
+                );
                 if (r.id === 'processors') {
                   shown = `${v.processors - v.processors_free} / ${v.processors}`;
                   // Data Centers short of upkeep: fewer run than are assigned.

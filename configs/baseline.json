@@ -60,7 +60,9 @@
         "program_count": 5,
         "max_entries": 64,
         "overclock_base_cap": "1.5",
-        "logic_unlock_processors": 2
+        "logic_unlock_processors": 2,
+        "library_slots": 12,
+        "loadout_name_max": 40
       }
     },
     "dream": {

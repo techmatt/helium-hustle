@@ -427,15 +427,16 @@ fn the_view_shows_pad_readiness_and_the_rate_a_cap_throws_away() {
     g.run.pads[0].cargo = f("5");
     let p = &r.view(&g).pads[0];
     assert!(p.fueled && p.can_launch && !p.ready);
-    // Energy at its cap: the change is 0, the net rate the surplus.
+    // Energy at its cap: the change is 0, the rate the uncapped surplus.
     set(&mut g, "energy", "0");
     let below = r.view(&g).resources.iter().find(|x| x.id == "energy").unwrap().clone();
     let cap = below.cap.unwrap();
     set(&mut g, "energy", &cap.to_string());
     let at = r.view(&g).resources.iter().find(|x| x.id == "energy").unwrap().clone();
-    assert!(at.net_per_day > Fx::ZERO, "solar makes a surplus: {:?}", at.net_per_day);
-    assert_eq!(at.per_day, Fx::ZERO);
-    assert_eq!(below.net_per_day, below.per_day, "below its cap nothing is cut");
+    assert!(at.per_day > Fx::ZERO && at.overflow == at.per_day, "solar makes a surplus: {:?}", at.per_day);
+    assert_eq!(at.change_per_day, Fx::ZERO);
+    assert_eq!(below.change_per_day, below.per_day, "below its cap nothing is cut");
+    assert!(below.overflow == Fx::ZERO && below.unmet == Fx::ZERO);
 }
 
 #[test]

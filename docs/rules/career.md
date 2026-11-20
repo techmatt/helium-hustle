@@ -18,7 +18,8 @@ step of [the day](README.md#the-day); voluntary retirement happens between days.
 - *Career (persists):* run number, retirements, lifetime totals (credits earned, shipments,
   days, buildings built, research completed), personal bests (longest run in days, most
   credits earned in a run, most shipments in a run), each axis's best ideology rank and best
-  score, peak power, career flags (the program instructions' unlock among them), ids ever researched, owned and used, events seen, quests
+  score, peak power, career flags (the program instructions' unlock among them), the
+  program loadout library ([programs.md](programs.md)), ids ever researched, owned and used, events seen, quests
   and sub-objectives completed, persistent project progress and completions, achievements,
   the log, and the last finished run's summary (display: its number, length, whether forced,
   stats and final ranks, for the UI's run summary).

@@ -16,7 +16,7 @@ import {
 } from '../store';
 import { Sky } from './art';
 import { Buildings } from './Buildings';
-import { Bar, CappedRate, Section, navShown } from './common';
+import { Bar, CappedRate, Section, ShortRate, navShown } from './common';
 import { Chip } from './icons';
 import { Left } from './Left';
 import { Options } from './Options';
@@ -137,11 +137,7 @@ function StatusBar({ s }: { s: Store }) {
   const energy = v.resources.find((r) => r.id === 'energy');
   const bored = v.resources.find((r) => r.id === 'boredom');
   // At its cap: the surplus thrown away, muted and marked (as in Resources).
-  const energyCapped =
-    energy !== undefined &&
-    energy.cap !== null &&
-    Number(energy.amount) >= Number(energy.cap) &&
-    Number(energy.net_per_day) > Number(energy.per_day);
+  const energyCapped = energy !== undefined && Number(energy.overflow) > 0;
   return (
     <footer class="status">
       <span id="day" class="status-day">
@@ -168,7 +164,15 @@ function StatusBar({ s }: { s: Store }) {
         label={`${num(energy?.amount ?? '0')} / ${num(energy?.cap ?? '0')}`}
       />
       <span class="status-rate" data-testid="energy-rate">
-        {v.retires_next ? '—' : energyCapped ? <CappedRate net={energy.net_per_day} spare /> : perDay(energy?.per_day ?? '0')}
+        {v.retires_next ? (
+          '—'
+        ) : energyCapped ? (
+          <CappedRate net={energy.per_day} lost={energy.overflow} spare />
+        ) : energy !== undefined && Number(energy.unmet) > 0 ? (
+          <ShortRate rate={energy.per_day} unmet={energy.unmet} change={energy.change_per_day} />
+        ) : (
+          perDay(energy?.per_day ?? '0')
+        )}
       </span>
     </footer>
   );
@@ -243,7 +247,8 @@ function Summary({ s }: { s: Store }) {
           </table>
         </Section>
         <p class="muted small">
-          What persists: quests, achievements, Long-Term projects, career bests and everything you have seen.
+          What persists: quests, achievements, Long-Term projects, career bests, saved programs (Load, in
+          each program tab) and everything you have seen.
         </p>
         <button type="button" class="big" data-testid="continue" onClick={continueAfterRetirement}>
           Continue

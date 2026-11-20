@@ -106,7 +106,13 @@ pub fn drain(g: &mut GameState) {
         for (res, rate) in rates {
             let done = progress(g, p).and_then(|m| m.get(&res)).copied().unwrap_or(Fx::ZERO);
             let need = p.costs[&res] - done;
-            let take = rate.min(need).min(g.amount(&res)).max(Fx::ZERO);
+            let want = rate.min(need).max(Fx::ZERO);
+            let take = want.min(g.amount(&res)).max(Fx::ZERO);
+            if take < want {
+                // Funding the stock couldn't cover counts as unmet demand (`rate`).
+                let u = g.run.today.unmet.entry(res.clone()).or_insert(Fx::ZERO);
+                *u = u.saturating_add(want - take);
+            }
             if take == Fx::ZERO {
                 continue;
             }

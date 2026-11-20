@@ -302,6 +302,42 @@ async function programLogic(grant) {
   const left = await evaluate(`[...document.querySelectorAll('.lines li')].map((l) => l.dataset.op + (l.classList.contains('indented') ? '>' : '')).join(' ')`);
   check(left === 'build if build> buy_land wait_until build', `removing an if un-indents its body: ${left}`);
   await shot('program-logic-built');
+
+  // The loadout library: a program saved in this run loads in the next and runs.
+  await click('[data-testid="loadout-save"]');
+  await setValue('[data-testid="loadout-name"]', 'Builder');
+  await click('[data-testid="loadout-save-new"]');
+  await sleep(100);
+  const runBefore = await run();
+  await debugMenu();
+  await setValue('#cheat-boredom', '100000');
+  await click('#cheat-set-boredom');
+  await speed(1);
+  await waitFor(`!!document.querySelector('[data-testid="summary"]')`, 'the forced retirement', 8000);
+  await click('[data-testid="continue"]');
+  await sleep(800);
+  await speed(0);
+  check((await run()) > runBefore, `a new run: ${await run()}`);
+  await click('.prog-tabs button[data-program="0"]');
+  check((await evaluate(`document.querySelectorAll('.lines li').length`)) === 0, 'programs start empty in the new run');
+  await click('[data-testid="loadout-load"]');
+  const listed = await evaluate(`document.querySelector('[data-loadout="0"] .loadout-name')?.textContent ?? ''`);
+  check(listed === 'Builder', `the library kept the saved program across retirement: ${listed}`);
+  await click('[data-testid="loadout-load-0"]');
+  await sleep(100);
+  const loaded = await evaluate(`[...document.querySelectorAll('.lines li')].map((l) => l.dataset.op + (l.classList.contains('indented') ? '>' : '')).join(' ')`);
+  check(loaded === left, `the loaded program: ${loaded}`);
+  await speed(1);
+  await waitFor(`!!document.querySelector('.lines li[data-line="1"]')?.className.match(/out-(true|false)/)`, 'the loaded program to run', 8000);
+  await speed(0);
+  check(true, 'a program saved in run 1 loads in run 2 and runs');
+  await shot('program-loadout');
+  // Delete is one click.
+  await click('[data-testid="loadout-load"]');
+  await click('[data-testid="loadout-delete-0"]');
+  await sleep(100);
+  check((await evaluate(`document.querySelectorAll('[data-loadout]').length`)) === 0, 'a loadout deletes');
+  await click('[data-testid="loadout-load"]');
 }
 
 /** Section 5, from scenario at_cap (paused, cheats on; `grant` from section 2). Shots

@@ -72,7 +72,10 @@ How it writes the main program depends on the gap to its next look (*When it loo
 | 5 (`construct`) | construction: `if Land free < its land and Credits >= the land price` / `buy land` (while short of land); `if Credits >= the target's price and <its scarcest other input> >= its price` / `build <target> up to owned + 1`; then the filler × 1 | 1 when 2 or more are left, once the game unlocks `if` and `build` (not under the oracle's `main_last`: the main program takes the slot) |
 
 A program is rewritten only when its text changes (a rewrite restarts its pointer; the main
-plan's re-arm: *When it looks*). Extra pads
+plan's re-arm: *When it looks*). Each write goes through the loadout library
+(`Player::put_program`): a saved loadout with the same lines is loaded instead, and a
+standing program (all but the hand plan) is saved to its role's slot (`author: main`,
+`author: dream`, ...), so a new run loads them back. The builder keeps a slot per command. Extra pads
 carry a good other than He-3 that sits at its cap. While looking often (gap ≤ `hand_gap`) it
 pauses buildings that eat a material its target is short of, so the stock builds up, and runs
 them again once it isn't.

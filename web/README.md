@@ -48,7 +48,8 @@ served page: `HH_URL`, required (it exits naming `vite preview` when unset),
    cheated mark, a jump ahead and the replay check.
 3. A program's frame at 10x and 50x, each speed's days per second, pause, click-to-buy, a reload keeping the save, a save from another
    revision discarded, the scenarios and the replay check; in `late_unlocks`, an `if` /
-   `build` / `wait until` program written through the editor, which then builds.
+   `build` / `wait until` program written through the editor, which then builds; saved,
+   then loaded after a retirement, it runs in run 2.
 4. **The theme:** the toggles switch it with every element's box unchanged (to 0.01 px);
    a reload keeps it.
 5. **Readability** (before 4): capped rates, Resources' groups, affordable cards and Land,
@@ -59,9 +60,9 @@ Any uncaught page error fails the run. Run it against `vite preview` (CLAUDE.md)
 - **Under load it flakes:** section 3's 10x pointer walk (`programOrder`) fails when a
   cargo build runs beside the browser (late timer wakes run two days a redraw). Rerun it
   alone.
-- **The late UI for screenshots:** `experiments/results/027_art_in_game/shots.mjs` reaches
-  it from scenario `pad_loading` with cheats (grants, buys, jumps; ~20 s). Cheat grants
-  don't count toward `resource_cumulative` quests: build producers and jump instead.
+- **The late UI for screenshots:** `experiments/results/027_art_in_game/shots.mjs` (from
+  `pad_loading` with cheats, ~20 s). Cheat grants don't count toward `resource_cumulative`
+  quests.
 - Edge needs an **absolute** `--user-data-dir`: given a relative one it hands the page to
   the Edge already running and exits (the script resolves it).
 - On leaving a page the browser fires `pagehide`, then `visibilitychange`; the page saves
@@ -85,9 +86,8 @@ and closed, Stats' breakdowns; program lines dragged; in `late_unlocks`, a loade
 pad switched to another good (the stockpile gains what its tooltip promised) and Recent
 Activity's unread count (counts while folded, clears once read). The late panels again in
 the other theme; every building's card (`?all-cards`, a display-only URL flag) in both.
-Real mouse and key probes of click-to-buy and the program frame. The checks by kind and
-the `HH_*` settings (`HH_PACE`, `HH_LONG` among them) are in the script's header. Exit 1
-on any finding.
+Real mouse and key probes of click-to-buy and the program frame. Checks and `HH_*`
+settings: the script's header. Exit 1 on any finding.
 
 ```sh
 npm run build && npx vite preview --port 0          # a static build: dev-server reloads break a pass
@@ -105,8 +105,9 @@ Three columns and a status bar:
   this run or whose panel holds something new; past nine tiles they go compact, icon beside
   name; a green dot on Launch Pads while a pad is ready), the speed buttons, Resources
   (Energy, Credits, Land, Boredom, Processors, then a second group of the rest; amount /
-  cap, change per day, at its cap the surplus thrown away, muted, or green for Energy's
-  spare power: "+9 CAP"; processors assigned / total; a click on a row opens its breakdown
+  cap, the engine's rate per day (the program `rate` reading's quantity, for tomorrow), at
+  its cap the surplus thrown away, muted, or green for Energy's spare power: "+9 CAP"; short
+  of demand, red: "−7 SHORT", the stock's actual change in its tooltip; processors assigned / total; a click on a row opens its breakdown
   in place, one at a time: last day's sources and sinks, who went short), each ideology
   axis's rank once Ideologies is unlocked (folded at first in a window under 800 px high),
   and the lunar horizon with the habitat at the foot.
@@ -119,7 +120,8 @@ Three columns and a status bar:
   cards tint their head: green Ready, yellow Paused, red full but short of fuel. Stats ends
   on every resource's breakdown, last day and rolling average.
 - **Right:** the main quest in its own slot at the top, which nothing else takes; program
-  tabs 1 to 5 with processors −/+ and Reset; a line per instruction, dragged to reorder
+  tabs 1 to 5 with processors −/+, Reset, Save / Load (`Library.tsx`: the loadout library;
+  save new or over a slot, load, rename, delete); a line per instruction, dragged to reorder
   (an `if` takes its body), tinted by today's outcome (a failed line says why: "needs ⚡2,
   had 0"), the next line to run in an accent frame. Once unlocked, Add: If, Wait until,
   Build, Buy Land (`ProgramLogic.tsx`): conditions as dropdowns, each clause with its live

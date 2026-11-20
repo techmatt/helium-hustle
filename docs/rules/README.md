@@ -1,6 +1,6 @@
 # Rules
 
-The rules as implemented, rules revision **7** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **8** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
 The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
@@ -53,8 +53,9 @@ One tick is one in-game day. Each tick, in this order (`Rules::tick`, `rules.rs`
 8. **Projects** drain their funding (projects).
 9. **Pads** cool down (shipments).
 10. **Speculator bursts and rival dumps** when due (demand).
-11. **Clamp**: every resource cut to its cap (overflow counted) and lifted to zero (economy);
-    the day's net flows are kept for the programs' `rate` reading.
+11. The day's **rate** per resource is kept for the programs' `rate` reading (programs),
+    then the **clamp**: every resource cut to its cap (overflow counted) and lifted to zero
+    (economy).
 12. **Quests and events** check their conditions (events).
 13. **Achievements** check the day's flows and stockpiles (achievements).
 14. **Ideology** bests are recorded in the career (ideology).
@@ -127,7 +128,7 @@ and in every later run; Strategic ones for the rest of their run.
 
 ## Not built
 
-Dream Echo (Dream is the flat variant), saved program loadouts, block/skip toggles, the
+Dream Echo (Dream is the flat variant), block/skip toggles, the
 Stats panel's lifetime source totals (the last day's and a rolling average's per-source
 breakdown is built: economy), and playtest telemetry. The view reports what the UI needs for progressive
 disclosure (`visible` flags, nav tiles); the "new" markers are the UI's own, not state

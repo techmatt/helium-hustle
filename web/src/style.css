@@ -1226,11 +1226,56 @@ button.go:hover:not(:disabled) {
 .capped-rate.spare {
   color: var(--pos-text);
 }
+/* The loadout library under a program's toolbar. */
+.library {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  padding: 6px;
+  margin: 4px 0 8px;
+}
+.library-save {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 4px;
+}
+.library-save input {
+  flex: 1;
+  min-width: 8em;
+}
+.library-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.library-list li {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 0;
+}
+.library-list .loadout-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.library-list .loadout-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 2px;
+}
+/* A rate that counts demand left unmet: a shortage, bad news. */
+.short-rate {
+  color: var(--neg);
+  white-space: nowrap;
+}
 .cap-mark {
   font-size: 0.85em;
 }
-/* In the narrow Resources column the marker is a small "cap" tag. */
-.capped-rate.compact .cap-mark {
+/* In the narrow Resources column the marker is a small "cap" or "short" tag. */
+.capped-rate.compact .cap-mark,
+.short-rate.compact .cap-mark {
   font-family: var(--font-body);
   font-size: 9px;
   text-transform: uppercase;

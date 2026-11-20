@@ -10,7 +10,7 @@ use crate::content::{content, Command, CommandEffect, ProjectReward, ResearchEff
 use crate::fx::Fx;
 use crate::modifiers::modifier;
 use crate::rules::Rules;
-use crate::state::{Clause, Cmp, Condition, Entry, GameState, Join, Joined, LineOutcome, Op, Overclock, Program, Reading};
+use crate::state::{Clause, Cmp, Condition, Entry, GameState, Join, Joined, LineOutcome, Loadout, Op, Overclock, Program, Reading};
 
 use super::economy::{BOREDOM, PROCESSORS};
 
@@ -23,6 +23,8 @@ pub static DEF: ModuleDef = ModuleDef {
             param("max_entries", K::Int, Some(("1", "10000")), "most lines in one program"),
             param("overclock_base_cap", K::Fx, Some(("1", "100")), "the most an overclock multiplies output, before research"),
             param("logic_unlock_processors", K::Int, Some(("0", "1000")), "working processors that first open if, wait until, build and buy land (a career first)"),
+            param("library_slots", K::Int, Some(("0", "1000")), "saved programs the loadout library holds (career state)"),
+            param("loadout_name_max", K::Int, Some(("1", "1000")), "most characters in a loadout's name"),
         ],
         rng: &[],
     }],
@@ -34,6 +36,8 @@ pub struct Params {
     pub max_entries: usize,
     pub overclock_base_cap: Fx,
     pub logic_unlock_processors: u32,
+    pub library_slots: usize,
+    pub loadout_name_max: usize,
 }
 
 impl Params {
@@ -43,6 +47,8 @@ impl Params {
             max_entries: mc.int("max_entries") as usize,
             overclock_base_cap: mc.fx("overclock_base_cap"),
             logic_unlock_processors: mc.int("logic_unlock_processors") as u32,
+            library_slots: mc.int("library_slots") as usize,
+            loadout_name_max: mc.int("loadout_name_max") as usize,
         })
     }
 }
@@ -107,12 +113,24 @@ fn program_mut(g: &mut GameState, program: u32) -> Result<&mut Program, String> 
 
 /// Replaces a program's queue; its pointer restarts at the top.
 pub fn set_program(r: &Rules, g: &mut GameState, program: u32, entries: &[Entry]) -> Result<(), String> {
+    let held = g.run.programs.get(program as usize).map(|p| p.entries.clone()).unwrap_or_default();
+    check_entries(r, g, program, entries, Some(&held))?;
+    put_entries(g, program, entries)
+}
+
+/// Whether `entries` may go in a program. With `held` (the program's lines
+/// now), a line not already among them is also refused for what this run
+/// can't use yet (a line other than a command before the logic unlock, a
+/// demand reading before demand is revealed). A loaded loadout (`held` `None`)
+/// skips those, and so does an edit of a loaded program that keeps the line:
+/// such a line fails, or its reading reads nothing, when run.
+fn check_entries(r: &Rules, g: &GameState, program: u32, entries: &[Entry], held: Option<&[Entry]>) -> Result<(), String> {
     if entries.len() > r.p.programs.max_entries {
         return Err(format!("Program {}: at most {} lines", program + 1, r.p.programs.max_entries));
     }
     let n = program + 1;
     let c = content();
-    let clause = |cl: &Clause| -> Result<(), String> {
+    let clause = |cl: &Clause, gated: bool| -> Result<(), String> {
         let known = |res: &str| c.resource(res).is_some();
         match &cl.reading {
             Reading::Amount { resource } | Reading::Percent { resource } | Reading::Rate { resource } => {
@@ -126,21 +144,22 @@ pub fn set_program(r: &Rules, g: &mut GameState, program: u32, entries: &[Entry]
                 if !g.run.markets.contains_key(good) {
                     return Err(format!("Program {n}: {good:?} is not a traded good"));
                 }
-                if !super::research::reveals_demand(g) {
+                if gated && !super::research::reveals_demand(g) {
                     return Err(format!("Program {n}: demand can't be read yet"));
                 }
                 Ok(())
             }
         }
     };
-    let condition = |when: &Condition| -> Result<(), String> {
-        clause(&when.first)?;
-        when.rest.as_ref().map_or(Ok(()), |j| clause(&j.clause))
+    let condition = |when: &Condition, gated: bool| -> Result<(), String> {
+        clause(&when.first, gated)?;
+        when.rest.as_ref().map_or(Ok(()), |j| clause(&j.clause, gated))
     };
     // Whether the line above is an `if` or in a body: only then may a line be indented.
     let mut in_block = false;
     for e in entries {
-        if !matches!(e.op, Op::Command { .. }) && !logic_unlocked(g) {
+        let gated = held.is_some_and(|h| !h.iter().any(|x| x.op == e.op));
+        if gated && !matches!(e.op, Op::Command { .. }) && !logic_unlocked(g) {
             return Err(format!("Program {n}: only commands can be queued yet"));
         }
         if e.indented && !in_block {
@@ -169,12 +188,19 @@ pub fn set_program(r: &Rules, g: &mut GameState, program: u32, entries: &[Entry]
                 if e.indented {
                     return Err(format!("Program {n}: an if can't sit inside another if"));
                 }
-                condition(when)?;
+                condition(when, gated)?;
                 in_block = true;
             }
-            Op::WaitUntil { when } => condition(when)?,
+            Op::WaitUntil { when } => condition(when, gated)?,
         }
     }
+    if program as usize >= g.run.programs.len() {
+        return Err(format!("Program {n}: there are {}", g.run.programs.len()));
+    }
+    Ok(())
+}
+
+fn put_entries(g: &mut GameState, program: u32, entries: &[Entry]) -> Result<(), String> {
     let p = program_mut(g, program)?;
     p.entries = entries.to_vec();
     p.entry = 0;
@@ -183,6 +209,73 @@ pub fn set_program(r: &Rules, g: &mut GameState, program: u32, entries: &[Entry]
     g.run.today.lines.remove(&program);
     let prefix = format!("program:{program}:");
     g.run.today.shorts.retain(|k, _| !k.starts_with(&prefix));
+    Ok(())
+}
+
+/// A loadout name as kept: trimmed, not empty, at most `loadout_name_max`
+/// characters.
+fn loadout_name(r: &Rules, name: &str) -> Result<String, String> {
+    let name = name.trim();
+    if name.is_empty() {
+        return Err("A loadout needs a name".to_string());
+    }
+    let max = r.p.programs.loadout_name_max;
+    if name.chars().count() > max {
+        return Err(format!("A loadout name is at most {max} characters"));
+    }
+    Ok(name.to_string())
+}
+
+fn loadout_mut(g: &mut GameState, loadout: u32) -> Result<&mut Loadout, String> {
+    let n = g.career.library.len();
+    g.career.library.get_mut(loadout as usize).ok_or_else(|| format!("Loadout {}: there are {n}", loadout + 1))
+}
+
+/// Saves a program's lines to the library: a new slot (`slot` `None`, while
+/// fewer than `library_slots` are held) or over an existing one.
+pub fn save_loadout(r: &Rules, g: &mut GameState, program: u32, slot: Option<u32>, name: &str) -> Result<(), String> {
+    let name = loadout_name(r, name)?;
+    let entries = g
+        .run
+        .programs
+        .get(program as usize)
+        .map(|p| p.entries.clone())
+        .ok_or_else(|| format!("Program {}: there are {}", program + 1, g.run.programs.len()))?;
+    if entries.is_empty() {
+        return Err(format!("Program {}: nothing to save", program + 1));
+    }
+    let l = Loadout { name, entries };
+    match slot {
+        None => {
+            if g.career.library.len() >= r.p.programs.library_slots {
+                return Err(format!("The library is full ({} loadouts)", r.p.programs.library_slots));
+            }
+            g.career.library.push(l);
+        }
+        Some(i) => *loadout_mut(g, i)? = l,
+    }
+    Ok(())
+}
+
+/// Replaces a program's lines with a loadout's, as `set_program` would, but
+/// without refusing what this run hasn't unlocked yet: those lines fail, or
+/// read nothing, when run.
+pub fn load_loadout(r: &Rules, g: &mut GameState, loadout: u32, program: u32) -> Result<(), String> {
+    let entries = loadout_mut(g, loadout)?.entries.clone();
+    check_entries(r, g, program, &entries, None)?;
+    put_entries(g, program, &entries)
+}
+
+pub fn rename_loadout(r: &Rules, g: &mut GameState, loadout: u32, name: &str) -> Result<(), String> {
+    let name = loadout_name(r, name)?;
+    loadout_mut(g, loadout)?.name = name;
+    Ok(())
+}
+
+/// Removes a loadout; later ones move up a slot.
+pub fn delete_loadout(g: &mut GameState, loadout: u32) -> Result<(), String> {
+    loadout_mut(g, loadout)?;
+    g.career.library.remove(loadout as usize);
     Ok(())
 }
 
@@ -264,6 +357,8 @@ pub fn execute(r: &Rules, g: &mut GameState, c: &Command, src: &str, short: &str
         if let Some(s) = super::economy::scarcest(g, &costs, ran) {
             g.run.today.shorts.insert(short.to_string(), s);
         }
+        // What it wanted counts, met or not (the `rate` reading).
+        super::economy::note_unmet(g, &costs, ran);
     }
     if failed {
         return LineOutcome::Failed;
@@ -363,13 +458,23 @@ pub fn holds(r: &Rules, g: &GameState, c: &Condition) -> bool {
     }
 }
 
-/// Records the day's net flow per resource for the `rate` reading (end of
-/// each day, after the clamp).
-pub fn note_day_net(g: &mut GameState) {
-    let t = &g.run.today;
-    let mut net = t.produced.clone();
-    for (res, &v) in &t.consumed {
-        *net.entry(res.clone()).or_insert(Fx::ZERO) -= v;
+/// Records the day's rate per resource (docs/rules/programs.md, *Conditions*):
+/// what the tick did to the stock since `start` (its amounts as the day
+/// began), before the cap's cut, less the demand it left unmet. So a capped
+/// resource reads its uncapped rate, and a brownout reads what was wanted.
+/// Called just before the clamp.
+pub fn note_day_net(g: &mut GameState, start: &BTreeMap<String, Fx>) {
+    let mut net = BTreeMap::new();
+    for (res, &now) in &g.run.resources {
+        let v = now - start.get(res).copied().unwrap_or(Fx::ZERO) - g.run.today.unmet.get(res).copied().unwrap_or(Fx::ZERO);
+        if v != Fx::ZERO {
+            net.insert(res.clone(), v);
+        }
+    }
+    for (res, &u) in &g.run.today.unmet {
+        if !g.run.resources.contains_key(res) && u != Fx::ZERO {
+            net.insert(res.clone(), Fx::ZERO - u);
+        }
     }
     g.run.day_net = net;
 }

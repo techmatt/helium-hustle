@@ -100,6 +100,22 @@ pub fn input_fraction(g: &GameState, needs: &Amounts) -> Fx {
     frac
 }
 
+/// Notes the demand a run of `needs` at `paid` (0 to 1) leaves unmet, for the
+/// `rate` reading: on each input held short of its full need, the need less
+/// what is paid. An input held in full but left unused (another input ran
+/// short) is no shortage of it and counts nothing. Call before paying.
+pub fn note_unmet(g: &mut GameState, needs: &Amounts, paid: Fx) {
+    for (res, &need) in needs {
+        if need > Fx::ZERO && g.amount(res) < need {
+            let left = need - need * paid;
+            if left > Fx::ZERO {
+                let u = g.run.today.unmet.entry(res.clone()).or_insert(Fx::ZERO);
+                *u = u.saturating_add(left);
+            }
+        }
+    }
+}
+
 /// The input that limits a run of `needs` to `ran` (its first scarcest, in id
 /// order), for the breakdown's shortfalls.
 pub fn scarcest(g: &GameState, needs: &Amounts, ran: Fx) -> Option<Short> {
@@ -468,6 +484,7 @@ fn resolve_stage(r: &Rules, g: &mut GameState, free: bool) -> Fx {
             }
             g.run.today.stalls.insert(id, Stall::InputStarved);
         }
+        note_unmet(g, &upk, frac.max(Fx::ZERO));
         if frac <= Fx::ZERO {
             continue;
         }

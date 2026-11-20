@@ -194,19 +194,145 @@ fn readings_read_the_state() {
 }
 
 #[test]
-fn rate_is_the_actual_flow_negative_while_the_stock_drains_and_zero_in_a_steady_brownout() {
-    // The reading's definition (docs/rules/programs.md); counting unmet upkeep as
-    // demand instead would keep it negative through the brownout.
+fn rate_reads_demand_so_a_line_under_rate_below_zero_runs_every_day_of_a_brownout() {
+    // Production less demand (docs/rules/programs.md): unmet upkeep counts, so
+    // Energy's rate stays negative after the store has drained.
     let r = rules();
     let mut g = game(&r);
     g.run.buildings.insert("data_center".into(), Holding { owned: 6, active: 6, bonus: 0, free: 0, unpaid: 0 });
     economy::refresh(&mut g);
+    let below = one(clause(Reading::Rate { resource: "energy".into() }, Cmp::Lt, "0"));
+    put(&r, &mut g, vec![when(below), Entry::command("idle", 1).indent()]).unwrap();
     let rate = |g: &GameState| programs::reading(&r, g, &Reading::Rate { resource: "energy".into() }).unwrap();
     r.advance(&mut g, 1);
     assert_eq!(rate(&g), f("-7"), "one panel's 5 against six Data Centers' 12");
-    r.advance(&mut g, 40);
-    assert!(g.amount("energy") < f("0.01"), "the store has drained: {}", g.amount("energy"));
-    assert!(rate(&g) >= Fx::ZERO && rate(&g) < f("0.01"), "use equals production: {}", rate(&g));
+    let mut brownout_days = 0;
+    for _ in 0..60 {
+        r.advance(&mut g, 1);
+        assert_eq!(rate(&g), f("-7"), "the demand stays, met or not (day {})", g.run.day);
+        assert_eq!(outcomes(&g)[1], Some(O::Ran), "the body ran (day {})", g.run.day);
+        if g.amount("energy") < f("0.01") {
+            brownout_days += 1;
+        }
+    }
+    assert!(brownout_days > 30, "a steady brownout: {brownout_days} days at 0");
+    // The panel shows the same quantity for the next day, with the stock's change beside it.
+    let e = r.view(&g).resources.into_iter().find(|x| x.id == "energy").unwrap();
+    assert_eq!(e.per_day, f("-7"));
+    assert!(e.unmet > f("6.99") && e.change_per_day < f("0.01") && e.change_per_day > f("-0.01"), "{e:?}");
+}
+
+#[test]
+fn unmet_demand_counts_only_on_the_input_that_ran_short() {
+    // A Smelter starved of energy wanted its regolith too, but regolith was on
+    // hand: its rate reads what was used, not a shortage.
+    let r = rules();
+    let mut g = game(&r);
+    g.run.buildings.insert("smelter".into(), Holding { owned: 4, active: 4, bonus: 0, free: 0, unpaid: 0 });
+    economy::refresh(&mut g);
+    set(&mut g, "energy", "0");
+    set(&mut g, "regolith", "40");
+    r.advance(&mut g, 1);
+    let read = |res: &str| programs::reading(&r, &g, &Reading::Rate { resource: res.into() }).unwrap();
+    assert_eq!(read("regolith"), g.amount("regolith") - f("40"), "regolith: actual use");
+    assert!(!g.run.today.unmet.contains_key("regolith"));
+    assert!(read("energy") < Fx::ZERO && g.run.today.unmet["energy"] > Fx::ZERO);
+}
+
+#[test]
+fn a_failed_command_and_a_short_project_count_as_demand() {
+    let r = rules();
+    let mut g = game(&r);
+    // Cloud Compute wants 2 energy a run; with none on hand it fails, still wanting it.
+    g.run.buildings.insert("solar_panel".into(), Holding::default());
+    economy::refresh(&mut g);
+    set(&mut g, "energy", "0");
+    put(&r, &mut g, vec![Entry::command("cloud_compute", 1)]).unwrap();
+    r.advance(&mut g, 1);
+    assert_eq!(outcomes(&g)[0], Some(O::Failed));
+    assert_eq!(g.run.today.unmet["energy"], f("4"), "Cloud Compute's 2 and the Data Center's 2");
+}
+
+#[test]
+fn a_loadout_saved_in_one_run_loads_and_runs_in_the_next() {
+    let r = rules();
+    let mut g = game(&r);
+    let lines = vec![when(one(amount("credits", Cmp::Ge, "0"))), Entry::command("idle", 1).indent()];
+    put(&r, &mut g, lines.clone()).unwrap();
+    let save = |g: &mut GameState, slot: Option<u32>, name: &str| {
+        r.apply(g, &Action::SaveLoadout { program: 0, slot, name: name.into() })
+    };
+    save(&mut g, None, "  Opening  ").unwrap();
+    assert_eq!(g.career.library[0].name, "Opening", "trimmed");
+    crate::modules::career::retire(&r, &mut g, false);
+    assert!(g.run.programs[0].entries.is_empty(), "programs still empty on retirement");
+    assert_eq!(r.view(&g).library.len(), 1, "the library is career state");
+    r.apply(&mut g, &Action::LoadLoadout { loadout: 0, program: 0 }).unwrap();
+    assert_eq!(g.run.programs[0].entries, lines);
+    r.advance(&mut g, 1);
+    assert_eq!(outcomes(&g), vec![Some(O::True), Some(O::Ran)]);
+    // Overwrite, rename, delete; the refusals change nothing.
+    put(&r, &mut g, vec![Entry::command("idle", 3)]).unwrap();
+    save(&mut g, Some(0), "Idle").unwrap();
+    assert_eq!(g.career.library[0].entries, vec![Entry::command("idle", 3)]);
+    r.apply(&mut g, &Action::RenameLoadout { loadout: 0, name: "Idler".into() }).unwrap();
+    assert_eq!(g.career.library[0].name, "Idler");
+    let before = g.clone();
+    assert!(save(&mut g, None, "   ").is_err(), "a name is needed");
+    assert!(save(&mut g, None, &"x".repeat(r.p.programs.loadout_name_max + 1)).is_err());
+    assert!(save(&mut g, Some(5), "nope").is_err(), "no slot 6");
+    assert!(r.apply(&mut g, &Action::SaveLoadout { program: 1, slot: None, name: "empty".into() }).is_err());
+    assert!(r.apply(&mut g, &Action::LoadLoadout { loadout: 3, program: 0 }).is_err());
+    assert!(r.apply(&mut g, &Action::LoadLoadout { loadout: 0, program: 99 }).is_err());
+    assert_eq!(g, before);
+    while g.career.library.len() < r.p.programs.library_slots {
+        save(&mut g, None, "more").unwrap();
+    }
+    assert!(save(&mut g, None, "one too many").is_err(), "the library is full");
+    r.apply(&mut g, &Action::DeleteLoadout { loadout: 0 }).unwrap();
+    assert_eq!(g.career.library.len(), r.p.programs.library_slots - 1);
+    assert_eq!(g.career.library[0].name, "more", "later slots move up");
+}
+
+#[test]
+fn a_loaded_line_this_run_has_not_unlocked_fails_or_reads_nothing() {
+    let r = rules();
+    let mut g = game(&r);
+    // Demand revealed in an earlier run: a saved line reads it.
+    let demand = one(clause(Reading::Demand { good: "he3".into() }, Cmp::Gt, "0"));
+    g.career.library.push(crate::state::Loadout {
+        name: "Later".into(),
+        entries: vec![when(demand.clone()), Entry::command("idle", 1).indent(), Entry::command("dream", 1)],
+    });
+    assert!(put(&r, &mut g, vec![when(demand)]).is_err(), "set_program refuses it this run");
+    r.apply(&mut g, &Action::LoadLoadout { loadout: 0, program: 0 }).unwrap();
+    r.advance(&mut g, 1);
+    let o = outcomes(&g);
+    assert_eq!(o[0], Some(O::False), "demand not revealed: reads nothing");
+    assert_eq!(o[2], Some(O::Failed), "Dream not researched: fails and advances");
+    // The loaded program stays editable: an edit keeping that line goes through, a
+    // new such line is still refused.
+    let mut lines = g.run.programs[0].entries.clone();
+    lines.push(Entry::command("idle", 2));
+    put(&r, &mut g, lines.clone()).unwrap();
+    lines.push(when(one(clause(Reading::Demand { good: "titanium".into() }, Cmp::Gt, "0"))));
+    assert!(put(&r, &mut g, lines).is_err());
+}
+
+#[test]
+fn a_project_funded_past_the_stock_counts_its_rate_as_demand() {
+    let r = rules();
+    let mut g = game(&r);
+    let p = crate::content::content()
+        .projects
+        .iter()
+        .find(|p| p.costs.contains_key("credits") && matches!(p.unlock, crate::content::ProjectUnlock::EventUnlocked))
+        .expect("an event-unlocked project costs credits");
+    g.run.enabled_projects.insert(p.id.clone());
+    set(&mut g, "credits", "0");
+    g.run.project_rates.insert(p.id.clone(), [("credits".to_string(), f("3"))].into());
+    crate::modules::projects::drain(&mut g);
+    assert_eq!(g.run.today.unmet["credits"], f("3"), "it wanted 3 and got none");
 }
 
 #[test]

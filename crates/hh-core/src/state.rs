@@ -314,6 +314,10 @@ pub struct Today {
     pub consumed: BTreeMap<String, Fx>,
     /// Production lost to a cap at the end-of-tick clamp.
     pub overflow: BTreeMap<String, Fx>,
+    /// Demand the day's tick left unmet, by resource: what buildings, program
+    /// commands and projects wanted of an input they ran short of, less what
+    /// they got (`economy::note_unmet`; the `rate` reading).
+    pub unmet: BTreeMap<String, Fx>,
     pub stalls: BTreeMap<String, Stall>,
     /// What each program line did the last time a processor ran it today:
     /// program -> line -> outcome.
@@ -433,9 +437,10 @@ pub struct Run {
     /// Each day's `today.flows` folded into a rolling average over the
     /// economy's `flow_average_days` (display only: no rule reads it).
     pub flow_average: BTreeMap<String, BTreeMap<String, Flow>>,
-    /// Per resource, what the last full day made less what it used (its
-    /// `today.produced − today.consumed`; purchases, loading and caps aside):
-    /// the `rate` reading of program conditions.
+    /// Per resource, the last full day's rate (`programs::note_day_net`):
+    /// what its tick did to the stock before the cap's cut, less the demand it
+    /// left unmet. The `rate` reading, and (on the view's next day) the
+    /// Resources panel's per-day number.
     pub day_net: BTreeMap<String, Fx>,
     /// The run's activity feed, oldest first (display only: no rule reads it).
     pub activity: Vec<Activity>,
@@ -495,6 +500,17 @@ pub struct Career {
     /// The last finished run, as it stood when it retired (display: the UI's
     /// retirement summary). No rule reads it.
     pub last_run: Option<LastRun>,
+    /// Saved programs (the loadout library), kept across retirements; at most
+    /// `library_slots`. Loading one is how a program comes back in a new run.
+    pub library: Vec<Loadout>,
+}
+
+/// A saved program: a display name (not an id; duplicates are fine) and its lines.
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Loadout {
+    pub name: String,
+    pub entries: Vec<Entry>,
 }
 
 /// A finished run's summary.

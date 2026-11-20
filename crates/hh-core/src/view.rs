@@ -18,7 +18,7 @@ use crate::fx::Fx;
 use crate::modifiers::modifier;
 use crate::modules::*;
 use crate::rules::Rules;
-use crate::state::{Activity, GameState, LastRun, Overclock, RunStats, Stall};
+use crate::state::{Activity, GameState, LastRun, Loadout, Overclock, RunStats, Stall};
 
 use crate::modules::programs as program_rules;
 use breakdown::{breakdown, short_view};
@@ -40,11 +40,17 @@ pub struct ResourceView {
     pub amount: Fx,
     /// Most that can be held, if capped.
     pub cap: Option<Fx>,
-    /// Change over the next day if nothing else is done.
+    /// The next day's rate if nothing else is done: the same quantity as a
+    /// program's `rate` reading (`programs::note_day_net`), before the cap's
+    /// cut and with unmet demand counted.
     pub per_day: Fx,
-    /// The same change before the end-of-tick clamp: at its cap, the surplus the
-    /// cap throws away shows here, where `per_day` reads 0.
-    pub net_per_day: Fx,
+    /// The stock's actual change over that day (after the cap, demand met
+    /// only as far as it was): what an ETA wants.
+    pub change_per_day: Fx,
+    /// What the cap throws away that day (`per_day` reads this far past the change).
+    pub overflow: Fx,
+    /// That day's demand left unmet (`per_day` reads this far below the change, the cap aside).
+    pub unmet: Fx,
     pub visible: bool,
     /// The debug grant cheat may grant it (`cheat::grantable`).
     pub grantable: bool,
@@ -323,6 +329,11 @@ pub struct View {
     /// first: the first day `logic_unlock_processors` processors work).
     pub program_logic: bool,
     pub logic_unlock_processors: u32,
+    /// The loadout library (career): saved programs, in slot order.
+    pub library: Vec<Loadout>,
+    /// Most loadouts the library holds, and the longest name.
+    pub library_slots: usize,
+    pub loadout_name_max: usize,
     /// The readings a condition may use now.
     pub readings: Vec<ReadingView>,
     /// Processors the active buildings grant (what can be assigned).
@@ -474,13 +485,10 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 name: &res.name,
                 amount: g.amount(&res.id),
                 cap: economy::cap(r, g, &res.id),
-                per_day: if same_run { next.amount(&res.id) - g.amount(&res.id) } else { Fx::ZERO },
-                net_per_day: if same_run {
-                    next.amount(&res.id) - g.amount(&res.id)
-                        + next.run.today.overflow.get(&res.id).copied().unwrap_or(Fx::ZERO)
-                } else {
-                    Fx::ZERO
-                },
+                per_day: if same_run { next.run.day_net.get(&res.id).copied().unwrap_or(Fx::ZERO) } else { Fx::ZERO },
+                change_per_day: if same_run { next.amount(&res.id) - g.amount(&res.id) } else { Fx::ZERO },
+                overflow: if same_run { next.run.today.overflow.get(&res.id).copied().unwrap_or(Fx::ZERO) } else { Fx::ZERO },
+                unmet: if same_run { next.run.today.unmet.get(&res.id).copied().unwrap_or(Fx::ZERO) } else { Fx::ZERO },
                 visible: res.always_visible || made_by_owned || made_by_used || g.amount(&res.id) > Fx::ZERO,
                 grantable: crate::cheat::grantable(&res.id),
             }
@@ -615,6 +623,9 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         programs: programs::programs(r, g, &running),
         program_logic: program_rules::logic_unlocked(g),
         logic_unlock_processors: r.p.programs.logic_unlock_processors,
+        library: g.career.library.clone(),
+        library_slots: r.p.programs.library_slots,
+        loadout_name_max: r.p.programs.loadout_name_max,
         readings,
         processors: procs,
         processors_free: procs.saturating_sub(program_rules::assigned(g)),

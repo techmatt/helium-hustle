@@ -135,13 +135,26 @@ export function Section({
 /** A resource's net rate while it sits at its cap: muted, marked capped (the surplus the
  * cap throws away). `compact` (the narrow Resources column, where several can be capped
  * at once): "+6" and a small "cap" tag, no wider than an ordinary "+0.2/day". */
-export function CappedRate({ net, compact = false, spare = false }: { net: Fx; compact?: boolean; spare?: boolean }) {
+export function CappedRate({ net, lost, compact = false, spare = false }: { net: Fx; lost: Fx; compact?: boolean; spare?: boolean }) {
   const rate = perDay(net);
-  const amt = num(Math.abs(Number(net)));
+  const amt = num(lost);
   const title = spare ? `At its cap: ${amt} a day of spare power goes unused` : `At its cap: ${amt} a day is lost`;
+  // (`lost` is the engine's overflow, also when the cap is reached within the day.)
   return (
     <span class={`capped-rate${compact ? ' compact' : ''}${spare ? ' spare' : ''}`} title={title} data-capped>
       {compact ? rate.replace('/day', '') : rate} <span class="cap-mark">{compact ? 'cap' : '(capped)'}</span>
+    </span>
+  );
+}
+
+/** A rate below the stock's change: demand the day leaves unmet (a brownout reads its
+ * shortfall, not 0). The actual change is in the tooltip. */
+export function ShortRate({ rate, unmet, change, compact = false }: { rate: Fx; unmet: Fx; change: Fx; compact?: boolean }) {
+  const shown = perDay(rate);
+  const title = `Short: ${num(unmet)} a day of demand goes unmet; the stock changes ${perDay(change)}`;
+  return (
+    <span class={`short-rate${compact ? ' compact' : ''}`} title={title} data-short>
+      {compact ? shown.replace('/day', '') : shown} <span class="cap-mark">{compact ? 'short' : '(short)'}</span>
     </span>
   );
 }

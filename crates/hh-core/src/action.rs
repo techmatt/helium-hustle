@@ -20,6 +20,13 @@ pub enum Action {
     SetProgram { program: u32, entries: Vec<Entry> },
     /// Set how many processors run a program.
     SetProcessors { program: u32, processors: u32 },
+    /// Save a program's lines to the loadout library: a new slot (`slot`
+    /// null) or over slot `slot`.
+    SaveLoadout { program: u32, slot: Option<u32>, name: String },
+    /// Replace a program's lines with a saved loadout's.
+    LoadLoadout { loadout: u32, program: u32 },
+    RenameLoadout { loadout: u32, name: String },
+    DeleteLoadout { loadout: u32 },
     SetPadGood { pad: u32, good: String },
     SetPadPaused { pad: u32, paused: bool },
     /// Launch a pad now (works on a paused pad; needs cargo and fuel).

@@ -21,6 +21,18 @@ not code rules. A new ruling, or a change to one, updates its line here in place
 - **Placeholder content.** Many thresholds, texts and numbers are placeholders. Don't spend
   items adjusting them (reachability, wording) until content is designed for real; bug hunts
   and QA may list them, not fix them.
+- **Program loadouts (2026-11-20).** Each program has save / load buttons. A saved program
+  goes into a library that persists across retirements (career state), so a player keeps
+  programs for different stages and loads one into any program tab. Programs still empty on
+  retirement; loading is how they come back. A loaded line not unlocked yet in this run fails
+  and advances. *Defaults (035):* 12 slots, display names up to 40 characters, open from
+  run 1, loading leaves processors as assigned.
+- **`rate` reads production less demand (2026-11-20).** What buildings and programs wanted
+  counts, met or not, so `Energy rate < 0` stays true all through a brownout; a capped
+  resource's rate is its uncapped rate. The condition's rate and the Resources panel's
+  per-day number are one quantity (the panel's for the next day). *Defaults (035):* unmet
+  demand counts only on an input that ran short; the rate counts everything the day's tick
+  did to the stock (purchases by program lines, pad loading, boredom growth and Dream too).
 - **Rules port picks (004, defaults).** The starting-credits bonus is 0.02 of the best run
   (`career.credits_bonus_fraction`), not the Godot build's /100. Ideology ranks are geometric,
   100 × 1.5^(n−1) (`rank_base_score`, `rank_growth`), not the data's `rank_thresholds`. Lunar

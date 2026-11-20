@@ -10,6 +10,7 @@ import { act, eventItems, markRead, store, unreadIn, type EventSection, type Sto
 import { Quest, ResChip, Section, ShortNote, name, shortText } from './common';
 import { Chip } from './icons';
 import { AddLogic, LogicBody, OUTCOME_TEXT, ProgramLine, lineText } from './ProgramLogic';
+import { Library, type LibraryMode } from './Library';
 import { canIndent, moveLines, removeLine, setIndent } from './programEdit';
 import { editProgram } from './programStore';
 
@@ -33,6 +34,7 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
   const v = s.view;
   const p = v.programs[program];
   const [drag, setDrag] = useState<number | null>(null);
+  const [library, setLibrary] = useState<LibraryMode | null>(null);
   // Lines that have shown a note ("needs …") since this program's lines last changed keep
   // the note's row, so a note coming and going day to day moves no line below it.
   const noted = useRef<{ key: string; lines: Set<number> }>({ key: '', lines: new Set() });
@@ -103,7 +105,29 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
         <button type="button" class="tiny" title="Clear this program" disabled={entries.length === 0} onClick={() => editProgram(program, () => [])}>
           Reset
         </button>
+        <button
+          type="button"
+          class="tiny"
+          data-testid="loadout-save"
+          title="Save this program to the library (kept across retirements)"
+          aria-pressed={library === 'save'}
+          disabled={entries.length === 0}
+          onClick={() => setLibrary(library === 'save' ? null : 'save')}
+        >
+          Save
+        </button>
+        <button
+          type="button"
+          class="tiny"
+          data-testid="loadout-load"
+          title="Load a saved program into this one"
+          aria-pressed={library === 'load'}
+          onClick={() => setLibrary(library === 'load' ? null : 'load')}
+        >
+          Load{v.library.length > 0 ? ` (${v.library.length})` : ''}
+        </button>
       </div>
+      {library && <Library v={v} program={program} mode={library} close={() => setLibrary(null)} />}
       {entries.length === 0 && (
         <p class="muted hint">Empty. Add commands from the Commands panel; each processor runs one step a day.</p>
       )}

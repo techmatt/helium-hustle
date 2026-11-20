@@ -9,6 +9,7 @@
 
 use std::collections::BTreeMap;
 
+use hh_core::state::Entry;
 use hh_core::{Action, Fx, Session, View};
 
 use crate::milestones::Milestones;
@@ -65,6 +66,32 @@ impl<'a> Player<'a> {
             self.applied += 1;
         }
         r
+    }
+
+    /// Puts `entries` in a program through the loadout library, as a player
+    /// keeping their programs across retirements would: a saved loadout with
+    /// these lines is loaded; otherwise the lines are written, and, when
+    /// `keep` names a role, saved to the slot of that name (overwritten when it
+    /// differs, a new slot while there is room). Returns whether it loaded.
+    pub fn put_program(&mut self, program: u32, entries: Vec<Entry>, keep: Option<&str>) -> bool {
+        let v = self.view();
+        if let Some(i) = v.library.iter().position(|l| l.entries == entries) {
+            if self.apply(&Action::LoadLoadout { loadout: i as u32, program }).is_ok() {
+                return true;
+            }
+        }
+        let _ = self.apply(&Action::SetProgram { program, entries: entries.clone() });
+        if let Some(name) = keep.filter(|_| !entries.is_empty()) {
+            let v = self.view();
+            if v.programs.get(program as usize).is_some_and(|p| p.entries == entries) {
+                let slot = v.library.iter().position(|l| l.name == name).map(|i| i as u32);
+                let room = slot.is_some() || v.library.len() < v.library_slots;
+                if room {
+                    let _ = self.apply(&Action::SaveLoadout { program, slot, name: name.to_string() });
+                }
+            }
+        }
+        false
     }
 }
 
@@ -229,7 +256,7 @@ pub fn ticks_to_afford(v: &View, cost: &BTreeMap<String, Fx>, credit_rate: Fx) -
         let rate = if res == "credits" {
             credit_rate
         } else {
-            v.resources.iter().find(|r| r.id == *res).map_or(Fx::ZERO, |r| r.per_day)
+            v.resources.iter().find(|r| r.id == *res).map_or(Fx::ZERO, |r| r.change_per_day)
         };
         most = most.max(ticks_to(amount(v, res), need, rate)?);
     }

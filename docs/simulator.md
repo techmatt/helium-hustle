@@ -148,9 +148,9 @@ dev career plays one. **Dev seeds** 1-3 are for development, on/off checks and t
 Spent: 1-3 and 100-103 (005, development), 1000-1004 (005, the rev-2 baseline), 2000-2003
 (005, a compare), 3000-3004 (008, a baseline read before review fixes, superseded),
 3005-3009 (008, the rev-3 baseline), 3010-3012 (011, the oracle's first read, superseded by a
-fix), 3013-3015 (011, the oracle's final read).
+fix), 3013-3015 (011, the oracle's final read), 3016-3023 (035, loadouts against main).
 
-Next free: 3016
+Next free: 3024
 
 ## `run` and `replay`
 

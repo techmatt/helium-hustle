@@ -43,7 +43,7 @@ an `Fx`. Readings (`state::Reading`, JSON `kind`):
 |---|---|
 | `amount` (`resource`) | The amount held. Land's is the land free; boredom is a resource too. |
 | `percent` (`resource`) | `amount / cap × 100`; a resource with no cap reads nothing. |
-| `rate` (`resource`) | What the last full day's tick made less what it used (buildings, programs' commands, projects; not purchases, pad loading, the cap's cut or anything done by hand between days), kept in `Run.day_net` at each day's end. Actual flows: a building short of upkeep uses only what it got, so in a steady brownout (Energy at 0) Energy's rate reads 0, and is negative only while the stock drains. 0 on a run's first day. |
+| `rate` (`resource`) | Production less demand over the last full day: what its tick did to the stock (everything from the day's start to just before the clamp: buildings, commands, `build` and `buy land` lines, pad loading, launches, projects, boredom growth, Dream), less the demand it left unmet (`today.unmet`), kept in `Run.day_net`. Unmet demand: on each input a building, command or project ran short of (held less than it needed), what it wanted less what it got; an input held in full but left unused because another ran short counts nothing. So in a steady brownout Energy's rate is the shortfall, negative every day; a capped resource reads its uncapped rate. Not the cap's cut, nor anything done by hand between days. 0 on a run's first day. |
 | `count` (`building`) | How many are owned. |
 | `day` | The run's day. |
 | `pads_ready` | Pads holding a full load that can launch now (shipments.md). |
@@ -54,6 +54,19 @@ labels and current values) only what the player can see: amount, percent (capped
 rate per visible resource (land and processors: amount only; boredom: no rate), a count per
 visible building, the day, pads ready once there is a pad, demand once revealed. No adversary
 reading (speculators, rivals) is offered yet.
+
+The Resources panel's per-day number is the same quantity for the next day (the view plays
+it on a copy: `ResourceView.per_day`), beside the stock's actual change (`change_per_day`)
+and what the cap cuts (`overflow`) and the demand left unmet (`unmet`) that day.
+
+**Loadouts.** The library (`Career.library`, kept across retirements) holds up to
+`library_slots` saved programs, each a display name (trimmed, 1 to `loadout_name_max`
+characters, duplicates allowed) and its lines. Saving copies a program's lines into a new
+slot or over one; loading replaces a program's lines with a slot's, as `set_program` does,
+processors unchanged. A loaded line this run hasn't unlocked (a command, building or
+research, a demand reading not yet revealed) is not refused: it fails and advances, or reads
+nothing, when run. `set_program`'s two run gates (the logic unlock, demand revealed) refuse
+only a line not already in the program, so a loaded program stays editable. Programs still empty at each new run; open from the start.
 
 **Unlock.** Every line but a command needs the career flag `program_logic`: set the first
 day `logic_unlock_processors` (2) processors work, checked as programs start to run, logged
@@ -106,8 +119,11 @@ pass. The factor multiplies production of every building of that category (econo
 
 | Action | Refused when |
 |---|---|
-| `set_program {program, entries}` | more than `max_entries` lines; an unknown command, building or resource; a `count` or `up_to` of 0; a line other than a command before the unlock; an indented line with no `if` or body line above it; an indented `if`; a `demand` reading of a good not traded or before demand is revealed; or no such program |
+| `set_program {program, entries}` | more than `max_entries` lines; an unknown command, building or resource; a `count` or `up_to` of 0; a line other than a command before the unlock (unless already in the program); an indented line with no `if` or body line above it; an indented `if`; a `demand` reading of a good not traded, or before demand is revealed (unless already in the program); or no such program |
 | `set_processors {program, processors}` | no such program, or the other programs' processors plus this number exceed what the active Data Centers grant |
+| `save_loadout {program, slot, name}` (`slot` null: a new slot) | no such program or slot; an empty program; a blank or overlong name; a new slot with the library full |
+| `load_loadout {loadout, program}` | no such loadout or program; lines `set_program` refuses on their form (it skips the unlock and reveal checks) |
+| `rename_loadout {loadout, name}` / `delete_loadout {loadout}` | no such loadout; a blank or overlong name (deleting moves later slots up) |
 
 `set_program` replaces the whole queue and restarts its pointer at the top. A locked command
 or building may be queued; it fails when run. A line is JSON `{"op": "command", "command":
@@ -123,6 +139,8 @@ hold command lines only. A refused action changes nothing.
 | `max_entries` | 64 | 1 to 10000 | Most lines in one program. |
 | `overclock_base_cap` | 1.5 | 1 to 100 | The most an overclock multiplies output, before research. |
 | `logic_unlock_processors` | 2 | 0 to 1000 | Working processors that first open if, wait until, build and buy land (a career first). |
+| `library_slots` | 12 | 0 to 1000 | Saved programs the loadout library holds (career state). |
+| `loadout_name_max` | 40 | 1 to 1000 | Most characters in a loadout's name. |
 <!-- /params -->
 
 The overclock duration bonus `overclock_duration_factor` is an ideology param (ideology.md).
@@ -157,7 +175,11 @@ overclock's `target`, `bonus`, `duration`) and `scale_modifier`. `content/resear
   (x 1.03^rationalist rank, whole days), from the same day's building pass; the product is
   capped.
 - Candidate (not in the Godot build): the instruction set beyond commands. `build ... up to
-  N` buys one a pass, not N in a row; `rate` is the last day's flows, not the view's forecast;
+  N` buys one a pass, not N in a row; `rate` is the last day's, the panel's the next day's;
   the unlock trigger is 2 working processors.
+- Candidate (035): unmet demand counts only on an input that ran short; `rate` counts
+  everything the tick did to the stock (031 left out purchases and pad loading), so it and
+  the panel agree. Loadouts: 12 slots, names up to 40 characters, open from run 1, loading
+  leaves processors as they are.
 - Candidate: AI Consciousness Act's command boredom values replace the commands' own (0.1 to
   0.2).

@@ -127,9 +127,10 @@ can't change an old record.
 ## The view
 
 `Rules::view` (`view.rs`; the programs and breakdown parts in `view/`) gives everything a
-client shows and can do: resources (amount, cap, change over the next day, the same before
-the end-of-tick clamp so a capped resource's surplus shows, visible, grantable by the
-debug grant), buildings (price, what's short, buyable, unlocked,
+client shows and can do: resources (amount, cap, the next day's rate (the `rate` reading's
+quantity: before the cap's cut, unmet demand counted), the stock's actual change, whether
+the cap cuts or demand goes short that day, visible, grantable by the debug grant), the
+loadout library, buildings (price, what's short, buyable, unlocked,
 visible, stall, description, ideology tag, content rates per copy, the action that buys
 one), land (price, per purchase, buyable), commands, programs (with each line's outcome
 today and each condition's live value; the readings a condition may use), pads (fuel, whether the shared Propellant covers it, cargo per load, payout, can launch,

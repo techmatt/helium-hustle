@@ -83,6 +83,8 @@ impl Rules {
         g.tick += 1;
         economy::fold_flow_average(self, g);
         g.run.today = Default::default();
+        // The stock as the day begins: the `rate` reading is the day's change.
+        let start = g.run.resources.clone();
         boredom::grow(self, g);
         programs::expire_overclocks(g);
         demand::update(self, g);
@@ -94,8 +96,8 @@ impl Rules {
         projects::drain(g);
         shipments::tick(g);
         demand::bursts(self, g);
+        programs::note_day_net(g, &start);
         economy::clamp(self, g);
-        programs::note_day_net(g);
         events::check(self, g);
         achievements::check(g);
         ideology::track(self, g);
@@ -118,6 +120,10 @@ impl Rules {
             Action::SetProcessors { program, processors } => {
                 programs::set_processors(&mut h, *program, *processors)
             }
+            Action::SaveLoadout { program, slot, name } => programs::save_loadout(self, &mut h, *program, *slot, name),
+            Action::LoadLoadout { loadout, program } => programs::load_loadout(self, &mut h, *loadout, *program),
+            Action::RenameLoadout { loadout, name } => programs::rename_loadout(self, &mut h, *loadout, name),
+            Action::DeleteLoadout { loadout } => programs::delete_loadout(&mut h, *loadout),
             Action::SetPadGood { pad, good } => shipments::set_pad_good(self, &mut h, *pad, good),
             Action::SetPadPaused { pad, paused } => shipments::set_pad_paused(&mut h, *pad, *paused),
             Action::Launch { pad } => shipments::launch_action(self, &mut h, *pad),

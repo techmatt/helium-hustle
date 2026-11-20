@@ -30,9 +30,15 @@ export interface ResourceView {
   name: string;
   amount: Fx;
   cap: Fx | null;
+  /** The next day's rate: the same quantity as a program's `rate` reading (before the
+   * cap's cut, unmet demand counted). */
   per_day: Fx;
-  /** `per_day` before the cap cuts it: at its cap, the surplus thrown away. */
-  net_per_day: Fx;
+  /** The stock's actual change that day. */
+  change_per_day: Fx;
+  /** What the cap throws away that day (`per_day` reads this far past the change). */
+  overflow: Fx;
+  /** Demand left unmet that day (`per_day` reads this far below the change, the cap aside). */
+  unmet: Fx;
   visible: boolean;
   /** The debug grant cheat may grant it. */
   grantable: boolean;
@@ -150,6 +156,12 @@ export interface ReadingView {
   reading: Reading;
   label: string;
   value: Fx | null;
+}
+
+/** A saved program in the loadout library: a display name and its lines. */
+export interface Loadout {
+  name: string;
+  entries: Entry[];
 }
 
 export interface ProgramView {
@@ -331,6 +343,10 @@ export interface View {
   /** `if`, `wait until`, `build` and `buy land` may be queued (a career first). */
   program_logic: boolean;
   logic_unlock_processors: number;
+  /** The loadout library (career): saved programs, in slot order. */
+  library: Loadout[];
+  library_slots: number;
+  loadout_name_max: number;
   readings: ReadingView[];
   processors: number;
   processors_free: number;

@@ -664,8 +664,18 @@ impl Author {
             .filter(|&i| (v.programs[i].entries != want[i] && !idle_same(i)) || rearm(i))
             .map(|i| (i, want[i].clone()))
             .collect();
+        // Standing programs go through the loadout library, so a new run loads
+        // them back; a hand plan is one look's, not worth keeping.
+        let role = |i: usize| match i {
+            _ if i == main => "author: main",
+            _ if i == dream => "author: dream",
+            FUND => "author: fund",
+            MARKET => "author: market",
+            _ => "author: build",
+        };
         for (i, entries) in writes {
-            let _ = p.apply(&Action::SetProgram { program: i as u32, entries });
+            let keep = if hand && i == main { None } else { Some(role(i)) };
+            p.put_program(i as u32, entries, keep);
         }
         for i in (0..procs.len()).filter(|&i| procs[i] < cur[i]) {
             let _ = p.apply(&Action::SetProcessors { program: i as u32, processors: procs[i] });
@@ -688,7 +698,7 @@ impl Author {
             }
         }
         if let Some(r) = self.next_research(v) {
-            let rate = v.resources.iter().find(|x| x.id == "science").map_or(Fx::ZERO, |x| x.per_day);
+            let rate = v.resources.iter().find(|x| x.id == "science").map_or(Fx::ZERO, |x| x.change_per_day);
             if let Some(t) = super::ticks_to(amount(v, "science"), r.cost, rate) {
                 sooner(&mut soon, t);
             }
