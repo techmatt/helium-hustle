@@ -29,7 +29,7 @@ against: [principles.md](principles.md); how they're run: [simulator.md](simulat
 | `random` | Each look, `actions` times: one action uniform over what the view offers (an affordable building or research, land, a random 1-4 line program on a random program, free processors to a random program, a random rate on an open project); retires with chance 1 in `retire_odds` a look; looks every `every` ticks. | `actions` 2, `retire_odds` 500, `every` 5 |
 | `greedy` | The **builder**: buys the best-scored building it can afford (land included), up to `buys` a look, never saving; the cheapest affordable research; one command on the first program with every processor, chosen afresh each look. No projects, no voluntary retirement. Looks again when its target comes within reach, at most `max_gap` ticks on. | `buys` 3, `decay`, `starved` 100, `reserve` 3, `min_gap` 1, `max_gap` 10 |
 | `author` | The **program author**: the builder's score, but saves for its target; writes condition programs kept in the library; research, projects, ideology, Dream, market commands; retires a stale run. | the builder's, `min_gap` 1, `max_gap` 10, `compute` 1, `hand_gap` 60, `loads` 20, `pause` 1, `wait_demand` 0, `dream_at` 60, `stale_days` 300, `project_rate` 3, `fund` 1, `market` 1, `construct` 1, `cond` 1 |
-| `handsoff` | **Automation alone**: run 1 is the author's; from run 2 it loads the library's programs at each reset and assigns processors, nothing else (below). | the author's, `every` 10 |
+| `handsoff` | **Automation alone**: run 1 is the author's; from run 2 it loads its programs and seats processors at each reset, nothing else. | the author's, `every` 10 |
 | `planner` | **Not built.** A strategic player that plans across retirements without peeking: the hook is `Agent::new_run`, called once a run: at the first look after a forced retirement, before `act`; after a retirement the agent chose, at the end of that look (whatever else `act` did in the new run came first, so a planner should retire last in its look). | |
 | `oracle` | The **ceiling**: the author steered by rollouts on copies of the game, the future included (below). Profiles: `profile` 0 milestones, 1 credits, 2 ideology, 3 builder, 4 quests. | `profile` 0, `every` 50, `horizon` 600, `width` 5, `beam` 1, `margin` 20, `long` 2000, `replan` 500, `strategy` -1 (search), `retire` 1, `min_run` 1000, `retire_margin` 0, `first_margin` 0, `early` and `ideology` (the profile's weights), `tail` 400, `hoard_at` 5000, `stale_days` 300, `max_gap` 10, `roll_gap` = `max_gap` |
 
@@ -78,11 +78,10 @@ the same `up to 1` for a good at its cap while two carry He-3; the filler; a han
 input), `dream watch` (2), `fund`, `market`, and `build order` (5: the last run's purchases
 as `build X up to N`, each gated on the one before and on fewer than N owned, a short input
 bought first, `research` once science covers it and it isn't researched; rewritten when a
-run bought past it). Guards skip done lines (a step each), hands-off's too.
+run bought past it). Guards skip done lines (a step each).
 
-A program is rewritten only when its text changes (a rewrite restarts its pointer). Each
-write goes through the library (`Player::put_program`): a loadout with the same lines is
-loaded instead, and a standing program is saved to its slot. Extra pads carry a good other
+A program is rewritten only when its text changes (a rewrite restarts its pointer), through
+the library (`Player::put_program`). Extra pads carry a good other
 than He-3 at its cap. Looking often (gap ≤ `hand_gap`), it pauses buildings that eat a
 material its target is short of, and runs them again once it isn't.
 
@@ -111,13 +110,15 @@ A hand plan is also rewritten to run its due lines again once the pointer passed
 filler, never over one that reaches the next look: about 90 decisions a run.
 
 **The hands-off player** (`handsoff.rs`) is the author in run 1; then at each new run it loads
-the five programs by name (saving run 1's build order first) and assigns processors (build
-order first, one each while two are left, the rest to Program 1). Its saved build order leads
-with lines for what was a hand: `assign processors` (all to the build order until a
-Launch Pad stands, then one), `pause` / `resume` of Smelters and Fabricators while titanium
-or circuits sit at their cap (resumed under 90%), and a Storage Depot while titanium does
-and credits reach 3× its price; it ends with research the author buys by hand.
-By hand only processors gained or stopped by unpaid upkeep, and the stale retirement.
+the five programs by name (run 1's build order saved first) and seats processors (build
+order first, one each while two are left, the rest to Program 1), and makes no other
+decision. Its build order leads with what were hands: processors (all to it until a pad
+stands, then one; a side program seated once enough work), Smelters and Fabricators paused
+while their product is at cap (on again under 90%), a Storage Depot while titanium is and
+credits reach 3× its price. The Dream watch gains, before its filler: every 49
+days at 3000 credits, `fund` most open projects at 3 a day; every 9 days a free
+processor to Program 1; `retire` once `days since last purchase` reaches `stale_days`; the
+author's hand research (odd periods: a guard read every other day lands).
 
 ## The oracle (`oracle/`)
 

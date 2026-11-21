@@ -245,6 +245,7 @@ pub fn buy(r: &Rules, g: &mut GameState, id: &str) -> Result<(), String> {
     h.owned += 1;
     h.active += 1;
     g.run.stats.buildings_built += 1;
+    g.run.last_purchase = Some(g.run.day);
     g.career.owned_buildings.insert(b.id.clone());
     refresh(g);
     Ok(())
@@ -331,6 +332,7 @@ pub fn buy_land(r: &Rules, g: &mut GameState) -> Result<(), String> {
     g.track("land", CREDITS, Fx::ZERO, price);
     g.track("land", LAND, r.p.economy.land_per_purchase, Fx::ZERO);
     g.run.land_bought += 1;
+    g.run.last_purchase = Some(g.run.day);
     Ok(())
 }
 

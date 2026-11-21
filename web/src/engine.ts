@@ -121,7 +121,7 @@ export type Cmp = 'lt' | 'le' | 'gt' | 'ge' | 'eq';
 export type Reading =
   | { kind: 'amount' | 'percent' | 'rate'; resource: string }
   | { kind: 'count'; building: string }
-  | { kind: 'day' | 'land_price' | 'days_since_launch' }
+  | { kind: 'day' | 'land_price' | 'days_since_launch' | 'days_since_purchase' }
   | { kind: 'pads_ready' | 'cargo' | 'pads'; good?: string | null }
   | { kind: 'demand'; good: string }
   | { kind: 'next_cost' | 'running'; building: string }
@@ -148,7 +148,8 @@ export type Verb =
   | 'research'
   | 'load_program'
   | 'assign_processors'
-  | 'retire';
+  | 'retire'
+  | 'fund';
 
 /** An `act` line's amount: N, or all. */
 export type Amount = { n: number } | 'all';

@@ -25,6 +25,8 @@ pub static DEF: ModuleDef = ModuleDef {
             param("logic_unlock_processors", K::Int, Some(("0", "1000")), "working processors that first open every line but plain commands (a career first)"),
             param("library_slots", K::Int, Some(("0", "1000")), "saved programs the loadout library holds (career state)"),
             param("loadout_name_max", K::Int, Some(("1", "1000")), "most characters in a loadout's name"),
+            param("fund_verb", K::Int, Some(("0", "1")), "1: the `fund <project>` verb is on; 0: off (a new line refused, a held one fails)"),
+            param("days_since_purchase_reading", K::Int, Some(("0", "1")), "1: the `days since last purchase` reading is on; 0: off (a new clause refused, a held one reads nothing)"),
         ],
         rng: &[],
     }],
@@ -38,6 +40,8 @@ pub struct Params {
     pub logic_unlock_processors: u32,
     pub library_slots: usize,
     pub loadout_name_max: usize,
+    pub fund_verb: bool,
+    pub days_since_purchase_reading: bool,
 }
 
 impl Params {
@@ -49,6 +53,8 @@ impl Params {
             logic_unlock_processors: mc.int("logic_unlock_processors") as u32,
             library_slots: mc.int("library_slots") as usize,
             loadout_name_max: mc.int("loadout_name_max") as usize,
+            fund_verb: mc.int("fund_verb") == 1,
+            days_since_purchase_reading: mc.int("days_since_purchase_reading") == 1,
         })
     }
 }
@@ -147,6 +153,12 @@ fn check_entries(r: &Rules, g: &GameState, program: u32, entries: &[Entry], held
             }
             Reading::Count { building: b } | Reading::NextCost { building: b } | Reading::Running { building: b } => building(b),
             Reading::Day | Reading::LandPrice | Reading::DaysSinceLaunch => Ok(()),
+            Reading::DaysSincePurchase => {
+                if gated && !r.p.programs.days_since_purchase_reading {
+                    return Err(format!("Program {n}: the days since last purchase reading is off"));
+                }
+                Ok(())
+            }
             Reading::PadsReady { good } | Reading::Cargo { good } | Reading::Pads { good } => good.as_deref().map_or(Ok(()), traded),
             Reading::Researched { item } => {
                 c.research_item(item).map(|_| ()).ok_or_else(|| format!("Program {n}: unknown research {item:?}"))
@@ -211,7 +223,12 @@ fn check_entries(r: &Rules, g: &GameState, program: u32, entries: &[Entry], held
                 in_block = true;
             }
             Op::WaitUntil { when } => condition(when, gated)?,
-            Op::Act { verb, target, tab, amount } => check_act(r, g, n, *verb, target.as_deref(), *tab, *amount)?,
+            Op::Act { verb, target, tab, amount } => {
+                if gated && *verb == Verb::Fund && !r.p.programs.fund_verb {
+                    return Err(format!("Program {n}: the fund verb is off"));
+                }
+                check_act(r, g, n, *verb, target.as_deref(), *tab, *amount)?
+            }
         }
     }
     if program as usize >= g.run.programs.len() {
@@ -240,6 +257,7 @@ fn check_act(r: &Rules, g: &GameState, n: u32, verb: Verb, target: Option<&str>,
         Verb::LoadProgram => (target.is_some_and(|s| !s.trim().is_empty()), true, Takes::No),
         Verb::AssignProcessors => (target.is_none(), true, Takes::Required),
         Verb::Retire => (target.is_none(), false, Takes::No),
+        Verb::Fund => (target.is_some_and(|p| c.project(p).is_some()), false, Takes::Optional),
     };
     let what = format!("Program {n}: {verb:?}");
     if !target_ok {
@@ -256,7 +274,7 @@ fn check_act(r: &Rules, g: &GameState, n: u32, verb: Verb, target: Option<&str>,
     match (amount_rule, amount) {
         (Takes::No, Some(_)) => Err(format!("{what} takes no amount")),
         (Takes::Required, None) => Err(format!("{what} needs an amount")),
-        (_, Some(Amount::N(0))) if verb != Verb::AssignProcessors => Err(format!("{what}: an amount of 0")),
+        (_, Some(Amount::N(0))) if verb != Verb::AssignProcessors && verb != Verb::Fund => Err(format!("{what}: an amount of 0")),
         (_, Some(Amount::All)) if verb == Verb::SetPads => Err(format!("{what}: up to N, not all")),
         _ => Ok(()),
     }
@@ -526,6 +544,13 @@ pub fn reading(r: &Rules, g: &GameState, what: &Reading) -> Option<Fx> {
         }
         Reading::Running { building } => Some(Fx::from_int(i64::from(g.active(building)))),
         Reading::Processors { tab } => g.run.programs.get(*tab as usize).map(|p| Fx::from_int(i64::from(p.processors))),
+        Reading::DaysSincePurchase => {
+            if !r.p.programs.days_since_purchase_reading {
+                return None;
+            }
+            let since = g.run.day - g.run.last_purchase.unwrap_or(0);
+            Some(Fx::from_int(i64::try_from(since).unwrap_or(i64::MAX)))
+        }
     }
 }
 
@@ -728,6 +753,31 @@ fn act(r: &Rules, g: &mut GameState, verb: Verb, target: Option<&str>, tab: Opti
                 return LineOutcome::Failed;
             }
             g.run.retire_asked = true;
+            LineOutcome::Ran
+        }
+        Verb::Fund => {
+            let Some(p) = target.and_then(|id| content().project(id)) else {
+                return LineOutcome::Failed;
+            };
+            if !r.p.programs.fund_verb || !super::projects::unlocked(g, p) {
+                return LineOutcome::Failed;
+            }
+            // The Projects panel's rate, on every cost: N a day (at most the
+            // most a project may take), `all` or none the most.
+            let max = r.p.projects.max_drain_rate;
+            let rate = match amount {
+                Some(Amount::N(k)) => Fx::from_int(i64::from(k)).min(max),
+                _ => max,
+            };
+            let now = g.run.project_rates.get(&p.id);
+            if p.costs.keys().all(|res| now.and_then(|m| m.get(res)).copied().unwrap_or(Fx::ZERO) == rate) {
+                return LineOutcome::Done;
+            }
+            for res in p.costs.keys() {
+                if super::projects::set_rate(r, g, &p.id, res, rate).is_err() {
+                    return LineOutcome::Failed;
+                }
+            }
             LineOutcome::Ran
         }
     }

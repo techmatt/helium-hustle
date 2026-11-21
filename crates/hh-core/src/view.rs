@@ -626,7 +626,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
     let procs = program_rules::capacity(g);
     let running = program_rules::running(g);
     let readings = programs::readings(r, g, &resources, &buildings);
-    let verbs = programs::verbs(g, &buildings);
+    let verbs = programs::verbs(r, g, &buildings);
     View {
         tick: g.tick,
         day: g.run.day,

@@ -244,6 +244,96 @@ fn set_program_refuses_act_lines_with_the_wrong_slots() {
     assert!(put(&r, &mut g, vec![act(Verb::Retire, None, None, None)]).is_err());
 }
 
+fn when(reading: Reading, cmp: Cmp, v: i64) -> Entry {
+    Entry::new(Op::If { when: Condition { first: Clause { reading, cmp, value: Fx::from_int(v), against: None }, rest: None } })
+}
+
+#[test]
+fn days_since_purchase_counts_buildings_land_and_research() {
+    let r = rules();
+    let mut g = game(&r);
+    let read = |g: &GameState| programs::reading(&r, g, &Reading::DaysSincePurchase);
+    r.advance(&mut g, 3);
+    assert_eq!(read(&g), Some(Fx::from_int(g.run.day as i64)), "none yet: the run's day");
+    set(&mut g, "credits", "100000");
+    set(&mut g, "titanium", "1000");
+    r.apply(&mut g, &Action::Buy { building: "solar_panel".into() }).unwrap();
+    assert_eq!(read(&g), Some(Fx::ZERO), "a building today");
+    r.advance(&mut g, 2);
+    assert_eq!(read(&g), Some(Fx::from_int(2)));
+    r.apply(&mut g, &Action::BuyLand).unwrap();
+    assert_eq!(read(&g), Some(Fx::ZERO), "land");
+    r.advance(&mut g, 2);
+    let item = crate::content::content()
+        .research
+        .iter()
+        .find(|it| it.requires.is_none() && crate::modules::research::visible(&g, it))
+        .expect("an open item")
+        .id
+        .clone();
+    set(&mut g, "science", "100000");
+    r.apply(&mut g, &Action::Research { research: item }).unwrap();
+    assert_eq!(read(&g), Some(Fx::ZERO), "research");
+    // A command that buys a resource is not a purchase.
+    r.advance(&mut g, 1);
+    assert_eq!(run_one(&r, &mut g, Entry::new(Op::Command { command: "idle".into(), count: 1 })), O::Ran);
+    assert_eq!(read(&g), Some(Fx::from_int(2)));
+}
+
+#[test]
+fn fund_sets_every_cost_rate_as_the_panel_does() {
+    let r = rules();
+    let mut g = game(&r);
+    let fund = |a| act(Verb::Fund, Some("foundation_grant"), None, a);
+    // Locked: fails, no rate.
+    assert_eq!(run_one(&r, &mut g, fund(Some(Amount::N(3)))), O::Failed);
+    assert!(g.run.project_rates.is_empty());
+    g.run.enabled_projects.insert("foundation_grant".into());
+    set(&mut g, "credits", "0");
+    set(&mut g, "science", "0");
+    let rates = |g: &GameState| g.run.project_rates.get("foundation_grant").cloned().unwrap_or_default();
+    assert_eq!(run_one(&r, &mut g, fund(Some(Amount::N(3)))), O::Ran);
+    assert_eq!(rates(&g).get("credits"), Some(&Fx::from_int(3)));
+    assert_eq!(rates(&g).get("science"), Some(&Fx::from_int(3)));
+    assert_eq!(run_one(&r, &mut g, fund(Some(Amount::N(3)))), O::Done, "already at that rate: the step only");
+    let max = r.p.projects.max_drain_rate;
+    assert_eq!(run_one(&r, &mut g, fund(Some(Amount::N(1_000_000)))), O::Ran);
+    assert_eq!(rates(&g).get("credits"), Some(&max), "capped at the most a project takes");
+    assert_eq!(run_one(&r, &mut g, fund(Some(Amount::N(0)))), O::Ran);
+    assert!(rates(&g).is_empty(), "0 stops it");
+    assert_eq!(run_one(&r, &mut g, fund(None)), O::Ran);
+    assert_eq!(rates(&g).get("science"), Some(&max), "no amount: the most, as all");
+    // Completed: no longer open, so it fails.
+    g.career.completed_projects.insert("foundation_grant".into());
+    assert_eq!(run_one(&r, &mut g, fund(Some(Amount::All))), O::Failed);
+    assert!(put(&r, &mut g, vec![act(Verb::Fund, Some("no_such"), None, None)]).is_err());
+    assert!(put(&r, &mut g, vec![act(Verb::Fund, None, None, None)]).is_err());
+}
+
+#[test]
+fn the_fund_verb_and_purchase_reading_switch_off_in_config() {
+    let json = super::BASELINE.replace("\"fund_verb\": 1", "\"fund_verb\": 0").replace(
+        "\"days_since_purchase_reading\": 1",
+        "\"days_since_purchase_reading\": 0",
+    );
+    let r = Rules::new(&crate::Config::from_json(&json).unwrap()).unwrap();
+    let mut g = game(&r);
+    let fund = act(Verb::Fund, Some("foundation_grant"), None, Some(Amount::All));
+    let stale = when(Reading::DaysSincePurchase, Cmp::Ge, 1);
+    assert!(put(&r, &mut g, vec![fund.clone()]).is_err(), "a new fund line is refused");
+    assert!(put(&r, &mut g, vec![stale.clone(), act(Verb::Retire, None, None, None).indent()]).is_err());
+    assert_eq!(programs::reading(&r, &g, &Reading::DaysSincePurchase), None);
+    let v = crate::view::build(&r, &g);
+    assert!(!v.verbs.iter().any(|x| x.verb == Verb::Fund));
+    assert!(!v.readings.iter().any(|x| x.reading == Reading::DaysSincePurchase));
+    // Held (as a loadout brings it), the fund line fails when run.
+    g.run.enabled_projects.insert("foundation_grant".into());
+    g.run.programs[0].entries = vec![fund];
+    r.advance(&mut g, 1);
+    assert_eq!(crate::view::LinesRun::today(&g).lines[0][0], Some(O::Failed));
+    assert!(g.run.project_rates.is_empty());
+}
+
 #[test]
 fn an_act_line_is_flat_json() {
     let e = act(Verb::SetPads, Some("he3"), None, Some(Amount::N(2)));

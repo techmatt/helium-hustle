@@ -1101,9 +1101,10 @@ fn pad_stands() -> Clause {
     clause(Reading::Count { building: "launch_pad".to_string() }, Cmp::Ge, 1)
 }
 
-/// Lines the build order leaves free for the hands-off player's lead.
-/// (16 stock and processor lines, 2 per non-essential research item).
-pub const LEAD_LINES: usize = 16 + 2 * (RESEARCH.len() - ESSENTIAL.len());
+/// Lines the build order leaves free for the hands-off player's lead
+/// (`handsoff::processor_lines`, 16 stock and processor lines, and
+/// `handsoff::seat_lines`, at most 12: 11 with three side programs).
+pub const LEAD_LINES: usize = 16 + 12;
 
 /// Cargo a pad holds (mirrors configs/baseline.json `pad_cargo_capacity`).
 const PAD_CARGO: i64 = 100;

@@ -101,7 +101,8 @@ pub(super) fn programs(r: &Rules, g: &GameState, running: &[u32]) -> Vec<Program
 /// visible building; researched per visible research item; each program's
 /// processors; the land price, the day, every N days (at 1: the editor sets
 /// N); once there is a pad, pads, pads ready and cargo (all, and per good) and
-/// days since the last launch; demand per good once exact demand is revealed.
+/// days since the last launch; days since the last purchase (unless switched
+/// off); demand per good once exact demand is revealed.
 pub(super) fn readings(r: &Rules, g: &GameState, resources: &[ResourceView], buildings: &[BuildingView]) -> Vec<ReadingView> {
     let mut out = Vec::new();
     let mut add = |reading: Reading, label: String| {
@@ -158,6 +159,9 @@ pub(super) fn readings(r: &Rules, g: &GameState, resources: &[ResourceView], bui
         }
         add(Reading::DaysSinceLaunch, "Days since last launch".to_string());
     }
+    if r.p.programs.days_since_purchase_reading {
+        add(Reading::DaysSincePurchase, "Days since last purchase".to_string());
+    }
     if research::reveals_demand(g) {
         for good in g.run.markets.keys() {
             let name = names.get(good.as_str()).copied().unwrap_or(good);
@@ -191,7 +195,7 @@ pub struct VerbView {
 
 /// Every verb of an `act` line, with its slots' choices now (visible
 /// buildings, the traded goods, visible research, the library's names).
-pub(super) fn verbs(g: &GameState, buildings: &[BuildingView]) -> Vec<VerbView> {
+pub(super) fn verbs(r: &Rules, g: &GameState, buildings: &[BuildingView]) -> Vec<VerbView> {
     let names = names();
     let goods: Vec<Choice> = g
         .run
@@ -213,8 +217,15 @@ pub(super) fn verbs(g: &GameState, buildings: &[BuildingView]) -> Vec<VerbView> 
             saved.push(Choice { value: l.name.clone(), label: l.name.clone() });
         }
     }
+    // Projects open to funding now (unlocked, not completed).
+    let open: Vec<Choice> = crate::content::content()
+        .projects
+        .iter()
+        .filter(|p| projects::unlocked(g, p))
+        .map(|p| Choice { value: p.id.clone(), label: p.name.clone() })
+        .collect();
     let v = |verb, label, targets: Option<Vec<Choice>>, target_all, tab, amount| VerbView { verb, label, targets, target_all, tab, amount };
-    vec![
+    let mut out = vec![
         v(Verb::LaunchPads, "Launch pads", Some(goods.clone()), true, false, "none"),
         v(Verb::LoadPads, "Load pads", Some(goods.clone()), true, false, "none"),
         v(Verb::SetPads, "Set pads", Some(goods), false, false, "up_to"),
@@ -224,7 +235,13 @@ pub(super) fn verbs(g: &GameState, buildings: &[BuildingView]) -> Vec<VerbView> 
         v(Verb::LoadProgram, "Load", Some(saved), false, true, "none"),
         v(Verb::AssignProcessors, "Assign processors", None, false, true, "n_or_all"),
         v(Verb::Retire, "Retire", None, false, false, "none"),
-    ]
+    ];
+    if r.p.programs.fund_verb {
+        // The editor writes `N` (0 stops it) or `all`; a line with no amount
+        // is `all` too.
+        out.push(v(Verb::Fund, "Fund", Some(open), false, false, "n_or_all"));
+    }
+    out
 }
 
 /// The program lines run over a span of days (a client drawing once per

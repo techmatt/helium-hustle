@@ -45,6 +45,14 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   player saves steps: wrap a finished line in an `if`. *Defaults (038):* guard readings
   `researched <item>`, `pads <good | all>` (pads carrying it), `running <building>` and
   `processors <tab>`; `load pads` is done when no pad of the good would take cargo.
+- **`days since last purchase` and `fund <project>` (2026-11-20).** A reading for days since
+  the last purchase, and a `fund <project> [amount]` verb funding a project the way the
+  Projects panel does; both may be switched off later, each one config change
+  (`days_since_purchase_reading`, `fund_verb`). *Defaults (039):* a purchase is a building,
+  land or research item, by hand or program (not commands, funding or free buildings); `fund
+  P N` sets N a day on every cost of P (at most `max_drain_rate`; `all` or no amount the most;
+  0 stops it); the switches are 0/1 programs params; JSON verb `fund`, so a later `fund <axis>`
+  can share it.
 - **`rate` reads production less demand (2026-11-20).** What buildings and programs wanted
   counts, met or not, so `Energy rate < 0` stays true all through a brownout; a capped
   resource's rate is its uncapped rate. The condition's rate and the Resources panel's

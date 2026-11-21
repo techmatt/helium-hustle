@@ -60,6 +60,8 @@ export function readingLabel(v: View, r: Reading): string {
       return `Days to cap of ${name(v, r.resource)}`;
     case 'days_since_launch':
       return 'Days since last launch';
+    case 'days_since_purchase':
+      return 'Days since last purchase';
     case 'pads':
       return r.good ? `Pads on ${name(v, r.good)}` : 'Pads (all)';
     case 'running':
@@ -464,7 +466,7 @@ function ActEdit({ v, e, set }: { v: View; e: Extract<Entry, { op: 'act' }>; set
             value={amountText}
             commit={(raw) => {
               const text = raw.toLowerCase();
-              const least = e.verb === 'assign_processors' ? 0 : 1;
+              const least = e.verb === 'assign_processors' || e.verb === 'fund' ? 0 : 1;
               if (text === '' && spec.amount === 'optional') set({ ...e, amount: null });
               else if (text === 'all' && spec.amount !== 'up_to') set({ ...e, amount: 'all' });
               else if (/^\d{1,9}$/.test(text) && Number(text) >= least) set({ ...e, amount: { n: Number(text) } });

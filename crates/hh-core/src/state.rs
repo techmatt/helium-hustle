@@ -158,6 +158,7 @@ impl Reading {
             Reading::Pads { good } => format!("pads on {}", all(good)),
             Reading::Running { building } => format!("{building} running"),
             Reading::Processors { tab } => format!("program {} processors", tab + 1),
+            Reading::DaysSincePurchase => "days since last purchase".to_string(),
         }
     }
 }
@@ -195,8 +196,8 @@ impl Condition {
 pub enum Op {
     /// Run `command` `count` times before moving on (a processor step each).
     Command { command: String, count: u32 },
-    /// Buy one `building` (a processor step). With `up_to`, free and passed
-    /// over once that many are owned.
+    /// Buy one `building` (a processor step). With `up_to`, done (the step
+    /// only) once that many are owned.
     Build { building: String, up_to: Option<u32> },
     /// Buy land (a processor step). A struct variant, so a stray key is refused.
     BuyLand {},
@@ -240,6 +241,9 @@ pub enum Verb {
     AssignProcessors,
     /// `retire`: a voluntary retirement at the day's end.
     Retire,
+    /// `fund <project> [N | all]`: sets the project's daily rate on each of
+    /// its costs, as the Projects panel does.
+    Fund,
 }
 
 /// An `act` line's amount: `N` (`{"n": 3}`; `up to N` for `set pads`) or `all`.
@@ -341,6 +345,9 @@ pub enum Reading {
     Running { building: String },
     /// Processors assigned to a program tab (0-based).
     Processors { tab: u32 },
+    /// Days since this run's last purchase: a building, land or research
+    /// (none yet: the run's day).
+    DaysSincePurchase,
 }
 
 /// A program tab: a command queue, the processors assigned to it and its
@@ -559,6 +566,9 @@ pub struct Run {
     pub activity: Vec<Activity>,
     /// The day of this run's last launch (the `days_since_launch` reading).
     pub last_launch: Option<u64>,
+    /// The day of this run's last purchase of a building, land or research
+    /// (the `days_since_purchase` reading).
+    pub last_purchase: Option<u64>,
     /// A program's `retire` ran today: the run retires at the day's end.
     pub retire_asked: bool,
 }

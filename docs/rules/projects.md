@@ -64,6 +64,9 @@ every later run; Strategic: the rest of the run):
   rate. Refused for an unknown project, one not unlocked (locked or already completed), a
   resource not among its costs, or a rate below 0 or above `max_drain_rate`.
 
+A program's `fund <project> [N | all]` line sets the same rates, one N on every cost
+([programs.md](programs.md), *Verbs*).
+
 ## Params
 
 <!-- params:projects -->

@@ -37,22 +37,26 @@ an `if` is never indented (no nesting), there is no `else`, and an indented line
 an `if` or another indented line. Any other line may sit in a body, `wait until` included.
 
 **Verbs** (`act` lines; `state::Verb`). The target slot is typed by the verb; `tab` is a
-program (0-based); the amount is `{"n": N}` or `"all"`; JSON `verb` is the snake_case name
-(`launch_pads`, `load_program`, `assign_processors`, ...). A verb with nothing to do is
-**done**, as a finished `build ... up to N`: it takes its step and nothing else (no
-resources, no boredom); one that can't act fails. A guard (`if`) is how a line saves the step.
+program (0-based); the amount is `{"n": N}` or `"all"`; JSON `verb` is the snake_case name.
+A verb with nothing to do is **done**, as a finished `build ... up to N`: its step and nothing
+else; one that can't act fails. A guard (`if`) is how a line saves the step.
 
 | Verb | What it does |
 |---|---|
 | `launch pads <good \| all>` (`target` null: all) | Runs Launch Full Pads (its row's costs and boredom) on that good's pads; done with none that would launch. |
 | `load pads <good \| all>` | Runs Load Launch Pads on that good's pads; done when none would take cargo. |
-| `set pads <good> up to N` | While fewer than N pads carry the good, an idle pad (empty, another good) switches to it, in pad order. Done at N; fails when none could switch. |
+| `set pads <good> up to N` | While fewer than N pads carry it, an idle pad (empty, another good) switches, in pad order. Done at N; fails when none could. |
 | `pause <building> [N \| all]` | N fewer running (1 with no amount; at most what runs), as Set Active. |
-| `resume <building> [N \| all]` | N more running, at most what is owned. |
-| `research <item>` | Buys it, as the Research action; done once researched. |
-| `load <saved program> into <tab>` (`target` a name) | Loads the first loadout of that name, as `load_loadout`. Into its own tab, the new lines start at the top. |
+| `resume <building> [N \| all]` | N more running, at most all owned. |
+| `research <item>` | Buys it, as Research does; done once researched. |
+| `load <saved program> into <tab>` (`target` a name) | Loads the first loadout of that name, as `load_loadout` (into its own tab: from the top). |
 | `assign processors <tab> N` (N may be 0) | As `set_processors` (`all`: every one not on another program). A program cut stops at its new count that day; one raised gains them the next. |
-| `retire` | Fails unless retiring is allowed (career.md); else the run retires at the day's end, as the Retire action (logged `retired`, its summary in `last_run`). |
+| `retire` | Fails unless retiring is allowed (career.md); else the run retires at the day's end, as the Retire action. |
+| `fund <project> [N \| all]` | Sets its daily rate on each cost to N, as the Projects panel does: at most `max_drain_rate` (`all` or none: that); 0 stops it. Done when every rate is N; fails when the project isn't open. |
+
+**Switches.** `fund_verb` and `days_since_purchase_reading` at 0 take that verb or reading
+out: not offered, refused in a line new to the program; a held or loaded one fails or reads
+nothing.
 
 **Conditions.** `<reading> <cmp> <right side>`, or two such clauses joined by one `and` or
 `or` (`state::Condition`: `first`, `rest`). `cmp` is `lt`, `le`, `gt`, `ge` or `eq`; the right
@@ -64,7 +68,7 @@ side is a number (`value`, an `Fx`) or, with `against`, another reading times th
 |---|---|
 | `amount` (`resource`) | The amount held. Land's is the land free; boredom is a resource too. |
 | `percent` (`resource`) | `amount / cap × 100`; a resource with no cap reads nothing. |
-| `rate` (`resource`) | Production less demand over the last full day (`Run.day_net`): what the tick did to the stock before the clamp, less the demand it left unmet (`today.unmet`: what a building, command or project wanted of a short input less what it got). So a brownout reads the shortfall; a capped resource its uncapped rate; nothing done by hand counts; 0 on day 1. |
+| `rate` (`resource`) | Production less demand over the last full day (`Run.day_net`): the tick's change to the stock before the clamp, less demand left unmet (`today.unmet`) on a short input. A brownout reads the shortfall; a capped resource its uncapped rate; nothing done by hand counts; 0 on day 1. |
 | `days_to_cap` (`resource`) | `(cap − amount) / rate`; 0 at the cap; nothing with no cap or a rate of 0 or less. |
 | `count` (`building`) | How many are owned. |
 | `running` (`building`) | How many are owned and active. |
@@ -78,25 +82,22 @@ side is a number (`value`, an `Fx`) or, with `against`, another reading times th
 | `pads_ready` (`good`, null: all) | Unpaused pads of the good holding a full load that can launch now (shipments.md). |
 | `cargo` (`good`, null: all) | Cargo aboard the good's pads. |
 | `days_since_launch` | Days since this run's last launch (none yet: the run's day). |
+| `days_since_purchase` | Days since this run last bought a building, land or research, by hand or line (none yet: the run's day); not commands or funding. |
 | `demand` (`good`) | The good's demand today; reads nothing until exact demand is revealed (Market Awareness, research.md). |
 
-A clause whose reading or right side reads nothing is false. The view's `readings` offer only
-what the player can see (visible resources, buildings and research; land and processors:
-amount only; boredom: no rate; pad readings once there is a pad; demand once revealed); its
-`verbs` give each verb's slot choices now. The Resources panel's per-day number is `rate`
-for the next day.
+A clause whose reading or right side reads nothing is false. The view's `readings` offer what
+the player can see (`view/programs.rs`), its `verbs` each slot's choices now. The Resources
+panel's per-day number is `rate` for the next day.
 
 **Loadouts.** The library (`Career.library`, kept across retirements) holds up to
 `library_slots` saved programs, each a display name (trimmed, 1 to `loadout_name_max`
 characters, duplicates allowed) and its lines. Saving copies a program's lines into a new
 slot or over one; loading replaces a program's lines with a slot's, as `set_program` does,
-processors unchanged. A loaded line this run hasn't unlocked is not refused: it fails, or
-reads nothing, when run; `set_program`'s run gates (the logic unlock, demand revealed) refuse
-only a line new to the program. Open from the start.
+processors unchanged. A loaded line this run hasn't unlocked fails, or reads nothing, when
+run: the run gates refuse only a line new to the program.
 
-**Unlock.** Every line but a command needs the career flag `program_logic`: set the first
-day `logic_unlock_processors` (2) processors work, checked as programs start to run, logged
-(`unlock`), kept as career flags are (career.md).
+**Unlock.** Every line but a command needs the career flag `program_logic`: set (and logged)
+the first day `logic_unlock_processors` processors work, as programs start to run.
 
 **Running** (each day): programs in order; each running processor of a program takes one
 step from the shared pointer. A step passes over free lines (an `if`, a `wait until` that
@@ -104,9 +105,8 @@ holds) until it reaches a line that costs it: that line runs once and the pointe
 whatever the outcome (ran, skipped, failed or done): a command line's run count rises and,
 at its `count`, the pointer moves on; any other line moves on at once. The pointer wraps from the last line to the first. A step that passes as
 many free lines as the program has (one loop) idles, as does one stopped at a `wait until`.
-An empty program does nothing. Each line's outcome today (`state::LineOutcome`, the last
-time the pointer met it; a false `if`'s body is `jumped` unless it ran earlier that day) is
-kept for display (the UI colors the line); no rule reads it. A failed `build` or
+An empty program does nothing. Each line's outcome today (`state::LineOutcome`; a false
+`if`'s body `jumped` unless it ran earlier that day) is display only. A failed `build` or
 `buy land` notes what it was short of, as a command does.
 
 **Running a command** (one execution):
@@ -142,16 +142,14 @@ pass. The factor multiplies production of every building of that category (econo
 
 | Action | Refused when |
 |---|---|
-| `set_program {program, entries}` | more than `max_entries` lines; an unknown command, building or resource; a `count` or `up_to` of 0; a line other than a command before the unlock (unless already in the program); an indented line with no `if` or body line above it; an indented `if`; a `demand` reading of a good not traded, or before demand is revealed (unless already in the program); a verb with an unknown or missing target (`load`: a blank name; one no loadout has fails when run), a tab or amount it doesn't take or lacks, an amount of 0 (but `assign_processors`), `set_pads ... all`; `every 0`; or no such program |
+| `set_program {program, entries}` | more than `max_entries` lines; an unknown command, building or resource; a `count` or `up_to` of 0; a line other than a command before the unlock (unless already in the program); an indented line with no `if` or body line above it; an indented `if`; a `demand` reading of a good not traded, or before demand is revealed (unless already in the program); a verb with an unknown or missing target (`load`: a blank name; one no loadout has fails when run), a tab or amount it doesn't take or lacks, an amount of 0 (but `assign_processors` and `fund`), `set_pads ... all`; `every 0`; a switched-off verb or reading (unless already in the program); or no such program |
 | `set_processors {program, processors}` | no such program, or the other programs' processors plus this number exceed what the active Data Centers grant |
 | `save_loadout {program, slot, name}` (`slot` null: a new slot) | no such program or slot; an empty program; a blank or overlong name; a new slot with the library full |
 | `load_loadout {loadout, program}` | no such loadout or program; lines `set_program` refuses on their form (it skips the unlock and reveal checks) |
 | `rename_loadout {loadout, name}` / `delete_loadout {loadout}` | no such loadout; a blank or overlong name (deleting moves later slots up) |
 
 `set_program` replaces the whole queue and restarts its pointer at the top. A locked command
-or building may be queued; it fails when run. A line is JSON `{"op": "command", "command":
-"idle", "count": 1}`, with `"indented": true` on a body line. A scenario's starting programs
-hold command lines only.
+or building may be queued; it fails when run. A body line carries `"indented": true`.
 
 ## Params
 
@@ -164,6 +162,8 @@ hold command lines only.
 | `logic_unlock_processors` | 2 | 0 to 1000 | Working processors that first open every line but plain commands (a career first). |
 | `library_slots` | 12 | 0 to 1000 | Saved programs the loadout library holds (career state). |
 | `loadout_name_max` | 40 | 1 to 1000 | Most characters in a loadout's name. |
+| `fund_verb` | 1 | 0 to 1 | 1: the `fund <project>` verb is on; 0: off (a new line refused, a held one fails). |
+| `days_since_purchase_reading` | 1 | 0 to 1 | 1: the `days since last purchase` reading is on; 0: off (a new clause refused, a held one reads nothing). |
 <!-- /params -->
 
 The overclock duration bonus `overclock_duration_factor` is an ideology param (ideology.md).
@@ -182,9 +182,8 @@ overclock's `target`, `bonus`, `duration`) and `scale_modifier`. `content/resear
   `unlocks_commands` is dropped for each command's `requires`; Microwave Receiver unlocks Buy
   Power ([economy.md](economy.md#port-notes)); Load's, Promote's and Disrupt's numbers are config.
 - Candidates (Godot port): processors on Program 1 at a new run, unassigned when gained, cut
-  from the last program; a repeat count, 64 lines (128 since 037); effect commands need their full cost; the
+  from the last program; a repeat count; effect commands need their full cost; the
   output-cap skip; one x1.05 overclock stack per execution for 5 days; AI Consciousness Act's
   boredom values replace the commands'.
-- Candidates (not in the Godot build): everything past commands (`build ... up to N` buys one
-  a pass; the unlock is 2 working processors; 035's `rate` and loadout picks; 037's verbs,
-  038's done step and guard readings: docs/rulings.md).
+- Candidates (not in the Godot build): everything past commands; the picks are in
+  docs/rulings.md.
