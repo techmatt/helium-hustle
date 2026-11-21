@@ -8,7 +8,7 @@ against: [principles.md](principles.md); how they're run: [simulator.md](simulat
   that the view lacks goes into the view. The one exception is the oracle's privilege (Matt's ruling: it may see the
   future), its privileged seats: `Player::state()` (the whole state), `Player::session()`
   (the session, for its milestone tracker) and `Player::fork()`, a copy of the game to play
-  ahead on (`Session::fork`, an empty record). It still acts only through `apply`.
+  ahead on (`Session::fork`). It still acts only through `apply`.
 - **Game time only.** A player acts at a look, then says how many ticks to skip to its next
   (`Agent::next_look`, below): no speed or attention setting touches a game. Real time is a
   human model's projection afterwards ([principles.md](principles.md#players-and-human-models)).
@@ -19,8 +19,7 @@ against: [principles.md](principles.md); how they're run: [simulator.md](simulat
 - **Spec syntax:** `[name=]kind[:knob=value,...]`, integer knobs (`author:hand_gap=0,compute=0`);
   a name labels a player (`casual=author:min_gap=120`, the ladder's casual player); an
   unknown knob is an error.
-- **Agent code is player code:** its numbers are strategy, not rules, so CLAUDE.md's "no
-  defaults in code" doesn't bind it; a number that mirrors game data says so in a comment.
+- **Agent code is player code** ([rulings.md](rulings.md)).
 - **Pinned games.** An agent edit changes how a player plays, not the game: no
   `RULES_REVISION` bump. Agent edits are guarded by the pinned games (`PINNED` and the
   oracle's, in `crates/hh-sim/tests/cli.rs`): a refactor keeps them.
@@ -74,11 +73,12 @@ How it writes the main program depends on the gap to its next look (*When it loo
 **Condition programs** (`cond` 1 once `if` is open; the oracle runs the table's, `cond` 0)
 read the game, not this look's counts, so each is saved once by name; side programs load at
 each reset and keep their lines while unassigned (`author.rs`): `ship` (1: once a pad stands, fuel, `launch pads all`, `load pads all` while
-`cargo of pads < Launch Pad count × 100`, `set pads he3 up to 1`, the same `up to 1` for a
-good at its cap once two pads stand; the filler; a hand plan replaces it while the target waits on a bought
+`cargo of pads < Launch Pad count × 100`, `set pads he3 up to 1` while no pad carries He-3,
+the same `up to 1` for a good at its cap while two carry He-3; the filler; a hand plan replaces it while the target waits on a bought
 input), `dream watch` (2), `fund`, `market`, and `build order` (5: the last run's purchases
-as `build X up to N`, each gated on the one before, a short input bought first, `research`
-once science covers it; rewritten when a run bought past it).
+as `build X up to N`, each gated on the one before and on fewer than N owned, a short input
+bought first, `research` once science covers it and it isn't researched; rewritten when a
+run bought past it). Guards skip done lines (a step each), hands-off's too.
 
 A program is rewritten only when its text changes (a rewrite restarts its pointer). Each
 write goes through the library (`Player::put_program`): a loadout with the same lines is

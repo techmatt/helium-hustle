@@ -109,17 +109,43 @@ pub fn load(r: &Rules, g: &mut GameState, only: Option<&str>) {
     let mut order: Vec<usize> = (0..g.run.pads.len()).filter(|&i| on(g, i, only)).collect();
     order.sort_by_key(|&i| (rank(&g.run.pads[i].good), i));
     for i in order {
-        if !pad_active(g, i) || g.run.pads[i].paused {
-            continue;
-        }
-        let good = g.run.pads[i].good.clone();
-        let take = per.min(cap - g.run.pads[i].cargo).min(g.amount(&good)).max(Fx::ZERO);
+        let take = load_take(g, i, per, cap);
         if take > Fx::ZERO {
+            let good = g.run.pads[i].good.clone();
             *g.run.resources.get_mut(&good).expect("content good") -= take;
             g.track("pads", &good, Fx::ZERO, take);
             g.run.pads[i].cargo += take;
         }
     }
+}
+
+/// What Load puts aboard pad `i` now (0 when paused, inactive, full or out of
+/// the good).
+fn load_take(g: &GameState, i: usize, per: Fx, cap: Fx) -> Fx {
+    if !pad_active(g, i) || g.run.pads[i].paused {
+        return Fx::ZERO;
+    }
+    let p = &g.run.pads[i];
+    per.min(cap - p.cargo).min(g.amount(&p.good)).max(Fx::ZERO)
+}
+
+/// Whether Load would put anything aboard `only`'s pads now (a `load pads`
+/// line with nothing to load is done).
+pub fn would_load(r: &Rules, g: &GameState, only: Option<&str>) -> bool {
+    let (per, cap) = (load_amount(r, g), r.p.shipments.pad_cargo_capacity);
+    (0..g.run.pads.len()).any(|i| on(g, i, only) && load_take(g, i, per, cap) > Fx::ZERO)
+}
+
+/// Whether Launch Full Pads would launch any of `only`'s pads now (a `launch
+/// pads` line with none is done).
+pub fn would_launch(r: &Rules, g: &GameState, only: Option<&str>) -> bool {
+    (0..g.run.pads.len()).any(|i| launches(r, g, i, only))
+}
+
+/// Pad `i` launches under Launch Full Pads for `only`: its good, unpaused,
+/// ready. The `pads_ready` reading counts these, so it guards `launch pads`.
+pub fn launches(r: &Rules, g: &GameState, i: usize, only: Option<&str>) -> bool {
+    on(g, i, only) && !g.run.pads[i].paused && ready(r, g, i)
 }
 
 /// A pad can launch now: active, cooled down, cargo aboard and fuel in stock.
@@ -129,7 +155,8 @@ pub fn can_launch(r: &Rules, g: &GameState, i: usize) -> bool {
 }
 
 /// A pad is ready: full and able to launch now. The one rule behind Launch Full
-/// Pads, the `pads_ready` reading and the view's Ready badge.
+/// Pads, the `pads_ready` reading (unpaused pads: [`launches`]) and the view's
+/// Ready badge.
 pub fn ready(r: &Rules, g: &GameState, i: usize) -> bool {
     g.run.pads[i].cargo >= r.p.shipments.pad_cargo_capacity && can_launch(r, g, i)
 }
@@ -143,7 +170,7 @@ pub fn on(g: &GameState, i: usize, only: Option<&str>) -> bool {
 /// pad order. With `only`, just that good's pads (`launch pads <good>`).
 pub fn launch_full(r: &Rules, g: &mut GameState, only: Option<&str>) {
     for i in 0..g.run.pads.len() {
-        if on(g, i, only) && !g.run.pads[i].paused && ready(r, g, i) {
+        if launches(r, g, i, only) {
             launch(r, g, i);
         }
     }

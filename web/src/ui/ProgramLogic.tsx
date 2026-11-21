@@ -26,7 +26,7 @@ export const OUTCOME_TEXT: Record<LineOutcome, string> = {
   false: 'false, its lines skipped',
   jumped: 'skipped with its if',
   waiting: 'waiting',
-  done: 'done, passed over',
+  done: 'nothing to do (a step)',
 };
 
 /** A reading's label: the view's while it is on offer, else built from names. */
@@ -60,6 +60,14 @@ export function readingLabel(v: View, r: Reading): string {
       return `Days to cap of ${name(v, r.resource)}`;
     case 'days_since_launch':
       return 'Days since last launch';
+    case 'pads':
+      return r.good ? `Pads on ${name(v, r.good)}` : 'Pads (all)';
+    case 'running':
+      return `${name(v, r.building)} running`;
+    case 'researched':
+      return `Researched ${name(v, r.item)}`;
+    case 'processors':
+      return `Program ${r.tab + 1} processors`;
   }
 }
 

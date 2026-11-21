@@ -35,7 +35,7 @@ fn own(r: &Rules, g: &mut GameState, b: &str, n: u32) {
 }
 
 #[test]
-fn pause_and_resume_take_n_or_all_and_are_free_with_nothing_to_do() {
+fn pause_and_resume_take_n_or_all_and_are_done_with_nothing_to_do() {
     let r = rules();
     let mut g = game(&r);
     own(&r, &mut g, "excavator", 3);
@@ -64,7 +64,50 @@ fn research_buys_once_and_is_done_after() {
     set(&mut g, "science", "100000");
     assert_eq!(run_one(&r, &mut g, line.clone()), O::Ran);
     assert!(g.run.research.contains(&item));
-    assert_eq!(run_one(&r, &mut g, line), O::Done, "already researched: free");
+    assert_eq!(run_one(&r, &mut g, line), O::Done, "already researched: done");
+    let read = programs::reading(&r, &g, &Reading::Researched { item: item.clone() });
+    assert_eq!(read, Some(Fx::ONE));
+    let other = crate::content::content().research.iter().find(|it| !g.run.research.contains(&it.id)).unwrap();
+    assert_eq!(programs::reading(&r, &g, &Reading::Researched { item: other.id.clone() }), Some(Fx::ZERO));
+}
+
+#[test]
+fn pad_verbs_with_nothing_to_do_cost_the_step_only() {
+    let r = rules();
+    let mut g = game(&r);
+    let mut no_pad = g.clone();
+    assert_eq!(run_one(&r, &mut no_pad, act(Verb::LaunchPads, None, None, None)), O::Failed, "locked: no Launch Pad");
+    own(&r, &mut g, "launch_pad", 1);
+    own(&r, &mut g, "solar_panel", 10);
+    set(&mut g, "he3", "0");
+    set(&mut g, "propellant", "100");
+    // The same day with and without the line: only the line's outcome differs.
+    let mut bare = g.clone();
+    put(&r, &mut bare, vec![]).unwrap();
+    r.advance(&mut bare, 1);
+    for line in [act(Verb::LaunchPads, None, None, None), act(Verb::LoadPads, Some("he3"), None, None)] {
+        let mut h = g.clone();
+        assert_eq!(run_one(&r, &mut h, line), O::Done, "no pad ready, nothing to load");
+        assert_eq!(h.run.resources, bare.run.resources, "no costs, no boredom");
+    }
+}
+
+#[test]
+fn guard_readings_read_pads_running_and_processors() {
+    let r = rules();
+    let mut g = game(&r);
+    own(&r, &mut g, "launch_pad", 2);
+    own(&r, &mut g, "excavator", 3);
+    let read = |g: &GameState, what: Reading| programs::reading(&r, g, &what);
+    let n = |v: i64| Some(Fx::from_int(v));
+    assert_eq!(read(&g, Reading::Pads { good: None }), n(2));
+    let on_he3 = g.run.pads.iter().filter(|p| p.good == "he3").count() as i64;
+    assert_eq!(read(&g, Reading::Pads { good: Some("he3".into()) }), n(on_he3));
+    r.apply(&mut g, &Action::SetActive { building: "excavator".into(), active: 1 }).unwrap();
+    assert_eq!(read(&g, Reading::Running { building: "excavator".into() }), n(1));
+    assert_eq!(read(&g, Reading::Count { building: "excavator".into() }), n(3));
+    assert_eq!(read(&g, Reading::Processors { tab: 0 }), n(i64::from(g.run.programs[0].processors)));
+    assert_eq!(read(&g, Reading::Processors { tab: 99 }), None, "no such program reads nothing");
 }
 
 #[test]
@@ -93,6 +136,11 @@ fn pad_verbs_and_readings_address_pads_by_good() {
     assert_eq!(read(&g, Reading::PadsReady { good: Some("titanium".into()) }), Some(Fx::ONE));
     assert_eq!(read(&g, Reading::PadsReady { good: Some("he3".into()) }), Some(Fx::ZERO));
     assert_eq!(read(&g, Reading::DaysSinceLaunch), Some(Fx::from_int(g.run.day as i64)), "none yet: the run's day");
+    // Paused, it doesn't launch, so it doesn't read ready: the guard matches the verb.
+    g.run.pads[ti].paused = true;
+    assert_eq!(read(&g, Reading::PadsReady { good: Some("titanium".into()) }), Some(Fx::ZERO));
+    assert_eq!(run_one(&r, &mut g, act(Verb::LaunchPads, Some("titanium"), None, None)), O::Done);
+    g.run.pads[ti].paused = false;
     assert_eq!(run_one(&r, &mut g, act(Verb::LaunchPads, Some("titanium"), None, None)), O::Ran);
     assert_eq!(g.run.stats.shipments, 1);
     assert_eq!(read(&g, Reading::DaysSinceLaunch), Some(Fx::ONE), "launched yesterday");

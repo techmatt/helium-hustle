@@ -15,7 +15,7 @@ Checks:
   call by name not through `libm::`, an `#[allow]` of the ban, the ban's `deny`
   removed, a name missing from clippy.toml).
 - docs: a doc (README, CLAUDE.md, web/README, docs/, docs/rules/) over 15 KB, or
-  inside the 1 KB margin below it.
+  inside the 1 KB margin below it (over 14,336 bytes, `wc -c`).
 - balance: each target the judge misses (`hh-sim balance` on experiments/balance.json,
   the judge's one home; targets in docs/principles.md).
 """

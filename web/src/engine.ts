@@ -122,9 +122,11 @@ export type Reading =
   | { kind: 'amount' | 'percent' | 'rate'; resource: string }
   | { kind: 'count'; building: string }
   | { kind: 'day' | 'land_price' | 'days_since_launch' }
-  | { kind: 'pads_ready' | 'cargo'; good?: string | null }
+  | { kind: 'pads_ready' | 'cargo' | 'pads'; good?: string | null }
   | { kind: 'demand'; good: string }
-  | { kind: 'next_cost'; building: string }
+  | { kind: 'next_cost' | 'running'; building: string }
+  | { kind: 'researched'; item: string }
+  | { kind: 'processors'; tab: number }
   | { kind: 'days_to_cap'; resource: string }
   | { kind: 'every'; days: number };
 

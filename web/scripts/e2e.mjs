@@ -203,8 +203,8 @@ async function playToFirstShipment() {
 
 /** Section 6, from scenario late_unlocks (two processors; cheats on): the instructions
  * unlock after a day, a program of the shape `if` / `build` / `buy land` / `wait until`
- * is written through the editor, shows live values and builds unattended. Shot
- * `program-logic.png`. */
+ * is written through the editor, shows live values and builds unattended; verb lines;
+ * a done line costs its step and a false `if` skips it free. Shot `program-logic.png`. */
 async function programLogic(grant) {
   await debugMenu();
   await speed(0);
@@ -382,6 +382,43 @@ async function programLogic(grant) {
   await speed(0);
   check(true, 'pause and resume ran from verb lines');
   await shot('program-verbs');
+
+  // Every non-`if` line costs a step: on one processor a done `build ... up to 1` takes the
+  // day's step and Idle the next; guarded by a false `if`, it is skipped free and Idle runs
+  // every day.
+  while (Number(await evaluate(`document.querySelector('.prog-procs span').textContent.match(/\\d+/)[0]`)) > 1) {
+    await click('[data-testid="proc-minus"]');
+  }
+  const days = async (ms) => {
+    await evaluate(`(() => { window.__days = new Set(); window.__ob2?.disconnect();
+      window.__ob2 = new MutationObserver(() => window.__days.add([...document.querySelectorAll('.lines li')].map((l) => (l.className.match(/out-\\w+/) ?? ['-'])[0]).join(' ')));
+      window.__ob2.observe(document.querySelector('.lines'), { subtree: true, attributes: true }); })()`);
+    await speed(1);
+    await sleep(ms);
+    await speed(0);
+    await evaluate('window.__ob2.disconnect()');
+    return evaluate('[...window.__days]');
+  };
+  await click('.prog-procs button[title="Clear this program"]');
+  await add('Build');
+  await pick(`${line(0)} select[aria-label="Building"]`, 'Solar Panel');
+  await pick(`${line(0)} input[aria-label="Up to"]`, '1');
+  await panel('commands');
+  await click('[data-testid="add-idle"]');
+  const done = await days(3500);
+  check(done.includes('out-done -') && done.includes('- out-ran') && !done.includes('out-done out-ran'),
+    `one processor: the done line takes a day's step, Idle the next (${done.join('; ')})`);
+  await click('.prog-procs button[title="Clear this program"]');
+  await add('If');
+  await setClause(0, 1, 'Solar Panel count', '<', '1');
+  await add('Build');
+  await pick(`${line(1)} select[aria-label="Building"]`, 'Solar Panel');
+  await pick(`${line(1)} input[aria-label="Up to"]`, '1');
+  await indent(1);
+  await click('[data-testid="add-idle"]');
+  const guarded = await days(3500);
+  check(guarded.includes('out-false out-jumped out-ran') && guarded.every((d) => !d.includes('out-done')),
+    `guarded by a false if: skipped free, Idle runs every day (${guarded.join('; ')})`);
 }
 
 /** Section 5, from scenario at_cap (paused, cheats on; `grant` from section 2). Shots

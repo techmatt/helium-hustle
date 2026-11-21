@@ -154,6 +154,10 @@ impl Reading {
             Reading::DaysSinceLaunch => "days since last launch".to_string(),
             Reading::Cargo { good } => format!("cargo of pads {}", all(good)),
             Reading::Every { days } => format!("every {days} days"),
+            Reading::Researched { item } => format!("researched {item}"),
+            Reading::Pads { good } => format!("pads on {}", all(good)),
+            Reading::Running { building } => format!("{building} running"),
+            Reading::Processors { tab } => format!("program {} processors", tab + 1),
         }
     }
 }
@@ -326,6 +330,17 @@ pub enum Reading {
     },
     /// 1 on a day that is a multiple of `days`, else 0 (`every N days`).
     Every { days: u32 },
+    /// 1 once a research item is researched this run, else 0.
+    Researched { item: String },
+    /// Pads carrying one good, or every pad.
+    Pads {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        good: Option<String>,
+    },
+    /// How many of a building are running (owned and active).
+    Running { building: String },
+    /// Processors assigned to a program tab (0-based).
+    Processors { tab: u32 },
 }
 
 /// A program tab: a command queue, the processors assigned to it and its
@@ -466,7 +481,8 @@ pub enum LineOutcome {
     Jumped,
     /// A `wait until` holding the pointer.
     Waiting,
-    /// A `build ... up to N` with N owned: passed over, free.
+    /// Nothing to do (a `build ... up to N` with N owned, a verb with nothing
+    /// to act on): the step taken, nothing else.
     Done,
 }
 

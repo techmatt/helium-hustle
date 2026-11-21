@@ -35,10 +35,16 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   `<reading> <op> <right side>` with one optional `and` / `or`; the right side is a number or
   another reading times a number (one multiplier). Pads are addressed only by good. Every verb
   costs a processor step. Unlocking is out of scope: everything is open wherever program logic
-  is. *Defaults (037, asked):* "costs a step" read as "a verb that acts": `research`, `pause`,
-  `resume`, `set pads`, `assign processors` with nothing to do are done and free (as `build
-  ... up to N`); the pad verbs run the Launch / Load commands' rows, a step every time as the
-  commands take; `retire` retires at the day's end like the button; `every N days` reads 1.
+  is. *Defaults (037):* the pad verbs run the Launch / Load commands' rows; `retire` retires at
+  the day's end like the button; `every N days` reads 1.
+- **Every non-`if` line costs a step (2026-11-20, replaces 037's "done and free").** A line
+  with nothing to do (`research X` once researched, `pause` with nothing running, `set pads`
+  already at N, `launch pads` with no pad ready, `build X up to N` with N owned) still takes a
+  processor step, and nothing else: no resources, no boredom. A false `if` still skips its
+  whole block for free, conditions stay free, `wait until` is unchanged. Guards are how a
+  player saves steps: wrap a finished line in an `if`. *Defaults (038):* guard readings
+  `researched <item>`, `pads <good | all>` (pads carrying it), `running <building>` and
+  `processors <tab>`; `load pads` is done when no pad of the good would take cargo.
 - **`rate` reads production less demand (2026-11-20).** What buildings and programs wanted
   counts, met or not, so `Energy rate < 0` stays true all through a brownout; a capped
   resource's rate is its uncapped rate. The condition's rate and the Resources panel's

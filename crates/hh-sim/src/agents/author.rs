@@ -1091,6 +1091,11 @@ fn when(first: Clause, and: Option<Clause>) -> Entry {
 const FUEL: i64 = 20;
 const LOAD: i64 = 5;
 
+/// Pads carrying `good`.
+fn on_good(good: &str) -> Reading {
+    Reading::Pads { good: Some(good.to_string()) }
+}
+
 /// `Launch Pad count >= 1`.
 fn pad_stands() -> Clause {
     clause(Reading::Count { building: "launch_pad".to_string() }, Cmp::Ge, 1)
@@ -1107,9 +1112,10 @@ const PAD_CARGO: i64 = 100;
 /// once a Launch Pad stands (an He-3 stock as the "pad near full" sign bought
 /// fuel with no pad at all), launch ready pads, load while there is a load of
 /// He-3 and room aboard (`cargo of pads < Launch Pad count × 100`, so a full
-/// pad cooling down takes no failed load), keep a pad on He-3, point an idle
-/// pad at a good (dearest first, He-3 aside) sitting at its cap once two
-/// stand, else the filler.
+/// pad cooling down takes no failed load), keep a pad on He-3 while none
+/// carries it, point an idle pad at a good (dearest first, He-3 aside)
+/// sitting at its cap while two carry He-3, else the filler. Every guard
+/// reads whether its line has anything to do: a done line costs a step.
 fn ship_cycle(filler: &str) -> Vec<Entry> {
     let e = Entry::command;
     let pads = || Reading::Count { building: "launch_pad".to_string() };
@@ -1120,14 +1126,18 @@ fn ship_cycle(filler: &str) -> Vec<Entry> {
         act(Verb::LaunchPads, None, None).indent(),
         when(clause(amount_of("he3"), Cmp::Ge, LOAD), Some(clause_times(Reading::Cargo { good: None }, Cmp::Lt, pads(), PAD_CARGO))),
         act(Verb::LoadPads, None, None).indent(),
-        // He-3 keeps a pad: with none on it, an idle pad points back (a free
-        // done line otherwise).
-        when(pad_stands(), None),
+        // He-3 keeps a pad: with none on it, an idle pad points back
+        // (guarded: a done line costs a step).
+        when(clause(on_good("he3"), Cmp::Lt, 1), Some(pad_stands())),
         act(Verb::SetPads, Some("he3"), Some(Amount::N(1))).indent(),
     ];
     for good in DEAREST.iter().filter(|&&g| g != "he3") {
+        // Once two pads carry He-3 (so one is spare), a good at its cap
+        // takes one; with its pad taken He-3 holds one fewer, so with two
+        // pads the guard then reads false (with more, the line is a done
+        // step while the good stays full: three clauses don't fit one `if`).
         let full = clause(Reading::Percent { resource: good.to_string() }, Cmp::Ge, 100);
-        lines.push(when(full, Some(clause(pads(), Cmp::Ge, 2))));
+        lines.push(when(full, Some(clause(on_good("he3"), Cmp::Ge, 2))));
         lines.push(act(Verb::SetPads, Some(good), Some(Amount::N(1))).indent());
     }
     lines.push(e(filler, 1));
@@ -1156,9 +1166,10 @@ fn dream_watch(dream_at: i64, filler: &str) -> Vec<Entry> {
 /// its step: once built, it keeps that input topped up to the old need while
 /// credits stay past the old price (gating it on the step unbuilt instead,
 /// with no credits clause, bought early and cut the hands-off player's run-2
-/// credits from 13% of the author's to 1%: dev seeds 1-8). Done lines are free; the
-/// first not done tries once a loop (failing when short), then the filler
-/// line. At most `max_entries` less [`LEAD_LINES`] lines: the author buys the
+/// credits from 13% of the author's to 1%: dev seeds 1-8). Each `build` is
+/// also guarded on fewer than N owned, so a finished step is a free false
+/// `if`, not a done step; the first not done tries once a loop (failing when
+/// short), then the filler line. At most `max_entries` less [`LEAD_LINES`] lines: the author buys the
 /// rest at its looks.
 /// Returns the lines and how many of `order`'s purchases they cover.
 fn build_order_program(v: &View, order: &[(String, u32, Vec<Bridge>)], filler: &str) -> (Vec<Entry>, usize) {
@@ -1208,7 +1219,7 @@ fn build_order_program(v: &View, order: &[(String, u32, Vec<Bridge>)], filler: &
     let mut covered = 0;
     for (id, c, bridged, merged) in steps {
         let after = prev.map(|(p, n)| count(p, Cmp::Ge, n));
-        let lines_needed = 2 * bridged.len() + if after.is_some() { 2 } else { 1 };
+        let lines_needed = 2 * bridged.len() + 2;
         // Room for the step and the filler line.
         if lines.len() + lines_needed + 1 > max_lines {
             break;
@@ -1221,14 +1232,13 @@ fn build_order_program(v: &View, order: &[(String, u32, Vec<Bridge>)], filler: &
             lines.push(when(short, Some(flush)));
             lines.push(Entry::command(&format!("buy_{r}"), 1).indent());
         }
-        let build = Entry::new(Op::Build { building: id.to_string(), up_to: Some(c) });
+        // Guarded on fewer than `c` owned too: a done line costs a step.
+        let short = count(id, Cmp::Lt, c);
         match after {
-            Some(a) => {
-                lines.push(when(a, None));
-                lines.push(build.indent());
-            }
-            None => lines.push(build),
+            Some(a) => lines.push(when(a, Some(short))),
+            None => lines.push(when(short, None)),
         }
+        lines.push(Entry::new(Op::Build { building: id.to_string(), up_to: Some(c) }).indent());
         prev = Some((id, c));
         covered += merged;
     }
@@ -1236,13 +1246,14 @@ fn build_order_program(v: &View, order: &[(String, u32, Vec<Bridge>)], filler: &
     (lines, covered)
 }
 
-/// `if Science >= <its price now>` / `research <id>`, for each of `ids` the
-/// view lists (done lines are free).
+/// `if Science >= <its price now> and Researched <id> < 1` / `research <id>`,
+/// for each of `ids` the view lists (guarded: a done line costs a step).
 pub fn research_lines(v: &View, ids: &[&str]) -> Vec<Entry> {
     let mut lines = Vec::new();
     for id in ids {
         if let Some(cost) = v.research.iter().find(|r| r.id == *id).map(|r| r.cost) {
-            lines.push(when(Clause { reading: amount_of("science"), cmp: Cmp::Ge, value: cost, against: None }, None));
+            let undone = clause(Reading::Researched { item: id.to_string() }, Cmp::Lt, 1);
+            lines.push(when(Clause { reading: amount_of("science"), cmp: Cmp::Ge, value: cost, against: None }, Some(undone)));
             lines.push(act(Verb::Research, Some(id), None).indent());
         }
     }

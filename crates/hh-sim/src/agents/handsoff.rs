@@ -34,7 +34,8 @@ const MAX_LINES: usize = 128;
 /// nothing to ship, so the build order takes every processor (its buy of a
 /// short input and the build it serves then fall on one day, before the
 /// day's clamp cuts the input back to its cap); once one stands, it keeps one
-/// and the ship program takes the rest. Done lines are free.
+/// and the ship program takes the rest. Every line is guarded on having
+/// something to do: a done line costs a step.
 ///
 /// Then the stock lines: a maker whose product sits at its cap is paused (all
 /// of it) so its input builds up for the next purchase, and resumed once the
@@ -47,18 +48,36 @@ fn processor_lines() -> Vec<Entry> {
         Entry::new(Op::Act { verb, target: target.map(str::to_string), tab: tab.map(|t| t as u32), amount }).indent()
     };
     let when = |c, and: Option<Clause>| Entry::new(Op::If { when: Condition { first: c, rest: and.map(|clause| Joined { join: Join::And, clause }) } });
+    // Each guard also reads whether its lines have anything to do (a done
+    // line costs a step): the build order short of every working processor
+    // (one gained before a pad stands is taken at once), or holding more than
+    // one; a maker still running, or not all running.
+    let on = |tab: usize, cmp, v: i64| Clause { reading: Reading::Processors { tab: tab as u32 }, cmp, value: Fx::from_int(v), against: None };
+    let short = Clause {
+        reading: Reading::Processors { tab: BUILD as u32 },
+        cmp: Cmp::Lt,
+        value: Fx::ONE,
+        against: Some(Reading::Amount { resource: "processors".to_string() }),
+    };
+    let running = |b: &str, cmp, v: i64| Clause { reading: Reading::Running { building: b.to_string() }, cmp, value: Fx::from_int(v), against: None };
     let mut lines = vec![
-        when(pads(Cmp::Lt), None),
+        when(pads(Cmp::Lt), Some(short)),
         act(Verb::AssignProcessors, None, Some(MAIN), Some(Amount::N(0))),
         act(Verb::AssignProcessors, None, Some(BUILD), Some(Amount::All)),
-        when(pads(Cmp::Ge), None),
+        when(pads(Cmp::Ge), Some(on(BUILD, Cmp::Ge, 2))),
         act(Verb::AssignProcessors, None, Some(BUILD), Some(Amount::N(1))),
         act(Verb::AssignProcessors, None, Some(MAIN), Some(Amount::All)),
     ];
     for (maker, product) in STOCK {
-        lines.push(when(pct(product, Cmp::Ge, 100), None));
+        lines.push(when(pct(product, Cmp::Ge, 100), Some(running(maker, Cmp::Ge, 1))));
         lines.push(act(Verb::Pause, Some(maker), None, Some(Amount::All)));
-        lines.push(when(pct(product, Cmp::Lt, 90), None));
+        let all = Clause {
+            reading: Reading::Running { building: maker.to_string() },
+            cmp: Cmp::Lt,
+            value: Fx::ONE,
+            against: Some(Reading::Count { building: maker.to_string() }),
+        };
+        lines.push(when(pct(product, Cmp::Lt, 90), Some(all)));
         lines.push(act(Verb::Resume, Some(maker), None, Some(Amount::All)));
     }
     let depot = Clause {

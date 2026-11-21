@@ -132,16 +132,36 @@ fn a_body_line_that_ran_today_keeps_its_outcome_when_its_if_turns_false() {
 }
 
 #[test]
-fn a_program_of_only_free_lines_idles_after_one_loop() {
+fn a_program_of_only_false_ifs_idles_after_one_loop() {
     let r = rules();
     let mut g = game(&r);
     let never = one(amount("credits", Cmp::Lt, "0"));
-    put(&r, &mut g, vec![when(never.clone()), Entry::command("idle", 1).indent(), build("solar_panel", Some(1))]).unwrap();
+    put(&r, &mut g, vec![when(never.clone()), Entry::command("idle", 1).indent()]).unwrap();
     let before = g.run.resources.clone();
     r.advance(&mut g, 3);
-    assert_eq!(outcomes(&g), [Some(O::False), Some(O::Jumped), Some(O::Done)]);
+    assert_eq!(outcomes(&g), [Some(O::False), Some(O::Jumped)]);
     assert_eq!(g.amount("credits"), before["credits"]);
+}
+
+#[test]
+fn a_done_line_costs_its_step_and_a_guarded_one_is_skipped_free() {
+    let r = rules();
+    let mut g = game(&r);
+    assert_eq!(g.run.programs[0].processors, 1, "one step a day");
     assert_eq!(g.owned("solar_panel"), 1);
+    // `build up to 1` with one owned: done, the day's step, Idle not reached.
+    put(&r, &mut g, vec![build("solar_panel", Some(1)), Entry::command("idle", 1)]).unwrap();
+    let credits = g.amount("credits");
+    r.advance(&mut g, 1);
+    assert_eq!(outcomes(&g), [Some(O::Done), None]);
+    assert_eq!(g.amount("credits"), credits, "a done line pays nothing");
+    r.advance(&mut g, 1);
+    assert_eq!(outcomes(&g), [None, Some(O::Ran)], "the next step is the next line");
+    // Guarded: the false `if` skips its body for free and Idle runs the same day.
+    let fewer = one(clause(Reading::Count { building: "solar_panel".into() }, Cmp::Lt, "1"));
+    put(&r, &mut g, vec![when(fewer), build("solar_panel", Some(1)).indent(), Entry::command("idle", 1)]).unwrap();
+    r.advance(&mut g, 1);
+    assert_eq!(outcomes(&g), [Some(O::False), Some(O::Jumped), Some(O::Ran)]);
 }
 
 #[test]

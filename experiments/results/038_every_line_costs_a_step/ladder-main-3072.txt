@@ -1,0 +1,69 @@
+[1/16] author seed 3074: 20 retirements, 33180 ticks, 15 s
+[2/16] author seed 3075: 20 retirements, 31995 ticks, 15 s
+[3/16] author seed 3076: 20 retirements, 31220 ticks, 16 s
+[4/16] author seed 3077: 20 retirements, 35491 ticks, 19 s
+[5/16] author seed 3072: 20 retirements, 34330 ticks, 25 s
+[6/16] handsoff seed 3072: 20 retirements, 30030 ticks, 11 s
+[7/16] author seed 3078: 20 retirements, 32944 ticks, 13 s
+[8/16] author seed 3073: 20 retirements, 35401 ticks, 29 s
+[9/16] author seed 3079: 20 retirements, 34006 ticks, 14 s
+[10/16] handsoff seed 3073: 20 retirements, 32112 ticks, 11 s
+[11/16] handsoff seed 3076: 20 retirements, 30674 ticks, 10 s
+[12/16] handsoff seed 3075: 20 retirements, 35620 ticks, 12 s
+[13/16] handsoff seed 3079: 20 retirements, 30416 ticks, 9 s
+[14/16] handsoff seed 3078: 20 retirements, 34560 ticks, 11 s
+[15/16] handsoff seed 3074: 20 retirements, 34286 ticks, 17 s
+[16/16] handsoff seed 3077: 20 retirements, 34250 ticks, 14 s
+ladder (16 games, 58.7 s wall)
+
+## Pace in game time (8 seeds a row; medians for run 1, means over finished runs)
+
+| Player | Ret | Run 1 ticks | Run ticks | Run 1 dec | Dec/run | Ticks/dec | Run credits | Peak cr/day | Ships/run | Forced | Cmd boredom | Idle | Piles at cap | Overflow lost | Ticks/s |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| author | 20.0 | 1446 | 1679 | 109 | 78 | 21.4 | 18710 | 26.0 | 14.2 | 91% | 10% | 25% | regolith 52%, energy 37%, circuits 20% | propellant 58%, circuits 31%, regolith 29% | 1827 |
+| handsoff | 20.0 | 1446 | 1637 | 109 | 8 | 211.6 | 17950 | 26.4 | 18.0 | 70% | 6% | 22% | energy 50%, regolith 41%, titanium 38% | propellant 27%, ice 23%, regolith 23% | 2771 |
+
+## Milestones (medians: `t` career ticks, `r` retirements before it (run r+1), `d` that run's day; `k/n` when only k of n seeds reached it)
+
+| Player | M1 | M2 | M3 | M4 | M5 | M6 | M7 | M8 | M9 | M10 | M11 | M12 | M13 | M14 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| author | t60 r0 d60 | t430 r0 d430 | t247 r0 d247 | t1446 r0 d1446 | t2920 r1 d1340 5/8 | - | t4693 r2 d1469 | - | - | - | - | t6160 r3 d1281 6/8 | - | - |
+| handsoff | t60 r0 d60 | t430 r0 d430 | t247 r0 d247 | t1446 r0 d1446 | t4691 r2 d1231 7/8 | - | t6187 r3 d1732 5/8 | - | - | - | - | t969 r0 d969 2/8 | - | - |
+
+Targets (run windows): M1 r1 d0-350, M2 r1 d250-700, M3 r1-2, M4 r1, M5 r2-4, M6 r3-5, M7 r4-8, M8 r5-8, M9 r5-10, M10 r6-10, M11 r8-15, M12 r8-15, M13 r10-18, M14 r15-20
+
+## Real time (projected by a human model, configs/sim/humans.json: real minutes; medians for run 1 and milestones, means over finished runs)
+
+| Player | Human | Run 1 min | Run min | Min/dec | M1 | M2 | M3 | M4 | M5 | M6 | M7 | M8 | M9 | M10 | M11 | M12 | M13 | M14 |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| author | careful | 32.7 | 34.5 | 0.44 | 2m | 10m | 6m | 33m | 64m | - | 102m | - | - | - | - | 132m | - | - |
+| author | mixed | 19.0 | 19.2 | 0.25 | 1m | 6m | 4m | 19m | 36m | - | 58m | - | - | - | - | 75m | - | - |
+| author | brisk | 13.3 | 13.2 | 0.17 | 1m | 4m | 2m | 13m | 25m | - | 40m | - | - | - | - | 52m | - | - |
+| handsoff | careful | 32.7 | 27.9 | 3.61 | 2m | 10m | 6m | 33m | 88m | - | 112m | - | - | - | - | 23m | - | - |
+| handsoff | mixed | 19.0 | 14.2 | 1.83 | 1m | 6m | 4m | 19m | 47m | - | 59m | - | - | - | - | 13m | - | - |
+| handsoff | brisk | 13.3 | 9.5 | 1.23 | 1m | 4m | 2m | 13m | 32m | - | 40m | - | - | - | - | 9m | - | - |
+
+## Hands-off (its programs alone from run 2, against the author on the same seeds)
+
+| Player | Credits a run from run 2 | Author's | Share | Milestones first met from run 2 | Author's | Share |
+|---|---|---|---|---|---|---|
+| handsoff | 17917 | 18718 | 96% | 10 | 15 | 67% |
+
+## Never built, never used (in every seed's career)
+
+| Player | Buildings never built | Commands never used |
+|---|---|---|
+| author | battery, fuel_cell, microwave_receiver | idle, overclock_mining, overclock_factories, promote_he3, promote_titanium, promote_circuits, promote_propellant, fund_nationalist, fund_rationalist, buy_power |
+| handsoff | battery, fuel_cell, microwave_receiver | idle, overclock_mining, overclock_factories, promote_he3, promote_titanium, promote_circuits, promote_propellant, fund_nationalist, fund_humanist, fund_rationalist, buy_power |
+
+## Run-1 objectives (reference/scenarios/run1_fresh.json; median day, against the Godot target window)
+
+| Player | excavator [5, 20] | smelter [40, 100] | refinery [100, 200] | he3_10 [140, 220] | first_ship [260, 380] | data_center [380, 530] | research_lab [600, 800] | retirement [720, 1000] |
+|---|---|---|---|---|---|---|---|---|
+| author | 71 late | 88 in | 288 late | 297 late | 430 late | 248 early | 480 early | 372 early |
+| handsoff | 71 late | 88 in | 288 late | 297 late | 430 late | 248 early | 480 early | 372 early |
+
+engine speed, native: 2062 ticks/s scripted (golden game, a view a tick), 43164 ticks/s plain advance
+engine speed, wasm: 2127 ticks/s scripted (golden game, a view a tick), 35836 ticks/s plain advance
+
+written to ../final-main/ (report.md, results.json, games.jsonl)

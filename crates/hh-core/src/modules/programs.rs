@@ -145,9 +145,15 @@ fn check_entries(r: &Rules, g: &GameState, program: u32, entries: &[Entry], held
             | Reading::DaysToCap { resource } => {
                 known(resource).then_some(()).ok_or_else(|| format!("Program {n}: unknown resource {resource:?}"))
             }
-            Reading::Count { building: b } | Reading::NextCost { building: b } => building(b),
+            Reading::Count { building: b } | Reading::NextCost { building: b } | Reading::Running { building: b } => building(b),
             Reading::Day | Reading::LandPrice | Reading::DaysSinceLaunch => Ok(()),
-            Reading::PadsReady { good } | Reading::Cargo { good } => good.as_deref().map_or(Ok(()), traded),
+            Reading::PadsReady { good } | Reading::Cargo { good } | Reading::Pads { good } => good.as_deref().map_or(Ok(()), traded),
+            Reading::Researched { item } => {
+                c.research_item(item).map(|_| ()).ok_or_else(|| format!("Program {n}: unknown research {item:?}"))
+            }
+            Reading::Processors { tab } => {
+                ((*tab as usize) < g.run.programs.len()).then_some(()).ok_or_else(|| format!("Program {n}: no program {}", tab + 1))
+            }
             Reading::Every { days } => {
                 (*days > 0).then_some(()).ok_or_else(|| format!("Program {n}: every 0 days"))
             }
@@ -479,8 +485,8 @@ pub fn reading(r: &Rules, g: &GameState, what: &Reading) -> Option<Fx> {
         Reading::Count { building } => Some(Fx::from_int(i64::from(g.owned(building)))),
         Reading::Day => Some(Fx::from_int(i64::try_from(g.run.day).unwrap_or(i64::MAX))),
         Reading::PadsReady { good } => {
-            let only = good.as_deref();
-            let n = (0..g.run.pads.len()).filter(|&i| super::shipments::on(g, i, only) && super::shipments::ready(r, g, i)).count();
+            // What `launch pads` would launch: ready and not paused.
+            let n = (0..g.run.pads.len()).filter(|&i| super::shipments::launches(r, g, i, good.as_deref())).count();
             Some(Fx::from_int(n as i64))
         }
         Reading::Demand { good } => {
@@ -513,6 +519,13 @@ pub fn reading(r: &Rules, g: &GameState, what: &Reading) -> Option<Fx> {
             Some(pads.fold(Fx::ZERO, |s, i| s + g.run.pads[i].cargo))
         }
         Reading::Every { days } => Some(if g.run.day.is_multiple_of(u64::from((*days).max(1))) { Fx::ONE } else { Fx::ZERO }),
+        Reading::Researched { item } => Some(if g.run.research.contains(item) { Fx::ONE } else { Fx::ZERO }),
+        Reading::Pads { good } => {
+            let only = good.as_deref();
+            Some(Fx::from_int((0..g.run.pads.len()).filter(|&i| super::shipments::on(g, i, only)).count() as i64))
+        }
+        Reading::Running { building } => Some(Fx::from_int(i64::from(g.active(building)))),
+        Reading::Processors { tab } => g.run.programs.get(*tab as usize).map(|p| Fx::from_int(i64::from(p.processors))),
     }
 }
 
@@ -616,7 +629,7 @@ fn pad_command(is: fn(&CommandEffect) -> bool) -> Option<&'static Command> {
 }
 
 /// Runs one `act` line (docs/rules/programs.md, *Verbs*). `Done`: nothing was
-/// left to do (free, like a finished `build ... up to N`).
+/// left to do (the step only, like a finished `build ... up to N`).
 #[allow(clippy::too_many_arguments)]
 fn act(r: &Rules, g: &mut GameState, verb: Verb, target: Option<&str>, tab: Option<u32>, amount: Option<Amount>, src: &str, short: &str) -> LineOutcome {
     let ok = |res: Result<(), String>| if res.is_ok() { LineOutcome::Ran } else { LineOutcome::Failed };
@@ -627,13 +640,21 @@ fn act(r: &Rules, g: &mut GameState, verb: Verb, target: Option<&str>, tab: Opti
             } else {
                 |e| matches!(e, CommandEffect::LoadPads)
             };
-            // The command's row as the command runs it: a step (and its
-            // costs) even with no pad of the good to act on, as a command
-            // line's would be.
-            match pad_command(is) {
-                Some(c) => execute(r, g, c, src, short, target),
-                None => LineOutcome::Failed,
+            // Locked, it fails; with nothing to load or launch, done: the
+            // step only, no costs or boredom. Else the command's row as the
+            // command runs it.
+            let Some(c) = pad_command(is).filter(|c| unlocked(g, c)) else {
+                return LineOutcome::Failed;
+            };
+            let busy = if verb == Verb::LaunchPads {
+                super::shipments::would_launch(r, g, target)
+            } else {
+                super::shipments::would_load(r, g, target)
+            };
+            if !busy {
+                return LineOutcome::Done;
             }
+            execute(r, g, c, src, short, target)
         }
         Verb::SetPads => {
             let (Some(good), Some(Amount::N(n))) = (target, amount) else {
@@ -722,9 +743,8 @@ fn past_body(p: &Program, line: usize) -> usize {
 }
 
 /// One processor's step of program `i`: free lines (an `if`, a passed `wait
-/// until`, a `build ... up to N` that is done) are passed over until a line
-/// that costs the step runs. A `wait until` not yet true, or a whole loop of
-/// free lines, idles the step.
+/// until`) are passed over until a line that costs the step runs, done or not.
+/// A `wait until` not yet true, or a whole loop of free lines, idles the step.
 fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
     let n = g.run.programs[i].entries.len();
     for _ in 0..n {
@@ -761,9 +781,8 @@ fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
                     return;
                 }
             }
-            Op::Build { building, up_to: Some(most) } if g.owned(building) >= *most => {
-                (LineOutcome::Done, next, false)
-            }
+            // Done: nothing to buy, the step only.
+            Op::Build { building, up_to: Some(most) } if g.owned(building) >= *most => (LineOutcome::Done, next, true),
             Op::Build { building, .. } => (build(r, g, building, &short), next, true),
             Op::BuyLand {} => (buy_land(r, g, &short), next, true),
             Op::Act { verb: Verb::LoadProgram, target, tab: Some(t), .. } if *t as usize == i => {
@@ -776,10 +795,7 @@ fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
                 }
                 (LineOutcome::Failed, next, true)
             }
-            Op::Act { verb, target, tab, amount } => match act(r, g, *verb, target.as_deref(), *tab, *amount, src, &short) {
-                LineOutcome::Done => (LineOutcome::Done, next, false),
-                o => (o, next, true),
-            },
+            Op::Act { verb, target, tab, amount } => (act(r, g, *verb, target.as_deref(), *tab, *amount, src, &short), next, true),
             Op::Command { command, count } => {
                 let c = content().command(command).expect("set_program checked");
                 let outcome = execute(r, g, c, src, &short, None);

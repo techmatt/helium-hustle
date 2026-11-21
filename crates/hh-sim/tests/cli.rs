@@ -111,12 +111,12 @@ const PINNED: &[(&str, u64, &str)] = &[
     ("random", 2, "03bb4a2beb61ae3e"),
     ("greedy", 1, "a26ff2e96cdcd6fa"),
     ("greedy", 2, "fa62cb96165efdfd"),
-    ("author", 1, "1b546b4b99577cda"),
-    ("author", 2, "9f9ae705dec460b2"),
-    ("casual", 1, "0e19cb08984112bd"),
+    ("author", 1, "c964c59ec772fa9b"),
+    ("author", 2, "d97ca2003a420efd"),
+    ("casual", 1, "da7e622a8672714c"),
     ("casual", 2, "d084cc3648589fd2"),
-    ("handsoff", 1, "edb8fede5609d304"),
-    ("handsoff", 2, "46cdf9435c52ae50"),
+    ("handsoff", 1, "026409a8d26aff7a"),
+    ("handsoff", 2, "cc1573393451c845"),
 ];
 
 #[test]
