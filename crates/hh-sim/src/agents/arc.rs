@@ -76,10 +76,13 @@ pub fn act(p: &mut Player) {
 fn fund_dyson(p: &mut Player) {
     let v = p.view();
     let Some(d) = v.projects.iter().find(|d| d.id == "dyson_sphere" && d.unlocked && !d.completed) else { return };
-    let max = d.max_rate;
-    let want: Vec<String> =
-        d.costs.keys().filter(|res| d.rates.get(*res).is_none_or(|r| *r < max)).cloned().collect();
-    for res in want {
-        let _ = p.apply(&Action::SetProjectRate { project: "dyson_sphere".into(), resource: res, rate: max });
+    let want: Vec<(String, Fx)> = d
+        .costs
+        .keys()
+        .map(|res| (res.clone(), d.max_rates.get(res).copied().unwrap_or(Fx::ZERO)))
+        .filter(|(res, max)| d.rates.get(res).is_none_or(|r| r < max))
+        .collect();
+    for (res, rate) in want {
+        let _ = p.apply(&Action::SetProjectRate { project: "dyson_sphere".into(), resource: res, rate });
     }
 }

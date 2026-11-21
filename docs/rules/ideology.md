@@ -42,7 +42,7 @@ whole price (every resource) takes its axis's discount. All per-rank powers are 
 
 **Career bests.** At the end of each tick, each axis's best rank and best score in the career
 are raised to the current ones (they start at 0, so a negative axis leaves them at 0).
-Persistent projects unlock on the best rank (rank 5 on an axis opens its project,
+Three `timeline` projects unlock on the best rank (rank 5 on an axis opens its project,
 [projects.md](projects.md)); the Open Horizons sub-objective reads the current rank of any
 axis ([events.md](events.md)).
 

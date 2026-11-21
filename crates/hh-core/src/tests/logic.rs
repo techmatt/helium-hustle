@@ -346,12 +346,12 @@ fn a_project_funded_past_the_stock_counts_its_rate_as_demand() {
     let p = crate::content::content()
         .projects
         .iter()
-        .find(|p| p.costs.contains_key("credits") && matches!(p.unlock, crate::content::ProjectUnlock::EventUnlocked))
+        .find(|p| p.costs.contains_key("credits") && matches!(p.unlock, crate::content::Condition::ProjectEnabled { .. }))
         .expect("an event-unlocked project costs credits");
     g.run.enabled_projects.insert(p.id.clone());
     set(&mut g, "credits", "0");
     g.run.project_rates.insert(p.id.clone(), [("credits".to_string(), f("3"))].into());
-    crate::modules::projects::drain(&mut g);
+    crate::modules::projects::drain(&r, &mut g);
     assert_eq!(g.run.today.unmet["credits"], f("3"), "it wanted 3 and got none");
 }
 

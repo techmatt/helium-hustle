@@ -179,7 +179,7 @@ fn send_science(g: &mut GameState) {
 fn arrive(r: &Rules, g: &mut GameState) {
     let p = &r.p.timeline;
     let t = g.saga.timeline.clone().expect("a timeline");
-    let dyson = g.career.completed_projects.contains(DYSON);
+    let dyson = super::projects::completed(g, DYSON);
     if t.super_timeline && dyson {
         g.saga.victory = true;
         g.saga.history.push(TimelineEnd {
@@ -254,9 +254,10 @@ fn end_timeline(r: &Rules, g: &mut GameState, outcome: &str) {
         achievements: c.achievements,
         log: c.log,
         library: c.library,
-        // Projects survive into a super timeline.
-        project_progress: if super_timeline { c.project_progress } else { Default::default() },
-        completed_projects: if super_timeline { c.completed_projects } else { Default::default() },
+        // `timeline` projects survive into a super timeline; `forever` ones,
+        // progress and completions, into every timeline.
+        projects: if super_timeline { c.projects } else { Default::default() },
+        forever_projects: c.forever_projects,
         ..Career::default()
     };
     start_timeline(r, g, t.number + 1, super_timeline);

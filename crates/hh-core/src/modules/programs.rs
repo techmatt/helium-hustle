@@ -172,6 +172,9 @@ fn check_entries(r: &Rules, g: &GameState, program: u32, entries: &[Entry], held
             Reading::Researched { item } => {
                 c.research_item(item).map(|_| ()).ok_or_else(|| format!("Program {n}: unknown research {item:?}"))
             }
+            Reading::Completed { project } => {
+                c.project(project).map(|_| ()).ok_or_else(|| format!("Program {n}: unknown project {project:?}"))
+            }
             Reading::Processors { tab } => {
                 ((*tab as usize) < g.run.programs.len()).then_some(()).ok_or_else(|| format!("Program {n}: no program {}", tab + 1))
             }
@@ -555,6 +558,9 @@ pub fn reading(r: &Rules, g: &GameState, what: &Reading) -> Option<Fx> {
         }
         Reading::Every { days } => Some(if g.run.day.is_multiple_of(u64::from((*days).max(1))) { Fx::ONE } else { Fx::ZERO }),
         Reading::Researched { item } => Some(if g.run.research.contains(item) { Fx::ONE } else { Fx::ZERO }),
+        Reading::Completed { project } => {
+            content().project(project).map(|p| Fx::from_int(i64::from(super::projects::completions(g, p))))
+        }
         Reading::Pads { good } => {
             let only = good.as_deref();
             Some(Fx::from_int((0..g.run.pads.len()).filter(|&i| super::shipments::on(g, i, only)).count() as i64))
@@ -782,22 +788,25 @@ fn act(r: &Rules, g: &mut GameState, verb: Verb, target: Option<&str>, tab: Opti
             let Some(p) = target.and_then(|id| content().project(id)) else {
                 return LineOutcome::Failed;
             };
-            if !r.p.programs.fund_verb || !super::projects::unlocked(g, p) {
+            if !r.p.programs.fund_verb || !super::projects::unlocked(r, g, p) {
                 return LineOutcome::Failed;
             }
             // The Projects panel's rate, on every cost: N a day (at most the
-            // most a project may take), `all` or none the most.
-            let max = r.p.projects.max_drain_rate;
-            let rate = match amount {
-                Some(Amount::N(k)) => Fx::from_int(i64::from(k)).min(max),
-                _ => max,
+            // resource's most a day), `all` or none the most.
+            let rate = |res: &str| {
+                let max = super::projects::max_rate(g, p, res);
+                match amount {
+                    Some(Amount::N(k)) => Fx::from_int(i64::from(k)).min(max),
+                    _ => max,
+                }
             };
+            let want: Vec<(String, Fx)> = p.costs.keys().map(|res| (res.clone(), rate(res))).collect();
             let now = g.run.project_rates.get(&p.id);
-            if p.costs.keys().all(|res| now.and_then(|m| m.get(res)).copied().unwrap_or(Fx::ZERO) == rate) {
+            if want.iter().all(|(res, x)| now.and_then(|m| m.get(res)).copied().unwrap_or(Fx::ZERO) == *x) {
                 return LineOutcome::Done;
             }
-            for res in p.costs.keys() {
-                if super::projects::set_rate(r, g, &p.id, res, rate).is_err() {
+            for (res, rate) in want {
+                if super::projects::set_rate(r, g, &p.id, &res, rate).is_err() {
                     return LineOutcome::Failed;
                 }
             }

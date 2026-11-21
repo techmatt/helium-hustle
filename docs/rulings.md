@@ -53,9 +53,17 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   Projects panel does; both may be switched off later, each one config change
   (`days_since_purchase_reading`, `fund_verb`). *Defaults (039):* a purchase is a building,
   land or research item, by hand or program (not commands, funding or free buildings); `fund
-  P N` sets N a day on every cost of P (at most `max_drain_rate`; `all` or no amount the most;
-  0 stops it); the switches are 0/1 programs params; JSON verb `fund`, so a later `fund <axis>`
-  can share it.
+  P N` sets N a day on every cost of P (each at most its resource's most a day, 046; `all` or
+  no amount the most; 0 stops it); the switches are 0/1 programs params; JSON verb `fund`, so
+  a later `fund <axis>` can share it.
+- **Project scopes (2026-11-21).** A project's `scope` is `run`, `timeline` or `forever`
+  (replacing `tier`: Long-Term is `timeline`, Strategic `run`). A `forever` project's
+  progress survives a timeline's end as well as its completions. A building gated on a
+  project's reward follows that project's scope: it requires the project's completion, not a
+  career flag that outlives it. *Defaults (046):* a repeatable row's rewards live once however
+  many completions, and it keeps its rates across completions; every row's `min_days` is its
+  largest cost over 30 rounded up (the old flat cap's fastest finish); the `completed
+  <project>` reading is the completion count.
 - **Folded guard readings and a golden program (2026-11-20).** Exact guards come from folded
   readings, not more `and` clauses; the golden game's scripted policy runs a short condition
   program, so the golden pins the interpreter. *Defaults (040):* `free processors` is granted

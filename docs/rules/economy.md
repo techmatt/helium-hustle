@@ -145,8 +145,9 @@ Six resource ids are fixed in code (`economy.rs` constants), named by content ro
 - Conflict: starting land. Data starts a run with 30 land, a Solar Panel and a Data Center;
   the 30 is free land, and starting buildings take none.
 - Conflict: Microwave Receiver. The building requires flag `microwave_power_active` but the
-  project sets `microwave_power_completed`; the engine uses the one flag
-  `microwave_power_completed` (else unreachable). Handoffs say it produces energy; the data
+  project sets `microwave_power_completed`; the engine gates it (and Fuel Cell Array) on its
+  project's completion, `requires: {"type": "project"}`, so it follows the project's scope
+  ([projects.md](projects.md)). Handoffs say it produces energy; the data
   has no production (it enables Buy Power, programs.md). The engine takes the data.
 - Conflict: Arbitrage Engine's `spec_decay`: see [demand.md](demand.md#port-notes).
 - Conflict: the data's Arbitrage Engine requires research `market_analysis`, which is not a

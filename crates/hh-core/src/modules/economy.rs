@@ -168,6 +168,7 @@ pub fn requirement_met(g: &GameState, req: &Requirement) -> bool {
         Requirement::Quest { quest } => super::events::quest_open_or_done(g, quest),
         Requirement::Research { research } => g.run.research.contains(research),
         Requirement::Flag { flag } => g.career.flags.contains(flag),
+        Requirement::Project { project } => super::projects::completed(g, project),
     }
 }
 

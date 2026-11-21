@@ -15,9 +15,9 @@
         "why": "a unit, not a tunable: the percent reading of a program condition is amount / cap x 100"
       },
       {
-        "file": "crates/hh-core/src/view.rs",
+        "file": "crates/hh-core/src/view/projects.rs",
         "literal": "2",
-        "why": "display only: an event text's {rate} shows two decimal places"
+        "why": "display only: `short` shows a number to two decimal places (event texts' {rate}, project texts)"
       },
       {
         "file": "crates/hh-core/src/modules/boredom.rs",

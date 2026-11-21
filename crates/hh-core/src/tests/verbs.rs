@@ -339,15 +339,26 @@ fn fund_sets_every_cost_rate_as_the_panel_does() {
     assert_eq!(rates(&g).get("credits"), Some(&Fx::from_int(3)));
     assert_eq!(rates(&g).get("science"), Some(&Fx::from_int(3)));
     assert_eq!(run_one(&r, &mut g, fund(Some(Amount::N(3)))), O::Done, "already at that rate: the step only");
-    let max = r.p.projects.max_drain_rate;
+    // The most a day is each cost over min_days (167): 5000 and 2000.
+    let fg = crate::content::content().project("foundation_grant").unwrap();
+    let most = |res: &str| crate::modules::projects::max_rate(&g, fg, res);
+    let (credits_max, science_max) = (most("credits"), most("science"));
+    assert_eq!(credits_max, f("29.94012"), "5000 / 167 rounded up a step: done in exactly 167 days");
     assert_eq!(run_one(&r, &mut g, fund(Some(Amount::N(1_000_000)))), O::Ran);
-    assert_eq!(rates(&g).get("credits"), Some(&max), "capped at the most a project takes");
+    assert_eq!(rates(&g).get("credits"), Some(&credits_max), "capped at the most a day");
+    assert_eq!(run_one(&r, &mut g, fund(Some(Amount::N(20)))), O::Ran);
+    assert_eq!(rates(&g).get("credits"), Some(&Fx::from_int(20)));
+    assert_eq!(rates(&g).get("science"), Some(&science_max), "each cost capped on its own");
     assert_eq!(run_one(&r, &mut g, fund(Some(Amount::N(0)))), O::Ran);
     assert!(rates(&g).is_empty(), "0 stops it");
     assert_eq!(run_one(&r, &mut g, fund(None)), O::Ran);
-    assert_eq!(rates(&g).get("science"), Some(&max), "no amount: the most, as all");
+    assert_eq!(rates(&g).get("science"), Some(&science_max), "no amount: the most, as all");
+    // The `completed` reading guards it.
+    let done = Reading::Completed { project: "foundation_grant".into() };
+    assert_eq!(programs::reading(&r, &g, &done), Some(Fx::ZERO));
     // Completed: no longer open, so it fails.
-    g.career.completed_projects.insert("foundation_grant".into());
+    g.career.projects.completions.insert("foundation_grant".into(), 1);
+    assert_eq!(programs::reading(&r, &g, &done), Some(Fx::ONE));
     assert_eq!(run_one(&r, &mut g, fund(Some(Amount::All))), O::Failed);
     assert!(put(&r, &mut g, vec![act(Verb::Fund, Some("no_such"), None, None)]).is_err());
     assert!(put(&r, &mut g, vec![act(Verb::Fund, None, None, None)]).is_err());

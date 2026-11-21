@@ -51,7 +51,7 @@ A verb with nothing to do is **done** (its step, nothing else); one that can't a
 | `load <saved program> into <tab>` (`target` a name) | Loads the first loadout of that name, as `load_loadout` (into its own tab: from the top). |
 | `assign processors <tab> N` (N may be 0) | As `set_processors` (`all`: every one not on another program). A program cut stops at its new count that day; one raised gains them the next. |
 | `retire` | Fails unless retiring is allowed (career.md); else the run retires at the day's end, as the Retire action. |
-| `fund <project> [N \| all]` | Sets its daily rate on each cost to N, as the Projects panel does: at most `max_drain_rate` (`all` or none: that); 0 stops it. Done when every rate is N; fails when the project isn't open. |
+| `fund <project> [N \| all]` | Sets its daily rate on each cost to N, as the Projects panel does, each at most its most a day (`all` or none: the most); 0 stops it. Done when so; fails when the project isn't open. |
 
 **Conditions.** `<reading> <cmp> <right side>`, or two such clauses joined by one `and` or
 `or` (`state::Condition`: `first`, `rest`). `cmp` is `lt`, `le`, `gt`, `ge` or `eq`; the right
@@ -68,6 +68,7 @@ side is a number (`value`, an `Fx`) or, with `against`, another reading times th
 | `count` (`building`) | How many are owned. |
 | `running` (`building`) | How many are owned and active. |
 | `researched` (`item`) | 1 once researched this run, else 0. |
+| `completed` (`project`) | Its completions in its scope. |
 | `pads` (`good`, null: all) | Pads carrying the good. |
 | `idle_pads` (`good`, null: all) | The good's pads with no cargo aboard (a cooling pad counts). `set pads X` can switch one exactly when `idle pads (all) > idle pads X × 1`. |
 | `processors` (`tab`) | Processors assigned to that program. |

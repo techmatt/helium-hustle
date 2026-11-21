@@ -408,7 +408,7 @@ impl<'a> Meter<'a> {
             never_used: c.commands.iter().filter(|x| !used.contains(&x.id)).map(|x| x.id.clone()).collect(),
             builds,
             best_ranks: s.state.career.max_ideology_ranks.clone(),
-            projects: s.state.career.completed_projects.iter().cloned().collect(),
+            projects: s.state.career.projects.completions.keys().chain(s.state.career.forever_projects.completions.keys()).cloned().collect(),
             quests: s.state.career.completed_quests.iter().cloned().collect(),
             sub_objectives: s.state.career.completed_sub_objectives.iter().cloned().collect(),
             achievements: s.state.career.achievements.iter().cloned().collect(),

@@ -68,6 +68,8 @@ export function readingLabel(v: View, r: Reading): string {
       return `${name(v, r.building)} running`;
     case 'researched':
       return `Researched ${name(v, r.item)}`;
+    case 'completed':
+      return `Completed ${name(v, r.project)}`;
     case 'processors':
       return `Program ${r.tab + 1} processors`;
     case 'free_processors':

@@ -33,9 +33,9 @@ pub(crate) fn set(g: &mut crate::GameState, res: &str, v: &str) {
 // The golden constants: update all three together on a `RULES_REVISION` bump
 // with `python scripts/set_golden.py` (it also sets `GOLDEN_*` in
 // scripts/wasm-smoke.mjs); never type them (README, *Rules changes*).
-const GOLDEN_REVISION: u32 = 13;
-const GOLDEN_FINGERPRINT: &str = "38a6879fb859aca3";
-const GOLDEN_CONTENT_HASH: &str = "572678504a32b7c4";
+const GOLDEN_REVISION: u32 = 14;
+const GOLDEN_FINGERPRINT: &str = "3ccc83437f701bfe";
+const GOLDEN_CONTENT_HASH: &str = "9494509aec3339dd";
 
 pub(crate) fn golden_session() -> Session {
     let mut s = Session::new(&baseline(), GOLDEN_SEED, None).unwrap();

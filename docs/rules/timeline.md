@@ -38,9 +38,10 @@ start resources set them aside for the next first run. Each tech's remaining tim
 falls (a `timeline` tech is dropped, a `next_timeline` one lasts one more, `forever` stays).
 Spendable Earth science becomes `science_made × science_carry`. The career hard-resets to run
 1: the mind keeps flags, researched/owned/used ids, seen events, quests and sub-objectives,
-achievements, the log and the program library; everything else resets (retirements,
-lifetime totals, bests, ideology bests, peak power, Long-Term projects; a super timeline keeps
-projects). The next timeline starts and a new run begins.
+achievements, the log, the program library and `forever` projects (progress and
+completions); everything else resets (retirements, lifetime totals, bests, ideology bests,
+peak power, `timeline` projects, and with them the buildings they gate; a super timeline
+keeps `timeline` projects). The next timeline starts and a new run begins.
 
 **Earth techs** (`content/earth_tech.json`) are bought with Earth science
 (`buy_earth_tech`), once each while held, after their `requires` quest. Effects: a modifier

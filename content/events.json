@@ -76,7 +76,7 @@
         {
           "id": "persistent_project",
           "label": "Complete a Long-Term project",
-          "condition": {"type": "persistent_project_completed_any"}
+          "condition": {"type": "project_completed_any", "scope": "timeline"}
         },
         {
           "id": "survive_10_years",

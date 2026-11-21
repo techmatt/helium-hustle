@@ -96,8 +96,9 @@ refactor that plays the same moves no golden constant; if it does, play changed.
 
 **A new module** touches its `modules/<id>.rs`, `modules/mod.rs` (`mod`, `REGISTRY`, `Params`),
 `configs/baseline.json` and a `docs/rules/<id>.md` page whose `<!-- params:<id> -->` block
-`hh-sim params --write` fills; a new event condition, `content.rs` (`Condition`,
-`condition_ok`) and `events.rs` (`holds`, `progress`, `kind`).
+`hh-sim params --write` fills; a new event condition (quests and project unlocks share
+them), `content.rs` (`Condition`, `condition_ok`), `events.rs` (`holds`, `progress`, `kind`),
+`view/projects.rs` (`condition_text`) and `hh-sim`'s `agents/progress.rs` (`condition`).
 
 **A new program reading** touches `state::Reading` (and `describe`), `modules/programs.rs`
 (`check_entries`, `reading`), `view/programs.rs` (`readings`, the editor's list), the web

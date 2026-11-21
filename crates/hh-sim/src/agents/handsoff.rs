@@ -162,32 +162,34 @@ const PROJECTS: &[&str] = &[
     "market_cornering",
 ];
 /// The daily rate per cost resource (the author's `project_rate`), the
-/// credits it waits for, and how often it looks (strategy). The periods are
+/// credits it waits for, and how often it looks (strategy). The period is
 /// odd: a one-processor program whose Dream runs every other day reads a
 /// guard on alternate days only, and an even period would then never land.
 const FUND_RATE: u32 = 3;
-const FUND_AT: i64 = 3000;
-const FUND_EVERY: u32 = 49;
+const FUND_AT: i64 = 1000;
 const FREE_EVERY: u32 = 9;
 
-/// Every `FUND_EVERY` days with credits at `FUND_AT` or more: each project
-/// in [`PROJECTS`] funded at `FUND_RATE` a day per cost. A rate set stays
-/// (the drain takes only what is in stock), so it needs no stop; a project
-/// not open fails, one already at the rate is done, each a step: on a
-/// one-processor program, about one step in six, hence the long period.
+/// From the day each project opens: while it is not completed and credits
+/// are at `FUND_AT` or more, it is funded at `FUND_RATE` a day per cost. A
+/// rate set stays (the drain takes only what is in stock), so it needs no
+/// stop; a project not open fails, one already at the rate is done, each a
+/// step; a completed one's guard skips it for free.
 fn fund_lines() -> Vec<Entry> {
     let fund = |id: &str| Entry::new(Op::Act { verb: Verb::Fund, target: Some(id.to_string()), tab: None, amount: Some(Amount::N(FUND_RATE)) }).indent();
-    let mut lines = vec![when2(
-        clause(Reading::Every { days: FUND_EVERY }, Cmp::Eq, 1),
-        clause(Reading::Amount { resource: "credits".to_string() }, Cmp::Ge, FUND_AT),
-    )];
-    lines.extend(PROJECTS.iter().map(|id| fund(id)));
+    let mut lines = Vec::new();
+    for id in PROJECTS {
+        lines.push(when2(
+            clause(Reading::Completed { project: id.to_string() }, Cmp::Lt, 1),
+            clause(Reading::Amount { resource: "credits".to_string() }, Cmp::Ge, FUND_AT),
+        ));
+        lines.push(fund(id));
+    }
     lines
 }
 
-/// The research the author's build order leaves to its looks (it weighs it
-/// against a Long-Term project; this player's funding lines don't), to go after the
-/// build order's own lines, so the essential research there comes first.
+/// The research the author's build order leaves to its looks (this player
+/// has no looks to buy it on), to go after the build order's own lines, so
+/// the essential research there comes first.
 fn research_tail(v: &View) -> Vec<Entry> {
     let rest: Vec<&str> = author::RESEARCH.iter().copied().filter(|id| !author::ESSENTIAL.contains(id)).collect();
     author::research_lines(v, &rest)

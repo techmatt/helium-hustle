@@ -603,6 +603,11 @@ ul.plain {
 .card.done {
   background: var(--skip-tint);
 }
+/* A project whose unlock does not hold yet: greyed, no rate controls. */
+.card.locked {
+  background: var(--disabled);
+  color: var(--muted);
+}
 .card.is-new,
 tr.is-new td:first-child {
   box-shadow: inset 4px 0 0 var(--accent);

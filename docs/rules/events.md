@@ -28,7 +28,11 @@ of every run.
 | `never` | never |
 | `all_of` | every sub-objective is latched (below) |
 | `ideology_rank_any` | some axis's current rank this run is at least `rank` |
-| `persistent_project_completed_any` | any Long-Term project is completed |
+| `ideology_rank` | the career's best rank on `axis` is at least `rank` |
+| `project_completed_any` | any project of `scope` (`run`, `timeline`, `forever`) is completed |
+| `project_enabled` | an event's `enable_project` enabled the project this run |
+| `quest_active` | the quest is active now or completed in any run |
+| `flag_set` | the career flag is set |
 | `days_survived` | the run's days, today included, reach `days` |
 | `credits_earned` | credits produced this run reach `amount` |
 | `quiet_days`, `earth_science`, `earth_tech`, `timelines_ended`, `swarm_repelled`, `vault_holds`, `super_timeline`, `project_completed`, `victory` | the later acts' (draft): [timeline.md](timeline.md) |
@@ -60,7 +64,7 @@ completed earlier in the same check can fire that same day.
 |---|---|
 | `enable_building` | the building may be bought this run. A building named by any event's `enable_building` is locked until one enables it ([economy.md](economy.md)). |
 | `enable_nav_panel` | the panel is shown this run. Only `retirement` gates a rule (the Retire action, [career.md](career.md)); others are display. |
-| `enable_project` | an `event_unlocked` project may be funded this run ([projects.md](projects.md)) |
+| `enable_project` | a project whose unlock is `project_enabled` may be funded this run ([projects.md](projects.md)) |
 | `set_flag` | sets a career flag |
 
 **Run start.** Every event the career has seen (quests and one-offs alike) re-applies its

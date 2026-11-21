@@ -233,6 +233,7 @@ impl Reading {
             Reading::Cargo { good } => format!("cargo of pads {}", all(good)),
             Reading::Every { days } => format!("every {days} days"),
             Reading::Researched { item } => format!("researched {item}"),
+            Reading::Completed { project } => format!("completed {project}"),
             Reading::Pads { good } => format!("pads on {}", all(good)),
             Reading::Running { building } => format!("{building} running"),
             Reading::Processors { tab } => format!("program {} processors", tab + 1),
@@ -416,6 +417,8 @@ pub enum Reading {
     Every { days: u32 },
     /// 1 once a research item is researched this run, else 0.
     Researched { item: String },
+    /// How many times a project has completed in its scope (0 if never).
+    Completed { project: String },
     /// Pads carrying one good, or every pad.
     Pads {
         #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -630,9 +633,8 @@ pub struct Run {
     pub ideology: BTreeMap<String, Fx>,
     /// Project funding rates per day: project -> resource -> rate.
     pub project_rates: BTreeMap<String, BTreeMap<String, Fx>>,
-    /// Strategic (per-run) project progress and completions.
-    pub project_progress: BTreeMap<String, BTreeMap<String, Fx>>,
-    pub completed_projects: BTreeSet<String>,
+    /// `run`-scoped projects' progress and completions.
+    pub projects: ProjectBook,
     /// Events fired this run.
     pub events: BTreeSet<String>,
     /// Unlocked by event effects this run (re-applied from seen events at start).
@@ -664,6 +666,17 @@ pub struct Run {
     /// `quiet_days` condition, draft). Absent until the first.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_order: Option<u64>,
+}
+
+/// One scope's projects: progress toward the next completion, and how many
+/// times each completed.
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct ProjectBook {
+    /// project -> resource -> paid toward the next completion.
+    pub progress: BTreeMap<String, BTreeMap<String, Fx>>,
+    /// project -> completions (absent: none).
+    pub completions: BTreeMap<String, u32>,
 }
 
 /// Career-wide totals over every finished run.
@@ -712,9 +725,11 @@ pub struct Career {
     pub completed_quests: BTreeSet<String>,
     /// `quest:sub_objective`, latched.
     pub completed_sub_objectives: BTreeSet<String>,
-    /// Long-Term (persistent) project progress and completions.
-    pub project_progress: BTreeMap<String, BTreeMap<String, Fx>>,
-    pub completed_projects: BTreeSet<String>,
+    /// `timeline`-scoped projects' progress and completions (a timeline's end
+    /// clears them, unless a super timeline follows).
+    pub projects: ProjectBook,
+    /// `forever`-scoped projects': kept through every timeline end.
+    pub forever_projects: ProjectBook,
     pub achievements: BTreeSet<String>,
     pub log: Vec<LogEntry>,
     /// The last finished run, as it stood when it retired (display: the UI's

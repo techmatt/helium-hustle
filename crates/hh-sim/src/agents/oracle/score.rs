@@ -185,7 +185,8 @@ impl Oracle {
         total += (ideo(b) - ideo(a)).mul_int(w.ideology).floor_int();
         total += (projects(b) - projects(a)).mul_int(w.project).floor_int();
         let n = |x: usize, y: usize| y.saturating_sub(x) as i64;
-        total += w.project_done * n(a.career.completed_projects.len(), b.career.completed_projects.len());
+        let done = |g: &GameState| g.career.projects.completions.len() + g.career.forever_projects.completions.len();
+        total += w.project_done * n(done(a), done(b));
         total += w.building * n(a.career.owned_buildings.len(), b.career.owned_buildings.len());
         total += w.command * n(a.career.used_commands.len(), b.career.used_commands.len());
         let quests = |g: &GameState| g.career.completed_quests.len() + g.career.completed_sub_objectives.len();
@@ -202,9 +203,9 @@ fn projects(g: &GameState) -> Fx {
     content()
         .projects
         .iter()
-        .filter(|p| p.persistent())
+        .filter(|p| p.scope != content::Scope::Run)
         .fold(Fx::ZERO, |s, p| {
-            if g.career.completed_projects.contains(&p.id) {
+            if hh_core::modules::projects::completed(g, &p.id) {
                 return s + Fx::ONE;
             }
             let (paid, total) = crate::agents::progress::paid(g, p);

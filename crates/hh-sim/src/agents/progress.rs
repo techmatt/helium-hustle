@@ -5,8 +5,8 @@
 //! Progress reads the state, plus what only a rollout saw: its closing credit
 //! income and the goods it shipped. A milestone met is 1.
 
-use hh_core::content::{content, Condition};
-use hh_core::modules::{events, ideology};
+use hh_core::content::{content, Condition, Scope};
+use hh_core::modules::{events, ideology, projects};
 use hh_core::{Fx, Rules};
 
 use crate::milestones::When;
@@ -30,15 +30,15 @@ fn count(have: u64, need: u64) -> Fx {
     frac(Fx::from_int(have as i64), Fx::from_int(need as i64))
 }
 
-/// The best fraction paid of a Long-Term project (career progress over its
+/// The best fraction paid of a project of the scope (progress over its
 /// summed costs; 1 for a completed one).
-pub fn persistent(g: &hh_core::GameState) -> Fx {
+pub fn best_paid(g: &hh_core::GameState, scope: Scope) -> Fx {
     content()
         .projects
         .iter()
-        .filter(|p| p.persistent())
+        .filter(|p| p.scope == scope)
         .map(|p| {
-            if g.career.completed_projects.contains(&p.id) {
+            if projects::completed(g, &p.id) {
                 return Fx::ONE;
             }
             let (paid, total) = paid(g, p);
@@ -48,11 +48,11 @@ pub fn persistent(g: &hh_core::GameState) -> Fx {
         .unwrap_or(Fx::ZERO)
 }
 
-/// A project's paid amount so far in the career and its total cost, summed over
-/// its resources.
+/// A project's paid amount toward its next completion and that completion's
+/// cost, summed over its resources.
 pub fn paid(g: &hh_core::GameState, p: &hh_core::content::Project) -> (Fx, Fx) {
-    let total = p.costs.values().fold(Fx::ZERO, |s, x| s + *x);
-    let paid = g.career.project_progress.get(&p.id).map_or(Fx::ZERO, |m| m.values().fold(Fx::ZERO, |s, x| s + *x));
+    let total = projects::costs(g, p).values().fold(Fx::ZERO, |s, x| s + *x);
+    let paid = projects::progress(g, p).map_or(Fx::ZERO, |m| m.values().fold(Fx::ZERO, |s, x| s + *x));
     (paid, total)
 }
 
@@ -64,7 +64,7 @@ fn condition(r: &Rules, g: &hh_core::GameState, quest: &str, c: &Condition) -> F
             let best = hh_core::content::AXES.iter().map(|a| ideology::score(g, a)).max().unwrap_or(Fx::ZERO);
             frac(best, need)
         }
-        Condition::PersistentProjectCompletedAny => persistent(g),
+        Condition::ProjectCompletedAny { scope } => best_paid(g, *scope),
         Condition::DaysSurvived { days } => count(g.run.day + 1, *days),
         Condition::CreditsEarned { amount } => frac(g.run.stats.credits_earned, *amount),
         Condition::ResearchCompleted { research } => Fx::from_int(i64::from(g.run.research.contains(research))),
@@ -103,9 +103,7 @@ pub fn toward(r: &Rules, g: &hh_core::GameState, w: &When, seen: &Seen) -> Fx {
             let cost = content().research.iter().find(|x| x.id == *research).map_or(Fx::ONE, |x| x.cost);
             frac(g.amount("science"), cost).min(Fx::from_int(9).mul_ratio(1, 10))
         }
-        // Progress is read for Long-Term projects only (the only tier a milestone names).
-        When::ProjectCompleted { tier } if tier == "persistent" => persistent(g),
-        When::ProjectCompleted { .. } => Fx::ZERO,
+        When::ProjectCompleted { scope } => best_paid(g, *scope),
         When::IdeologyRank { rank } => {
             let need = ideology::score_for_rank(r, *rank);
             let best = g.career.max_ideology_scores.values().copied().max().unwrap_or(Fx::ZERO);

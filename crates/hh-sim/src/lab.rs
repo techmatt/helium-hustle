@@ -338,7 +338,8 @@ fn state_at(s: &Session, note: &str) -> String {
     let _ = writeln!(t, "  quests: {:?}", c.completed_quests);
     let _ = writeln!(t, "  sub-objectives: {:?}", c.completed_sub_objectives);
     let _ = writeln!(t, "  best ranks: {:?} best scores: {:?}", c.max_ideology_ranks, c.max_ideology_scores);
-    let _ = writeln!(t, "  projects done: {:?} progress: {:?}", c.completed_projects, c.project_progress);
+    let _ = writeln!(t, "  projects done: {:?} progress: {:?}", c.projects.completions, c.projects.progress);
+    let _ = writeln!(t, "  forever projects done: {:?} progress: {:?}", c.forever_projects.completions, c.forever_projects.progress);
     let _ = writeln!(t, "  achievements: {:?}", c.achievements);
     t
 }

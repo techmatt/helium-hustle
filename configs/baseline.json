@@ -73,7 +73,7 @@
     },
     "projects": {
       "variant": "drain",
-      "params": { "max_drain_rate": "30" }
+      "params": {}
     },
     "shipments": {
       "variant": "arc1",

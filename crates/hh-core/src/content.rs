@@ -76,6 +76,8 @@ pub enum Requirement {
     Research { research: String },
     /// A career flag is set.
     Flag { flag: String },
+    /// The project is completed (in its scope: a building it gates follows it).
+    Project { project: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -216,7 +218,17 @@ pub enum Condition {
     /// Every sub-objective, each latched in the career once met.
     AllOf { sub_objectives: Vec<SubObjective> },
     IdeologyRankAny { rank: i64 },
-    PersistentProjectCompletedAny,
+    /// The career's best rank on `axis` reached `rank` (bests are recorded at
+    /// the day's end, so it holds from the next day).
+    IdeologyRank { axis: String, rank: i64 },
+    /// Any project of the scope is completed.
+    ProjectCompletedAny { scope: Scope },
+    /// An event's `enable_project` enabled the project this run.
+    ProjectEnabled { project: String },
+    /// The quest is active now or completed in any run.
+    QuestActive { quest: String },
+    /// The career flag is set.
+    FlagSet { flag: String },
     DaysSurvived { days: u64 },
     CreditsEarned { amount: Fx },
     // Draft (042), the later acts (docs/rules/timeline.md):
@@ -294,17 +306,34 @@ impl Event {
     }
 }
 
+/// How long a project's progress and completions last (docs/rules/projects.md).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Scope {
+    /// Reset at every retirement.
+    Run,
+    /// Kept across retirements, reset at a timeline's end (kept into a super timeline).
+    Timeline,
+    /// Kept for good, timeline ends included.
+    Forever,
+}
+
+impl Scope {
+    pub fn name(self) -> &'static str {
+        match self {
+            Scope::Run => "run",
+            Scope::Timeline => "timeline",
+            Scope::Forever => "forever",
+        }
+    }
+}
+
+/// A repeatable project: after each completion its progress starts over and
+/// every cost is multiplied by `cost_growth` once more.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
-pub enum ProjectUnlock {
-    /// Enabled by an event's `enable_project`.
-    EventUnlocked,
-    /// The career's best rank on `axis` reached `rank`.
-    IdeologyRank { axis: String, rank: i64 },
-    /// The quest is active or completed.
-    QuestActive { quest: String },
-    ResearchCompleted { research: String },
-    FlagSet { flag: String },
+#[serde(deny_unknown_fields)]
+pub struct Repeat {
+    pub cost_growth: Fx,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -326,18 +355,19 @@ pub struct Project {
     pub id: String,
     pub name: String,
     pub description: String,
-    /// `persistent` (Long-Term, progress kept across runs) or `personal`
-    /// (Strategic, reset each run).
-    pub tier: String,
-    pub unlock: ProjectUnlock,
+    pub scope: Scope,
+    /// Fundable while this holds (an events condition; `all_of` is refused).
+    pub unlock: Condition,
+    /// The first completion's costs (a repeatable one's grow per completion).
     pub costs: Amounts,
-    pub reward: ProjectReward,
-}
-
-impl Project {
-    pub fn persistent(&self) -> bool {
-        self.tier == "persistent"
-    }
+    /// The fewest days funding may take: each resource's most a day is its
+    /// cost over this.
+    pub min_days: u32,
+    /// Absent: completes once. Present: repeatable.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub repeat: Option<Repeat>,
+    /// Live while the project counts as completed (at least once).
+    pub rewards: Vec<ProjectReward>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -451,7 +481,8 @@ impl Content {
             | Condition::Immediate
             | Condition::Never
             | Condition::IdeologyRankAny { .. }
-            | Condition::PersistentProjectCompletedAny
+            | Condition::ProjectCompletedAny { .. }
+            | Condition::FlagSet { .. }
             | Condition::DaysSurvived { .. }
             | Condition::CreditsEarned { .. }
             | Condition::QuietDays { .. }
@@ -462,7 +493,11 @@ impl Content {
             | Condition::Victory => true,
             Condition::EarthTech { tech } => self.earth_tech.iter().any(|t| &t.id == tech),
             Condition::VaultHolds { resource, .. } => self.resource(resource).is_some(),
-            Condition::ProjectCompleted { project } => self.projects.iter().any(|p| &p.id == project),
+            Condition::ProjectCompleted { project } | Condition::ProjectEnabled { project } => {
+                self.project(project).is_some()
+            }
+            Condition::IdeologyRank { axis, .. } => AXES.contains(&axis.as_str()),
+            Condition::QuestActive { quest } => self.event(quest).is_some_and(|e| e.is_quest()),
         }
     }
 
@@ -500,6 +535,7 @@ impl Content {
         let axis = |a: &str| AXES.contains(&a);
         let req = |r: &Requirement| match r {
             Requirement::None | Requirement::Flag { .. } => true,
+            Requirement::Project { project } => self.project(project).is_some(),
             Requirement::Building { building, .. } => bld(building),
             Requirement::Quest { quest: q } => quest(q),
             Requirement::Research { research: x } => research(x),
@@ -572,25 +608,25 @@ impl Content {
         }
         for p in &self.projects {
             let w = format!("project {:?}", p.id);
-            need(p.tier == "persistent" || p.tier == "personal", format!("{w}: bad tier"));
             need(p.costs.keys().all(|r| res(r)), format!("{w}: unknown cost resource"));
-            let unlock_ok = match &p.unlock {
-                ProjectUnlock::IdeologyRank { axis: a, .. } => axis(a),
-                ProjectUnlock::QuestActive { quest: q } => quest(q),
-                ProjectUnlock::ResearchCompleted { research: x } => research(x),
-                ProjectUnlock::EventUnlocked | ProjectUnlock::FlagSet { .. } => true,
-            };
-            need(unlock_ok, format!("{w}: bad unlock"));
-            match &p.reward {
-                ProjectReward::Modifier { key, .. } => need(modifier(key), format!("{w}: unknown modifier")),
-                ProjectReward::StartingBuildings { buildings } => {
-                    need(buildings.keys().all(|b| bld(b)), format!("{w}: unknown building"))
+            need(p.min_days >= 1, format!("{w}: min_days below 1"));
+            need(p.repeat.as_ref().is_none_or(|x| x.cost_growth >= Fx::ONE), format!("{w}: cost_growth below 1"));
+            need(
+                self.condition_ok(&p.unlock) && !matches!(p.unlock, Condition::AllOf { .. }),
+                format!("{w}: bad unlock"),
+            );
+            for reward in &p.rewards {
+                match reward {
+                    ProjectReward::Modifier { key, .. } => need(modifier(key), format!("{w}: unknown modifier")),
+                    ProjectReward::StartingBuildings { buildings } => {
+                        need(buildings.keys().all(|b| bld(b)), format!("{w}: unknown building"))
+                    }
+                    ProjectReward::BoredomModifiers { command_boredom, .. } => need(
+                        command_boredom.keys().all(|c| self.command(c).is_some()),
+                        format!("{w}: unknown command"),
+                    ),
+                    _ => {}
                 }
-                ProjectReward::BoredomModifiers { command_boredom, .. } => need(
-                    command_boredom.keys().all(|c| self.command(c).is_some()),
-                    format!("{w}: unknown command"),
-                ),
-                _ => {}
             }
         }
         for a in &self.achievements {
@@ -611,8 +647,10 @@ impl Content {
         // Every flag a building or project waits on is set by something.
         let mut set: BTreeSet<&str> = self.commands.iter().filter_map(|c| c.sets_flag.as_deref()).collect();
         for p in &self.projects {
-            if let ProjectReward::SetFlag { flag } = &p.reward {
-                set.insert(flag);
+            for reward in &p.rewards {
+                if let ProjectReward::SetFlag { flag } = reward {
+                    set.insert(flag);
+                }
             }
         }
         for e in &self.events {
@@ -635,7 +673,7 @@ impl Content {
             }
         }
         for p in &self.projects {
-            if let ProjectUnlock::FlagSet { flag } = &p.unlock {
+            if let Condition::FlagSet { flag } = &p.unlock {
                 need(set.contains(flag.as_str()), format!("project {:?}: nothing sets flag {flag:?}", p.id));
             }
         }

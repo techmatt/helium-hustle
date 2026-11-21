@@ -62,7 +62,7 @@
     },
     {
       "id": "M11", "name": "First Major Project", "says": "persistent (runs 8-15)",
-      "when": { "type": "project_completed", "tier": "persistent" },
+      "when": { "type": "project_completed", "scope": "timeline" },
       "target": { "runs": [8, 15] }
     },
     {

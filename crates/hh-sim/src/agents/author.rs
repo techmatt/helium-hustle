@@ -34,12 +34,13 @@
 //! While looking often, it pauses buildings that eat a material its target is
 //! short of, so the stock builds up.
 //!
-//! It buys research in [`RESEARCH`] order (only [`ESSENTIAL`] ones while a
-//! Long-Term project is open), funds the first open project in [`PROJECTS`]
-//! order (only when every cost can move; science at the most a day when no
-//! research worth it waits; a tenth of the credits past twice its target's
-//! price plus 200; anything else `project_rate`), and retires once the run
-//! has bought nothing for `stale_days` days. docs/agents.md says the same.
+//! It buys research in [`RESEARCH`] order, funds the cheapest open `run`
+//! project whose costs can move beside the first open other one in
+//! [`PROJECTS`] order (each only when every cost can move; science at the most a
+//! day when no research waits, else `science_share` percent of the most; a
+//! tenth of the credits past twice its target's price plus 200; anything else
+//! `project_rate`), and retires once the run has bought nothing for
+//! `stale_days` days. docs/agents.md says the same.
 //!
 //! The oracle steers it through [`Directives`] (a target, research, a
 //! project, funding, Dream held, market, pads, hoarding, program order); each
@@ -59,7 +60,7 @@ use super::{amount, cap, command_cost, command_unlocked, credits_price, made, Ag
 pub const KNOBS: &[&str] = &[
     "decay", "starved", "reserve", "buys", "compute", "dream_at", "stale_days", "project_rate", "fund", "market",
     "hand_gap", "loads", "pause", "wait_demand", "min_gap", "max_gap", "construct", "cond", "diversify",
-    "all_research",
+    "all_research", "science_share",
 ];
 
 /// Library names of the condition programs (`cond`): one saved copy each,
@@ -85,9 +86,8 @@ pub const RESEARCH: &[&str] = &[
     "overclock_boost",
 ];
 
-/// Research worth its science every run; the rest waits while a Long-Term
-/// project is open (research resets each run, a Long-Term project's
-/// progress doesn't). Market Awareness only until its quest is done.
+/// Research the main plan buys by program line every run, once science
+/// covers its price (the rest the author buys on its looks).
 pub const ESSENTIAL: &[&str] = &[
     "propellant_synthesis",
     "market_awareness",
@@ -96,7 +96,9 @@ pub const ESSENTIAL: &[&str] = &[
     "geopolitical_intelligence",
 ];
 
-/// Projects, first funded first: Long-Term ones, then Strategic.
+/// Projects the author funds: the first open non-`run` one in this order,
+/// beside the cheapest open `run` one whose costs can move (order only
+/// breaks ties).
 pub const PROJECTS: &[&str] = &[
     "lunar_cartography",
     "foundation_grant",
@@ -147,7 +149,8 @@ pub struct Directives {
     /// Hold boredom down with Dream (enough processors to outpace growth,
     /// from a third of the cap), and never retire for a stale run.
     pub sustain: bool,
-    /// Buy all visible research, not only the essential ones.
+    /// Buy all visible research. A no-op since 046 (an open project no longer
+    /// holds research back); kept for the oracle's and autopilot's grids.
     pub all_research: bool,
     /// Run the market program (Promote what ships, Disrupt) on one processor
     /// whenever two are free, not only three.
@@ -250,6 +253,8 @@ pub struct Author {
     dream_at: i64,
     stale_days: u64,
     project_rate: Fx,
+    /// Percent of a project's most a day of science while research waits.
+    science_share: i64,
     fund: bool,
     market: bool,
     /// Writes the construction program (Program 5) once the game allows it.
@@ -295,8 +300,7 @@ impl Author {
         Author {
             // `diversify` and `all_research` (default 0): the directives of those
             // names, for the debug autopilot, whose boosted runs fill no cap with
-            // the plain rule's goods and keep a Long-Term project open while
-            // research a milestone asks for waits.
+            // the plain rule's goods (`all_research` changes nothing since 046).
             dir: Directives {
                 diversify: k.get("diversify", 0) != 0,
                 all_research: k.get("all_research", 0) != 0,
@@ -309,6 +313,7 @@ impl Author {
             dream_at: k.get("dream_at", 60).clamp(0, 100),
             stale_days: k.get("stale_days", 300).max(1) as u64,
             project_rate: Fx::from_int(k.get("project_rate", 3).max(0)),
+            science_share: k.get("science_share", 50).clamp(0, 100),
             fund: k.get("fund", 1) != 0,
             market: k.get("market", 1) != 0,
             construct: k.get("construct", 1) != 0,
@@ -528,16 +533,10 @@ impl Author {
         None
     }
 
-    /// Whether research `id` is worth science now: essential, or nothing
-    /// Long-Term is open to fund instead.
-    fn worth(&self, v: &View, id: &str) -> bool {
-        if self.dir.wants_research(id) {
-            return true;
-        }
-        if id == "market_awareness" && v.completed_quests.contains(&"qmarket_awareness") {
-            return Self::long_term_open(v).is_none();
-        }
-        ESSENTIAL.contains(&id) || Self::long_term_open(v).is_none()
+    /// Whether research `id` is worth science: directed or in [`RESEARCH`]
+    /// (an open project no longer holds research back; it takes a share).
+    fn worth(&self, id: &str) -> bool {
+        self.dir.wants_research(id) || RESEARCH.contains(&id)
     }
 
     /// The research it wants next: the directed one first, then [`RESEARCH`]
@@ -546,11 +545,7 @@ impl Author {
         self.dir
             .research_order()
             .filter_map(|id| v.research.iter().find(|r| r.id == id))
-            .find(|r| r.visible && !r.done && self.worth(v, r.id))
-    }
-
-    fn long_term_open(v: &View) -> Option<&str> {
-        v.projects.iter().find(|p| p.tier == "persistent" && p.unlocked && !p.completed).map(|p| p.id)
+            .find(|r| r.visible && !r.done && self.worth(r.id))
     }
 
     fn research(&self, p: &mut Player) {
@@ -567,7 +562,7 @@ impl Author {
     fn science_wanted(&self, v: &View) -> bool {
         RESEARCH
             .iter()
-            .any(|id| v.research.iter().any(|r| r.id == *id && r.visible && !r.done && self.worth(v, id)))
+            .any(|id| v.research.iter().any(|r| r.id == *id && r.visible && !r.done && self.worth(id)))
     }
 
     fn projects(&self, p: &mut Player, target: Option<&str>) {
@@ -584,46 +579,65 @@ impl Author {
             }
             return;
         }
-        let Some(proj) = self
+        // The pushed one alone; else the cheapest movable open `run` project
+        // (its reward is live for the rest of this run) beside the first open
+        // other one in order, so a slow `run` project never blocks a
+        // `timeline` one.
+        let open: Vec<&hh_core::view::ProjectView> = self
             .dir
             .project_order()
             .filter_map(|id| v.projects.iter().find(|p| p.id == id))
-            .find(|p| p.unlocked && !p.completed)
-        else {
-            return;
-        };
-        let pushed = self.dir.pushes(proj.id);
-        let keep = target.map_or(Fx::ZERO, |t| price(v, t, "credits"));
+            .filter(|p| p.unlocked && !p.completed)
+            .collect();
         // Every cost must be able to move: on hand, or made by a building.
-        let movable = proj.costs.keys().all(|res| {
-            amount(v, res) > Fx::ZERO || v.buildings.iter().any(|b| b.active > 0 && b.produces.contains_key(res))
-        });
+        let can_move = |p: &hh_core::view::ProjectView| {
+            p.costs.keys().all(|res| {
+                amount(v, res) > Fx::ZERO || v.buildings.iter().any(|b| b.active > 0 && b.produces.contains_key(res))
+            })
+        };
+        let total = |p: &hh_core::view::ProjectView| p.costs.values().fold(Fx::ZERO, |s, x| s + *x);
+        let chosen: Vec<&hh_core::view::ProjectView> = match open.iter().find(|p| self.dir.pushes(p.id)) {
+            Some(p) => vec![*p],
+            None => {
+                let cheap_run = open.iter().filter(|p| p.scope == "run" && can_move(p)).min_by_key(|p| total(p));
+                let other = open.iter().find(|p| p.scope != "run");
+                cheap_run.into_iter().chain(other).copied().collect()
+            }
+        };
+        if chosen.is_empty() {
+            return;
+        }
+        let keep = target.map_or(Fx::ZERO, |t| price(v, t, "credits"));
         let mut want = Vec::new();
-        let max = proj.max_rate;
-        for res in proj.costs.keys() {
-            let rate = if !movable {
-                Fx::ZERO
-            } else {
-                match res.as_str() {
-                    // All of it, unless research is waiting on it.
-                    "science" if !self.science_wanted(v) => max,
-                    "science" => Fx::ZERO,
-                    // Pushed: everything past the target's price.
-                    "credits" if pushed => (amount(v, "credits") - keep).max(Fx::ZERO).min(max),
-                    // A tenth of the credits past twice the target's price and 200.
-                    "credits" => {
-                        let spare = amount(v, "credits") - keep.mul_int(2) - Fx::from_int(200);
-                        spare.mul_ratio(1, 10).max(Fx::ZERO).min(max)
+        for proj in &chosen {
+            let pushed = self.dir.pushes(proj.id);
+            let movable = can_move(proj);
+            for res in proj.costs.keys() {
+                let max = proj.max_rates.get(res).copied().unwrap_or(Fx::ZERO);
+                let rate = if !movable {
+                    Fx::ZERO
+                } else {
+                    match res.as_str() {
+                        // All of it, unless research is waiting: then a share.
+                        "science" if !self.science_wanted(v) => max,
+                        "science" => max.mul_ratio(self.science_share, 100),
+                        // Pushed: everything past the target's price.
+                        "credits" if pushed => (amount(v, "credits") - keep).max(Fx::ZERO).min(max),
+                        // A tenth of the credits past twice the target's price and 200.
+                        "credits" => {
+                            let spare = amount(v, "credits") - keep.mul_int(2) - Fx::from_int(200);
+                            spare.mul_ratio(1, 10).max(Fx::ZERO).min(max)
+                        }
+                        _ => self.project_rate.min(max),
                     }
-                    _ => self.project_rate.min(max),
+                };
+                if proj.rates.get(res).copied().unwrap_or(Fx::ZERO) != rate {
+                    want.push(Action::SetProjectRate { project: proj.id.to_string(), resource: res.clone(), rate });
                 }
-            };
-            if proj.rates.get(res).copied().unwrap_or(Fx::ZERO) != rate {
-                want.push(Action::SetProjectRate { project: proj.id.to_string(), resource: res.clone(), rate });
             }
         }
         // Rates left on other projects stop.
-        for other in v.projects.iter().filter(|o| o.id != proj.id) {
+        for other in v.projects.iter().filter(|o| !chosen.iter().any(|c| c.id == o.id)) {
             for (res, r) in &other.rates {
                 if *r > Fx::ZERO {
                     want.push(Action::SetProjectRate { project: other.id.to_string(), resource: res.clone(), rate: Fx::ZERO });
@@ -1215,9 +1229,8 @@ fn build_order_program(v: &View, order: &[(String, u32, Vec<Bridge>)], filler: &
         lines.push(when(short, Some(flush)));
         lines.push(Entry::new(Op::BuyLand {}).indent());
     }
-    // The essential research, each once science covers its price: worth it
-    // every run, even with a Long-Term project open (the rest waits for the
-    // author's looks, which weigh it against the project).
+    // The essential research, each once science covers its price (the rest
+    // waits for the author's looks).
     lines.extend(research_lines(v, ESSENTIAL));
     // Runs of the same building merge into one `up to` line (each input at
     // the most any of its purchases asked), and count the purchases merged.

@@ -670,6 +670,16 @@ try {
   await waitFor(`!!document.querySelector('[data-testid="research-geopolitical_intelligence"]')`, 'Geopolitical Intelligence', 5000);
   await speed(0);
   check(await navVisible('projects'), 'Projects appears with Market Awareness');
+  // A locked project shows its condition; a funded one its days to done (both the engine's text).
+  await panel('projects');
+  const lockedText = await evaluate(`document.querySelector('.card.project.locked[data-id="predictive_maintenance"]')?.textContent ?? ''`);
+  check(lockedText.includes('Locked: Research Dream Protocols'), `a locked project shows its condition: ${lockedText.slice(0, 160)}`);
+  await evaluate(`[...document.querySelectorAll('.card.project[data-id="foundation_grant"] button[title^="Fund at the most"]')].forEach((b) => b.click())`);
+  await waitFor(`/Done in \\d+ days/.test(document.querySelector('.card.project[data-id="foundation_grant"]')?.textContent ?? '')`, 'days to done', 5000);
+  const fundedText = await evaluate(`document.querySelector('.card.project[data-id="foundation_grant"]').textContent`);
+  check(/Done in 167 days/.test(fundedText), `a funded project shows its days to done: ${(fundedText.match(/Done in \d+ days?/) ?? ['none'])[0]}`);
+  await shot('projects-locked-and-funded');
+  await panel('research');
   await click('[data-testid="research-geopolitical_intelligence"]');
   await speed(1);
   await waitFor(`!!document.querySelector('.nav-tile[data-nav="ideologies"]')`, 'the Ideologies tile', 5000);

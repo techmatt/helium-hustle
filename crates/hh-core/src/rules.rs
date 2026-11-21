@@ -96,7 +96,7 @@ impl Rules {
         let free_energy = economy::produce_free(self, g);
         programs::run(self, g);
         economy::resolve(self, g, free_energy);
-        projects::drain(g);
+        projects::drain(self, g);
         shipments::tick(g);
         demand::bursts(self, g);
         programs::note_day_net(g, &start);

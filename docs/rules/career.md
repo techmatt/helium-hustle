@@ -13,15 +13,15 @@ asked for that day (programs.md); the Retire action retires between days.
 
 - *Run (resets):* the run's day, every resource (boredom included), buildings, land bought,
   programs, launch pads, loading priority, markets and speculators, bursts and rival
-  schedules, overclocks, research bought, ideology scores, every project's funding rates (Long-Term
-  ones too), strategic project progress and completions, events fired and the buildings, panels and projects they enabled, the
+  schedules, overclocks, research bought, ideology scores, every project's funding rates (every
+  scope's), `run` project progress and completions, events fired and the buildings, panels and projects they enabled, the
   boredom phase, run stats.
 - *Career (persists):* run number, retirements, lifetime totals (credits earned, shipments,
   days, buildings built, research completed), personal bests (longest run in days, most
   credits earned in a run, most shipments in a run), each axis's best ideology rank and best
   score, peak power, career flags (the program instructions' unlock among them), the
   program loadout library ([programs.md](programs.md)), ids ever researched, owned and used, events seen, quests
-  and sub-objectives completed, persistent project progress and completions, achievements,
+  and sub-objectives completed, `timeline` and `forever` project progress and completions, achievements,
   the log, and the last finished run's summary (display: its number, length, whether forced,
   stats and final ranks, for the UI's run summary).
 

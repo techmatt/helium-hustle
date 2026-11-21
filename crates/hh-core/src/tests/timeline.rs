@@ -68,6 +68,27 @@ fn the_swarm_ends_a_timeline_and_the_mind_keeps_what_it_learned() {
 }
 
 #[test]
+fn a_timeline_end_clears_timeline_projects_and_their_buildings_but_keeps_forever_ones() {
+    let r = rules();
+    let mut g = revealed(&r);
+    let receiver = crate::content::content().building("microwave_receiver").unwrap();
+    assert!(!crate::modules::economy::requirement_met(&g, &receiver.requires));
+    g.career.projects.completions.insert("microwave_power".into(), 1);
+    assert!(crate::modules::economy::requirement_met(&g, &receiver.requires), "its project opens it");
+    // A forever book's progress and completions (no forever row yet: the book itself).
+    g.career.forever_projects.completions.insert("some_forever".into(), 3);
+    g.career.forever_projects.progress.insert("some_forever".into(), [("credits".to_string(), f("5"))].into());
+    let arrival = g.saga.timeline.as_ref().unwrap().arrival;
+    let day = g.saga.timeline.as_ref().unwrap().day;
+    r.advance(&mut g, arrival - day);
+    assert_eq!(g.saga.ended, 1);
+    assert!(g.career.projects.completions.is_empty(), "timeline projects reset");
+    assert!(!crate::modules::economy::requirement_met(&g, &receiver.requires), "the building follows its project");
+    assert_eq!(g.career.forever_projects.completions.get("some_forever"), Some(&3));
+    assert_eq!(g.career.forever_projects.progress["some_forever"]["credits"], f("5"), "forever progress survives");
+}
+
+#[test]
 fn a_later_swarm_can_be_repelled_once_and_returns_entangled() {
     let r = rules();
     let mut g = revealed(&r);
@@ -123,12 +144,12 @@ fn the_vault_buys_a_super_timeline_and_a_finished_sphere_wins() {
     r.apply(&mut g, &Action::Deposit { resource: "tachyon".into() }).unwrap();
     assert!(r.apply(&mut g, &Action::BeginSuperTimeline).is_err(), "Q15 first");
     g.career.completed_quests.insert("qfilling_vault".into());
-    g.career.completed_projects.insert("foundation_grant".into());
+    g.career.projects.completions.insert("foundation_grant".into(), 1);
     r.apply(&mut g, &Action::BeginSuperTimeline).unwrap();
     let t = g.saga.timeline.clone().unwrap();
     assert!(t.super_timeline);
     assert_eq!(t.arrival, 6000);
-    assert!(g.career.completed_projects.contains("foundation_grant"), "projects survive into it");
+    assert!(g.career.projects.completions.contains_key("foundation_grant"), "projects survive into it");
     // A retirement inside it keeps resources.
     set(&mut g, "neodymium", "40");
     g.run.enabled_panels.insert("retirement".into());
@@ -140,7 +161,7 @@ fn the_vault_buys_a_super_timeline_and_a_finished_sphere_wins() {
     g.run.enabled_panels.insert("retirement".into());
     r.apply(&mut g, &Action::Retire).unwrap();
     assert_eq!(g.saga.timeline.as_ref().unwrap().science_made, made + f("7"));
-    g.career.completed_projects.insert(timeline::DYSON.into());
+    g.career.projects.completions.insert(timeline::DYSON.into(), 1);
     let t = g.saga.timeline.clone().unwrap();
     r.advance(&mut g, t.arrival - t.day);
     assert!(g.saga.victory);

@@ -140,6 +140,12 @@ pub(super) fn readings(r: &Rules, g: &GameState, resources: &[ResourceView], bui
     for it in crate::content::content().research.iter().filter(|it| research::visible(g, it)) {
         add(Reading::Researched { item: it.id.clone() }, format!("Researched {}", it.name));
     }
+    // Projects open now or completed: a guard for a `fund` line.
+    for p in crate::content::content().projects.iter() {
+        if projects::unlocked(r, g, p) || projects::completions(g, p) > 0 {
+            add(Reading::Completed { project: p.id.clone() }, format!("Completed {}", p.name));
+        }
+    }
     for tab in 0..g.run.programs.len() as u32 {
         add(Reading::Processors { tab }, format!("Program {} processors", tab + 1));
     }
@@ -225,7 +231,7 @@ pub(super) fn verbs(r: &Rules, g: &GameState, buildings: &[BuildingView]) -> Vec
     let open: Vec<Choice> = crate::content::content()
         .projects
         .iter()
-        .filter(|p| projects::unlocked(g, p))
+        .filter(|p| projects::unlocked(r, g, p))
         .map(|p| Choice { value: p.id.clone(), label: p.name.clone() })
         .collect();
     let v = |verb, label, targets: Option<Vec<Choice>>, target_all, tab, amount| VerbView { verb, label, targets, target_all, tab, amount };

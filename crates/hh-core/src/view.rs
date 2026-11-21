@@ -26,8 +26,11 @@ use breakdown::{breakdown, short_view};
 mod breakdown;
 // The programs panel; the game's own programs module is `program_rules` here.
 mod programs;
+#[path = "view/projects.rs"]
+mod project_view;
 mod saga;
 
+pub use project_view::{condition_text, ProjectView};
 pub use saga::{SagaView, TechView};
 
 pub use breakdown::{BreakdownView, FlowRow, ShortView};
@@ -179,21 +182,6 @@ pub struct AxisView {
     /// Scores (in size) where this rank and the next start, for a progress bar.
     pub rank_score: Fx,
     pub next_rank_score: Fx,
-}
-
-#[derive(Debug, Clone, Serialize)]
-pub struct ProjectView {
-    pub id: Text,
-    pub name: Text,
-    pub description: Text,
-    pub tier: Text,
-    pub unlocked: bool,
-    pub completed: bool,
-    pub costs: &'static Amounts,
-    pub progress: BTreeMap<String, Fx>,
-    pub rates: BTreeMap<String, Fx>,
-    /// The most a rate may be (per resource, per day).
-    pub max_rate: Fx,
 }
 
 /// A countable condition's progress.
@@ -381,6 +369,8 @@ pub struct View {
     pub overclocks: Vec<Overclock>,
     /// Every modifier key's value now (1 with no source).
     pub modifiers: BTreeMap<Text, Fx>,
+    /// Every live project reward as text, `Project: what it gives`.
+    pub live_rewards: Vec<String>,
     pub career: CareerView,
     pub next_run: NextRunView,
     /// The last finished run's summary, if any.
@@ -459,14 +449,7 @@ fn event_story(r: &Rules, g: &GameState, e: &'static crate::content::Event) -> S
     if let crate::content::Trigger::BoredomPhase { phase } = e.trigger {
         let rates = &r.p.boredom.phase_rates;
         let i = (phase.max(1) as usize - 1).min(rates.len() - 1);
-        let full = (rates[i] * boredom::multiplier(r, g)).to_string();
-        let shown = match full.split_once('.') {
-            Some((whole, frac)) => {
-                let frac = frac[..frac.len().min(2)].trim_end_matches('0');
-                if frac.is_empty() { whole.to_string() } else { format!("{whole}.{frac}") }
-            }
-            None => full,
-        };
+        let shown = project_view::short(rates[i] * boredom::multiplier(r, g));
         s.body = Cow::Owned(s.body.replace("{rate}", &shown));
     }
     s
@@ -706,22 +689,8 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             })
             .collect(),
         ideology: axes(r, g),
-        projects: c
-            .projects
-            .iter()
-            .map(|p| ProjectView {
-                id: &p.id,
-                name: &p.name,
-                description: &p.description,
-                tier: &p.tier,
-                unlocked: projects::unlocked(g, p),
-                completed: projects::completed(g, &p.id),
-                costs: &p.costs,
-                progress: projects::progress(g, p).cloned().unwrap_or_default(),
-                rates: g.run.project_rates.get(&p.id).cloned().unwrap_or_default(),
-                max_rate: r.p.projects.max_drain_rate,
-            })
-            .collect(),
+        projects: project_view::projects(r, g),
+        live_rewards: project_view::live_rewards(g),
         quest,
         completed_quests: c
             .events

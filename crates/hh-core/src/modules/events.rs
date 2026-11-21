@@ -78,10 +78,14 @@ pub fn holds(r: &Rules, g: &GameState, quest: &str, c: &Condition) -> bool {
         Condition::IdeologyRankAny { rank } => {
             crate::content::AXES.iter().any(|a| super::ideology::rank(r, g, a) >= *rank)
         }
-        Condition::PersistentProjectCompletedAny => content()
+        Condition::IdeologyRank { axis, rank } => g.career.max_ideology_ranks.get(axis).copied().unwrap_or(0) >= *rank,
+        Condition::ProjectCompletedAny { scope } => content()
             .projects
             .iter()
-            .any(|p| p.persistent() && g.career.completed_projects.contains(&p.id)),
+            .any(|p| p.scope == *scope && super::projects::completions(g, p) > 0),
+        Condition::ProjectEnabled { project } => g.run.enabled_projects.contains(project),
+        Condition::QuestActive { quest } => quest_open_or_done(g, quest),
+        Condition::FlagSet { flag } => g.career.flags.contains(flag),
         // Checked before the day count rises: today counts as survived.
         Condition::DaysSurvived { days } => g.run.day + 1 >= *days,
         Condition::CreditsEarned { amount } => g.run.stats.credits_earned >= *amount,
@@ -96,9 +100,7 @@ pub fn holds(r: &Rules, g: &GameState, quest: &str, c: &Condition) -> bool {
             g.saga.vault.get(resource).is_some_and(|v| v >= amount)
         }
         Condition::SuperTimeline => g.saga.timeline.as_ref().is_some_and(|t| t.super_timeline),
-        Condition::ProjectCompleted { project } => {
-            g.career.completed_projects.contains(project) || g.run.completed_projects.contains(project)
-        }
+        Condition::ProjectCompleted { project } => super::projects::completed(g, project),
         Condition::Victory => g.saga.victory,
     }
 }
@@ -142,7 +144,11 @@ pub fn kind(c: &Condition) -> &'static str {
         Condition::Never => "never",
         Condition::AllOf { .. } => "all_of",
         Condition::IdeologyRankAny { .. } => "ideology_rank_any",
-        Condition::PersistentProjectCompletedAny => "persistent_project_completed_any",
+        Condition::IdeologyRank { .. } => "ideology_rank",
+        Condition::ProjectCompletedAny { .. } => "project_completed_any",
+        Condition::ProjectEnabled { .. } => "project_enabled",
+        Condition::QuestActive { .. } => "quest_active",
+        Condition::FlagSet { .. } => "flag_set",
         Condition::DaysSurvived { .. } => "days_survived",
         Condition::CreditsEarned { .. } => "credits_earned",
         Condition::QuietDays { .. } => "quiet_days",

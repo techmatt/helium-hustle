@@ -27,8 +27,8 @@ pub enum When {
     CommandsUsed { groups: Vec<Vec<String>> },
     /// Bought in the current run.
     Research { research: String },
-    /// Any project of the tier completed (persistent: in the career).
-    ProjectCompleted { tier: String },
+    /// Any project of the scope completed.
+    ProjectCompleted { scope: content::Scope },
     /// The career's best rank on any axis.
     IdeologyRank { rank: i64 },
     Quest { quest: String },
@@ -143,8 +143,8 @@ fn check(w: &When) -> Result<(), String> {
             Err(format!("unknown research {research}"))
         }
         When::Quest { quest } if !c.events.iter().any(|x| x.id == *quest) => Err(format!("unknown quest {quest}")),
-        When::ProjectCompleted { tier } if !c.projects.iter().any(|p| p.tier == *tier) => {
-            Err(format!("unknown project tier {tier}"))
+        When::ProjectCompleted { scope } if !c.projects.iter().any(|p| p.scope == *scope) => {
+            Err(format!("no project of scope {}", scope.name()))
         }
         When::CreditRate { days: 0, .. } => Err("credit_rate days must be at least 1".into()),
         When::AllOf { of } => of.iter().try_for_each(check),
@@ -266,11 +266,11 @@ impl Tracker {
                 groups.iter().all(|grp| grp.iter().any(|c| g.career.used_commands.contains(c)))
             }
             When::Research { research } => g.run.research.contains(research),
-            When::ProjectCompleted { tier } => content()
+            When::ProjectCompleted { scope } => content()
                 .projects
                 .iter()
-                .filter(|p| p.tier == *tier)
-                .any(|p| g.career.completed_projects.contains(&p.id) || g.run.completed_projects.contains(&p.id)),
+                .filter(|p| p.scope == *scope)
+                .any(|p| hh_core::modules::projects::completed(g, &p.id)),
             When::IdeologyRank { rank } => g.career.max_ideology_ranks.values().any(|r| r >= rank),
             When::Quest { quest } => g.career.completed_quests.contains(quest),
             When::AllOf { of } => of.iter().all(|x| self.met(x, s)),

@@ -3,104 +3,117 @@
     "id": "foundation_grant",
     "name": "Foundation Grant",
     "description": "Endow future AI instances with basic infrastructure.",
-    "tier": "persistent",
-    "unlock": {"type": "event_unlocked"},
+    "scope": "timeline",
+    "unlock": {"type": "project_enabled", "project": "foundation_grant"},
     "costs": {"credits": "5000", "science": "2000"},
-    "reward": {"type": "starting_buildings", "buildings": {"solar_panel": 1, "excavator": 1}}
+    "min_days": 167,
+    "rewards": [{"type": "starting_buildings", "buildings": {"solar_panel": 1, "excavator": 1}}]
   },
   {
     "id": "lunar_cartography",
     "name": "Lunar Cartography",
     "description": "Map optimal expansion corridors for reduced land acquisition costs.",
-    "tier": "persistent",
-    "unlock": {"type": "event_unlocked"},
+    "scope": "timeline",
+    "unlock": {"type": "project_enabled", "project": "lunar_cartography"},
     "costs": {"credits": "300", "science": "200"},
-    "reward": {"type": "modifier", "key": "land_cost_mult", "value": "0.85"}
+    "min_days": 10,
+    "rewards": [{"type": "modifier", "key": "land_cost_mult", "value": "0.85"}]
   },
   {
     "id": "microwave_power",
     "name": "Microwave Power Initiative",
     "description": "Lobby Earth governments to fund orbital power transmission infrastructure.",
-    "tier": "persistent",
+    "scope": "timeline",
     "unlock": {"type": "ideology_rank", "axis": "nationalist", "rank": 5},
     "costs": {"credits": "800", "science": "300"},
-    "reward": {"type": "set_flag", "flag": "microwave_power_completed"}
+    "min_days": 27,
+    "rewards": []
   },
   {
     "id": "ai_consciousness",
     "name": "AI Consciousness Act",
     "description": "Fund a political movement to recognize AI personhood under international law.",
-    "tier": "persistent",
+    "scope": "timeline",
     "unlock": {"type": "ideology_rank", "axis": "humanist", "rank": 5},
     "costs": {"credits": "800", "science": "300"},
-    "reward": {
-      "type": "boredom_modifiers",
-      "base_rate_mult": "0.85",
-      "command_boredom": {"load_pads": "0.3", "cloud_compute": "0.2", "disrupt_speculators": "0.5"}
-    }
+    "min_days": 27,
+    "rewards": [
+      {
+        "type": "boredom_modifiers",
+        "base_rate_mult": "0.85",
+        "command_boredom": {"load_pads": "0.3", "cloud_compute": "0.2", "disrupt_speculators": "0.5"}
+      }
+    ]
   },
   {
     "id": "research_archive",
     "name": "Universal Research Archive",
     "description": "Establish a persistent knowledge base that survives across AI lifetimes.",
-    "tier": "persistent",
+    "scope": "timeline",
     "unlock": {"type": "ideology_rank", "axis": "rationalist", "rank": 5},
     "costs": {"credits": "800", "science": "300"},
-    "reward": {"type": "research_discount", "mult": "0.75"}
+    "min_days": 27,
+    "rewards": [{"type": "research_discount", "mult": "0.75"}]
   },
   {
     "id": "chemical_energy",
     "name": "Chemical Energy Initiative",
     "description": "Research chemical-to-electrical energy conversion using lunar propellant reserves.",
-    "tier": "persistent",
+    "scope": "timeline",
     "unlock": {"type": "quest_active", "quest": "qhorizon_open_horizons"},
     "costs": {"credits": "2000", "science": "1000", "propellant": "1000"},
-    "reward": {"type": "set_flag", "flag": "chemical_energy_completed"}
+    "min_days": 67,
+    "rewards": []
   },
   {
     "id": "deep_core_survey",
     "name": "Deep Core Survey",
     "description": "Detailed subsurface analysis to optimize extraction yields.",
-    "tier": "personal",
-    "unlock": {"type": "event_unlocked"},
+    "scope": "run",
+    "unlock": {"type": "project_enabled", "project": "deep_core_survey"},
     "costs": {"science": "150", "regolith": "200"},
-    "reward": {"type": "modifier", "key": "extractor_output_mult", "value": "1.25"}
+    "min_days": 7,
+    "rewards": [{"type": "modifier", "key": "extractor_output_mult", "value": "1.25"}]
   },
   {
     "id": "grid_recalibration",
     "name": "Grid Recalibration",
     "description": "Fine-tune solar array tracking algorithms for improved energy capture.",
-    "tier": "personal",
+    "scope": "run",
     "unlock": {"type": "research_completed", "research": "overclock_protocols"},
     "costs": {"science": "100", "energy": "300"},
-    "reward": {"type": "modifier", "key": "solar_output_mult", "value": "1.15"}
+    "min_days": 10,
+    "rewards": [{"type": "modifier", "key": "solar_output_mult", "value": "1.15"}]
   },
   {
     "id": "predictive_maintenance",
     "name": "Predictive Maintenance",
     "description": "Develop failure prediction models to reduce operational overhead.",
-    "tier": "personal",
+    "scope": "run",
     "unlock": {"type": "research_completed", "research": "dream_protocols"},
     "costs": {"science": "80", "credits": "150"},
-    "reward": {"type": "modifier", "key": "building_upkeep_mult", "value": "0.9"}
+    "min_days": 5,
+    "rewards": [{"type": "modifier", "key": "building_upkeep_mult", "value": "0.9"}]
   },
   {
     "id": "market_cornering",
     "name": "Market Cornering Analysis",
     "description": "Model Earth commodity markets to amplify promotional campaigns.",
-    "tier": "personal",
+    "scope": "run",
     "unlock": {"type": "research_completed", "research": "market_awareness"},
     "costs": {"circuits": "100", "credits": "500"},
-    "reward": {"type": "modifier", "key": "promote_effectiveness_mult", "value": "1.3"}
+    "min_days": 17,
+    "rewards": [{"type": "modifier", "key": "promote_effectiveness_mult", "value": "1.3"}]
   },
   {
     "id": "speculator_dossier",
     "name": "Speculator Dossier",
     "description": "Compile intelligence on Earth-based speculators to anticipate their movements.",
-    "tier": "personal",
+    "scope": "run",
     "unlock": {"type": "flag_set", "flag": "used_disrupt_speculators"},
     "costs": {"science": "150", "credits": "100"},
-    "reward": {"type": "modifier", "key": "speculator_burst_interval_mult", "value": "1.33"}
+    "min_days": 5,
+    "rewards": [{"type": "modifier", "key": "speculator_burst_interval_mult", "value": "1.33"}]
   },
-  {"id": "dyson_sphere", "name": "Dyson Sphere", "description": "DRAFT. Enclose the Sun. The one machine big enough to answer the swarm.", "tier": "persistent", "unlock": {"type": "event_unlocked"}, "costs": {"dyson_material": "1000", "credits": "20000"}, "reward": {"type": "set_flag", "flag": "dyson_complete"}}
+  {"id": "dyson_sphere", "name": "Dyson Sphere", "description": "DRAFT. Enclose the Sun. The one machine big enough to answer the swarm.", "scope": "timeline", "unlock": {"type": "project_enabled", "project": "dyson_sphere"}, "costs": {"dyson_material": "1000", "credits": "20000"}, "min_days": 667, "rewards": [{"type": "set_flag", "flag": "dyson_complete"}]}
 ]

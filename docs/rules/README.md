@@ -1,6 +1,6 @@
 # Rules
 
-The rules as implemented, rules revision **13** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **14** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
 The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
@@ -28,7 +28,7 @@ table is generated from `REGISTRY` and the baseline (`hh-sim params --write`; a 
 | `demand` | `arc1` | [demand.md](demand.md) | Demand per tradeable good: noise, speculators, rivals, saturation, Promote. |
 | `programs` | `arc1` | [programs.md](programs.md) | Programs, processors, instructions (`if` blocks, `build`), running commands, overclocks. |
 | `dream` | `flat` | [dream.md](dream.md) | What Dream does to boredom. |
-| `projects` | `drain` | [projects.md](projects.md) | Long-Term and Strategic projects, funded over time. |
+| `projects` | `drain` | [projects.md](projects.md) | Projects scoped to a run, a timeline or forever, funded over time. |
 | `shipments` | `arc1` | [shipments.md](shipments.md) | Launch pads, loading, launching, payouts. |
 | `research` | `arc1` | [research.md](research.md) | Science-bought upgrades, gated by visibility. |
 | `ideology` | `geometric` | [ideology.md](ideology.md) | Three axes, Fund commands, ranks and per-rank bonuses. |
@@ -129,8 +129,9 @@ A modifier key's value is the product of every live source naming it, 1 with non
 | `ideology_cross_mult` | Consensus Engine (Earth tech, draft) | Fund's cross-penalty on the other axes |
 
 A building lists the keys that multiply its output (`output_modifiers`); a command its
-`scale_modifier`. Achievement and Long-Term rewards apply from the moment they are earned
-and in every later run; Strategic ones for the rest of their run.
+`scale_modifier`. Achievement and `forever` project rewards apply from the moment they are
+earned and in every later run, across timelines; Long-Term (`timeline`) ones for the rest of
+the timeline; Strategic (`run`) ones for the rest of their run.
 
 ## Not built
 

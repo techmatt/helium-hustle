@@ -321,20 +321,21 @@ function ResearchCard({ v, r, fresh }: { v: View; r: ResearchView; fresh: Set<st
 
 export function Projects({ s }: { s: Store }) {
   const v = s.view;
-  const tiers: [string, string, string][] = [
-    ['persistent', 'Long-Term', 'Progress and completion carry across retirements; funding rates reset, so set them again each run.'],
-    ['personal', 'Strategic', 'This run only: progress resets on retirement.'],
+  const scopes: [ProjectView['scope'], string, string][] = [
+    ['run', 'Strategic (this run)', 'This run only: progress resets on retirement.'],
+    ['timeline', 'Long-Term (this timeline)', 'Progress and completion carry across retirements until the timeline ends; funding rates reset, so set them again each run.'],
+    ['forever', 'Forever', 'Progress and completion are kept for good.'],
   ];
   return (
     <div class="panel" data-panel="projects">
       <h2>Projects</h2>
       <p class="muted">Fund a project by setting a daily rate per resource; it drains that much each day until done.</p>
-      {tiers.map(([tier, title, note]) => {
-        const items = v.projects.filter((p) => p.tier === tier && (p.unlocked || p.completed));
+      {scopes.map(([scope, title, note]) => {
+        const items = v.projects.filter((p) => p.scope === scope);
+        if (items.length === 0) return null;
         return (
-          <Section key={tier} title={`${title} (${items.length})`} dark>
+          <Section key={scope} title={`${title} (${items.length})`} dark>
             <p class="muted small">{note}</p>
-            {items.length === 0 && <p class="muted">None unlocked yet.</p>}
             <div class="cards wide">
               {items.map((p) => (
                 <Project key={p.id} v={v} p={p} fresh={s.fresh} />
@@ -353,20 +354,42 @@ export function Project({ v, p, fresh }: { v: View; p: ProjectView; fresh: Set<s
     // From the engine's rate now, not this render's: quick clicks must each count.
     const cur = store.view.projects.find((x) => x.id === p.id) ?? p;
     const now = Number(cur.rates[res] ?? '0');
-    const next = Math.max(0, Math.min(Number(p.max_rate), now + by));
+    const next = Math.max(0, Math.min(Number(p.max_rates[res] ?? '0'), now + by));
     act({ type: 'set_project_rate', project: p.id, resource: res, rate: String(next) });
   };
+  const locked = !p.unlocked && !p.completed;
+  const funded = p.unlocked && Object.values(p.rates).some((r) => Number(r) > 0);
+  const state = p.completed && !p.unlocked ? ' done' : locked ? ' locked' : '';
   return (
-    <div class={`card project${p.completed ? ' done' : ''}${freshClass(fresh, key)}`} data-id={p.id} onMouseEnter={() => seen(key)}>
+    <div class={`card project${state}${freshClass(fresh, key)}`} data-id={p.id} onMouseEnter={() => seen(key)}>
       <div class="card-head">
         <h3>{p.name}</h3>
-        {p.completed && <span class="ok">✓ Complete</span>}
+        {p.completed && !p.repeatable && <span class="ok">✓ Complete</span>}
       </div>
       <p class="desc">{p.description}</p>
-      {!p.completed &&
+      {locked && <p class="muted small">Locked: {p.unlock_text}</p>}
+      {p.reward_text.map((t, i) => (
+        <p class="small" key={i}>
+          Reward: {t}
+        </p>
+      ))}
+      {p.repeatable && p.completions > 0 && (
+        <p class="ok small">
+          Completed {p.completions} {p.completions === 1 ? 'time' : 'times'}
+        </p>
+      )}
+      {funded && (
+        <p class="muted small">
+          {p.days_to_done !== null
+            ? `Done in ${p.days_to_done} ${p.days_to_done === 1 ? 'day' : 'days'}`
+            : 'Not every cost is funded'}
+        </p>
+      )}
+      {p.unlocked &&
         Object.entries(p.costs).map(([res, cost]) => {
           const got = p.progress[res] ?? '0';
           const rate = p.rates[res] ?? '0';
+          const max = p.max_rates[res] ?? '0';
           return (
             <div class="proj-row" key={res}>
               <span class="proj-res">
@@ -377,10 +400,10 @@ export function Project({ v, p, fresh }: { v: View; p: ProjectView; fresh: Set<s
               <button type="button" class="tiny" disabled={Number(rate) <= 0} onClick={() => step(res, -1)}>
                 −
               </button>
-              <button type="button" class="tiny" disabled={Number(rate) >= Number(p.max_rate)} onClick={() => step(res, 1)}>
+              <button type="button" class="tiny" disabled={Number(rate) >= Number(max)} onClick={() => step(res, 1)}>
                 +
               </button>
-              <button type="button" class="tiny" title={`Fund at the most (${num(p.max_rate)}/day)`} onClick={() => step(res, Number(p.max_rate))}>
+              <button type="button" class="tiny" title={`Fund at the most (${num(max)}/day)`} onClick={() => step(res, Number(max))}>
                 Max
               </button>
             </div>
@@ -553,6 +576,16 @@ export function Stats({ s }: { s: Store }) {
         )}
         {v.overclocks.length > 0 && (
           <Rows rows={v.overclocks.map((o, i) => [`Overclock ${i + 1}: ${o.target}`, `+${num(Number(o.bonus) * 100)}% through day ${o.until_day - 1}`])} />
+        )}
+        <h4>Project rewards</h4>
+        {v.live_rewards.length === 0 ? (
+          <p class="muted">None yet</p>
+        ) : (
+          <ul class="plain" data-testid="live-rewards">
+            {v.live_rewards.map((t, i) => (
+              <li key={i}>{t}</li>
+            ))}
+          </ul>
         )}
       </Section>
     </div>

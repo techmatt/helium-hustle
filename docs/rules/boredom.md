@@ -25,7 +25,7 @@ in [README.md](README.md)):
 1. every research bought this run with a `boredom_rate_multiplier` effect (Stress Tolerance, ×0.85);
 2. `discount_factor ^ humanist rank` ([ideology.md](ideology.md); above 1 for a negative rank);
 3. every completed project with a `boredom_modifiers` reward, its `base_rate_mult`
-   (AI Consciousness Act, ×0.85; a persistent project, so it holds every later run);
+   (AI Consciousness Act, ×0.85; a `timeline` project, so it holds every later run of the timeline);
 4. the `boredom_growth_mult` modifier (Boredom Dampers, a draft Earth tech: [timeline.md](timeline.md));
 5. the career's boredom resilience, `boredom_resilience_base ^ (best_run_days / boredom_resilience_period)`
    ([career.md](career.md)).

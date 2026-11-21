@@ -126,6 +126,7 @@ export type Reading =
   | { kind: 'demand'; good: string }
   | { kind: 'next_cost' | 'running'; building: string }
   | { kind: 'researched'; item: string }
+  | { kind: 'completed'; project: string }
   | { kind: 'processors'; tab: number }
   | { kind: 'days_to_cap'; resource: string }
   | { kind: 'every'; days: number };
@@ -279,13 +280,26 @@ export interface ProjectView {
   id: string;
   name: string;
   description: string;
-  tier: string;
+  /** Where its progress and completions live: this run, this timeline, or forever. */
+  scope: 'run' | 'timeline' | 'forever';
+  /** Fundable now (its unlock holds and it is not done; a repeatable one is never done). */
   unlocked: boolean;
+  /** Completed at least once in its scope. */
   completed: boolean;
+  completions: number;
+  repeatable: boolean;
+  /** The next completion's costs. */
   costs: Amounts;
   progress: Amounts;
   rates: Amounts;
-  max_rate: Fx;
+  /** The most each rate may be, per resource, per day. */
+  max_rates: Amounts;
+  /** Days to the next completion at today's rates; null while a cost still owed has no rate. */
+  days_to_done: number | null;
+  /** What opens it (the engine's text). */
+  unlock_text: string;
+  /** What it gives, one line per reward (the engine's text). */
+  reward_text: string[];
 }
 
 export interface ProgressView {
@@ -487,6 +501,8 @@ export interface View {
   rivals: { id: string; name: string; good: string; dumps_seen: number }[];
   overclocks: { target: string; bonus: Fx; until_day: number }[];
   modifiers: Record<string, Fx>;
+  /** Every live project reward, as `Project: what it gives`. */
+  live_rewards: string[];
   career: CareerView;
   next_run: NextRunView;
   last_run: LastRun | null;

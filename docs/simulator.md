@@ -165,9 +165,9 @@ baseline), 3010-3012 (011, sup.), 3013-3015 (011, the oracle's final read), 3016
 loadouts), 4-8 (036, development), 3024-3039 (036, sup.), 3040-3047 (036, hands-off against
 main), 3048-3055 (037, sup.), 3056-3063 (037, verbs: hands-off share), 3064-3071 (038,
 sup.), 3072-3079 (038, done steps), 3080-3087 (039, hands-off retire and fund lines),
-0 (041, tuning), 3088-3093 (041, autopilot; 042, development), 3094-3096 (042, to the ending).
+0 (041, tuning), 3088-3093 (041, autopilot; 042, development), 3094-3096 (042), 3097-3104 (044), 3105-3112 (046, paired).
 
-Next free: 3097
+Next free: 3113
 
 ## `run` and `replay`
 
