@@ -15,6 +15,10 @@ import { editProgram } from './programStore';
 export function Commands({ s, program }: { s: Store; program: number }) {
   const v = s.view;
   const add = (id: string) => editProgram(program, (now) => [...now, { op: 'command', command: id, count: 1 }]);
+  // Per-target commands fold into one card per verb, its target picked from a dropdown.
+  const [picked, setPicked] = useState<Record<string, string>>({});
+  const shown = v.commands.filter((c) => c.visible);
+  const cards = shown.filter((c, i) => !c.verb || shown.findIndex((x) => x.verb === c.verb) === i);
   return (
     <div class="panel" data-panel="commands">
       <h2>Commands</h2>
@@ -23,14 +27,38 @@ export function Commands({ s, program }: { s: Store; program: number }) {
         Program {program + 1}.
       </p>
       <div class="cards">
-        {v.commands
-          .filter((c) => c.visible)
-          .map((c) => {
-            const key = `command:${c.id}`;
+        {cards
+          .map((first) => {
+            const group = first.verb ? shown.filter((x) => x.verb === first.verb) : [first];
+            const c = group.find((x) => x.id === picked[first.verb ?? '']) ?? first;
+            // The card is new while any of its commands is; hovering it sees them all.
+            const keys = group.map((x) => `command:${x.id}`);
+            const fresh = keys.map((k) => freshClass(s.fresh, k)).find((f) => f !== '') ?? '';
             return (
-              <div key={c.id} class={`card command${freshClass(s.fresh, key)}`} data-id={c.id} onMouseEnter={() => seen(key)}>
+              <div key={first.verb ?? c.id} class={`card command${fresh}`} data-id={c.id} onMouseEnter={() => keys.forEach((k) => seen(k))}>
                 <div class="card-head">
-                  <h3>{c.name}</h3>
+                  {first.verb && group.length > 1 ? (
+                    <h3>
+                      {first.verb}{' '}
+                      <select
+                        aria-label={`${first.verb} target`}
+                        data-testid={`target-${first.verb}`}
+                        value={c.id}
+                        onChange={(ev) => {
+                          const id = ev.currentTarget.value;
+                          setPicked((p) => ({ ...p, [first.verb ?? '']: id }));
+                        }}
+                      >
+                        {group.map((x) => (
+                          <option key={x.id} value={x.id}>
+                            {x.target ?? x.name}
+                          </option>
+                        ))}
+                      </select>
+                    </h3>
+                  ) : (
+                    <h3>{c.name}</h3>
+                  )}
                 </div>
                 <p class="desc">{c.description}</p>
                 <div class="effects">

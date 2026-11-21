@@ -49,7 +49,8 @@ served page: `HH_URL`, required (it exits naming `vite preview` when unset),
 3. A program's frame at 10x and 50x, each speed's days per second, pause, click-to-buy, a reload keeping the save, a save from another
    revision discarded, the scenarios and the replay check; in `late_unlocks`, an `if` /
    `build` / `wait until` program written through the editor, which then builds; saved,
-   then loaded after a retirement, it runs in run 2.
+   then loaded after a retirement, it runs in run 2; pause/resume verb lines under a
+   `reading ×` clause and `every N days` run.
 4. **The theme:** the toggles switch it with every element's box unchanged (to 0.01 px);
    a reload keeps it.
 5. **Readability** (before 4): capped rates, Resources' groups, affordable cards and Land,
@@ -57,16 +58,14 @@ served page: `HH_URL`, required (it exits naming `vite preview` when unset),
 
 Any uncaught page error fails the run. Run it against `vite preview` (CLAUDE.md).
 
-- **Under load it flakes:** section 3's 10x pointer walk (`programOrder`) fails when a
-  cargo build runs beside the browser (late timer wakes run two days a redraw). Rerun it
-  alone.
-- **The late UI for screenshots:** `experiments/results/027_art_in_game/shots.mjs` (from
-  `pad_loading` with cheats, ~20 s). Cheat grants don't count toward `resource_cumulative`
-  quests.
-- Edge needs an **absolute** `--user-data-dir`: given a relative one it hands the page to
-  the Edge already running and exits (the script resolves it).
-- On leaving a page the browser fires `pagehide`, then `visibilitychange`; the page saves
-  on both, so a test that edits the save must do it after both.
+- **Under load it flakes:** section 3's 10x pointer walk (`programOrder`) fails beside a
+  cargo build (late timers run two days a redraw). Rerun it alone.
+- **The late UI for screenshots:** `experiments/results/027_art_in_game/shots.mjs`
+  (`pad_loading`, cheats, ~20 s). Cheat grants don't count toward `resource_cumulative`.
+- Edge needs an **absolute** `--user-data-dir` (a relative one hands the page to a running
+  Edge, which exits; the script resolves it).
+- Leaving a page fires `pagehide`, then `visibilitychange`; the page saves on both, so a
+  test editing the save does it after both.
 
 `npm run unit` checks the number formatting (`src/format.ts`), then `scripts/contrast.mjs`
 the text-on-background pairs in its hand-kept `PAIRS` list, in both themes, at
@@ -116,7 +115,8 @@ Three columns and a status bar:
   when affordable), a collapsible section per category, cards (`Buildings.tsx`: picture,
   effects, a status row always kept, price with shortfalls in red, −/+ and Sell). A click on an affordable card (outlined in green, its name row tinted), off its
   controls, builds one (Shift: up to ten; ignored for 0.5 s after the summary or a story
-  text closes); any other card says why it can't. Research cards work the same way. Pad
+  text closes); any other card says why it can't. Research cards work the same way.
+  Commands: a card per verb (Buy, Promote, ...), a target dropdown. Pad
   cards tint their head: green Ready, yellow Paused, red full but short of fuel. Stats ends
   on every resource's breakdown, last day and rolling average.
 - **Right:** the main quest in its own slot at the top, which nothing else takes; program
@@ -124,12 +124,13 @@ Three columns and a status bar:
   save new or over a slot, load, rename, delete); a line per instruction, dragged to reorder
   (an `if` takes its body), tinted by today's outcome (a failed line says why: "needs ⚡2,
   had 0"), the next line to run in an accent frame. Once unlocked, Add: If, Wait until,
-  Build, Buy Land (`ProgramLogic.tsx`): conditions as dropdowns, each clause with its live
+  Build, Buy Land, Verb (`ProgramLogic.tsx`; one editor for all verbs): conditions as
+  dropdowns (right side a number or a reading × it), each clause with its live
   value and ✓/✗; body lines indented under the `if` (⇥/⇤), greyed with it when false.
   Above 10x a redraw covers several days: each line shows its outcome over them
   (`advance_run`'s `lines`), no frame. Below, Events: Story (side story and the latest
   boredom phase), completed quests, and Recent Activity (green good, red bad, blue news),
-  each with an unread count, cleared once open and on screen for about a second.
+  each with an unread count.
 - **Bottom:** day and run, the cheated mark, Boredom and Energy bars with their rates
   (capped as in Resources; "cap tomorrow" the day before a forced retirement).
 - **Run summary:** when a run ends a summary covers the screen, the clock stopped until

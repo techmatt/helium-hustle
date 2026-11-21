@@ -1008,6 +1008,11 @@ tr.is-new td:first-child {
   align-items: center;
   gap: 3px;
 }
+/* A clause with a right-side reading is wider than the row: let it wrap. */
+.line-logic .clause {
+  flex-wrap: wrap;
+  max-width: 100%;
+}
 .cond-now {
   font-size: 12px;
   font-variant-numeric: tabular-nums;

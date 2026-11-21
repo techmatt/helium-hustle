@@ -110,6 +110,9 @@ export interface CommandView {
   costs: Amounts;
   produces: Amounts;
   boredom: Fx;
+  /** A per-target command folded into one verb (Buy, Promote, Fund, Overclock) and its target's label. */
+  verb: string | null;
+  target: string | null;
 }
 
 export type Cmp = 'lt' | 'le' | 'gt' | 'ge' | 'eq';
@@ -118,14 +121,47 @@ export type Cmp = 'lt' | 'le' | 'gt' | 'ge' | 'eq';
 export type Reading =
   | { kind: 'amount' | 'percent' | 'rate'; resource: string }
   | { kind: 'count'; building: string }
-  | { kind: 'day' }
-  | { kind: 'pads_ready' }
-  | { kind: 'demand'; good: string };
+  | { kind: 'day' | 'land_price' | 'days_since_launch' }
+  | { kind: 'pads_ready' | 'cargo'; good?: string | null }
+  | { kind: 'demand'; good: string }
+  | { kind: 'next_cost'; building: string }
+  | { kind: 'days_to_cap'; resource: string }
+  | { kind: 'every'; days: number };
 
+/** `<reading> <cmp> <value>`, or with `against`, `<reading> <cmp> <against> × <value>`. */
 export interface Clause {
   reading: Reading;
   cmp: Cmp;
   value: Fx;
+  against?: Reading | null;
+}
+
+/** The verbs of an `act` line (hh-core `state::Verb`). */
+export type Verb =
+  | 'launch_pads'
+  | 'load_pads'
+  | 'set_pads'
+  | 'pause'
+  | 'resume'
+  | 'research'
+  | 'load_program'
+  | 'assign_processors'
+  | 'retire';
+
+/** An `act` line's amount: N, or all. */
+export type Amount = { n: number } | 'all';
+
+/** A verb on offer (hh-core `view::VerbView`): its slots and their choices now. */
+export interface VerbView {
+  verb: Verb;
+  label: string;
+  /** Choices for the target slot (null: the verb takes none). */
+  targets: { value: string; label: string }[] | null;
+  /** The target may be left at all. */
+  target_all: boolean;
+  /** It takes a program tab. */
+  tab: boolean;
+  amount: 'none' | 'optional' | 'n_or_all' | 'up_to';
 }
 
 export interface Condition {
@@ -139,7 +175,8 @@ export type Op =
   | { op: 'build'; building: string; up_to: number | null }
   | { op: 'buy_land' }
   | { op: 'if'; when: Condition }
-  | { op: 'wait_until'; when: Condition };
+  | { op: 'wait_until'; when: Condition }
+  | { op: 'act'; verb: Verb; target?: string | null; tab?: number | null; amount?: Amount | null };
 
 /** A program line: an instruction, `indented` in the body of the `if` above it. */
 export type Entry = Op & { indented?: boolean };
@@ -348,6 +385,8 @@ export interface View {
   library_slots: number;
   loadout_name_max: number;
   readings: ReadingView[];
+  /** The verbs an `act` line may use. */
+  verbs: VerbView[];
   processors: number;
   processors_free: number;
   /** Assigned processors running today (fewer while Data Centers go unpaid). */

@@ -49,7 +49,7 @@
 use std::collections::BTreeMap;
 
 use hh_core::content::Requirement;
-use hh_core::state::{Clause, Cmp, Condition, Entry, Join, Joined, Op, Reading};
+use hh_core::state::{Amount, Clause, Cmp, Condition, Entry, Join, Joined, Op, Reading, Verb};
 use hh_core::view::PadView;
 use hh_core::{Action, Fx, View};
 
@@ -341,7 +341,7 @@ impl Author {
         if v.run != self.seen_run {
             if self.seen_run != 0 && self.order.len() > self.plan_from {
                 let filler = if self.compute { "cloud_compute" } else { "idle" };
-                // What it covers (64 lines may cut it short): a later run
+                // What it covers (the line cap may cut it short): a later run
                 // that buys past that rewrites it.
                 (self.plan, self.plan_from) = build_order_program(v, &self.order, filler);
             }
@@ -1020,11 +1020,12 @@ fn construction(v: &View, b: &hh_core::view::BuildingView, filler: &str) -> Vec<
         reading: Reading::Amount { resource: resource.to_string() },
         cmp: Cmp::Ge,
         value,
+        against: None,
     };
     let mut lines = Vec::new();
     let land = Fx::from_int(i64::from(b.land));
     if amount(v, "land") < land {
-        let short = Clause { reading: Reading::Amount { resource: "land".to_string() }, cmp: Cmp::Lt, value: land };
+        let short = Clause { reading: Reading::Amount { resource: "land".to_string() }, cmp: Cmp::Lt, value: land, against: None };
         let rest = Some(Joined { join: Join::And, clause: at_least("credits", v.land_price) });
         lines.push(Entry::new(Op::If { when: Condition { first: short, rest } }));
         lines.push(Entry::new(Op::BuyLand {}).indent());
@@ -1062,7 +1063,17 @@ fn bridge_due(v: &View, target: Option<&str>) -> bool {
 type Bridge = (String, Fx, Fx);
 
 fn clause(reading: Reading, cmp: Cmp, value: i64) -> Clause {
-    Clause { reading, cmp, value: Fx::from_int(value) }
+    Clause { reading, cmp, value: Fx::from_int(value), against: None }
+}
+
+/// `<reading> <cmp> <against> × <times>`.
+fn clause_times(reading: Reading, cmp: Cmp, against: Reading, times: i64) -> Clause {
+    Clause { reading, cmp, value: Fx::from_int(times), against: Some(against) }
+}
+
+/// An `act` line.
+fn act(verb: Verb, target: Option<&str>, amount: Option<Amount>) -> Entry {
+    Entry::new(Op::Act { verb, target: target.map(str::to_string), tab: None, amount })
 }
 
 fn amount_of(resource: &str) -> Reading {
@@ -1085,24 +1096,42 @@ fn pad_stands() -> Clause {
     clause(Reading::Count { building: "launch_pad".to_string() }, Cmp::Ge, 1)
 }
 
+/// Lines the build order leaves free for the hands-off player's lead.
+/// (16 stock and processor lines, 2 per non-essential research item).
+pub const LEAD_LINES: usize = 16 + 2 * (RESEARCH.len() - ESSENTIAL.len());
+
+/// Cargo a pad holds (mirrors configs/baseline.json `pad_cargo_capacity`).
+const PAD_CARGO: i64 = 100;
+
 /// The main program with conditions: one text for every run. Fuel a launch
 /// once a Launch Pad stands (an He-3 stock as the "pad near full" sign bought
-/// fuel with no pad at all), launch a ready pad, load while there is a load of
-/// He-3, else the filler.
+/// fuel with no pad at all), launch ready pads, load while there is a load of
+/// He-3 and room aboard (`cargo of pads < Launch Pad count × 100`, so a full
+/// pad cooling down takes no failed load), keep a pad on He-3, point an idle
+/// pad at a good (dearest first, He-3 aside) sitting at its cap once two
+/// stand, else the filler.
 fn ship_cycle(filler: &str) -> Vec<Entry> {
     let e = Entry::command;
-    vec![
+    let pads = || Reading::Count { building: "launch_pad".to_string() };
+    let mut lines = vec![
         when(clause(amount_of("propellant"), Cmp::Lt, FUEL), Some(pad_stands())),
         e("buy_propellant", 1).indent(),
-        when(clause(Reading::PadsReady, Cmp::Ge, 1), None),
-        e("launch_pads", 1).indent(),
-        // Loads only once a pad stands (Load is locked before: a failed step).
-        // A full pad cooling down still takes a failed load a loop: no
-        // reading sees a pad's cargo.
-        when(clause(amount_of("he3"), Cmp::Ge, LOAD), Some(pad_stands())),
-        e("load_pads", 1).indent(),
-        e(filler, 1),
-    ]
+        when(clause(Reading::PadsReady { good: None }, Cmp::Ge, 1), None),
+        act(Verb::LaunchPads, None, None).indent(),
+        when(clause(amount_of("he3"), Cmp::Ge, LOAD), Some(clause_times(Reading::Cargo { good: None }, Cmp::Lt, pads(), PAD_CARGO))),
+        act(Verb::LoadPads, None, None).indent(),
+        // He-3 keeps a pad: with none on it, an idle pad points back (a free
+        // done line otherwise).
+        when(pad_stands(), None),
+        act(Verb::SetPads, Some("he3"), Some(Amount::N(1))).indent(),
+    ];
+    for good in DEAREST.iter().filter(|&&g| g != "he3") {
+        let full = clause(Reading::Percent { resource: good.to_string() }, Cmp::Ge, 100);
+        lines.push(when(full, Some(clause(pads(), Cmp::Ge, 2))));
+        lines.push(act(Verb::SetPads, Some(good), Some(Amount::N(1))).indent());
+    }
+    lines.push(e(filler, 1));
+    lines
 }
 
 /// The Dream watch: dream past `dream_at`% of boredom's cap, else the filler.
@@ -1129,10 +1158,13 @@ fn dream_watch(dream_at: i64, filler: &str) -> Vec<Entry> {
 /// with no credits clause, bought early and cut the hands-off player's run-2
 /// credits from 13% of the author's to 1%: dev seeds 1-8). Done lines are free; the
 /// first not done tries once a loop (failing when short), then the filler
-/// line. At most `max_entries` lines: the author buys the rest at its looks.
+/// line. At most `max_entries` less [`LEAD_LINES`] lines: the author buys the
+/// rest at its looks.
 /// Returns the lines and how many of `order`'s purchases they cover.
 fn build_order_program(v: &View, order: &[(String, u32, Vec<Bridge>)], filler: &str) -> (Vec<Entry>, usize) {
-    let max_lines = 64; // mirrors configs/baseline.json `max_entries`
+    // Mirrors configs/baseline.json `max_entries` (128), less the hands-off
+    // player's lead (`handsoff::processor_lines`).
+    let max_lines = 128 - LEAD_LINES;
     let mut lines = Vec::new();
     let land = order
         .iter()
@@ -1140,14 +1172,16 @@ fn build_order_program(v: &View, order: &[(String, u32, Vec<Bridge>)], filler: &
         .max()
         .unwrap_or(0);
     if land > 0 {
-        // Gated at a new run's first land price (no reading sees the price):
-        // once land costs more (`land_cost_scaling`), credits between the two
-        // still try `buy land`, which fails and spends a step.
+        // Gated on the land price as it reads then (`Credits >= Land price × 1`).
         let short = clause(amount_of("land"), Cmp::Lt, i64::from(land));
-        let flush = Clause { reading: amount_of("credits"), cmp: Cmp::Ge, value: v.land_price };
+        let flush = clause_times(amount_of("credits"), Cmp::Ge, Reading::LandPrice, 1);
         lines.push(when(short, Some(flush)));
         lines.push(Entry::new(Op::BuyLand {}).indent());
     }
+    // The essential research, each once science covers its price: worth it
+    // every run, even with a Long-Term project open (the rest waits for the
+    // author's looks, which weigh it against the project).
+    lines.extend(research_lines(v, ESSENTIAL));
     // Runs of the same building merge into one `up to` line (each input at
     // the most any of its purchases asked), and count the purchases merged.
     let mut steps: Vec<(&str, u32, Vec<Bridge>, usize)> = Vec::new();
@@ -1182,8 +1216,8 @@ fn build_order_program(v: &View, order: &[(String, u32, Vec<Bridge>)], filler: &
         // Its inputs first: one bought a loop while the stock is under what
         // the price asked and the credits cover the price and the buy.
         for (r, need, rich) in bridged {
-            let short = Clause { reading: amount_of(&r), cmp: Cmp::Lt, value: need };
-            let flush = Clause { reading: amount_of("credits"), cmp: Cmp::Ge, value: rich };
+            let short = Clause { reading: amount_of(&r), cmp: Cmp::Lt, value: need, against: None };
+            let flush = Clause { reading: amount_of("credits"), cmp: Cmp::Ge, value: rich, against: None };
             lines.push(when(short, Some(flush)));
             lines.push(Entry::command(&format!("buy_{r}"), 1).indent());
         }
@@ -1200,6 +1234,19 @@ fn build_order_program(v: &View, order: &[(String, u32, Vec<Bridge>)], filler: &
     }
     lines.push(Entry::command(filler, 1));
     (lines, covered)
+}
+
+/// `if Science >= <its price now>` / `research <id>`, for each of `ids` the
+/// view lists (done lines are free).
+pub fn research_lines(v: &View, ids: &[&str]) -> Vec<Entry> {
+    let mut lines = Vec::new();
+    for id in ids {
+        if let Some(cost) = v.research.iter().find(|r| r.id == *id).map(|r| r.cost) {
+            lines.push(when(Clause { reading: amount_of("science"), cmp: Cmp::Ge, value: cost, against: None }, None));
+            lines.push(act(Verb::Research, Some(id), None).indent());
+        }
+    }
+    lines
 }
 
 /// Keeps the sooner of `soon` and `t`; a `t` of 0 (it holds already, yet this

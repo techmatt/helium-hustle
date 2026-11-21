@@ -13,7 +13,7 @@ use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
 use crate::action::Action;
-use crate::content::{content, Amounts, BuildingEffect, Condition, NavCondition, Requirement, AXES, MODIFIER_KEYS};
+use crate::content::{content, Amounts, BuildingEffect, CommandEffect, Condition, NavCondition, Requirement, AXES, MODIFIER_KEYS};
 use crate::fx::Fx;
 use crate::modifiers::modifier;
 use crate::modules::*;
@@ -28,7 +28,7 @@ mod breakdown;
 mod programs;
 
 pub use breakdown::{BreakdownView, FlowRow, ShortView};
-pub use programs::{ClauseView, ConditionView, LinesRun, ProgramView, ReadingView};
+pub use programs::{Choice, ClauseView, ConditionView, LinesRun, ProgramView, ReadingView, VerbView};
 
 /// Text borrowed from the embedded content.
 pub type Text = &'static str;
@@ -110,6 +110,11 @@ pub struct CommandView {
     pub costs: BTreeMap<String, Fx>,
     pub produces: BTreeMap<String, Fx>,
     pub boredom: Fx,
+    /// A per-target command folded into one verb (docs/rulings.md, the flat
+    /// template): its verb (`Buy`, `Promote`, `Fund`, `Overclock`) and its
+    /// target's label (the name past the verb). `None` for the rest.
+    pub verb: Option<&'static str>,
+    pub target: Option<Text>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -336,6 +341,8 @@ pub struct View {
     pub loadout_name_max: usize,
     /// The readings a condition may use now.
     pub readings: Vec<ReadingView>,
+    /// The verbs an `act` line may use, with their slots' choices now.
+    pub verbs: Vec<VerbView>,
     /// Processors the active buildings grant (what can be assigned).
     pub processors: u32,
     pub processors_free: u32,
@@ -552,7 +559,17 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         .iter()
         .map(|cmd| {
             let (costs, produces) = program_rules::flows(r, g, cmd);
+            let verb = match &cmd.effect {
+                Some(CommandEffect::Promote { .. }) => Some("Promote"),
+                Some(CommandEffect::Fund { .. }) => Some("Fund"),
+                Some(CommandEffect::Overclock { .. }) => Some("Overclock"),
+                None if cmd.costs.contains_key(economy::CREDITS) && cmd.produces.len() == 1 => Some("Buy"),
+                _ => None,
+            };
+            let target = verb.and_then(|vb| cmd.name.strip_prefix(vb)).map(str::trim);
             CommandView {
+                verb,
+                target,
                 id: &cmd.id,
                 name: &cmd.name,
                 description: &cmd.description,
@@ -609,6 +626,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
     let procs = program_rules::capacity(g);
     let running = program_rules::running(g);
     let readings = programs::readings(r, g, &resources, &buildings);
+    let verbs = programs::verbs(g, &buildings);
     View {
         tick: g.tick,
         day: g.run.day,
@@ -627,6 +645,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         library_slots: r.p.programs.library_slots,
         loadout_name_max: r.p.programs.loadout_name_max,
         readings,
+        verbs,
         processors: procs,
         processors_free: procs.saturating_sub(program_rules::assigned(g)),
         processors_running: running.iter().sum(),

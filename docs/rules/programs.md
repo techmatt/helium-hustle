@@ -1,7 +1,7 @@
 # Programs (module `programs`, variant `arc1`)
 
 Program tabs (queues of instructions), the processors that run them, the instruction set
-(commands, `build`, `buy land`, `if` blocks, `wait until`), command execution and overclocks. In [the day](README.md#the-day), expired overclocks drop before the building
+(commands, `build`, `buy land`, verbs, `if` blocks, `wait until`), command execution and overclocks. In [the day](README.md#the-day), expired overclocks drop before the building
 pass, and programs run after the demand update and the upkeep-free buildings' production,
 before every building that takes upkeep (programs are paid first), projects and shipments.
 
@@ -19,8 +19,8 @@ Center) starts unassigned. Each day at most the processors resource (economy.md:
 *working*, upkeep-paid Data Center) runs: when fewer work than are assigned, the shortfall
 comes off the last programs first for that day, and their assignments stay.
 
-**Instructions.** A line is one of these (`state::Op`; the set is built to grow). Only the
-first three cost a processor step:
+**Instructions** (`state::Op`; flat, `<verb> <target> [amount]`: docs/rulings.md). All but
+`if` and `wait until` cost a processor step:
 
 | Line | JSON `op` | What it does |
 |---|---|---|
@@ -28,6 +28,7 @@ first three cost a processor step:
 | `build <building>` | `build` (`building`, `up_to` null) | Buys one, as the Buy action would (economy.md); refused there, it fails. |
 | `build <building> up to N` | `build` (`up_to` N) | The same while fewer than N are owned; with N owned it is **free** and passed over. |
 | `buy land` | `buy_land` | Buys land, as the Buy Land action would; unaffordable, it fails. |
+| a verb | `act` (`verb`, `target`, `tab`, `amount`) | *Verbs*, below. |
 | `if <condition>` | `if` (`when`) | **Free.** Checked once, when the pointer reaches it. True: the pointer moves into its body, which then runs whole, whatever the condition does meanwhile. False: the pointer jumps past the body. |
 | `wait until <condition>` | `wait_until` (`when`) | **Free.** True: passed over. False: the pointer stays, and every processor of the program idles that step. |
 
@@ -35,38 +36,60 @@ first three cost a processor step:
 an `if` is never indented (no nesting), there is no `else`, and an indented line must follow
 an `if` or another indented line. Any other line may sit in a body, `wait until` included.
 
-**Conditions.** `<reading> <cmp> <number>`, or two such clauses joined by one `and` or `or`
-(`state::Condition`: `first`, `rest`). `cmp` is `lt`, `le`, `gt`, `ge` or `eq`; the number is
-an `Fx`. Readings (`state::Reading`, JSON `kind`):
+**Verbs** (`act` lines; `state::Verb`). The target slot is typed by the verb; `tab` is a
+program (0-based); the amount is `{"n": N}` or `"all"`; JSON `verb` is the snake_case name
+(`launch_pads`, `load_program`, `assign_processors`, ...). A verb with nothing to do is
+**done** and free, as a finished `build ... up to N`; one that can't act fails. The pad
+verbs, `retire` and `load` always take their step.
+
+| Verb | What it does |
+|---|---|
+| `launch pads <good \| all>` (`target` null: all) | Runs Launch Full Pads (its row's costs and boredom) on that good's pads, as the command line would. |
+| `load pads <good \| all>` | Runs Load Launch Pads on that good's pads, likewise. |
+| `set pads <good> up to N` | While fewer than N pads carry the good, an idle pad (empty, another good) switches to it, in pad order. Done at N; fails when none could switch. |
+| `pause <building> [N \| all]` | N fewer running (1 with no amount; at most what runs), as Set Active. |
+| `resume <building> [N \| all]` | N more running, at most what is owned. |
+| `research <item>` | Buys it, as the Research action; done once researched. |
+| `load <saved program> into <tab>` (`target` a name) | Loads the first loadout of that name, as `load_loadout`. Into its own tab, the new lines start at the top. |
+| `assign processors <tab> N` (N may be 0) | As `set_processors` (`all`: every one not on another program). A program cut stops at its new count that day; one raised gains them the next. |
+| `retire` | Fails unless retiring is allowed (career.md); else the run retires at the day's end, as the Retire action (logged `retired`, its summary in `last_run`). |
+
+**Conditions.** `<reading> <cmp> <right side>`, or two such clauses joined by one `and` or
+`or` (`state::Condition`: `first`, `rest`). `cmp` is `lt`, `le`, `gt`, `ge` or `eq`; the right
+side is a number (`value`, an `Fx`) or, with `against`, another reading times that number
+(`Solar Panel count < Excavator count × 2`): one multiplier, no other math. Readings
+(`state::Reading`, JSON `kind`):
 
 | Reading | Reads |
 |---|---|
 | `amount` (`resource`) | The amount held. Land's is the land free; boredom is a resource too. |
 | `percent` (`resource`) | `amount / cap × 100`; a resource with no cap reads nothing. |
-| `rate` (`resource`) | Production less demand over the last full day: what its tick did to the stock (everything from the day's start to just before the clamp: buildings, commands, `build` and `buy land` lines, pad loading, launches, projects, boredom growth, Dream), less the demand it left unmet (`today.unmet`), kept in `Run.day_net`. Unmet demand: on each input a building, command or project ran short of (held less than it needed), what it wanted less what it got; an input held in full but left unused because another ran short counts nothing. So in a steady brownout Energy's rate is the shortfall, negative every day; a capped resource reads its uncapped rate. Not the cap's cut, nor anything done by hand between days. 0 on a run's first day. |
+| `rate` (`resource`) | Production less demand over the last full day (`Run.day_net`): what the tick did to the stock before the clamp, less the demand it left unmet (`today.unmet`: on each input a building, command or project ran short of, what it wanted less what it got). So a brownout reads the shortfall; a capped resource its uncapped rate; nothing done by hand counts; 0 on day 1. |
+| `days_to_cap` (`resource`) | `(cap − amount) / rate`; 0 at the cap; nothing with no cap or a rate of 0 or less. |
 | `count` (`building`) | How many are owned. |
+| `next_cost` (`building`) | The next one's price in credits (no credits cost: nothing). |
+| `land_price` | The land price. |
 | `day` | The run's day. |
-| `pads_ready` | Pads holding a full load that can launch now (shipments.md). |
+| `every` (`days`) | 1 on a day that is a multiple of N, else 0 (the editor's `every N days`, `= 1`). |
+| `pads_ready` (`good`, null: all) | Pads of the good holding a full load that can launch now (shipments.md). |
+| `cargo` (`good`, null: all) | Cargo aboard the good's pads. |
+| `days_since_launch` | Days since this run's last launch (none yet: the run's day). |
 | `demand` (`good`) | The good's demand today; reads nothing until exact demand is revealed (Market Awareness, research.md). |
 
-A clause whose reading reads nothing is false. The view offers (`readings`, with display
-labels and current values) only what the player can see: amount, percent (capped ones) and
-rate per visible resource (land and processors: amount only; boredom: no rate), a count per
-visible building, the day, pads ready once there is a pad, demand once revealed. No adversary
-reading (speculators, rivals) is offered yet.
+A clause whose reading or right side reads nothing is false. The view's `readings` offer only
+what the player can see (visible resources and buildings; land and processors: amount only;
+boredom: no rate; pad readings once there is a pad; demand once revealed); its `verbs` give
+each verb's slot choices now.
 
-The Resources panel's per-day number is the same quantity for the next day (the view plays
-it on a copy: `ResourceView.per_day`), beside the stock's actual change (`change_per_day`)
-and what the cap cuts (`overflow`) and the demand left unmet (`unmet`) that day.
+The Resources panel's per-day number (`ResourceView.per_day`) is `rate` for the next day.
 
 **Loadouts.** The library (`Career.library`, kept across retirements) holds up to
 `library_slots` saved programs, each a display name (trimmed, 1 to `loadout_name_max`
 characters, duplicates allowed) and its lines. Saving copies a program's lines into a new
 slot or over one; loading replaces a program's lines with a slot's, as `set_program` does,
-processors unchanged. A loaded line this run hasn't unlocked (a command, building or
-research, a demand reading not yet revealed) is not refused: it fails and advances, or reads
-nothing, when run. `set_program`'s two run gates (the logic unlock, demand revealed) refuse
-only a line not already in the program, so a loaded program stays editable. Programs still empty at each new run; open from the start.
+processors unchanged. A loaded line this run hasn't unlocked is not refused: it fails, or
+reads nothing, when run; `set_program`'s run gates (the logic unlock, demand revealed) refuse
+only a line new to the program. Programs are empty at each new run; open from the start.
 
 **Unlock.** Every line but a command needs the career flag `program_logic`: set the first
 day `logic_unlock_processors` (2) processors work, checked as programs start to run, logged
@@ -74,13 +97,12 @@ day `logic_unlock_processors` (2) processors work, checked as programs start to 
 
 **Running** (each day): programs in order; each running processor of a program takes one
 step from the shared pointer. A step passes over free lines (an `if`, a `wait until` that
-holds, a `build ... up to N` that is done) until it reaches a line that costs it: that line
-runs once and the pointer advances whatever the outcome (ran, skipped or failed): a command
-line's run count rises and, at its `count`, the pointer moves on; a `build` or `buy land`
+holds, a `build ... up to N` or a verb that is done) until it reaches a line that costs it:
+that line runs once and the pointer advances whatever the outcome (ran, skipped or failed): a
+command line's run count rises and, at its `count`, the pointer moves on; any other line
 moves on at once. The pointer wraps from the last line to the first. A step that passes as
 many free lines as the program has (one loop) idles, as does one stopped at a `wait until`.
-A program with no lines does nothing. So a program with 3 processors runs three consecutive
-costed steps of its queue a day. Each line's outcome today (the last time the pointer met it:
+An empty program does nothing. Each line's outcome today (the last time the pointer met it:
 `ran`, `skipped`, `failed`, `true`, `false`, `jumped` for a false `if`'s body unless it ran
 earlier that day, `waiting`, `done`) is kept for display (the UI colors the line); no rule reads it. A failed `build` or
 `buy land` notes what it was short of, as a command does.
@@ -119,7 +141,7 @@ pass. The factor multiplies production of every building of that category (econo
 
 | Action | Refused when |
 |---|---|
-| `set_program {program, entries}` | more than `max_entries` lines; an unknown command, building or resource; a `count` or `up_to` of 0; a line other than a command before the unlock (unless already in the program); an indented line with no `if` or body line above it; an indented `if`; a `demand` reading of a good not traded, or before demand is revealed (unless already in the program); or no such program |
+| `set_program {program, entries}` | more than `max_entries` lines; an unknown command, building or resource; a `count` or `up_to` of 0; a line other than a command before the unlock (unless already in the program); an indented line with no `if` or body line above it; an indented `if`; a `demand` reading of a good not traded, or before demand is revealed (unless already in the program); a verb with an unknown or missing target (`load`: a blank name; one no loadout has fails when run), a tab or amount it doesn't take or lacks, an amount of 0 (but `assign_processors`), `set_pads ... all`; `every 0`; or no such program |
 | `set_processors {program, processors}` | no such program, or the other programs' processors plus this number exceed what the active Data Centers grant |
 | `save_loadout {program, slot, name}` (`slot` null: a new slot) | no such program or slot; an empty program; a blank or overlong name; a new slot with the library full |
 | `load_loadout {loadout, program}` | no such loadout or program; lines `set_program` refuses on their form (it skips the unlock and reveal checks) |
@@ -136,9 +158,9 @@ hold command lines only. A refused action changes nothing.
 | Param | Baseline | Range | Meaning |
 |---|---|---|---|
 | `program_count` | 5 | 1 to 100 | Program tabs. |
-| `max_entries` | 64 | 1 to 10000 | Most lines in one program. |
+| `max_entries` | 128 | 1 to 10000 | Most lines in one program. |
 | `overclock_base_cap` | 1.5 | 1 to 100 | The most an overclock multiplies output, before research. |
-| `logic_unlock_processors` | 2 | 0 to 1000 | Working processors that first open if, wait until, build and buy land (a career first). |
+| `logic_unlock_processors` | 2 | 0 to 1000 | Working processors that first open every line but plain commands (a career first). |
 | `library_slots` | 12 | 0 to 1000 | Saved programs the loadout library holds (career state). |
 | `loadout_name_max` | 40 | 1 to 1000 | Most characters in a loadout's name. |
 <!-- /params -->
@@ -154,32 +176,16 @@ overclock's `target`, `bonus`, `duration`) and `scale_modifier`. `content/resear
 
 ## Port notes
 
-- Conflict: overclock cap. The Godot command text said "+200%"; Overclock Boost research raises
-  150% to 200%. The engine: base cap 1.5 in config, research raises it to 2 (the text now
-  says so: up to +50%, +100% with Overclock Boost).
-- Conflict: Buy Ice. Handoffs require an Ice Extractor; data has no requirement. The engine
-  takes the data (Fabricators cost ice before Ice Extractors exist).
-- Conflict: research `unlocks_commands` duplicates each command's `requires`; it is dropped,
-  and the command's `requires` is the one home.
-- Conflict: Microwave Receiver produces nothing; owning one unlocks Buy Power ([economy.md](economy.md#port-notes)).
-- Conflict: Load per execution (5) appears in both the command effect and `game_config`;
-  it lives once in config (shipments.md). Likewise Promote's 0.03 and Disrupt's 1-3
-  (demand.md).
-- Candidate: a new run puts every processor on Program 1; a new Data Center's processor
-  starts unassigned; losing processors unassigns from the last program first.
-- Candidate: program lines have a repeat count; at most 64 lines (config).
-- Candidate: effect commands need their full cost; pure conversions run partially.
-- Candidate: output-cap skip for any command whose every product is capped (boredom is not a
-  product).
-- Candidate: overclock: each execution is its own x(1 + 0.05) stack for 5 days
-  (x 1.03^rationalist rank, whole days), from the same day's building pass; the product is
-  capped.
-- Candidate (not in the Godot build): the instruction set beyond commands. `build ... up to
-  N` buys one a pass, not N in a row; `rate` is the last day's, the panel's the next day's;
-  the unlock trigger is 2 working processors.
-- Candidate (035): unmet demand counts only on an input that ran short; `rate` counts
-  everything the tick did to the stock (031 left out purchases and pad loading), so it and
-  the panel agree. Loadouts: 12 slots, names up to 40 characters, open from run 1, loading
-  leaves processors as they are.
-- Candidate: AI Consciousness Act's command boredom values replace the commands' own (0.1 to
-  0.2).
+- Conflicts, the engine's pick: the overclock cap is 1.5, 2 with Overclock Boost (the text
+  said "+200%"); Buy Ice needs nothing (handoffs wanted an Ice Extractor); research
+  `unlocks_commands` is dropped for each command's `requires`; Microwave Receiver unlocks Buy
+  Power ([economy.md](economy.md#port-notes)); Load's 5, Promote's 0.03 and Disrupt's 1-3
+  live once in config.
+- Candidates (Godot port): processors on Program 1 at a new run, unassigned when gained, cut
+  from the last program; a repeat count, 64 lines (128 since 037, so a build order reaches the
+  late buildings); effect commands need their full cost; the
+  output-cap skip; one x1.05 overclock stack per execution for 5 days; AI Consciousness Act's
+  boredom values replace the commands'.
+- Candidates (not in the Godot build): everything past commands (`build ... up to N` buys one
+  a pass; the unlock is 2 working processors; 035's `rate` and loadout picks, docs/rulings.md);
+  037's verbs (docs/rulings.md, the flat template).

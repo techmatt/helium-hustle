@@ -1,0 +1,206 @@
+//! `act` lines (`<verb> <target> [amount]`), the readings added with them and a
+//! right side that is another reading times a number (docs/rules/programs.md,
+//! *Verbs*, *Conditions*).
+
+use super::{f, rules, set};
+use crate::modules::{career, economy, programs};
+use crate::state::{Amount, Clause, Cmp, Condition, Entry, GameState, Holding, LineOutcome as O, Op, Reading, Verb};
+use crate::{Action, Fx, Rules};
+
+fn game(r: &Rules) -> GameState {
+    let mut g = r.new_game(1);
+    g.career.flags.insert(programs::LOGIC_FLAG.into());
+    g
+}
+
+fn act(verb: Verb, target: Option<&str>, tab: Option<u32>, amount: Option<Amount>) -> Entry {
+    Entry::new(Op::Act { verb, target: target.map(str::to_string), tab, amount })
+}
+
+fn put(r: &Rules, g: &mut GameState, entries: Vec<Entry>) -> Result<(), String> {
+    r.apply(g, &Action::SetProgram { program: 0, entries })
+}
+
+/// Runs line 0 of program 0 once (one step; nothing else in the day matters here).
+fn run_one(r: &Rules, g: &mut GameState, e: Entry) -> O {
+    put(r, g, vec![e]).unwrap();
+    r.advance(g, 1);
+    crate::view::LinesRun::today(g).lines[0][0].expect("ran")
+}
+
+fn own(r: &Rules, g: &mut GameState, b: &str, n: u32) {
+    let _ = r;
+    g.run.buildings.insert(b.into(), Holding::starting(n));
+    economy::refresh(g);
+}
+
+#[test]
+fn pause_and_resume_take_n_or_all_and_are_free_with_nothing_to_do() {
+    let r = rules();
+    let mut g = game(&r);
+    own(&r, &mut g, "excavator", 3);
+    assert_eq!(run_one(&r, &mut g, act(Verb::Pause, Some("excavator"), None, None)), O::Ran);
+    assert_eq!(g.active("excavator"), 2, "no amount: one");
+    assert_eq!(run_one(&r, &mut g, act(Verb::Pause, Some("excavator"), None, Some(Amount::N(5)))), O::Ran);
+    assert_eq!(g.active("excavator"), 0, "N past what runs pauses what runs");
+    assert_eq!(run_one(&r, &mut g, act(Verb::Pause, Some("excavator"), None, Some(Amount::All))), O::Done);
+    assert_eq!(run_one(&r, &mut g, act(Verb::Resume, Some("excavator"), None, Some(Amount::All))), O::Ran);
+    assert_eq!(g.active("excavator"), 3);
+}
+
+#[test]
+fn research_buys_once_and_is_done_after() {
+    let r = rules();
+    let mut g = game(&r);
+    let item = crate::content::content()
+        .research
+        .iter()
+        .find(|it| it.requires.is_none() && crate::modules::research::visible(&g, it))
+        .expect("an open item")
+        .id
+        .clone();
+    let line = act(Verb::Research, Some(&item), None, None);
+    assert_eq!(run_one(&r, &mut g, line.clone()), O::Failed, "no science");
+    set(&mut g, "science", "100000");
+    assert_eq!(run_one(&r, &mut g, line.clone()), O::Ran);
+    assert!(g.run.research.contains(&item));
+    assert_eq!(run_one(&r, &mut g, line), O::Done, "already researched: free");
+}
+
+#[test]
+fn pad_verbs_and_readings_address_pads_by_good() {
+    let r = rules();
+    let mut g = game(&r);
+    own(&r, &mut g, "launch_pad", 2);
+    own(&r, &mut g, "solar_panel", 10);
+    assert_eq!(g.run.pads.len(), 2);
+    let set_ti = act(Verb::SetPads, Some("titanium"), None, Some(Amount::N(1)));
+    assert_eq!(run_one(&r, &mut g, set_ti.clone()), O::Ran);
+    assert_eq!(g.run.pads.iter().filter(|p| p.good == "titanium").count(), 1);
+    assert_eq!(run_one(&r, &mut g, set_ti), O::Done, "one carries it already");
+    set(&mut g, "titanium", "40");
+    set(&mut g, "he3", "0");
+    assert_eq!(run_one(&r, &mut g, act(Verb::LoadPads, Some("titanium"), None, None)), O::Ran);
+    let read = |g: &GameState, what: Reading| programs::reading(&r, g, &what);
+    let per = crate::modules::shipments::load_amount(&r, &g);
+    assert_eq!(read(&g, Reading::Cargo { good: Some("titanium".into()) }), Some(per));
+    assert_eq!(read(&g, Reading::Cargo { good: Some("he3".into()) }), Some(Fx::ZERO));
+    assert_eq!(read(&g, Reading::Cargo { good: None }), Some(per));
+    // A full titanium pad, fuel aboard: ready, and `launch pads titanium` ships it alone.
+    let ti = g.run.pads.iter().position(|p| p.good == "titanium").unwrap();
+    g.run.pads[ti].cargo = r.p.shipments.pad_cargo_capacity;
+    set(&mut g, "propellant", "100");
+    assert_eq!(read(&g, Reading::PadsReady { good: Some("titanium".into()) }), Some(Fx::ONE));
+    assert_eq!(read(&g, Reading::PadsReady { good: Some("he3".into()) }), Some(Fx::ZERO));
+    assert_eq!(read(&g, Reading::DaysSinceLaunch), Some(Fx::from_int(g.run.day as i64)), "none yet: the run's day");
+    assert_eq!(run_one(&r, &mut g, act(Verb::LaunchPads, Some("titanium"), None, None)), O::Ran);
+    assert_eq!(g.run.stats.shipments, 1);
+    assert_eq!(read(&g, Reading::DaysSinceLaunch), Some(Fx::ONE), "launched yesterday");
+}
+
+#[test]
+fn load_program_and_assign_processors_reach_other_tabs() {
+    let r = rules();
+    let mut g = game(&r);
+    own(&r, &mut g, "data_center", 3);
+    own(&r, &mut g, "solar_panel", 10);
+    put(&r, &mut g, vec![Entry::command("idle", 2)]).unwrap();
+    r.apply(&mut g, &Action::SaveLoadout { program: 0, slot: None, name: "Idle".into() }).unwrap();
+    assert_eq!(run_one(&r, &mut g, act(Verb::LoadProgram, Some("Idle"), Some(2), None)), O::Ran);
+    assert_eq!(g.run.programs[2].entries, vec![Entry::command("idle", 2)]);
+    assert_eq!(run_one(&r, &mut g, act(Verb::LoadProgram, Some("missing"), Some(2), None)), O::Failed);
+    let free = programs::capacity(&g) - programs::assigned(&g);
+    assert!(free > 0);
+    assert_eq!(run_one(&r, &mut g, act(Verb::AssignProcessors, None, Some(2), Some(Amount::All))), O::Ran);
+    assert_eq!(g.run.programs[2].processors, free, "all: every processor not on another program");
+    assert_eq!(run_one(&r, &mut g, act(Verb::AssignProcessors, None, Some(2), Some(Amount::All))), O::Done);
+    assert_eq!(run_one(&r, &mut g, act(Verb::AssignProcessors, None, Some(2), Some(Amount::N(99)))), O::Failed);
+    // Loading into its own tab: the new lines start at the top.
+    put(&r, &mut g, vec![act(Verb::LoadProgram, Some("Idle"), Some(0), None)]).unwrap();
+    r.advance(&mut g, 1);
+    assert_eq!(g.run.programs[0].entries, vec![Entry::command("idle", 2)]);
+}
+
+#[test]
+fn retire_fails_until_retiring_is_allowed_then_retires_at_the_days_end() {
+    let r = rules();
+    let mut g = game(&r);
+    assert_eq!(run_one(&r, &mut g, act(Verb::Retire, None, None, None)), O::Failed);
+    g.run.enabled_panels.insert(career::RETIREMENT_PANEL.into());
+    put(&r, &mut g, vec![act(Verb::Retire, None, None, None)]).unwrap();
+    let run = g.career.run_number;
+    r.advance(&mut g, 1);
+    assert_eq!(g.career.run_number, run + 1);
+    let last = g.career.last_run.as_ref().unwrap();
+    assert!(!last.forced, "a voluntary retirement, summary and all");
+    assert_eq!(last.days, 2, "the day it ran, played out");
+}
+
+#[test]
+fn a_right_side_reading_times_a_number_and_the_new_readings() {
+    let r = rules();
+    let mut g = game(&r);
+    own(&r, &mut g, "solar_panel", 3);
+    own(&r, &mut g, "excavator", 2);
+    let count = |b: &str| Reading::Count { building: b.into() };
+    let times = |cmp, n: &str| Clause { reading: count("solar_panel"), cmp, value: f(n), against: Some(count("excavator")) };
+    assert!(programs::clause_holds(&r, &g, &times(Cmp::Lt, "2")), "3 < 2 × 2");
+    assert!(!programs::clause_holds(&r, &g, &times(Cmp::Lt, "1.5")), "3 < 2 × 1.5 is false");
+    let nothing = Clause { against: Some(Reading::Percent { resource: "credits".into() }), ..times(Cmp::Lt, "2") };
+    assert!(!programs::clause_holds(&r, &g, &nothing), "a right side reading nothing is false");
+    let read = |g: &GameState, what: Reading| programs::reading(&r, g, &what);
+    let b = crate::content::content().building("solar_panel").unwrap();
+    assert_eq!(read(&g, Reading::NextCost { building: "solar_panel".into() }), economy::price(&r, &g, b).get("credits").copied());
+    assert_eq!(read(&g, Reading::LandPrice), Some(economy::land_price(&r, &g)));
+    let every = Reading::Every { days: 3 };
+    assert_eq!(read(&g, every.clone()), Some(Fx::ONE), "day 0");
+    g.run.day = 4;
+    assert_eq!(read(&g, every.clone()), Some(Fx::ZERO));
+    g.run.day = 6;
+    assert_eq!(read(&g, every), Some(Fx::ONE));
+    // Days to cap: what is left over the rate; nothing at a rate of 0 or less.
+    let cap = economy::cap(&r, &g, "regolith").unwrap();
+    set(&mut g, "regolith", "0");
+    g.run.day_net.insert("regolith".into(), cap / f("4"));
+    assert_eq!(read(&g, Reading::DaysToCap { resource: "regolith".into() }), Some(f("4")));
+    g.run.day_net.insert("regolith".into(), Fx::ZERO);
+    assert_eq!(read(&g, Reading::DaysToCap { resource: "regolith".into() }), None);
+    g.run.resources.insert("regolith".into(), cap);
+    assert_eq!(read(&g, Reading::DaysToCap { resource: "regolith".into() }), Some(Fx::ZERO));
+}
+
+#[test]
+fn set_program_refuses_act_lines_with_the_wrong_slots() {
+    let r = rules();
+    let mut g = game(&r);
+    let bad = [
+        act(Verb::Pause, Some("no_such"), None, None),
+        act(Verb::Pause, Some("excavator"), None, Some(Amount::N(0))),
+        act(Verb::Research, None, None, None),
+        act(Verb::SetPads, Some("he3"), None, None),
+        act(Verb::SetPads, Some("he3"), None, Some(Amount::All)),
+        act(Verb::LaunchPads, Some("regolith"), None, None),
+        act(Verb::AssignProcessors, None, Some(99), Some(Amount::N(1))),
+        act(Verb::Retire, Some("x"), None, None),
+        act(Verb::LoadProgram, Some("x"), None, None),
+    ];
+    for e in bad {
+        assert!(put(&r, &mut g, vec![e.clone()]).is_err(), "{e:?}");
+    }
+    let every0 = Entry::new(Op::If {
+        when: Condition { first: Clause { reading: Reading::Every { days: 0 }, cmp: Cmp::Eq, value: Fx::ONE, against: None }, rest: None },
+    });
+    assert!(put(&r, &mut g, vec![every0]).is_err());
+    // Before the logic unlock, a verb line is refused like any line but a command.
+    g.career.flags.clear();
+    assert!(put(&r, &mut g, vec![act(Verb::Retire, None, None, None)]).is_err());
+}
+
+#[test]
+fn an_act_line_is_flat_json() {
+    let e = act(Verb::SetPads, Some("he3"), None, Some(Amount::N(2)));
+    let json = serde_json::to_string(&e).unwrap();
+    assert_eq!(json, r#"{"op":"act","verb":"set_pads","target":"he3","amount":{"n":2}}"#);
+    let back: Entry = serde_json::from_str(r#"{"op":"act","verb":"assign_processors","tab":1,"amount":"all"}"#).unwrap();
+    assert_eq!(back, act(Verb::AssignProcessors, None, Some(1), Some(Amount::All)));
+}

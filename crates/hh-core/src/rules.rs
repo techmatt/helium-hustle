@@ -104,6 +104,9 @@ impl Rules {
         g.run.day += 1;
         if boredom::at_cap(self, g) {
             career::retire(self, g, true);
+        } else if g.run.retire_asked {
+            // A program's `retire` line (programs.md, *Verbs*).
+            career::retire(self, g, false);
         }
         events::trim_activity(self, g);
     }

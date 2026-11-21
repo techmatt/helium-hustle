@@ -51,9 +51,8 @@ way to a Solar Panel; a price past a cap gives way to a Storage Depot (a Battery
 Land is bought first when short and credits cover it and the price.
 
 A hand-played command (`hand_command`, greedy's): launch a full fuelled pad; fuel a full pad;
-load when a load's worth of the pad's good waits; bridge the target's missing titanium, regolith or ice with
-its Buy command when credits past the target's price cover one; else Cloud Compute (Idle
-without the energy).
+load when a load of its good waits; buy the target's missing titanium, regolith or ice from
+credits past its price; else Cloud Compute (Idle without the energy).
 
 ## The program author (`author.rs`)
 
@@ -74,19 +73,18 @@ How it writes the main program depends on the gap to its next look (*When it loo
 
 **Condition programs** (`cond` 1 once `if` is open; the oracle runs the table's, `cond` 0)
 read the game, not this look's counts, so each is saved once by name; side programs load at
-each reset and keep their lines while without a processor (lines: `author.rs`): `ship` (1: once a pad stands, fuel, launch, load; the filler; the hand
-plan replaces it, unsaved, while the target waits on a bought input), `dream watch` (2),
-`fund`, `market`, and `build order` (5: the last run's purchases as `build X up to N`, each
-gated on the one before owned, a short input bought first; rewritten only when a run bought
-past it; run 1 writes the one-target program).
+each reset and keep their lines while unassigned (`author.rs`): `ship` (1: once a pad stands, fuel, `launch pads all`, `load pads all` while
+`cargo of pads < Launch Pad count × 100`, `set pads he3 up to 1`, the same `up to 1` for a
+good at its cap once two pads stand; the filler; a hand plan replaces it while the target waits on a bought
+input), `dream watch` (2), `fund`, `market`, and `build order` (5: the last run's purchases
+as `build X up to N`, each gated on the one before, a short input bought first, `research`
+once science covers it; rewritten when a run bought past it).
 
-A program is rewritten only when its text changes (a rewrite restarts its pointer; the main
-plan's re-arm: *When it looks*). Each write goes through the loadout library
-(`Player::put_program`): a saved loadout with the same lines is loaded instead, and a
-standing program is saved to its slot, so a new run loads them back. The builder keeps a slot per command. Extra pads
-carry a good other than He-3 that sits at its cap. While looking often (gap ≤ `hand_gap`) it
-pauses buildings that eat a material its target is short of, so the stock builds up, and runs
-them again once it isn't.
+A program is rewritten only when its text changes (a rewrite restarts its pointer). Each
+write goes through the library (`Player::put_program`): a loadout with the same lines is
+loaded instead, and a standing program is saved to its slot. Extra pads carry a good other
+than He-3 at its cap. Looking often (gap ≤ `hand_gap`), it pauses buildings that eat a
+material its target is short of, and runs them again once it isn't.
 
 **Science.** Research resets each run; a Long-Term project's progress doesn't. Research comes
 in a fixed order (`author.rs`), but while a Long-Term project is open only the essential ones
@@ -109,17 +107,17 @@ a stall). Greedy waits for its target or `max_gap`; random looks every `every` t
 retirement wakes any player. The casual player is the author with `min_gap` 120: it writes the
 standing cycle and looks about 12 times a run.
 
-The author's plan is rewritten only when its text changes, or to run its due lines (all but
-the filler) again once the pointer has passed them into the filler; a plan with nothing due
-isn't written over one already in its filler with enough left to reach the next look. So a
-decision (a look that applied an action)
-is a real change: about 90 a run with condition programs (140 with the 035 templates).
+A hand plan is also rewritten to run its due lines again once the pointer passed into its
+filler, never over one that reaches the next look: about 90 decisions a run.
 
 **The hands-off player** (`handsoff.rs`) is the author in run 1; then at each new run it loads
 the five programs by name (saving run 1's build order first) and assigns processors (build
-order first, one each while two are left, the rest to Program 1). Nothing else but two
-acts: it assigns a processor gained mid-run, and retires a run that bought nothing for
-`stale_days`.
+order first, one each while two are left, the rest to Program 1). Its saved build order leads
+with lines for what was a hand: `assign processors` (all to the build order until a
+Launch Pad stands, then one), `pause` / `resume` of Smelters and Fabricators while titanium
+or circuits sit at their cap (resumed under 90%), and a Storage Depot while titanium does
+and credits reach 3× its price; it ends with research the author buys by hand.
+By hand only processors gained or stopped by unpaid upkeep, and the stale retirement.
 
 ## The oracle (`oracle/`)
 

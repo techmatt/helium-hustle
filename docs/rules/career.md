@@ -3,7 +3,8 @@
 A game is a career of runs. A run ends in retirement, forced when boredom reaches its cap
 ([boredom.md](boredom.md)) or chosen by the player; the next run starts at once with a fresh
 operation, and a few career bonuses earned from personal bests. Forced retirement is the last
-step of [the day](README.md#the-day); voluntary retirement happens between days.
+step of [the day](README.md#the-day), and so is a voluntary one a program's `retire` line
+asked for that day (programs.md); the Retire action retires between days.
 
 ## Rules
 

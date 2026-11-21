@@ -14,7 +14,7 @@ fn game(r: &Rules) -> GameState {
 }
 
 fn clause(reading: Reading, cmp: Cmp, v: &str) -> Clause {
-    Clause { reading, cmp, value: f(v) }
+    Clause { reading, cmp, value: f(v), against: None }
 }
 
 fn amount(res: &str, cmp: Cmp, v: &str) -> Clause {
@@ -179,7 +179,7 @@ fn readings_read_the_state() {
     assert_eq!(read(&g, Reading::Percent { resource: "credits".into() }), None, "no cap, nothing to read");
     assert_eq!(read(&g, Reading::Count { building: "solar_panel".into() }), Some(f("1")));
     assert_eq!(read(&g, Reading::Demand { good: "he3".into() }), None, "demand is not revealed yet");
-    assert_eq!(read(&g, Reading::PadsReady), Some(Fx::ZERO));
+    assert_eq!(read(&g, Reading::PadsReady { good: None }), Some(Fx::ZERO));
     // The rate is the last full day's production less use: one panel against one Data Center.
     r.advance(&mut g, 2);
     assert_eq!(read(&g, Reading::Day), Some(f("2")));

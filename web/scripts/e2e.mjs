@@ -77,8 +77,20 @@ const runOnly = async (cmd, lines) => {
   await click('.prog-tabs button[data-program="0"]');
   if (lines.length) await click('.prog-procs button[title="Clear this program"]');
   await panel('commands');
+  await pickCommand(cmd);
   await click(`[data-testid="add-${cmd}"]`);
 };
+
+/** A per-target command (Buy, Promote, Fund, Overclock) shares its verb's card: pick it
+ * in the card's target dropdown so its Add button shows. */
+const pickCommand = (cmd) =>
+  evaluate(`(() => {
+    const o = document.querySelector('.panel[data-panel="commands"] select option[value="${cmd}"]');
+    if (o && o.parentElement.value !== '${cmd}') {
+      o.parentElement.value = '${cmd}';
+      o.parentElement.dispatchEvent(new Event('change', { bubbles: true }));
+    }
+  })()`);
 
 /** Program 1, one processor, lines of counts 2, 1, 3: at 10x (a day a redraw) the
  * current-line frame walks the queue in order, the lines keep their order and no line's
@@ -338,6 +350,38 @@ async function programLogic(grant) {
   await sleep(100);
   check((await evaluate(`document.querySelectorAll('[data-loadout]').length`)) === 0, 'a loadout deletes');
   await click('[data-testid="loadout-load"]');
+
+  // Verb lines: one dropdown editor for every verb; a right side that is a reading times a
+  // number; `every N days`.
+  await click('.prog-tabs button[data-program="0"]');
+  await click('.prog-procs button[title="Clear this program"]');
+  await add('If');
+  await setClause(0, 1, 'Solar Panel count', '≥', '1');
+  await pick(`${clause(0, 1)} select[aria-label="Times reading"]`, 'Battery count ×');
+  await add('Verb');
+  await pick(`${line(1)} select[aria-label="Verb"]`, 'Pause');
+  await pick(`${line(1)} select[aria-label="Target"]`, 'Solar Panel');
+  await indent(1);
+  await add('If');
+  await pick(`${clause(2, 1)} select[aria-label="Reading"]`, 'Every N days');
+  await pick(`${clause(2, 1)} input[aria-label="Days"]`, '2');
+  await add('Verb');
+  await pick(`${line(3)} select[aria-label="Verb"]`, 'Resume');
+  await pick(`${line(3)} select[aria-label="Target"]`, 'Solar Panel');
+  await pick(`${line(3)} input[aria-label="Amount"]`, 'all');
+  await indent(3);
+  const verbShape = await evaluate(`[...document.querySelectorAll('.lines li')].map((l) => l.dataset.op + (l.classList.contains('indented') ? '>' : '')).join(' ')`);
+  check(verbShape === 'if act> if act>', `verb lines as written: ${verbShape}`);
+  const verbText = await evaluate(`[...document.querySelectorAll('.lines li')].map((l) => l.title.split(':')[0]).join(' | ')`);
+  check(/Battery count × 1/.test(verbText) && /Pause Solar Panel/.test(verbText) && /Every 2 days/.test(verbText) && /Resume Solar Panel all/.test(verbText), `verb lines read as text: ${verbText}`);
+  // One processor: a day runs the pause, a day the resume (each a step).
+  const ran = (i) => `/out-(ran|done)/.test(document.querySelector(${q(line(i))})?.className ?? '')`;
+  await speed(3);
+  await waitFor(ran(1), 'the pause line to run', 8000);
+  await waitFor(ran(3), 'the resume line to run', 8000);
+  await speed(0);
+  check(true, 'pause and resume ran from verb lines');
+  await shot('program-verbs');
 }
 
 /** Section 5, from scenario at_cap (paused, cheats on; `grant` from section 2). Shots

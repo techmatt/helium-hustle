@@ -151,9 +151,10 @@ Spent: 1-3 and 100-103 (005, development), 1000-1004 (005, the rev-2 baseline), 
 3005-3009 (008, the rev-3 baseline), 3010-3012 (011, the oracle's first read, superseded by a
 fix), 3013-3015 (011, the oracle's final read), 3016-3023 (035, loadouts against main), 4-8
 (036, development), 3024-3031 and 3032-3039 (036, against main before review fixes,
-superseded), 3040-3047 (036, condition programs and hands-off against main).
+superseded), 3040-3047 (036, condition programs and hands-off against main), 3048-3055 (037,
+hands-off share before review fixes, superseded), 3056-3063 (037, verbs: hands-off share).
 
-Next free: 3048
+Next free: 3064
 
 ## `run` and `replay`
 

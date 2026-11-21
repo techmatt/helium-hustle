@@ -9,7 +9,7 @@ use super::{names, BuildingView, ResourceView};
 use crate::fx::Fx;
 use crate::modules::*;
 use crate::rules::Rules;
-use crate::state::{Clause, Condition as When, Entry, GameState, LineOutcome, Op, Reading};
+use crate::state::{Clause, Condition as When, Entry, GameState, LineOutcome, Op, Reading, Verb};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ProgramView {
@@ -96,9 +96,11 @@ pub(super) fn programs(r: &Rules, g: &GameState, running: &[u32]) -> Vec<Program
 }
 
 /// The readings on offer: what the player can see now. Amount, percent of cap
-/// (capped ones) and last-day rate per visible resource (land and processors:
-/// amount only); a count per visible building; the day; pads ready once there
-/// is a pad; demand per good once exact demand is revealed.
+/// and days to cap (capped ones) and last-day rate per visible resource (land
+/// and processors: amount only); a count and next cost per visible building;
+/// the land price, the day, every N days (at 1: the editor sets N); once there
+/// is a pad, pads ready and cargo (all, and per good) and days since the last
+/// launch; demand per good once exact demand is revealed.
 pub(super) fn readings(r: &Rules, g: &GameState, resources: &[ResourceView], buildings: &[BuildingView]) -> Vec<ReadingView> {
     let mut out = Vec::new();
     let mut add = |reading: Reading, label: String| {
@@ -117,21 +119,100 @@ pub(super) fn readings(r: &Rules, g: &GameState, resources: &[ResourceView], bui
             add(Reading::Rate { resource: id }, format!("{} rate", res.name));
         }
     }
+    for res in resources.iter().filter(|x| x.visible && x.cap.is_some()) {
+        let id = res.id.to_string();
+        if id != economy::LAND && id != economy::PROCESSORS && id != economy::BOREDOM {
+            add(Reading::DaysToCap { resource: id }, format!("Days to cap of {}", res.name));
+        }
+    }
     for b in buildings.iter().filter(|b| b.visible) {
         add(Reading::Count { building: b.id.to_string() }, format!("{} count", b.name));
     }
+    for b in buildings.iter().filter(|b| b.visible) {
+        add(Reading::NextCost { building: b.id.to_string() }, format!("Next cost of {}", b.name));
+    }
+    add(Reading::LandPrice, "Land price".to_string());
     add(Reading::Day, "Day".to_string());
+    // The editor sets N; offered at 1 (every day).
+    add(Reading::Every { days: 1 }, "Every N days".to_string());
+    let names = names();
     if !g.run.pads.is_empty() {
-        add(Reading::PadsReady, "Pads ready".to_string());
+        add(Reading::PadsReady { good: None }, "Ready pads (all)".to_string());
+        add(Reading::Cargo { good: None }, "Cargo of pads (all)".to_string());
+        for good in g.run.markets.keys() {
+            let name = names.get(good.as_str()).copied().unwrap_or(good);
+            add(Reading::PadsReady { good: Some(good.clone()) }, format!("Ready pads {name}"));
+            add(Reading::Cargo { good: Some(good.clone()) }, format!("Cargo of pads {name}"));
+        }
+        add(Reading::DaysSinceLaunch, "Days since last launch".to_string());
     }
     if research::reveals_demand(g) {
-        let names = names();
         for good in g.run.markets.keys() {
             let name = names.get(good.as_str()).copied().unwrap_or(good);
             add(Reading::Demand { good: good.clone() }, format!("{name} demand"));
         }
     }
     out
+}
+
+/// One choice for a verb's slot: the value a line holds and its display label.
+#[derive(Debug, Clone, Serialize)]
+pub struct Choice {
+    pub value: String,
+    pub label: String,
+}
+
+/// A verb on offer to the editor: its label, the choices for its target slot
+/// (`None`: it takes none; `target_all`: the slot may also be left at `all`,
+/// a line's `target` null), whether it takes a program tab, and its amount (`none`, `optional`:
+/// `N` or `all`, empty for 1; `n_or_all`, `up_to`).
+#[derive(Debug, Clone, Serialize)]
+pub struct VerbView {
+    pub verb: Verb,
+    pub label: &'static str,
+    pub targets: Option<Vec<Choice>>,
+    /// The target slot may be left at `all`.
+    pub target_all: bool,
+    pub tab: bool,
+    pub amount: &'static str,
+}
+
+/// Every verb of an `act` line, with its slots' choices now (visible
+/// buildings, the traded goods, visible research, the library's names).
+pub(super) fn verbs(g: &GameState, buildings: &[BuildingView]) -> Vec<VerbView> {
+    let names = names();
+    let goods: Vec<Choice> = g
+        .run
+        .markets
+        .keys()
+        .map(|id| Choice { value: id.clone(), label: names.get(id.as_str()).copied().unwrap_or(id).to_string() })
+        .collect();
+    let blds: Vec<Choice> =
+        buildings.iter().filter(|b| b.visible).map(|b| Choice { value: b.id.to_string(), label: b.name.to_string() }).collect();
+    let research: Vec<Choice> = crate::content::content()
+        .research
+        .iter()
+        .filter(|it| research::visible(g, it))
+        .map(|it| Choice { value: it.id.clone(), label: it.name.clone() })
+        .collect();
+    let mut saved: Vec<Choice> = Vec::new();
+    for l in &g.career.library {
+        if !saved.iter().any(|c| c.value == l.name) {
+            saved.push(Choice { value: l.name.clone(), label: l.name.clone() });
+        }
+    }
+    let v = |verb, label, targets: Option<Vec<Choice>>, target_all, tab, amount| VerbView { verb, label, targets, target_all, tab, amount };
+    vec![
+        v(Verb::LaunchPads, "Launch pads", Some(goods.clone()), true, false, "none"),
+        v(Verb::LoadPads, "Load pads", Some(goods.clone()), true, false, "none"),
+        v(Verb::SetPads, "Set pads", Some(goods), false, false, "up_to"),
+        v(Verb::Pause, "Pause", Some(blds.clone()), false, false, "optional"),
+        v(Verb::Resume, "Resume", Some(blds), false, false, "optional"),
+        v(Verb::Research, "Research", Some(research), false, false, "none"),
+        v(Verb::LoadProgram, "Load", Some(saved), false, true, "none"),
+        v(Verb::AssignProcessors, "Assign processors", None, false, true, "n_or_all"),
+        v(Verb::Retire, "Retire", None, false, false, "none"),
+    ]
 }
 
 /// The program lines run over a span of days (a client drawing once per

@@ -27,6 +27,18 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   retirement; loading is how they come back. A loaded line not unlocked yet in this run fails
   and advances. *Defaults (035):* 12 slots, display names up to 40 characters, open from
   run 1, loading leaves processors as assigned.
+- **One flat program template (2026-11-20).** Every line is `<verb> <target> [amount]`: the
+  target slot is typed by the verb (building, resource, good, ideology axis, research item,
+  saved program, program tab), the amount `N`, `up to N` or `all`. No nesting, variables,
+  labels or jumps; a new capability is a new verb or reading, never new grammar; per-target
+  commands (Buy X, Promote X, Fund X, Overclock X) are one verb with a target. Conditions stay
+  `<reading> <op> <right side>` with one optional `and` / `or`; the right side is a number or
+  another reading times a number (one multiplier). Pads are addressed only by good. Every verb
+  costs a processor step. Unlocking is out of scope: everything is open wherever program logic
+  is. *Defaults (037, asked):* "costs a step" read as "a verb that acts": `research`, `pause`,
+  `resume`, `set pads`, `assign processors` with nothing to do are done and free (as `build
+  ... up to N`); the pad verbs run the Launch / Load commands' rows, a step every time as the
+  commands take; `retire` retires at the day's end like the button; `every N days` reads 1.
 - **`rate` reads production less demand (2026-11-20).** What buildings and programs wanted
   counts, met or not, so `Energy rate < 0` stays true all through a brownout; a capped
   resource's rate is its uncapped rate. The condition's rate and the Resources panel's

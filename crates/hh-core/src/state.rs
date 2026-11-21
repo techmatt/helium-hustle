@@ -116,23 +116,52 @@ impl Entry {
             Op::BuyLand {} => "buy land".to_string(),
             Op::If { when } => format!("if {}", when.describe()),
             Op::WaitUntil { when } => format!("wait until {}", when.describe()),
+            Op::Act { verb, target, tab, amount } => {
+                let mut t = serde_json::to_value(verb).ok().and_then(|v| v.as_str().map(str::to_string)).unwrap_or_default();
+                if let Some(x) = target {
+                    t = format!("{t} {x}");
+                }
+                if let Some(p) = tab {
+                    t = format!("{t} program {}", p + 1);
+                }
+                match amount {
+                    Some(Amount::N(n)) => t = format!("{t} {n}"),
+                    Some(Amount::All) => t = format!("{t} all"),
+                    None => {}
+                }
+                t
+            }
         };
         if self.indented { format!("> {text}") } else { text }
+    }
+}
+
+impl Reading {
+    /// Terse text with content ids (traces and logs, not the UI).
+    pub fn describe(&self) -> String {
+        let all = |g: &Option<String>| g.clone().unwrap_or_else(|| "all".to_string());
+        match self {
+            Reading::Amount { resource } => resource.clone(),
+            Reading::Percent { resource } => format!("{resource} %"),
+            Reading::Rate { resource } => format!("{resource} rate"),
+            Reading::Count { building } => format!("{building} count"),
+            Reading::Day => "day".to_string(),
+            Reading::PadsReady { good } => format!("ready pads {}", all(good)),
+            Reading::Demand { good } => format!("{good} demand"),
+            Reading::NextCost { building } => format!("next cost of {building}"),
+            Reading::LandPrice => "land price".to_string(),
+            Reading::DaysToCap { resource } => format!("days to cap of {resource}"),
+            Reading::DaysSinceLaunch => "days since last launch".to_string(),
+            Reading::Cargo { good } => format!("cargo of pads {}", all(good)),
+            Reading::Every { days } => format!("every {days} days"),
+        }
     }
 }
 
 impl Condition {
     pub fn describe(&self) -> String {
         let clause = |c: &Clause| {
-            let reading = match &c.reading {
-                Reading::Amount { resource } => resource.clone(),
-                Reading::Percent { resource } => format!("{resource} %"),
-                Reading::Rate { resource } => format!("{resource} rate"),
-                Reading::Count { building } => format!("{building} count"),
-                Reading::Day => "day".to_string(),
-                Reading::PadsReady => "pads ready".to_string(),
-                Reading::Demand { good } => format!("{good} demand"),
-            };
+            let reading = c.reading.describe();
             let cmp = match c.cmp {
                 Cmp::Lt => "<",
                 Cmp::Le => "<=",
@@ -140,7 +169,10 @@ impl Condition {
                 Cmp::Ge => ">=",
                 Cmp::Eq => "=",
             };
-            format!("{reading} {cmp} {}", c.value)
+            match &c.against {
+                None => format!("{reading} {cmp} {}", c.value),
+                Some(a) => format!("{reading} {cmp} {} x {}", a.describe(), c.value),
+            }
         };
         match &self.rest {
             None => clause(&self.first),
@@ -168,6 +200,50 @@ pub enum Op {
     If { when: Condition },
     /// Free. Holds the pointer until true.
     WaitUntil { when: Condition },
+    /// `<verb> <target> [amount]` (a processor step; docs/rules/programs.md,
+    /// *Verbs*). The target slot is typed by the verb: `target` a building,
+    /// good, research item or saved program's name, `tab` a program (0-based).
+    Act {
+        verb: Verb,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        target: Option<String>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        tab: Option<u32>,
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        amount: Option<Amount>,
+    },
+}
+
+/// The verbs of an `act` line (docs/rules/programs.md, *Verbs*).
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Verb {
+    /// `launch pads <good | all>`: Launch Full Pads, on that good's pads.
+    LaunchPads,
+    /// `load pads <good | all>`: Load Launch Pads, on that good's pads.
+    LoadPads,
+    /// `set pads <good> up to N`: points idle pads at the good.
+    SetPads,
+    /// `pause <building> [N | all]`.
+    Pause,
+    /// `resume <building> [N | all]`.
+    Resume,
+    /// `research <item>`.
+    Research,
+    /// `load <saved program> into <tab>`.
+    LoadProgram,
+    /// `assign processors <tab> N`.
+    AssignProcessors,
+    /// `retire`: a voluntary retirement at the day's end.
+    Retire,
+}
+
+/// An `act` line's amount: `N` (`{"n": 3}`; `up to N` for `set pads`) or `all`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Amount {
+    N(u32),
+    All,
 }
 
 /// One clause, or two joined by `and` / `or`.
@@ -192,13 +268,15 @@ pub enum Join {
     Or,
 }
 
-/// `<reading> <cmp> <value>`.
+/// `<reading> <cmp> <value>`, or with `against`, `<reading> <cmp> <against> × <value>`.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Clause {
     pub reading: Reading,
     pub cmp: Cmp,
     pub value: Fx,
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub against: Option<Reading>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
@@ -225,10 +303,29 @@ pub enum Reading {
     Count { building: String },
     /// The run's day.
     Day,
-    /// Pads full and able to launch now.
-    PadsReady,
+    /// Pads full and able to launch now: of one good's pads, or all.
+    PadsReady {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        good: Option<String>,
+    },
     /// A good's demand (needs exact demand revealed).
     Demand { good: String },
+    /// The next one's price in credits (no credits cost: nothing).
+    NextCost { building: String },
+    /// The land price.
+    LandPrice,
+    /// Days until the resource reaches its cap at its `rate` (0 at the cap;
+    /// nothing with no cap or a rate of 0 or less).
+    DaysToCap { resource: String },
+    /// Days since this run's last launch (none yet: the run's day).
+    DaysSinceLaunch,
+    /// Cargo aboard one good's pads, or all.
+    Cargo {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        good: Option<String>,
+    },
+    /// 1 on a day that is a multiple of `days`, else 0 (`every N days`).
+    Every { days: u32 },
 }
 
 /// A program tab: a command queue, the processors assigned to it and its
@@ -444,6 +541,10 @@ pub struct Run {
     pub day_net: BTreeMap<String, Fx>,
     /// The run's activity feed, oldest first (display only: no rule reads it).
     pub activity: Vec<Activity>,
+    /// The day of this run's last launch (the `days_since_launch` reading).
+    pub last_launch: Option<u64>,
+    /// A program's `retire` ran today: the run retires at the day's end.
+    pub retire_asked: bool,
 }
 
 /// Career-wide totals over every finished run.

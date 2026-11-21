@@ -58,7 +58,7 @@
       "variant": "arc1",
       "params": {
         "program_count": 5,
-        "max_entries": 64,
+        "max_entries": 128,
         "overclock_base_cap": "1.5",
         "logic_unlock_processors": 2,
         "library_slots": 12,

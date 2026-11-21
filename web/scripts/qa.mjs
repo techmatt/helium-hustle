@@ -690,6 +690,14 @@ async function pass(seed, width, theme) {
       await click('.prog-tabs button[data-program="0"]', 'program 1 tab');
       if (lines.length) await click('.prog-procs button[title="Clear this program"]', 'clear program');
       await panel('commands');
+      // A per-target command shares its verb's card: pick it so its Add button shows.
+      await evaluate(`(() => {
+        const o = document.querySelector('.panel[data-panel="commands"] select option[value="${cmd}"]');
+        if (o && o.parentElement.value !== '${cmd}') {
+          o.parentElement.value = '${cmd}';
+          o.parentElement.dispatchEvent(new Event('change', { bubbles: true }));
+        }
+      })()`);
       if (await exists(`[data-testid="add-${cmd}"]:not([disabled])`)) await click(`[data-testid="add-${cmd}"]`, `add ${cmd}`);
     };
     const seenNav = new Set();

@@ -1,6 +1,6 @@
 # Rules
 
-The rules as implemented, rules revision **8** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **9** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
 The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
@@ -60,7 +60,8 @@ One tick is one in-game day. Each tick, in this order (`Rules::tick`, `rules.rs`
 13. **Achievements** check the day's flows and stockpiles (achievements).
 14. **Ideology** bests are recorded in the career (ideology).
 15. The run's **day** count rises.
-16. Boredom at its cap **forces retirement**: the next run starts at once (career).
+16. Boredom at its cap **forces retirement**; otherwise a program's `retire` line that ran today
+    retires the run voluntarily. The next run starts at once (career).
 17. The **activity feed** is cut to its newest `activity_kept` lines (events; display only).
     The same trim ends every applied action.
 

@@ -85,7 +85,8 @@ change bumps `RULES_REVISION`
 and in `scripts/wasm-smoke.mjs` (`wasm_smoke_expects_the_golden_constants` fails until they
 match; it also checks the smoke plays the golden game through `play_golden`, which runs
 `hh_core::driver` itself in wasm, with the same seed and length). `GOLDEN_CONTENT_HASH`
-moves with any `content/` byte, play or not. Never type them: `python scripts/set_golden.py`
+moves with any `content/` byte, play or not; `GOLDEN_FINGERPRINT` with any
+`configs/baseline.json` value (the config is part of the state). Never type them: `python scripts/set_golden.py`
 copies all six from `hh-sim golden` (or copy each from the failing assertion's left side).
 The sim players' pinned games are separate: `PINNED` and the oracle's in
 `crates/hh-sim/tests/cli.rs` (an agent refactor keeps them; a rules change moves them all),

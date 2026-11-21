@@ -101,11 +101,12 @@ pub fn load_amount(r: &Rules, g: &GameState) -> Fx {
 /// from its good's stockpile, to its capacity; pads load in loading-priority
 /// order of their goods (pad order within a good), so a short stockpile goes
 /// to the higher-priority good's pads first.
-pub fn load(r: &Rules, g: &mut GameState) {
+/// With `only`, just that good's pads (`load pads <good>`).
+pub fn load(r: &Rules, g: &mut GameState, only: Option<&str>) {
     let per = load_amount(r, g);
     let cap = r.p.shipments.pad_cargo_capacity;
     let rank = |good: &str| g.run.loading_priority.iter().position(|x| x == good).unwrap_or(usize::MAX);
-    let mut order: Vec<usize> = (0..g.run.pads.len()).collect();
+    let mut order: Vec<usize> = (0..g.run.pads.len()).filter(|&i| on(g, i, only)).collect();
     order.sort_by_key(|&i| (rank(&g.run.pads[i].good), i));
     for i in order {
         if !pad_active(g, i) || g.run.pads[i].paused {
@@ -133,13 +134,38 @@ pub fn ready(r: &Rules, g: &GameState, i: usize) -> bool {
     g.run.pads[i].cargo >= r.p.shipments.pad_cargo_capacity && can_launch(r, g, i)
 }
 
-/// Launch Full Pads: every active, unpaused, full pad that can launch does, in pad order.
-pub fn launch_full(r: &Rules, g: &mut GameState) {
+/// Pad `i` carries `only` (`None`: every pad).
+pub fn on(g: &GameState, i: usize, only: Option<&str>) -> bool {
+    only.is_none_or(|good| g.run.pads[i].good == good)
+}
+
+/// Launch Full Pads: every active, unpaused, full pad that can launch does, in
+/// pad order. With `only`, just that good's pads (`launch pads <good>`).
+pub fn launch_full(r: &Rules, g: &mut GameState, only: Option<&str>) {
     for i in 0..g.run.pads.len() {
-        if !g.run.pads[i].paused && ready(r, g, i) {
+        if on(g, i, only) && !g.run.pads[i].paused && ready(r, g, i) {
             launch(r, g, i);
         }
     }
+}
+
+/// `set pads <good> up to N`: while fewer than `n` pads carry `good`, an idle
+/// pad (empty, carrying another good) switches to it, in pad order. Returns
+/// how many switched.
+pub fn point_idle(r: &Rules, g: &mut GameState, good: &str, n: u32) -> u32 {
+    let mut have = (0..g.run.pads.len()).filter(|&i| on(g, i, Some(good))).count() as u32;
+    let mut moved = 0;
+    for i in 0..g.run.pads.len() {
+        if have >= n {
+            break;
+        }
+        let p = &g.run.pads[i];
+        if p.good != good && p.cargo == Fx::ZERO && set_pad_good(r, g, i as u32, good).is_ok() {
+            have += 1;
+            moved += 1;
+        }
+    }
+    moved
 }
 
 /// The credits a pad's cargo fetches now.
@@ -161,6 +187,7 @@ pub fn launch(r: &Rules, g: &mut GameState, i: usize) {
     let demand = g.run.markets.get(&good).map_or(Fx::ZERO, |m| m.demand);
     g.produce("launch", CREDITS, pay);
     g.run.stats.shipments += 1;
+    g.run.last_launch = Some(g.run.day);
     let cargo = g.run.pads[i].cargo;
     g.activity("shipment", &good, Some(pay), Some(cargo));
     let p = &mut g.run.pads[i];
