@@ -110,6 +110,49 @@ fn guard_readings_read_pads_running_and_processors() {
     assert_eq!(read(&g, Reading::Processors { tab: 99 }), None, "no such program reads nothing");
 }
 
+/// `free processors` and `idle pads` fold a guard into one reading:
+/// `free processors > 0` exactly when `assign processors <tab> all` would add
+/// some, `idle pads (all) > idle pads X × 1` exactly when `set pads X` has a
+/// pad to switch.
+#[test]
+fn folded_readings_guard_assign_and_set_pads_exactly() {
+    let r = rules();
+    let mut g = game(&r);
+    own(&r, &mut g, "launch_pad", 2);
+    own(&r, &mut g, "solar_panel", 10);
+    own(&r, &mut g, "data_center", 3);
+    let read = |g: &GameState, what: Reading| programs::reading(&r, g, &what);
+    let n = |v: i64| Some(Fx::from_int(v));
+    let free = |g: &GameState| programs::capacity(g) - programs::assigned(g);
+    assert!(free(&g) > 0, "new Data Centers' processors start unassigned");
+    assert_eq!(read(&g, Reading::FreeProcessors), n(i64::from(free(&g))));
+    let all = act(Verb::AssignProcessors, None, Some(1), Some(Amount::All));
+    assert_eq!(run_one(&r, &mut g, all.clone()), O::Ran);
+    r.advance(&mut g, 1);
+    assert_eq!(read(&g, Reading::FreeProcessors), n(0));
+    assert_eq!(run_one(&r, &mut g, all), O::Done, "none free: nothing to add");
+    // Both pads on He-3 and empty: both idle; cargo on one leaves the other.
+    for p in &mut g.run.pads {
+        p.good = "he3".into();
+    }
+    let idle = |g: &GameState, good: Option<&str>| read(g, Reading::IdlePads { good: good.map(str::to_string) });
+    assert_eq!(idle(&g, None), n(2));
+    g.run.pads[0].cargo = f("1");
+    assert_eq!((idle(&g, None), idle(&g, Some("he3")), idle(&g, Some("titanium"))), (n(1), n(1), n(0)));
+    // `set pads titanium` has a pad to switch exactly when idle pads (all) > idle pads titanium:
+    // here the empty He-3 pad, never the loaded one.
+    assert!(idle(&g, None) > idle(&g, Some("titanium")));
+    let set_ti = act(Verb::SetPads, Some("titanium"), None, Some(Amount::N(2)));
+    assert_eq!(run_one(&r, &mut g, set_ti.clone()), O::Ran);
+    assert_eq!((g.run.pads[0].good.as_str(), g.run.pads[1].good.as_str()), ("he3", "titanium"), "the loaded pad stays");
+    assert_eq!(idle(&g, None), idle(&g, Some("titanium")), "no idle pad on another good left");
+    assert_eq!(run_one(&r, &mut g, set_ti), O::Failed, "only the loaded pad could switch");
+    let v = r.view(&g);
+    assert!(v.readings.iter().any(|x| x.reading == Reading::FreeProcessors));
+    assert!(v.readings.iter().any(|x| x.reading == Reading::IdlePads { good: None }));
+    assert!(v.readings.iter().any(|x| x.reading == Reading::IdlePads { good: Some("he3".into()) }));
+}
+
 #[test]
 fn pad_verbs_and_readings_address_pads_by_good() {
     let r = rules();

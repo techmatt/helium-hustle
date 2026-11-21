@@ -159,6 +159,8 @@ impl Reading {
             Reading::Running { building } => format!("{building} running"),
             Reading::Processors { tab } => format!("program {} processors", tab + 1),
             Reading::DaysSincePurchase => "days since last purchase".to_string(),
+            Reading::FreeProcessors => "free processors".to_string(),
+            Reading::IdlePads { good } => format!("idle pads {}", all(good)),
         }
     }
 }
@@ -348,6 +350,15 @@ pub enum Reading {
     /// Days since this run's last purchase: a building, land or research
     /// (none yet: the run's day).
     DaysSincePurchase,
+    /// Processors the active buildings grant that no program holds: what
+    /// `assign processors <tab> all` would add.
+    FreeProcessors,
+    /// Pads of one good, or every pad, with no cargo aboard (`set pads X` has
+    /// one to switch exactly when `idle pads (all) > idle pads X × 1`).
+    IdlePads {
+        #[serde(default, skip_serializing_if = "Option::is_none")]
+        good: Option<String>,
+    },
 }
 
 /// A program tab: a command queue, the processors assigned to it and its

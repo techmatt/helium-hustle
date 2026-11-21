@@ -121,8 +121,8 @@ export type Cmp = 'lt' | 'le' | 'gt' | 'ge' | 'eq';
 export type Reading =
   | { kind: 'amount' | 'percent' | 'rate'; resource: string }
   | { kind: 'count'; building: string }
-  | { kind: 'day' | 'land_price' | 'days_since_launch' | 'days_since_purchase' }
-  | { kind: 'pads_ready' | 'cargo' | 'pads'; good?: string | null }
+  | { kind: 'day' | 'land_price' | 'days_since_launch' | 'days_since_purchase' | 'free_processors' }
+  | { kind: 'pads_ready' | 'cargo' | 'pads' | 'idle_pads'; good?: string | null }
   | { kind: 'demand'; good: string }
   | { kind: 'next_cost' | 'running'; building: string }
   | { kind: 'researched'; item: string }

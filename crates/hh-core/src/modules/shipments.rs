@@ -176,8 +176,14 @@ pub fn launch_full(r: &Rules, g: &mut GameState, only: Option<&str>) {
     }
 }
 
+/// Pad `i` is idle: no cargo aboard. `set pads` switches only idle pads (of
+/// another good), and the `idle pads` reading counts them.
+pub fn idle(g: &GameState, i: usize) -> bool {
+    g.run.pads[i].cargo == Fx::ZERO
+}
+
 /// `set pads <good> up to N`: while fewer than `n` pads carry `good`, an idle
-/// pad (empty, carrying another good) switches to it, in pad order. Returns
+/// pad carrying another good switches to it, in pad order. Returns
 /// how many switched.
 pub fn point_idle(r: &Rules, g: &mut GameState, good: &str, n: u32) -> u32 {
     let mut have = (0..g.run.pads.len()).filter(|&i| on(g, i, Some(good))).count() as u32;
@@ -186,8 +192,7 @@ pub fn point_idle(r: &Rules, g: &mut GameState, good: &str, n: u32) -> u32 {
         if have >= n {
             break;
         }
-        let p = &g.run.pads[i];
-        if p.good != good && p.cargo == Fx::ZERO && set_pad_good(r, g, i as u32, good).is_ok() {
+        if g.run.pads[i].good != good && idle(g, i) && set_pad_good(r, g, i as u32, good).is_ok() {
             have += 1;
             moved += 1;
         }

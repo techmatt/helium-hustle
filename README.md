@@ -77,7 +77,8 @@ is optimized (`opt-level = 1`) and keeps overflow checks.
 
 **Rules changes:** the `golden_game` test (`crates/hh-core/src/tests/mod.rs`) pins the final
 state of one fixed game: baseline config, seed `u64::MAX`, 2000 ticks of the scripted
-policy (`driver.rs`: it ships, is retired by boredom at tick 1574 and starts run 2). An intended play
+policy (`driver.rs`: it ships, runs a condition program once program logic opens, is retired
+by boredom at tick 1575 in `hh-sim run`'s career log and starts run 2). An intended play
 change bumps `RULES_REVISION`
 (`crates/hh-core/src/lib.rs`, and the revision line in `docs/rules/README.md`), adds its
 `docs/rules-history.md` row, and updates the three golden constants, `GOLDEN_REVISION`,
@@ -89,9 +90,14 @@ moves with any `content/` byte, play or not; `GOLDEN_FINGERPRINT` with any
 `configs/baseline.json` value (the config is part of the state). Never type them: `python scripts/set_golden.py`
 copies all six from `hh-sim golden` (or copy each from the failing assertion's left side).
 The sim players' pinned games are separate: `PINNED` and the oracle's in
-`crates/hh-sim/tests/cli.rs` (an agent refactor keeps them; a rules change moves them all),
-which `set_golden.py` doesn't touch: copy them from the failing assertion. A rename or
+`crates/hh-sim/tests/cli.rs` (an agent refactor keeps them; a rules change moves those whose
+play it changes), which `set_golden.py` doesn't touch: copy them from the failing assertion. A rename or
 refactor that plays the same moves no golden constant; if it does, play changed.
+
+**A new program reading** touches `state::Reading` (and `describe`), `modules/programs.rs`
+(`check_entries`, `reading`), `view/programs.rs` (`readings`, the editor's list), the web
+`Reading` type (`engine.ts`) and `readingLabel` (`ui/ProgramLogic.tsx`), and
+`docs/rules/programs.md`; `npm run check` is the only check on the web two.
 
 ## This machine
 

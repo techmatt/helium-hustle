@@ -70,6 +70,10 @@ export function readingLabel(v: View, r: Reading): string {
       return `Researched ${name(v, r.item)}`;
     case 'processors':
       return `Program ${r.tab + 1} processors`;
+    case 'free_processors':
+      return 'Free processors';
+    case 'idle_pads':
+      return r.good ? `Idle pads on ${name(v, r.good)}` : 'Idle pads (all)';
   }
 }
 

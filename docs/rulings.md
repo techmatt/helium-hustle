@@ -53,6 +53,12 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   P N` sets N a day on every cost of P (at most `max_drain_rate`; `all` or no amount the most;
   0 stops it); the switches are 0/1 programs params; JSON verb `fund`, so a later `fund <axis>`
   can share it.
+- **Folded guard readings and a golden program (2026-11-20).** Exact guards come from folded
+  readings, not more `and` clauses; the golden game's scripted policy runs a short condition
+  program, so the golden pins the interpreter. *Defaults (040):* `free processors` is granted
+  by active buildings less assigned (what `assign processors ... all` would add); `idle pads
+  <good | all>` is pads with no cargo (a cooling pad counts), so `set pads X` has one to switch
+  exactly when `idle pads (all) > idle pads X × 1`.
 - **`rate` reads production less demand (2026-11-20).** What buildings and programs wanted
   counts, met or not, so `Energy rate < 0` stays true all through a brownout; a capped
   resource's rate is its uncapped rate. The condition's rate and the Resources panel's

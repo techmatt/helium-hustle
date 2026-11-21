@@ -1,7 +1,7 @@
 # Programs (module `programs`, variant `arc1`)
 
-Program tabs (queues of instructions), the processors that run them, the instruction set
-(commands, `build`, `buy land`, verbs, `if` blocks, `wait until`), command execution and overclocks. In [the day](README.md#the-day), expired overclocks drop before the building
+Program tabs, the processors that run them, the instruction set, command execution and
+overclocks. In [the day](README.md#the-day), expired overclocks drop before the building
 pass, and programs run after the demand update and the upkeep-free buildings' production,
 before every building that takes upkeep (programs are paid first), projects and shipments.
 
@@ -24,7 +24,7 @@ comes off the last programs first for that day, and their assignments stay.
 
 | Line | JSON `op` | What it does |
 |---|---|---|
-| a command | `command` (`command`, `count`) | Runs the command (below) `count` times, a step each, before moving on. |
+| a command | `command` (`command`, `count`) | Runs it (below) `count` times, a step each. |
 | `build <building>` | `build` (`building`, `up_to` null) | Buys one, as the Buy action would (economy.md); refused there, it fails. |
 | `build <building> up to N` | `build` (`up_to` N) | The same while fewer than N are owned; with N owned it is **done**: the step, nothing else. |
 | `buy land` | `buy_land` | Buys land, as the Buy Land action would; unaffordable, it fails. |
@@ -38,8 +38,7 @@ an `if` or another indented line. Any other line may sit in a body, `wait until`
 
 **Verbs** (`act` lines; `state::Verb`). The target slot is typed by the verb; `tab` is a
 program (0-based); the amount is `{"n": N}` or `"all"`; JSON `verb` is the snake_case name.
-A verb with nothing to do is **done**, as a finished `build ... up to N`: its step and nothing
-else; one that can't act fails. A guard (`if`) is how a line saves the step.
+A verb with nothing to do is **done** (its step, nothing else); one that can't act fails.
 
 | Verb | What it does |
 |---|---|
@@ -53,10 +52,6 @@ else; one that can't act fails. A guard (`if`) is how a line saves the step.
 | `assign processors <tab> N` (N may be 0) | As `set_processors` (`all`: every one not on another program). A program cut stops at its new count that day; one raised gains them the next. |
 | `retire` | Fails unless retiring is allowed (career.md); else the run retires at the day's end, as the Retire action. |
 | `fund <project> [N \| all]` | Sets its daily rate on each cost to N, as the Projects panel does: at most `max_drain_rate` (`all` or none: that); 0 stops it. Done when every rate is N; fails when the project isn't open. |
-
-**Switches.** `fund_verb` and `days_since_purchase_reading` at 0 take that verb or reading
-out: not offered, refused in a line new to the program; a held or loaded one fails or reads
-nothing.
 
 **Conditions.** `<reading> <cmp> <right side>`, or two such clauses joined by one `and` or
 `or` (`state::Condition`: `first`, `rest`). `cmp` is `lt`, `le`, `gt`, `ge` or `eq`; the right
@@ -74,7 +69,9 @@ side is a number (`value`, an `Fx`) or, with `against`, another reading times th
 | `running` (`building`) | How many are owned and active. |
 | `researched` (`item`) | 1 once researched this run, else 0. |
 | `pads` (`good`, null: all) | Pads carrying the good. |
+| `idle_pads` (`good`, null: all) | The good's pads with no cargo aboard (a cooling pad counts). `set pads X` can switch one exactly when `idle pads (all) > idle pads X × 1`. |
 | `processors` (`tab`) | Processors assigned to that program. |
+| `free_processors` | Processors active buildings grant that no program holds (`processors_free`): above 0 exactly when `assign processors <tab> all` would add some. |
 | `next_cost` (`building`) | The next one's price in credits (no credits cost: nothing). |
 | `land_price` | The land price. |
 | `day` | The run's day. |
@@ -85,8 +82,10 @@ side is a number (`value`, an `Fx`) or, with `against`, another reading times th
 | `days_since_purchase` | Days since this run last bought a building, land or research, by hand or line (none yet: the run's day); not commands or funding. |
 | `demand` (`good`) | The good's demand today; reads nothing until exact demand is revealed (Market Awareness, research.md). |
 
-A clause whose reading or right side reads nothing is false. The view's `readings` offer what
-the player can see (`view/programs.rs`), its `verbs` each slot's choices now. The Resources
+A clause whose reading or right side reads nothing is false. Guards stay exact through
+folded readings like `free_processors` and `idle_pads`, not more `and` clauses. The view's
+`readings` offer what the player can see (`view/programs.rs`), its `verbs` each slot's
+choices now; neither offers one switched off (*Params*). The Resources
 panel's per-day number is `rate` for the next day.
 
 **Loadouts.** The library (`Career.library`, kept across retirements) holds up to
@@ -131,10 +130,9 @@ An empty program does nothing. Each line's outcome today (`state::LineOutcome`; 
 
 **Overclock.** Each execution adds its own stack on its `target` building category for
 `floor(duration × overclock_duration_factor ^ rationalist rank)` days, live from the same
-day's pass of the buildings that take upkeep (every target does): a stack run on day `d` lasts while the day is below `d + days`. A category's overclock factor is the product of `1 + bonus` over its live
+day's pass of the buildings that take upkeep: a stack run on day `d` lasts while the day is below `d + days`. A category's overclock factor is the product of `1 + bonus` over its live
 stacks, capped at the overclock cap: `overclock_base_cap`, or the highest `overclock_cap`
-among researched items if higher. Expired stacks are dropped at the start of each building
-pass. The factor multiplies production of every building of that category (economy.md).
+among researched items if higher. The factor multiplies production of every building of that category (economy.md).
 
 **Visible:** a command is shown when unlocked or used in any run.
 
@@ -180,10 +178,8 @@ overclock's `target`, `bonus`, `duration`) and `scale_modifier`. `content/resear
 - Conflicts, the engine's pick: the overclock cap is 1.5, 2 with Overclock Boost (the text
   said "+200%"); Buy Ice needs nothing (handoffs wanted an Ice Extractor); research
   `unlocks_commands` is dropped for each command's `requires`; Microwave Receiver unlocks Buy
-  Power ([economy.md](economy.md#port-notes)); Load's, Promote's and Disrupt's numbers are config.
-- Candidates (Godot port): processors on Program 1 at a new run, unassigned when gained, cut
-  from the last program; a repeat count; effect commands need their full cost; the
+  Power ([economy.md](economy.md#port-notes)).
+- Candidates (Godot port): the processor rules above; a repeat count; effect commands need their full cost; the
   output-cap skip; one x1.05 overclock stack per execution for 5 days; AI Consciousness Act's
   boredom values replace the commands'.
-- Candidates (not in the Godot build): everything past commands; the picks are in
-  docs/rulings.md.
+- Everything past commands is new (picks: docs/rulings.md).

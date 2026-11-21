@@ -32,8 +32,8 @@ pub(crate) fn set(g: &mut crate::GameState, res: &str, v: &str) {
 // The golden constants: update all three together on a `RULES_REVISION` bump
 // with `python scripts/set_golden.py` (it also sets `GOLDEN_*` in
 // scripts/wasm-smoke.mjs); never type them (README, *Rules changes*).
-const GOLDEN_REVISION: u32 = 11;
-const GOLDEN_FINGERPRINT: &str = "83a78ad29c46a461";
+const GOLDEN_REVISION: u32 = 12;
+const GOLDEN_FINGERPRINT: &str = "53f003e058d17519";
 const GOLDEN_CONTENT_HASH: &str = "1bb305eca42caf60";
 
 pub(crate) fn golden_session() -> Session {
@@ -54,6 +54,43 @@ fn golden_game() {
         (GOLDEN_REVISION, GOLDEN_FINGERPRINT)
     );
     assert_eq!(content_hash(), GOLDEN_CONTENT_HASH);
+}
+
+/// The golden script's condition program (`driver::guard_lines`) does its work
+/// in the golden game: each guard both holds and fails, the `assign` and the
+/// `build` both run, and the `build` is also done (two pads owned), so the
+/// fingerprint pins the interpreter and the new readings, not only unit tests.
+#[test]
+fn golden_game_runs_its_condition_program() {
+    use crate::state::{LineOutcome as O, Reading};
+    use std::collections::BTreeSet;
+    let mut s = Session::new(&baseline(), GOLDEN_SEED, None).unwrap();
+    let mut seen: [BTreeSet<String>; 4] = Default::default();
+    let mut readings = BTreeSet::new();
+    for _ in 0..GOLDEN_TICKS {
+        play(&mut s, 1, GOLDEN_POLICY);
+        let program = &s.state.run.programs[0];
+        if program.entries.len() == 5 {
+            for e in &program.entries {
+                if let crate::state::Op::If { when } = &e.op {
+                    readings.insert(when.first.reading.describe());
+                }
+            }
+            for (&line, &o) in s.state.run.today.lines.get(&0).into_iter().flatten() {
+                if let Some(set) = seen.get_mut(line as usize) {
+                    set.insert(format!("{o:?}"));
+                }
+            }
+        }
+    }
+    let has = |line: usize, o: O| seen[line].contains(&format!("{o:?}"));
+    assert!(readings.contains(&Reading::FreeProcessors.describe()), "{readings:?}");
+    assert!(readings.contains(&Reading::IdlePads { good: None }.describe()), "{readings:?}");
+    for (line, outcomes) in [(0, &[O::True, O::False][..]), (1, &[O::Ran]), (2, &[O::True, O::False]), (3, &[O::Ran, O::Done])] {
+        for &o in outcomes {
+            assert!(has(line, o), "line {line} never {o:?}: {seen:?}");
+        }
+    }
 }
 
 #[test]

@@ -85,6 +85,13 @@ pub fn assigned(g: &GameState) -> u32 {
     g.run.programs.iter().map(|p| p.processors).sum()
 }
 
+/// Processors the active buildings grant that no program holds (the view's
+/// `processors_free`, the `free processors` reading): what `assign processors
+/// <tab> all` would add.
+pub fn free(g: &GameState) -> u32 {
+    capacity(g).saturating_sub(assigned(g))
+}
+
 /// How many of each program's assigned processors run today: all, unless fewer
 /// are working than assigned, when the shortfall comes off the last programs first.
 pub fn running(g: &GameState) -> Vec<u32> {
@@ -152,14 +159,16 @@ fn check_entries(r: &Rules, g: &GameState, program: u32, entries: &[Entry], held
                 known(resource).then_some(()).ok_or_else(|| format!("Program {n}: unknown resource {resource:?}"))
             }
             Reading::Count { building: b } | Reading::NextCost { building: b } | Reading::Running { building: b } => building(b),
-            Reading::Day | Reading::LandPrice | Reading::DaysSinceLaunch => Ok(()),
+            Reading::Day | Reading::LandPrice | Reading::DaysSinceLaunch | Reading::FreeProcessors => Ok(()),
             Reading::DaysSincePurchase => {
                 if gated && !r.p.programs.days_since_purchase_reading {
                     return Err(format!("Program {n}: the days since last purchase reading is off"));
                 }
                 Ok(())
             }
-            Reading::PadsReady { good } | Reading::Cargo { good } | Reading::Pads { good } => good.as_deref().map_or(Ok(()), traded),
+            Reading::PadsReady { good } | Reading::Cargo { good } | Reading::Pads { good } | Reading::IdlePads { good } => {
+                good.as_deref().map_or(Ok(()), traded)
+            }
             Reading::Researched { item } => {
                 c.research_item(item).map(|_| ()).ok_or_else(|| format!("Program {n}: unknown research {item:?}"))
             }
@@ -550,6 +559,12 @@ pub fn reading(r: &Rules, g: &GameState, what: &Reading) -> Option<Fx> {
             }
             let since = g.run.day - g.run.last_purchase.unwrap_or(0);
             Some(Fx::from_int(i64::try_from(since).unwrap_or(i64::MAX)))
+        }
+        Reading::FreeProcessors => Some(Fx::from_int(i64::from(free(g)))),
+        Reading::IdlePads { good } => {
+            let only = good.as_deref();
+            let n = (0..g.run.pads.len()).filter(|&i| super::shipments::on(g, i, only) && super::shipments::idle(g, i)).count();
+            Some(Fx::from_int(n as i64))
         }
     }
 }

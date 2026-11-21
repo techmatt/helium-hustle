@@ -6,7 +6,7 @@
 use crate::action::Action;
 use crate::fx::Fx;
 use crate::record::Session;
-use crate::state::Entry;
+use crate::state::{Amount, Clause, Cmp, Condition, Entry, Join, Joined, Op, Reading, Verb};
 use crate::view::View;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -17,7 +17,8 @@ pub enum Policy {
     /// content order (the view's `affordable` flag, re-read after each buy).
     Greedy { every: u64 },
     /// The scripted Arc 1 opening ([`script_step`] each tick): a fixed build
-    /// order, one command at a time on the first program, shipping He-3.
+    /// order, one command at a time on the first program (behind a short
+    /// condition program once program logic opens), shipping He-3.
     Script,
 }
 
@@ -136,9 +137,10 @@ fn energy_surplus(v: &View) -> Fx {
     net
 }
 
-/// One decision, before a tick: assign free processors to the first program,
-/// buy the next building in [`BUILD_ORDER`] if it can, then pick the one
-/// command the first program runs today:
+/// One decision, before a tick: assign free processors to the first program
+/// (until program logic opens; then its [`guard_lines`] do), buy the next
+/// building in [`BUILD_ORDER`] if it can, then pick the one command the first
+/// program runs today, after the guard lines:
 /// 1. shipping: launch a full pad with fuel aboard, buy fuel for a full pad,
 ///    or load when there is He-3 to load;
 /// 2. bridging: buy the next building's missing titanium, regolith or ice
@@ -148,7 +150,8 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
     let mut v = s.rules.view(&s.state);
     // The view is re-read only after an action that may change what it shows.
     let mut stale = false;
-    if v.processors_free > 0 {
+    // Once program logic is open, the first program's guard lines assign them.
+    if v.processors_free > 0 && !v.program_logic {
         let n = v.programs[0].processors + v.processors_free;
         stale |= s.apply(&Action::SetProcessors { program: 0, processors: n }).is_ok();
     }
@@ -197,10 +200,48 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
         v = s.rules.view(&s.state);
     }
     let pick = choose_command(&v, goal.map(|(id, _)| *id), allowed);
-    let want = vec![Entry::command(pick, 1)];
+    let mut want = if v.program_logic { guard_lines(allowed) } else { Vec::new() };
+    want.push(Entry::command(pick, 1));
     if v.programs[0].entries != want {
         s.apply(&Action::SetProgram { program: 0, entries: want }).expect("a known command");
     }
+}
+
+/// The condition program ahead of the day's command once program logic is
+/// open, so the golden game pins the interpreter (`if`, `and`, a reading
+/// against a reading, verbs, `build`, the step each line costs):
+///
+/// ```text
+/// if free processors > 0
+///     assign processors program 1 all
+/// if idle pads (all) >= 1 and credits >= next cost of Launch Pad x 1
+///     build launch_pad up to 2
+/// ```
+///
+/// The build guard leaves out the count on purpose: with two pads owned the
+/// `build` is done, and still takes its step.
+fn guard_lines(allowed: &Allowed) -> Vec<Entry> {
+    let clause = |reading: Reading, cmp: Cmp, value: i64, against: Option<Reading>| Clause {
+        reading,
+        cmp,
+        value: Fx::from_int(value),
+        against,
+    };
+    let mut lines = vec![
+        Entry::new(Op::If { when: Condition { first: clause(Reading::FreeProcessors, Cmp::Gt, 0, None), rest: None } }),
+        Entry::new(Op::Act { verb: Verb::AssignProcessors, target: None, tab: Some(0), amount: Some(Amount::All) }).indent(),
+    ];
+    if allowed.building("launch_pad") {
+        let credits = Reading::Amount { resource: "credits".to_string() };
+        let price = Reading::NextCost { building: "launch_pad".to_string() };
+        let when = Condition {
+            first: clause(Reading::IdlePads { good: None }, Cmp::Ge, 1, None),
+            rest: Some(Joined { join: Join::And, clause: clause(credits, Cmp::Ge, 1, Some(price)) }),
+        };
+        lines.push(Entry::new(Op::If { when }));
+        lines.push(Entry::new(Op::Build { building: "launch_pad".to_string(), up_to: Some(2) }).indent());
+    }
+    lines
 }
 
 fn choose_command(v: &View, goal: Option<&str>, allowed: &Allowed) -> &'static str {

@@ -647,7 +647,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         readings,
         verbs,
         processors: procs,
-        processors_free: procs.saturating_sub(program_rules::assigned(g)),
+        processors_free: program_rules::free(g),
         processors_running: running.iter().sum(),
         pads: (0..g.run.pads.len())
             .map(|i| {

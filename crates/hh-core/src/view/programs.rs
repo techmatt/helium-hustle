@@ -99,8 +99,9 @@ pub(super) fn programs(r: &Rules, g: &GameState, running: &[u32]) -> Vec<Program
 /// and days to cap (capped ones) and last-day rate per visible resource (land
 /// and processors: amount only); a count, running count and next cost per
 /// visible building; researched per visible research item; each program's
-/// processors; the land price, the day, every N days (at 1: the editor sets
-/// N); once there is a pad, pads, pads ready and cargo (all, and per good) and
+/// processors and the free ones; the land price, the day, every N days (at 1:
+/// the editor sets N); once there is a pad, pads, idle pads, pads ready and
+/// cargo (all, and per good) and
 /// days since the last launch; days since the last purchase (unless switched
 /// off); demand per good once exact demand is revealed.
 pub(super) fn readings(r: &Rules, g: &GameState, resources: &[ResourceView], buildings: &[BuildingView]) -> Vec<ReadingView> {
@@ -142,6 +143,7 @@ pub(super) fn readings(r: &Rules, g: &GameState, resources: &[ResourceView], bui
     for tab in 0..g.run.programs.len() as u32 {
         add(Reading::Processors { tab }, format!("Program {} processors", tab + 1));
     }
+    add(Reading::FreeProcessors, "Free processors".to_string());
     add(Reading::LandPrice, "Land price".to_string());
     add(Reading::Day, "Day".to_string());
     // The editor sets N; offered at 1 (every day).
@@ -149,11 +151,13 @@ pub(super) fn readings(r: &Rules, g: &GameState, resources: &[ResourceView], bui
     let names = names();
     if !g.run.pads.is_empty() {
         add(Reading::Pads { good: None }, "Pads (all)".to_string());
+        add(Reading::IdlePads { good: None }, "Idle pads (all)".to_string());
         add(Reading::PadsReady { good: None }, "Ready pads (all)".to_string());
         add(Reading::Cargo { good: None }, "Cargo of pads (all)".to_string());
         for good in g.run.markets.keys() {
             let name = names.get(good.as_str()).copied().unwrap_or(good);
             add(Reading::Pads { good: Some(good.clone()) }, format!("Pads on {name}"));
+            add(Reading::IdlePads { good: Some(good.clone()) }, format!("Idle pads on {name}"));
             add(Reading::PadsReady { good: Some(good.clone()) }, format!("Ready pads {name}"));
             add(Reading::Cargo { good: Some(good.clone()) }, format!("Cargo of pads {name}"));
         }
