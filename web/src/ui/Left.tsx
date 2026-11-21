@@ -1,7 +1,7 @@
 // Left column: title, nav grid, speed controls, Resources and Ideology, the horizon.
 
 import { Fragment, type ComponentChildren } from 'preact';
-import { SPEEDS } from '../clock';
+import { DEBUG_SPEEDS, SPEEDS } from '../clock';
 import { capitalize, num, perDay } from '../format';
 import { navHasNews, seen, setSpeed, type Store } from '../store';
 import { useEffect, useState } from 'preact/hooks';
@@ -61,16 +61,16 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
       <div class="speed">
         <div class="label">Game Speed</div>
         <div class="speeds" id="speeds" role="group" aria-label="Speed">
-          {SPEEDS.map((sp) => (
+          {[...SPEEDS, ...(s.cheatsEnabled ? DEBUG_SPEEDS : [])].map((sp) => (
             <button
               type="button"
               key={sp}
               data-speed={sp}
               aria-pressed={s.speed === sp}
-              title={sp === 0 ? 'Pause (space)' : `${sp} days per second`}
+              title={sp === 0 ? 'Pause (space)' : `${sp} days per second${sp > 200 ? ' (debug)' : ''}`}
               onClick={() => setSpeed(sp)}
             >
-              {sp === 0 ? '❚❚' : `${sp}x`}
+              {sp === 0 ? '❚❚' : sp >= 1000 ? `${sp / 1000}k` : `${sp}x`}
             </button>
           ))}
         </div>

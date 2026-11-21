@@ -19,7 +19,7 @@ implemented (the Godot build's Arc 1, ported): [docs/rules/](docs/rules/README.m
 |---|---|
 | `crates/hh-core` | The rules engine: every rule, fixed-point state, no I/O, no clock, no global RNG (CLAUDE.md, *Engine rules*). |
 | `crates/hh-sim` | Native CLI ([docs/simulator.md](docs/simulator.md)): runs a seed, replays records; agents ([docs/agents.md](docs/agents.md)) play careers in game time against the targets ([docs/principles.md](docs/principles.md)): the ladder, experiments, compare, balance, a human's play log beside them (`vs-human`). |
-| `crates/hh-wasm` | wasm-bindgen bindings for `web/`, JSON in and out. |
+| `crates/hh-wasm` | wasm-bindgen bindings for `web/`, JSON in and out (with `hh-sim`'s agents, for the debug autopilot). |
 | `web/` | The browser UI ([web/README.md](web/README.md)). Renders the engine's view, sends actions, holds no rules. `web/src/engine.ts` mirrors hh-core's `View` by hand, and hh-sim reads view fields the page doesn't: grep both before dropping or renaming one. |
 | `configs/` | Game configs: modules, variants and every tunable number. No defaults in code. |
 | `configs/sim/` | The simulator's data: human time models (real minutes from a career's looks) and the milestones with their targets. |

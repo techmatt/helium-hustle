@@ -6,7 +6,19 @@
 import { useEffect, useState } from 'preact/hooks';
 import baselineConfig from '../../configs/baseline.json?raw';
 import { Clock, SPEEDS, type Speed } from './clock';
-import { engine, type Action, type LastRun, type LinesRun, type Scenario, type Stamped, type StoryView, type View } from './engine';
+import {
+  engine,
+  type Action,
+  type AutopilotStatus,
+  type AutopilotTarget,
+  type LastRun,
+  type LinesRun,
+  type Scenario,
+  type Stamped,
+  type StoryView,
+  type View,
+} from './engine';
+import type { Autopilot } from './wasm/hh_wasm.js';
 import * as playlog from './playlog';
 import { clearSave, loadSave, SAVE_KEY, storageGet, storageSet, writeSave } from './save';
 
@@ -387,6 +399,7 @@ export function newGame(seed: string, scenario: Scenario | null, why = 'new game
   // The engine's own reading of the seed ("+5", " 5" -> "5"): the career id (a file
   // name) and the record carry that.
   seed = String((JSON.parse(state) as { seed: number | string }).seed ?? seed);
+  abortAutopilot();
   if (game) {
     checkpoint();
     playlog.log('career_end', { reason: why });
@@ -424,7 +437,7 @@ export function act(action: Action): boolean {
   }
   // The run summary covers the screen: a key on a card still focused behind it must not
   // play into the new run unseen.
-  if (store.summary) return false;
+  if (store.summary || pilotBusy()) return false;
   const run = store.view.run;
   clock.wake(); // settle the ticks owed so the action lands between the right ticks
   if (store.view.run !== run) {
@@ -459,6 +472,7 @@ export function setSpeed(s: Speed): void {
   // Settle the ticks owed at the old speed first: they may end the run, and then the
   // summary holds the clock stopped.
   if (stoodDown) return;
+  if (s !== 0 && pilotBusy()) return;
   clock.wake();
   if (store.summary) return;
   clock.setSpeed(s);
@@ -504,6 +518,129 @@ export function jumpAhead(days: number): void {
   save();
 }
 
+/** A running autopilot (debug accelerator), if any. */
+let pilot: { ap: Autopilot; stop: boolean } | null = null;
+/** Ticks the autopilot plays between redraws. */
+const PILOT_CHUNK = 2000;
+
+/** The autopilot's progress line (null while none ran this visit). */
+export const pilotStatus: { text: string | null; running: boolean } = { text: null, running: false };
+
+/** Hands the game to a sim player (the debug autopilot, docs/simulator.md *Accelerators*):
+ * it plays on, honestly and with the boost when given, until `target` is reached, the
+ * budget is spent or Stop. Its actions (the boost and autopilot cheats first) join the
+ * record and the play log as any others, so replay stays exact; the jump's days take no
+ * play time in the log (`jump_end` closes them, as for jump ahead). */
+export function runAutopilot(target: AutopilotTarget, agent: string, boost: string, budget: number): void {
+  if (pilot || stoodDown || store.summary) return;
+  setSpeed(0);
+  const career = game.careerId;
+  const met = pilotMet(career);
+  let ap: Autopilot;
+  try {
+    ap = engine.autopilot(game.state, target, agent, boost, budget, met);
+  } catch (e) {
+    setNotice(`Autopilot: ${e}`);
+    return;
+  }
+  const mine = { ap, stop: false };
+  pilot = mine;
+  pilotStatus.running = true;
+  playlog.log('debug', { what: 'autopilot', target, agent, boost, budget });
+  const startedAt = performance.now();
+  const take = () => {
+    const acts = JSON.parse(ap.take_actions()) as Stamped[];
+    for (const a of acts) {
+      game.actions.push(a);
+      playlog.log('action', { tick: a.tick, action: a.action });
+    }
+    game.state = ap.state();
+  };
+  const finish = (text: string) => {
+    pilot = null;
+    pilotStatus.running = false;
+    pilotStatus.text = text;
+    freePilot(ap);
+    clock.forgetTimeAway();
+    checkpoint('jump_end');
+    save();
+    refresh(true);
+  };
+  const chunk = () => {
+    // Aborted (a new game, another tab): the career it played is gone; nothing is taken.
+    if (pilot !== mine) return;
+    let st: AutopilotStatus;
+    try {
+      st = JSON.parse(ap.step(PILOT_CHUNK)) as AutopilotStatus;
+      take();
+    } catch (e) {
+      finish(`Autopilot failed: ${e}`);
+      return;
+    }
+    for (const h of st.hits) if (!met.includes(h.id)) met.push(h.id);
+    storageSet(PILOT_MET_KEY, JSON.stringify({ career, met }));
+    const secs = ((performance.now() - startedAt) / 1000).toFixed(1);
+    const last = st.hits.length ? st.hits[st.hits.length - 1].name : 'nothing yet';
+    const text =
+      `${st.reached ? 'Reached' : st.gave_up ? 'Gave up' : mine.stop ? 'Stopped' : 'Playing'}: ` +
+      `${st.ticks_played} days in ${secs} s, run ${st.run}; ${st.hits.length} steps met (last: ${last}); ` +
+      `${st.left.length} left${st.left.length && st.left.length <= 4 ? ` (${st.left.join('; ')})` : ''}`;
+    if (st.reached || st.gave_up || mine.stop) return finish(text);
+    pilotStatus.text = text;
+    // Each chunk saved: the save, the play log and `hh.pilotMet` stay in step if the
+    // page dies or another tab takes the career mid-run.
+    save();
+    refresh(true);
+    window.setTimeout(chunk, 0);
+  };
+  window.setTimeout(chunk, 0);
+}
+
+export function stopAutopilot(): void {
+  if (pilot) pilot.stop = true;
+}
+
+/** Drops a running autopilot without taking its game (the career it played is gone). */
+function abortAutopilot(): void {
+  if (!pilot) return;
+  const ap = pilot.ap;
+  pilot = null;
+  pilotStatus.running = false;
+  pilotStatus.text = 'Autopilot dropped: the career changed.';
+  freePilot(ap);
+}
+
+/** Frees the wasm object; after a panic mid-step it may still count as borrowed and
+ * refuse (its memory is then lost, a debug run's worth). */
+function freePilot(ap: Autopilot): void {
+  try {
+    ap.free();
+  } catch {
+    // ignored: see above
+  }
+}
+
+/** The steps the autopilot has met in this career (`hh.pilotMet`): a milestone met in an
+ * earlier run (a run's building count, a credit rate) stays met for the next *Next
+ * milestone*. */
+const PILOT_MET_KEY = 'hh.pilotMet';
+function pilotMet(career: string): string[] {
+  try {
+    const v = JSON.parse(storageGet(PILOT_MET_KEY) ?? 'null') as { career?: string; met?: string[] } | null;
+    return v?.career === career && Array.isArray(v.met) ? v.met : [];
+  } catch {
+    return [];
+  }
+}
+
+/** While the autopilot plays, the game is its: a hand action, a speed or a jump would
+ * land on a state the next chunk replaces. */
+function pilotBusy(): boolean {
+  if (!pilot) return false;
+  setNotice('The autopilot is playing: Stop it first.');
+  return true;
+}
+
 export function record() {
   return {
     format: 'hh-record/1',
@@ -539,6 +676,7 @@ export function fingerprint(): string {
 function standDown(): void {
   if (stoodDown) return;
   stoodDown = true;
+  abortAutopilot();
   clock.stop();
   clock.speed = 0;
   store.speed = 0;
@@ -578,11 +716,13 @@ export function start(): void {
       if (!game.careerId) game.careerId = openLog(game.actions);
       else playlog.open(game.careerId, null);
       how = 'save';
-      const speed = SPEEDS.includes(s.speed) ? s.speed : 1;
+      // A debug speed (clock.ts DEBUG_SPEEDS) reloads as 1x.
+      const normal = (x: number) => (SPEEDS as readonly number[]).includes(x);
+      const speed = normal(s.speed) ? s.speed : 1;
       clock.speed = speed;
       store.speed = speed;
-      if (s.resumeSpeed && SPEEDS.includes(s.resumeSpeed)) resumeSpeed = s.resumeSpeed;
-      if (s.speedBeforeSummary !== undefined && SPEEDS.includes(s.speedBeforeSummary)) speedBeforeSummary = s.speedBeforeSummary;
+      if (s.resumeSpeed && normal(s.resumeSpeed)) resumeSpeed = s.resumeSpeed;
+      if (s.speedBeforeSummary !== undefined && normal(s.speedBeforeSummary)) speedBeforeSummary = s.speedBeforeSummary;
       refresh(true);
       // A run summary left open is still open, and unread story texts still wait.
       store.summary = s.summary ?? null;

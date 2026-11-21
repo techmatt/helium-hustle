@@ -35,6 +35,14 @@ pub struct GameState {
     /// good. Absent from the JSON while false.
     #[serde(default, skip_serializing_if = "std::ops::Not::not")]
     pub cheated: bool,
+    /// An accelerator (boost or autopilot) has been used: a play log of this
+    /// career is no human's honest pace (`hh-sim vs-human` refuses it).
+    /// Absent from the JSON while false.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub accelerated: bool,
+    /// The debug boost (`Cheat::Boost`), absent while never set.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub boost: Option<crate::action::Boost>,
 }
 
 /// Buildings of one type: owned, of which `active` run, `bonus` were granted
@@ -727,10 +735,12 @@ impl GameState {
     }
 
     /// Adds production: the resource, today's flow (by source) and the run's total.
+    /// Every resource made passes here, so the debug boost applies here alone.
     pub(crate) fn produce(&mut self, source: &str, resource: &str, v: Fx) {
         if v <= Fx::ZERO {
             return;
         }
+        let v = crate::cheat::boosted(self, resource, v);
         self.track(source, resource, v, Fx::ZERO);
         self.add(resource, v);
         let t = self.run.today.produced.entry(resource.to_string()).or_insert(Fx::ZERO);

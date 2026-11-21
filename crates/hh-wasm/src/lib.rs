@@ -157,6 +157,76 @@ pub fn play_golden(config_json: &str) -> Result<String, JsValue> {
     })))
 }
 
+/// The debug autopilot (`hh_sim::autopilot`, an accelerator): a sim player
+/// plays the client's game on, honestly, toward a target. The client calls
+/// [`Autopilot::step`] in chunks (so the page stays live), then takes the state
+/// and the stamped actions to append to its record.
+#[wasm_bindgen]
+pub struct Autopilot {
+    ap: hh_sim::autopilot::Autopilot,
+    /// Actions already handed out by [`Autopilot::take_actions`].
+    taken: usize,
+}
+
+#[wasm_bindgen]
+impl Autopilot {
+    /// `target`: `milestone`, `quest` or `end`; `agent`: a sim player's spec
+    /// (empty: the default); `boost`: `production,research,boredom` (empty: no
+    /// boost action); `budget`: ticks before it gives up; `met_json`: the step
+    /// ids (`["milestone:M1", ...]`) already met in the career, kept by the
+    /// client from earlier runs of the autopilot.
+    #[wasm_bindgen(constructor)]
+    pub fn new(
+        state_json: &str,
+        target: &str,
+        agent: &str,
+        boost: &str,
+        budget: u32,
+        met_json: &str,
+    ) -> Result<Autopilot, JsValue> {
+        use hh_sim::autopilot as a;
+        let g = GameState::from_json(state_json).map_err(err)?;
+        let ms = hh_sim::milestones::Milestones::from_json(include_str!("../../../configs/sim/milestones.json"))
+            .map_err(err)?;
+        let target = a::Target::parse(target).map_err(err)?;
+        let agent = if agent.trim().is_empty() { a::DEFAULT_AGENT } else { agent.trim() };
+        let boost = if boost.trim().is_empty() { None } else { Some(a::parse_boost(boost.trim()).map_err(err)?) };
+        let met: Vec<String> = serde_json::from_str(met_json).map_err(|e| err(format!("bad met JSON: {e}")))?;
+        let ap = a::Autopilot::new(g, ms, agent, target, boost, budget as u64, &met).map_err(err)?;
+        Ok(Autopilot { ap, taken: 0 })
+    }
+
+    /// Plays up to `ticks` more; returns its status (`hh_sim::autopilot::Status`).
+    pub fn step(&mut self, ticks: u32) -> String {
+        to_json(&self.ap.step(ticks as u64))
+    }
+
+    pub fn state(&self) -> String {
+        self.ap.state().to_json()
+    }
+
+    /// The stamped actions (`[{tick, action}]`) applied since the last call.
+    pub fn take_actions(&mut self) -> String {
+        let all = self.ap.actions();
+        let new = &all[self.taken..];
+        self.taken = all.len();
+        to_json(new)
+    }
+}
+
+/// The autopilot's defaults and every step it knows (milestones, then
+/// main-quest steps): `{"agent", "boost", "steps": [{id, name}]}`.
+#[wasm_bindgen]
+pub fn autopilot_info() -> Result<String, JsValue> {
+    let ms = hh_sim::milestones::Milestones::from_json(include_str!("../../../configs/sim/milestones.json"))
+        .map_err(err)?;
+    Ok(to_json(&serde_json::json!({
+        "agent": hh_sim::autopilot::DEFAULT_AGENT,
+        "boost": hh_sim::autopilot::DEFAULT_BOOST,
+        "steps": hh_sim::autopilot::steps(&ms),
+    })))
+}
+
 /// Replays a record (`hh_core::Record` JSON). Returns
 /// `{"state": <state>, "fingerprint": "...", "warnings": [...]}` or throws.
 #[wasm_bindgen]

@@ -8,7 +8,10 @@ How the engine is put together. The rules are in [rules/](rules/README.md); the 
 - **`hh-core`**: every rule; nothing else holds one.
 - **`hh-sim`**: the native CLI: agents, careers, experiments ([simulator.md](simulator.md),
   [agents.md](agents.md)).
-- **`hh-wasm`**: wasm-bindgen adapter, JSON strings in and out, no rules.
+- **`hh-wasm`**: wasm-bindgen adapter, JSON strings in and out, no rules. It also links
+  `hh-sim`'s library for the debug autopilot alone (a sim player driving the page's game:
+  [simulator.md](simulator.md#accelerators)); `hh-sim` code it reaches must not read the
+  clock (`Instant` panics in wasm) or the disk.
 - **`web/`**: Vite + TypeScript + Preact. Renders the engine's view, sends actions, owns
   the wall clock ([web/README.md](../web/README.md)).
 

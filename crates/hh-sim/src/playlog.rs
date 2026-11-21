@@ -17,7 +17,7 @@
 use std::collections::BTreeMap;
 use std::fmt::Write as _;
 
-use hh_core::{Action, Config, Scenario, Session, Stamped, RULES_REVISION};
+use hh_core::{Action, Cheat, Config, Scenario, Session, Stamped, RULES_REVISION};
 use serde::Serialize;
 use serde_json::Value;
 
@@ -58,6 +58,18 @@ pub struct Log {
     pub panels: BTreeMap<String, u64>,
     /// Lines dropped as repeats of an earlier line's `id`.
     pub duplicates: u64,
+    /// The career used an accelerator (a boost, the autopilot or a debug
+    /// speed): no human's pace, so `vs-human` refuses it.
+    pub accelerated: bool,
+}
+
+/// The page's fastest speed but a debug one (`web/src/clock.ts`, `SPEEDS`): a log
+/// that played faster used a debug speed, an accelerator.
+pub const MAX_SPEED: u32 = 200;
+
+/// An accelerator's action (`Cheat::Boost`, `Cheat::Autopilot`).
+pub fn is_accelerator(a: &Action) -> bool {
+    matches!(a, Action::Cheat { cheat: Cheat::Boost { .. } | Cheat::Autopilot { .. } })
 }
 
 fn field<'a>(v: &'a Value, k: &str, line: usize) -> Result<&'a Value, String> {
@@ -106,6 +118,7 @@ impl Log {
             rejected: BTreeMap::new(),
             panels: BTreeMap::new(),
             duplicates: 0,
+            accelerated: actions.iter().any(|a| is_accelerator(&a.action)),
         };
         // In tick, then wall-clock, order: a page's closing beacon can land
         // before a send still in flight, so file order may swap neighbors (ticks
@@ -148,6 +161,9 @@ impl Log {
                 "action" => {
                     let a: Action = serde_json::from_value(field(&v, "action", n)?.clone())
                         .map_err(|e| format!("line {n}: action: {e}"))?;
+                    if is_accelerator(&a) {
+                        log.accelerated = true;
+                    }
                     actions.push(Stamped { tick, action: a });
                     // A fingerprint at this tick came before this action: stale.
                     if tick == log.last_tick {
@@ -177,8 +193,12 @@ impl Log {
                 }
             }
             let speed = v.get("speed").and_then(Value::as_u64).unwrap_or(0) as u32;
-            // A jump ahead's action starts the ticks its `jump_end` closes.
-            let kind = if kind == "action" && v.pointer("/action/cheat/kind").and_then(Value::as_str) == Some("jump_ahead") {
+            if speed > MAX_SPEED {
+                log.accelerated = true;
+            }
+            // A jump ahead's or an autopilot's action starts the ticks its `jump_end` closes.
+            let cheat = v.pointer("/action/cheat/kind").and_then(Value::as_str);
+            let kind = if kind == "action" && matches!(cheat, Some("jump_ahead" | "autopilot")) {
                 "jump_start".to_string()
             } else {
                 kind
@@ -367,6 +387,9 @@ pub fn report(path: &str, log: &Log, r: &Replayed, milestones: Milestones, human
             None => "(the log has no fingerprint at its last tick to check)".to_string(),
         }
     );
+    if log.accelerated {
+        let _ = writeln!(t, "ACCELERATED: an accelerator (boost, autopilot or debug speed) was used: not a human's pace");
+    }
     let cell = Cell::new(&log.config.name, "human", "human");
     let sum = experiment::summarize(&cell, std::slice::from_ref(&r.game), &milestones, &[("log".into(), None)]);
     let spec = Spec {

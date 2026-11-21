@@ -619,6 +619,29 @@ fn cheats_apply_through_actions_mark_the_game_and_replay() {
 }
 
 #[test]
+fn the_boost_scales_production_marks_the_game_accelerated_and_replays() {
+    let cheat = |c: crate::Cheat| Action::Cheat { cheat: c };
+    let mut honest = Session::new(&baseline(), 9, None).unwrap();
+    let json = honest.state.to_json();
+    assert!(!json.contains("accelerated") && !json.contains("boost"), "an honest game's JSON has neither");
+    let mut s = Session::new(&baseline(), 9, None).unwrap();
+    let boost = crate::Cheat::Boost { production: f("10"), research: f("1"), boredom: f("0") };
+    s.apply(&cheat(boost)).unwrap();
+    assert!(s.state.accelerated && s.state.cheated && s.state.boost.is_some());
+    honest.advance(20);
+    s.advance(20);
+    // Solar Panels' energy, ten times over (before upkeep takes its share); no boredom.
+    let made = |g: &crate::GameState| g.run.stats.produced.get("energy").copied().unwrap_or(Fx::ZERO);
+    assert_eq!(made(&s.state), made(&honest.state).mul_int(10));
+    assert_eq!(s.state.amount("boredom"), Fx::ZERO);
+    assert!(s.apply(&cheat(crate::Cheat::Boost { production: f("0"), research: f("1"), boredom: f("1") })).is_err());
+    s.apply(&cheat(crate::Cheat::Autopilot { target: "end".into() })).unwrap();
+    let (g, warnings) = Record::from_json(&s.record().to_json()).unwrap().replay().unwrap();
+    assert!(warnings.is_empty(), "{warnings:?}");
+    assert_eq!(g.fingerprint(), s.state.fingerprint());
+}
+
+#[test]
 fn the_view_shows_nav_tiles_from_content_and_the_next_run() {
     let r = rules();
     let mut g = r.new_game(1);

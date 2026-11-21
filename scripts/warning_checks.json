@@ -48,6 +48,11 @@
         "file": "crates/hh-core/src/modules/demand.rs",
         "literal": "10",
         "why": "quintic fade polynomial 6t^5 - 15t^4 + 10t^3 (math, not a tunable)"
+      },
+      {
+        "file": "crates/hh-core/src/cheat.rs",
+        "literal": "1000",
+        "why": "the debug boost's largest factor (an overflow guard on a cheat, not a rule of play)"
       }
     ]
   }

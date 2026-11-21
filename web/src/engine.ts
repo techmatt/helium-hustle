@@ -373,6 +373,10 @@ export interface View {
   day: number;
   run: number;
   cheated: boolean;
+  /** An accelerator (boost or autopilot) was used. */
+  accelerated: boolean;
+  /** The debug boost's factors, if set. */
+  boost: { production: Fx; research: Fx; boredom: Fx } | null;
   resources: ResourceView[];
   buildings: BuildingView[];
   land_price: Fx;
@@ -447,4 +451,24 @@ export const engine = {
   view: (state: string): View => JSON.parse(wasm.view(state)),
   fingerprint: (state: string): string => wasm.fingerprint(state),
   replay: (record: unknown): Replayed => JSON.parse(wasm.replay(JSON.stringify(record))),
+  /** The debug autopilot (an accelerator): a sim player plays the game on toward
+   * `target`; `met`: step ids met earlier in the career. Free it when done. */
+  autopilot: (state: string, target: AutopilotTarget, agent: string, boost: string, budget: number, met: string[]): wasm.Autopilot =>
+    new wasm.Autopilot(state, target, agent, boost, budget, JSON.stringify(met)),
+  autopilotInfo: (): { agent: string; boost: string; steps: { id: string; name: string }[] } =>
+    JSON.parse(wasm.autopilot_info()),
 };
+
+export type AutopilotTarget = 'milestone' | 'quest' | 'end';
+
+/** `hh_sim::autopilot::Status`. */
+export interface AutopilotStatus {
+  aim: string[];
+  reached: boolean;
+  gave_up: boolean;
+  ticks_played: number;
+  tick: number;
+  run: number;
+  hits: { id: string; name: string; tick: number; run: number }[];
+  left: string[];
+}

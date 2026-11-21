@@ -54,4 +54,23 @@ pub enum Cheat {
     /// Marks a jump of `days` days; the client then advances them as usual,
     /// so a replay plays them like any others.
     JumpAhead { days: u32 },
+    /// An accelerator (`cheat.rs`, docs/rules/README.md *Cheats*): sets the
+    /// career's debug boost. Each factor multiplies for the rest of the career
+    /// (1 is off): `production` every resource made but science (buildings,
+    /// commands, launch payouts), `research` science made, `boredom` boredom
+    /// growth. Marks the game accelerated too.
+    Boost { production: Fx, research: Fx, boredom: Fx },
+    /// An accelerator: marks the start of an autopilot run (a sim player
+    /// playing on toward `target`); its actions follow as usual, so a replay
+    /// plays them like any others. Marks the game accelerated.
+    Autopilot { target: String },
+}
+
+/// The career's debug boost (`Cheat::Boost`): factors, 1 = off.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Boost {
+    pub production: Fx,
+    pub research: Fx,
+    pub boredom: Fx,
 }

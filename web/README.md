@@ -46,8 +46,8 @@ served page: `HH_URL`, required (it exits naming `vite preview` when unset),
    clock, run 2 (known tiles and resources still shown, not cheated).
 2. **Every panel**: cheats reach Research, Projects and Ideologies; every nav tile opens; the
    cheated mark, a jump ahead and the replay check.
-3. A program's frame at 10x and 50x, each speed's days per second, pause, click-to-buy, a reload keeping the save, a save from another
-   revision discarded, the scenarios and the replay check; in `late_unlocks`, an `if` /
+3. A program's frame at 10x and 50x, each speed's days per second, pause, click-to-buy, a
+   reload keeping the save, another revision's save discarded, the scenarios; in `late_unlocks`, an `if` /
    `build` / `wait until` program written through the editor, which then builds; saved,
    then loaded after a retirement, it runs in run 2; pause/resume verb lines under a
    `reading ×` clause and `every N days` run.
@@ -58,12 +58,10 @@ served page: `HH_URL`, required (it exits naming `vite preview` when unset),
 
 Any uncaught page error fails the run. Run it against `vite preview` (CLAUDE.md).
 
-- **Under load it flakes:** section 3's 10x pointer walk (`programOrder`) fails beside a
-  cargo build (late timers run two days a redraw). Rerun it alone.
+- **Under load it flakes:** section 3's 10x pointer walk fails beside a cargo build.
 - **The late UI for screenshots:** `experiments/results/027_art_in_game/shots.mjs`
-  (`pad_loading`, cheats, ~20 s). Cheat grants don't count toward `resource_cumulative`.
-- Edge needs an **absolute** `--user-data-dir` (a relative one hands the page to a running
-  Edge, which exits; the script resolves it).
+  (`pad_loading`, cheats, ~20 s); grants don't count toward `resource_cumulative`.
+- Edge needs an **absolute** `--user-data-dir` (the script resolves it).
 - Leaving a page fires `pagehide`, then `visibilitychange`; the page saves on both, so a
   test editing the save does it after both.
 
@@ -157,24 +155,26 @@ for a later live base view: replace what it draws, keep its box.
 
 ## Using it
 
-- **Speed:** Pause, 1x, 3x, 10x, 50x, 200x; at 1x one day per second. Each timer wake
-  (every 100 ms) runs the ticks owed since the last, so a throttled background tab
-  catches up (stopping at a forced retirement); a closed page is paused. Keys: space
+- **Speed:** Pause, 1x to 200x; at 1x a day a second. Each timer wake (100 ms) runs the
+  ticks owed since the last, so a throttled tab catches up (stopping at a forced
+  retirement); a closed page is paused. Keys: space
   pauses or resumes, 1 to 5 pick 1x to 200x; a card reached with Tab buys on Enter.
 - **Actions** apply between ticks, stamped with the current tick; an illegal one shows the
   engine's reason in the notice line.
 - **Autosave:** `localStorage` `hh.save`, at most once a second while ticking, on every
-  action and speed change, and when the page is hidden or closed: the state, the game's
-  record (seed, scenario, stamped actions) and the speed, tagged with the rules revision
-  and config hash. A save from another revision or config, or one the engine can't read,
-  is discarded with a notice and a new game starts.
+  action and speed change, and when the page is hidden or closed: the state, the record
+  and the speed (a debug speed reloads as 1x), tagged with the rules revision and config
+  hash. A save from another revision or config, or one the engine can't read, is
+  discarded with a notice.
 - **One tab at a time:** a page claims the save when it loads; a tab already playing it
-  sees the save change (`storage` event), stops its clock and says to reload it.
+  sees the change (`storage` event), stops and says to reload.
 - **Debug menu** (Options → Debug): the theme, a scenario (`scenarios/`) or a new game from
   a seed; *Check replay* replays the record in wasm and compares fingerprints; a line with
   engine, revision, config hash, seed, action count and fingerprint. **Cheats** (off by
-  default, remembered in `hh.cheats`): grant a resource, set boredom, jump ahead N days.
-  They are engine actions, so replay stays exact, and any cheat marks the game CHEATED.
+  default, remembered in `hh.cheats`): grant a resource, set boredom, jump ahead N days;
+  the **accelerators**: 2k and 10k speeds, the boost and the autopilot
+  ([simulator.md](../docs/simulator.md#accelerators)). Engine actions, so replay stays
+  exact; any cheat marks the game CHEATED, a boost or autopilot ACCELERATED too.
 
 ## Play logs
 
@@ -202,7 +202,8 @@ be replayed exactly and set against the sim players (`hh-sim playlog`, `hh-sim v
   `jump_end`, `career_end` (`reason`; `offline` when written at a later visit).
 
 `hh-sim playlog <file>` replays the header's config, seed and scenario with the logged
-actions to the last tick and checks the fingerprint logged there.
+actions to the last tick and checks the fingerprint logged there. An autopilot's actions
+are logged as any others, its days closed by `jump_end` as a jump's.
 
 ## Source
 

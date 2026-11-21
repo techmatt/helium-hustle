@@ -9,6 +9,7 @@ license = "MIT"
 
 [workspace.dependencies]
 hh-core = { path = "crates/hh-core" }
+hh-sim = { path = "crates/hh-sim" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
 rand = { version = "0.8", default-features = false }

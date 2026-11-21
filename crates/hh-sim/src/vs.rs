@@ -268,6 +268,7 @@ pub fn report(rows: &[Row], div: &Divergence, ms: &Milestones, humans: &Humans, 
 pub fn run(args: &[String]) -> Result<String, Fail> {
     let mut path = None;
     let (mut json, mut threads, mut ticks) = (false, THREADS, None::<u64>);
+    let mut include_accelerated = false;
     let mut agents: Option<Vec<String>> = None;
     let mut models: Option<Vec<String>> = None;
     let mut milestones = MILESTONES.to_string();
@@ -277,6 +278,7 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
         let mut val = || it.next().cloned().ok_or_else(|| Fail::Usage(format!("{a} needs a value")));
         match a.as_str() {
             "--json" => json = true,
+            "--include-accelerated" => include_accelerated = true,
             "--agents" => agents = Some(crate::lab::agent_list(&val()?)),
             "--humans" => models = Some(list(&val()?)),
             "--ticks" => ticks = Some(val()?.parse().map_err(|_| Fail::Usage("bad --ticks".into()))?),
@@ -320,6 +322,11 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
         names.push(name);
     }
     let log = Log::parse(&read(&path)?).map_err(|e| Fail::Usage(format!("{path}: {e}")))?;
+    if log.accelerated && !include_accelerated {
+        return usage(format!(
+            "vs-human: {path} used an accelerator (boost, autopilot or debug speed): no human's pace (--include-accelerated to compare anyway)"
+        ));
+    }
     let h = playlog::replay(&log, &ms).map_err(|e| Fail::Check(format!("{path}: replay failed: {e}")))?;
     let span = ticks.unwrap_or(h.game.ticks).max(1);
     let out = crate::experiment::par_map(agents.len(), threads, |j| {

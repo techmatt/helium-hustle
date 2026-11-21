@@ -58,7 +58,8 @@ use super::{amount, cap, command_cost, command_unlocked, credits_price, made, Ag
 
 pub const KNOBS: &[&str] = &[
     "decay", "starved", "reserve", "buys", "compute", "dream_at", "stale_days", "project_rate", "fund", "market",
-    "hand_gap", "loads", "pause", "wait_demand", "min_gap", "max_gap", "construct", "cond",
+    "hand_gap", "loads", "pause", "wait_demand", "min_gap", "max_gap", "construct", "cond", "diversify",
+    "all_research",
 ];
 
 /// Library names of the condition programs (`cond`): one saved copy each,
@@ -292,7 +293,15 @@ impl Author {
         let min_gap = k.get("min_gap", 1).max(1) as u64;
         let b = Builder::new(k);
         Author {
-            dir: Directives::default(),
+            // `diversify` and `all_research` (default 0): the directives of those
+            // names, for the debug autopilot, whose boosted runs fill no cap with
+            // the plain rule's goods and keep a Long-Term project open while
+            // research a milestone asks for waits.
+            dir: Directives {
+                diversify: k.get("diversify", 0) != 0,
+                all_research: k.get("all_research", 0) != 0,
+                ..Directives::default()
+            },
             reserve: b.reserve,
             b,
             buys: k.get("buys", 3).max(1) as u32,

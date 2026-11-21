@@ -322,6 +322,10 @@ pub struct View {
     pub run: u32,
     /// A cheat was used in this game.
     pub cheated: bool,
+    /// An accelerator was used (`GameState::accelerated`).
+    pub accelerated: bool,
+    /// The debug boost now, if set.
+    pub boost: Option<crate::action::Boost>,
     pub resources: Vec<ResourceView>,
     pub buildings: Vec<BuildingView>,
     pub land_price: Fx,
@@ -632,6 +636,8 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         day: g.run.day,
         run: g.career.run_number,
         cheated: g.cheated,
+        accelerated: g.accelerated,
+        boost: g.boost,
         resources,
         buildings,
         land_price: economy::land_price(r, g),

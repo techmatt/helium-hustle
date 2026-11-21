@@ -131,6 +131,20 @@ impl Session {
         }
     }
 
+    /// A session going on from a state (checked against its rules), with an
+    /// empty record: a client's game handed to a sim player (the debug
+    /// autopilot), whose actions the client appends to its own record.
+    pub fn resume(state: GameState) -> Result<Session, String> {
+        let rules = Rules::for_state(&state)?;
+        rules.check_state(&state)?;
+        Ok(Session { rules, state, actions: Vec::new(), scenario: None })
+    }
+
+    /// The actions applied since the session began or resumed.
+    pub fn actions(&self) -> &[Stamped] {
+        &self.actions
+    }
+
     pub fn advance(&mut self, n: u64) {
         self.rules.advance(&mut self.state, n);
     }

@@ -1,13 +1,18 @@
 //! Debug cheats (the web debug menu's Cheats section). They are actions like
 //! any other, so a cheated game replays exactly; any cheat marks the game
-//! (`GameState::cheated`) for good. No rule reads the mark.
+//! (`GameState::cheated`) for good. No rule reads the mark. The accelerators
+//! (boost, autopilot) also mark it `accelerated`; the boost is the one cheat a
+//! rule reads, through [`boosted`] and the boredom multiplier.
 
-use crate::action::Cheat;
+use crate::action::{Boost, Cheat};
 use crate::content::content;
 use crate::fx::Fx;
-use crate::modules::economy::{self, BOREDOM, PROCESSORS};
+use crate::modules::economy::{self, BOREDOM, PROCESSORS, SCIENCE};
 use crate::rules::Rules;
 use crate::state::GameState;
+
+/// The largest boost factor (debug only, so not a config number).
+pub const BOOST_MAX: i64 = 1000;
 
 /// The grant cheat may grant this content resource: not processors (they
 /// come from Data Centers) nor boredom (set it instead).
@@ -45,7 +50,37 @@ pub fn apply(r: &Rules, g: &mut GameState, c: &Cheat) -> Result<(), String> {
                 return Err("cheat: jump at least one day".into());
             }
         }
+        Cheat::Boost { production, research, boredom } => {
+            if *production <= Fx::ZERO || *research <= Fx::ZERO || *boredom < Fx::ZERO {
+                return Err("cheat: boost factors must be positive (boredom may be 0)".into());
+            }
+            // Past this a product can overflow `Fx` (a panic by design): no debug
+            // run needs more.
+            let most = Fx::from_int(BOOST_MAX);
+            if *production > most || *research > most || *boredom > most {
+                return Err(format!("cheat: boost factors are at most {BOOST_MAX}"));
+            }
+            let b = Boost { production: *production, research: *research, boredom: *boredom };
+            g.boost = Some(b);
+            g.accelerated = true;
+        }
+        Cheat::Autopilot { target } => {
+            if target.is_empty() {
+                return Err("cheat: autopilot needs a target".into());
+            }
+            g.accelerated = true;
+        }
     }
     g.cheated = true;
     Ok(())
+}
+
+/// `v` of `resource` made, times the debug boost (`research` for science,
+/// `production` for the rest); `v` itself with no boost set.
+pub fn boosted(g: &GameState, resource: &str, v: Fx) -> Fx {
+    match g.boost {
+        None => v,
+        Some(b) if resource == SCIENCE => v * b.research,
+        Some(b) => v * b.production,
+    }
 }

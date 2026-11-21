@@ -142,3 +142,12 @@ replays exactly: **grant** adds to a resource up to its cap (not processors or b
 **set boredom** sets it up to its cap (at the cap the run retires on the next tick), and
 **jump ahead** marks a jump whose days then pass as usual. Any cheat sets the state's
 `cheated` mark for good (absent from an honest game's JSON); no rule reads it.
+
+Two cheats are **accelerators**, debug-only, for zooming a career through the arc
+([simulator.md](../simulator.md#accelerators)). **Boost** sets the career's factors (1 is
+off; state `boost`, absent until set): `production` multiplies every resource made but
+science (buildings, commands, launch payouts: one place, `GameState::produce`), `research`
+science made, `boredom` boredom's growth (the boredom multiplier). **Autopilot** marks
+where a sim player took over toward a target; its actions follow as any others. Either
+also sets `accelerated` (absent while false), which `hh-sim vs-human` refuses. No honest
+game, the golden, a sim agent or a report sets either, so neither moves `RULES_REVISION`.

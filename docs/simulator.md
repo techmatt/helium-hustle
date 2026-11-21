@@ -39,6 +39,7 @@ node scripts/wasm-speed.mjs                   # the same in wasm (on web/src/was
 $S params --write                             # docs/rules param tables from REGISTRY (a test fails when stale)
 $S playlog C:/Code/gdrive-sync/helium-hustle/playlogs/<career>.jsonl   # a human's career (--json: one line)
 $S vs-human C:/Code/gdrive-sync/helium-hustle/playlogs/<career>.jsonl  # the sim players beside it
+$S accelerate --seed 3                        # debug: the autopilot
 ```
 
 **A career.** At each look the player reads the view and acts, then says how many ticks to
@@ -72,6 +73,19 @@ tick counts in the next run): first in **when** (the same building more than 50 
 quarter of the player's tick apart: `vs_human` in `configs/sim/milestones.json`) and first in **what** (a different building, or one side
 bought nothing), with each side's next five purchases. `--json`: one line, every row's
 `GameResult` and the divergence. Exit 1 if the log doesn't replay to its fingerprint.
+
+### Accelerators
+
+Debug only. The web debug menu's cheats add 2k and 10k speeds, the **boost**
+([rules](rules/README.md#cheats)) and the **autopilot** (`autopilot.rs`): a sim player
+plays on honestly toward the **next milestone**, the **next main-quest step** (an `all_of`
+sub-objective counts) or **everything**. Steps come from
+`configs/sim/milestones.json` and the `story` events (`never` left out): a new act needs no
+code unless it adds a condition type. Its drivers (`DEFAULT_AGENT`, two author settings)
+switch when no step is met for long. A boost or autopilot marks the career
+`accelerated`, a debug speed its log: `playlog` says so, `vs-human` refuses it
+(`--include-accelerated`), the autopilot's days count as jumped. `accelerate` plays a
+fresh career so natively. Everything: 13k-173k days, 5-40 s (or in a browser).
 
 ### Grids and specs
 
@@ -123,11 +137,11 @@ sides' tables; `--out` writes `compare.md`.
 | Milestones | Per milestone, medians: career ticks (`t`), retirements before it (`r`; it fell in run r+1) and that run's day (`d`); `k/n` when only k of n seeds reached it. |
 | Run credits, Peak cr/day, Ships/run | Credits earned and shipments a finished run (means); each career's best credit rate over the milestones' longest `credit_rate` window, 100 days (median over seeds). |
 | Real time | With `humans`: per player and model, run 1's real minutes (median), a finished run's (mean), minutes a decision, and each milestone's minutes from the career's start (median). |
-| Hands-off | With a `handsoff` player and an `author` one: how far automation alone carries a run. Credits a finished run from run 2 on (mean) and milestones first met from run 2 on (summed over seeds), each against the author's on the same seeds and as a share of it (run 1 is the author's in both). Its runs end by its `retire` line or the boredom cap, so the credits share is earning and lasting together. |
+| Hands-off | With a `handsoff` player and an `author` one: how far automation alone carries a run. Credits a finished run from run 2 on (mean) and milestones first met from run 2 on (summed over seeds), each against the author's on the same seeds and as a share of it (run 1 is the author's in both). Its runs end by its `retire` line or the boredom cap. |
 | Run-1 objectives | With a spec's `objectives`: each objective's median run-1 day against its Godot window (`in`, `early`, `late`). |
 | Never built, never used | Buildings never owned and commands never run in any seed's career. |
 
-After `ladder`'s and `experiment`'s tables, the engine's speed natively and, with `web/src/wasm` built, in wasm.
+After `ladder`'s and `experiment`'s tables, the engine's speed natively and in wasm.
 
 **Costs** (this machine, idle): the ladder (4 players × 3 seeds, careers of 20 retirements)
 about 11 s on 6 threads; `ceiling` about 20 minutes, set by the oracle's careers
@@ -151,30 +165,23 @@ rev-2 baseline), 2000-2003 (005, a compare), 3000-3004 (008, sup.), 3005-3009 (0
 baseline), 3010-3012 (011, sup.), 3013-3015 (011, the oracle's final read), 3016-3023 (035,
 loadouts), 4-8 (036, development), 3024-3039 (036, sup.), 3040-3047 (036, hands-off against
 main), 3048-3055 (037, sup.), 3056-3063 (037, verbs: hands-off share), 3064-3071 (038,
-sup.), 3072-3079 (038, done steps), 3080-3087 (039, hands-off retire and fund lines).
+sup.), 3072-3079 (038, done steps), 3080-3087 (039, hands-off retire and fund lines),
+0 (041, tuning), 3088-3093 (041, autopilot).
 
-Next free: 3088
+Next free: 3094
 
 ## `run` and `replay`
 
-| Option | Default | Meaning |
-|---|---|---|
-| `--config F` | `configs/baseline.json` | The game config. |
-| `--seed S` | `0` | Any `u64`. |
-| `--ticks N` | `1000` (`objectives`: `5000`) | Ticks to run (from the scenario's start tick, if any); for `objectives`, the most to play. |
-| `--policy P` | `idle` | `idle`; `greedy` (each tick, buy each affordable building); `greedy:every=N`; `script`. |
-| `--scenario NAME` / `--scenario-file F` | none | Lay a scenario over the new game. |
-| `--save F` | | Write the game's record (`hh-record/1`). |
-| `--json` | off | One JSON line: hashes, fingerprint, `replay_ok`, the state. |
+Options and defaults: the usage (`hh-sim` with no command). `--save F` writes the game's
+record (`hh-record/1`); `--json` prints one line: hashes, fingerprint, `replay_ok`, the state.
 
-`run` prints the tick, the run and its day, each resource (amount, cap, change over the
-next day), the buildings owned, the career log (`career log (tick, run, day):` quests,
-achievements, projects, research, retirements), the final fingerprint and the
-replay check: every game is replayed from its record and must equal the final state. Exit
+`run` prints the tick, run and day, each resource (amount, cap, next day's change), the
+buildings owned, the career log (quests, achievements, projects, research, retirements),
+the fingerprint and the replay check (the record replayed must equal the final state). Exit
 codes: 0 ok, 1 a failed replay or record check, 2 bad arguments or a bad config.
 
-`replay` prints each record's final tick and fingerprint (`tick N, fingerprint F`), warns on another rules revision or a
-fingerprint that differs, and exits 1 on any warning or failure.
+`replay` prints each record's final tick and fingerprint, warns on another revision or a
+differing fingerprint, and exits 1 on any warning or failure.
 
 ## Policies
 
@@ -182,8 +189,8 @@ Policies live in `hh-core` (`driver.rs`) because the golden game and the wasm pa
 use one; the agents that measure play live here ([agents.md](agents.md)). Both read only the
 view and act only through actions.
 
-- **`greedy`** buys every affordable building in content order. Under Arc 1 it earns
-  nothing (no program runs), so from a new game it buys nothing.
+- **`greedy`** buys every affordable building in content order (from a new game, nothing:
+  no program runs, so nothing is earned).
 - **`script`** is a fixed Arc 1 opening, one decision a day (build order, Program 1's one
   command and when it switches: `driver.rs`); it never researches, funds projects or retires
   voluntarily.
@@ -196,5 +203,4 @@ the port's), from a new game until the first run's forced retirement. It prints 
 objective's tick against its target window (`in`, `early`, `late`, `not hit`), when the
 scenario's end condition was met, and the career log. Objective types: `building` (with
 `count`), `resource` (stockpile `threshold`), `event` `shipment_complete` and
-`boredom_N`. A run takes about 0.2 s. The opening has no randomness, so every seed plays the
-same until the first shipment.
+`boredom_N`. About 0.2 s.

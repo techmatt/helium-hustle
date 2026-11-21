@@ -26,7 +26,7 @@ pub mod view;
 #[cfg(test)]
 mod tests;
 
-pub use action::{Action, Cheat};
+pub use action::{Action, Boost, Cheat};
 pub use config::Config;
 pub use content::{content, content_hash, Content};
 pub use driver::{play, Policy};

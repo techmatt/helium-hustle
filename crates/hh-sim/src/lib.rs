@@ -8,6 +8,7 @@ use hh_core::{
 use std::fmt::Write as _;
 
 pub mod agents;
+pub mod autopilot;
 pub mod career;
 pub mod experiment;
 pub mod human;
@@ -39,6 +40,8 @@ pub const USAGE: &str = "usage:
   hh-sim playlog LOG.jsonl [--json] [--milestones F] [--human-models F]   replay and measure a human's play log
   hh-sim vs-human LOG.jsonl [--agents a,b] [--humans a,b] [--ticks N] [--json] [--threads T] [--milestones F] [--human-models F]
                                                    the sim players on the log's game, beside the human
+  hh-sim accelerate [--seed S] [--config F] [--agent SPEC] [--boost P,R,B | --no-boost] [--target milestone|quest|end]
+                    [--budget TICKS] [--save RECORD]   debug: a fresh career on the autopilot (docs/simulator.md, Accelerators)
 GRID: [SPEC.json] [--agents a,b] [--humans a,b] [--seeds N] [--first-seed S]
       [--retirements N] [--max-ticks N] [--config F] [--set module.key=value]... [--threads T]
       [--out DIR (ladder, experiment, compare)] [--human-models F] [--milestones F]
@@ -159,6 +162,9 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     }
     if cmd == "vs-human" {
         return vs::run(rest);
+    }
+    if cmd == "accelerate" {
+        return autopilot::cli(rest);
     }
     if cmd == "params" {
         return params::run(rest);
@@ -306,6 +312,7 @@ fn playlog_cmd(args: &[String]) -> Result<String, Fail> {
             "commit": log.commit,
             "fingerprint": r.fingerprint,
             "reproduced": r.matches,
+            "accelerated": log.accelerated,
             "game": r.game,
             "time": r.time,
         })

@@ -41,9 +41,12 @@ function inputsHash() {
   const h = createHash('sha256');
   h.update(`profile ${profile}\n`);
   const list = [
-    // The crates the wasm is built from (hh-wasm and the hh-core it depends on): an
-    // hh-sim edit needs no rebuild.
-    ...[join('crates', 'hh-core'), join('crates', 'hh-wasm'), 'content', 'scenarios'].flatMap((d) => files(join(repo, d))),
+    // The crates the wasm is built from (hh-wasm, hh-core, and hh-sim for the debug
+    // autopilot's sim players), and the milestones the autopilot embeds.
+    ...[join('crates', 'hh-core'), join('crates', 'hh-sim'), join('crates', 'hh-wasm'), 'content', 'scenarios'].flatMap((d) =>
+      files(join(repo, d)),
+    ),
+    join(repo, 'configs', 'sim', 'milestones.json'),
     join(repo, 'Cargo.toml'),
     join(repo, 'Cargo.lock'),
     fileURLToPath(import.meta.url),

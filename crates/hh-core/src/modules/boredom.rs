@@ -58,7 +58,7 @@ pub fn cap(r: &Rules, g: &GameState) -> Fx {
 
 /// The stacked growth-rate multiplier: research (Stress Tolerance), Humanist
 /// rank (discount ^ rank), completed projects (AI Consciousness Act) and the
-/// career's boredom resilience.
+/// career's boredom resilience; the debug boost's `boredom` factor when set.
 pub fn multiplier(r: &Rules, g: &GameState) -> Fx {
     let mut m = Fx::ONE;
     for effect in super::research::live_effects(g) {
@@ -72,7 +72,7 @@ pub fn multiplier(r: &Rules, g: &GameState) -> Fx {
             m = m * *base_rate_mult;
         }
     }
-    m * super::career::boredom_resilience(r, g)
+    m * super::career::boredom_resilience(r, g) * g.boost.map_or(Fx::ONE, |b| b.boredom)
 }
 
 /// Today's growth rate (per day, after modifiers).

@@ -57,6 +57,8 @@ impl Rules {
             run: Run::default(),
             rng,
             cheated: false,
+            accelerated: false,
+            boost: None,
         };
         career::new_run(self, &mut g);
         g

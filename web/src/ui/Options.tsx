@@ -2,7 +2,7 @@
 // and the cheats, off by default). Cheats are engine actions, so replay stays exact.
 
 import { useEffect, useState } from 'preact/hooks';
-import { engine } from '../engine';
+import { engine, type AutopilotTarget } from '../engine';
 import { onTheme, setTheme, theme, type Theme } from '../theme';
 import * as playlog from '../playlog';
 import {
@@ -12,8 +12,11 @@ import {
   jumpAhead,
   newCareer,
   newGame,
+  pilotStatus,
+  runAutopilot,
   setCheatsEnabled,
   setNotice,
+  stopAutopilot,
   type Store,
 } from '../store';
 import { Section } from './common';
@@ -171,6 +174,7 @@ function Debug({ s }: { s: Store }) {
               Set
             </button>
           </p>
+          <Accelerators s={s} />
           <p>
             Jump ahead{' '}
             <input id="cheat-days" size={6} value={days} onInput={(e) => setDays((e.target as HTMLInputElement).value)} /> days{' '}
@@ -189,5 +193,62 @@ function Debug({ s }: { s: Store }) {
         </div>
       )}
     </Section>
+  );
+}
+
+/** The accelerators (docs/simulator.md, *Accelerators*): the boost, and the autopilot,
+ * a sim player playing the game on honestly toward the next milestone, main-quest step
+ * or the end. Either marks the career accelerated, so its play log is no human pace. */
+function Accelerators({ s }: { s: Store }) {
+  const v = s.view;
+  const info = engine.autopilotInfo();
+  const [boost, setBoost] = useState(info.boost);
+  const [agent, setAgent] = useState(info.agent);
+  const [budget, setBudget] = useState('500000');
+  const go = (target: AutopilotTarget) => {
+    const n = Math.floor(Number(budget));
+    if (!(n > 0 && n <= 10_000_000)) return setNotice('Autopilot: give a budget of 1 to 10,000,000 days.');
+    runAutopilot(target, agent, boost, n);
+  };
+  const setBoostOnly = () => {
+    const [production, research, bored] = boost.split(',').map((x) => x.trim());
+    act({ type: 'cheat', cheat: { kind: 'boost', production, research, boredom: bored ?? '' } });
+  };
+  const b = v.boost;
+  return (
+    <div class="accelerators" data-testid="accelerators">
+      <p>
+        Boost (production, research, boredom){' '}
+        <input id="accel-boost" size={12} value={boost} onInput={(e) => setBoost((e.target as HTMLInputElement).value)} />{' '}
+        <button type="button" id="accel-set-boost" onClick={setBoostOnly}>
+          Set boost
+        </button>{' '}
+        <span class="muted small" id="accel-boost-now">
+          {b ? `now ×${b.production}, ×${b.research}, boredom ×${b.boredom}` : 'off'}
+          {v.accelerated ? ' · ACCELERATED' : ''}
+        </span>
+      </p>
+      <p>
+        Autopilot: player <input id="accel-agent" size={34} value={agent} onInput={(e) => setAgent((e.target as HTMLInputElement).value)} />{' '}
+        budget <input id="accel-budget" size={8} value={budget} onInput={(e) => setBudget((e.target as HTMLInputElement).value)} /> days
+      </p>
+      <p>
+        <button type="button" id="accel-milestone" disabled={pilotStatus.running} onClick={() => go('milestone')}>
+          Next milestone
+        </button>{' '}
+        <button type="button" id="accel-quest" disabled={pilotStatus.running} onClick={() => go('quest')}>
+          Next quest step
+        </button>{' '}
+        <button type="button" id="accel-end" disabled={pilotStatus.running} onClick={() => go('end')}>
+          Everything
+        </button>{' '}
+        <button type="button" id="accel-stop" disabled={!pilotStatus.running} onClick={stopAutopilot}>
+          Stop
+        </button>
+      </p>
+      <p class="muted small" id="accel-status" data-running={pilotStatus.running ? '1' : '0'}>
+        {pilotStatus.text ?? 'The autopilot plays with the boost above (empty: none); its days take no play time in the log.'}
+      </p>
+    </div>
   );
 }
