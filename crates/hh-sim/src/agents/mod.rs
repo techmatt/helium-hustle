@@ -16,6 +16,7 @@ use crate::milestones::Milestones;
 
 pub mod author;
 pub mod builder;
+pub mod handsoff;
 pub mod oracle;
 pub mod progress;
 pub mod random;
@@ -144,6 +145,7 @@ pub const RUNGS: &[(&str, &str)] = &[
     ("random", "uniform over the actions the view offers"),
     ("greedy", "scored build order, one hand-picked command at a time"),
     ("author", "the builder plus programs written from templates, research, projects, Dream"),
+    ("handsoff", "the author's first run, then only its saved programs, loaded at each reset, and processors assigned"),
     ("planner", "not built: plans across retirements without peeking (hook: Agent::new_run)"),
     ("oracle", "the author steered by rollouts on copies of the game (the future included): run strategies, then tactics"),
 ];
@@ -189,6 +191,10 @@ pub fn build(player: &str, seed: u64, ms: &Milestones) -> Result<Box<dyn Agent>,
         "author" => {
             knobs.check(author::KNOBS, kind)?;
             Ok(Box::new(author::Author::new(&knobs)))
+        }
+        "handsoff" => {
+            knobs.check(&handsoff::knobs(), kind)?;
+            Ok(Box::new(handsoff::HandsOff::new(&knobs)))
         }
         "oracle" => {
             knobs.check(oracle::KNOBS, kind)?;

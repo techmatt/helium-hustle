@@ -176,7 +176,9 @@ impl Oracle {
         w.early = k.get("early", w.early).max(0);
         w.ideology = k.get("ideology", w.ideology).max(0);
         let stale_days = k.get("stale_days", 300).max(1) as u64;
-        let mut base = Author::new(&Knobs::default());
+        // The oracle steers the author's templates of 035 (no condition
+        // programs: its rollouts and pins were tuned on them).
+        let mut base = Author::new(&Knobs([("cond".to_string(), 0)].into_iter().collect()));
         base.set_gaps(1, k.get("max_gap", 10).max(1) as u64);
         base.set_stale_days(stale_days);
         Ok(Oracle {

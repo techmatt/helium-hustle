@@ -71,8 +71,10 @@ credits, a building count) is not seen.
 **Sim players play in game time** (Matt's ruling): a player acts whenever a decision is useful
 and skips stretches that need none ([agents.md](agents.md#when-it-looks)), so results are ticks
 and **decisions** (looks that applied an action), never speed-dependent. The ladder's players:
-`random`, `greedy`, `author` (playing well: about 140 decisions a run), `casual` (the author
-looking at most every 120 ticks: about 12 a run). Above them, in its own spec
+`random`, `greedy`, `author` (playing well, with condition programs kept in the library: about
+90 decisions a run), `casual` (the author looking at most every 120 ticks: about 12 a run),
+`handsoff` (the author's run 1, then only its saved programs: how far automation alone carries a
+run, [simulator.md](simulator.md)). Above them, in its own spec
 (`experiments/ceiling.json`), `oracle` (the ceiling: the author steered by rollouts that see
 the future; not read by the judge).
 

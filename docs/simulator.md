@@ -123,6 +123,7 @@ sides' tables; `--out` writes `compare.md`.
 | Milestones | Per milestone, medians: career ticks (`t`), retirements before it (`r`; it fell in run r+1) and that run's day (`d`); `k/n` when only k of n seeds reached it. |
 | Run credits, Peak cr/day, Ships/run | Credits earned and shipments a finished run (means); each career's best credit rate over the milestones' longest `credit_rate` window, 100 days (median over seeds). |
 | Real time | With `humans`: per player and model, run 1's real minutes (median), a finished run's (mean), minutes a decision, and each milestone's minutes from the career's start (median). |
+| Hands-off | With a `handsoff` player and an `author` one: how far automation alone carries a run. Credits a finished run from run 2 on (mean) and milestones first met from run 2 on (summed over seeds), each against the author's on the same seeds and as a share of it (run 1 is the author's in both). Its runs end by its stale rule, often well before the author's, so the credits share is earning and lasting together. |
 | Run-1 objectives | With a spec's `objectives`: each objective's median run-1 day against its Godot window (`in`, `early`, `late`). |
 | Never built, never used | Buildings never owned and commands never run in any seed's career. |
 
@@ -148,9 +149,11 @@ dev career plays one. **Dev seeds** 1-3 are for development, on/off checks and t
 Spent: 1-3 and 100-103 (005, development), 1000-1004 (005, the rev-2 baseline), 2000-2003
 (005, a compare), 3000-3004 (008, a baseline read before review fixes, superseded),
 3005-3009 (008, the rev-3 baseline), 3010-3012 (011, the oracle's first read, superseded by a
-fix), 3013-3015 (011, the oracle's final read), 3016-3023 (035, loadouts against main).
+fix), 3013-3015 (011, the oracle's final read), 3016-3023 (035, loadouts against main), 4-8
+(036, development), 3024-3031 and 3032-3039 (036, against main before review fixes,
+superseded), 3040-3047 (036, condition programs and hands-off against main).
 
-Next free: 3024
+Next free: 3048
 
 ## `run` and `replay`
 

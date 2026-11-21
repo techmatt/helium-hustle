@@ -361,6 +361,11 @@ pub struct Summary {
     pub ticks_per_decision: f64,
     /// Credits earned and shipments a finished run (means).
     pub run_credits: f64,
+    /// Credits earned a finished run from run 2 on (mean; the hands-off measure).
+    pub later_credits: f64,
+    /// Milestones first reached from run 2 on, summed over the games (the
+    /// hands-off measure).
+    pub later_milestones: usize,
     pub run_shipments: f64,
     /// Each game's best run's best credits a day over 100 days (median over games).
     pub peak_rate: f64,
@@ -477,6 +482,8 @@ pub fn summarize(cell: &Cell, games: &[GameResult], ms: &Milestones, models: &[(
         run_decisions: mean(&runs.iter().map(|r| r.decisions as f64).collect::<Vec<_>>()),
         ticks_per_decision: ticks as f64 / decisions.max(1) as f64,
         run_credits: mean(&runs.iter().map(|r| r.credits_earned).collect::<Vec<_>>()),
+        later_credits: mean(&runs.iter().filter(|r| r.run >= 2).map(|r| r.credits_earned).collect::<Vec<_>>()),
+        later_milestones: games.iter().map(|g| g.milestones.values().filter(|h| h.run >= 2).count()).sum(),
         run_shipments: mean(&runs.iter().map(|r| r.shipments as f64).collect::<Vec<_>>()),
         peak_rate: median(
             games.iter().map(|g| g.all_runs().map(|r| r.best_credit_rate).fold(0.0, f64::max)).collect(),
@@ -564,6 +571,48 @@ fn row_label(c: &Cell, multi: bool) -> String {
     }
 }
 
+/// How far automation alone carries a run (docs/simulator.md, *Hands-off*):
+/// each `handsoff` row against the `author` row of its config and variant,
+/// on the same seeds: credits a finished run from run 2 on, and milestones
+/// first met from run 2 on (run 1 is the author's in both).
+fn hands_off(t: &mut String, sums: &[Summary], multi: bool) {
+    let pairs: Vec<(&Summary, &Summary)> = sums
+        .iter()
+        .filter(|s| crate::agents::kind(&s.cell.spec) == "handsoff")
+        .filter_map(|h| {
+            let a = sums.iter().find(|a| {
+                a.cell.agent == "author"
+                    && a.cell.config == h.cell.config
+                    && a.cell.variant == h.cell.variant
+            })?;
+            Some((h, a))
+        })
+        .collect();
+    if pairs.is_empty() {
+        return;
+    }
+    let _ = writeln!(t, "\n## Hands-off (its programs alone from run 2, against the author on the same seeds)\n");
+    let _ = writeln!(
+        t,
+        "| Player | Credits a run from run 2 | Author's | Share | Milestones first met from run 2 | Author's | Share |"
+    );
+    let _ = writeln!(t, "|---|---|---|---|---|---|---|");
+    let share = |x: f64, y: f64| if y > 0.0 { pct(x / y) } else { "-".to_string() };
+    for (h, a) in pairs {
+        let _ = writeln!(
+            t,
+            "| {} | {:.0} | {:.0} | {} | {} | {} | {} |",
+            row_label(&h.cell, multi),
+            h.later_credits,
+            a.later_credits,
+            share(h.later_credits, a.later_credits),
+            h.later_milestones,
+            a.later_milestones,
+            share(h.later_milestones as f64, a.later_milestones as f64),
+        );
+    }
+}
+
 /// The report: a pace table, a milestones table and the unused content in
 /// game time, one row per player; then, when the spec names human models,
 /// the real-time projection, one row per player and model.
@@ -648,6 +697,7 @@ pub fn tables(sums: &[Summary], l: &Loaded) -> String {
             }
         }
     }
+    hands_off(&mut t, sums, multi);
     let _ = writeln!(t, "\n## Never built, never used (in every seed's career)\n");
     let _ = writeln!(t, "| Player | Buildings never built | Commands never used |");
     let _ = writeln!(t, "|---|---|---|");

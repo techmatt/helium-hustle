@@ -111,21 +111,25 @@ const PINNED: &[(&str, u64, &str)] = &[
     ("random", 2, "5ce6c8a2da01d5c1"),
     ("greedy", 1, "15c0241a915a6343"),
     ("greedy", 2, "d420d904639b1870"),
-    ("author", 1, "10ef4d64aafd5efc"),
-    ("author", 2, "bac28c0fb35037d4"),
-    ("casual", 1, "804803c8eb99fe67"),
+    ("author", 1, "9e76d500c42e33cc"),
+    ("author", 2, "260c0cdb338a2181"),
+    ("casual", 1, "5f4dafdcea0679d3"),
     ("casual", 2, "603a8ced6cc728ef"),
+    ("handsoff", 1, "7cf363293039ae92"),
+    ("handsoff", 2, "cd77889228b56445"),
 ];
 
 #[test]
 fn the_ladder_prints_its_tables_and_writes_results() {
     let dir = root("out/hh-sim-tests/ladder");
-    let players = "random,greedy,author,casual=author:min_gap=120";
+    let players = "random,greedy,author,casual=author:min_gap=120,handsoff";
     let out = run(&grid("experiment", players, &["--out", &dir, "--threads", "3"])).unwrap();
     for want in [
         "## Pace in game time",
         "## Milestones",
         "## Real time",
+        "## Hands-off",
+        "| handsoff |",
         "## Never built",
         "| author |",
         "| greedy |",
@@ -137,7 +141,7 @@ fn the_ladder_prints_its_tables_and_writes_results() {
         assert!(out.contains(want), "{want}: {out}");
     }
     let games = std::fs::read_to_string(format!("{dir}/games.jsonl")).unwrap();
-    assert_eq!(games.lines().count(), 8);
+    assert_eq!(games.lines().count(), 10);
     let played: Vec<(String, u64, String)> = games
         .lines()
         .map(|l| {
@@ -165,7 +169,7 @@ fn the_ladder_prints_its_tables_and_writes_results() {
     // `summarize` reads it back: each game's runs, milestones and career.
     let ms = root("configs/sim/milestones.json");
     let s = run(&args(&["summarize", &format!("{dir}/games.jsonl"), "--milestones", &ms])).unwrap();
-    for want in ["## Runs (8 games", "| author | 1 | 1 |", "| casual | 2 | 2 |","## Milestones", "| M1 |", "## Career at the end"] {
+    for want in ["## Runs (10 games", "| author | 1 | 1 |", "| casual | 2 | 2 |","## Milestones", "| M1 |", "## Career at the end"] {
         assert!(s.contains(want), "{want}: {s}");
     }
 }

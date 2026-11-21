@@ -29,7 +29,8 @@ against: [principles.md](principles.md); how they're run: [simulator.md](simulat
 |---|---|---|
 | `random` | Each look, `actions` times: one action uniform over what the view offers (an affordable building or research, land, a random 1-4 line program on a random program, free processors to a random program, a random rate on an open project); retires with chance 1 in `retire_odds` a look; looks every `every` ticks. | `actions` 2, `retire_odds` 500, `every` 5 |
 | `greedy` | The **builder**: buys the best-scored building it can afford (land included), up to `buys` a look, never saving; the cheapest affordable research; one command on the first program with every processor, chosen afresh each look. No projects, no voluntary retirement. Looks again when its target comes within reach, at most `max_gap` ticks on. | `buys` 3, `decay`, `starved` 100, `reserve` 3, `min_gap` 1, `max_gap` 10 |
-| `author` | The **program author**: the builder's score, but saves for its target; writes programs from templates; research, projects, ideology, Dream, market commands; retires a stale run. | the builder's, `min_gap` 1, `max_gap` 10, `compute` 1, `hand_gap` 60, `loads` 20, `pause` 1, `wait_demand` 0, `dream_at` 60, `stale_days` 300, `project_rate` 3, `fund` 1, `market` 1, `construct` 1 |
+| `author` | The **program author**: the builder's score, but saves for its target; writes condition programs kept in the library; research, projects, ideology, Dream, market commands; retires a stale run. | the builder's, `min_gap` 1, `max_gap` 10, `compute` 1, `hand_gap` 60, `loads` 20, `pause` 1, `wait_demand` 0, `dream_at` 60, `stale_days` 300, `project_rate` 3, `fund` 1, `market` 1, `construct` 1, `cond` 1 |
+| `handsoff` | **Automation alone**: run 1 is the author's; from run 2 it loads the library's programs at each reset and assigns processors, nothing else (below). | the author's, `every` 10 |
 | `planner` | **Not built.** A strategic player that plans across retirements without peeking: the hook is `Agent::new_run`, called once a run: at the first look after a forced retirement, before `act`; after a retirement the agent chose, at the end of that look (whatever else `act` did in the new run came first, so a planner should retire last in its look). | |
 | `oracle` | The **ceiling**: the author steered by rollouts on copies of the game, the future included (below). Profiles: `profile` 0 milestones, 1 credits, 2 ideology, 3 builder, 4 quests. | `profile` 0, `every` 50, `horizon` 600, `width` 5, `beam` 1, `margin` 20, `long` 2000, `replan` 500, `strategy` -1 (search), `retire` 1, `min_run` 1000, `retire_margin` 0, `first_margin` 0, `early` and `ideology` (the profile's weights), `tail` 400, `hoard_at` 5000, `stale_days` 300, `max_gap` 10, `roll_gap` = `max_gap` |
 
@@ -71,11 +72,18 @@ How it writes the main program depends on the gap to its next look (*When it loo
 | 4 | `promote_<good>` per pad good, `disrupt_speculators` | 1 when 3 or more are left |
 | 5 (`construct`) | construction: `if Land free < its land and Credits >= the land price` / `buy land` (while short of land); `if Credits >= the target's price and <its scarcest other input> >= its price` / `build <target> up to owned + 1`; then the filler × 1 | 1 when 2 or more are left, once the game unlocks `if` and `build` (not under the oracle's `main_last`: the main program takes the slot) |
 
+**Condition programs** (`cond` 1 once `if` is open; the oracle runs the table's, `cond` 0)
+read the game, not this look's counts, so each is saved once by name; side programs load at
+each reset and keep their lines while without a processor (lines: `author.rs`): `ship` (1: once a pad stands, fuel, launch, load; the filler; the hand
+plan replaces it, unsaved, while the target waits on a bought input), `dream watch` (2),
+`fund`, `market`, and `build order` (5: the last run's purchases as `build X up to N`, each
+gated on the one before owned, a short input bought first; rewritten only when a run bought
+past it; run 1 writes the one-target program).
+
 A program is rewritten only when its text changes (a rewrite restarts its pointer; the main
 plan's re-arm: *When it looks*). Each write goes through the loadout library
 (`Player::put_program`): a saved loadout with the same lines is loaded instead, and a
-standing program (all but the hand plan) is saved to its role's slot (`author: main`,
-`author: dream`, ...), so a new run loads them back. The builder keeps a slot per command. Extra pads
+standing program is saved to its slot, so a new run loads them back. The builder keeps a slot per command. Extra pads
 carry a good other than He-3 that sits at its cap. While looking often (gap ≤ `hand_gap`) it
 pauses buildings that eat a material its target is short of, so the stock builds up, and runs
 them again once it isn't.
@@ -105,7 +113,13 @@ The author's plan is rewritten only when its text changes, or to run its due lin
 the filler) again once the pointer has passed them into the filler; a plan with nothing due
 isn't written over one already in its filler with enough left to reach the next look. So a
 decision (a look that applied an action)
-is a real change, and `max_gap` 10 gives about 140 decisions a run.
+is a real change: about 90 a run with condition programs (140 with the 035 templates).
+
+**The hands-off player** (`handsoff.rs`) is the author in run 1; then at each new run it loads
+the five programs by name (saving run 1's build order first) and assigns processors (build
+order first, one each while two are left, the rest to Program 1). Nothing else but two
+acts: it assigns a processor gained mid-run, and retires a run that bought nothing for
+`stale_days`.
 
 ## The oracle (`oracle/`)
 
@@ -115,43 +129,32 @@ is a real change, and `max_gap` 10 gives about 140 decisions a run.
 
 The reasonable upper bound on a dedicated human, not an optimum: no per-tick search, no speed
 model. The author plays every look (looking at most every `max_gap`); the oracle sets its
-**goals** (`author::Directives`, none set for the plain author): a building to save for,
-research first, a project pushed (all spare credits; science the research doesn't want), an
-axis funded on N processors, Dream held against boredom (`sustain`: enough Dream processors
-to outpace growth, Dream's program first, energy users leave room for two Dreams, no stale
-retirement), all research, the market program on one processor once two are free, a different
-good on each extra pad, hoarding, and the main program run last (`main_last`, so Dream, Fund
-and Promote get energy before Cloud Compute's filler). It chooses them by **rollouts**: the
+**goals** (`author::Directives`, each field's doc says what it changes): a building to save
+for, research first, a project pushed, an axis funded, Dream held against boredom
+(`sustain`), all research, the market program, diversified pads, hoarding, and the main
+program run last (`main_last`). It chooses them by **rollouts**: the
 author, cloned, plays a copy of the game under the goals, and the score picks. The real game
 looks exactly when the author would (plans fall due at its next look) and rollouts look as
 often, so a rollout of the current goals is what will happen.
 
 - **Strategy** (each run's start, every `replan` ticks): standing bundles, a fixed table
-  (`strategies`; `strategy=k` pins row k, a row unavailable now is skipped and a pinned one
-  unavailable searches the rest): 0 the author's own; 1 *trade* (Trade Promotion first,
-  market, diversified pads, main last); 2 trade with the main program first; 3-5 trade +
-  sustain, + all research, + Foundation Grant; 6-11, once the market quest is done, trade +
-  humanist, rationalist, nationalist funded on 2 processors, each without then with sustain.
-  Each is played `long` ticks through retirements. The quests profile, while Open Horizons is
+  (`strategies`, its rows documented there; `strategy=k` pins row k): the author's own,
+  *trade* variants, trade + sustain, research or Foundation Grant, and trade + each axis
+  funded. Each is played `long` ticks through retirements. The quests profile, while Open Horizons is
   open, has one: its campaign (trade, Dream held, Humanist funded, then AI Consciousness).
 - **Tactics** (every `every` ticks, and once its target is bought): one change each to the
   target (every unlocked building), the research (once the strategy's is done), the project
   (when the strategy names none) or hoarding (from `hoard_at` credits on hand); all screened
   over a third of `horizon`, the best `width` over all of it, the two best together. A change
   must beat keeping the goals by `margin` per mille.
-- **Score**, in credits: credits earned; the closing income of the run under way at the end
-  times the days it has left (room to the boredom cap at its closing growth, at most `tail`);
-  and the profile's weights on what the career keeps (ideology best scores, Long-Term project
-  progress, building types, commands, quests and sub-objectives, achievements, research), on
-  each open milestone met (the career's milestones, `--milestones`: 4,000 plus `early` 100 a
-  tick sooner) and on each open milestone's progress squared (`progress.rs`). Credits weighs
-  credits alone.
-- **Retirement**, tried every `RETIRE_EVERY` (100) ticks from day `min_run`, apart from
-  the strategy's plans: it plays the run out on a copy and retires once the run's average
-  credits a day is the best it will see (the prestige rule). Before `min_run` it never
-  retires: a retirement re-rolls the markets for free, which a peeking player farms, and the
-  run played out under fixed goals underestimates a young run. `first_margin` loosens the
-  rule for the first retirement (a milestone) in a profile that scores milestones.
+- **Score**, in credits (`score.rs`): credits earned, the run's closing income over the days
+  it has left (at most `tail`), and the profile's weights on what the career keeps, on each
+  open milestone met (4,000 plus `early` 100 a tick sooner) and on its progress squared
+  (`progress.rs`). Credits weighs credits alone.
+- **Retirement** (`retire.rs`), tried every 100 ticks from day `min_run`: it plays the run out
+  on a copy and retires once the run's average credits a day is the best it will see. Never
+  before `min_run` (a retirement re-rolls the markets, which a peeking player farms);
+  `first_margin` loosens the first one in a profile that scores milestones.
 
 It plays about 30 ticks a second (a rollout a few milliseconds): a career of 20 retirements
 is about 18 minutes on one thread. Results and what blocks each milestone:

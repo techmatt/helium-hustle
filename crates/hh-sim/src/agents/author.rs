@@ -16,6 +16,16 @@
 //! | 4 market | `promote_<good>` for each pad good, `disrupt_speculators` | 1 when 3 or more are left |
 //! | 5 construction (`construct`) | `if Land free < its land and Credits >= the land price` / `buy land` (only while short of land); `if Credits >= its price and <its scarcest other input> >= its price` / `build <target> up to owned + 1`; then the filler × 1 | 1 when 2 or more are left, once `if` and `build` are unlocked (never under the oracle's `main_last`, which puts the main program in that slot) |
 //!
+//! With `cond` (default 1; the oracle runs 0) and program logic open, the
+//! table gives way to condition programs, one text each, saved by name
+//! ([`SHIP`], [`DREAM_WATCH`], [`FUND_NAME`], [`MARKET_NAME`], [`BUILD_ORDER`])
+//! and loaded back (side programs at each new run, where they keep their
+//! lines while without a processor): the main program is [`ship_cycle`]
+//! (the hand plan, unsaved, while the target waits on a bought input),
+//! Program 2 the [`dream_watch`] on one processor once Dream is unlocked,
+//! Program 5 the [`build_order_program`] learned from the last run (rewritten
+//! only when a run bought past it; run 1 writes the one-target program).
+//!
 //! A program is rewritten only when its text changes (a rewrite restarts its
 //! pointer), or, for the main plan, to run its due lines again once the
 //! pointer has passed into the filler; a plan with nothing due isn't written
@@ -36,6 +46,8 @@
 //! one set changes the rules above where its doc says. Unset, as for the
 //! `author` and `casual` rungs, they change nothing.
 
+use std::collections::BTreeMap;
+
 use hh_core::content::Requirement;
 use hh_core::state::{Clause, Cmp, Condition, Entry, Join, Joined, Op, Reading};
 use hh_core::view::PadView;
@@ -46,8 +58,16 @@ use super::{amount, cap, command_cost, command_unlocked, credits_price, made, Ag
 
 pub const KNOBS: &[&str] = &[
     "decay", "starved", "reserve", "buys", "compute", "dream_at", "stale_days", "project_rate", "fund", "market",
-    "hand_gap", "loads", "pause", "wait_demand", "min_gap", "max_gap", "construct",
+    "hand_gap", "loads", "pause", "wait_demand", "min_gap", "max_gap", "construct", "cond",
 ];
+
+/// Library names of the condition programs (`cond`): one saved copy each,
+/// loaded back at every new run. The hands-off player loads them by name.
+pub const SHIP: &str = "ship";
+pub const DREAM_WATCH: &str = "dream watch";
+pub const BUILD_ORDER: &str = "build order";
+pub const FUND_NAME: &str = "fund";
+pub const MARKET_NAME: &str = "market";
 
 /// Research, first wanted first.
 pub const RESEARCH: &[&str] = &[
@@ -103,11 +123,11 @@ const AXES: &[(&str, &str)] = &[
 /// shows no prices).
 const DEAREST: &[&str] = &["circuits", "he3", "titanium", "propellant"];
 
-const MAIN: usize = 0;
-const DREAM: usize = 1;
-const FUND: usize = 2;
-const MARKET: usize = 3;
-const BUILD: usize = 4;
+pub const MAIN: usize = 0;
+pub const DREAM: usize = 1;
+pub const FUND: usize = 2;
+pub const MARKET: usize = 3;
+pub const BUILD: usize = 4;
 
 /// Goals a planner sets on top of the author's own choices (the oracle,
 /// docs/agents.md). Unset, the author plays as itself.
@@ -247,6 +267,24 @@ pub struct Author {
     pause: bool,
     wait_demand: bool,
     last_note: String,
+    /// Writes condition programs (once program logic is open): the ship
+    /// cycle, the Dream watch and the build order, kept in the library.
+    cond: bool,
+    /// This run's purchases as seen look to look: each building's count, and
+    /// each rise in order (`(building, owned after)`).
+    seen_run: u32,
+    owned: BTreeMap<String, u32>,
+    order: Vec<(String, u32, Vec<Bridge>)>,
+    /// Per building, the buyable inputs of its price that no building made
+    /// or that were short at the last look ([`Bridge`]).
+    unmade: BTreeMap<String, Vec<Bridge>>,
+    /// The build order program, from the last run that bought past what it
+    /// covers, and how many of that run's purchases its lines cover (64
+    /// lines may stop short of them all).
+    plan: Vec<Entry>,
+    plan_from: usize,
+    /// Ends the look at a retirement (the hands-off player plays the new run).
+    pub stop_at_retire: bool,
 }
 
 impl Author {
@@ -277,7 +315,70 @@ impl Author {
             pause: k.get("pause", 1) != 0,
             wait_demand: k.get("wait_demand", 0) != 0,
             last_note: String::new(),
+            cond: k.get("cond", 1) != 0,
+            seen_run: 0,
+            owned: BTreeMap::new(),
+            order: Vec::new(),
+            unmade: BTreeMap::new(),
+            plan: Vec::new(),
+            plan_from: 0,
+            stop_at_retire: false,
         }
+    }
+
+    /// The build order program it holds (empty before a run has ended).
+    pub fn build_order(&self) -> &[Entry] {
+        &self.plan
+    }
+
+    /// Notes purchases since the last look. At a new run, a last run that
+    /// bought more than the build order covers rewrites it (the order fell
+    /// short); otherwise the saved one stands.
+    pub fn track(&mut self, v: &View) {
+        if !self.cond {
+            return;
+        }
+        if v.run != self.seen_run {
+            if self.seen_run != 0 && self.order.len() > self.plan_from {
+                let filler = if self.compute { "cloud_compute" } else { "idle" };
+                // What it covers (64 lines may cut it short): a later run
+                // that buys past that rewrites it.
+                (self.plan, self.plan_from) = build_order_program(v, &self.order, filler);
+            }
+            self.seen_run = v.run;
+            self.order.clear();
+            self.owned = v.buildings.iter().map(|b| (b.id.to_string(), b.owned)).collect();
+        } else {
+            for b in &v.buildings {
+                let had = self.owned.get(b.id).copied().unwrap_or(0);
+                let bridged = self.unmade.get(b.id).cloned().unwrap_or_default();
+                for n in had + 1..=b.owned {
+                    self.order.push((b.id.to_string(), n, bridged.clone()));
+                }
+                self.owned.insert(b.id.to_string(), b.owned);
+            }
+        }
+        // Each building's buyable inputs that nothing makes now or that are
+        // short of its price: the purchase seen at the next look may have
+        // needed them bought. (Remembering an input short at any look since
+        // the last purchase bought more and earned less: dev seeds 1-8.)
+        self.unmade = v
+            .buildings
+            .iter()
+            .map(|b| {
+                let res = INPUT_BRIDGES
+                    .iter()
+                    .filter_map(|&(r, cmd)| {
+                        let rich = credits_price(b) + command_cost(v, cmd, "credits");
+                        b.cost
+                            .get(r)
+                            .filter(|&&n| n > Fx::ZERO && (!made(v, r) || amount(v, r) < n))
+                            .map(|&n| (r.to_string(), n, rich))
+                    })
+                    .collect();
+                (b.id.to_string(), res)
+            })
+            .collect();
     }
 
     /// Its look gaps (the oracle sets its own and its rollouts').
@@ -558,6 +659,9 @@ impl Author {
     /// The programs' templates and processors; `gap` is the ticks to the next
     /// look.
     fn programs(&self, p: &mut Player, target: Option<&str>, gap: u64) {
+        if self.cond && p.view().program_logic {
+            self.load_at_reset(p);
+        }
         let v = p.view();
         let total = v.processors;
         let mut want: Vec<Vec<Entry>> = vec![Vec::new(); v.programs.len()];
@@ -571,7 +675,14 @@ impl Author {
         let (main, dream) = self.dir.program_slots(want.len());
         // Main: by hand while looks come often, else a standing cycle.
         let filler = if self.compute { "cloud_compute" } else { "idle" };
-        want[main] = if gap <= self.hand_gap {
+        // Condition programs once the game allows them: one fixed text each.
+        let cond = self.cond && v.program_logic;
+        // The ship cycle falls short while the target waits on an input only
+        // a purchase brings: then the main program is a hand plan that buys it.
+        let ship = cond && !bridge_due(v, target);
+        want[main] = if ship {
+            ship_cycle(filler)
+        } else if gap <= self.hand_gap {
             // Twice what reaches the latest next look; a constant, so the text
             // changes only when what is due does.
             let fill = (2 * self.max_gap.max(gap) * u64::from(left.max(1))).min(1000) as u32;
@@ -592,7 +703,12 @@ impl Author {
                 procs[dream] = n;
                 left -= n;
             }
-        } else if bored && building && command_unlocked(v, "dream") && left > 1 && dream < want.len() {
+        } else if cond && building && command_unlocked(v, "dream") && left > 1 && dream < want.len() {
+            // The Dream watch: dreams past `dream_at`% of the cap, else computes.
+            want[dream] = dream_watch(self.dream_at, filler);
+            procs[dream] = 1;
+            left -= 1;
+        } else if !cond && bored && building && command_unlocked(v, "dream") && left > 1 && dream < want.len() {
             want[dream] = vec![e("dream", 1)];
             procs[dream] = 1;
             left -= 1;
@@ -626,7 +742,12 @@ impl Author {
         }
         // Construction: buy the target the day it comes within reach, between
         // looks. Its `if`s are free, so the processor computes on other days.
-        if self.construct && v.program_logic && left > 1 && BUILD < want.len() && BUILD != main {
+        // With conditions, the build order from the last runs, once there is one.
+        if self.construct && cond && !self.plan.is_empty() && left > 1 && BUILD < want.len() && BUILD != main {
+            want[BUILD] = self.plan.clone();
+            procs[BUILD] = 1;
+            left -= 1;
+        } else if self.construct && v.program_logic && left > 1 && BUILD < want.len() && BUILD != main {
             if let Some(b) = target.and_then(|t| v.buildings.iter().find(|b| b.id == t && b.unlocked)) {
                 want[BUILD] = construction(v, b, filler);
                 procs[BUILD] = 1;
@@ -634,7 +755,17 @@ impl Author {
             }
         }
         procs[main] = left;
-        let hand = gap <= self.hand_gap;
+        // A side program that loses its processor keeps its lines (idle with
+        // none), so it needn't be written or loaded again when one comes back.
+        if cond {
+            let n = want.len();
+            for i in [dream, FUND, MARKET, BUILD].into_iter().filter(|&i| i != main && i < n) {
+                if want[i].is_empty() && procs[i] == 0 {
+                    want[i] = v.programs[i].entries.clone();
+                }
+            }
+        }
+        let hand = !ship && gap <= self.hand_gap;
         let due: u64 = if hand {
             want[main].iter().filter(|l| l.command_id() != Some(filler)).map(|l| u64::from(l.count())).sum()
         } else {
@@ -665,16 +796,24 @@ impl Author {
             .map(|i| (i, want[i].clone()))
             .collect();
         // Standing programs go through the loadout library, so a new run loads
-        // them back; a hand plan is one look's, not worth keeping.
+        // them back; a hand plan is one look's, not worth keeping, nor is a
+        // construction program for one target once conditions are open.
         let role = |i: usize| match i {
+            _ if ship && i == main => SHIP,
+            _ if cond && i == main => "author: main",
+            _ if cond && i == dream => DREAM_WATCH,
+            _ if cond && i == FUND => FUND_NAME,
+            _ if cond && i == MARKET => MARKET_NAME,
+            _ if cond => BUILD_ORDER,
             _ if i == main => "author: main",
             _ if i == dream => "author: dream",
             FUND => "author: fund",
             MARKET => "author: market",
             _ => "author: build",
         };
+        let one_target = |i: usize| cond && i == BUILD && want[i] != self.plan;
         for (i, entries) in writes {
-            let keep = if hand && i == main { None } else { Some(role(i)) };
+            let keep = if (hand && i == main) || one_target(i) { None } else { Some(role(i)) };
             p.put_program(i as u32, entries, keep);
         }
         for i in (0..procs.len()).filter(|&i| procs[i] < cur[i]) {
@@ -682,6 +821,26 @@ impl Author {
         }
         for i in (0..procs.len()).filter(|&i| procs[i] > cur[i]) {
             let _ = p.apply(&Action::SetProcessors { program: i as u32, processors: procs[i] });
+        }
+    }
+
+    /// At a new run (its side programs still empty), loads each saved side
+    /// program into its slot: the Dream watch, fund, market, and the build
+    /// order unless the last run rewrote it. Processors come as it gains them.
+    fn load_at_reset(&self, p: &mut Player) {
+        // The slots `programs` uses (a directive can move main and Dream).
+        let (main, dream) = self.dir.program_slots(p.view().programs.len());
+        let slots = [(dream, DREAM_WATCH), (FUND, FUND_NAME), (MARKET, MARKET_NAME), (BUILD, BUILD_ORDER)];
+        for (slot, name) in slots.into_iter().filter(|&(s, _)| s != main) {
+            let v = p.view();
+            if v.programs.get(slot).is_none_or(|p| !p.entries.is_empty()) {
+                continue;
+            }
+            let Some(i) = v.library.iter().position(|l| l.name == name) else { continue };
+            if slot == BUILD && v.library[i].entries != self.plan {
+                continue;
+            }
+            let _ = p.apply(&Action::LoadLoadout { loadout: i as u32, program: slot as u32 });
         }
     }
 
@@ -884,6 +1043,165 @@ fn construction(v: &View, b: &hh_core::view::BuildingView, filler: &str) -> Vec<
     lines
 }
 
+/// Whether the target is short of an input a `buy_*` command brings, with
+/// credits past its price for at least one (what a hand plan would buy).
+fn bridge_due(v: &View, target: Option<&str>) -> bool {
+    let Some(b) = target.and_then(|t| v.buildings.iter().find(|b| b.id == t)) else { return false };
+    let spare = amount(v, "credits") - credits_price(b);
+    INPUT_BRIDGES.iter().any(|&(res, cmd)| {
+        let each = command_cost(v, cmd, "credits");
+        b.cost.get(res).is_some_and(|&need| need > amount(v, res))
+            && command_unlocked(v, cmd)
+            && each > Fx::ZERO
+            && spare >= each
+    })
+}
+
+/// An input a purchase bought with `buy_*`, how much of it its price asked,
+/// and the credits that buy one past its credits price.
+type Bridge = (String, Fx, Fx);
+
+fn clause(reading: Reading, cmp: Cmp, value: i64) -> Clause {
+    Clause { reading, cmp, value: Fx::from_int(value) }
+}
+
+fn amount_of(resource: &str) -> Reading {
+    Reading::Amount { resource: resource.to_string() }
+}
+
+/// `if a [and b]`.
+fn when(first: Clause, and: Option<Clause>) -> Entry {
+    let rest = and.map(|clause| Joined { join: Join::And, clause });
+    Entry::new(Op::If { when: Condition { first, rest } })
+}
+
+/// Propellant a launch burns and He-3 a load moves (mirror configs/baseline.json
+/// `fuel_per_pad` 20 and `load_per_execution` 5).
+const FUEL: i64 = 20;
+const LOAD: i64 = 5;
+
+/// `Launch Pad count >= 1`.
+fn pad_stands() -> Clause {
+    clause(Reading::Count { building: "launch_pad".to_string() }, Cmp::Ge, 1)
+}
+
+/// The main program with conditions: one text for every run. Fuel a launch
+/// once a Launch Pad stands (an He-3 stock as the "pad near full" sign bought
+/// fuel with no pad at all), launch a ready pad, load while there is a load of
+/// He-3, else the filler.
+fn ship_cycle(filler: &str) -> Vec<Entry> {
+    let e = Entry::command;
+    vec![
+        when(clause(amount_of("propellant"), Cmp::Lt, FUEL), Some(pad_stands())),
+        e("buy_propellant", 1).indent(),
+        when(clause(Reading::PadsReady, Cmp::Ge, 1), None),
+        e("launch_pads", 1).indent(),
+        // Loads only once a pad stands (Load is locked before: a failed step).
+        // A full pad cooling down still takes a failed load a loop: no
+        // reading sees a pad's cargo.
+        when(clause(amount_of("he3"), Cmp::Ge, LOAD), Some(pad_stands())),
+        e("load_pads", 1).indent(),
+        e(filler, 1),
+    ]
+}
+
+/// The Dream watch: dream past `dream_at`% of boredom's cap, else the filler.
+fn dream_watch(dream_at: i64, filler: &str) -> Vec<Entry> {
+    vec![
+        when(clause(Reading::Percent { resource: "boredom".to_string() }, Cmp::Ge, dream_at), None),
+        Entry::command("dream", 1).indent(),
+        Entry::command(filler, 1),
+    ]
+}
+
+/// The build order program from a run's purchases (`order`, in the order
+/// seen): land while free land is under the most a listed building needs,
+/// then each purchase in turn as `build X up to N` (a run of one building
+/// merged), each past the first in the body of an `if` that the one before it
+/// is owned, so it keeps the order and reads how far the run has come rather
+/// than the day. A step whose price had an input nothing made then (bought
+/// with `buy_*` in that run) is led by `if` the input is under what that
+/// price asked `and` the credits cover that price and the buy: buy one (as
+/// the hand plan buys inputs only from credits past the target's price, so
+/// a step far ahead buys only once the run can afford it). The line outlives
+/// its step: once built, it keeps that input topped up to the old need while
+/// credits stay past the old price (gating it on the step unbuilt instead,
+/// with no credits clause, bought early and cut the hands-off player's run-2
+/// credits from 13% of the author's to 1%: dev seeds 1-8). Done lines are free; the
+/// first not done tries once a loop (failing when short), then the filler
+/// line. At most `max_entries` lines: the author buys the rest at its looks.
+/// Returns the lines and how many of `order`'s purchases they cover.
+fn build_order_program(v: &View, order: &[(String, u32, Vec<Bridge>)], filler: &str) -> (Vec<Entry>, usize) {
+    let max_lines = 64; // mirrors configs/baseline.json `max_entries`
+    let mut lines = Vec::new();
+    let land = order
+        .iter()
+        .filter_map(|(id, _, _)| v.buildings.iter().find(|b| b.id == id).map(|b| b.land))
+        .max()
+        .unwrap_or(0);
+    if land > 0 {
+        // Gated at a new run's first land price (no reading sees the price):
+        // once land costs more (`land_cost_scaling`), credits between the two
+        // still try `buy land`, which fails and spends a step.
+        let short = clause(amount_of("land"), Cmp::Lt, i64::from(land));
+        let flush = Clause { reading: amount_of("credits"), cmp: Cmp::Ge, value: v.land_price };
+        lines.push(when(short, Some(flush)));
+        lines.push(Entry::new(Op::BuyLand {}).indent());
+    }
+    // Runs of the same building merge into one `up to` line (each input at
+    // the most any of its purchases asked), and count the purchases merged.
+    let mut steps: Vec<(&str, u32, Vec<Bridge>, usize)> = Vec::new();
+    for (id, c, bridged) in order {
+        match steps.last_mut() {
+            Some(last) if last.0 == id => {
+                last.1 = last.1.max(*c);
+                last.3 += 1;
+                for (r, n, rich) in bridged {
+                    match last.2.iter_mut().find(|x| x.0 == *r) {
+                        Some(x) => {
+                            x.1 = x.1.max(*n);
+                            x.2 = x.2.max(*rich);
+                        }
+                        None => last.2.push((r.clone(), *n, *rich)),
+                    }
+                }
+            }
+            _ => steps.push((id, *c, bridged.clone(), 1)),
+        }
+    }
+    let count = |b: &str, cmp: Cmp, n: u32| clause(Reading::Count { building: b.to_string() }, cmp, i64::from(n));
+    let mut prev: Option<(&str, u32)> = None;
+    let mut covered = 0;
+    for (id, c, bridged, merged) in steps {
+        let after = prev.map(|(p, n)| count(p, Cmp::Ge, n));
+        let lines_needed = 2 * bridged.len() + if after.is_some() { 2 } else { 1 };
+        // Room for the step and the filler line.
+        if lines.len() + lines_needed + 1 > max_lines {
+            break;
+        }
+        // Its inputs first: one bought a loop while the stock is under what
+        // the price asked and the credits cover the price and the buy.
+        for (r, need, rich) in bridged {
+            let short = Clause { reading: amount_of(&r), cmp: Cmp::Lt, value: need };
+            let flush = Clause { reading: amount_of("credits"), cmp: Cmp::Ge, value: rich };
+            lines.push(when(short, Some(flush)));
+            lines.push(Entry::command(&format!("buy_{r}"), 1).indent());
+        }
+        let build = Entry::new(Op::Build { building: id.to_string(), up_to: Some(c) });
+        match after {
+            Some(a) => {
+                lines.push(when(a, None));
+                lines.push(build.indent());
+            }
+            None => lines.push(build),
+        }
+        prev = Some((id, c));
+        covered += merged;
+    }
+    lines.push(Entry::command(filler, 1));
+    (lines, covered)
+}
+
 /// Keeps the sooner of `soon` and `t`; a `t` of 0 (it holds already, yet this
 /// look didn't act on it) gives no reason to look again sooner.
 fn sooner(soon: &mut u64, t: u64) {
@@ -916,6 +1234,7 @@ impl Agent for Author {
             self.b.reserve = self.dir.energy_reserve(self.reserve, v);
             (v.run, v.day, v.run_stats.buildings_built)
         };
+        self.track(p.view());
         if run != self.run || built != self.built {
             self.run = run;
             self.built = built;
@@ -928,6 +1247,10 @@ impl Agent for Author {
             self.run = v.run;
             self.built = v.run_stats.buildings_built;
             self.built_day = v.day;
+            self.track(p.view());
+            if self.stop_at_retire {
+                return;
+            }
         }
         self.research(p);
         let target = self.build(p);
