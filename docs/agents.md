@@ -57,7 +57,9 @@ credits past its price; else Cloud Compute (Idle without the energy).
 The rung that matters most: program authoring is the core skill. Its target is the best-scored
 building whose missing inputs can be made or bought; one short of an input nothing makes and no
 command buys (circuits) works toward that input's maker, or the building that unlocks the maker
-(the view's `requires`). It buys another building only from credits past the target's price.
+(`requires`). A resolved target still past a cap (a ninth Storage Depot) gives way to the
+building itself if under its caps, else is skipped (a maker step past a cap is skipped). It
+buys others only from credits past the target's price.
 How it writes the main program depends on the gap to its next look (*When it looks*):
 
 | Program | Template | Processors |
@@ -94,16 +96,14 @@ once the run has bought nothing for `stale_days` days.
 
 ## When it looks
 
-Every player looks whenever a decision is useful and skips stretches that need none; how
-often is a knob, never a profile. After acting, the author reads, from the view alone (integers
-and `Fx`), the ticks until: its target is affordable (credits at its own reading of its income,
-credits earned this run between its last two looks a day; other costs at the view's
-`per_day`); the next research it wants is affordable; boredom reaches `dream_at`; the pad's
-cooldown ends; a stale run would retire. The soonest (one already true doesn't count) is its
-gap, clamped to `min_gap`..`max_gap`; `max_gap` covers what it can't foresee (events, demand,
-a stall). Greedy waits for its target or `max_gap`; random looks every `every` ticks; a forced
-retirement wakes any player. The casual player is the author with `min_gap` 120: it writes the
-standing cycle and looks about 12 times a run.
+Every player looks when a decision is useful; how often is a knob. After acting, the author
+reads, from the view alone, the ticks until: its target is affordable (credits at this run's
+income a day between its last two looks; other costs at the view's `per_day`); the next
+research it wants is affordable; boredom reaches `dream_at`; the pad's cooldown ends; a stale
+run would retire. The soonest not already true is its gap, clamped to
+`min_gap`..`max_gap`; `max_gap` covers what it can't foresee (events, demand, stalls). Greedy
+waits for its target or `max_gap`; random looks every `every` ticks; a forced retirement wakes
+any player. The casual player (`min_gap` 120) writes the standing cycle, about 12 looks a run.
 
 A hand plan is also rewritten to run its due lines again once the pointer passed into its
 filler, never over one that reaches the next look: about 90 decisions a run.

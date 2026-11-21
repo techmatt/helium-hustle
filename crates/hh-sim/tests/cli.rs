@@ -111,12 +111,12 @@ const PINNED: &[(&str, u64, &str)] = &[
     ("random", 2, "627621e285bbbb0d"),
     ("greedy", 1, "084bea1e7b278639"),
     ("greedy", 2, "d99a102e32928cee"),
-    ("author", 1, "bd04e318978836e6"),
-    ("author", 2, "032dcfef6e31c36c"),
+    ("author", 1, "269a2e3eb297bb51"),
+    ("author", 2, "59bf47dddee118e0"),
     ("casual", 1, "2ec08cd74a8642d3"),
     ("casual", 2, "8cb5573fd966a21b"),
-    ("handsoff", 1, "8bcf992936e59bb8"),
-    ("handsoff", 2, "9141dd6e449e0bd0"),
+    ("handsoff", 1, "79e6b3bf678e6c63"),
+    ("handsoff", 2, "48ea0c637bd371f8"),
 ];
 
 #[test]
@@ -310,7 +310,7 @@ fn the_oracle_plays_on_copies_and_its_game_replays() {
     let half = fingerprints.len() / 2;
     assert_eq!(fingerprints[..half], fingerprints[half..]);
     // Seeds 1 and 2 of the oracle, then of the pinned one.
-    assert_eq!(fingerprints[..half], ["b6ff6c4ef7fb4615", "c357d97fd94aa031", "bcde2701f0b0590e", "0c83fac69f51c8f1"]);
+    assert_eq!(fingerprints[..half], ["6ad2c92d22bd5af2", "64693a21afc50393", "9b26442aa05705d8", "e35477a14866f258"]);
 }
 
 /// `trace --at T` prints the state at career tick T: what walls a run in.

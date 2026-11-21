@@ -468,12 +468,25 @@ impl Author {
     /// The best-scored building whose missing inputs can be made or bought.
     /// A target short of an input nothing makes and no command buys (circuits)
     /// works toward that input's maker, or the building that unlocks it.
+    /// A step costing more of a resource than its cap holds can never be
+    /// bought, and waiting on it deadlocks: [`Builder::resolve`] already
+    /// plans storage for an over-cap building, so this is the storage itself
+    /// over its cap (a Storage Depot's cost grows 1.5x a buy, the cap it adds
+    /// linearly). Then the building itself is the target if it fits its caps
+    /// (an Arbitrage Engine resolved to a Solar Panel that needs a ninth
+    /// depot), else it is skipped.
     fn reachable_target(&self, v: &View) -> Option<String> {
         let mut ranked = self.b.ranked(v);
         self.dir.rank_target(v, &mut ranked);
         for (id, _) in ranked {
-            let t = self.b.resolve(v, &id).to_string();
-            let Some(b) = v.buildings.iter().find(|b| b.id == t) else { continue };
+            let Some(b) = [self.b.resolve(v, &id), id.as_str()]
+                .into_iter()
+                .filter_map(|t| v.buildings.iter().find(|b| b.id == t))
+                .find(|b| !over_cap(v, b))
+            else {
+                continue;
+            };
+            let t = b.id.to_string();
             let mut ok = true;
             for (res, &need) in &b.cost {
                 if amount(v, res) >= need || res == "credits" {
@@ -486,7 +499,10 @@ impl Author {
                 }
                 ok = false;
                 if let Some(step) = Self::toward_maker(v, res) {
-                    return Some(self.b.resolve(v, step).to_string());
+                    let step = self.b.resolve(v, step);
+                    if v.buildings.iter().any(|m| m.id == step && !over_cap(v, m)) {
+                        return Some(step.to_string());
+                    }
                 }
             }
             if ok {
@@ -1285,6 +1301,13 @@ fn price(v: &View, id: &str, res: &str) -> Fx {
         .and_then(|b| b.cost.get(res).copied())
         .unwrap_or(Fx::ZERO)
 }
+
+/// Whether `b` costs more of some capped resource than its cap holds: it
+/// can't be bought until the cap rises.
+fn over_cap(v: &View, b: &hh_core::view::BuildingView) -> bool {
+    b.cost.iter().any(|(res, &need)| cap(v, res).is_some_and(|c| need > c))
+}
+
 
 impl Agent for Author {
     fn next_look(&mut self, _p: &mut Player) -> u64 {

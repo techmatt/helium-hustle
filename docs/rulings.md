@@ -12,6 +12,9 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   programs later at high speed ("unlimited speed" is about 200x for now). Programs are the core
   identity. Boredom is a speed governor. No loss: stages are wins, and a finale is far off. No
   offline time: the game advances only while it runs in the browser. Numbers grow naturally.
+- **Be intentional about what can be gamed (2026-11-21).** A solution that sounds "too
+  boring" (idling, waiting it out, repeating the last run) must never work well. Every gate and
+  quest condition states which boring strategies it rules out.
 - **Speed.** Decisions happen at 1-3x with brief bursts to 5-20x. 200x comes later, once
   programs can automate more, behind tech not yet in the game.
 - **Run-1 real time.** 1x stays 1 tick a second; the 25-35 real-minute target for run 1 is what
