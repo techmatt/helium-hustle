@@ -69,8 +69,8 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   demand counts only on an input that ran short; the rate counts everything the day's tick
   did to the stock (purchases by program lines, pad loading, boredom growth and Dream too).
 - **Rules port picks (004, defaults).** The starting-credits bonus is 0.02 of the best run
-  (`career.credits_bonus_fraction`), not the Godot build's /100. Ideology ranks are geometric,
-  100 × 1.5^(n−1) (`rank_base_score`, `rank_growth`), not the data's `rank_thresholds`. Lunar
+  (`career.credits_bonus_fraction`), not the Godot build's /100. Ideology ranks are geometric:
+  rank n costs 100 × 1.5^(n−1) more score, so rank 5 is at 1,318.75 (`rank_base_score`, `rank_growth`), not the data's `rank_thresholds`. Lunar
   Cartography and Deep Core Survey stay unreachable until the narrative pass. The boredom cap is
   1000 plus 100 per Recreation Dome. Invented numbers (demand base, noise, coupling, cooldowns)
   are config candidates.

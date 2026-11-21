@@ -50,7 +50,8 @@ every later run; Strategic: the rest of the run):
   Long-Term only in practice: it is read from the career's completions.
 - `modifier`: a modifier `key` multiplied by `value` ([Modifiers](README.md#modifiers)).
 - `set_flag`: a career flag, set once at completion (buildings and projects can require
-  it).
+  it). Flags outlive a timeline's end and completions don't ([timeline.md](timeline.md)), so
+  after one the flag's building stays buildable while the project can be funded again.
 - `boredom_modifiers`: `base_rate_mult` multiplies boredom growth
   ([boredom.md](boredom.md)); `command_boredom` replaces the named commands' flat boredom
   per execution ([programs.md](programs.md)).

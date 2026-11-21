@@ -205,9 +205,14 @@ def check_floats():
 def run(cmd, **kw):
     """Runs a tool; a missing one is a failed run (exit 127), never an exception."""
     exe = shutil.which(cmd[0]) or cmd[0]
+    # A relative CARGO_TARGET_DIR would resolve against each tool's own directory (the wasm
+    # build runs cargo in crates/hh-wasm, leaving a stray target there): pin it to the root.
+    env = dict(os.environ)
+    if env.get("CARGO_TARGET_DIR") and not os.path.isabs(env["CARGO_TARGET_DIR"]):
+        env["CARGO_TARGET_DIR"] = str(ROOT / env["CARGO_TARGET_DIR"])
     try:
         return subprocess.run([exe, *cmd[1:]], cwd=ROOT, capture_output=True, text=True,
-                              encoding="utf-8", errors="replace", **kw)
+                              encoding="utf-8", errors="replace", env=env, **kw)
     except OSError as e:
         return subprocess.CompletedProcess(cmd, 127, "", f"{cmd[0]}: {e}")
 

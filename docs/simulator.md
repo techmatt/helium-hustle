@@ -110,10 +110,10 @@ whatever the thread count.
 **Output.** The tables on stdout and in `report.md`; `results.json` (`hh-experiment/1`: the
 spec, revision, content hash and each cell's summary); `games.jsonl` (a line a game: every
 measure, each run's ticks and decisions, every building bought, the career's best ranks,
-projects, quests, sub-objectives and achievements at the end, its cell, the fingerprint and
-`replay_ok`), appended as each game finishes, with a progress line on stderr, and rewritten in
-game order at the end: `summarize` reads it, a read still running included (a run's length is
-`ticks`; files before 032 say `days`, still read). The milestones
+Long-Term projects (Strategic ones only in `trace`'s career log, `project <id>` lines), quests,
+sub-objectives and achievements at the end, its cell, the fingerprint and `replay_ok`),
+appended as each game finishes and rewritten in game order at the end: `summarize` reads it,
+a read still running included. The milestones
 (`--milestones`) are the oracle's too. Every command exits 1 if a game's record doesn't
 replay to its state.
 `compare` prints the paired table (B minus A on the same seeds, mean difference and its
