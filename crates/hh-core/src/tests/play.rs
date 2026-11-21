@@ -216,7 +216,8 @@ fn programs_are_paid_before_upkeep_and_the_breakdown_shows_who_went_short() {
     let r = rules();
     let mut g = r.start(1, Some(scenario("late_unlocks").unwrap()));
     let v = r.view(&g);
-    assert_eq!(v.nav.iter().filter(|t| t.visible).count(), v.nav.len(), "every tile open");
+    // Every Act 1 tile open; the later acts' five (draft) open with their quests.
+    assert_eq!(v.nav.iter().filter(|t| t.visible).count(), v.nav.len() - 5, "every Act 1 tile open");
     r.advance(&mut g, 3);
     let v = r.view(&g);
     // Load Launch Pads ran on the Solar Panels' power; a building with upkeep went short.

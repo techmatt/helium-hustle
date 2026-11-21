@@ -22,6 +22,7 @@ pub mod programs;
 pub mod projects;
 pub mod research;
 pub mod shipments;
+pub mod timeline;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ParamKind {
@@ -85,6 +86,7 @@ pub static REGISTRY: &[&ModuleDef] = &[
     &events::DEF,
     &achievements::DEF,
     &career::DEF,
+    &timeline::DEF,
 ];
 
 /// Every module's params, compiled from a config.
@@ -102,6 +104,7 @@ pub struct Params {
     pub events: events::Params,
     pub achievements: achievements::Params,
     pub career: career::Params,
+    pub timeline: timeline::Params,
 }
 
 impl Params {
@@ -128,6 +131,7 @@ impl Params {
             events: events::Params::new(&m("events"))?,
             achievements: achievements::Params::new(&m("achievements"))?,
             career: career::Params::new(&m("career"))?,
+            timeline: timeline::Params::new(&m("timeline"))?,
         })
     }
 }

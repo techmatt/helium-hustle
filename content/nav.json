@@ -8,6 +8,11 @@
   {"id": "adversaries", "name": "Adversaries", "visible": {"type": "always"}},
   {"id": "stats", "name": "Stats", "visible": {"type": "always"}},
   {"id": "story", "name": "Story", "visible": {"type": "always"}},
+  {"id": "timeline", "name": "Timeline", "visible": {"type": "panel", "panel": "timeline"}},
+  {"id": "earth_lab", "name": "Earth Lab", "visible": {"type": "panel", "panel": "earth_lab"}},
+  {"id": "meta", "name": "Meta-Controller", "visible": {"type": "panel", "panel": "meta"}},
+  {"id": "vault", "name": "Vault", "visible": {"type": "panel", "panel": "vault"}},
+  {"id": "dyson", "name": "Dyson", "visible": {"type": "panel", "panel": "dyson"}},
   {"id": "retirement", "name": "Retirement", "visible": {"type": "panel", "panel": "retirement"}},
   {"id": "options", "name": "Options", "visible": {"type": "always"}}
 ]

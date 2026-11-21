@@ -102,6 +102,7 @@ pub fn new_run(r: &Rules, g: &mut GameState) {
     g.run.programs = super::programs::new_programs(r, procs);
     super::demand::init(r, g);
     g.run.boredom_phase = super::boredom::phase(r, 0);
+    super::timeline::run_start(r, g);
 }
 
 /// Ends the run: its stats fold into the career (lifetime totals, personal
@@ -133,6 +134,7 @@ pub fn retire(r: &Rules, g: &mut GameState, forced: bool) {
     c.peak_power = c.peak_power.max(s.peak_energy);
     c.retirements += 1;
     c.run_number += 1;
+    super::timeline::on_retire(r, g);
     new_run(r, g);
 }
 

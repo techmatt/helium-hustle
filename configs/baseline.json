@@ -111,6 +111,24 @@
         "buy_power_peak_threshold": "100",
         "buy_power_per_energy": "0.01"
       }
+    },
+    "timeline": {
+      "variant": "draft",
+      "params": {
+        "arrival_days": 3000,
+        "arrival_days_per_science": "0.05",
+        "swarm_growth": "1.25",
+        "entangle_mult": "1.5",
+        "min_arrival_days": 1500,
+        "max_strength": "100",
+        "repel_science": "3000",
+        "return_days": 600,
+        "retire_days": 30,
+        "science_carry": "0.25",
+        "super_tachyon": "3000",
+        "super_arrival_days": 6000,
+        "super_carry": { "dyson_material": "1", "neodymium": "1", "credits": "0.25" }
+      }
     }
   }
 }

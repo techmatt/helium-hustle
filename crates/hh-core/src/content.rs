@@ -25,6 +25,7 @@ const FILES: &[(&str, &str)] = &[
     ("achievements.json", include_str!("../../../content/achievements.json")),
     ("rivals.json", include_str!("../../../content/rivals.json")),
     ("nav.json", include_str!("../../../content/nav.json")),
+    ("earth_tech.json", include_str!("../../../content/earth_tech.json")),
 ];
 
 /// The modifier keys rewards may name (docs/rules/README.md, *Modifiers*).
@@ -41,6 +42,8 @@ pub const MODIFIER_KEYS: &[&str] = &[
     "cargo_capacity_mult",
     "demand_ceiling",
     "buy_power_mult",
+    "boredom_growth_mult",
+    "ideology_cross_mult",
 ];
 
 /// The ideology axes buildings, commands and projects may name.
@@ -216,6 +219,49 @@ pub enum Condition {
     PersistentProjectCompletedAny,
     DaysSurvived { days: u64 },
     CreditsEarned { amount: Fx },
+    // Draft (042), the later acts (docs/rules/timeline.md):
+    /// Days this run since the player's last order (programs don't count).
+    QuietDays { days: u64 },
+    /// Earth science made this timeline.
+    EarthScience { amount: Fx },
+    /// The Earth tech is held now.
+    EarthTech { tech: String },
+    TimelinesEnded { count: u32 },
+    SwarmRepelled,
+    /// The vault holds at least `amount` of the resource.
+    VaultHolds { resource: String, amount: Fx },
+    SuperTimeline,
+    /// The project (any tier) is completed (career or run).
+    ProjectCompleted { project: String },
+    Victory,
+}
+
+/// A draft Earth tech (`content/earth_tech.json`, docs/rules/timeline.md).
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct EarthTech {
+    pub id: String,
+    pub name: String,
+    pub description: String,
+    /// Earth science.
+    pub cost: Fx,
+    /// A quest that must be complete first, if any.
+    pub requires: Option<String>,
+    /// `timeline`, `next_timeline` or `forever`: how many timeline ends it survives.
+    pub scope: String,
+    pub effects: Vec<TechEffect>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
+pub enum TechEffect {
+    Modifier { key: String, value: Fx },
+    /// Days added to the swarm's arrival in each timeline that starts while held.
+    SwarmDelay { days: u64 },
+    /// Resources added at the start of run 1 of the next timeline.
+    StartResources { resources: Amounts },
+    /// A feature the engine names (`timeline::FEATURES`).
+    Unlock { feature: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -368,6 +414,7 @@ pub struct Content {
     pub achievements: Vec<Achievement>,
     pub rivals: Vec<Rival>,
     pub nav: Vec<NavTile>,
+    pub earth_tech: Vec<EarthTech>,
 }
 
 fn parse<T: for<'de> Deserialize<'de>>(name: &str) -> Result<Vec<T>, String> {
@@ -387,6 +434,7 @@ impl Content {
             achievements: parse("achievements.json")?,
             rivals: parse("rivals.json")?,
             nav: parse("nav.json")?,
+            earth_tech: parse("earth_tech.json")?,
         };
         c.check()?;
         Ok(c)
@@ -405,7 +453,16 @@ impl Content {
             | Condition::IdeologyRankAny { .. }
             | Condition::PersistentProjectCompletedAny
             | Condition::DaysSurvived { .. }
-            | Condition::CreditsEarned { .. } => true,
+            | Condition::CreditsEarned { .. }
+            | Condition::QuietDays { .. }
+            | Condition::EarthScience { .. }
+            | Condition::TimelinesEnded { .. }
+            | Condition::SwarmRepelled
+            | Condition::SuperTimeline
+            | Condition::Victory => true,
+            Condition::EarthTech { tech } => self.earth_tech.iter().any(|t| &t.id == tech),
+            Condition::VaultHolds { resource, .. } => self.resource(resource).is_some(),
+            Condition::ProjectCompleted { project } => self.projects.iter().any(|p| &p.id == project),
         }
     }
 
@@ -422,7 +479,8 @@ impl Content {
             .chain(self.events.iter().map(|b| &b.id))
             .chain(self.projects.iter().map(|b| &b.id))
             .chain(self.achievements.iter().map(|b| &b.id))
-            .chain(self.rivals.iter().map(|b| &b.id));
+            .chain(self.rivals.iter().map(|b| &b.id))
+            .chain(self.earth_tech.iter().map(|b| &b.id));
         for id in all {
             if !ids.insert(id.as_str()) {
                 return Err(format!("content: duplicate id {id:?}"));
@@ -617,6 +675,27 @@ impl Content {
                 .iter()
                 .any(|t| matches!(&t.visible, NavCondition::Panel { panel } if panel == career::RETIREMENT_PANEL));
             need(retire, format!("no nav tile shows the engine's panel {:?}", career::RETIREMENT_PANEL));
+        }
+        for t in &self.earth_tech {
+            let w = format!("earth tech {:?}", t.id);
+            need(["timeline", "next_timeline", "forever"].contains(&t.scope.as_str()), format!("{w}: bad scope"));
+            need(t.requires.as_deref().is_none_or(quest), format!("{w}: unknown quest"));
+            for e in &t.effects {
+                match e {
+                    TechEffect::Modifier { key, .. } => need(modifier(key), format!("{w}: unknown modifier")),
+                    TechEffect::StartResources { resources } => {
+                        need(resources.keys().all(|r| res(r)), format!("{w}: unknown resource"))
+                    }
+                    TechEffect::Unlock { feature } => need(
+                        crate::modules::timeline::FEATURES.contains(&feature.as_str()),
+                        format!("{w}: unknown feature"),
+                    ),
+                    TechEffect::SwarmDelay { .. } => {}
+                }
+            }
+        }
+        for r in [crate::modules::timeline::EARTH_SCIENCE, crate::modules::timeline::TACHYON] {
+            need(res(r), format!("engine resource {r:?} missing from content"));
         }
         if errors.is_empty() {
             Ok(())

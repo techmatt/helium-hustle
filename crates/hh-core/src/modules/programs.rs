@@ -365,6 +365,7 @@ pub fn rename_loadout(r: &Rules, g: &mut GameState, loadout: u32, name: &str) ->
 pub fn delete_loadout(g: &mut GameState, loadout: u32) -> Result<(), String> {
     loadout_mut(g, loadout)?;
     g.career.library.remove(loadout as usize);
+    super::timeline::loadout_deleted(g, loadout);
     Ok(())
 }
 
@@ -440,9 +441,11 @@ pub fn execute(r: &Rules, g: &mut GameState, c: &Command, src: &str, short: &str
         return LineOutcome::Skipped;
     }
     let frac = super::economy::input_fraction(g, &costs);
-    // An effect command needs its full cost; a pure conversion runs at the
-    // fraction its scarcest input allows.
-    let failed = frac <= Fx::ZERO || (c.effect.is_some() && frac < Fx::ONE);
+    // An effect command needs its full cost, and so does one that relieves
+    // boredom (Distract, draft); a pure conversion runs at the fraction its
+    // scarcest input allows.
+    let relieves = boredom_cost(g, c) < Fx::ZERO;
+    let failed = frac <= Fx::ZERO || ((c.effect.is_some() || relieves) && frac < Fx::ONE);
     if frac < Fx::ONE {
         let ran = if failed { Fx::ZERO } else { frac };
         if let Some(s) = super::economy::scarcest(g, &costs, ran) {
@@ -464,6 +467,11 @@ pub fn execute(r: &Rules, g: &mut GameState, c: &Command, src: &str, short: &str
     if b > Fx::ZERO {
         g.add(BOREDOM, b);
         g.track(src, BOREDOM, b, Fx::ZERO);
+    } else if b < Fx::ZERO {
+        // A negative flat boredom relieves it (Distract, draft), never below zero.
+        let relief = (-b).min(g.amount(BOREDOM));
+        g.add(BOREDOM, -relief);
+        g.track(src, BOREDOM, Fx::ZERO, relief);
     }
     g.career.used_commands.insert(c.id.clone());
     if let Some(f) = &c.sets_flag {

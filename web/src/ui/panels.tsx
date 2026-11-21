@@ -347,7 +347,7 @@ export function Projects({ s }: { s: Store }) {
   );
 }
 
-function Project({ v, p, fresh }: { v: View; p: ProjectView; fresh: Set<string> }) {
+export function Project({ v, p, fresh }: { v: View; p: ProjectView; fresh: Set<string> }) {
   const key = `project:${p.id}`;
   const step = (res: string, by: number) => {
     // From the engine's rate now, not this render's: quick clicks must each count.

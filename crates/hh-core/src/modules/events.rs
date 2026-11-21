@@ -85,6 +85,21 @@ pub fn holds(r: &Rules, g: &GameState, quest: &str, c: &Condition) -> bool {
         // Checked before the day count rises: today counts as survived.
         Condition::DaysSurvived { days } => g.run.day + 1 >= *days,
         Condition::CreditsEarned { amount } => g.run.stats.credits_earned >= *amount,
+        Condition::QuietDays { days } => g.run.day + 1 >= g.run.last_order.unwrap_or(0) + *days,
+        Condition::EarthScience { amount } => {
+            g.saga.timeline.as_ref().is_some_and(|t| t.science_made >= *amount)
+        }
+        Condition::EarthTech { tech } => g.saga.techs.contains_key(tech),
+        Condition::TimelinesEnded { count } => g.saga.ended >= *count,
+        Condition::SwarmRepelled => g.saga.repelled >= 1,
+        Condition::VaultHolds { resource, amount } => {
+            g.saga.vault.get(resource).is_some_and(|v| v >= amount)
+        }
+        Condition::SuperTimeline => g.saga.timeline.as_ref().is_some_and(|t| t.super_timeline),
+        Condition::ProjectCompleted { project } => {
+            g.career.completed_projects.contains(project) || g.run.completed_projects.contains(project)
+        }
+        Condition::Victory => g.saga.victory,
     }
 }
 
@@ -104,7 +119,41 @@ pub fn progress(r: &Rules, g: &GameState, c: &Condition) -> Option<(Fx, Fx)> {
         }
         Condition::DaysSurvived { days } => Some((n(g.run.day), n(*days))),
         Condition::CreditsEarned { amount } => Some((g.run.stats.credits_earned, *amount)),
+        Condition::QuietDays { days } => Some((n((g.run.day + 1).saturating_sub(g.run.last_order.unwrap_or(0))), n(*days))),
+        Condition::EarthScience { amount } => {
+            Some((g.saga.timeline.as_ref().map_or(Fx::ZERO, |t| t.science_made), *amount))
+        }
+        Condition::TimelinesEnded { count } => Some((n(g.saga.ended.into()), n((*count).into()))),
+        Condition::VaultHolds { resource, amount } => {
+            Some((g.saga.vault.get(resource).copied().unwrap_or(Fx::ZERO), *amount))
+        }
         _ => None,
+    }
+}
+
+/// A condition's type name, as in the content's `type`.
+pub fn kind(c: &Condition) -> &'static str {
+    match c {
+        Condition::BuildingOwned { .. } => "building_owned",
+        Condition::ResourceCumulative { .. } => "resource_cumulative",
+        Condition::ShipmentCompleted { .. } => "shipment_completed",
+        Condition::ResearchCompleted { .. } => "research_completed",
+        Condition::Immediate => "immediate",
+        Condition::Never => "never",
+        Condition::AllOf { .. } => "all_of",
+        Condition::IdeologyRankAny { .. } => "ideology_rank_any",
+        Condition::PersistentProjectCompletedAny => "persistent_project_completed_any",
+        Condition::DaysSurvived { .. } => "days_survived",
+        Condition::CreditsEarned { .. } => "credits_earned",
+        Condition::QuietDays { .. } => "quiet_days",
+        Condition::EarthScience { .. } => "earth_science",
+        Condition::EarthTech { .. } => "earth_tech",
+        Condition::TimelinesEnded { .. } => "timelines_ended",
+        Condition::SwarmRepelled => "swarm_repelled",
+        Condition::VaultHolds { .. } => "vault_holds",
+        Condition::SuperTimeline => "super_timeline",
+        Condition::ProjectCompleted { .. } => "project_completed",
+        Condition::Victory => "victory",
     }
 }
 

@@ -14,6 +14,7 @@ use hh_core::{Action, Fx, Session, View};
 
 use crate::milestones::Milestones;
 
+pub mod arc;
 pub mod author;
 pub mod builder;
 pub mod handsoff;

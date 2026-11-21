@@ -77,7 +77,8 @@ A program's `fund <project> [N | all]` line sets the same rates, one N on every 
 
 ## Content
 
-`content/projects.json`: 11 rows, six Long-Term and five Strategic, each with `tier`,
+`content/projects.json`: 12 rows, seven Long-Term (the Dyson Sphere among them: draft,
+[timeline.md](timeline.md)) and five Strategic, each with `tier`,
 `unlock`, `costs` (resource amounts) and one `reward`; names and descriptions are the
 Godot placeholders.
 

@@ -26,6 +26,7 @@ pub fn modifier(r: &Rules, g: &GameState, key: &str) -> Fx {
             }
         }
     }
+    m = m * crate::modules::timeline::modifier(g, key);
     if key == "buy_power_mult" {
         m = m * crate::modules::career::buy_power_mult(r, g);
     }

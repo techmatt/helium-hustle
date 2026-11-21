@@ -25,9 +25,8 @@ npm run preview                              # serve web/dist/
   [preview] --port <p> --strictPort`, or kill by port (`netstat -ano`, `taskkill //F //PID`).
 - **The wasm build:** `scripts/build-wasm.mjs` runs `wasm-pack build crates/hh-wasm
   --target web --release` into `web/src/wasm/` (git-ignored); `HH_WASM_PROFILE=dev` builds
-  unoptimized. It skips the build when a hash of its inputs (`crates/hh-core`,
-  `crates/hh-wasm`, `content/`, `scenarios/`, `Cargo.*`, the script) matches `web/src/wasm/.inputs`; `HH_WASM_FORCE=1`
-  builds anyway.
+  unoptimized. It skips the build when its inputs' hash (list: the script) matches
+  `web/src/wasm/.inputs`; `HH_WASM_FORCE=1` builds anyway. It honors `CARGO_TARGET_DIR` (absolute: cargo runs in `crates/hh-wasm`).
 - **While the dev server runs**, editing `crates/hh-core`, `crates/hh-wasm`, `content/` or
   `scenarios/` rebuilds the wasm and reloads the page; a `configs/baseline.json` edit reloads it. A failed rebuild keeps the last good
   engine; the error is in the dev server's terminal.
@@ -98,25 +97,24 @@ Output (`HH_QA_OUT`, default `out/qa`, wiped): a PNG per moment in
 
 Three columns and a status bar:
 
-- **Left:** the title, the nav grid (tiles from `content/nav.json`; a dot marks a tile new
+- **Left:** the title, the calendar strip once the swarm is revealed, the nav grid (tiles from `content/nav.json`; a dot marks a tile new
   this run or whose panel holds something new; past nine tiles they go compact, icon beside
   name; a green dot on Launch Pads while a pad is ready), the speed buttons, Resources
   (Energy, Credits, Land, Boredom, Processors, then a second group of the rest; amount /
-  cap, the engine's rate per day (the program `rate` reading's quantity, for tomorrow), at
-  its cap the surplus thrown away, muted, or green for Energy's spare power: "+9 CAP"; short
-  of demand, red: "−7 SHORT", the stock's actual change in its tooltip; processors assigned / total; a click on a row opens its breakdown
-  in place, one at a time: last day's sources and sinks, who went short), each ideology
+  cap, the engine's rate per day; at its cap the surplus thrown away, muted, or green for
+  Energy's spare power: "+9 CAP"; short of demand, red: "−7 SHORT"; a click on a row opens
+  its breakdown in place: last day's sources and sinks, who went short), each ideology
   axis's rank once Ideologies is unlocked (folded at first in a window under 800 px high),
   and the lunar horizon with the habitat at the foot.
 - **Middle:** the sky with the Earth, the main quest's text when it opens (the only story
   banner), then the active panel. Buildings: the Land bar (green and click-to-buy like a card
-  when affordable), a collapsible section per category, cards (`Buildings.tsx`: picture,
-  effects, a status row always kept, price with shortfalls in red, −/+ and Sell). A click on an affordable card (outlined in green, its name row tinted), off its
+  when affordable), a collapsible section per category, cards (`Buildings.tsx`). A click on an affordable card (outlined in green, its name row tinted), off its
   controls, builds one (Shift: up to ten; ignored for 0.5 s after the summary or a story
   text closes); any other card says why it can't. Research cards work the same way.
   Commands: a card per verb (Buy, Promote, ...), a target dropdown. Pad
   cards tint their head: green Ready, yellow Paused, red full but short of fuel. Stats ends
-  on every resource's breakdown, last day and rolling average.
+  on every resource's breakdown. Acts 2 and 3 (`Saga.tsx`, DRAFT; `docs/arc.md`): Timeline,
+  Earth Lab, Meta-Controller, Vault, Dyson; the ending covers the screen once.
 - **Right:** the main quest in its own slot at the top, which nothing else takes; program
   tabs 1 to 5 with processors −/+, Reset, Save / Load (`Library.tsx`: the loadout library;
   save new or over a slot, load, rename, delete); a line per instruction, dragged to reorder
@@ -150,7 +148,8 @@ readable variant per theme. Fonts are bundled (`@fontsource`, named in `src/styl
 Building pictures: `src/assets/buildings/<id>.webp` (one per building, both themes; 192 px
 shown at 96 px; `src/ui/buildingArt.ts`; made by `experiments/results/020_building_card_art/`).
 Chips, nav icons, horizon: `src/ui/icons.tsx` over `src/assets/{chips,nav,horizon}/`
-(`experiments/results/027_art_in_game/`). The sky (`src/ui/art.tsx`, `.sky`) is the home
+(`experiments/results/027_art_in_game/`); a nav `<id>.svg` stands in for an unpainted
+`<id>.webp`. The sky (`src/ui/art.tsx`, `.sky`) is the home
 for a later live base view: replace what it draws, keep its box.
 
 ## Using it

@@ -1296,6 +1296,10 @@ impl Agent for Author {
     }
 
     fn act(&mut self, p: &mut Player) {
+        // The later acts (draft): quiet while the reveal wants quiet days.
+        if super::arc::hands_off(p.view()) {
+            return;
+        }
         let (run, day, built) = {
             let v = p.view();
             self.income.read(v);
@@ -1336,6 +1340,9 @@ impl Agent for Author {
         self.pads(p, target.as_deref());
         self.programs(p, target.as_deref(), gap);
         self.gap = gap;
+        // Last, so its project funding (the Dyson Sphere) outlives the
+        // author's own stop of every project but its pick.
+        super::arc::act(p);
         let v = p.view();
         self.last_note = format!(
             "target {}, credits {}, processors {}, gap {gap}",

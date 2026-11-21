@@ -72,6 +72,7 @@ pub fn multiplier(r: &Rules, g: &GameState) -> Fx {
             m = m * *base_rate_mult;
         }
     }
+    m = m * crate::modifiers::modifier(r, g, "boredom_growth_mult");
     m * super::career::boredom_resilience(r, g) * g.boost.map_or(Fx::ONE, |b| b.boredom)
 }
 

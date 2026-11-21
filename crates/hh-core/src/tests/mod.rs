@@ -5,6 +5,7 @@ mod fx;
 mod logic;
 mod play;
 mod rng;
+mod timeline;
 mod verbs;
 
 use crate::driver::{play, GOLDEN_POLICY, GOLDEN_SEED, GOLDEN_TICKS};
@@ -32,9 +33,9 @@ pub(crate) fn set(g: &mut crate::GameState, res: &str, v: &str) {
 // The golden constants: update all three together on a `RULES_REVISION` bump
 // with `python scripts/set_golden.py` (it also sets `GOLDEN_*` in
 // scripts/wasm-smoke.mjs); never type them (README, *Rules changes*).
-const GOLDEN_REVISION: u32 = 12;
-const GOLDEN_FINGERPRINT: &str = "53f003e058d17519";
-const GOLDEN_CONTENT_HASH: &str = "1bb305eca42caf60";
+const GOLDEN_REVISION: u32 = 13;
+const GOLDEN_FINGERPRINT: &str = "38a6879fb859aca3";
+const GOLDEN_CONTENT_HASH: &str = "572678504a32b7c4";
 
 pub(crate) fn golden_session() -> Session {
     let mut s = Session::new(&baseline(), GOLDEN_SEED, None).unwrap();

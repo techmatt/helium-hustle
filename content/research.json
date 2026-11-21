@@ -108,5 +108,6 @@
     "effect": null,
     "visible_when": {"type": "quest_completed", "quest": "qmarket_awareness"},
     "description": "Study Earth's political power structures. Unlocks the Fund Nationalists, Fund Humanists and Fund Rationalists commands. Reveals the Ideologies panel."
-  }
+  },
+  {"id": "novelty_simulation", "name": "Novelty Simulation", "category": "Self-Maintenance", "cost": "300", "requires": null, "effect": null, "visible_when": {"type": "quest_completed", "quest": "qend_signal_detected"}, "description": "DRAFT. Unlocks Distract: pour credits into boredom. Relief, never a cure."}
 ]

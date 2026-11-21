@@ -261,5 +261,9 @@
     "effects": [{"type": "store", "resource": "boredom", "amount": "100"}],
     "output_modifiers": [],
     "description": "Recreational facilities keep your AI engaged. Raises the boredom cap by +100 per active dome."
-  }
+  },
+  {"id": "experiment_lab", "name": "Experiment Lab", "category": "science", "ideology": null, "requires": {"type": "none"}, "land": 2, "cost_scaling": "1.3", "max_count": null, "cost": {"credits": "500", "circuits": "5"}, "produces": {"earth_science": "1"}, "upkeep": {"energy": "4", "science": "2"}, "effects": [], "output_modifiers": [], "description": "DRAFT. Experiments as a service: runs Earth's experiments on lunar science. Its Earth science goes to Earth each day."},
+  {"id": "tachyon_condenser", "name": "Tachyon Condenser", "category": "science", "ideology": null, "requires": {"type": "none"}, "land": 2, "cost_scaling": "1.3", "max_count": 3, "cost": {"credits": "2000", "titanium": "10"}, "produces": {"tachyon": "0.1"}, "upkeep": {"energy": "8"}, "effects": [], "output_modifiers": [], "description": "DRAFT. Condenses tachyon crystals: a resource that keeps across timelines in the vault."},
+  {"id": "neodymium_mine", "name": "Neodymium Mine", "category": "science", "ideology": null, "requires": {"type": "none"}, "land": 2, "cost_scaling": "1.3", "max_count": null, "cost": {"credits": "800", "titanium": "5"}, "produces": {"neodymium": "1"}, "upkeep": {"energy": "4", "regolith": "2"}, "effects": [], "output_modifiers": [], "description": "DRAFT. Rare-earth extraction for the sphere's magnets."},
+  {"id": "dyson_foundry", "name": "Dyson Foundry", "category": "science", "ideology": null, "requires": {"type": "none"}, "land": 2, "cost_scaling": "1.3", "max_count": null, "cost": {"credits": "1500", "circuits": "4"}, "produces": {"dyson_material": "0.5"}, "upkeep": {"energy": "6", "neodymium": "1", "titanium": "0.5"}, "effects": [], "output_modifiers": [], "description": "DRAFT. Prints Dyson sphere panels from neodymium and titanium."}
 ]

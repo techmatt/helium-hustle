@@ -22,6 +22,10 @@ const RESOURCE_COLORS: Record<string, string> = {
   land: '#4caf50',
   boredom: '#8a8a8a',
   processors: '#d63ad6',
+  earth_science: '#2f7fd0',
+  tachyon: '#00c2c7',
+  neodymium: '#5f7d8c',
+  dyson_material: '#ff9f1c',
 };
 
 /** True axis colors, behind white text or ink. As text, an axis takes its class
@@ -69,7 +73,11 @@ export function Chip({ id, title, size = 14 }: { id: string; title: string; size
   );
 }
 
-const NAV_NORMAL = byName(import.meta.glob<string>('../assets/nav/*.webp', { eager: true, query: '?url', import: 'default' }), '.webp');
+/** Painted tiles (`<id>.webp`); a placeholder `<id>.svg` stands in until one is painted. */
+const NAV_NORMAL = {
+  ...byName(import.meta.glob<string>(['../assets/nav/*.svg', '!../assets/nav/*-compact.svg'], { eager: true, query: '?url', import: 'default' }), '.svg'),
+  ...byName(import.meta.glob<string>('../assets/nav/*.webp', { eager: true, query: '?url', import: 'default' }), '.webp'),
+};
 const NAV_COMPACT = byName(import.meta.glob<string>('../assets/nav/*-compact.svg', { eager: true, query: '?url', import: 'default' }), '-compact.svg');
 
 /** A nav tile's icon: the painted one at normal size, the compact chip at 18 px. */

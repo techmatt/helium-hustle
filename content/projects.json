@@ -101,5 +101,6 @@
     "unlock": {"type": "flag_set", "flag": "used_disrupt_speculators"},
     "costs": {"science": "150", "credits": "100"},
     "reward": {"type": "modifier", "key": "speculator_burst_interval_mult", "value": "1.33"}
-  }
+  },
+  {"id": "dyson_sphere", "name": "Dyson Sphere", "description": "DRAFT. Enclose the Sun. The one machine big enough to answer the swarm.", "tier": "persistent", "unlock": {"type": "event_unlocked"}, "costs": {"dyson_material": "1000", "credits": "20000"}, "reward": {"type": "set_flag", "flag": "dyson_complete"}}
 ]

@@ -31,6 +31,7 @@ of every run.
 | `persistent_project_completed_any` | any Long-Term project is completed |
 | `days_survived` | the run's days, today included, reach `days` |
 | `credits_earned` | credits produced this run reach `amount` |
+| `quiet_days`, `earth_science`, `earth_tech`, `timelines_ended`, `swarm_repelled`, `vault_holds`, `super_timeline`, `project_completed`, `victory` | the later acts' (draft): [timeline.md](timeline.md) |
 
 **The quest chain.** The active quest is the first `story` row in file order that is not
 completed and whose trigger has happened; the last quest's condition is `never`, so once
@@ -95,8 +96,8 @@ Triggers, conditions and unlocks are content (`content/events.json`).
 
 ## Content
 
-`content/events.json`: 14 rows, seven `story` (Q1 Boot Sequence to Q7 Signal Detected)
-and seven `ongoing` (the Recreation Dome unlock, Political Currents, propellant discovery,
+`content/events.json`: 26 rows, nineteen `story` (Q1 Boot Sequence to Q7 Signal Detected, the
+swarm's reveal; then the draft Q8 to Q18 and the Epilogue, [../arc.md](../arc.md)) and seven `ongoing` (the Recreation Dome unlock, Political Currents, propellant discovery,
 boredom phases 2 to 5).
 
 ## Port notes

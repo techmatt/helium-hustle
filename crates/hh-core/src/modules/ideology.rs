@@ -130,12 +130,14 @@ pub fn overclock_duration(r: &Rules, g: &GameState) -> Fx {
 /// A Fund command: `fund_push` to its axis, `fund_push × fund_cross_penalty` from each other.
 pub fn fund(r: &Rules, g: &mut GameState, axis: &str) {
     let p = &r.p.ideology;
+    // The Consensus Engine (draft Earth tech) sets this to 0.
+    let cross = p.fund_push * p.fund_cross_penalty * crate::modifiers::modifier(r, g, "ideology_cross_mult");
     for &a in AXES {
         let v = g.run.ideology.entry(a.to_string()).or_insert(Fx::ZERO);
         if a == axis {
             *v += p.fund_push;
         } else {
-            *v -= p.fund_push * p.fund_cross_penalty;
+            *v -= cross;
         }
     }
 }

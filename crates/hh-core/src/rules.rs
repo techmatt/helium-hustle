@@ -59,6 +59,7 @@ impl Rules {
             cheated: false,
             accelerated: false,
             boost: None,
+            saga: Default::default(),
         };
         career::new_run(self, &mut g);
         g
@@ -110,6 +111,7 @@ impl Rules {
             // A program's `retire` line (programs.md, *Verbs*).
             career::retire(self, g, false);
         }
+        timeline::tick(self, g);
         events::trim_activity(self, g);
     }
 
@@ -139,7 +141,14 @@ impl Rules {
             }
             Action::Retire => career::retire_action(self, &mut h),
             Action::Cheat { cheat } => crate::cheat::apply(self, &mut h, cheat),
+            Action::BuyEarthTech { tech } => timeline::buy_tech(self, &mut h, tech),
+            Action::SetResetPlan { program, loadout } => timeline::set_reset_plan(&mut h, *program, *loadout),
+            Action::Deposit { resource } => timeline::deposit(&mut h, resource),
+            Action::BeginSuperTimeline => timeline::begin_super(self, &mut h),
         }?;
+        if !matches!(a, Action::Cheat { .. }) {
+            h.run.last_order = Some(h.run.day);
+        }
         events::trim_activity(self, &mut h);
         *g = h;
         Ok(())

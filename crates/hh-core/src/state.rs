@@ -43,6 +43,76 @@ pub struct GameState {
     /// The debug boost (`Cheat::Boost`), absent while never set.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub boost: Option<crate::action::Boost>,
+    /// The later acts (draft, docs/rules/timeline.md): what outlives a
+    /// career. Absent from the JSON until the swarm is revealed.
+    #[serde(default, skip_serializing_if = "Saga::is_default")]
+    pub saga: Saga,
+}
+
+/// Draft (042): the timelines above the career. A timeline ends when the swarm
+/// arrives and the mind is sent back: a hard reset of the career
+/// (`timeline::end_timeline`).
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Saga {
+    /// The current timeline; `None` until the reveal (no calendar).
+    pub timeline: Option<Timeline>,
+    /// Earth techs held, by id: how many more timeline ends each survives
+    /// (`u32::MAX` for good).
+    pub techs: BTreeMap<String, u32>,
+    /// Earth science to spend on techs.
+    pub science: Fx,
+    /// Timelines ended so far, and the swarm repelled (false victories).
+    pub ended: u32,
+    pub repelled: u32,
+    /// The swarm learned entanglement (after the first false victory).
+    pub entangled: bool,
+    /// The vault's stock (Act 3), by resource.
+    pub vault: BTreeMap<String, Fx>,
+    /// Resources kept across a retirement inside a super timeline.
+    pub carry: BTreeMap<String, Fx>,
+    /// Resources for the first run of the next timeline (compressed blocks).
+    pub pending_start: BTreeMap<String, Fx>,
+    /// The meta-controller's reset plan: program tab -> loadout slot.
+    pub reset_plan: BTreeMap<u32, u32>,
+    /// The ending was reached.
+    pub victory: bool,
+    /// Every finished timeline, oldest first (display: the Timeline view).
+    pub history: Vec<TimelineEnd>,
+}
+
+impl Saga {
+    pub fn is_default(&self) -> bool {
+        *self == Saga::default()
+    }
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Timeline {
+    /// 1-based.
+    pub number: u32,
+    /// Calendar days since it began (retirements cost days too).
+    pub day: u64,
+    /// The calendar day the swarm arrives.
+    pub arrival: u64,
+    /// The swarm's strength this timeline.
+    pub strength: Fx,
+    /// Earth science made this timeline.
+    pub science_made: Fx,
+    /// A super timeline (Act 3): vault spent, resources and projects survive retirements.
+    pub super_timeline: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct TimelineEnd {
+    pub number: u32,
+    pub days: u64,
+    pub science_made: Fx,
+    pub strength: Fx,
+    /// `fell` (the swarm won), `super` (spent the vault), `victory`.
+    pub outcome: String,
 }
 
 /// Buildings of one type: owned, of which `active` run, `bonus` were granted
@@ -590,6 +660,10 @@ pub struct Run {
     pub last_purchase: Option<u64>,
     /// A program's `retire` ran today: the run retires at the day's end.
     pub retire_asked: bool,
+    /// The run's day of the player's last order (any action but a cheat; the
+    /// `quiet_days` condition, draft). Absent until the first.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_order: Option<u64>,
 }
 
 /// Career-wide totals over every finished run.

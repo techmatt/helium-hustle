@@ -40,6 +40,16 @@ pub enum Action {
     Retire,
     /// A debug cheat (`cheat.rs`): marks the game as cheated for good.
     Cheat { cheat: Cheat },
+    // Draft (042), the later acts (docs/rules/timeline.md):
+    /// Buy an Earth tech with Earth science.
+    BuyEarthTech { tech: String },
+    /// The meta-controller's reset plan: load `loadout` into `program` at each
+    /// new run (`null` clears the tab's entry).
+    SetResetPlan { program: u32, loadout: Option<u32> },
+    /// Move the run's whole stock of a resource into the vault.
+    Deposit { resource: String },
+    /// Spend the vault on a super timeline.
+    BeginSuperTimeline,
 }
 
 /// The debug menu's cheats. JSON: `{"type": "cheat", "cheat": {"kind": "grant",

@@ -76,16 +76,15 @@ bought nothing), with each side's next five purchases. `--json`: one line, every
 
 ### Accelerators
 
-Debug only. The web debug menu's cheats add 2k and 10k speeds, the **boost**
+Debug only. The debug menu's cheats add 2k and 10k speeds, the **boost**
 ([rules](rules/README.md#cheats)) and the **autopilot** (`autopilot.rs`): a sim player
 plays on honestly toward the **next milestone**, the **next main-quest step** (an `all_of`
-sub-objective counts) or **everything**. Steps come from
-`configs/sim/milestones.json` and the `story` events (`never` left out): a new act needs no
-code unless it adds a condition type. Its drivers (`DEFAULT_AGENT`, two author settings)
-switch when no step is met for long. A boost or autopilot marks the career
+sub-objective counts) or **everything**. Steps: `configs/sim/milestones.json` and the
+`story` events not `never`. Its drivers (`DEFAULT_AGENT`) switch after a long stall. A boost or autopilot marks the career
 `accelerated`, a debug speed its log: `playlog` says so, `vs-human` refuses it
 (`--include-accelerated`), the autopilot's days count as jumped. `accelerate` plays a
-fresh career so natively. Everything: 13k-173k days, 5-40 s (or in a browser).
+fresh career so natively. The draft later acts: the author's `agents/arc.rs`
+([042](../experiments/results/042_draft_whole_arc/README.md)).
 
 ### Grids and specs
 
@@ -166,9 +165,9 @@ baseline), 3010-3012 (011, sup.), 3013-3015 (011, the oracle's final read), 3016
 loadouts), 4-8 (036, development), 3024-3039 (036, sup.), 3040-3047 (036, hands-off against
 main), 3048-3055 (037, sup.), 3056-3063 (037, verbs: hands-off share), 3064-3071 (038,
 sup.), 3072-3079 (038, done steps), 3080-3087 (039, hands-off retire and fund lines),
-0 (041, tuning), 3088-3093 (041, autopilot).
+0 (041, tuning), 3088-3093 (041, autopilot; 042, development), 3094-3096 (042, to the ending).
 
-Next free: 3094
+Next free: 3097
 
 ## `run` and `replay`
 

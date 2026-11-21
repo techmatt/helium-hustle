@@ -26,6 +26,9 @@ use breakdown::{breakdown, short_view};
 mod breakdown;
 // The programs panel; the game's own programs module is `program_rules` here.
 mod programs;
+mod saga;
+
+pub use saga::{SagaView, TechView};
 
 pub use breakdown::{BreakdownView, FlowRow, ShortView};
 pub use programs::{Choice, ClauseView, ConditionView, LinesRun, ProgramView, ReadingView, VerbView};
@@ -211,6 +214,8 @@ pub struct SubObjectiveView {
 #[derive(Debug, Clone, Serialize)]
 pub struct QuestView {
     pub id: Text,
+    /// The condition's type (`building_owned`, `quiet_days`, ...).
+    pub kind: &'static str,
     pub title: Text,
     pub summary: Text,
     pub body: Text,
@@ -326,6 +331,8 @@ pub struct View {
     pub accelerated: bool,
     /// The debug boost now, if set.
     pub boost: Option<crate::action::Boost>,
+    /// The later acts (draft): calendar, swarm, Earth techs, vault, ending.
+    pub saga: SagaView,
     pub resources: Vec<ResourceView>,
     pub buildings: Vec<BuildingView>,
     pub land_price: Fx,
@@ -601,6 +608,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         .collect();
     let quest = events::active_quest(g).map(|q| QuestView {
         id: &q.id,
+        kind: events::kind(&q.condition),
         title: &q.title,
         summary: &q.summary,
         body: &q.body,
@@ -638,6 +646,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         cheated: g.cheated,
         accelerated: g.accelerated,
         boost: g.boost,
+        saga: saga::build(r, g),
         resources,
         buildings,
         land_price: economy::land_price(r, g),

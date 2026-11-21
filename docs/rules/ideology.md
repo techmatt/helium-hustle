@@ -9,7 +9,8 @@ happens when a program runs a Fund command; the career's bests are tracked at th
 ## Rules
 
 **Fund.** One execution of Fund *axis* adds `fund_push` to that axis and takes
-`fund_push × fund_cross_penalty` from each of the other two (+1 / −0.5 / −0.5 at baseline).
+`fund_push × fund_cross_penalty × ideology_cross_mult` (the modifier is 0 once the draft
+Consensus Engine is held, [timeline.md](timeline.md); else 1) from each of the other two (+1 / −0.5 / −0.5 at baseline).
 Scores are unbounded either way and may go negative. A Fund command is an effect command: it
 runs only if its full cost can be paid ([programs.md](programs.md)).
 

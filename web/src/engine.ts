@@ -295,6 +295,8 @@ export interface ProgressView {
 
 export interface QuestView {
   id: string;
+  /** The condition's type (`building_owned`, `quiet_days`, ...). */
+  kind: string;
   title: string;
   summary: string;
   body: string;
@@ -367,6 +369,77 @@ export interface NextRunView {
   ideology: AxisView[];
 }
 
+/** A timeline (hh-core `state::Timeline`): the calendar and the swarm (draft, 042). */
+export interface TimelineView {
+  number: number;
+  /** Calendar days since it began (retirements cost days too). */
+  day: number;
+  /** The calendar day the swarm arrives. */
+  arrival: number;
+  strength: Fx;
+  science_made: Fx;
+  super_timeline: boolean;
+}
+
+/** A past timeline (hh-core `state::TimelineEnd`). */
+export interface TimelineEnd {
+  number: number;
+  days: number;
+  science_made: Fx;
+  strength: Fx;
+  /** `fell`, `super` or `victory`. */
+  outcome: string;
+}
+
+/** An Earth tech (hh-core `view::TechView`). */
+export interface TechView {
+  id: string;
+  name: string;
+  description: string;
+  cost: Fx;
+  /** `timeline`, `next_timeline` or `forever`. */
+  scope: string;
+  requires: string | null;
+  held: boolean;
+  /** Timeline ends it still survives (null: not held, or kept for good). */
+  ends_left: number | null;
+  /** Why it can't be bought now (null: buyable). */
+  blocker: string | null;
+}
+
+/** The later acts (hh-core `view::SagaView`, draft): calendar, swarm, Earth techs, vault, ending. */
+export interface SagaView {
+  revealed: boolean;
+  timeline: TimelineView | null;
+  days_left: number | null;
+  /** Earth science to spend. */
+  science: Fx;
+  ended: number;
+  repelled: number;
+  entangled: boolean;
+  victory: boolean;
+  techs: TechView[];
+  history: TimelineEnd[];
+  reset_plan_open: boolean;
+  /** Program tab -> loadout slot. */
+  reset_plan: Record<string, number>;
+  vault_open: boolean;
+  vault: Amounts;
+  /** Tachyon on hand this run (what Deposit would move). */
+  tachyon_here: Fx;
+  deposit_blocker: string | null;
+  super_tachyon: Fx;
+  /** Why Begin Super Timeline can't apply now (null: it can). */
+  super_blocker: string | null;
+}
+
+/** The later acts' actions (draft, crates/hh-core/src/action.rs). */
+export type SagaAction =
+  | { type: 'buy_earth_tech'; tech: string }
+  | { type: 'set_reset_plan'; program: number; loadout: number | null }
+  | { type: 'deposit'; resource: string }
+  | { type: 'begin_super_timeline' };
+
 /** hh-core's `View` (crates/hh-core/src/view.rs). */
 export interface View {
   tick: number;
@@ -377,6 +450,8 @@ export interface View {
   accelerated: boolean;
   /** The debug boost's factors, if set. */
   boost: { production: Fx; research: Fx; boredom: Fx } | null;
+  /** The later acts (draft). */
+  saga: SagaView;
   resources: ResourceView[];
   buildings: BuildingView[];
   land_price: Fx;

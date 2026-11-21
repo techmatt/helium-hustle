@@ -94,6 +94,11 @@ The sim players' pinned games are separate: `PINNED` and the oracle's in
 play it changes), which `set_golden.py` doesn't touch: copy them from the failing assertion. A rename or
 refactor that plays the same moves no golden constant; if it does, play changed.
 
+**A new module** touches its `modules/<id>.rs`, `modules/mod.rs` (`mod`, `REGISTRY`, `Params`),
+`configs/baseline.json` and a `docs/rules/<id>.md` page whose `<!-- params:<id> -->` block
+`hh-sim params --write` fills; a new event condition, `content.rs` (`Condition`,
+`condition_ok`) and `events.rs` (`holds`, `progress`, `kind`).
+
 **A new program reading** touches `state::Reading` (and `describe`), `modules/programs.rs`
 (`check_entries`, `reading`), `view/programs.rs` (`readings`, the editor's list), the web
 `Reading` type (`engine.ts`) and `readingLabel` (`ui/ProgramLogic.tsx`), and

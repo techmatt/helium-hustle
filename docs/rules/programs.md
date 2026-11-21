@@ -123,7 +123,8 @@ An empty program does nothing. Each line's outcome today (`state::LineOutcome`; 
 5. It pays `cost × frac` and adds `produces × frac`. Products may pass their cap until the
    day's clamp.
 6. It adds its flat `boredom` (whole, not scaled by `frac`); a completed project with
-   `boredom_modifiers` replaces a command's boredom with its own value.
+   `boredom_modifiers` replaces a command's boredom with its own value. A negative one (the
+   draft Distract) takes that much off, never below zero.
 7. The command is marked used in the career (it stays visible in later runs), and its effect
    applies: Load (shipments.md), Launch full pads (shipments.md), Dream (dream.md), Promote and
    Disrupt (demand.md), Fund (ideology.md), Overclock (below).

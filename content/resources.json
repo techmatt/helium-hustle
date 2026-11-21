@@ -10,5 +10,9 @@
   {"id": "science", "name": "Science", "cap": null, "always_visible": false},
   {"id": "land", "name": "Land", "cap": null, "always_visible": true},
   {"id": "boredom", "name": "Boredom", "cap": null, "always_visible": true},
-  {"id": "processors", "name": "Processors", "cap": null, "always_visible": true}
+  {"id": "processors", "name": "Processors", "cap": null, "always_visible": true},
+  {"id": "earth_science", "name": "Earth Science", "cap": null, "always_visible": false},
+  {"id": "tachyon", "name": "Tachyon Crystals", "cap": null, "always_visible": false},
+  {"id": "neodymium", "name": "Neodymium", "cap": null, "always_visible": false},
+  {"id": "dyson_material", "name": "Dyson Material", "cap": null, "always_visible": false}
 ]

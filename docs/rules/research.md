@@ -73,7 +73,7 @@ Every number is on the content rows: costs, visibility thresholds and effect val
 
 ## Content
 
-`content/research.json`: 11 rows, each with `cost`, optional `requires`, optional `effect`,
+`content/research.json`: 12 rows (Novelty Simulation is draft, [timeline.md](timeline.md)), each with `cost`, optional `requires`, optional `effect`,
 `visible_when`, and placeholder `category`/`description`. Unlocks live on the unlocked
 rows' `requires` (`content/commands.json`, `content/buildings.json`), not here.
 

@@ -32,6 +32,7 @@ import {
   Story,
 } from './panels';
 import { Right } from './Right';
+import { Dyson, EarthLab, Ending, MetaController, Timeline, Vault } from './Saga';
 
 /** Keys 1-5 pick the speeds after pause, in order. */
 const KEY_SPEEDS: Record<string, Speed> = Object.fromEntries(SPEEDS.slice(1).map((sp, i) => [String(i + 1), sp]));
@@ -101,6 +102,7 @@ export function App() {
       />
       <StatusBar s={s} />
       {s.summary && <Summary s={s} />}
+      <Ending v={s.view} />
     </div>
   );
 }
@@ -123,6 +125,16 @@ function Panel({ id, s, program }: { id: string; s: Store; program: number }) {
       return <Stats s={s} />;
     case 'story':
       return <Story s={s} />;
+    case 'timeline':
+      return <Timeline s={s} />;
+    case 'earth_lab':
+      return <EarthLab s={s} />;
+    case 'meta':
+      return <MetaController s={s} />;
+    case 'vault':
+      return <Vault s={s} />;
+    case 'dyson':
+      return <Dyson s={s} />;
     case 'retirement':
       return <Retirement s={s} />;
     case 'options':

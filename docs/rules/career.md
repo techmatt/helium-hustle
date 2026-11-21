@@ -28,7 +28,9 @@ asked for that day (programs.md); the Retire action retires between days.
 **Retirement.** `retire` logs `retired` or `forced_retirement`, records the run's summary,
 folds the run into the
 career (adds the run's stats and day count to the lifetime totals, raises each personal best
-it beats, counts a retirement, raises the run number), then starts a new run. The run's day
+it beats, counts a retirement, raises the run number), charges the calendar its
+`retire_days` once the swarm is revealed (draft, [timeline.md](timeline.md)), then starts a new
+run. The run's day
 count at retirement is its length (a forced retirement counts the tick it happened on).
 
 **A new run** (a new game is run 1 of a fresh career), in this order:
@@ -51,6 +53,10 @@ count at retirement is its length (a forced retirement counts the tick it happen
 10. Fresh markets: new noise, empty speculator pools, the first burst and rival dumps
     scheduled ([demand.md](demand.md)).
 11. Boredom phase 1.
+12. The later acts' run start (draft, [timeline.md](timeline.md)): compressed blocks in a
+    timeline's first run, a super timeline's carried resources, the reset plan's loads.
+
+A timeline's end (draft) hard-resets the career itself to run 1: [timeline.md](timeline.md).
 
 **Career bonuses.** Derived from the career on demand, never stored:
 

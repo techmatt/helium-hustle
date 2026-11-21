@@ -238,5 +238,6 @@
     "scale_modifier": "buy_power_mult",
     "sets_flag": null,
     "description": "Purchase beamed energy from Earth's orbital power grid. Requires Microwave Receiver."
-  }
+  },
+  {"id": "distract", "name": "Distract", "requires": {"type": "research", "research": "novelty_simulation"}, "costs": {"credits": "200", "energy": "5"}, "produces": {}, "boredom": "-10", "effect": null, "scale_modifier": null, "sets_flag": null, "description": "DRAFT. Buy novelty: 10 boredom off for 200 credits. It never solves boredom."}
 ]

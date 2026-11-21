@@ -7,6 +7,7 @@ import { navHasNews, seen, setSpeed, type Store } from '../store';
 import { useEffect, useState } from 'preact/hooks';
 import { Breakdown, CappedRate, Section, ShortRate, navShown, risingIsBad } from './common';
 import { Chip, Horizon, NavIcon } from './icons';
+import { CalendarStrip } from './Saga';
 
 /** The Resources panel's first group, in this order; every other resource follows in a
  * second group, in the engine's order. Display order only. */
@@ -39,6 +40,7 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
   return (
     <aside class="col-left">
       <h1 class="title">Helium Hustle</h1>
+      <CalendarStrip v={v} />
       <nav class={`nav-grid${compact ? ' compact' : ''}`} aria-label="Panels">
         {tiles.map((t) => (
           <button

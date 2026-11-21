@@ -1,6 +1,6 @@
 # Rules
 
-The rules as implemented, rules revision **12** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **13** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
 The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
@@ -35,6 +35,7 @@ table is generated from `REGISTRY` and the baseline (`hh-sim params --write`; a 
 | `events` | `arc1` | [events.md](events.md) | The quest chain and one-off events, with their unlocks. |
 | `achievements` | `arc1` | [achievements.md](achievements.md) | Six achievements with permanent rewards. |
 | `career` | `arc1` | [career.md](career.md) | Runs, retirement, what persists, career bonuses. |
+| `timeline` | `draft` | [timeline.md](timeline.md) | **Draft** Acts 2 and 3: calendar, swarm, Earth techs, hard resets, vault, super timeline, ending ([../arc.md](../arc.md)). |
 
 ## The day
 
@@ -62,7 +63,9 @@ One tick is one in-game day. Each tick, in this order (`Rules::tick`, `rules.rs`
 15. The run's **day** count rises.
 16. Boredom at its cap **forces retirement**; otherwise a program's `retire` line that ran today
     retires the run voluntarily. The next run starts at once (career).
-17. The **activity feed** is cut to its newest `activity_kept` lines (events; display only).
+17. **Timeline** (draft, after the reveal): Earth science goes to Earth, the calendar
+    rises, and the swarm arrives on its day (timeline).
+18. The **activity feed** is cut to its newest `activity_kept` lines (events; display only).
     The same trim ends every applied action.
 
 Player actions apply between ticks; an illegal one changes nothing. Actions are listed on
@@ -70,10 +73,10 @@ the page of the module that takes them (`crates/hh-core/src/action.rs` has them 
 
 ## Content
 
-`content/*.json`, embedded in `hh-core`: resources (12), buildings (16), commands (20),
-research (11), events (14, seven of them the quest chain), projects (11), achievements (6),
-rivals (4), and the UI's nav tiles (`nav.json`, 11: when each panel's tile shows; display
-only). Ids are unique across all files but `nav.json`, whose ids are panel names.
+`content/*.json`, embedded in `hh-core`: resources (16), buildings (20), commands (21),
+research (12), events (26, nineteen of them the quest chain), projects (12), achievements (6),
+rivals (4), Earth techs (6, `earth_tech.json`), and the UI's nav tiles (`nav.json`, 16: when
+each panel's tile shows; display only). Everything past Q6 is draft ([../arc.md](../arc.md)). Ids are unique across all files but `nav.json`, whose ids are panel names.
 Buildings resolve in file order; quests chain in file order.
 
 A few content ids are fixed in code, each listed in its page's *Content*: resources
@@ -122,6 +125,8 @@ A modifier key's value is the product of every live source naming it, 1 with non
 | `cargo_capacity_mult` | Bulk Shipper (achievement) | cargo loaded per Load |
 | `demand_ceiling` | Market Timer (achievement) | the demand ceiling |
 | `buy_power_mult` | career peak power ([career.md](career.md)) | Buy Power's cost and output |
+| `boredom_growth_mult` | Boredom Dampers (Earth tech, draft) | boredom growth |
+| `ideology_cross_mult` | Consensus Engine (Earth tech, draft) | Fund's cross-penalty on the other axes |
 
 A building lists the keys that multiply its output (`output_modifiers`); a command its
 `scale_modifier`. Achievement and Long-Term rewards apply from the moment they are earned
