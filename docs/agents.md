@@ -28,7 +28,7 @@ against: [principles.md](principles.md); how they're run: [simulator.md](simulat
 | `random` | Each look, `actions` times: one action uniform over what the view offers (an affordable building or research, land, a random 1-4 line program on a random program, free processors to a random program, a random rate on an open project); retires with chance 1 in `retire_odds` a look; looks every `every` ticks. | `actions` 2, `retire_odds` 500, `every` 5 |
 | `greedy` | The **builder**: buys the best-scored building it can afford (land included), up to `buys` a look, never saving; the cheapest affordable research; one command on the first program with every processor, chosen afresh each look. No projects, no voluntary retirement. Looks again when its target comes within reach, at most `max_gap` ticks on. | `buys` 3, `decay`, `starved` 100, `reserve` 3, `min_gap` 1, `max_gap` 10 |
 | `author` | The **program author**: the builder's score, but saves for its target; writes condition programs kept in the library; research, projects, ideology, Dream, market commands; retires a stale run. | the builder's, `min_gap` 1, `max_gap` 10, `compute` 1, `hand_gap` 60, `loads` 20, `pause` 1, `wait_demand` 0, `dream_at` 60, `stale_days` 300, `project_rate` 3, `fund` 1, `market` 1, `construct` 1, `cond` 1, `diversify` 0, `all_research` 0 (1: also research outside its list, today only the draft Novelty Simulation), `science_share` 50 |
-| `handsoff` | **Automation alone**: run 1 is the author's; from run 2 it loads its programs and seats processors at each reset, nothing else. | the author's, `every` 10 |
+| `handsoff` | **Automation alone**: the author's until the run `if` opens in (its programs guard with `if`), then from the next run it loads its programs and seats processors at each reset, nothing else. | the author's, `every` 10 |
 | `planner` | **Not built.** A strategic player that plans across retirements without peeking: the hook is `Agent::new_run`, called once a run: at the first look after a forced retirement, before `act`; after a retirement the agent chose, at the end of that look (whatever else `act` did in the new run came first, so a planner should retire last in its look). | |
 | `oracle` | The **ceiling**: the author steered by rollouts on copies of the game, the future included ([oracle.md](oracle.md)). Profiles: `profile` 0 milestones, 1 credits, 2 ideology, 3 builder, 4 quests. | `profile` 0, `every` 50, `horizon` 600, `width` 5, `beam` 1, `margin` 20, `long` 2000, `replan` 500, `strategy` -1 (search), `retire` 1, `min_run` 1000, `retire_margin` 0, `first_margin` 0, `early` and `ideology` (the profile's weights), `tail` 400, `hoard_at` 5000, `stale_days` 300, `max_gap` 10, `roll_gap` = `max_gap` |
 
@@ -109,7 +109,8 @@ any player. The casual player (`min_gap` 120) writes the standing cycle, about 1
 A hand plan is also rewritten to run its due lines again once the pointer passed into its
 filler, never over one that reaches the next look: about 90 decisions a run.
 
-**The hands-off player** (`handsoff.rs`) is the author in run 1; then at each new run it loads
+**The hands-off player** (`handsoff.rs`) is the author until the run `if` opens in (049: its
+programs guard with `if`), counted as its first; then at each new run it loads
 the five programs by name (run 1's build order saved first) and seats processors (build
 order first, one each while two are left, the rest to Program 1), and makes no other
 decision. Its build order leads with what were hands: processors (all to it until a pad

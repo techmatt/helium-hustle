@@ -2,8 +2,8 @@
 //! (docs/rules/timeline.md). The calendar and the swarm, Earth science and
 //! Earth techs, the hard reset when a timeline ends (the mind sent back), the
 //! meta-controller's reset plan, the vault, the super timeline and the
-//! Dyson-sphere ending. Everything here waits on the swarm's reveal (Q7's
-//! flag), so Act 1 never meets it.
+//! Dyson-sphere ending. Everything here waits on the swarm's reveal (the
+//! flag 1.9 Deep Space Telescope sets), so Act 1 never meets it.
 
 use super::{param, ModuleDef, ParamKind as K, VariantDef};
 use crate::config::ModuleConfig;
@@ -13,7 +13,7 @@ use crate::rules::Rules;
 use crate::state::{Career, GameState, Timeline, TimelineEnd};
 use std::collections::BTreeMap;
 
-/// The flag Q7 sets: the swarm is revealed and the calendar starts.
+/// The flag 1.9 (the Deep Space Telescope) sets: the swarm is revealed and the calendar starts.
 pub const REVEAL_FLAG: &str = "swarm_revealed";
 /// The resource the Experiment Lab makes; each day's stock goes to Earth.
 pub const EARTH_SCIENCE: &str = "earth_science";

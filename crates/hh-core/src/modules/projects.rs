@@ -58,6 +58,23 @@ pub fn live_rewards(g: &GameState) -> impl Iterator<Item = &'static ProjectRewar
     content().projects.iter().filter(|p| completions(g, p) > 0).flat_map(|p| p.rewards.iter())
 }
 
+/// A completed project's multiplier reward, stacked per completion by the
+/// bonus-stacking ruling: one source's bonuses add, so `n` completions of a
+/// ×`v` reward give `1 + (v − 1) × n` (a one-off row: `v`).
+pub fn stacked(v: Fx, n: u32) -> Fx {
+    (Fx::ONE + (v - Fx::ONE).mul_int(i64::from(n))).max(Fx::ZERO)
+}
+
+/// Like [`live_rewards`], with each reward's project's completion count.
+pub fn live_rewards_counted(g: &GameState) -> impl Iterator<Item = (&'static ProjectReward, u32)> + '_ {
+    content()
+        .projects
+        .iter()
+        .map(move |p| (p, completions(g, p)))
+        .filter(|(_, n)| *n > 0)
+        .flat_map(|(p, n)| p.rewards.iter().map(move |r| (r, n)))
+}
+
 /// Fundable now: its `unlock` holds and it is not done (a repeatable one is
 /// never done).
 pub fn unlocked(r: &Rules, g: &GameState, p: &Project) -> bool {
@@ -198,12 +215,11 @@ fn complete(g: &mut GameState, p: &Project) {
 
 /// Free buildings at the start of every run from completed projects.
 pub fn starting_bonus(g: &GameState) -> Vec<(String, u32)> {
+    // Stacked per completion (bonus stacking): n completions give n × each.
     let mut out = Vec::new();
-    for p in content().projects.iter().filter(|p| completions(g, p) > 0) {
-        for reward in &p.rewards {
-            if let ProjectReward::StartingBuildings { buildings } = reward {
-                out.extend(buildings.iter().map(|(b, &n)| (b.clone(), n)));
-            }
+    for (reward, times) in live_rewards_counted(g) {
+        if let ProjectReward::StartingBuildings { buildings } = reward {
+            out.extend(buildings.iter().map(|(b, &n)| (b.clone(), n.saturating_mul(times))));
         }
     }
     out

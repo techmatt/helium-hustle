@@ -11,15 +11,18 @@ and serving the page: [README.md](README.md). e2e and qa share the DevTools harn
 protocol (no packages; the harness, shared with qa, is `scripts/cdp.mjs`) against a
 served page: `HH_URL`, required (it exits naming `vite preview` when unset),
 `HH_BROWSER` for a browser off the usual paths, `HH_SHOTS=<dir>` to save PNGs. About
-45 s. It plays, in order:
+100 s. It plays, in order:
 
 1. **A fresh game through the normal UI only** (no debug menu): a build order, Program 1
    switched between Sell Cloud Compute and the bridging buys, the first pad loaded and
-   launched (Q1 to Q3, around day 400 at 50x); retirement, the run summary holding the
-   clock, run 2 (known tiles and resources still shown, not cheated).
-2. **Every panel**: cheats reach Research, Projects and Ideologies; every nav tile shown opens, and every Act 1 tile is
-   shown (all of `content/nav.json` but panels only a DRAFT quest opens); the
-   cheated mark, a jump ahead and the replay check.
+   launched (1.1 and 1.2, around day 400 at 50x); no Retirement tile (it opens at 1.5
+   Burnout), so on at 200x to the forced retirement at the boredom cap (around day 1,650,
+   ~10 s); the run summary holding the clock, run 2 (known tiles and resources still shown,
+   not cheated).
+2. **Every panel**: scenario `late_unlocks` opens Research, Projects and Ideologies (1.6 Lab
+   is past a second run); a locked project's condition, a funded one's days to done; every
+   nav tile shown opens, and every Act 1 tile is shown (all of `content/nav.json` but panels
+   only a DRAFT quest opens); the cheated mark, a jump ahead and the replay check.
 3. A program's frame at 10x and 50x, each speed's days per second, pause, click-to-buy, a
    reload keeping the save, another revision's save discarded, the scenarios; in `late_unlocks`, an `if` /
    `build` / `wait until` program written through the editor, which then builds; saved,

@@ -1,6 +1,6 @@
 # Rules
 
-The rules as implemented, rules revision **14** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **15** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
 The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
@@ -26,15 +26,16 @@ table is generated from `REGISTRY` and the baseline (`hh-sim params --write`; a 
 | `boredom` | `phased` | [boredom.md](boredom.md) | Growth by phase of the run's day, the cap, forced retirement. |
 | `economy` | `arc1` | [economy.md](economy.md) | Resources, caps, buildings and their daily resolution, land. |
 | `demand` | `arc1` | [demand.md](demand.md) | Demand per tradeable good: noise, speculators, rivals, saturation, Promote. |
+| `attention` | `minimal` | [attention.md](attention.md) | **Draft** Each adversary's Attention: what draws the speculators and rivals in. |
 | `programs` | `arc1` | [programs.md](programs.md), [commands.md](commands.md) | Programs, processors, instructions (`if` blocks, `build`); running commands, overclocks (commands.md). |
 | `dream` | `flat` | [dream.md](dream.md) | What Dream does to boredom. |
 | `projects` | `drain` | [projects.md](projects.md) | Projects scoped to a run, a timeline or forever, funded over time. |
 | `shipments` | `arc1` | [shipments.md](shipments.md) | Launch pads, loading, launching, payouts. |
 | `research` | `arc1` | [research.md](research.md) | Science-bought upgrades, gated by visibility. |
 | `ideology` | `geometric` | [ideology.md](ideology.md) | Three axes, Fund commands, ranks and per-rank bonuses. |
-| `events` | `arc1` | [events.md](events.md) | The quest chain and one-off events, with their unlocks. |
+| `events` | `arc1` | [events.md](events.md) | The quest chain, side quests and one-off events, with their unlocks. |
 | `achievements` | `arc1` | [achievements.md](achievements.md) | Six achievements with permanent rewards. |
-| `career` | `arc1` | [career.md](career.md) | Runs, retirement, what persists, career bonuses. |
+| `career` | `arc1` | [career.md](career.md) | Runs, retirement and its gap, what persists, career bonuses. |
 | `timeline` | `draft` | [timeline.md](timeline.md) | **Draft** Acts 2 and 3: calendar, swarm, Earth techs, hard resets, vault, super timeline, ending ([../arc.md](../arc.md)). |
 
 ## The day
@@ -45,7 +46,8 @@ One tick is one in-game day. Each tick, in this order (`Rules::tick`, `rules.rs`
    clears (economy; display only).
 2. **Boredom** grows by the phase rate (boredom).
 3. **Overclocks** past their last day expire (programs).
-4. **Demand** decays its forces and is set for the day (demand).
+4. **Attention** decays (attention), then **demand** decays its forces and is set for the
+   day (demand).
 5. **Upkeep-free buildings** (Solar Panels) produce (economy).
 6. **Programs** run, paid first: each processor one step (programs, with shipments,
    demand, ideology and dream for their commands' effects, economy for `build`).
@@ -53,11 +55,12 @@ One tick is one in-game day. Each tick, in this order (`Rules::tick`, `rules.rs`
    production (economy).
 8. **Projects** drain their funding (projects).
 9. **Pads** cool down (shipments).
-10. **Speculator bursts and rival dumps** when due (demand).
+10. **Speculator bursts and rival dumps** when due, landing only while their adversary is
+    present (demand).
 11. The day's **rate** per resource is kept for the programs' `rate` reading (programs),
     then the **clamp**: every resource cut to its cap (overflow counted) and lifted to zero
     (economy).
-12. **Quests and events** check their conditions (events).
+12. **Quests, side quests and events** check their conditions (events).
 13. **Achievements** check the day's flows and stockpiles (achievements).
 14. **Ideology** bests are recorded in the career (ideology).
 15. The run's **day** count rises.
@@ -73,15 +76,18 @@ the page of the module that takes them (`crates/hh-core/src/action.rs` has them 
 
 ## Content
 
-`content/*.json`, embedded in `hh-core`: resources (16), buildings (20), commands (21),
-research (12), events (26, nineteen of them the quest chain), projects (12), achievements (6),
-rivals (4), Earth techs (6, `earth_tech.json`), and the UI's nav tiles (`nav.json`, 16: when
-each panel's tile shows; display only). Everything past Q6 is draft ([../arc.md](../arc.md)). Ids are unique across all files but `nav.json`, whose ids are panel names.
+`content/*.json`, embedded in `hh-core`: resources (16), buildings (20), commands (22),
+research (12), events (31: twenty-one the quest chain, two side quests), projects (14),
+achievements (6), rivals (4), Earth techs (6, `earth_tech.json`), and the UI's nav tiles
+(`nav.json`, 16: when each panel's tile shows; display only). Act 1's beats are draft from
+1.3 on, Acts 2 to 4 unaligned scaffolding ([../arc.md](../arc.md)). Ids are unique across all files but `nav.json`, whose ids are panel names.
 Buildings resolve in file order; quests chain in file order.
 
 A few content ids are fixed in code, each listed in its page's *Content*: resources
 ([economy.md](economy.md), [shipments.md](shipments.md)), `launch_pad`, the `retirement`
-panel ([career.md](career.md)), the ideology axes ([ideology.md](ideology.md)) and the
+panel ([career.md](career.md)), the `research` panel ([research.md](research.md)), the
+`logic_if` and `logic_wait_until` flags ([programs.md](programs.md)), the adversaries
+([attention.md](attention.md)), the ideology axes ([ideology.md](ideology.md)) and the
 modifier keys (`content::MODIFIER_KEYS`, [Modifiers](#modifiers)).
 
 The port renamed the Godot data's short ids: `eng` energy, `reg` regolith, `ti` titanium,
@@ -101,8 +107,8 @@ in `i128` and floors once to 10^-6, so 1.15^2 is 1.3225, not the float floor 1.3
 serves every whole power in play: building cost curves (x1.5, x1.4), land prices, ideology
 rank scores, per-rank bonuses and discounts (1.05^r, 0.97^r, 1.03^r) and speculator burst
 growth. A negative power is `1 / x^|n|`, floored once. Only fractional powers use floats,
-through `libm` (`crate::math`): boredom resilience (0.995^(days/400)) and the ideology head
-start (a continuous rank). This matters: 0.97^r and 1.05^r aren't exact as `f64`, so the
+through `libm` (`crate::math`): boredom resilience (0.995^(days/400)) and the retirement
+gap's daily ideology decay (0.5^(1/365)). This matters: 0.97^r and 1.05^r aren't exact as `f64`, so the
 float floor would land discounts and bonuses a step low, and a cost curve shouldn't hang on
 float rounding.
 
@@ -119,7 +125,7 @@ A modifier key's value is the product of every live source naming it, 1 with non
 | `building_upkeep_mult` | Predictive Maintenance (Strategic) | every building's upkeep |
 | `promote_effectiveness_mult` | Market Cornering (Strategic) | Promote's demand effect |
 | `speculator_burst_interval_mult` | Speculator Dossier (Strategic) | days between speculator bursts |
-| `land_cost_mult` | Lunar Cartography (Long-Term; unreachable) | land price |
+| `land_cost_mult` | Lunar Cartography (global; unreachable) | land price |
 | `storage_cap_mult` | Silicon Valley (achievement) | every cap but energy's (and boredom's) |
 | `shipment_credit_mult` | First Profit (achievement) | shipment payouts |
 | `cargo_capacity_mult` | Bulk Shipper (achievement) | cargo loaded per Load |
@@ -130,7 +136,7 @@ A modifier key's value is the product of every live source naming it, 1 with non
 
 A building lists the keys that multiply its output (`output_modifiers`); a command its
 `scale_modifier`. Achievement and `forever` project rewards apply from the moment they are
-earned and in every later run, across timelines; Long-Term (`timeline`) ones for the rest of
+earned and in every later run, across timelines; global (`timeline`) ones for the rest of
 the timeline; Strategic (`run`) ones for the rest of their run.
 
 ## Not built

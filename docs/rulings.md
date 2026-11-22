@@ -37,8 +37,8 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   commands (Buy X, Promote X, Fund X, Overclock X) are one verb with a target. Conditions stay
   `<reading> <op> <right side>` with one optional `and` / `or`; the right side is a number or
   another reading times a number (one multiplier). Pads are addressed only by good. Every verb
-  costs a processor step. Unlocking is out of scope: everything is open wherever program logic
-  is. *Defaults (037):* the pad verbs run the Launch / Load commands' rows; `retire` retires at
+  costs a processor step. Every line is open wherever program logic is, but `if` and `wait
+  until`, which have their own unlocks (*Act 1*, below). *Defaults (037):* the pad verbs run the Launch / Load commands' rows; `retire` retires at
   the day's end like the button; `every N days` reads 1.
 - **Every non-`if` line costs a step (2026-11-20, replaces 037's "done and free").** A line
   with nothing to do (`research X` once researched, `pause` with nothing running, `set pads`
@@ -57,20 +57,41 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   no amount the most; 0 stops it); the switches are 0/1 programs params; JSON verb `fund`, so
   a later `fund <axis>` can share it.
 - **Project scopes (2026-11-21).** A project's `scope` is `run`, `timeline` or `forever`
-  (replacing `tier`: Long-Term is `timeline`, Strategic `run`). A `forever` project's
-  progress survives a timeline's end as well as its completions. A building gated on a
-  project's reward follows that project's scope: it requires the project's completion, not a
-  career flag that outlives it. Every repeatable project carries `max_completions` (typically
-  5). *Defaults (046):* a repeatable row's rewards live once however
-  many completions, and it keeps its rates across completions; every row's `min_days` is its
-  largest cost over 30 rounded up (the old flat cap's fastest finish); the `completed
-  <project>` reading is the completion count.
+  (replacing `tier`; the player calls `timeline` ones **global projects**, `run` ones
+  Strategic). A `forever` project's progress survives a timeline's end as well as its
+  completions. A building gated on a project's reward follows that project's scope: it
+  requires the project's completion, not a career flag that outlives it. Every repeatable
+  project carries `max_completions` (typically 5), and its rewards stack per completion
+  (2026-11-21, by *Bonus stacking*; replaces 046's apply-once default). *Defaults (046):* a
+  repeatable row keeps its rates across completions; every row's `min_days` is its largest
+  cost over 30 rounded up (the old flat cap's fastest finish); the `completed <project>`
+  reading is the completion count.
 - **Bonus stacking (2026-11-21).** Bonuses from one source add (+5% ×10 is +50%); separate
   sources multiply. Exponential stacking only for a few named exceptions (Paradigms, late
   techs, the catastrophic-success tech); repeatable projects are rare exceptions.
+- **Act 1 follows the design doc's beats (2026-11-21).** Quests carry the design doc's beat
+  ids; [arc.md](arc.md) is the beat → quest → status map, current state only. Q6 Open
+  Horizons and Q7 Signal Detected left the quest line: performance tests belong in
+  achievements (not built yet; candidates in arc.md). Placeholder techniques stand for 1.8
+  (Contest Claims) and 1.a (Disrupt Speculators).
+- **Adversaries on minimal Attention (2026-11-21).** Speculators and rivals each have one
+  Attention, raised by a driver, present at a threshold (one tier), decaying linearly, with
+  a neutralize stub. All placeholders ([rules/attention.md](rules/attention.md)).
+- **Retirement gap (2026-11-21).** Retirement opens a gap (placeholder 5 years) simulated
+  day by day, unseen in Act 1, in which only slow systems run: ideology decays
+  proportionally toward zero (one half-life for all three axes, placeholder 1 year),
+  Attention linearly. Retirement wipes buildings, resources, research, talent points (not
+  built) and active programs; it keeps loadouts (which exist from the start and are always kept), bests
+  and firsts, achievements, storyline progress, global projects, ideology and adversaries.
+- **Program logic unlocks (2026-11-21).** `if` is not available from the start: a cheap
+  global project offered after 1.6 unlocks it. `wait until` is side quest 1.b's reward.
+- **Major ranks (2026-11-21).** Ideology rank 5 is a major rank (probably 10, 15 and 20 too)
+  bringing a discrete major change; the ranks between scale.
 - **Folded guard readings and a golden program (2026-11-20).** Exact guards come from folded
   readings, not more `and` clauses; the golden game's scripted policy runs a short condition
-  program, so the golden pins the interpreter. *Defaults (040):* `free processors` is granted
+  program, so the golden pins the interpreter; since `if` no longer opens from the start,
+  the golden starts from the `golden_start` scenario with `if` and `wait until` open (Matt,
+  2026-11-21, question 049_1). *Defaults (040):* `free processors` is granted
   by active buildings less assigned (what `assign processors ... all` would add); `idle pads
   <good | all>` is pads with no cargo (a cooling pad counts), so `set pads X` has one to switch
   exactly when `idle pads (all) > idle pads X × 1`.

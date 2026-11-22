@@ -77,7 +77,7 @@
     },
     {
       "id": "M14", "name": "Timeline Unlocked", "says": "Arc 1 to Arc 2 (runs 15-20)",
-      "when": { "type": "quest", "quest": "qhorizon_open_horizons" },
+      "when": { "type": "quest", "quest": "qdeep_space_telescope" },
       "target": { "runs": [15, 20] }
     }
   ],

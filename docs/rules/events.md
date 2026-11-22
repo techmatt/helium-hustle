@@ -1,8 +1,10 @@
 # Events (module `events`, variant `arc1`)
 
-Events are the quest chain ("Breadcrumbs", the `story` rows, in file order) and one-off
-events (the `ongoing` rows). Each has a trigger, a condition and unlock effects that open
-buildings, panels, projects or flags. Events are checked at step 12 of
+Events are the quest chain ("Breadcrumbs", the `story` rows, in file order), side quests
+(the `side` rows) and one-off events (the `ongoing` rows). Each has a trigger, a condition
+and unlock effects that open buildings, panels, projects or flags. A quest may carry the
+design doc's `beat` id (`1.1` to `1.9`, `1.a`, `1.b`; [../arc.md](../arc.md) maps beats to
+quests); no rule reads it. Events are checked at step 12 of
 [the day](README.md#the-day), after the clamp; their unlocks are re-applied at the start
 of every run.
 
@@ -35,7 +37,12 @@ of every run.
 | `flag_set` | the career flag is set |
 | `days_survived` | the run's days, today included, reach `days` |
 | `credits_earned` | credits produced this run reach `amount` |
-| `quiet_days`, `earth_science`, `earth_tech`, `timelines_ended`, `swarm_repelled`, `vault_holds`, `super_timeline`, `project_completed`, `victory` | the later acts' (draft): [timeline.md](timeline.md) |
+| `retirements` | the career's retirements, forced or chosen, reach `count` |
+| `adversary_present` | the adversary is present now ([attention.md](attention.md)) |
+| `launch_credits` | one launch this run paid at least `amount` credits ([shipments.md](shipments.md)) |
+| `research_cluster` | every research item of some category with at least `min_items` items is bought this run |
+| `project_completed` | the project is completed ([projects.md](projects.md)) |
+| `quiet_days`, `earth_science`, `earth_tech`, `timelines_ended`, `swarm_repelled`, `vault_holds`, `super_timeline`, `victory` | the later acts' (draft): [timeline.md](timeline.md). `quiet_days` is unused (it was Signal Detected's, now an achievement candidate) |
 
 **The quest chain.** The active quest is the first `story` row in file order that is not
 completed and whose trigger has happened; the last quest's condition is `never`, so once
@@ -52,6 +59,12 @@ the chain starts there is always one. Each check:
 Quests complete once per career. Their conditions read this run, so progress that isn't
 latched (cumulative He-3, shipments, Data Centers) starts over after a retirement.
 
+**Side quests.** After the chain, each `side` row in file order that is not completed
+completes if its trigger has happened and its condition holds: recorded in the career like
+a chain quest, fired and logged. Each completes once per career, beside the chain, which
+never waits on one. A side quest's condition can't be `all_of` (sub-objectives latch only
+for the chain's active quest).
+
 **One-off events.** After the quests, each `ongoing` row in file order that has not fired
 this run fires if its trigger has happened and its condition holds. Each fires at most once
 per run, and again in the next run (its fired mark is per run). One triggered by a quest
@@ -63,7 +76,7 @@ completed earlier in the same check can fire that same day.
 | Unlock | Effect |
 |---|---|
 | `enable_building` | the building may be bought this run. A building named by any event's `enable_building` is locked until one enables it ([economy.md](economy.md)). |
-| `enable_nav_panel` | the panel is shown this run. Only `retirement` gates a rule (the Retire action, [career.md](career.md)); others are display. |
+| `enable_nav_panel` | the panel is shown this run. Two gate a rule: `retirement` (the Retire action, [career.md](career.md)) and `research` (buying research, [research.md](research.md)); others (`adversaries` from 1.4, `projects`, `ideologies`, ...) are display. |
 | `enable_project` | a project whose unlock is `project_enabled` may be funded this run ([projects.md](projects.md)) |
 | `set_flag` | sets a career flag |
 
@@ -72,7 +85,7 @@ unlocks at the start of each run, so an unlocked building, panel or project stay
 after a retirement from day 0. One-off events still fire again during the run once their
 trigger and condition hold.
 
-`category` decides quest or one-off. `silent` keeps a one-off event out of the activity
+`category` decides chain quest, side quest or one-off. `silent` keeps a one-off event out of the activity
 feed and the view's event list (display only). `title`, `summary` and `body` are text no
 rule reads (the view fills a body's `{rate}` with the phase's boredom per day).
 
@@ -82,7 +95,8 @@ career log's lines), each fired non-silent one-off event, each shipment (good, c
 credits), speculator burst (good, speculators added) and rival dump. At the end of each day
 and after each action the oldest lines beyond `activity_kept` are dropped; a new run starts
 it empty. The view also gives each quest's countable progress (owned, produced, shipments,
-days, credits, best rank) beside its condition.
+days, credits, best rank, retirements, Attention against its threshold, best launch) beside
+its condition.
 
 ## Actions
 
@@ -100,30 +114,27 @@ Triggers, conditions and unlocks are content (`content/events.json`).
 
 ## Content
 
-`content/events.json`: 26 rows, nineteen `story` (Q1 Boot Sequence to Q7 Signal Detected, the
-swarm's reveal; then the draft Q8 to Q18 and the Epilogue, [../arc.md](../arc.md)) and seven `ongoing` (the Recreation Dome unlock, Political Currents, propellant discovery,
-boredom phases 2 to 5).
+`content/events.json`: 31 rows. Twenty-one `story`: Act 1's beats 1.1 Online to 1.9 Deep Space
+Telescope (the swarm's reveal; draft, [../arc.md](../arc.md)), then the draft Q8 to Q18 and the
+Epilogue. Two `side`: 1.a Big Launch (opens Disrupt Speculators) and 1.b Full Cluster (opens
+`wait until`; a cluster of 2 or more items, `min_items`). Eight `ongoing`: Launch Plans (50 He-3 made this run enables the Launch Pad),
+the Recreation Dome unlock (once 1.6 is done), Political Currents, propellant discovery,
+boredom phases 2 to 5.
 
 ## Port notes
 
-- Conflict: QShipment unlocks. The handoffs have it unlock Foundation Grant, Retirement and
-  Projects; the data has Retirement only, with QMarket unlocking Foundation Grant and the
-  Projects panel. The engine uses the data.
+- Changed (049): the Godot chain's Q1 to Q7 became the design doc's beats. Q2 First
+  Extraction is the Launch Plans event; Q5 Market Awareness, Q6 Open Horizons and Q7 Signal
+  Detected left the line (Q6 and Q7 are achievement candidates, [../arc.md](../arc.md));
+  Retirement opens at 1.5, Foundation Grant and the Projects panel at 1.6.
 - Conflict: Dream's falling effectiveness. The boredom phase 3 to 5 events' text says Dream
   drops to 20/15/10%; the ruling is a flat Dream ([dream.md](dream.md)), so these events
   unlock nothing and their text stays as placeholder.
 - Conflict: Lunar Cartography and Deep Core Survey are unreachable ([projects.md](projects.md#port-notes)).
-- Candidate: Open Horizons (Q6). The ten years are reachable with Dream, but no player has
-  earned 100,000 credits in one run (its `credits_earned` sub-objective counts this run's),
-  so the quest, and milestone M14, is never met: the best run so far made 90,306 credits in
-  3,654 days ([011's write-up](../../experiments/results/011_oracle_planner/README.md)).
-- Candidate: Q6's own `enable_building recreation_dome` never matters: the silent
-  `recreation_dome_unlock` enables it when Q5 completes, the moment Q6 starts. It stays in
-  the data (dropping it moves the content hash).
 - Conflict: Godot's milestones (`game_config.milestones`) were removed per the handoffs;
   not ported.
 - Candidate: quests ignore a `game_start` run filter, so the chain picks up where the
-  career left it (Q1's `run_number` 1 would otherwise strand the chain after run 1).
+  career left it (1.1's `run_number` 1 would otherwise strand the chain after run 1).
 - Candidate: a `quest_active` gate (projects, building `requires`) holds while the quest is
   active or after it completes.
 - Candidate: one-off events fire once per run; `shipment_completed` counts this run's

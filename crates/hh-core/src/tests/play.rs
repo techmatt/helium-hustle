@@ -137,7 +137,7 @@ fn the_first_quest_unlocks_the_excavator() {
     own(&mut g, "solar_panel", 2);
     r.advance(&mut g, 1);
     assert!(g.career.completed_quests.contains("qpower_boot_sequence"));
-    assert_eq!(r.view(&g).quest.unwrap().id, "qextract_first_extraction");
+    assert_eq!(r.view(&g).quest.unwrap().id, "qshipment_proof_of_concept");
     set(&mut g, "credits", "100");
     r.apply(&mut g, &buy("excavator")).unwrap();
 }
@@ -500,12 +500,24 @@ fn research_needs_visibility_and_science() {
     let r = rules();
     let mut g = r.new_game(1);
     let res = |id: &str| Action::Research { research: id.into() };
+    // No research before the Lab quest (1.6) opens the research panel.
+    assert!(r.apply(&mut g, &res("market_awareness")).unwrap_err().contains("not open"));
+    g.run.enabled_panels.insert(crate::modules::research::RESEARCH_PANEL.into());
     assert!(r.apply(&mut g, &res("market_awareness")).unwrap_err().contains("science"));
     assert!(r.apply(&mut g, &res("dream_protocols")).unwrap_err().contains("not available"));
     set(&mut g, "science", "250");
     r.apply(&mut g, &res("market_awareness")).unwrap();
     assert_eq!(g.amount("science"), f("50"));
     assert!(r.view(&g).markets[0].demand.is_some(), "market awareness shows demand");
+}
+
+#[test]
+fn a_repeatable_projects_multiplier_stacks_by_adding() {
+    use crate::modules::projects::stacked;
+    assert_eq!(stacked(f("1.05"), 1), f("1.05"));
+    assert_eq!(stacked(f("1.05"), 10), f("1.5"), "+5% ×10 is +50%");
+    assert_eq!(stacked(f("0.9"), 3), f("0.7"));
+    assert_eq!(stacked(f("0.5"), 3), Fx::ZERO, "floored at 0");
 }
 
 #[test]
@@ -559,7 +571,7 @@ fn locked_projects_show_their_condition_and_rewards() {
     let find = |id: &str| v.projects.iter().find(|p| p.id == id).unwrap();
     let pm = find("predictive_maintenance");
     assert!(!pm.unlocked);
-    assert_eq!(pm.unlock_text, "Research Dream Protocols");
+    assert_eq!(pm.unlock_text, "Research Daydreaming");
     assert_eq!(pm.days_to_done, None, "no rate set");
     assert_eq!(find("microwave_power").reward_text, vec!["Opens Microwave Receiver".to_string()]);
     assert_eq!(find("microwave_power").unlock_text, "Reach rank 5 on the Nationalist axis (best in the career)");
@@ -583,7 +595,7 @@ fn forced_retirement_starts_the_next_run_with_career_bonuses() {
     assert_eq!(g.owned("excavator"), 0, "buildings reset");
     assert_eq!(g.amount("credits"), f("100"), "2% of the best run's credits");
     assert_eq!(g.career.log.last().unwrap().kind, "forced_retirement");
-    // Voluntary retirement waits for the third quest.
+    // Voluntary retirement waits for the Burnout quest (1.5).
     assert!(r.apply(&mut g, &Action::Retire).is_err());
 }
 
@@ -592,7 +604,7 @@ fn the_script_reaches_the_first_shipment_and_retires() {
     let mut s = Session::new(&baseline(), 1, None).unwrap();
     play(&mut s, 2000, Policy::Script);
     let c = &s.state.career;
-    for q in ["qpower_boot_sequence", "qextract_first_extraction", "qshipment_proof_of_concept"] {
+    for q in ["qpower_boot_sequence", "qshipment_proof_of_concept"] {
         assert!(c.completed_quests.contains(q), "{q}");
     }
     assert_eq!(c.retirements, 1);

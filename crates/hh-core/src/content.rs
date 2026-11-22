@@ -128,6 +128,8 @@ pub enum CommandEffect {
     Promote { good: String },
     DisruptSpeculators,
     Fund { axis: String },
+    /// The neutralize stub: the adversary's Attention goes to zero.
+    Neutralize { adversary: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -231,6 +233,15 @@ pub enum Condition {
     FlagSet { flag: String },
     DaysSurvived { days: u64 },
     CreditsEarned { amount: Fx },
+    /// The career's retirements (forced or chosen) reach `count`.
+    Retirements { count: u32 },
+    /// The adversary is present now (its Attention at its threshold, attention.md).
+    AdversaryPresent { adversary: String },
+    /// One launch this run paid at least `amount` credits.
+    LaunchCredits { amount: Fx },
+    /// Every research item of some category (a cluster) of at least
+    /// `min_items` items is bought this run.
+    ResearchCluster { min_items: u32 },
     // Draft (042), the later acts (docs/rules/timeline.md):
     /// Days this run since the player's last order (programs don't count).
     QuietDays { days: u64 },
@@ -289,8 +300,13 @@ pub enum Unlock {
 #[serde(deny_unknown_fields)]
 pub struct Event {
     pub id: String,
-    /// `story` events are the quest chain, in file order; `ongoing` fire once a run.
+    /// `story` events are the quest chain, in file order; `side` quests
+    /// complete once a career beside it; `ongoing` fire once a run.
     pub category: String,
+    /// The design doc's beat id (`1.1` ... `1.9`, `1.a`, `1.b`), on quests that
+    /// carry one (docs/arc.md).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub beat: Option<String>,
     pub silent: bool,
     pub title: String,
     pub summary: String,
@@ -303,6 +319,11 @@ pub struct Event {
 impl Event {
     pub fn is_quest(&self) -> bool {
         self.category == "story"
+    }
+
+    /// A side quest: completes once a career, beside the chain.
+    pub fn is_side(&self) -> bool {
+        self.category == "side"
     }
 }
 
@@ -485,6 +506,9 @@ impl Content {
             | Condition::FlagSet { .. }
             | Condition::DaysSurvived { .. }
             | Condition::CreditsEarned { .. }
+            | Condition::Retirements { .. }
+            | Condition::LaunchCredits { .. }
+            | Condition::ResearchCluster { .. }
             | Condition::QuietDays { .. }
             | Condition::EarthScience { .. }
             | Condition::TimelinesEnded { .. }
@@ -497,6 +521,9 @@ impl Content {
                 self.project(project).is_some()
             }
             Condition::IdeologyRank { axis, .. } => AXES.contains(&axis.as_str()),
+            Condition::AdversaryPresent { adversary } => {
+                crate::modules::attention::ADVERSARIES.contains(&adversary.as_str())
+            }
             Condition::QuestActive { quest } => self.event(quest).is_some_and(|e| e.is_quest()),
         }
     }
@@ -568,6 +595,10 @@ impl Content {
             match &c.effect {
                 Some(CommandEffect::Promote { good }) => need(res(good), format!("{w}: unknown good")),
                 Some(CommandEffect::Fund { axis: a }) => need(axis(a), format!("{w}: unknown axis")),
+                Some(CommandEffect::Neutralize { adversary }) => need(
+                    crate::modules::attention::ADVERSARIES.contains(&adversary.as_str()),
+                    format!("{w}: unknown adversary {adversary:?}"),
+                ),
                 Some(CommandEffect::Overclock { target, .. }) => need(
                     self.buildings.iter().any(|b| b.category == *target),
                     format!("{w}: overclock target {target:?} is no building category"),
@@ -595,7 +626,12 @@ impl Content {
             if let Trigger::QuestComplete { quest: q } = &e.trigger {
                 need(quest(q), format!("{w}: trigger names unknown quest {q:?}"));
             }
-            need(e.category == "story" || e.category == "ongoing", format!("{w}: bad category {:?}", e.category));
+            need(
+                e.category == "story" || e.category == "side" || e.category == "ongoing",
+                format!("{w}: bad category {:?}", e.category),
+            );
+            // Sub-objectives latch only on the chain's active quest.
+            need(!(e.is_side() && matches!(e.condition, Condition::AllOf { .. })), format!("{w}: a side quest can't be all_of"));
             need(self.condition_ok(&e.condition), format!("{w}: condition names something unknown"));
             for u in &e.unlocks {
                 let ok = match u {
@@ -659,6 +695,10 @@ impl Content {
                     set.insert(flag);
                 }
             }
+        }
+        // `if` and `wait until` open on flags content must set (programs.md, *Unlock*).
+        for flag in [crate::modules::programs::IF_FLAG, crate::modules::programs::WAIT_FLAG] {
+            need(set.contains(flag), format!("programs: nothing sets flag {flag:?}"));
         }
         // The engine sets this one itself (programs.md, *Unlock*).
         set.insert(crate::modules::programs::LOGIC_FLAG);

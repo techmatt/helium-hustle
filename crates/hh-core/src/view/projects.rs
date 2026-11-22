@@ -160,6 +160,12 @@ pub fn condition_text(c: &Condition) -> String {
         },
         Condition::DaysSurvived { days } => format!("Last {days} days in a run"),
         Condition::CreditsEarned { amount } => format!("Earn {} credits this run", n(*amount)),
+        Condition::Retirements { count } => format!("Retire {count} times"),
+        Condition::AdversaryPresent { adversary } => format!("Draw the {adversary} in"),
+        Condition::LaunchCredits { amount } => format!("Earn {} credits from one launch", n(*amount)),
+        Condition::ResearchCluster { min_items } => {
+            format!("Research every item of one cluster of {min_items} or more in one run")
+        }
         Condition::QuietDays { days } => format!("{days} days without an order"),
         Condition::EarthScience { amount } => format!("{} Earth science this timeline", n(*amount)),
         Condition::EarthTech { tech } => {

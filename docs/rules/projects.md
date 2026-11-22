@@ -10,7 +10,7 @@ programs and buildings run, step 8 of [the day](README.md#the-day).
 **Scope** (`scope` on the row), where progress and completions live:
 
 - `run` (the Projects panel's *Strategic*): in the run, lost at retirement.
-- `timeline` (*Long-Term*): in the career, kept across retirements, cleared at a
+- `timeline` (*global projects* to the player): in the career, kept across retirements, cleared at a
   timeline's end unless a super timeline follows ([timeline.md](timeline.md)).
 - `forever`: kept through every timeline end, progress and completions both. No row has
   it yet; it is for the super-projects to come.
@@ -53,15 +53,17 @@ the grown cost.
 
 **Rewards** (`rewards` on the row, a list), live while the project has completed at
 least once in its scope (`timeline`: every later run of the timeline; `run`: the rest of
-the run). A reward lives once, however many completions:
+the run). A repeatable row's numeric rewards stack per completion, adding (the
+bonus-stacking ruling): `n` completions of a ×`v` multiplier give `1 + (v − 1) × n` (floored
+at 0), and `n` times each starting building; the others live once (no row repeats yet):
 
 - `starting_buildings`: free bonus buildings at the start of every run (owned and
   running, not counted in their price curve; [career.md](career.md), [economy.md](economy.md)).
 - `modifier`: a modifier `key` multiplied by `value` ([Modifiers](README.md#modifiers)).
 - `set_flag`: a career flag, set at completion. Flags outlive a timeline's end.
-- `boredom_modifiers`: `base_rate_mult` multiplies boredom growth
-  ([boredom.md](boredom.md)); `command_boredom` replaces the named commands' flat boredom
-  per execution ([commands.md](commands.md)).
+- `boredom_modifiers`: `base_rate_mult` multiplies boredom growth (stacking as a
+  multiplier, [boredom.md](boredom.md)); `command_boredom` replaces the named commands' flat
+  boredom per execution ([commands.md](commands.md)).
 - `research_discount`: research bought in an earlier run costs `mult` of its price
   ([research.md](research.md)).
 
@@ -95,21 +97,26 @@ The `drain` variant has no params (`"params": {}`).
 
 ## Content
 
-`content/projects.json`: 12 rows, seven `timeline` (the Dyson Sphere among them: draft,
+`content/projects.json`: 14 rows, nine `timeline` (the Dyson Sphere among them: draft,
 [timeline.md](timeline.md)) and five `run`, each with `scope`, `unlock`, `costs`,
 `min_days` and `rewards` (none repeats yet); names and descriptions are the Godot
-placeholders. Each row's `min_days` is its largest cost over 30, rounded up: the days the
-old flat cap of 30 a day took, so the fastest completion is unchanged.
+placeholders but for the draft rows (049): Conditional Logic (offered once quest 1.6 is
+done, its reward the `logic_if` flag that opens `if`, [programs.md](programs.md)) and the
+Deep Space Telescope (offered once 1.8 is done; completing it completes quest 1.9, so it
+spans several runs: `min_days` 3,000). Chemical Energy Initiative is offered once 1.6 is
+done. Every other row's `min_days` is its largest cost over 30, rounded up: the days the old
+flat cap of 30 a day took.
 
 ## Port notes
 
 - Conflict: Microwave Receiver gate: see [economy.md](economy.md#port-notes).
-- Conflict: Foundation Grant's unlock. The handoffs have QShipment enable it; the data has
-  QMarket (`qmarket_awareness`) enable it and the Projects panel. The engine uses the data.
+- Changed (049): quest 1.6 Lab enables Foundation Grant and the Projects panel (the Godot
+  data had Market Awareness, a quest no longer in the line).
 - Conflict: Lunar Cartography and Deep Core Survey unlock by `project_enabled`, but no
   event enables them. Kept as data, so both are unreachable (candidate: give each an
   enabling event or another unlock).
 - Candidate: a `quest_active` gate holds while the quest is active or after it is
-  completed (Chemical Energy Initiative stays fundable after Open Horizons completes).
+  completed (Chemical Energy Initiative and Conditional Logic stay fundable after 1.7
+  Three Voices completes).
 - Candidate: AI Consciousness Act's `command_boredom` values replace the commands' own
   boredom per execution rather than adding to it.

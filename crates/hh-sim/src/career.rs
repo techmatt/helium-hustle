@@ -131,7 +131,7 @@ pub struct GameResult {
     /// Every building bought, in order.
     pub builds: Vec<Build>,
     /// The career's long goals at the end: each axis's best rank, projects
-    /// completed (Long-Term), quests and sub-objectives done, achievements.
+    /// completed (global), quests and sub-objectives done, achievements.
     pub best_ranks: BTreeMap<String, i64>,
     pub projects: Vec<String>,
     pub quests: Vec<String>,

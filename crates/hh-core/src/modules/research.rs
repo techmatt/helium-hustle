@@ -12,6 +12,10 @@ use crate::state::GameState;
 
 use super::economy::{BOREDOM, SCIENCE};
 
+/// The panel an event opens before any research can be bought (the Lab
+/// quest, 1.6).
+pub const RESEARCH_PANEL: &str = "research";
+
 pub static DEF: ModuleDef = ModuleDef {
     id: "research",
     variants: &[VariantDef { name: "arc1", params: &[], rng: &[] }],
@@ -49,6 +53,10 @@ pub fn visible(g: &GameState, item: &Research) -> bool {
 pub fn price(r: &Rules, g: &GameState, item: &Research) -> Fx {
     let mut c = item.cost * super::ideology::discount(r, g, "rationalist");
     if g.career.researched.contains(&item.id) {
+        // The Rationalist major effect: research done in an earlier run is free.
+        if super::ideology::major(r, g, "rationalist") {
+            return Fx::ZERO;
+        }
         for reward in super::projects::live_rewards(g) {
             if let ProjectReward::ResearchDiscount { mult } = reward {
                 c = c * *mult;
@@ -71,6 +79,9 @@ pub fn reveals_demand(g: &GameState) -> bool {
 
 /// Why `item` can't be bought now, if it can't.
 pub fn blocker(r: &Rules, g: &GameState, item: &Research) -> Option<String> {
+    if !g.run.enabled_panels.contains(RESEARCH_PANEL) {
+        return Some("research: not open yet".into());
+    }
     if g.run.research.contains(&item.id) {
         return Some(format!("research {}: already done", item.name));
     }

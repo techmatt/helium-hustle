@@ -12,12 +12,13 @@ The module's params, `overclock_base_cap` among them, are in [programs.md](progr
 1. **Locked** (its `requires` doesn't hold): fails.
 2. **Flows:** its `costs`, with any researched `command_cost_override` replacing that cost,
    and its `produces`; a `scale_modifier` multiplies both (Buy Power uses `buy_power_mult`,
-   which includes the career's bonus; [career.md](career.md)).
+   which includes the career's bonus; [career.md](career.md)). Dream at a Humanist major
+   rank keeps only its energy cost ([dream.md](dream.md)).
 3. **Output-cap skip:** if it produces anything and every product is at or over its cap
    (economy.md), it is skipped: nothing paid, nothing made, no boredom.
 4. **Fraction:** `frac` = the least of `max(held, 0) / cost` over its costs, at most 1 (1 with
    no costs). If `frac` is 0, it fails. A command with an effect (Load, Launch, Dream,
-   Overclock, Promote, Disrupt, Fund) fails unless `frac` is 1; a pure conversion (Idle,
+   Overclock, Promote, Disrupt, Fund, Neutralize) fails unless `frac` is 1; a pure conversion (Idle,
    Cloud Compute, Buy *) runs at `frac`.
 5. It pays `cost × frac` and adds `produces × frac`. Products may pass their cap until the
    day's clamp.
@@ -26,7 +27,8 @@ The module's params, `overclock_base_cap` among them, are in [programs.md](progr
    draft Distract) takes that much off, never below zero.
 7. The command is marked used in the career (it stays visible in later runs), and its effect
    applies: Load (shipments.md), Launch full pads (shipments.md), Dream (dream.md), Promote and
-   Disrupt (demand.md), Fund (ideology.md), Overclock (below).
+   Disrupt (demand.md), Fund (ideology.md), Neutralize (Contest Claims: the named
+   adversary's Attention to 0, [attention.md](attention.md)), Overclock (below).
 
 **Overclock.** Each execution adds its own stack on its `target` building category for
 `floor(duration × overclock_duration_factor ^ rationalist rank)` days, live from the same

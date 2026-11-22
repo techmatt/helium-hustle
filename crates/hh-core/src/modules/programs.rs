@@ -205,6 +205,12 @@ fn check_entries(r: &Rules, g: &GameState, program: u32, entries: &[Entry], held
         if gated && !matches!(e.op, Op::Command { .. }) && !logic_unlocked(g) {
             return Err(format!("Program {n}: only commands can be queued yet"));
         }
+        if gated && matches!(e.op, Op::If { .. }) && !if_unlocked(g) {
+            return Err(format!("Program {n}: if is not unlocked yet"));
+        }
+        if gated && matches!(e.op, Op::WaitUntil { .. }) && !wait_unlocked(g) {
+            return Err(format!("Program {n}: wait until is not unlocked yet"));
+        }
         if e.indented && !in_block {
             return Err(format!("Program {n}: an indented line needs an if above it"));
         }
@@ -406,6 +412,10 @@ pub fn flows(r: &Rules, g: &GameState, c: &Command) -> (BTreeMap<String, Fx>, BT
             }
         }
     }
+    // The Humanist major effect: Dream costs only its energy.
+    if matches!(c.effect, Some(CommandEffect::Dream)) && super::ideology::major(r, g, "humanist") {
+        costs.retain(|res, _| res == super::economy::ENERGY);
+    }
     let mut produces = c.produces.clone();
     if let Some(k) = &c.scale_modifier {
         let m = modifier(r, g, k);
@@ -498,6 +508,7 @@ pub fn execute(r: &Rules, g: &mut GameState, c: &Command, src: &str, short: &str
         Some(CommandEffect::Promote { good }) => super::demand::promote(r, g, good),
         Some(CommandEffect::DisruptSpeculators) => super::demand::disrupt(r, g),
         Some(CommandEffect::Fund { axis }) => super::ideology::fund(r, g, axis),
+        Some(CommandEffect::Neutralize { adversary }) => super::attention::neutralize(g, adversary),
     }
     LineOutcome::Ran
 }
@@ -509,6 +520,21 @@ pub const LOGIC_FLAG: &str = "program_logic";
 /// across retirements.
 pub fn logic_unlocked(g: &GameState) -> bool {
     g.career.flags.contains(LOGIC_FLAG)
+}
+
+/// The career flag that opens `if` (a global project's reward).
+pub const IF_FLAG: &str = "logic_if";
+/// The career flag that opens `wait until` (the Full Cluster side quest's reward).
+pub const WAIT_FLAG: &str = "logic_wait_until";
+
+/// `if` lines are open: program logic and the `if` flag.
+pub fn if_unlocked(g: &GameState) -> bool {
+    logic_unlocked(g) && g.career.flags.contains(IF_FLAG)
+}
+
+/// `wait until` lines are open: program logic and the `wait until` flag.
+pub fn wait_unlocked(g: &GameState) -> bool {
+    logic_unlocked(g) && g.career.flags.contains(WAIT_FLAG)
 }
 
 /// What a reading reads now (`None`: nothing to read, the clause is false).
@@ -843,7 +869,8 @@ fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
         // (outcome, where the pointer goes, whether the step is spent)
         let (outcome, to, spent) = match &op {
             Op::If { when } => {
-                if holds(r, g, when) {
+                // A loaded `if` this career hasn't opened is false.
+                if if_unlocked(g) && holds(r, g, when) {
                     (LineOutcome::True, next, false)
                 } else {
                     let to = past_body(&g.run.programs[i], line);
@@ -856,7 +883,8 @@ fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
                 }
             }
             Op::WaitUntil { when } => {
-                if holds(r, g, when) {
+                // A loaded `wait until` this career hasn't opened is passed over.
+                if !wait_unlocked(g) || holds(r, g, when) {
                     (LineOutcome::True, next, false)
                 } else {
                     mark(g, line, LineOutcome::Waiting);

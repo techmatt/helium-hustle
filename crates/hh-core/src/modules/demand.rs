@@ -257,6 +257,7 @@ fn burst_interval(r: &Rules, g: &mut GameState) -> u64 {
 /// plus each Arbitrage Engine's flat amount, both times the Nationalist
 /// bonus), promote, rival pressure and saturation fade, then demand is set.
 pub fn update(r: &Rules, g: &mut GameState) {
+    super::attention::decay_day(r, g);
     let p = &r.p.demand;
     let nat = super::ideology::bonus(r, g, "nationalist");
     let mut engines = 0i64;
@@ -283,7 +284,11 @@ pub fn bursts(r: &Rules, g: &mut GameState) {
     let p = &r.p.demand;
     if g.run.day >= g.run.next_burst_day {
         let total: Fx = g.run.markets.values().map(|m| m.revenue).sum();
-        if total > Fx::ZERO {
+        // Bursts land only while the speculators are present (attention.md),
+        // and never at a Nationalist major rank (ideology.md).
+        let landing = super::attention::present(r, g, super::attention::SPECULATORS)
+            && !super::ideology::major(r, g, "nationalist");
+        if total > Fx::ZERO && landing {
             let one = u32::try_from(Fx::ONE.steps()).expect("scale fits u32");
             let k = g.stream(SPECULATORS).below(one);
             let at = total.mul_ratio(k as i64, one as i64);
@@ -311,9 +316,11 @@ pub fn bursts(r: &Rules, g: &mut GameState) {
         }
         g.run.next_burst_day = g.run.day + burst_interval(r, g);
     }
+    let rivals = super::attention::present(r, g, super::attention::RIVALS);
     for rv in &content().rivals {
         if g.run.rival_next.get(&rv.id).is_some_and(|&d| g.run.day >= d) {
-            if let Some(m) = g.run.markets.get_mut(&rv.good) {
+            // A rival dumps only while the rivals are present (attention.md).
+            if let Some(m) = g.run.markets.get_mut(&rv.good).filter(|_| rivals) {
                 m.rival_pressure += rv.demand_hit;
                 g.activity("rival_dump", &rv.id, None, None);
             }
@@ -349,6 +356,7 @@ pub fn promote(r: &Rules, g: &mut GameState, good: &str) {
 pub fn disrupt(r: &Rules, g: &mut GameState) {
     let p = &r.p.demand;
     let amount = g.stream(DISRUPT).fx_in(p.disrupt_min, p.disrupt_max);
+    super::attention::on_disrupt(r, g);
     let order = g.run.loading_priority.clone();
     for good in order {
         if let Some(m) = g.run.markets.get_mut(&good) {

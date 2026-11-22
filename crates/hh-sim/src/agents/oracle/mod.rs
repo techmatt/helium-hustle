@@ -22,7 +22,7 @@
 //! second half and that run's start) times the days that run has left (room
 //! to the boredom cap at its closing growth, at most `tail`); plus the
 //! profile's weights ([`Profile`]) on what the career
-//! keeps (ideology best scores, Long-Term project progress and completions,
+//! keeps (ideology best scores, global project progress and completions,
 //! building types, commands, quests and sub-objectives, achievements),
 //! research this run, each open milestone met (more the sooner) and each
 //! open milestone's progress squared ([`super::progress`]: the pull grows as a goal
@@ -31,10 +31,9 @@
 //! **Runs.** Every `RETIRE_EVERY` (100) ticks from day `min_run`, the oracle plays the
 //! run out on a copy and retires once its average credits a day so far is
 //! the best the run will see (the prestige rule: a later day's average beats
-//! it by no more than `retire_margin` per mille), except while holding
-//! boredom for the Open Horizons quest's ten years. The author also retires
-//! a run that has bought nothing for `stale_days`; holding boredom with Dream
-//! it doesn't, so the oracle does, the ten years again excepted.
+//! it by no more than `retire_margin` per mille). The author also retires a
+//! run that has bought nothing for `stale_days`; holding boredom with Dream
+//! it doesn't, so the oracle does.
 //!
 //! Files: `score.rs` (profiles, rollouts, the score), `strategy.rs` (the
 //! strategy table, tactics), `retire.rs` (the retirement rule); this one the
@@ -61,9 +60,8 @@ pub const KNOBS: &[&str] = &[
     "first_margin", "ideology",
 ];
 
-/// The Open Horizons quest and its ten-year sub-objective.
-const HORIZON: &str = "qhorizon_open_horizons";
-const SURVIVE: &str = "survive_10_years";
+/// The Three Voices quest (1.7): the quests profile's ideology stretch.
+const THREE_VOICES: &str = "qthree_voices";
 
 /// Ticks between retirement checks (each plays the run out on a copy).
 const RETIRE_EVERY: u64 = 100;
@@ -269,9 +267,9 @@ impl Agent for Oracle {
             self.built_day = day;
         }
         self.observe(p);
-        // A stale run held by Dream retires, unless it is surviving its ten years.
+        // A stale run held by Dream retires.
         let stale = day.saturating_sub(self.built_day) >= self.stale_days;
-        if self.base.dir.sustain && stale && p.view().can_retire && !retire::surviving(p.state()) {
+        if self.base.dir.sustain && stale && p.view().can_retire {
             let _ = p.apply(&Action::Retire);
             return;
         }

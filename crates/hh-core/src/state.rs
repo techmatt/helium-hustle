@@ -513,6 +513,8 @@ pub struct RunStats {
     pub research_completed: u32,
     /// Most energy buildings made in one day.
     pub peak_energy: Fx,
+    /// The most credits one launch paid this run.
+    pub best_launch: Fx,
     /// Everything produced this run, by resource (before caps).
     pub produced: BTreeMap<String, Fx>,
 }
@@ -743,6 +745,14 @@ pub struct Career {
     /// Saved programs (the loadout library), kept across retirements; at most
     /// `library_slots`. Loading one is how a program comes back in a new run.
     pub library: Vec<Loadout>,
+    /// Each adversary's Attention (attention.md, draft): kept across
+    /// retirements, decaying through the gap.
+    pub attention: BTreeMap<String, Fx>,
+    /// Ideology scores carried into the next run: a retirement keeps them,
+    /// decayed through the gap (career.md).
+    pub ideology: BTreeMap<String, Fx>,
+    /// Days spent in retirement gaps over the career (unseen in Act 1).
+    pub gap_days: u64,
 }
 
 /// A saved program: a display name (not an id; duplicates are fine) and its lines.

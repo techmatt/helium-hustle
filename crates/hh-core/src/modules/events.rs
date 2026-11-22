@@ -89,7 +89,11 @@ pub fn holds(r: &Rules, g: &GameState, quest: &str, c: &Condition) -> bool {
         // Checked before the day count rises: today counts as survived.
         Condition::DaysSurvived { days } => g.run.day + 1 >= *days,
         Condition::CreditsEarned { amount } => g.run.stats.credits_earned >= *amount,
-        Condition::QuietDays { days } => g.run.day + 1 >= g.run.last_order.unwrap_or(0) + *days,
+        Condition::Retirements { count } => g.career.retirements >= *count,
+        Condition::AdversaryPresent { adversary } => super::attention::present(r, g, adversary),
+        Condition::LaunchCredits { amount } => g.run.stats.best_launch >= *amount,
+        Condition::ResearchCluster { min_items } => cluster_done(g, *min_items).is_some(),
+        Condition::QuietDays { days } => g.run.day + 1 >=g.run.last_order.unwrap_or(0) + *days,
         Condition::EarthScience { amount } => {
             g.saga.timeline.as_ref().is_some_and(|t| t.science_made >= *amount)
         }
@@ -121,6 +125,11 @@ pub fn progress(r: &Rules, g: &GameState, c: &Condition) -> Option<(Fx, Fx)> {
         }
         Condition::DaysSurvived { days } => Some((n(g.run.day), n(*days))),
         Condition::CreditsEarned { amount } => Some((g.run.stats.credits_earned, *amount)),
+        Condition::Retirements { count } => Some((n(g.career.retirements.into()), n((*count).into()))),
+        Condition::AdversaryPresent { adversary } => {
+            Some((super::attention::attention(g, adversary), super::attention::threshold_of(r, adversary)))
+        }
+        Condition::LaunchCredits { amount } => Some((g.run.stats.best_launch, *amount)),
         Condition::QuietDays { days } => Some((n((g.run.day + 1).saturating_sub(g.run.last_order.unwrap_or(0))), n(*days))),
         Condition::EarthScience { amount } => {
             Some((g.saga.timeline.as_ref().map_or(Fx::ZERO, |t| t.science_made), *amount))
@@ -151,6 +160,10 @@ pub fn kind(c: &Condition) -> &'static str {
         Condition::FlagSet { .. } => "flag_set",
         Condition::DaysSurvived { .. } => "days_survived",
         Condition::CreditsEarned { .. } => "credits_earned",
+        Condition::Retirements { .. } => "retirements",
+        Condition::AdversaryPresent { .. } => "adversary_present",
+        Condition::LaunchCredits { .. } => "launch_credits",
+        Condition::ResearchCluster { .. } => "research_cluster",
         Condition::QuietDays { .. } => "quiet_days",
         Condition::EarthScience { .. } => "earth_science",
         Condition::EarthTech { .. } => "earth_tech",
@@ -161,6 +174,16 @@ pub fn kind(c: &Condition) -> &'static str {
         Condition::ProjectCompleted { .. } => "project_completed",
         Condition::Victory => "victory",
     }
+}
+
+/// The first research category (in content order) of at least `min_items`
+/// items whose every item is bought this run: a whole cluster.
+pub fn cluster_done(g: &GameState, min_items: u32) -> Option<&'static str> {
+    let c = content();
+    c.research.iter().map(|item| item.category.as_str()).find(|&cat| {
+        let n = c.research.iter().filter(|i| i.category == cat).count();
+        n >= min_items as usize && c.research.iter().filter(|i| i.category == cat).all(|i| g.run.research.contains(&i.id))
+    })
 }
 
 pub fn sub_key(quest: &str, sub: &str) -> String {
@@ -217,7 +240,16 @@ pub fn check(r: &Rules, g: &mut GameState) {
         fire(g, q);
         g.note("quest", &q.id);
     }
-    for e in content().events.iter().filter(|e| !e.is_quest()) {
+    // Side quests: each completes once a career, once triggered and its
+    // condition holds, beside the chain (it never waits on them).
+    for e in content().events.iter().filter(|e| e.is_side()) {
+        if !g.career.completed_quests.contains(&e.id) && triggered(g, e) && holds(r, g, &e.id, &e.condition) {
+            g.career.completed_quests.insert(e.id.clone());
+            fire(g, e);
+            g.note("quest", &e.id);
+        }
+    }
+    for e in content().events.iter().filter(|e| !e.is_quest() && !e.is_side()) {
         if !g.run.events.contains(&e.id) && triggered(g, e) && holds(r, g, &e.id, &e.condition) {
             fire(g, e);
             if !e.silent {

@@ -10,9 +10,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 
 // Must equal GOLDEN_* in crates/hh-core/src/tests/mod.rs (a fast-lane test checks it).
-const GOLDEN_REVISION = 14;
-const GOLDEN_FINGERPRINT = '3ccc83437f701bfe';
-const GOLDEN_CONTENT_HASH = '9494509aec3339dd';
+const GOLDEN_REVISION = 15;
+const GOLDEN_FINGERPRINT = '6993f91f56cc5bc4';
+const GOLDEN_CONTENT_HASH = '02697048f11250f6';
 // The golden game (crates/hh-core/src/driver.rs): baseline, seed u64::MAX, 2000 ticks of
 // the scripted policy.
 const SEED = '18446744073709551615';
@@ -39,8 +39,9 @@ check(golden.fingerprint === GOLDEN_FINGERPRINT, `golden fingerprint ${golden.fi
 check(m.content_hash() === GOLDEN_CONTENT_HASH, `content hash ${m.content_hash()} (golden ${GOLDEN_CONTENT_HASH})`);
 check(record.seed === SEED && record.ticks === TICKS, `golden record: seed ${record.seed}, ${record.ticks} ticks`);
 
-// The same actions through the JSON API, one call at a time.
-let state = m.new_game(cfg, SEED, '');
+// The same actions through the JSON API, one call at a time, from the golden's
+// start (the `golden_start` scenario: `if` and `wait until` open).
+let state = m.new_game(cfg, SEED, 'golden_start');
 let tick = 0;
 for (const { tick: at, action } of record.actions) {
   if (at > tick) state = m.advance(state, at - tick);

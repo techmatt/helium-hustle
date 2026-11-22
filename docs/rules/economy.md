@@ -54,8 +54,10 @@ owned (an idle copy goes first); bonus is lowered the same way, so selling a bou
 lowers the next price. Starting buildings count toward the price (they are not `bonus`).
 
 **Land.** The next land purchase costs
-`land_base_cost × land_cost_scaling ^ land_bought × land_cost_mult × discount_factor ^ nationalist rank`
-credits and gives `land_per_purchase` land. `land_bought` counts this run's purchases.
+`land_base_cost × land_cost_scaling ^ land_bought × land_cost_mult × discount_factor ^ nationalist rank × R`
+credits and gives `land_per_purchase` land, where `R` is `rival_land_price_mult` while the
+rivals are present, else 1 ([attention.md](attention.md)). Each purchase raises the rivals'
+Attention by the land gained × `rival_per_land`. `land_bought` counts this run's purchases.
 
 **Daily resolution**, over building types in content order, each type's active copies
 together, in two stages around the programs ([the day](README.md#the-day)): first the
@@ -131,7 +133,9 @@ A refused action changes nothing.
 `content/resources.json`: each resource's `cap` (null for none). `content/buildings.json`:
 `category`, `ideology`, `requires`, `land`, `cost`, `cost_scaling`, `max_count`, `produces`,
 `upkeep`, `effects` (`grant`, `store`, `speculator_decay` for demand.md) and
-`output_modifiers`.
+`output_modifiers`. The Launch Pad and Recreation Dome require nothing but their event: the
+Launch Plans event (50 He-3 made in a run) enables the Launch Pad, and quest 1.6 Lab's
+completion the Recreation Dome ([events.md](events.md)).
 
 Six resource ids are fixed in code (`economy.rs` constants), named by content rows:
 `energy` (its cap skips `storage_cap_mult`; its output counts toward peak power),

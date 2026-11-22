@@ -6,10 +6,12 @@ use crate::modules::{economy, programs};
 use crate::state::{Clause, Cmp, Condition, Entry, GameState, Holding, Join, Joined, LineOutcome as O, Op, Reading};
 use crate::{Action, Fx, Rules};
 
-/// A new game with the instructions unlocked.
+/// A new game with the instructions unlocked (`if` and `wait until` too).
 fn game(r: &Rules) -> GameState {
     let mut g = r.new_game(1);
-    g.career.flags.insert(programs::LOGIC_FLAG.into());
+    for flag in [programs::LOGIC_FLAG, programs::IF_FLAG, programs::WAIT_FLAG] {
+        g.career.flags.insert(flag.into());
+    }
     g
 }
 
@@ -396,6 +398,24 @@ fn the_unlock_is_a_career_first_kept_across_retirement() {
     assert_eq!(g.owned("data_center"), 1);
     assert!(r.view(&g).program_logic, "kept in run 2");
     assert!(g.run.programs.iter().all(|p| p.entries.is_empty()), "programs still empty on retirement");
+}
+
+#[test]
+fn if_and_wait_until_open_on_their_own_flags() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    g.career.flags.insert(programs::LOGIC_FLAG.into());
+    let cond = one(amount("credits", Cmp::Ge, "0"));
+    let iff = vec![when(cond.clone()), Entry::command("idle", 1).indent()];
+    let wait = vec![Entry::new(Op::WaitUntil { when: cond })];
+    assert!(put(&r, &mut g, iff.clone()).is_err(), "if needs the Conditional Logic flag");
+    assert!(put(&r, &mut g, wait.clone()).is_err(), "wait until needs the Full Cluster flag");
+    assert!(put(&r, &mut g, vec![build("solar_panel", Some(9))]).is_ok(), "build needs only program logic");
+    g.career.flags.insert(programs::IF_FLAG.into());
+    assert!(put(&r, &mut g, iff).is_ok());
+    assert!(put(&r, &mut g, wait.clone()).is_err());
+    g.career.flags.insert(programs::WAIT_FLAG.into());
+    assert!(put(&r, &mut g, wait).is_ok());
 }
 
 #[test]

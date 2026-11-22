@@ -30,7 +30,8 @@ clamped to −1..1, times `noise_amplitude`. All fixed point; no floats.
 **Speculator suppression.** Each good has its own pool `n`:
 `suppression = speculator_max_suppression × n / (n + speculator_half_point)`. Pools have no cap.
 
-**Daily update**, before demand is set, for every good:
+**Daily update**, before demand is set. First each adversary's Attention decays
+([attention.md](attention.md)); then, for every good:
 
 1. Pool decay: `n −= n × speculator_decay × N + arbitrage_decay_per_engine × E × N`, floored
    at 0, where `E` counts working (active, upkeep paid) buildings with the `speculator_decay` effect (Arbitrage Engine).
@@ -39,15 +40,18 @@ clamped to −1..1, times `noise_amplitude`. All fixed point; no floats.
 
 **Speculator bursts.** A burst is due when the run day reaches the scheduled day. Its target
 is drawn (stream `speculators`) in proportion to each good's shipment revenue since the last
-burst (goods walked in id order). If no good has revenue, there is no burst: the counter does
-not move and the next one is scheduled anyway. Otherwise the target's pool gains
+burst (goods walked in id order). If no good has revenue, or the speculators are not present
+([attention.md](attention.md)), or Nationalist is at its major rank (its major effect,
+[ideology.md](ideology.md)), there is no burst: nothing is drawn, the counter does not move,
+revenue keeps adding up, and the next one is scheduled anyway. Otherwise the target's pool gains
 `size × burst_growth ^ bursts`, `size` uniform in `burst_size_min`..`burst_size_max` and
 `bursts` the bursts so far this run; then every good's revenue resets to 0. The next burst
 comes `floor(interval × speculator_burst_interval_mult)` days on (at least 1), the interval
 uniform in `burst_interval_min`..`burst_interval_max`. The first is scheduled at run start.
 
-**Rivals.** Each rival dumps on its own good when its scheduled day arrives: the good's
-`rival_pressure` rises by the rival's `demand_hit`, and its next dump is drawn (stream
+**Rivals.** Each rival dumps on its own good when its scheduled day arrives, if the rivals
+are present ([attention.md](attention.md)): the good's `rival_pressure` rises by the
+rival's `demand_hit`. Present or not, its next dump is drawn (stream
 `rivals`) uniform in its `interval_min`..`interval_max` days on. Each rival's first dump is
 scheduled at run start.
 
@@ -61,7 +65,8 @@ promote_effectiveness_mult` (Market Cornering Analysis: x1.3), and its pool is m
 coupling term.
 
 **Disrupt Speculators** draws an amount uniform in `disrupt_min`..`disrupt_max` (stream
-`disrupt`, drawn every execution) and takes it off the first good, in loading priority, whose
+`disrupt`, drawn every execution), takes `disrupt_attention` off the speculators'
+Attention (floored at 0, [attention.md](attention.md)), and takes the amount off the first good, in loading priority, whose
 pool is above 0, floored at 0. If every pool is 0, nothing happens; the command's cost is still
 spent. Each execution sets the career flag `used_disrupt_speculators` (the command's content
 `sets_flag`; it unlocks Speculator Dossier).
@@ -77,8 +82,8 @@ A good's speculator pool shows once it has been above 0 this run (set by a burst
 
 ## Actions
 
-None of its own. Promote (`promote_*`, after Trade Promotion) and Disrupt Speculators (after
-Market Awareness) are commands run by programs ([commands.md](commands.md)); as effect
+None of its own. Promote (`promote_*`, after Trade Promotion) and Disrupt Speculators (once
+side quest 1.a Big Launch sets the career flag `speculator_disruption`) are commands run by programs ([commands.md](commands.md)); as effect
 commands they need their full cost. Loading priority, which Disrupt reads, is set by
 `set_loading_priority` ([shipments.md](shipments.md)).
 

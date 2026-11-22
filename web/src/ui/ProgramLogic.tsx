@@ -489,7 +489,8 @@ export function AddLogic({ v, add }: { v: View; add: (e: Entry) => void }) {
   if (!v.program_logic) {
     return (
       <p class="muted hint" data-testid="logic-locked">
-        If, Wait until, Build and Buy Land lines unlock for good the first day {v.logic_unlock_processors} processors work.
+        Build, Buy Land and verb lines unlock for good the first day {v.logic_unlock_processors} processors work; If opens with
+        the Conditional Logic global project, Wait until with the Full Cluster side quest.
       </p>
     );
   }
@@ -499,10 +500,22 @@ export function AddLogic({ v, add }: { v: View; add: (e: Entry) => void }) {
   return (
     <div class="add-logic" data-testid="logic-add">
       <span class="muted">Add:</span>
-      <button type="button" class="tiny" disabled={!when} title="The indented lines under it run only when it is true" onClick={() => when && add({ op: 'if', when })}>
+      <button
+        type="button"
+        class="tiny"
+        disabled={!when || !v.if_open}
+        title={v.if_open ? 'The indented lines under it run only when it is true' : 'Opens with the Conditional Logic global project'}
+        onClick={() => when && add({ op: 'if', when })}
+      >
         If
       </button>
-      <button type="button" class="tiny" disabled={!when} title="Holds the program here until it is true" onClick={() => when && add({ op: 'wait_until', when })}>
+      <button
+        type="button"
+        class="tiny"
+        disabled={!when || !v.wait_open}
+        title={v.wait_open ? 'Holds the program here until it is true' : 'Opens with the Full Cluster side quest (1.b)'}
+        onClick={() => when && add({ op: 'wait_until', when })}
+      >
         Wait until
       </button>
       <button type="button" class="tiny" disabled={!building} title="Buys one building a step" onClick={() => building && add({ op: 'build', building, up_to: null })}>

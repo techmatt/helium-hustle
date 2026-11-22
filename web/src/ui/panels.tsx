@@ -323,7 +323,7 @@ export function Projects({ s }: { s: Store }) {
   const v = s.view;
   const scopes: [ProjectView['scope'], string, string][] = [
     ['run', 'Strategic (this run)', 'This run only: progress resets on retirement.'],
-    ['timeline', 'Long-Term (this timeline)', 'Progress and completion carry across retirements until the timeline ends; funding rates reset, so set them again each run.'],
+    ['timeline', 'Global (this timeline)', 'Progress and completion carry across retirements until the timeline ends; funding rates reset, so set them again each run.'],
     ['forever', 'Forever', 'Progress and completion are kept for good.'],
   ];
   return (
@@ -422,8 +422,8 @@ export function Ideologies({ s }: { s: Store }) {
       <h2>Ideologies</h2>
       <p class="muted">
         Fund commands push one axis up and the other two down. Each whole rank multiplies that axis's bonuses and
-        discounts, among them the price of buildings tagged with it. Scores reset each run to a head start from the
-        career's best.
+        discounts, among them the price of buildings tagged with it; rank 5 is a major rank with its own change.
+        Scores carry into the next run, halving every year of the years away.
       </p>
       {v.ideology.map((a) => {
         const lo = Number(a.rank_score);
@@ -456,6 +456,22 @@ export function Adversaries({ s }: { s: Store }) {
   return (
     <div class="panel" data-panel="adversaries">
       <h2>Adversaries</h2>
+      <Section title="Attention">
+        <p class="muted">Selling draws speculators; claiming land draws the rival AIs. Each comes in once its Attention reaches its threshold, and Attention fades day by day.</p>
+        <table class="grid-table">
+          <tbody>
+            {v.adversaries.map((a) => (
+              <tr key={a.id} data-testid={`attention-${a.id}`}>
+                <td>{a.id === 'rivals' ? 'Rival AIs' : 'Speculators'}</td>
+                <td>
+                  {num(a.attention, 0)} / {num(a.threshold, 0)}
+                </td>
+                <td>{a.present ? 'present' : 'away'}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </Section>
       <Section title="Rival AIs">
         <p class="muted">Rivals dump goods on Earth's markets from time to time, pushing that good's demand down.</p>
         <table class="grid-table">
@@ -672,7 +688,7 @@ export function NextRunRows({ v }: { v: View }) {
   for (const a of n.ideology) {
     if (Number(a.score) > 0) rows.push([
       <>
-        <Chip id={a.axis} title={capitalize(a.axis)} /> {capitalize(a.axis)} head start
+        <Chip id={a.axis} title={capitalize(a.axis)} /> {capitalize(a.axis)} carried
       </>,
       `score ${num(a.score)} (rank ${a.rank})`,
     ]);
@@ -692,7 +708,8 @@ export function Retirement({ s }: { s: Store }) {
       <h2>Retirement</h2>
       <p class="muted">
         Retiring ends this run: buildings, resources, research, Strategic projects and every project's funding rates reset. The career keeps its
-        bests, achievements, Long-Term projects, quests and what you have seen. Boredom at its cap retires you anyway.
+        bests, achievements, global projects, quests, saved programs, ideology (fading through the years away), adversaries and what you have
+        seen. Boredom at its cap retires you anyway.
       </p>
       <Section title={`This run (day ${num(v.day)})`}>
         <Rows

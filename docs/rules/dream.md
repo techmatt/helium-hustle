@@ -15,7 +15,9 @@ variant.
   and does nothing (commands.md, *Running a command*). It is never skipped for caps (it
   produces nothing). It adds no boredom of its own.
 - Its cost and unlock are content: 8 energy and 0.5 helium-3 per execution, unlocked by the
-  Dream Protocols research.
+  Daydreaming research (id `dream_protocols`).
+- While Humanist is at its major rank (ideology.md, *Major ranks*; draft), Dream costs only
+  its energy: every other cost is dropped.
 
 ## Actions
 

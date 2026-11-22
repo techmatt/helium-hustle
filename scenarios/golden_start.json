@@ -1,0 +1,12 @@
+{
+  "name": "golden_start",
+  "description": "A fresh game with if and wait until already open (their flags set): the golden game's start, so the golden keeps pinning the interpreter and conditions (README, Rules changes).",
+  "start": {
+    "tick": 0,
+    "resources": {},
+    "buildings": {},
+    "panels": [],
+    "programs": [],
+    "flags": ["logic_if", "logic_wait_until"]
+  }
+}

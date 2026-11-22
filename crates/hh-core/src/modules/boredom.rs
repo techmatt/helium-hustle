@@ -67,9 +67,9 @@ pub fn multiplier(r: &Rules, g: &GameState) -> Fx {
         }
     }
     m = m * super::ideology::discount(r, g, "humanist");
-    for reward in super::projects::live_rewards(g) {
+    for (reward, n) in super::projects::live_rewards_counted(g) {
         if let ProjectReward::BoredomModifiers { base_rate_mult, .. } = reward {
-            m = m * *base_rate_mult;
+            m = m * super::projects::stacked(*base_rate_mult, n);
         }
     }
     m = m * crate::modifiers::modifier(r, g, "boredom_growth_mult");

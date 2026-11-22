@@ -4,7 +4,7 @@
 //! `cargo run --release -p hh-sim --example view_bench` (~10 s).
 use std::time::Instant;
 
-use hh_core::{driver, modules::career, play, Config, Session};
+use hh_core::{driver, modules::career, play, Config};
 
 fn time<F: FnMut()>(n: u32, mut f: F) -> f64 {
     let t = Instant::now();
@@ -17,7 +17,7 @@ fn time<F: FnMut()>(n: u32, mut f: F) -> f64 {
 fn main() {
     let c = Config::from_json(&std::fs::read_to_string("configs/baseline.json").unwrap()).unwrap();
     // Digest: FNV over the view JSON at every tick of the golden game.
-    let mut s = Session::new(&c, driver::GOLDEN_SEED, None).unwrap();
+    let mut s = driver::golden_start(&c).unwrap();
     let mut h: u64 = 0xcbf29ce484222325;
     let mut bytes = 0usize;
     for _ in 0..driver::GOLDEN_TICKS {
@@ -31,7 +31,7 @@ fn main() {
     }
     println!("view digest over the golden game: {h:016x} ({bytes} bytes)");
     for at in [100u64, 800, 1500] {
-        let mut s = Session::new(&c, driver::GOLDEN_SEED, None).unwrap();
+        let mut s = driver::golden_start(&c).unwrap();
         play(&mut s, at, driver::GOLDEN_POLICY);
         let (r, g) = (&s.rules, &s.state);
         let n = 3000;

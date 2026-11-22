@@ -221,6 +221,8 @@ pub fn launch(r: &Rules, g: &mut GameState, i: usize) {
     g.run.stats.shipments += 1;
     g.run.last_launch = Some(g.run.day);
     let cargo = g.run.pads[i].cargo;
+    g.run.stats.best_launch = g.run.stats.best_launch.max(pay);
+    super::attention::on_sale(r, g, cargo);
     g.activity("shipment", &good, Some(pay), Some(cargo));
     let p = &mut g.run.pads[i];
     p.cargo = Fx::ZERO;

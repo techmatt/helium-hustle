@@ -15,7 +15,7 @@ use crate::milestones::{Tracker, When};
 pub struct Weights {
     /// Per point of an axis's career-best score.
     pub ideology: i64,
-    /// Per Long-Term project's worth of progress (fractions paid, summed),
+    /// Per global project's worth of progress (fractions paid, summed),
     /// and per completion.
     pub project: i64,
     pub project_done: i64,
@@ -35,7 +35,7 @@ pub struct Weights {
 
 /// The profiles, by their `profile` knob: 0 milestones (the default), 1
 /// credits, 2 ideology, 3 builder, 4 quests (the milestones' weights, and
-/// while Open Horizons is open, its campaign as the only strategy:
+/// while Three Voices (1.7) is open, its campaign as the only strategy:
 /// [`super::strategy::campaign`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Profile {
@@ -198,7 +198,7 @@ impl Oracle {
     }
 }
 
-/// Long-Term projects' fractions paid, summed (completed ones count 1).
+/// Global projects' fractions paid, summed (completed ones count 1).
 fn projects(g: &GameState) -> Fx {
     content()
         .projects

@@ -22,7 +22,7 @@ pub static DEF: ModuleDef = ModuleDef {
             param("credits_bonus_fraction", K::Fx, Some(("0", "10")), "starting credits: this fraction of the best run's credits earned (whole credits)"),
             param("boredom_resilience_base", K::Fx, Some(("0.000001", "1")), "boredom growth multiplier per resilience period of the longest run"),
             param("boredom_resilience_period", K::Fx, Some(("1", "1000000")), "days of the longest run per resilience step"),
-            param("ideology_headstart_fraction", K::Fx, Some(("0", "1")), "each axis starts at this fraction of the career's best (continuous) rank"),
+            param("gap_days", K::Int, Some(("0", "100000")), "days of the retirement gap, simulated day by day (slow systems only)"),
             param("buy_power_peak_threshold", K::Fx, Some(("0", "1000000")), "peak energy production per day above which Buy Power scales"),
             param("buy_power_per_energy", K::Fx, Some(("0", "10")), "Buy Power scaling per unit of peak production over the threshold"),
         ],
@@ -35,7 +35,7 @@ pub struct Params {
     pub credits_bonus_fraction: Fx,
     pub boredom_resilience_base: Fx,
     pub boredom_resilience_period: Fx,
-    pub ideology_headstart_fraction: Fx,
+    pub gap_days: u64,
     pub buy_power_peak_threshold: Fx,
     pub buy_power_per_energy: Fx,
 }
@@ -46,7 +46,7 @@ impl Params {
             credits_bonus_fraction: mc.fx("credits_bonus_fraction"),
             boredom_resilience_base: mc.fx("boredom_resilience_base"),
             boredom_resilience_period: mc.fx("boredom_resilience_period"),
-            ideology_headstart_fraction: mc.fx("ideology_headstart_fraction"),
+            gap_days: mc.int("gap_days") as u64,
             buy_power_peak_threshold: mc.fx("buy_power_peak_threshold"),
             buy_power_per_energy: mc.fx("buy_power_per_energy"),
         })
@@ -86,7 +86,7 @@ pub fn new_run(r: &Rules, g: &mut GameState) {
     for (res, &v) in &r.p.economy.starting_resources {
         g.run.resources.insert(res.clone(), v);
     }
-    super::ideology::head_start(r, g, r.p.career.ideology_headstart_fraction);
+    super::ideology::carry_in(g);
     let credits = starting_credits(r, g);
     g.add(CREDITS, credits);
     let mut bonus = super::projects::starting_bonus(g);
@@ -134,8 +134,25 @@ pub fn retire(r: &Rules, g: &mut GameState, forced: bool) {
     c.peak_power = c.peak_power.max(s.peak_energy);
     c.retirements += 1;
     c.run_number += 1;
+    c.ideology = g.run.ideology.clone();
+    gap(r, g);
     super::timeline::on_retire(r, g);
     new_run(r, g);
+}
+
+/// The retirement gap (draft): `gap_days` days, simulated one by one, in which
+/// only the slow systems run: every carried ideology score decays
+/// proportionally toward zero (one half-life for all three axes), and every
+/// adversary's Attention decays linearly. Unseen in Act 1 (no calendar).
+fn gap(r: &Rules, g: &mut GameState) {
+    let f = super::ideology::gap_decay_factor(r);
+    for _ in 0..r.p.career.gap_days {
+        for v in g.career.ideology.values_mut() {
+            *v = *v * f;
+        }
+        super::attention::decay_day(r, g);
+    }
+    g.career.gap_days += r.p.career.gap_days;
 }
 
 /// Why the player can't retire now, if they can't: retiring needs the retirement panel

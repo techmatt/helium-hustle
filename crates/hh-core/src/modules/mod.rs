@@ -11,6 +11,7 @@
 use crate::config::ModuleConfig;
 
 pub mod achievements;
+pub mod attention;
 pub mod boredom;
 pub mod career;
 pub mod demand;
@@ -77,6 +78,7 @@ pub static REGISTRY: &[&ModuleDef] = &[
     &boredom::DEF,
     &economy::DEF,
     &demand::DEF,
+    &attention::DEF,
     &programs::DEF,
     &dream::DEF,
     &projects::DEF,
@@ -95,6 +97,7 @@ pub struct Params {
     pub boredom: boredom::Params,
     pub economy: economy::Params,
     pub demand: demand::Params,
+    pub attention: attention::Params,
     pub programs: programs::Params,
     pub dream: dream::Params,
     pub projects: projects::Params,
@@ -122,6 +125,7 @@ impl Params {
             boredom: boredom::Params::new(&m("boredom"))?,
             economy: economy::Params::new(&m("economy"))?,
             demand: demand::Params::new(&m("demand"))?,
+            attention: attention::Params::new(&m("attention"))?,
             programs: programs::Params::new(&m("programs"))?,
             dream: dream::Params::new(&m("dream"))?,
             projects: projects::Params::new(&m("projects"))?,

@@ -23,23 +23,23 @@ use crate::milestones::{Milestones, Tracker};
 
 /// The default drivers, `|`-separated: the autopilot plays the first and moves
 /// to the next (round the list) once [`STALL`] ticks pass with no step met.
-/// Both are the author, kept on in a run while it lasts (a quest asks for
-/// years survived) and dreaming from the first boredom (the boost's slow
-/// boredom never reaches its usual threshold); the first ships every good
-/// made (`diversify`), the second doesn't, and buys all visible research
+/// Both are the author, kept on in a run while it lasts (the Telescope wants
+/// long runs) and dreaming from the first boredom (the boost's slow boredom
+/// never reaches its usual threshold); the first ships every good made
+/// (`diversify`), the second doesn't, and buys all visible research
 /// (`all_research`: past [`author::RESEARCH`](crate::agents::author::RESEARCH),
-/// today only the draft Novelty Simulation, visible after Q7).
+/// today only the draft Novelty Simulation, visible after 1.9).
 pub const DEFAULT_AGENT: &str =
     "author:stale_days=4000,dream_at=1,diversify=1|author:stale_days=4000,dream_at=1,all_research=1";
 
 /// Ticks with no step met before the autopilot changes driver (4,000 cut
-/// a Long-Term project short on one seed in six; 8,000 met every step on six).
+/// a global project short on one seed in six; 8,000 met every step on six).
 pub const STALL: u64 = 8000;
 
 /// One thing to reach: a milestone, a main-quest sub-objective or a main quest.
 #[derive(Debug, Clone, Serialize)]
 pub struct Step {
-    /// `milestone:M5`, `quest:qmarket_awareness`, `quest:qhorizon_open_horizons:credits_100k`.
+    /// `milestone:M5`, `quest:qlab`, `quest:qthree_voices:humanist_5`.
     pub id: String,
     pub name: String,
 }
@@ -53,7 +53,8 @@ pub fn steps(ms: &Milestones) -> Vec<Step> {
         .iter()
         .map(|m| Step { id: format!("milestone:{}", m.id), name: format!("{} {}", m.id, m.name) })
         .collect();
-    for e in content().events.iter().filter(|e| e.category == "story") {
+    // Side quests (1.a, 1.b) are steps too, in file order.
+    for e in content().events.iter().filter(|e| e.is_quest() || e.is_side()) {
         match &e.condition {
             Condition::Never => continue,
             Condition::AllOf { sub_objectives } => {
@@ -423,7 +424,8 @@ mod tests {
         let st = steps(&ms);
         assert_eq!(st.iter().filter(|s| s.id.starts_with("milestone:")).count(), ms.milestones.len());
         assert!(st.iter().any(|s| s.id == "quest:qpower_boot_sequence"));
-        assert!(st.iter().any(|s| s.id == "quest:qhorizon_open_horizons:credits_100k"));
+        assert!(st.iter().any(|s| s.id == "quest:qthree_voices:humanist_5"));
+        assert!(st.iter().any(|s| s.id == "quest:qbig_launch"), "side quests are steps");
         assert!(st.iter().any(|s| s.id == "quest:qoverload"), "the later acts' quests are steps");
         assert!(!st.iter().any(|s| s.id == "quest:qepilogue"), "a `never` quest is no step");
     }

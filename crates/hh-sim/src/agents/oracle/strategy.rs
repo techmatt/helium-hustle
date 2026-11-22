@@ -7,7 +7,7 @@ use hh_core::GameState;
 use super::super::author::Directives;
 use super::super::Player;
 use super::score::Profile;
-use super::{Oracle, HORIZON};
+use super::{Oracle, THREE_VOICES};
 
 /// The ideology axes (mirrors the game's `fund_<axis>` commands, content/commands.json).
 const AXES: &[&str] = &["humanist", "rationalist", "nationalist"];
@@ -18,13 +18,13 @@ pub struct Strategy {
     pub label: String,
     pub dir: Directives,
     /// It funds an ideology axis, which needs Geopolitical Intelligence,
-    /// visible once the market quest is done: until then it is skipped.
+    /// visible once the Lab quest (1.6) is done: until then it is skipped.
     pub funds: bool,
 }
 
 impl Strategy {
     pub fn available(&self, g: &GameState) -> bool {
-        !self.funds || g.career.completed_quests.contains("qmarket_awareness")
+        !self.funds || g.career.completed_quests.contains("qlab")
     }
 }
 
@@ -56,8 +56,8 @@ pub fn strategy_index(label: &str) -> Option<usize> {
     strategies().iter().position(|s| s.label == label)
 }
 
-/// The Open Horizons campaign (the quests profile): one run held long by
-/// Dream for its ten years, funding Humanist toward rank 5 (cheaper boredom,
+/// The Three Voices campaign (the quests profile, 1.7): one run held long by
+/// Dream, funding Humanist toward rank 5 (cheaper boredom,
 /// stronger Dream) and then its AI Consciousness project, trading meanwhile.
 pub fn campaign() -> (String, Directives) {
     let d = Directives {
@@ -81,18 +81,18 @@ fn trade() -> Directives {
     }
 }
 
-/// Whether the Open Horizons quest is the one under way.
-pub(super) fn horizon_open(g: &GameState) -> bool {
-    g.career.completed_quests.contains("qmarket_awareness") && !g.career.completed_quests.contains(HORIZON)
+/// Whether the Three Voices quest (1.7, ranks) is the one under way.
+pub(super) fn three_voices_open(g: &GameState) -> bool {
+    g.career.completed_quests.contains("qlab") && !g.career.completed_quests.contains(THREE_VOICES)
 }
 
 impl Oracle {
     /// Plays each strategy for `long` ticks and keeps the best: the pinned
     /// one only, while it is available (else every available one); the
-    /// quests profile's campaign alone while Open Horizons is open.
+    /// quests profile's campaign alone while Three Voices (1.7) is open.
     pub(super) fn choose_strategy(&mut self, p: &mut Player) {
         let mut best: Option<(i64, String, Directives)> = None;
-        let all: Vec<(String, Directives)> = if self.profile == Profile::Quests && horizon_open(p.state()) {
+        let all: Vec<(String, Directives)> = if self.profile == Profile::Quests && three_voices_open(p.state()) {
             vec![campaign()]
         } else {
             let table = strategies();

@@ -312,7 +312,8 @@ pub fn land_price(r: &Rules, g: &GameState) -> Fx {
         .land_cost_scaling
         .pow_int(g.run.land_bought as i64)
         .and_then(|f| f.checked_mul(modifier(r, g, "land_cost_mult")))
-        .and_then(|f| f.checked_mul(super::ideology::discount(r, g, "nationalist")));
+        .and_then(|f| f.checked_mul(super::ideology::discount(r, g, "nationalist")))
+        .and_then(|f| f.checked_mul(super::attention::land_price_mult(r, g)));
     factor.and_then(|f| p.land_base_cost.checked_mul(f)).unwrap_or(Fx::MAX)
 }
 
@@ -334,6 +335,7 @@ pub fn buy_land(r: &Rules, g: &mut GameState) -> Result<(), String> {
     g.track("land", LAND, r.p.economy.land_per_purchase, Fx::ZERO);
     g.run.land_bought += 1;
     g.run.last_purchase = Some(g.run.day);
+    super::attention::on_land(r, g, r.p.economy.land_per_purchase);
     Ok(())
 }
 

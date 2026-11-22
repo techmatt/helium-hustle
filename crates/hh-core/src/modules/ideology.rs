@@ -23,6 +23,8 @@ pub static DEF: ModuleDef = ModuleDef {
             param("bonus_factor", K::Fx, Some(("0.000001", "10")), "per-rank multiplier on bonuses (demand, Dream, science, speculator decay)"),
             param("discount_factor", K::Fx, Some(("0.000001", "10")), "per-rank multiplier on costs and boredom growth"),
             param("overclock_duration_factor", K::Fx, Some(("0.000001", "10")), "per Rationalist rank multiplier on overclock duration"),
+            param("major_rank", K::Int, Some(("1", "1000")), "the first major rank: at or past it an axis's discrete major effect is on"),
+            param("half_life_days", K::Fx, Some(("1", "1000000")), "days of the retirement gap that halve every score (proportional decay toward 0)"),
         ],
         rng: &[],
     }],
@@ -38,6 +40,8 @@ pub struct Params {
     pub bonus_factor: Fx,
     pub discount_factor: Fx,
     pub overclock_duration_factor: Fx,
+    pub major_rank: i64,
+    pub half_life_days: Fx,
 }
 
 impl Params {
@@ -51,6 +55,8 @@ impl Params {
             bonus_factor: mc.fx("bonus_factor"),
             discount_factor: mc.fx("discount_factor"),
             overclock_duration_factor: mc.fx("overclock_duration_factor"),
+            major_rank: mc.int("major_rank"),
+            half_life_days: mc.fx("half_life_days"),
         })
     }
 }
@@ -79,23 +85,17 @@ pub fn rank_for_score(r: &Rules, score: Fx) -> i64 {
     }
 }
 
-/// The fractional rank a score reaches: `log_growth(score × (growth − 1) / base + 1)`.
-pub fn continuous_rank(r: &Rules, score: Fx) -> Fx {
-    let p = &r.p.ideology;
-    if score <= Fx::ZERO {
-        return Fx::ZERO;
-    }
-    let x = score * (p.rank_growth - Fx::ONE) / p.rank_base_score + Fx::ONE;
-    math::log_in(x, p.rank_growth).unwrap_or(Fx::ZERO)
+/// The axis is at or past its first major rank (`major_rank`, positive):
+/// its discrete major effect is on (ideology.md, *Major ranks*).
+pub fn major(r: &Rules, g: &GameState, axis: &str) -> bool {
+    rank(r, g, axis) >= r.p.ideology.major_rank
 }
 
-/// Score for a fractional rank (the inverse of [`continuous_rank`]).
-pub fn score_for_continuous_rank(r: &Rules, rank: Fx) -> Fx {
-    let p = &r.p.ideology;
-    match math::pow_frac(p.rank_growth, rank) {
-        Some(g) => p.rank_base_score * (g - Fx::ONE) / (p.rank_growth - Fx::ONE),
-        None => Fx::ZERO,
-    }
+/// The retirement gap's daily decay factor on every score:
+/// `0.5 ^ (1 / half_life_days)` (fractional, through `libm`).
+pub fn gap_decay_factor(r: &Rules) -> Fx {
+    let exp = Fx::ONE / r.p.ideology.half_life_days;
+    math::pow_frac(Fx::ONE / Fx::from_int(2), exp).unwrap_or(Fx::ZERO)
 }
 
 pub fn score(g: &GameState, axis: &str) -> Fx {
@@ -154,12 +154,11 @@ pub fn track(r: &Rules, g: &mut GameState) {
     }
 }
 
-/// A new run's starting scores: the score of `fraction ×` the continuous
-/// rank of the career's best score on each axis.
-pub fn head_start(r: &Rules, g: &mut GameState, fraction: Fx) {
+/// A new run's starting scores: the ones the career carried out of the last
+/// run, decayed through the gap (none in run 1 or a timeline's first run).
+pub fn carry_in(g: &mut GameState) {
     for &a in AXES {
-        let best = g.career.max_ideology_scores.get(a).copied().unwrap_or(Fx::ZERO);
-        let start = score_for_continuous_rank(r, continuous_rank(r, best) * fraction);
-        g.run.ideology.insert(a.to_string(), start);
+        let s = g.career.ideology.get(a).copied().unwrap_or(Fx::ZERO);
+        g.run.ideology.insert(a.to_string(), s);
     }
 }

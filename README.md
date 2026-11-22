@@ -83,9 +83,10 @@ relative one to the repo root; bare `cargo` can't (the variable outranks `.cargo
 `/crates/**/out/` is git-ignored as a backstop.
 
 **Rules changes:** the `golden_game` test (`crates/hh-core/src/tests/mod.rs`) pins the final
-state of one fixed game: baseline config, seed `u64::MAX`, 2000 ticks of the scripted
-policy (`driver.rs`: it ships, runs a condition program once program logic opens, is retired
-by boredom at tick 1575 in `hh-sim run`'s career log and starts run 2). An intended play
+state of one fixed game: baseline config, seed `u64::MAX`, the `golden_start` scenario (`if`
+and `wait until` open from tick 0, `driver::golden_start`), 2000 ticks of the scripted policy
+(`driver.rs`: it ships, runs a condition program once program logic opens, is retired by
+boredom and starts run 2). An intended play
 change bumps `RULES_REVISION`
 (`crates/hh-core/src/lib.rs`, and the revision line in `docs/rules/README.md`), adds its
 `docs/rules-history.md` row, and updates the three golden constants, `GOLDEN_REVISION`,

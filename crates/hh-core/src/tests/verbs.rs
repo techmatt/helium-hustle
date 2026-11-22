@@ -7,9 +7,13 @@ use crate::modules::{career, economy, programs};
 use crate::state::{Amount, Clause, Cmp, Condition, Entry, GameState, Holding, LineOutcome as O, Op, Reading, Verb};
 use crate::{Action, Fx, Rules};
 
+/// A new game with every line open and research too (the Lab quest's panel).
 fn game(r: &Rules) -> GameState {
     let mut g = r.new_game(1);
-    g.career.flags.insert(programs::LOGIC_FLAG.into());
+    for flag in [programs::LOGIC_FLAG, programs::IF_FLAG, programs::WAIT_FLAG] {
+        g.career.flags.insert(flag.into());
+    }
+    g.run.enabled_panels.insert(crate::modules::research::RESEARCH_PANEL.into());
     g
 }
 

@@ -19,10 +19,10 @@ pub fn modifier(r: &Rules, g: &GameState, key: &str) -> Fx {
             }
         }
     }
-    for reward in crate::modules::projects::live_rewards(g) {
+    for (reward, n) in crate::modules::projects::live_rewards_counted(g) {
         if let ProjectReward::Modifier { key: k, value } = reward {
             if k == key {
-                m = m * *value;
+                m = m * crate::modules::projects::stacked(*value, n);
             }
         }
     }

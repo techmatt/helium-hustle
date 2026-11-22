@@ -239,7 +239,7 @@ function Summary({ s }: { s: Store }) {
                 .map((a) => (
                   <tr key={a.axis}>
                     <td>
-                      <Chip id={a.axis} title={capitalize(a.axis)} /> {capitalize(a.axis)} head start
+                      <Chip id={a.axis} title={capitalize(a.axis)} /> {capitalize(a.axis)} carried
                     </td>
                     <td class="num">
                       score {num(a.score)} (rank {a.rank})
@@ -250,8 +250,8 @@ function Summary({ s }: { s: Store }) {
           </table>
         </Section>
         <p class="muted small">
-          What persists: quests, achievements, Long-Term projects, career bests, saved programs (Load, in
-          each program tab) and everything you have seen.
+          What persists: quests, achievements, global projects, career bests, saved programs (Load, in
+          each program tab), ideology (faded by the years away), adversaries and everything you have seen.
         </p>
         <button type="button" class="big" data-testid="continue" onClick={continueAfterRetirement}>
           Continue

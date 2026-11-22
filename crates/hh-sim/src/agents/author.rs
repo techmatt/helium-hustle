@@ -104,6 +104,8 @@ pub const PLAN_RESEARCH: &[&str] = &[
 /// beside the cheapest open `run` one whose costs can move (order only
 /// breaks ties).
 pub const PROJECTS: &[&str] = &[
+    "conditional_logic",
+    "deep_space_telescope",
     "lunar_cartography",
     "foundation_grant",
     "ai_consciousness",
@@ -155,7 +157,7 @@ pub struct Directives {
     pub sustain: bool,
     /// Buy all visible research, not only [`RESEARCH`]: it differs from the
     /// plain author only on research outside that list (today the draft
-    /// Novelty Simulation, visible after Q7), since no open project holds
+    /// Novelty Simulation, visible after 1.9), since no open project holds
     /// research back (046).
     pub all_research: bool,
     /// Run the market program (Promote what ships, Disrupt) on one processor
@@ -705,7 +707,7 @@ impl Author {
     /// The programs' templates and processors; `gap` is the ticks to the next
     /// look.
     fn programs(&self, p: &mut Player, target: Option<&str>, gap: u64) {
-        if self.cond && p.view().program_logic {
+        if self.cond && p.view().if_open {
             self.load_at_reset(p);
         }
         let v = p.view();
@@ -722,7 +724,8 @@ impl Author {
         // Main: by hand while looks come often, else a standing cycle.
         let filler = if self.compute { "cloud_compute" } else { "idle" };
         // Condition programs once the game allows them: one fixed text each.
-        let cond = self.cond && v.program_logic;
+        // (Its templates guard with `if`, a global project's unlock.)
+        let cond = self.cond && v.if_open;
         // The ship cycle falls short while the target waits on an input only
         // a purchase brings: then the main program is a hand plan that buys it.
         let ship = cond && !bridge_due(v, target);
@@ -793,7 +796,7 @@ impl Author {
             want[BUILD] = self.plan.clone();
             procs[BUILD] = 1;
             left -= 1;
-        } else if self.construct && v.program_logic && left > 1 && BUILD < want.len() && BUILD != main {
+        } else if self.construct && v.if_open && left > 1 && BUILD < want.len() && BUILD != main {
             if let Some(b) = target.and_then(|t| v.buildings.iter().find(|b| b.id == t && b.unlocked)) {
                 want[BUILD] = construction(v, b, filler);
                 procs[BUILD] = 1;
@@ -958,10 +961,6 @@ impl Agent for Author {
     }
 
     fn act(&mut self, p: &mut Player) {
-        // The later acts (draft): quiet while the reveal wants quiet days.
-        if super::arc::hands_off(p.view()) {
-            return;
-        }
         let (run, day, built) = {
             let v = p.view();
             self.income.read(v);

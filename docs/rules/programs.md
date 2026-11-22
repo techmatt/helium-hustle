@@ -97,7 +97,12 @@ processors unchanged. A loaded line this run hasn't unlocked fails, or reads not
 run: the run gates refuse only a line new to the program.
 
 **Unlock.** Every line but a command needs the career flag `program_logic`: set (and logged)
-the first day `logic_unlock_processors` processors work, as programs start to run.
+the first day `logic_unlock_processors` processors work, as programs start to run. Two
+lines also need their own career flag (draft, 049): `if` needs `logic_if` (the Conditional
+Logic global project's reward, [projects.md](projects.md)), `wait until` needs
+`logic_wait_until` (side quest 1.b Full Cluster, [events.md](events.md)); content must set
+both. A loaded line the career hasn't opened runs as if false: an `if` skips its body, a
+`wait until` is passed over. The view's `if_open` and `wait_open` say which are open.
 
 **Running** (each day): programs in order; each running processor of a program takes one
 step from the shared pointer. A step passes over free lines (an `if`, a `wait until` that
@@ -116,7 +121,7 @@ when a command is visible: [commands.md](commands.md).
 
 | Action | Refused when |
 |---|---|
-| `set_program {program, entries}` | more than `max_entries` lines; an unknown command, building or resource; a `count` or `up_to` of 0; a line other than a command before the unlock (unless already in the program); an indented line with no `if` or body line above it; an indented `if`; a `demand` reading of a good not traded, or before demand is revealed (unless already in the program); a verb with an unknown or missing target (`load`: a blank name; one no loadout has fails when run), a tab or amount it doesn't take or lacks, an amount of 0 (but `assign_processors` and `fund`), `set_pads ... all`; `every 0`; a switched-off verb or reading (unless already in the program); or no such program |
+| `set_program {program, entries}` | more than `max_entries` lines; an unknown command, building or resource; a `count` or `up_to` of 0; a line other than a command before the unlock, or an `if` or `wait until` before its flag (unless already in the program); an indented line with no `if` or body line above it; an indented `if`; a `demand` reading of a good not traded, or before demand is revealed (unless already in the program); a verb with an unknown or missing target (`load`: a blank name; one no loadout has fails when run), a tab or amount it doesn't take or lacks, an amount of 0 (but `assign_processors` and `fund`), `set_pads ... all`; `every 0`; a switched-off verb or reading (unless already in the program); or no such program |
 | `set_processors {program, processors}` | no such program, or the other programs' processors plus this number exceed what the active Data Centers grant |
 | `save_loadout {program, slot, name}` (`slot` null: a new slot) | no such program or slot; an empty program; a blank or overlong name; a new slot with the library full |
 | `load_loadout {loadout, program}` | no such loadout or program; lines `set_program` refuses on their form (it skips the unlock and reveal checks) |

@@ -78,7 +78,12 @@ fn condition(r: &Rules, g: &hh_core::GameState, quest: &str, c: &Condition) -> F
             });
             sum.mul_ratio(1, n)
         }
-        _ => Fx::ZERO,
+        Condition::IdeologyRank { axis, rank } => {
+            let best = g.career.max_ideology_scores.get(axis).copied().unwrap_or(Fx::ZERO);
+            frac(best.max(ideology::score(g, axis)), ideology::score_for_rank(r, *rank))
+        }
+        // The rest: the engine's own countable progress, where it has one.
+        _ => events::progress(r, g, c).map_or(Fx::ZERO, |(now, target)| frac(now, target)),
     }
 }
 

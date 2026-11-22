@@ -148,9 +148,7 @@ pub fn config_hash(state_json: &str) -> Result<String, JsValue> {
 /// the record through this API.
 #[wasm_bindgen]
 pub fn play_golden(config_json: &str) -> Result<String, JsValue> {
-    use hh_core::driver::{play, GOLDEN_POLICY, GOLDEN_SEED, GOLDEN_TICKS};
-    let mut s = hh_core::Session::new(&config(config_json)?, GOLDEN_SEED, None).map_err(err)?;
-    play(&mut s, GOLDEN_TICKS, GOLDEN_POLICY);
+    let s = hh_core::driver::golden_session(&config(config_json)?).map_err(err)?;
     Ok(to_json(&serde_json::json!({
         "fingerprint": s.state.fingerprint(),
         "record": s.record(),

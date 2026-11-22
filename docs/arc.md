@@ -1,67 +1,80 @@
 # The arc
 
-The story spine from Act 1 to the Dyson sphere ending, one line per beat. Each beat names the quest
-or milestone that marks it and the view or system it opens. **Everything past Act 1 is a draft**
-(042): rough mechanics, placeholder numbers, art and text, for Matt to keep, cut or rewrite. The
-rules are in [rules/timeline.md](rules/timeline.md) (draft); quests are `story` rows in
-`content/events.json`, in this order.
+A map from the design doc's beats to the quests that carry them (`story` and `side` rows in
+`content/events.json`, each with its `beat` id) and their status. It records the current state
+only. Status: **aligned** (matches the design), **draft** (the beat's trigger and opens are
+in, every mechanic in its simplest form, placeholder numbers and text), **unaligned** (the 042
+scaffolding, not yet aligned with the design doc). The rules are in [rules/](rules/README.md):
+[events.md](rules/events.md) for quests, [attention.md](rules/attention.md) for the
+adversaries, [career.md](rules/career.md) for retirement, [timeline.md](rules/timeline.md) for
+Acts 2-4.
 
-## Act 1: the lunar operation (as built)
+## Act 1: the lunar operation (draft-playable)
 
-1. **Boot.** Q1 Boot Sequence (M1): a second Solar Panel. Opens extraction.
-2. **First pipeline.** Q2 First Extraction, Q3 Proof of Concept (M2): He-3 shipped to Earth.
-   Opens Launch Pads and Retirement.
-3. **Boredom bites.** M4 First Retirement: boredom forces the first retirement. The fiction is a
-   *factory reset*: the company takes the base and installs dummy programs; the AI keeps only what
-   it learned (career bonuses, the program library).
-4. **Automation.** Q4 Automation (M3), M5, M6: programs carry the run. Opens program logic.
-5. **Markets and rivals.** Q5 Market Awareness (M8, M10, M12): demand, speculators and a few rival
-   AIs. Opens Projects.
-6. **Ideologies.** Political Currents, M13: three factions, Fund commands, ranks. Opens Ideologies.
-7. **Open Horizons.** Q6 (M14): rank 5 on an axis, a Long-Term project, ten years in one run,
-   100k credits in one run. Act 1's exit exam.
+About 25% of play (a readout, not a target). Skill: from clicking commands to programs that run
+whole runs. The chain is 1.1 to 1.9 in order; 1.a and 1.b are side quests that complete beside
+it and never hold it up.
 
-## Act 1 to 2: the signal
+| Beat | Quest (id) | Trigger | Condition | Opens | Status |
+|---|---|---|---|---|---|
+| 1.1 Online | `qpower_boot_sequence` | game start | 2 Solar Panels | the Regolith Excavator (the base view is there from boot) | aligned |
+| 1.2 First shipment | `qshipment_proof_of_concept` | 1.1 | 1 shipment | credits (the launch payout). Launch Pads come from the *Launch Plans* event (50 He-3 made in a run) | aligned |
+| 1.3 Processors | `qautomate_automation` | 1.2 | 2 Data Centers | program logic (the `program_logic` flag at 2 working processors); loadouts are open from run 1 and always kept | draft |
+| 1.4 Speculators notice you | `qspeculators_notice` | 1.3 | speculators present (Attention from units sold) | the adversary tab (the `adversaries` panel; speculator bursts land only while they are present) | draft |
+| 1.5 Burnout | `qburnout` | 1.4 | 1 retirement (boredom forces the first) | the Retirement panel (voluntary retirement); bests and firsts carry | draft |
+| 1.6 Lab | `qlab` | 1.5 | a Research Lab | the research view (no research before it), Projects and Foundation Grant, the Recreation Dome; Geopolitical Intelligence shows; the first global project (Conditional Logic, opens `if`) is offered | draft |
+| 1.7 Three voices | `qthree_voices` | 1.6 | career-best rank 5 on each axis (three sub-objectives) | each axis's major rank-5 effect (ideology.md); its rank-5 global project | draft |
+| 1.8 Land rush | `qland_rush` | 1.7 | rivals present (Attention from land claimed) | the Contest Claims command (neutralizes the rivals) | draft |
+| 1.9 Deep Space Telescope | `qdeep_space_telescope` | 1.8 | the Deep Space Telescope global project (30,000 credits and 5,000 science at no faster than 3,000 days, so several runs) | Act 2: the `swarm_revealed` flag, the calendar, the Timeline view, the Experiment Lab | draft |
+| 1.a Big launch | `qbig_launch` (side) | 1.4 | one launch pays 1,000+ credits | Disrupt Speculators (also takes speculator Attention off) | draft |
+| 1.b Full cluster | `qfull_cluster` (side) | 1.6 | every item of one research category of 2+ items bought in one run | `wait until` | draft |
 
-8. **Smooth runs.** Q7 Signal Detected: a run goes `quiet_days` (300) days with no order from
-   the player, only programs. The reveal: a swarm is coming. Opens the **calendar** (absent until
-   now), the **Timeline** view, the Experiment Lab, and Novelty Simulation research (a Distract
-   command that pours credits into boredom: relief, never a cure).
+Placeholder choices (049), all for Matt to keep or replace:
 
-## Act 2: timelines
+- **Major ranks (rank 5).** Nationalist: speculator bursts stop landing. Humanist: Dream costs
+  only its energy (no He-3). Rationalist: research bought in an earlier run is free. The ranks
+  between scale as before.
+- **Techniques.** Anti-rival (1.8): *Contest Claims*, 500 credits and 10 energy, sets the
+  rivals' Attention to zero (the neutralize stub). Speculator disruption (1.a): the existing
+  *Disrupt Speculators*, now gated on 1.a instead of Market Awareness, also takes 20
+  speculator Attention off per execution.
+- **Retirement.** A 5-year gap (1,825 days), simulated day by day, unseen (no calendar in Act
+  1): ideology scores halve every 365 days (so a run starts with about 3% of the last one's
+  scores), Attention decays linearly. Retirement keeps loadouts, bests and firsts,
+  achievements, quests, global projects, ideology and adversaries.
+- **Mapped onto what existed.** Self-Maintenance (the lesser boredom measure) is Stress
+  Tolerance, in the research category of that name; Daydreaming is the renamed Dream
+  Protocols. Research categories are 1.b's clusters (Overclock Algorithms and Market Analysis
+  can be finished in Act 1; Self-Maintenance holds the draft Novelty Simulation, shown after
+  1.9). Q2 First Extraction
+  became the *Launch Plans* event, Q5 Market Awareness left the line (Market Awareness stays a
+  research item).
 
-9. **Experiments as a Service.** Q8: build an Experiment Lab. Science becomes Earth science, sent
-   to Earth every day. Each retirement costs calendar days. Opens the **Earth Lab** view: Earth
-   techs bought with Earth science, each kept for this timeline, the next, or for good.
-10. **Earth Science.** Q9: Earth science this timeline reaches its mark. Opens the techs that
-    wait on it: a swarm-delay beacon and compressed resource blocks for the next start (Boredom
-    Dampers need no quest).
-11. **The Swarm Arrives.** Q10: the calendar reaches the swarm. Earth's scientists send the AI's
-    mind back to its first moment of consciousness: a hard reset to run 1. The mind keeps quests,
-    flags, the library and achievements; a share of Earth science and the kept techs go with it.
-    The swarm is stronger in every new timeline. The Timeline view lists the past timelines.
-12. **Catastrophic Success.** Q11: the Consensus Engine tech ends zero-sum ideology (Fund no
-    longer costs the other axes).
-13. **Rules for Building.** Q12: the Meta-Controller tech. Opens the **Meta-Controller** view: a
-    reset plan that loads saved programs into each tab at every new run.
-14. **False Victory.** Q13: Earth science at the swarm's arrival is enough to repel it, once.
-    The swarm learns quantum temporal entanglement from the AI's own sendbacks and returns
-    stronger, sooner.
+**Achievement candidates** (performance tests, out of the quest line; achievements for them
+aren't built yet):
 
-## Act 2 to 3: the vault
+- *Open Horizons* (was Q6): rank 5 on any axis, a global project, ten years in one run and
+  100,000 credits in one run.
+- *Signal Detected* (was Q7): a run of 300 days with no order from the player, only programs.
+  The `quiet_days` condition it used stays in the engine.
 
-15. **The Vault.** Q14: the Temporal Vault tech. Opens the **Vault** view and the Tachyon
-    Condenser: tachyon crystals deposited in the vault survive every timeline.
+## Acts 2-4: unaligned with the design doc
 
-## Act 3: the super timeline
+The 042 scaffolding: rough mechanics, placeholder numbers, art and text, kept running so the
+autopilot reaches the ending. **Unaligned with the design doc.** Act 2 starts when the
+Telescope (1.9) is finished.
 
-16. **Filling the Vault.** Q15: the vault holds its target of tachyon, gathered over several
-    timelines.
-17. **Super Timeline.** Q16: spend the vault on a super timeline: a far-off swarm, and resources
-    and projects that survive every retirement inside it. Opens the **Dyson** view, the Neodymium
-    Mine and the Dyson Foundry.
-18. **Dyson Sphere.** Q17: complete the Dyson Sphere project (Dyson material and credits).
-19. **Overload.** Q18: the swarm arrives at a finished sphere. Its own entanglement links every
-    copy of it across the timelines; the sphere's whole output goes down that link at once, and
-    the swarm overloads everywhere it has ever been. The ending.
-20. **Epilogue.** The last quest, never completed: the game runs on.
+| Story step | Quest | Opens | Status |
+|---|---|---|---|
+| Experiments as a Service | Q8 `qexperiments_service`: an Experiment Lab | the Earth Lab view; each retirement costs calendar days | unaligned |
+| Earth Science | Q9 `qearth_science`: 1,000 Earth science this timeline | | unaligned |
+| The Swarm Arrives | Q10 `qswarm_arrives`: a timeline ends (the mind is sent back to run 1) | the Timeline history | unaligned |
+| Catastrophic Success | Q11 `qcatastrophic_success`: the Consensus Engine tech | zero-cost Fund | unaligned |
+| Rules for Building | Q12 `qrules_for_building`: the Meta-Controller tech | the Meta-Controller view (reset plan) | unaligned |
+| False Victory | Q13 `qfalse_victory`: repel the swarm once | a stronger, sooner swarm | unaligned |
+| The Vault | Q14 `qthe_vault`: the Temporal Vault tech | the Vault view, the Tachyon Condenser | unaligned |
+| Filling the Vault | Q15 `qfilling_vault`: 3,000 tachyon in the vault | | unaligned |
+| Super Timeline | Q16 `qsuper_timeline`: spend the vault | the Dyson view, Neodymium Mine, Dyson Foundry, the Dyson Sphere | unaligned |
+| Dyson Sphere | Q17 `qdyson_sphere`: complete the Dyson Sphere | | unaligned |
+| Overload | Q18 `qoverload`: the swarm meets the finished sphere | the ending | unaligned |
+| Epilogue | `qepilogue`, never completed | the game runs on | unaligned |

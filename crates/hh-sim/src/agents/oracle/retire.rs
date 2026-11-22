@@ -1,13 +1,11 @@
 //! When the oracle retires (module doc in `mod.rs`, *Runs*): the prestige
 //! rule, checked on a copy of the run played out.
 
-use hh_core::modules::events;
 use hh_core::{Action, Fx, GameState, Session};
 
 use super::super::author::Directives;
 use super::super::{Agent, Player};
-use super::strategy::horizon_open;
-use super::{Oracle, HORIZON, SURVIVE};
+use super::Oracle;
 
 impl Oracle {
     /// Retires once the run's average credits a day is the best it will see
@@ -19,7 +17,7 @@ impl Oracle {
         let can = p.view().can_retire;
         let g = p.state();
         let open = self.retire && can && g.run.day >= self.min_run;
-        if !open || (self.base.dir.sustain && surviving(g)) {
+        if !open {
             return false;
         }
         let dir = self.base.dir.clone();
@@ -68,10 +66,4 @@ impl Oracle {
         }
         (now, best)
     }
-}
-
-/// Whether the run should go on past a stale stretch: the Open Horizons
-/// quest is active and its ten years aren't yet survived.
-pub(super) fn surviving(g: &GameState) -> bool {
-    horizon_open(g) && !g.career.completed_sub_objectives.contains(&events::sub_key(HORIZON, SURVIVE))
 }

@@ -48,7 +48,6 @@ fn objectives_play_the_reference_scenario_to_a_forced_retirement() {
     for want in [
         "first_ship",
         "quest qpower_boot_sequence",
-        "quest qextract_first_extraction",
         "quest qshipment_proof_of_concept",
         "forced_retirement",
     ] {
@@ -112,16 +111,16 @@ fn grid(cmd: &str, agents: &str, extra: &[&str]) -> Vec<String> {
 /// One that changes play updates them and says so; a rules change moves them
 /// all. Copy them from the failing assertion (or the test's `games.jsonl`).
 const PINNED: &[(&str, u64, &str)] = &[
-    ("random", 1, "24627ab26fc7fc77"),
-    ("random", 2, "e746cbcc89515eb2"),
-    ("greedy", 1, "350ed6cb48446c4c"),
-    ("greedy", 2, "8ba892404e53495b"),
-    ("author", 1, "11ad1e9f916b833c"),
-    ("author", 2, "934c727d35558bc4"),
-    ("casual", 1, "c5dc18bf8c191e06"),
-    ("casual", 2, "0c0bcb1280dc3b7a"),
-    ("handsoff", 1, "d8acce3927d23c2f"),
-    ("handsoff", 2, "bff133f05cbbfa6d"),
+    ("random", 1, "0f39bb6fd74a1208"),
+    ("random", 2, "df3e40ddc58ef5fb"),
+    ("greedy", 1, "af16fff2dba79a69"),
+    ("greedy", 2, "86c9c44a2d4611e8"),
+    ("author", 1, "81e452f53bc86461"),
+    ("author", 2, "81f7b7b93e5fe58c"),
+    ("casual", 1, "604224fc67970416"),
+    ("casual", 2, "1eba20c0c3387eac"),
+    ("handsoff", 1, "81e452f53bc86461"),
+    ("handsoff", 2, "290a8e0ce44fdbda"),
 ];
 
 #[test]
@@ -315,7 +314,7 @@ fn the_oracle_plays_on_copies_and_its_game_replays() {
     let half = fingerprints.len() / 2;
     assert_eq!(fingerprints[..half], fingerprints[half..]);
     // Seeds 1 and 2 of the oracle, then of the pinned one.
-    assert_eq!(fingerprints[..half], ["cbd2259e72548f4c", "88e5f9ec807fe2f9", "ca49fb0986f5255b", "b95cfc5d7657eb8a"]);
+    assert_eq!(fingerprints[..half], ["711b75707b9ded7f", "82b54cef7962e8dd", "2d807b2bf4323a37", "908b25df70dc9069"]);
 }
 
 /// `trace --at T` prints the state at career tick T: what walls a run in.

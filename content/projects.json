@@ -60,7 +60,7 @@
     "name": "Chemical Energy Initiative",
     "description": "Research chemical-to-electrical energy conversion using lunar propellant reserves.",
     "scope": "timeline",
-    "unlock": {"type": "quest_active", "quest": "qhorizon_open_horizons"},
+    "unlock": {"type": "quest_active", "quest": "qthree_voices"},
     "costs": {"credits": "2000", "science": "1000", "propellant": "1000"},
     "min_days": 67,
     "rewards": []
@@ -115,5 +115,7 @@
     "min_days": 5,
     "rewards": [{"type": "modifier", "key": "speculator_burst_interval_mult", "value": "1.33"}]
   },
+  {"id": "conditional_logic", "name": "Conditional Logic", "description": "DRAFT. A global project: teach programs to branch. Opens if.", "scope": "timeline", "unlock": {"type": "quest_active", "quest": "qthree_voices"}, "costs": {"credits": "500", "science": "100"}, "min_days": 17, "rewards": [{"type": "set_flag", "flag": "logic_if"}]},
+  {"id": "deep_space_telescope", "name": "Deep Space Telescope", "description": "DRAFT. A global project built across several runs: a telescope that looks past the inner system.", "scope": "timeline", "unlock": {"type": "quest_active", "quest": "qdeep_space_telescope"}, "costs": {"credits": "30000", "science": "5000"}, "min_days": 3000, "rewards": []},
   {"id": "dyson_sphere", "name": "Dyson Sphere", "description": "DRAFT. Enclose the Sun. The one machine big enough to answer the swarm.", "scope": "timeline", "unlock": {"type": "project_enabled", "project": "dyson_sphere"}, "costs": {"dyson_material": "1000", "credits": "20000"}, "min_days": 667, "rewards": [{"type": "set_flag", "flag": "dyson_complete"}]}
 ]

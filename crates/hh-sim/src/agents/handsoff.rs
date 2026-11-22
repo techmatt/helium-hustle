@@ -1,5 +1,6 @@
-//! `handsoff`: how far automation alone carries a run. Its first run is the
-//! author's (with its knobs), which writes and saves the condition programs.
+//! `handsoff`: how far automation alone carries a run. Its first run (every
+//! run until `if` opens, then that one: 049) is the author's (with its
+//! knobs), which writes and saves the condition programs.
 //! From run 2 on, at each new run it loads them from the library by name
 //! (ship → Program 1, Dream watch → 2, fund → 3, market → 4, build order → 5)
 //! and assigns processors, and makes no other decision: no purchase, research,
@@ -278,7 +279,12 @@ impl Agent for HandsOff {
     fn act(&mut self, p: &mut Player) {
         let v = p.view();
         let run = v.run;
-        self.first_run.get_or_insert(run);
+        // Its saved programs guard with `if`: the author plays every run
+        // until `if` opens (a global project, Act 1 beat 1.7), and that run
+        // counts as its first.
+        if v.if_open {
+            self.first_run.get_or_insert(run);
+        }
         if !self.hands_off(v) {
             self.author.act(p);
             return;

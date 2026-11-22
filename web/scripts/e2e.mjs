@@ -1,11 +1,14 @@
 // Browser check: drives headless Edge or Chrome over the DevTools protocol (no
 // packages) against a served page.
 //   1. A fresh game through the normal UI only (no debug menu): a build order to the
-//      first pad loaded and launched (Q1 to Q3), retirement, the run summary holding the
-//      clock (a double-click on Continue buys nothing under it), run 2 (known tiles and
-//      resources still shown, not cheated), the career's play log on disk as a bot's.
-//   2. Every panel: cheats reach Research, Projects and Ideologies; every nav tile opens;
-//      the cheated mark, a jump ahead and the replay check.
+//      first pad loaded and launched (1.1 Online and 1.2 First Shipment), no Retirement
+//      tile yet (it opens at 1.5 Burnout), then on at 200x to the forced retirement at the
+//      boredom cap, the run summary holding the clock (a double-click on Continue buys
+//      nothing under it), run 2 (known tiles and resources still shown, not cheated), the
+//      career's play log on disk as a bot's.
+//   2. Every panel: scenario late_unlocks opens Research, Projects and Ideologies (1.6 Lab
+//      is past a second run); a locked and a funded project; every nav tile opens; the
+//      cheated mark, a jump ahead and the replay check.
 //   3. A program's current-line frame at 10x and 50x, each speed's days per second,
 //      pause, click-to-buy (a green card's text buys, its −/+ and Sell 1 don't, space after
 //      a click pauses and buys nothing, a grey card says why), a reload keeping the save,
@@ -144,9 +147,10 @@ async function playToFirstShipment() {
   let lastLog = 0;
   const seenQuests = new Set();
   while (Date.now() - started < 180_000) {
-    if (await navVisible('retirement')) return true;
     const s = await look();
     if (s.quest) seenQuests.add(s.quest);
+    // 1.2 First Shipment done: the pinned quest has moved past it.
+    if (s.quest && s.quest !== 'qshipment_proof_of_concept' && seenQuests.has('qshipment_proof_of_concept')) return true;
     if (Date.now() - lastLog > 5000) {
       lastLog = Date.now();
       console.log(`     day ${s.day}, quest ${s.quest}, credits ${s.res.credits}, he3 ${s.res.he3 ?? '-'}`);
@@ -546,7 +550,7 @@ try {
   check((await day()) < 5 && (await run()) === 1, `a fresh game loads: day ${await day()}, run ${await run()}`);
   check(!(await exists('[data-testid="cheats"]')), 'cheats are off by default');
   check(!(await navVisible('retirement')) && !(await navVisible('launch_pads')), 'gated nav tiles start hidden');
-  check(/Boot Sequence/.test(await evaluate(`document.querySelector('[data-testid="quest"]')?.textContent ?? ''`)), 'the first quest shows');
+  check(/1\.1 — Online/.test(await evaluate(`document.querySelector('[data-testid="quest"]')?.textContent ?? ''`)), 'the first quest shows');
 
   check((await evaluate(`document.querySelector('[data-testid="story-banner"]')?.dataset.story`)) === 'qpower_boot_sequence', 'a new game tells its first quest');
   await click('[data-testid="story-banner"] button');
@@ -557,32 +561,32 @@ try {
   const two = await evaluate(`[...document.querySelectorAll('.lines li')].map((li) => li.dataset.command).join(',')`);
   check(two === 'cloud_compute,idle', `two quick adds both land: ${two}`);
 
-  // ---- 1. a fresh game to retirement and run 2, through the normal UI ----
+  // ---- 1. a fresh game to the first shipment, a forced retirement and run 2, through the normal UI ----
   const shipped = await playToFirstShipment();
   check(shipped, `played to the first shipment by day ${await day()}`);
   await click('[data-testid="events-completed"] .fold-head'); // it starts folded
   const done = await evaluate(`[...document.querySelectorAll('[data-testid="events-completed"] [data-quest]')].map((li) => li.dataset.quest)`);
   check(
-    ['qpower_boot_sequence', 'qextract_first_extraction', 'qshipment_proof_of_concept'].every((x) => done.includes(x)),
-    `QPower, QExtract and QShipment complete: ${done.join(', ')}`,
+    ['qpower_boot_sequence', 'qshipment_proof_of_concept'].every((x) => done.includes(x)),
+    `1.1 Online and 1.2 First Shipment complete: ${done.join(', ')}`,
   );
   check(await evaluate(`!!document.querySelector('.activity li[data-kind="shipment"]')`), 'the shipment is in Recent Activity');
   check(await exists('tr[data-res="propellant"]'), 'Propellant shows in Resources once bought');
   const told = await evaluate(`document.querySelector('[data-testid="story-banner"]')?.textContent ?? ''`);
-  check(/First Extraction|Proof of Concept|Automation/.test(told), `later quests are told as they open: ${told.slice(0, 40)}`);
-  check(await evaluate(`!!document.querySelector('.nav-tile[data-nav="retirement"] .dot')`), 'the new Retirement tile carries a "new" dot');
-  await panel('retirement');
-  check(!(await evaluate(`!!document.querySelector('.nav-tile[data-nav="retirement"] .dot')`)), 'opening it clears the dot');
-  await shot('retirement-panel');
+  check(/First Shipment|Processors|Speculators/.test(told), `later quests are told as they open: ${told.slice(0, 40)}`);
+  check(await navVisible('launch_pads'), 'the Launch Pads tile shows');
+  // Voluntary retirement opens only at 1.5 Burnout (after a first retirement): run 1
+  // ends at the boredom cap, played on at 200x with no cheat.
+  check(!(await navVisible('retirement')), 'no Retirement tile in run 1 (it opens at 1.5 Burnout)');
   await panel('buildings');
   await shot('run1-buildings');
   await panel('launch_pads');
   await shot('run1-launch-pads');
-  await panel('retirement');
-  const runDays = await day();
-  await click('[data-testid="retire"]');
-  await click('[data-testid="retire-confirm"]');
-  await waitFor(`!!document.querySelector('[data-testid="summary"]')`, 'the run summary', 3000);
+  await speed(200);
+  await waitFor(`!!document.querySelector('[data-testid="summary"]')`, 'the forced retirement at the boredom cap', 60_000);
+  const summaryText = await evaluate(`document.querySelector('[data-testid="summary"]').textContent`);
+  const runDays = (summaryText.match(/ended on day ([\d,.]+)/) ?? [, '?'])[1];
+  check(/forced retirement/.test(summaryText), `boredom at its cap retires run 1 (day ${runDays})`);
   const paused1 = await day();
   await sleep(600);
   check((await day()) === paused1 && (await run()) === 2, `the run summary pauses the game (run 2, day ${paused1})`);
@@ -602,8 +606,9 @@ try {
   }
   await sleep(800);
   check((await run()) === 2 && (await day()) > 0 && !(await exists('[data-testid="summary"]')), `run 2 plays on (day ${await day()}; run 1 lasted ${runDays} days)`);
-  check(await exists('#speeds button[data-speed="50"][aria-pressed="true"]'), 'Continue restores the speed before the summary');
-  check(await navVisible('retirement') && await navVisible('launch_pads'), 'known nav tiles stay visible in run 2');
+  check(await exists('#speeds button[data-speed="200"][aria-pressed="true"]'), 'Continue restores the speed before the summary');
+  await speed(0);
+  check(await navVisible('launch_pads'), 'known nav tiles stay visible in run 2');
   check(await evaluate(`!!document.querySelector('tr[data-res="he3"]')`), 'known resources stay visible in run 2');
   check(!(await evaluate(`document.getElementById('status')?.textContent ?? document.querySelector('.status').textContent`)).includes('CHEATED'), 'an honest game is not marked');
 
@@ -621,48 +626,34 @@ try {
     `the play log is on disk: ${logFile} (${logLines.length} lines, ${logLines.filter((l) => l.kind === 'action').length} actions)`,
   );
 
-  // ---- 2. every panel, reaching the gated ones with cheats ----
+  // ---- 2. every panel, reaching the gated ones from scenario late_unlocks ----
+  // Research and Projects open at 1.6 Lab, after 1.5 Burnout (a second run): the scenario
+  // opens them (and Ideologies and Retirement) instead of playing that far.
   await speed(0);
   await debugMenu();
   await click('#cheats-toggle');
   check(await exists('[data-testid="cheats"]'), 'the cheats section opens');
-  const buy = async (id) => {
-    await panel('buildings');
-    await click(`[data-testid="buy-${id}"]`);
-    await debugMenu();
-  };
+  await setValue('#scenario', 'late_unlocks');
+  await click('#start-scenario');
   await grant('credits', '100000');
-  await grant('regolith', '50');
-  await grant('titanium', '20');
-  await buy('storage_depot');
-  await grant('titanium', '45');
-  await grant('circuits', '30');
-  await buy('data_center');
-  await grant('circuits', '30');
-  await buy('research_lab');
+  await grant('circuits', '100');
   await grant('science', '5000');
-  check(await navVisible('research'), 'Research appears with a Research Lab');
+  check(await navVisible('research') && await navVisible('projects') && await navVisible('ideologies'), 'late_unlocks opens Research, Projects and Ideologies');
   await panel('research');
   await click('[data-testid="research-market_awareness"]');
   // Quests and events check at the end of a day: let days pass.
   await speed(1);
-  await waitFor(`!!document.querySelector('[data-testid="research-geopolitical_intelligence"]')`, 'Geopolitical Intelligence', 5000);
-  await speed(0);
-  check(await navVisible('projects'), 'Projects appears with Market Awareness');
-  // A locked project shows its condition; a funded one its days to done (both the engine's text).
   await panel('projects');
-  const lockedText = await evaluate(`document.querySelector('.card.project.locked[data-id="predictive_maintenance"]')?.textContent ?? ''`);
-  check(lockedText.includes('Locked: Research Dream Protocols'), `a locked project shows its condition: ${lockedText.slice(0, 160)}`);
-  await evaluate(`[...document.querySelectorAll('.card.project[data-id="foundation_grant"] button[title^="Fund at the most"]')].forEach((b) => b.click())`);
-  await waitFor(`/Done in \\d+ days/.test(document.querySelector('.card.project[data-id="foundation_grant"]')?.textContent ?? '')`, 'days to done', 5000);
-  const fundedText = await evaluate(`document.querySelector('.card.project[data-id="foundation_grant"]').textContent`);
-  check(/Done in 167 days/.test(fundedText), `a funded project shows its days to done: ${(fundedText.match(/Done in \d+ days?/) ?? ['none'])[0]}`);
-  await shot('projects-locked-and-funded');
-  await panel('research');
-  await click('[data-testid="research-geopolitical_intelligence"]');
-  await speed(1);
-  await waitFor(`!!document.querySelector('.nav-tile[data-nav="ideologies"]')`, 'the Ideologies tile', 5000);
+  await waitFor(`!!document.querySelector('.card.project[data-id="market_cornering"]:not(.locked)')`, 'Market Cornering unlocked by Market Awareness', 5000);
   await speed(0);
+  // A locked project shows its condition; a funded one its days to done (both the engine's text).
+  const lockedText = await evaluate(`document.querySelector('.card.project.locked[data-id="predictive_maintenance"]')?.textContent ?? ''`);
+  check(lockedText.includes('Locked: Research Daydreaming'), `a locked project shows its condition: ${lockedText.slice(0, 160)}`);
+  await evaluate(`[...document.querySelectorAll('.card.project[data-id="market_cornering"] button[title^="Fund at the most"]')].forEach((b) => b.click())`);
+  await waitFor(`/Done in \\d+ days/.test(document.querySelector('.card.project[data-id="market_cornering"]')?.textContent ?? '')`, 'days to done', 5000);
+  const fundedText = await evaluate(`document.querySelector('.card.project[data-id="market_cornering"]').textContent`);
+  check(/Done in 17 days/.test(fundedText), `a funded project shows its days to done: ${(fundedText.match(/Done in \d+ days?/) ?? ['none'])[0]}`);
+  await shot('projects-locked-and-funded');
   const tiles = await evaluate(`[...document.querySelectorAll('.nav-tile')].map((t) => t.dataset.nav)`);
   for (const id of tiles) {
     await panel(id);
@@ -687,7 +678,7 @@ try {
   await click('#cheat-jump');
   check((await day()) === d0 + 30, `jump ahead 30 days (${d0} -> ${await day()})`);
   await click('#check-replay');
-  check(/^Replay ok/.test(await noticeText()), `replay check of the whole career: ${await noticeText()}`);
+  check(/^Replay ok/.test(await noticeText()), `replay check of the scenario's game: ${await noticeText()}`);
 
   // ---- 3. speeds, saves and scenarios ----
   await setValue('#scenario', 'rich');

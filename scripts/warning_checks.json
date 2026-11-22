@@ -10,6 +10,11 @@
     },
     "exceptions": [
       {
+        "file": "crates/hh-core/src/modules/ideology.rs",
+        "literal": "2",
+        "why": "a definition, not a tunable: a half-life halves, so the gap's daily factor is (1/2)^(1 / half_life_days)"
+      },
+      {
         "file": "crates/hh-core/src/modules/programs.rs",
         "literal": "100",
         "why": "a unit, not a tunable: the percent reading of a program condition is amount / cap x 100"

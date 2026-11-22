@@ -1,16 +1,19 @@
 # Timeline (module `timeline`, variant `draft`): DRAFT
 
 **Draft (042).** Acts 2 and 3 as a rough, playable sketch: placeholder mechanics, numbers and
-text, for Matt to keep, cut or rewrite. The story they serve is [../arc.md](../arc.md). Nothing
-here runs before the swarm's reveal (Q7), so Act 1 plays as before.
+text, for Matt to keep, cut or rewrite, unaligned with the design doc. The story they serve
+is [../arc.md](../arc.md). Nothing here runs before the swarm's reveal (quest 1.9), so Act 1
+doesn't see it.
 
 ## Rules
 
-**The reveal and the calendar.** Q7 Signal Detected completes when a run goes `quiet_days`
-(300) days with no order from the player (`Run.last_order`: the run's day of the last applied
-action other than a cheat; programs don't count). It sets the career flag `swarm_revealed`.
+**The reveal and the calendar.** Act 1's last beat, quest 1.9 Deep Space Telescope, completes
+when the Deep Space Telescope global project does ([events.md](events.md)). It sets the career
+flag `swarm_revealed`, opens the Timeline panel and the Experiment Lab, and Act 2 begins.
 From that same day a **timeline** runs: a calendar day count and the day the swarm arrives.
-Before the reveal there is no calendar.
+Before the reveal there is no calendar. The draft `quiet_days` condition (days this run since
+the player's last order, `Run.last_order`: the run's day of the last applied action other than
+a cheat; programs don't count) stays in the engine; no row uses it.
 
 **The day's last step** (after retirement, before the activity trim): the run's whole stock of
 `earth_science` (made by the Experiment Lab from science) goes to Earth, adding to the
@@ -39,8 +42,8 @@ falls (a `timeline` tech is dropped, a `next_timeline` one lasts one more, `fore
 Spendable Earth science becomes `science_made × science_carry`. The career hard-resets to run
 1: the mind keeps flags, researched/owned/used ids, seen events, quests and sub-objectives,
 achievements, the log, the program library and `forever` projects (progress and
-completions); everything else resets (retirements, lifetime totals, bests, ideology bests,
-peak power, `timeline` projects, and with them the buildings they gate; a super timeline
+completions); everything else resets (retirements, lifetime totals, bests, ideology bests and
+carried scores, Attention, gap days, peak power, `timeline` projects, and with them the buildings they gate; a super timeline
 keeps `timeline` projects). The next timeline starts and a new run begins.
 
 **Earth techs** (`content/earth_tech.json`) are bought with Earth science
@@ -59,7 +62,8 @@ timeline. **Super timeline** (`begin_super_timeline`): legal once the vault hold
 super timeline. Inside one, each retirement keeps `super_carry` fractions of those resources
 for the next run.
 
-**Distract** (content, plus one rule in programs): the Novelty Simulation research opens a
+**Distract** (content, plus one rule in programs): the Novelty Simulation research (shown
+once quest 1.9 is done) opens a
 command whose flat boredom is −10, so each run takes 10 boredom off (never below zero) for 200
 credits; like an effect command it needs its full cost.
 

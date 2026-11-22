@@ -26,11 +26,14 @@ falls back) can't be bought until it holds again.
 
 **Price** in science: `cost × discount_factor ^ rationalist rank` (the run's current
 rank, [ideology.md](ideology.md); a negative rank raises the price). If the item was bought
-in an earlier run and a project with a `research_discount` reward is completed (Universal
+in an earlier run and Rationalist is at its major rank, the price is 0 (the major effect,
+[ideology.md](ideology.md#rules)); else, if a project with a `research_discount` reward is completed (Universal
 Research Archive, [projects.md](projects.md)), the price is further multiplied by its
 `mult` (0.75). Each product is floored once (the [rounding rule](README.md#numbers)).
 
-**Buying** checks, in order: not already bought this run; visible; its `requires` item
+**Buying** checks, in order: the `research` panel is enabled this run (quest 1.6 Lab opens
+it, [events.md](events.md); the nav's Research tile shows with it); not already bought this
+run; visible; its `requires` item
 bought this run (if it names one); science at least the price. Then science falls by the
 price, the item is added to the run's research and the career's `researched`, the run's
 research count rises by one (folded into the career's lifetime total at retirement), and
@@ -57,7 +60,7 @@ description's burst forecast is not built).
 ## Actions
 
 - **`research`** `{"type": "research", "research": <id>}`: buys an item. Refused for an
-  unknown id, an item already bought this run, one not visible, one whose `requires` isn't
+  unknown id, before the `research` panel is enabled, for an item already bought this run, one not visible, one whose `requires` isn't
   bought this run, or too little science.
 
 ## Params
@@ -73,9 +76,17 @@ Every number is on the content rows: costs, visibility thresholds and effect val
 
 ## Content
 
-`content/research.json`: 12 rows (Novelty Simulation is draft, [timeline.md](timeline.md)), each with `cost`, optional `requires`, optional `effect`,
-`visible_when`, and placeholder `category`/`description`. Unlocks live on the unlocked
-rows' `requires` (`content/commands.json`, `content/buildings.json`), not here.
+`content/research.json`: 12 rows, each with `cost`, optional `requires`, optional `effect`,
+`visible_when`, a `category` and a placeholder `description`. A category is a cluster:
+buying every item of one of 2 or more items in a run (so not the one-item Political
+Influence) meets side quest 1.b's `research_cluster`
+([events.md](events.md)). Dream Protocols is named Daydreaming; Novelty Simulation (draft,
+[timeline.md](timeline.md)) stays in Self-Maintenance, so that cluster can't be finished
+before quest 1.9 shows it;
+Geopolitical Intelligence shows once 1.6 is done; Market Awareness only reveals demand
+(Disrupt Speculators opens on side quest 1.a, [demand.md](demand.md)). The `research` panel
+id is fixed in code (`research::RESEARCH_PANEL`). Unlocks live on the unlocked rows'
+`requires` (`content/commands.json`, `content/buildings.json`), not here.
 
 ## Port notes
 
@@ -84,8 +95,8 @@ rows' `requires` (`content/commands.json`, `content/buildings.json`), not here.
 - Conflict: Overclock cap. The Godot command text said "+200%" (rewritten to the engine's caps); Overclock Boost's data says the
   cap goes from 150% to 200%. The engine has a base cap of 1.5 in config
   (`programs.overclock_base_cap`) and Overclock Boost's `overclock_cap` 2.
-- Conflict: Geopolitical Intelligence visibility. The handoffs show it after QAutomate; the
-  data after QMarket (`qmarket_awareness`). The engine uses the data.
+- Changed (049): Geopolitical Intelligence shows after quest 1.6 Lab (the handoffs had
+  QAutomate, the data QMarket, a quest no longer in the line).
 - Conflict: the data's research `unlocks_commands` lists duplicate each command's own
   `requires`. Dropped: the command's `requires` is the one home.
 - Conflict: Shipping Efficiency's 7 replaces the per-Load amount, whose base 5 appears in

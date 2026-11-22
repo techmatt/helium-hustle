@@ -42,7 +42,10 @@ propellant can run out partway through.
 1. Burns `fuel_per_pad` propellant.
 2. Pays `base_values[good] × demand × cargo × shipment_credit_mult` credits, at the good's
    demand for today (set earlier in the day).
-3. Counts a shipment for the run, empties the pad and sets its cooldown to `launch_cooldown`.
+3. Counts a shipment for the run, raises the run's best launch (the most credits one launch
+   paid, which the `launch_credits` condition reads, [events.md](events.md)), adds the cargo
+   × `speculator_per_unit` to the speculators' Attention ([attention.md](attention.md)),
+   empties the pad and sets its cooldown to `launch_cooldown`.
 4. Raises the good's launch saturation and adds the payout to its burst-target revenue
    ([demand.md](demand.md)). Demand moves at the next day's update, so every launch of a good
    in one day pays the same demand.

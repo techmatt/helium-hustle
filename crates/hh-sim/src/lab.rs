@@ -5,7 +5,7 @@
 use std::fmt::Write as _;
 use std::time::Instant;
 
-use hh_core::{driver, play, Config, Session};
+use hh_core::{driver, Config, Session};
 
 use crate::experiment::{self, Spec, Variant};
 use crate::{list, read, read_text, usage, Fail, BALANCE, BASELINE, HUMANS, LADDER, MILESTONES, THREADS};
@@ -409,8 +409,7 @@ pub fn speed_line() -> String {
         return "engine speed: configs/baseline.json not readable".into();
     };
     let t0 = Instant::now();
-    let mut s = Session::new(&c, driver::GOLDEN_SEED, None).expect("baseline plays");
-    play(&mut s, driver::GOLDEN_TICKS, driver::GOLDEN_POLICY);
+    driver::golden_session(&c).expect("baseline plays");
     let scripted = driver::GOLDEN_TICKS as f64 / t0.elapsed().as_secs_f64();
     let t1 = Instant::now();
     let mut s = Session::new(&c, 1, None).expect("baseline plays");

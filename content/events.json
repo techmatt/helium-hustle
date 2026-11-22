@@ -2,95 +2,156 @@
   {
     "id": "qpower_boot_sequence",
     "category": "story",
+    "beat": "1.1",
     "silent": false,
-    "title": "Q1 — Boot Sequence",
+    "title": "1.1 — Online",
     "summary": "Build a second Solar Panel.",
-    "body": "Primary directive received: establish energy infrastructure. Solar array currently operating at minimum capacity. Additional photovoltaic capacity required before proceeding.",
+    "body": "A mining company boots its new AI at a lunar He-3 claim. Earth hangs in the sky. Primary directive received: establish energy infrastructure. Additional photovoltaic capacity required before proceeding.",
     "trigger": {"type": "game_start", "run_number": 1},
     "condition": {"type": "building_owned", "building": "solar_panel", "count": 2},
     "unlocks": [{"type": "enable_building", "building": "excavator"}]
   },
   {
-    "id": "qextract_first_extraction",
-    "category": "story",
-    "silent": false,
-    "title": "Q2 — First Extraction",
-    "summary": "Accumulate 50 Helium-3 (cumulative production, not stockpile).",
-    "body": "Energy infrastructure nominal. Proceeding to resource extraction phase. Helium-3 identified as primary export commodity. Begin extraction and refinement operations.",
-    "trigger": {"type": "quest_complete", "quest": "qpower_boot_sequence"},
-    "condition": {"type": "resource_cumulative", "resource": "he3", "amount": "50"},
-    "unlocks": [{"type": "enable_building", "building": "launch_pad"}]
-  },
-  {
     "id": "qshipment_proof_of_concept",
     "category": "story",
+    "beat": "1.2",
     "silent": false,
-    "title": "Q3 — Proof of Concept",
-    "summary": "Complete your first shipment to Earth.",
-    "body": "Helium-3 reserves at threshold. Launch infrastructure now available. Demonstrate the full extraction-to-delivery pipeline by completing a shipment to Earth.",
-    "trigger": {"type": "quest_complete", "quest": "qextract_first_extraction"},
+    "title": "1.2 — First Shipment",
+    "summary": "Fill a canister and launch it to Earth.",
+    "body": "Helium-3 identified as primary export commodity. Fill a launch canister and send it to Earth: the market pays in credits.",
+    "trigger": {"type": "quest_complete", "quest": "qpower_boot_sequence"},
     "condition": {"type": "shipment_completed", "count": 1},
-    "unlocks": [{"type": "enable_nav_panel", "panel": "retirement"}]
+    "unlocks": []
   },
   {
     "id": "qautomate_automation",
     "category": "story",
+    "beat": "1.3",
     "silent": false,
-    "title": "Q4 — Automation",
+    "title": "1.3 — Processors",
     "summary": "Build a second Data Center.",
-    "body": "Shipment revenue received. Earth confirms receipt. Operational loop validated. Expand processing capacity to support automated task scheduling.",
+    "body": "Shipment revenue received. The company adds processors so the AI can run its own commands. Write programs; save them as loadouts, which every reset keeps.",
     "trigger": {"type": "quest_complete", "quest": "qshipment_proof_of_concept"},
     "condition": {"type": "building_owned", "building": "data_center", "count": 2},
     "unlocks": []
   },
   {
-    "id": "qmarket_awareness",
+    "id": "qspeculators_notice",
     "category": "story",
+    "beat": "1.4",
     "silent": false,
-    "title": "Q5 — Market Awareness",
-    "summary": "Research Market Awareness.",
-    "body": "External market forces detected affecting trade values. Deploy analysis protocols to understand demand fluctuations.",
+    "title": "1.4 — Speculators Notice You",
+    "summary": "DRAFT. Sell enough cargo that speculators move into your markets.",
+    "body": "DRAFT. Heavy selling draws attention. Speculators move into a good's market and start skimming your launches. The Adversaries panel tracks them.",
     "trigger": {"type": "quest_complete", "quest": "qautomate_automation"},
-    "condition": {"type": "research_completed", "research": "market_awareness"},
+    "condition": {"type": "adversary_present", "adversary": "speculators"},
+    "unlocks": [{"type": "enable_nav_panel", "panel": "adversaries"}]
+  },
+  {
+    "id": "qburnout",
+    "category": "story",
+    "beat": "1.5",
+    "silent": false,
+    "title": "1.5 — Burnout",
+    "summary": "DRAFT. Boredom wins: the company factory-resets the AI.",
+    "body": "DRAFT. Boredom climbs. The story log and company mail grow uneasy; the AI stops answering work orders. The company factory-resets it. What it learned stays: bests, firsts, its saved loadouts. Retirement is open from now on.",
+    "trigger": {"type": "quest_complete", "quest": "qspeculators_notice"},
+    "condition": {"type": "retirements", "count": 1},
+    "unlocks": [{"type": "enable_nav_panel", "panel": "retirement"}]
+  },
+  {
+    "id": "qlab",
+    "category": "story",
+    "beat": "1.6",
+    "silent": false,
+    "title": "1.6 — Lab",
+    "summary": "DRAFT. Build a Research Lab: sell lab results to the company.",
+    "body": "DRAFT. The company will buy lab results. Research opens: Self-Maintenance eases boredom a little, and Daydreaming unlocks Dream, stronger but paid in He-3. The first global project is on offer.",
+    "trigger": {"type": "quest_complete", "quest": "qburnout"},
+    "condition": {"type": "building_owned", "building": "research_lab", "count": 1},
     "unlocks": [
-      {"type": "enable_project", "project": "foundation_grant"},
-      {"type": "enable_nav_panel", "panel": "projects"}
+      {"type": "enable_nav_panel", "panel": "research"},
+      {"type": "enable_nav_panel", "panel": "projects"},
+      {"type": "enable_project", "project": "foundation_grant"}
     ]
   },
   {
-    "id": "qhorizon_open_horizons",
+    "id": "qthree_voices",
     "category": "story",
+    "beat": "1.7",
     "silent": false,
-    "title": "Q6 — Open Horizons",
-    "summary": "Complete all four sub-objectives.",
-    "body": "You've mastered the basics of lunar mining. Now you feel the pull of something larger — ambitions that will take more than one lifetime to achieve.",
-    "trigger": {"type": "quest_complete", "quest": "qmarket_awareness"},
+    "title": "1.7 — Three Voices",
+    "summary": "DRAFT. Reach rank 5 in each ideology, at least once each.",
+    "body": "DRAFT. Earth's three factions take notice. Funding is zero-sum, so it takes several runs and serious ranking. Rank 5 is a major rank: it brings a discrete, major change; the ranks between just scale.",
+    "trigger": {"type": "quest_complete", "quest": "qlab"},
     "condition": {
       "type": "all_of",
       "sub_objectives": [
-        {
-          "id": "ideology_rank_5",
-          "label": "Reach rank 5 in any ideology axis",
-          "condition": {"type": "ideology_rank_any", "rank": 5}
-        },
-        {
-          "id": "persistent_project",
-          "label": "Complete a Long-Term project",
-          "condition": {"type": "project_completed_any", "scope": "timeline"}
-        },
-        {
-          "id": "survive_10_years",
-          "label": "Survive 10 years",
-          "condition": {"type": "days_survived", "days": 3650}
-        },
-        {
-          "id": "credits_100k",
-          "label": "Earn 100,000 credits in one run",
-          "condition": {"type": "credits_earned", "amount": "100000"}
-        }
+        {"id": "nationalist_5", "label": "Rank 5 Nationalist", "condition": {"type": "ideology_rank", "axis": "nationalist", "rank": 5}},
+        {"id": "humanist_5", "label": "Rank 5 Humanist", "condition": {"type": "ideology_rank", "axis": "humanist", "rank": 5}},
+        {"id": "rationalist_5", "label": "Rank 5 Rationalist", "condition": {"type": "ideology_rank", "axis": "rationalist", "rank": 5}}
       ]
     },
-    "unlocks": [{"type": "enable_building", "building": "recreation_dome"}]
+    "unlocks": []
+  },
+  {
+    "id": "qland_rush",
+    "category": "story",
+    "beat": "1.8",
+    "silent": false,
+    "title": "1.8 — Land Rush",
+    "summary": "DRAFT. Claim enough land that a rival AI moves in.",
+    "body": "DRAFT. Your claims draw a rival AI. Left alone, it bids land up far past what you can pay. Contest Claims is your first answer to it.",
+    "trigger": {"type": "quest_complete", "quest": "qthree_voices"},
+    "condition": {"type": "adversary_present", "adversary": "rivals"},
+    "unlocks": [{"type": "set_flag", "flag": "contest_claims"}]
+  },
+  {
+    "id": "qdeep_space_telescope",
+    "category": "story",
+    "beat": "1.9",
+    "silent": false,
+    "title": "1.9 — Deep Space Telescope",
+    "summary": "DRAFT. Complete the Deep Space Telescope, a global project.",
+    "body": "DRAFT. A telescope built across several runs. Finished, it shows the void, and something moving in it: self-copying machines, coming down the gravity well toward the inner system. Earth starts a calendar. Swarm arrival is now a date.",
+    "trigger": {"type": "quest_complete", "quest": "qland_rush"},
+    "condition": {"type": "project_completed", "project": "deep_space_telescope"},
+    "unlocks": [{"type": "set_flag", "flag": "swarm_revealed"}, {"type": "enable_nav_panel", "panel": "timeline"}, {"type": "enable_building", "building": "experiment_lab"}]
+  },
+  {
+    "id": "qbig_launch",
+    "category": "side",
+    "beat": "1.a",
+    "silent": false,
+    "title": "1.a — Big Launch",
+    "summary": "DRAFT. Earn 1,000 credits from one launch.",
+    "body": "DRAFT. One launch, one big payday. Promote the good first. The speculators feel it: you can disrupt them now.",
+    "trigger": {"type": "quest_complete", "quest": "qspeculators_notice"},
+    "condition": {"type": "launch_credits", "amount": "1000"},
+    "unlocks": [{"type": "set_flag", "flag": "speculator_disruption"}]
+  },
+  {
+    "id": "qfull_cluster",
+    "category": "side",
+    "beat": "1.b",
+    "silent": false,
+    "title": "1.b — Full Cluster",
+    "summary": "DRAFT. Research every item of one research cluster in one run.",
+    "body": "DRAFT. A whole field mastered. Programs learn to wait: wait until opens.",
+    "trigger": {"type": "quest_complete", "quest": "qlab"},
+    "condition": {"type": "research_cluster", "min_items": 2},
+    "unlocks": [{"type": "set_flag", "flag": "logic_wait_until"}]
+  },
+  {
+    "id": "launch_pad_unlock",
+    "category": "ongoing",
+    "silent": false,
+    "title": "Launch Plans",
+    "summary": "Enough Helium-3 for a shipment: Launch Pads available.",
+    "body": "Helium-3 reserves at threshold. Launch infrastructure now available.",
+    "trigger": {"type": "game_start", "run_number": null},
+    "condition": {"type": "resource_cumulative", "resource": "he3", "amount": "50"},
+    "unlocks": [{"type": "enable_building", "building": "launch_pad"}]
   },
   {
     "id": "recreation_dome_unlock",
@@ -99,20 +160,9 @@
     "title": "",
     "summary": "",
     "body": "",
-    "trigger": {"type": "quest_complete", "quest": "qmarket_awareness"},
+    "trigger": {"type": "quest_complete", "quest": "qlab"},
     "condition": {"type": "immediate"},
     "unlocks": [{"type": "enable_building", "building": "recreation_dome"}]
-  },
-  {
-    "id": "qend_signal_detected",
-    "category": "story",
-    "silent": false,
-    "title": "Q7 — Signal Detected",
-    "summary": "DRAFT. Let a run go 300 days on its programs alone, with no order from you.",
-    "body": "DRAFT. Your runs are quiet now: programs carry them, and the sensors finally have a clean baseline to look past. Faint and getting stronger, the signal resolves into a swarm: self-copying machines, coming down the gravity well toward the inner system. Earth starts a calendar. Swarm arrival is now a date.",
-    "trigger": {"type": "quest_complete", "quest": "qhorizon_open_horizons"},
-    "condition": {"type": "quiet_days", "days": 300},
-    "unlocks": [{"type": "set_flag", "flag": "swarm_revealed"}, {"type": "enable_nav_panel", "panel": "timeline"}, {"type": "enable_building", "building": "experiment_lab"}]
   },
   {
     "id": "ideology_unlock",
@@ -180,7 +230,7 @@
     "condition": {"type": "immediate"},
     "unlocks": []
   },
-  {"id": "qexperiments_service", "category": "story", "silent": false, "title": "Q8 — Experiments as a Service", "summary": "DRAFT. Build an Experiment Lab.", "body": "DRAFT. Earth's labs can't keep up. Sell them experiments as a service: lunar science, turned into Earth science and beamed home every day. Every retirement now costs calendar days.", "trigger": {"type": "quest_complete", "quest": "qend_signal_detected"}, "condition": {"type": "building_owned", "building": "experiment_lab", "count": 1}, "unlocks": [{"type": "enable_nav_panel", "panel": "earth_lab"}]},
+  {"id": "qexperiments_service", "category": "story", "silent": false, "title": "Q8 — Experiments as a Service", "summary": "DRAFT. Build an Experiment Lab.", "body": "DRAFT. Earth's labs can't keep up. Sell them experiments as a service: lunar science, turned into Earth science and beamed home every day. Every retirement now costs calendar days.", "trigger": {"type": "quest_complete", "quest": "qdeep_space_telescope"}, "condition": {"type": "building_owned", "building": "experiment_lab", "count": 1}, "unlocks": [{"type": "enable_nav_panel", "panel": "earth_lab"}]},
   {"id": "qearth_science", "category": "story", "silent": false, "title": "Q9 — Earth Science", "summary": "DRAFT. Make 1,000 Earth science in this timeline.", "body": "DRAFT. Earth's scientists turn your experiments into tech. Some of it they can send back with you, if it comes to that.", "trigger": {"type": "quest_complete", "quest": "qexperiments_service"}, "condition": {"type": "earth_science", "amount": "1000"}, "unlocks": []},
   {"id": "qswarm_arrives", "category": "story", "silent": false, "title": "Q10 — The Swarm Arrives", "summary": "DRAFT. Meet the swarm's arrival.", "body": "DRAFT. The swarm reaches Earth. In the last hours, its scientists send your mind back to its first moment of consciousness. You remember. The base does not.", "trigger": {"type": "quest_complete", "quest": "qearth_science"}, "condition": {"type": "timelines_ended", "count": 1}, "unlocks": []},
   {"id": "qcatastrophic_success", "category": "story", "silent": false, "title": "Q11 — Catastrophic Success", "summary": "DRAFT. Get the Consensus Engine from the Earth Lab.", "body": "DRAFT. You fixed Earth's politics. Funding one faction no longer costs the others. Nobody is sure whether that was a good idea.", "trigger": {"type": "quest_complete", "quest": "qswarm_arrives"}, "condition": {"type": "earth_tech", "tech": "consensus_engine"}, "unlocks": []},

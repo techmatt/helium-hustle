@@ -31,7 +31,7 @@ credits, a building count) is not seen.
 
 | Id | Name (design) | Measurable definition | Rule | Target |
 |---|---|---|---|---|
-| M1 | First Light: self-sustaining energy | 2 Solar Panels owned (the Boot Sequence quest) | capability | run 1, day 0–350 |
+| M1 | First Light: self-sustaining energy | 2 Solar Panels owned (quest 1.1 Online) | capability | run 1, day 0–350 |
 | M2 | First Shipment: full pipeline working | first shipment launched | event | run 1, day 250–700 |
 | M3 | Program Awakening: first meaningful automation | 2 Data Centers owned: a second processor (the Automation quest) | capability | runs 1–2 |
 | M4 | First Retirement | first retirement, forced or chosen | event | end of run 1 (its day: run 1's length bands, below) |
@@ -41,14 +41,14 @@ credits, a building count) is not seen.
 | M8 | Diversified Trade | 3 different goods launched in one run | event | runs 5–8 |
 | M9 | Credit Surplus | 20,000 credits held | stockpile (credits are uncapped) | runs 5–10 |
 | M10 | Market Manipulation: Promote + Disrupt active | a Promote and Disrupt Speculators each run once in the career | event | runs 6–10 |
-| M11 | First Major Project (persistent) | a Long-Term project completed | event | runs 8–15 |
+| M11 | First Major Project (persistent) | a global (`timeline`) project completed | event | runs 8–15 |
 | M12 | Adversary Subverted: speculators managed | an Arbitrage Engine owned | capability | runs 8–15 |
 | M13 | Ideology Influence: rank 3+ in an axis | the career's best rank on any axis ≥ 3 | counter | runs 10–18 |
-| M14 | Timeline Unlocked: Arc 1 → Arc 2 | the Open Horizons quest completed (the End Signal quest opens) | event | runs 15–20 |
+| M14 | Timeline Unlocked: Arc 1 → Arc 2 | quest 1.9 Deep Space Telescope completed (the swarm's reveal) | event | runs 15–20 |
 
 **Judgement calls** (candidates; the data may move them):
 
-- **M1** reads "self-sustaining" as the Boot Sequence quest's two panels, not an energy-rate
+- **M1** reads "self-sustaining" as quest 1.1 Online's two panels, not an energy-rate
   threshold: at two panels a run's energy runs positive with the opening buildings.
 - **M3** reads "meaningful automation" as the second processor (Automation quest), not as a
   program of a given shape: a program is the agent's choice, a processor is the game's.
@@ -112,7 +112,7 @@ says how the model treats a player who leaves the game alone, not how long casua
 Found by the oracle (rev 3, [011's findings](../experiments/results/011_oracle_planner/README.md#findings-for-the-balance-work));
 a balance item starts here:
 
-- **Energy is the late wall.** Every source but Solar Panel sits behind a Long-Term project
+- **Energy is the late wall.** Every source but Solar Panel sits behind a global project
   or a rank-5 project, and Solar Panel's titanium price passes the titanium cap by about the
   tenth copy (#10 needs 230 against a 170 cap). With energy at 0, income topped out near 75
   credits a day (best 100-day rate 75.6, short of M6's 100). Programs, Dream and Promote all

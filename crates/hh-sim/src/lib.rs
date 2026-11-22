@@ -205,8 +205,7 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
         }
         "golden" => {
             let c = load_config(BASELINE)?;
-            let mut s = Session::new(&c, hh_core::driver::GOLDEN_SEED, None).map_err(Fail::Usage)?;
-            play(&mut s, hh_core::driver::GOLDEN_TICKS, hh_core::driver::GOLDEN_POLICY);
+            let s = hh_core::driver::golden_session(&c).map_err(Fail::Usage)?;
             Ok(format!(
                 "revision {RULES_REVISION} fingerprint {} content {}\n",
                 s.state.fingerprint(),

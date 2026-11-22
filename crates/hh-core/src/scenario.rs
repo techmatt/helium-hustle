@@ -26,6 +26,7 @@ const FILES: &[(&str, &str)] = &[
     ("at_cap.json", include_str!("../../../scenarios/at_cap.json")),
     ("late_unlocks.json", include_str!("../../../scenarios/late_unlocks.json")),
     ("pad_loading.json", include_str!("../../../scenarios/pad_loading.json")),
+    ("golden_start.json", include_str!("../../../scenarios/golden_start.json")),
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -39,6 +40,10 @@ pub struct Start {
     pub panels: Vec<String>,
     /// Program queues from the first program on (the rest stay empty).
     pub programs: Vec<Vec<Entry>>,
+    /// Career flags set at the start (`logic_if`: `if` open; the golden
+    /// game's start, README *Rules changes*).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub flags: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -117,6 +122,7 @@ impl Scenario {
             p.processors += free;
         }
         g.run.enabled_panels.extend(self.start.panels.iter().cloned());
+        g.career.flags.extend(self.start.flags.iter().cloned());
         for (p, entries) in g.run.programs.iter_mut().zip(&self.start.programs) {
             p.entries = entries.clone();
         }

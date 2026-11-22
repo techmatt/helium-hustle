@@ -150,7 +150,7 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
     let mut v = s.rules.view(&s.state);
     // The view is re-read only after an action that may change what it shows.
     let mut stale = false;
-    // Once program logic is open, the first program's guard lines assign them.
+    // Once program logic is open, the first program's lines assign them.
     if v.processors_free > 0 && !v.program_logic {
         let n = v.programs[0].processors + v.processors_free;
         stale |= s.apply(&Action::SetProcessors { program: 0, processors: n }).is_ok();
@@ -200,7 +200,22 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
         v = s.rules.view(&s.state);
     }
     let pick = choose_command(&v, goal.map(|(id, _)| *id), allowed);
-    let mut want = if v.program_logic { guard_lines(allowed) } else { Vec::new() };
+    // Before `if` opens (a global project, Act 1 beat 1.7), the guards' bodies
+    // run bare: the verbs and `build` still pin the interpreter.
+    let mut want = if v.if_open {
+        guard_lines(allowed)
+    } else if v.program_logic {
+        guard_lines(allowed)
+            .into_iter()
+            .filter(|e| !matches!(e.op, Op::If { .. }))
+            .map(|mut e| {
+                e.indented = false;
+                e
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
     want.push(Entry::command(pick, 1));
     if v.programs[0].entries != want {
         s.apply(&Action::SetProgram { program: 0, entries: want }).expect("a known command");
@@ -281,8 +296,22 @@ fn choose_command(v: &View, goal: Option<&str>, allowed: &Allowed) -> &'static s
     }
 }
 
-/// The golden game: baseline config, seed `u64::MAX`, 2000 ticks of the
-/// script (README, *Rules changes*).
+/// The golden game: baseline config, seed `u64::MAX`, the `golden_start`
+/// scenario (`if` and `wait until` open, so the golden pins the interpreter),
+/// 2000 ticks of the script (README, *Rules changes*).
 pub const GOLDEN_SEED: u64 = u64::MAX;
 pub const GOLDEN_TICKS: u64 = 2000;
 pub const GOLDEN_POLICY: Policy = Policy::Script;
+pub const GOLDEN_SCENARIO: &str = "golden_start";
+
+/// The golden game's session at its start (tick 0), on `config`.
+pub fn golden_start(config: &crate::Config) -> Result<Session, String> {
+    Session::new(config, GOLDEN_SEED, Some(crate::scenario(GOLDEN_SCENARIO)?))
+}
+
+/// The golden game played out on `config`.
+pub fn golden_session(config: &crate::Config) -> Result<Session, String> {
+    let mut s = golden_start(config)?;
+    play(&mut s, GOLDEN_TICKS, GOLDEN_POLICY);
+    Ok(s)
+}

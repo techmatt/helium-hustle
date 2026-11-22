@@ -11,6 +11,14 @@ mod verbs;
 use crate::driver::{play, GOLDEN_POLICY, GOLDEN_SEED, GOLDEN_TICKS};
 use crate::{content_hash, Config, Session, RULES_REVISION};
 
+#[test]
+fn the_golden_starts_with_if_open() {
+    let s = crate::driver::golden_start(&baseline()).unwrap();
+    assert!(s.state.career.flags.contains(crate::modules::programs::IF_FLAG));
+    assert!(s.state.career.flags.contains(crate::modules::programs::WAIT_FLAG));
+    assert_eq!(s.state.tick, 0);
+}
+
 pub(crate) const BASELINE: &str = include_str!("../../../../configs/baseline.json");
 
 pub(crate) fn baseline() -> Config {
@@ -38,14 +46,12 @@ pub(crate) fn set(g: &mut crate::GameState, res: &str, v: &str) {
 // The golden constants: update all three together on a `RULES_REVISION` bump
 // with `python scripts/set_golden.py` (it also sets `GOLDEN_*` in
 // scripts/wasm-smoke.mjs); never type them (README, *Rules changes*).
-const GOLDEN_REVISION: u32 = 14;
-const GOLDEN_FINGERPRINT: &str = "3ccc83437f701bfe";
-const GOLDEN_CONTENT_HASH: &str = "9494509aec3339dd";
+const GOLDEN_REVISION: u32 = 15;
+const GOLDEN_FINGERPRINT: &str = "6993f91f56cc5bc4";
+const GOLDEN_CONTENT_HASH: &str = "02697048f11250f6";
 
 pub(crate) fn golden_session() -> Session {
-    let mut s = Session::new(&baseline(), GOLDEN_SEED, None).unwrap();
-    play(&mut s, GOLDEN_TICKS, GOLDEN_POLICY);
-    s
+    crate::driver::golden_session(&baseline()).unwrap()
 }
 
 #[test]
@@ -63,14 +69,15 @@ fn golden_game() {
 }
 
 /// The golden script's condition program (`driver::guard_lines`) does its work
-/// in the golden game: each guard both holds and fails, the `assign` and the
-/// `build` both run, and the `build` is also done (two pads owned), so the
-/// fingerprint pins the interpreter and the new readings, not only unit tests.
+/// in the golden game (which starts with `if` open, the `golden_start`
+/// scenario): each guard both holds and fails, the `assign` and the `build`
+/// both run, and the `build` is also done (two pads owned), so the
+/// fingerprint pins the interpreter and the readings, not only unit tests.
 #[test]
 fn golden_game_runs_its_condition_program() {
     use crate::state::{LineOutcome as O, Reading};
     use std::collections::BTreeSet;
-    let mut s = Session::new(&baseline(), GOLDEN_SEED, None).unwrap();
+    let mut s = crate::driver::golden_start(&baseline()).unwrap();
     let mut seen: [BTreeSet<String>; 4] = Default::default();
     let mut readings = BTreeSet::new();
     for _ in 0..GOLDEN_TICKS {

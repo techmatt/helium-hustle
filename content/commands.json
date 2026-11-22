@@ -182,7 +182,7 @@
   {
     "id": "disrupt_speculators",
     "name": "Disrupt Speculators",
-    "requires": {"type": "research", "research": "market_awareness"},
+    "requires": {"type": "flag", "flag": "speculator_disruption"},
     "costs": {"energy": "3"},
     "produces": {},
     "boredom": "0",
@@ -239,5 +239,6 @@
     "sets_flag": null,
     "description": "Purchase beamed energy from Earth's orbital power grid. Requires Microwave Receiver."
   },
+  {"id": "contest_claims", "name": "Contest Claims", "requires": {"type": "flag", "flag": "contest_claims"}, "costs": {"credits": "500", "energy": "10"}, "produces": {}, "boredom": "0", "effect": {"type": "neutralize", "adversary": "rivals"}, "scale_modifier": null, "sets_flag": null, "description": "DRAFT. File counter-claims against the rival AI: its attention drops to zero and land prices fall back."},
   {"id": "distract", "name": "Distract", "requires": {"type": "research", "research": "novelty_simulation"}, "costs": {"credits": "200", "energy": "5"}, "produces": {}, "boredom": "-10", "effect": null, "scale_modifier": null, "sets_flag": null, "description": "DRAFT. Buy novelty: 10 boredom off for 200 credits. It never solves boredom."}
 ]

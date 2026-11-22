@@ -1,21 +1,15 @@
 //! The later acts (draft, 042) for the author: just enough play to get
-//! through them, not to play them well. It engages only once the swarm's
-//! reveal quest is active (Q7, `quiet_days`) or the calendar runs, so Act 1
+//! through them, not to play them well. It engages only once the swarm is
+//! revealed (the Deep Space Telescope, 1.9) and the calendar runs, so Act 1
 //! play, the ladder and the balance reads never meet it. Player strategy: its
 //! numbers are knobs' kind, not rules (docs/rulings.md).
 
-use hh_core::{Action, Fx, View};
+use hh_core::{Action, Fx};
 
 use super::Player;
 
 /// Later-act buildings and how many of each it keeps (strategy).
 const BUILD: &[(&str, u32)] = &[("experiment_lab", 4), ("tachyon_condenser", 3), ("neodymium_mine", 3), ("dyson_foundry", 4)];
-
-/// While the active quest wants quiet days (the reveal), the author gives
-/// no orders once the run's first days are set up.
-pub fn hands_off(v: &View) -> bool {
-    v.quest.as_ref().is_some_and(|q| q.kind == "quiet_days") && v.day > 20
-}
 
 /// One look's later-act moves; nothing before the reveal.
 pub fn act(p: &mut Player) {

@@ -241,6 +241,15 @@ pub struct RivalView {
 }
 
 #[derive(Debug, Clone, Serialize)]
+pub struct AdversaryView {
+    /// `speculators` or `rivals`.
+    pub id: Text,
+    pub attention: Fx,
+    pub threshold: Fx,
+    pub present: bool,
+}
+
+#[derive(Debug, Clone, Serialize)]
 pub struct NavView {
     pub id: Text,
     pub name: Text,
@@ -286,7 +295,7 @@ pub struct NextRunView {
     pub starting_credits: Fx,
     pub boredom_resilience: Fx,
     pub buy_power_mult: Fx,
-    /// Each axis's starting score and rank (the ideology head start).
+    /// Each axis's starting score and rank (carried through the gap).
     pub ideology: Vec<AxisView>,
 }
 
@@ -329,9 +338,14 @@ pub struct View {
     pub can_buy_land: bool,
     pub commands: Vec<CommandView>,
     pub programs: Vec<ProgramView>,
-    /// `if`, `wait until`, `build` and `buy land` may be queued (a career
-    /// first: the first day `logic_unlock_processors` processors work).
+    /// `build`, `buy land` and verb lines may be queued (a career first: the
+    /// first day `logic_unlock_processors` processors work); `if` and `wait
+    /// until` also need `if_open` / `wait_open`.
     pub program_logic: bool,
+    /// `if` may be queued (program logic and the Conditional Logic project).
+    pub if_open: bool,
+    /// `wait until` may be queued (program logic and the Full Cluster side quest).
+    pub wait_open: bool,
     pub logic_unlock_processors: u32,
     /// Most lines in one program (`max_entries`).
     pub max_program_lines: usize,
@@ -367,6 +381,8 @@ pub struct View {
     /// Every achievement, earned or not, in content order.
     pub achievement_list: Vec<AchievementView>,
     pub rivals: Vec<RivalView>,
+    /// Each adversary's Attention, threshold and presence (attention.md).
+    pub adversaries: Vec<AdversaryView>,
     /// Live overclocks.
     pub overclocks: Vec<Overclock>,
     /// Every modifier key's value now (1 with no source).
@@ -640,6 +656,8 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         commands,
         programs: programs::programs(r, g, &running),
         program_logic: program_rules::logic_unlocked(g),
+        if_open: program_rules::if_unlocked(g),
+        wait_open: program_rules::wait_unlocked(g),
         logic_unlock_processors: r.p.programs.logic_unlock_processors,
         max_program_lines: r.p.programs.max_entries,
         library: g.career.library.clone(),
@@ -732,6 +750,15 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 name: &rv.name,
                 good: &rv.good,
                 dumps_seen: g.run.activity.iter().filter(|a| a.kind == "rival_dump" && a.id == rv.id).count() as u32,
+            })
+            .collect(),
+        adversaries: crate::modules::attention::ADVERSARIES
+            .iter()
+            .map(|&id| AdversaryView {
+                id,
+                attention: crate::modules::attention::attention(g, id),
+                threshold: crate::modules::attention::threshold_of(r, id),
+                present: crate::modules::attention::present(r, g, id),
             })
             .collect(),
         // Only those the next day still applies: one whose last day has passed lingers in

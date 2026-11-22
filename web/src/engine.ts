@@ -475,6 +475,10 @@ export interface View {
   programs: ProgramView[];
   /** `if`, `wait until`, `build` and `buy land` may be queued (a career first). */
   program_logic: boolean;
+  /** `if` may be queued (program logic and the Conditional Logic project). */
+  if_open: boolean;
+  /** `wait until` may be queued (program logic and the Full Cluster side quest). */
+  wait_open: boolean;
   logic_unlock_processors: number;
   /** Most lines in one program (`max_entries`). */
   max_program_lines: number;
@@ -501,6 +505,8 @@ export interface View {
   event_texts: StoryView[];
   achievement_list: AchievementView[];
   rivals: { id: string; name: string; good: string; dumps_seen: number }[];
+  /** Each adversary's Attention, threshold and presence (docs/rules/attention.md). */
+  adversaries: { id: string; attention: Fx; threshold: Fx; present: boolean }[];
   overclocks: { target: string; bonus: Fx; until_day: number }[];
   modifiers: Record<string, Fx>;
   /** Every live project reward, as `Project: what it gives`. */

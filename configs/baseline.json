@@ -54,6 +54,19 @@
         "tier_bounds": ["0.25", "0.5", "0.75"]
       }
     },
+    "attention": {
+      "variant": "minimal",
+      "params": {
+        "speculator_per_unit": "1",
+        "speculator_threshold": "500",
+        "speculator_decay": "0.5",
+        "rival_per_land": "1",
+        "rival_threshold": "100",
+        "rival_decay": "0.02",
+        "rival_land_price_mult": "3",
+        "disrupt_attention": "20"
+      }
+    },
     "programs": {
       "variant": "arc1",
       "params": {
@@ -96,7 +109,9 @@
         "fund_cross_penalty": "0.5",
         "bonus_factor": "1.05",
         "discount_factor": "0.97",
-        "overclock_duration_factor": "1.03"
+        "overclock_duration_factor": "1.03",
+        "major_rank": 5,
+        "half_life_days": "365"
       }
     },
     "events": { "variant": "arc1", "params": { "activity_kept": 50 } },
@@ -107,7 +122,7 @@
         "credits_bonus_fraction": "0.02",
         "boredom_resilience_base": "0.995",
         "boredom_resilience_period": "400",
-        "ideology_headstart_fraction": "0.2",
+        "gap_days": 1825,
         "buy_power_peak_threshold": "100",
         "buy_power_per_energy": "0.01"
       }
