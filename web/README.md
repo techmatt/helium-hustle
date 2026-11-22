@@ -76,7 +76,8 @@ Three columns and a status bar:
   columns while the left stays, opened and closed by its button under the nav grid, or
   closed with Esc or a nav tile. A slim strip on top shows the day, Boredom, Energy,
   Credits, He-3 and Science, and pause. The game runs on behind it: the covered columns
-  stay mounted, only hidden. A view is one `Takeover` entry in `App.tsx`'s `TAKEOVERS`.
+  stay mounted, only hidden. A view is one `Takeover` entry in `App.tsx`'s `TAKEOVERS`;
+  `bleed` drops the body's padding and scrolling for a view that fits itself to it.
   Its only user so far is the Cortex mock (below); later large views are meant to use it.
 - **Run summary:** when a run ends a summary covers the screen, the clock stopped until
   Continue.
@@ -120,7 +121,8 @@ for a later live base view: replace what it draws, keep its box.
   a seed; *Check replay* replays the record in wasm and compares fingerprints; a line with
   engine, revision, config hash, seed, action count and fingerprint; *Cortex mock in the left
   column*, which shows the button of a UI-only radial mock of the talent tree, a takeover
-  view (`src/ui/CortexMock.tsx`, placeholders, no effect, in memory). **Cheats** (off by
+  view (`src/ui/CortexMock.tsx`, placeholders, no effect, in memory; dark art in both
+  themes; left-click adds a point, right-click takes one back). **Cheats** (off by
   default, remembered in `hh.cheats`): grant a resource, set boredom, jump ahead N days;
   the **accelerators**: 2k and 10k speeds, the boost and the autopilot
   ([simulator.md](../docs/simulator.md#accelerators)). Engine actions, so replay stays

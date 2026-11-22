@@ -366,6 +366,10 @@ ul.plain {
   overflow: auto;
   padding: 10px 12px;
 }
+.takeover-body.takeover-bleed {
+  padding: 0;
+  overflow: hidden;
+}
 .takeover-buttons {
   display: flex;
   flex-direction: column;

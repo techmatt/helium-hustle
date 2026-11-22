@@ -18,6 +18,8 @@ export type Takeover = {
   label: string;
   /** The heading over the view. */
   title: ComponentChildren;
+  /** The view draws edge to edge: no padding, and it fits itself to the body (no scrolling). */
+  bleed?: boolean;
   shown: (s: Store) => boolean;
   render: (s: Store) => ComponentChildren;
 };
@@ -97,7 +99,7 @@ export function TakeoverView({ s, t, close }: { s: Store; t: Takeover; close: ()
           ✕ Close
         </button>
       </div>
-      <div class="takeover-body">{t.render(s)}</div>
+      <div class={`takeover-body${t.bleed ? ' takeover-bleed' : ''}`}>{t.render(s)}</div>
     </section>
   );
 }
