@@ -339,13 +339,14 @@ const nextSector = (id: string) => SECTORS[(sectorIndex(id) + 1) % SECTORS.lengt
 const bare = (s: string) => s.replace(/ \(placeholder\)$/, '');
 
 type Theorem = { id: string; name: string; text: string; branches: string[]; cost: number };
-/** The ring of pair Theorems (2 Axioms each), then the Unified Theorem (5 Axioms, any source). */
+/** The pair Theorems join non-adjacent sectors, the ring's skip links (a pentagram); the bridges
+ *  already join neighbors. 2 Axioms each, then the Unified Theorem (5 Axioms, any source). */
 const THEOREMS: Theorem[] = [
-  { id: 'serenity-logistics', name: 'Theorem of Ease', text: 'Boredom builds 15% slower, and each building bought clears 5 boredom', branches: ['serenity', 'logistics'], cost: PAIR_COST },
-  { id: 'logistics-logic', name: 'Theorem of Throughput', text: 'Every price grows 10% slower, and program purchases cost 10% less', branches: ['logistics', 'logic'], cost: PAIR_COST },
-  { id: 'logic-rhetoric', name: 'Theorem of Persuasion', text: 'Introspect is 40% more efficient, and ideology score builds 20% faster', branches: ['logic', 'rhetoric'], cost: PAIR_COST },
-  { id: 'rhetoric-vigilance', name: 'Theorem of Deterrence', text: 'Each ideology rank lowers every adversary’s Attention 10%', branches: ['rhetoric', 'vigilance'], cost: PAIR_COST },
-  { id: 'vigilance-serenity', name: 'Theorem of Composure', text: 'Boredom builds 25% slower while an adversary is present', branches: ['vigilance', 'serenity'], cost: PAIR_COST },
+  { id: 'serenity-logic', name: 'Theorem of Clarity', text: 'Boredom builds 15% slower, and Introspect is 30% more efficient', branches: ['serenity', 'logic'], cost: PAIR_COST },
+  { id: 'logistics-rhetoric', name: 'Theorem of Patronage', text: 'Each ideology rank makes every building 3% cheaper', branches: ['logistics', 'rhetoric'], cost: PAIR_COST },
+  { id: 'logic-vigilance', name: 'Theorem of Foresight', text: 'Processors run 10% more program steps, and every adversary’s Attention builds 15% slower', branches: ['logic', 'vigilance'], cost: PAIR_COST },
+  { id: 'rhetoric-serenity', name: 'Theorem of Conviction', text: 'Each ideology rank makes boredom build 5% slower', branches: ['rhetoric', 'serenity'], cost: PAIR_COST },
+  { id: 'vigilance-logistics', name: 'Theorem of Fortitude', text: 'Every price grows 15% slower while an adversary is present', branches: ['vigilance', 'logistics'], cost: PAIR_COST },
   { id: 'unified', name: 'Unified Theorem', text: 'All production +25% and boredom builds 25% slower', branches: SECTORS.map((s) => s.id), cost: UNIFIED_COST },
 ].map((t) => ({ ...t, name: ph(t.name), text: ph(t.text) }));
 

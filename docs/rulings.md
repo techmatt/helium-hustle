@@ -174,11 +174,12 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   `icons.tsx` (the chip needs the hex for its ink-contrast choice, and they are the same in
   both themes); only the axis text colors are CSS tokens.
 - **Cortex mock (2026-11-22).** Contrast first: inside the wheel's rim a plain solid ground per
-  theme; decoration (bezel, corona, neurons) only outside the rim, nothing crossing inside the bezel. It follows the app's
-  theme. The Grand Theorems sit left of the wheel in one framed brass case with a title plate,
-  clear of the game's nav, centered on the core. A socket's or fan's part switches with one click, free.
+  theme; decoration (bezel, corona, neurons) only outside the rim. It follows the app's
+  theme. The Grand Theorems sit left of the wheel in a framed brass case, clear of the nav,
+  centered on the core. Pair Theorems join non-adjacent sectors (a pentagram); bridges join
+  neighbors (057). A socket's or fan's part switches with one click, free.
   One grammar (056): lines are prerequisites, Y and V forks, split sockets, bridges, gates; a
-  sector's personality is only how it arranges them (Vigilance: a ladder). Drawn
-  lines and prerequisites are one set. Hovering a locked node
-  outlines its prerequisites and the lines in, owned and missing apart.
-  For the record, not built: an Act 4 upgrade lets a fan hold several parts at once.
+  sector's personality is only how it arranges them (Vigilance: a ladder). Drawn lines and
+  prerequisites are one set. Hovering a locked node outlines its prerequisites and the lines
+  in, owned and missing apart.
+  Not built: an Act 4 upgrade lets a fan hold several parts at once.
