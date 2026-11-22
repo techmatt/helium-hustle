@@ -112,7 +112,8 @@ for a later live base view: replace what it draws, keep its box.
   sees the change (`storage` event), stops and says to reload.
 - **Debug menu** (Options → Debug): the theme, a scenario (`scenarios/`) or a new game from
   a seed; *Check replay* replays the record in wasm and compares fingerprints; a line with
-  engine, revision, config hash, seed, action count and fingerprint. **Cheats** (off by
+  engine, revision, config hash, seed, action count and fingerprint; *Cortex mock*, a UI-only
+  mock of the talent tree (`src/ui/CortexMock.tsx`, placeholders, no effect). **Cheats** (off by
   default, remembered in `hh.cheats`): grant a resource, set boredom, jump ahead N days;
   the **accelerators**: 2k and 10k speeds, the boost and the autopilot
   ([simulator.md](../docs/simulator.md#accelerators)). Engine actions, so replay stays

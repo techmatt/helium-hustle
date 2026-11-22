@@ -20,6 +20,7 @@ import {
   type Store,
 } from '../store';
 import { Section } from './common';
+import { CortexMockButton } from './CortexMock';
 
 export function Options({ s }: { s: Store }) {
   const [confirm, setConfirm] = useState(false);
@@ -131,6 +132,7 @@ function Debug({ s }: { s: Store }) {
           Check replay
         </button>
       </p>
+      <CortexMockButton />
       <p class="muted small" id="debug-info">
         engine {engine.version()} · rules revision {engine.rulesRevision()} · config {s.configHash} · seed {s.seed}
         {s.scenario ? ` · scenario ${s.scenario.name}` : ''} · {s.actionCount} actions · fingerprint {fingerprint()}
