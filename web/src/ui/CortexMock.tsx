@@ -1,5 +1,5 @@
-// A UI-only MOCK of the Cortex (the talent tree), drawn as a radial tree on a plain ground,
-// for trying how it reads and feels. Every node and theorem is a placeholder with no
+// A UI-only MOCK of the Cortex (the talent tree), drawn as a radial tree on a plain ground in
+// a brass dial bezel (neural decoration only outside it), for trying how it reads and feels. Every node and theorem is a placeholder with no
 // mechanical effect: nothing here reaches the engine, the store, the save or the play log,
 // and its state (the tree and the debug toggle that shows it) lives in this module, in
 // memory, lost on reload. It is the first user of the takeover view (Takeover.tsx): a
@@ -20,12 +20,21 @@ const PAIR_COST = 2;
 const UNIFIED_COST = 5;
 
 // ---- the drawing, in SVG units around the core at (0, 0) ----
-const VIEW = 572;
+const VIEW = 612;
 const SPAN = 72;
 const CORE_R = 62;
 const RIM_R = 506;
 const NAME_R = 524;
 const NODE_R = 18;
+// The frame (055): a brass dial bezel round the rim, carrying the sector names; a corona of
+// filaments just outside it; sparse neurons beyond. Nothing decorative inside BEZEL_IN.
+const BEZEL_IN = 512;
+const BEZEL_OUT = 556;
+const CORONA_IN = 559;
+const CORONA_LEN: [number, number] = [10, 36];
+const CORONA_COUNT = 140;
+/** Background neurons, their dendrites and traces stay outside this radius. */
+const DECO_MIN_R = 640;
 
 // ---- glyphs, on a 24-unit grid; most from 026's chip glyphs (glyphs.mjs), as placeholders ----
 const STROKE = (d: string, w = 2.4) => `<path d="${d}" fill="none" stroke="currentColor" stroke-width="${w}" stroke-linecap="round" stroke-linejoin="round"/>`;
@@ -504,6 +513,125 @@ function edgeLit(e: Edge): boolean {
   return !!e.from && !!e.from.ring && !!e.to.ring && full(e.to) && owned(e.from);
 }
 
+// ---- the frame and the decoration outside it, drawn once (055) ----
+/** A small seeded generator, so the decoration is the same on every load and screenshot. */
+function rng(seed: number): () => number {
+  let s = seed >>> 0;
+  return () => {
+    s = (s + 0x6d2b79f5) >>> 0;
+    let t = s;
+    t = Math.imul(t ^ (t >>> 15), t | 1);
+    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+const dot = ([x, y]: [number, number], r: number) => `M ${f1(x - r)} ${f1(y)} a ${r} ${r} 0 1 0 ${f1(2 * r)} 0 a ${r} ${r} 0 1 0 ${f1(-2 * r)} 0 `;
+/** The bezel's tick marks: fine ones every 2 degrees on its outer edge, longer every 10, and a fine row on its inner edge. */
+function bezelTicks(): { minor: string; major: string; inner: string } {
+  let [minor, major, inner] = ['', '', ''];
+  for (let k = 0; k < 360; k += 2) {
+    if (k % 10 === 0) major += `M ${pt(at(BEZEL_OUT - 12, k))} L ${pt(at(BEZEL_OUT - 2, k))} `;
+    else minor += `M ${pt(at(BEZEL_OUT - 7, k))} L ${pt(at(BEZEL_OUT - 2, k))} `;
+    if (k % 4 === 0) inner += `M ${pt(at(BEZEL_IN + 2, k))} L ${pt(at(BEZEL_IN + 6, k))} `;
+  }
+  return { minor, major, inner };
+}
+/**
+ * The corona: short dendrite-like filaments growing out of the bezel, each in the color of the
+ * sector it leaves. Every step and twig heads within 80 degrees of its root's outward line, so
+ * each point lies further out than CORONA_IN along that line: nothing reaches inside the bezel.
+ */
+function coronaPaths(): { sector: string; d: string; tips: string }[] {
+  const r = rng(55);
+  const out = SECTORS.map((s) => ({ sector: s.id, d: '', tips: '' }));
+  for (let k = 0; k < CORONA_COUNT; k++) {
+    const a = (360 * (k + r() * 0.8)) / CORONA_COUNT;
+    const i = Math.floor((((a + 90 + SPAN / 2) % 360) + 360) % 360 / SPAN);
+    const o = out[i];
+    const len = CORONA_LEN[0] + r() * (CORONA_LEN[1] - CORONA_LEN[0]);
+    let p = at(CORONA_IN, a);
+    let dir = a + (r() - 0.5) * 20;
+    o.d += `M ${pt(p)}`;
+    for (let s = 0; s < 3; s++) {
+      dir = Math.max(a - 40, Math.min(a + 40, dir + (r() - 0.5) * 30));
+      p = [p[0] + (len / 3) * Math.cos(rad(dir)), p[1] + (len / 3) * Math.sin(rad(dir))];
+      o.d += ` L ${pt(p)}`;
+      if (s < 2 && r() < (s === 0 ? 0.3 : 0.6)) {
+        const td = dir + (r() < 0.5 ? -1 : 1) * (25 + r() * 15);
+        const tl = len * (s === 0 ? 0.45 : 0.32);
+        const tp: [number, number] = [p[0] + tl * Math.cos(rad(td)), p[1] + tl * Math.sin(rad(td))];
+        o.d += ` M ${pt(p)} L ${pt(tp)} M ${pt(p)}`;
+      }
+    }
+    if (r() < 0.35) o.tips += dot(p, 1.6);
+  }
+  return out;
+}
+/**
+ * The background: sparse neurons (a soma and a few branching dendrites) with synapse traces
+ * between near neighbors, all outside DECO_MIN_R. Somas sit at least 70 further out and a
+ * dendrite reaches at most 60, and a trace is kept only if every sampled point clears it.
+ */
+function neuralField(): { somas: string; dendrites: string; traces: string; boutons: string; pulses: string[] } {
+  const r = rng(553);
+  const somas: [number, number][] = [];
+  for (let tries = 0; somas.length < 90 && tries < 6000; tries++) {
+    const p: [number, number] = [(r() * 2 - 1) * 1700, (r() * 2 - 1) * 1000];
+    if (Math.hypot(p[0], p[1]) < DECO_MIN_R + 70) continue;
+    if (somas.some((q) => Math.hypot(q[0] - p[0], q[1] - p[1]) < 165)) continue;
+    somas.push(p);
+  }
+  let [soma, dendrites, traces, boutons] = ['', '', '', ''];
+  for (const p of somas) {
+    soma += dot(p, 2.6 + r() * 2.4);
+    const arms = 3 + Math.floor(r() * 3);
+    for (let k = 0; k < arms; k++) {
+      let dir = (360 * (k + r() * 0.7)) / arms;
+      let q = p;
+      dendrites += `M ${pt(q)}`;
+      for (let s = 0; s < 3; s++) {
+        dir += (r() - 0.5) * 50;
+        q = [q[0] + 13 * Math.cos(rad(dir)), q[1] + 13 * Math.sin(rad(dir))];
+        dendrites += ` L ${pt(q)}`;
+        if (s === 1 && r() < 0.45) {
+          const td = dir + (r() < 0.5 ? -1 : 1) * 40;
+          dendrites += ` M ${pt(q)} L ${pt([q[0] + 9 * Math.cos(rad(td)), q[1] + 9 * Math.sin(rad(td))])} M ${pt(q)}`;
+        }
+      }
+    }
+  }
+  const pulses: string[] = [];
+  const seen = new Set<string>();
+  somas.forEach((p, i) => {
+    const near = somas
+      .map((q, j) => ({ j, d: Math.hypot(q[0] - p[0], q[1] - p[1]) }))
+      .filter((e) => e.j !== i && e.d < 330)
+      .sort((x, y) => x.d - y.d)
+      .slice(0, 2);
+    for (const { j, d } of near) {
+      const key = [i, j].sort((x, y) => x - y).join('-');
+      if (seen.has(key)) continue;
+      seen.add(key);
+      const q = somas[j];
+      const bend = (r() - 0.5) * 0.5 * d;
+      const c: [number, number] = [(p[0] + q[0]) / 2 - ((q[1] - p[1]) / d) * bend, (p[1] + q[1]) / 2 + ((q[0] - p[0]) / d) * bend];
+      const on = (t: number): [number, number] => [
+        (1 - t) * (1 - t) * p[0] + 2 * t * (1 - t) * c[0] + t * t * q[0],
+        (1 - t) * (1 - t) * p[1] + 2 * t * (1 - t) * c[1] + t * t * q[1],
+      ];
+      if (Array.from({ length: 21 }, (_, k) => on(k / 20)).some(([x, y]) => Math.hypot(x, y) < DECO_MIN_R)) continue;
+      const path = `M ${pt(p)} Q ${pt(c)} ${pt(q)} `;
+      traces += path;
+      boutons += dot(on(0.9), 2);
+      if (seen.size % 4 === 0) pulses.push(path);
+    }
+  });
+  return { somas: soma, dendrites, traces, boutons, pulses };
+}
+const TICKS = bezelTicks();
+const CORONA = coronaPaths();
+const FIELD = neuralField();
+
 // ---- the debug toggle and the takeover ----
 
 /** The debug-menu toggle that shows the Cortex mock's button in the left column. */
@@ -651,8 +779,8 @@ function CortexMock() {
     place();
   };
   useLayoutEffect(place);
-  // The wheel scales to fit its box; `--cx-scale` (screen px per wheel unit) lets the
-  // Theorem heading match the rim's sector names at any window size.
+  // The wheel scales to fit its box; `--cx-scale` (screen px per wheel unit) keeps the
+  // vignette's clear middle just outside the corona at any window size.
   useLayoutEffect(() => {
     const tree = treeRef.current;
     if (!tree) return;
@@ -710,8 +838,25 @@ function CortexMock() {
       </div>
       <div class="cx-main">
         <div class="cx-tree" ref={treeRef} onMouseMove={onMove} onContextMenu={(e) => e.preventDefault()}>
+          {/* Decoration outside the bezel only: neurons and synapse traces, fading toward the edges.
+              Same viewBox as the wheel, so the two line up; it overflows the square into the box's margins. */}
+          <svg class="cx-field" viewBox={`${-VIEW} ${-VIEW} ${2 * VIEW} ${2 * VIEW}`} aria-hidden="true" data-deco="field">
+            <path class="cx-field-trace" d={FIELD.traces} />
+            {FIELD.pulses.map((d, k) => (
+              <path key={k} class="cx-field-pulse" d={d} style={{ animationDelay: `${-1.7 * k}s` }} />
+            ))}
+            <path class="cx-field-dendrite" d={FIELD.dendrites} />
+            <path class="cx-field-soma" d={FIELD.somas} />
+            <path class="cx-field-bouton" d={FIELD.boutons} />
+          </svg>
           <svg class="cx-svg" viewBox={`${-VIEW} ${-VIEW} ${2 * VIEW} ${2 * VIEW}`} role="group" aria-label="The Cortex tree">
             <defs>
+              <radialGradient id="cx-bezel-fill" gradientUnits="userSpaceOnUse" cx="0" cy="0" r={BEZEL_OUT}>
+                <stop offset={BEZEL_IN / BEZEL_OUT} style={{ stopColor: 'var(--cx-bezel-edge)' }} />
+                <stop offset={(BEZEL_IN + 8) / BEZEL_OUT} style={{ stopColor: 'var(--cx-bezel-mid)' }} />
+                <stop offset={(BEZEL_OUT - 14) / BEZEL_OUT} style={{ stopColor: 'var(--cx-bezel-mid)' }} />
+                <stop offset="1" style={{ stopColor: 'var(--cx-bezel-edge)' }} />
+              </radialGradient>
               <radialGradient id="cx-core-fill">
                 <stop offset="0%" stop-color="#fff3d6" />
                 <stop offset="35%" stop-color="#ffc861" />
@@ -749,6 +894,30 @@ function CortexMock() {
                 </g>
               );
             })}
+            {/* The dial bezel: a brass ring hugging the rim, fine ticks on its edges, a stud on each
+                sector boundary; the sector names are engraved on it. */}
+            <g class="cx-bezel-ring" data-deco="bezel" aria-hidden="true">
+              <circle class="cx-bz-band" r={(BEZEL_IN + BEZEL_OUT) / 2} style={{ strokeWidth: BEZEL_OUT - BEZEL_IN }} />
+              <circle class="cx-bz-edge" r={BEZEL_IN} />
+              <circle class="cx-bz-edge" r={BEZEL_OUT} />
+              <circle class="cx-bz-fine" r={BEZEL_OUT - 13.5} />
+              <path class="cx-bz-tick" d={TICKS.minor} />
+              <path class="cx-bz-tick cx-bz-major" d={TICKS.major} />
+              <path class="cx-bz-tick" d={TICKS.inner} />
+              {SECTORS.map((s, i) => {
+                const [x, y] = at((BEZEL_IN + BEZEL_OUT) / 2 - 2, center(i) - SPAN / 2);
+                return <path key={s.id} class="cx-bz-stud" d={`M ${f1(x)} ${f1(y - 6)} L ${f1(x + 6)} ${f1(y)} L ${f1(x)} ${f1(y + 6)} L ${f1(x - 6)} ${f1(y)} Z`} />;
+              })}
+            </g>
+            {/* The corona: faint filaments growing out of the bezel, in their sector's color. */}
+            <g class="cx-corona" data-deco="corona" aria-hidden="true">
+              {CORONA.map((c) => (
+                <g key={c.sector} class={`cx-corona-sector${lit.includes(c.sector) ? ' cx-lit' : ''}`} style={{ color: color(c.sector) }}>
+                  <path class="cx-corona-fil" d={c.d} />
+                  <path class="cx-corona-tip" d={c.tips} />
+                </g>
+              ))}
+            </g>
             {/* Sector names along the outer rim; the lower ones run the other way to read upright. */}
             {SECTORS.map((s, i) => {
               const [a0, a1] = [center(i) - SPAN / 2 + 3, center(i) + SPAN / 2 - 3];
@@ -817,42 +986,54 @@ function CortexMock() {
             {mock.flash ?? 'Left-click adds a point, right-click takes one back. Placeholder powers with no effect; lost on reload.'}
           </p>
         </div>
-        <aside class="cx-side" data-testid="cortex-theorems">
-          <h3 class="cx-side-head">Grand Theorems</h3>
-          {THEOREMS.map((t) => {
-            const have = mock.theorems.has(t.id);
-            const unified = t.id === 'unified';
-            const can = !have && axFree >= t.cost;
-            const light = (ids: string[]) => () => setLit(ids);
-            return (
-              <button
-                type="button"
-                key={t.id}
-                class={`cx-plaque${have ? ' cx-have' : ''}${can ? ' cx-can' : ''}${unified ? ' cx-unified' : ''}`}
-                data-theorem={t.id}
-                data-learned={have ? '1' : '0'}
-                aria-disabled={!can}
-                onMouseEnter={light(t.branches)}
-                onMouseLeave={light([])}
-                onFocus={light(t.branches)}
-                onBlur={light([])}
-                onClick={() => learn(t)}
-              >
-                <span class="cx-rivet cx-rivet-l" />
-                <span class="cx-rivet cx-rivet-r" />
-                <span class="cx-plaque-studs">
-                  {t.branches.map((b) => (
-                    <span key={b} class="cx-stud" style={{ background: color(b) }} title={sectorOf(b).name} />
-                  ))}
-                </span>
-                <span class="cx-plaque-name">{bare(t.name)}</span>
-                <span class="cx-plaque-text">{t.text}</span>
-                <span class="cx-plaque-cost">
-                  {have ? 'Learned' : <>{'◆'.repeat(t.cost)} <span class="cx-dim">{can ? 'learn' : `${t.cost} Axioms`}</span></>}
-                </span>
-              </button>
-            );
-          })}
+        <aside class="cx-side">
+          {/* A brass display case: a frame with corner studs, a title plate on its top edge, and
+              the plaques in a recessed well. */}
+          <div class="cx-case" data-testid="cortex-theorems">
+            <span class="cx-corner cx-corner-tl" />
+            <span class="cx-corner cx-corner-tr" />
+            <span class="cx-corner cx-corner-bl" />
+            <span class="cx-corner cx-corner-br" />
+            <div class="cx-case-plate">
+              <h3 class="cx-case-title">Grand Theorems</h3>
+            </div>
+            <div class="cx-case-well">
+              {THEOREMS.map((t) => {
+                const have = mock.theorems.has(t.id);
+                const unified = t.id === 'unified';
+                const can = !have && axFree >= t.cost;
+                const light = (ids: string[]) => () => setLit(ids);
+                return (
+                  <button
+                    type="button"
+                    key={t.id}
+                    class={`cx-plaque${have ? ' cx-have' : ''}${can ? ' cx-can' : ''}${unified ? ' cx-unified' : ''}`}
+                    data-theorem={t.id}
+                    data-learned={have ? '1' : '0'}
+                    aria-disabled={!can}
+                    onMouseEnter={light(t.branches)}
+                    onMouseLeave={light([])}
+                    onFocus={light(t.branches)}
+                    onBlur={light([])}
+                    onClick={() => learn(t)}
+                  >
+                    <span class="cx-rivet cx-rivet-l" />
+                    <span class="cx-rivet cx-rivet-r" />
+                    <span class="cx-plaque-studs">
+                      {t.branches.map((b) => (
+                        <span key={b} class="cx-stud" style={{ background: color(b) }} title={sectorOf(b).name} />
+                      ))}
+                    </span>
+                    <span class="cx-plaque-name">{bare(t.name)}</span>
+                    <span class="cx-plaque-text">{t.text}</span>
+                    <span class="cx-plaque-cost">
+                      {have ? 'Learned' : <>{'◆'.repeat(t.cost)} <span class="cx-dim">{can ? 'learn' : `${t.cost} Axioms`}</span></>}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </aside>
       </div>
     </div>
@@ -1080,8 +1261,8 @@ function Tip({ n, part, st, tpFree, refusal }: { n: Node; part: number | null; s
   );
 }
 
-// The mock follows the app's theme (Matt, 053): contrast first, on a plain solid ground with no
-// backdrop art. Every color is a `--cx-*` token: the light block is the default (as the app's
+// The mock follows the app's theme (Matt, 053): contrast first, on a plain solid ground inside
+// the rim; decoration only outside the bezel (Matt, 055). Every color is a `--cx-*` token: the light block is the default (as the app's
 // is), the dark block overrides it; sector colors are tokens too, re-tuned for each ground.
 const CSS = `
 .cx-root {
@@ -1099,11 +1280,18 @@ const CSS = `
   --cx-tip-bg: #fdfcfa; --cx-tip-line: #b9b3a8; --cx-tip-shadow: rgb(0 0 0 / 22%); --cx-tip-text: #2b2823; --cx-tip-sep: #e0dbd2;
   --cx-tip-pick-bg: #8f5600; --cx-tip-pick-text: #ffffff; --cx-ink-mix: 70%;
   --cx-ok: #1f7a42; --cx-own: #8f5600; --cx-muted: #625d55; --cx-bad: #b4352c; --cx-ph: #7d776d;
-  --cx-brass-head: #7a5a1e; --cx-brass-bg: linear-gradient(180deg, #f6ecd6 0%, #ecdfc2 100%); --cx-brass-line: #b89a5e;
+  --cx-brass-bg: linear-gradient(180deg, #f6ecd6 0%, #ecdfc2 100%); --cx-brass-line: #b89a5e;
   --cx-brass-inset: #f6ecd6; --cx-brass-inner: #d2bb88; --cx-brass-text: #4f4126; --cx-brass-name: #3d2d0e; --cx-brass-sub: #6b5c40;
   --cx-brass-cost: #8f5600; --cx-brass-hover: #a5823f; --cx-brass-can: #a5823f;
   --cx-brass-have-bg: linear-gradient(180deg, #f6d991 0%, #eac36a 100%); --cx-brass-have-line: #8f5600; --cx-brass-have-inset: #eac36a;
   --cx-brass-have-text: #3d2d0e; --cx-rivet: radial-gradient(circle at 35% 35%, #fff4d8, #a5823f); --cx-stud-line: #4f4126;
+  --cx-bezel-edge: #d9c393; --cx-bezel-mid: #f2e6c8; --cx-bezel-line: #9c7b3c; --cx-bezel-tick: #8a6a2e; --cx-bezel-stud: #b8924a;
+  --cx-corona-a: 0.42; --cx-corona-lit-a: 0.8;
+  --cx-field: #8d7d62; --cx-field-a: 0.5; --cx-field-pulse: #b86e00; --cx-vignette: rgb(120 100 70 / 20%);
+  --cx-case-frame: linear-gradient(180deg, #ead9ad 0%, #cfb06f 48%, #b8954f 100%); --cx-case-line: #8a6a2e;
+  --cx-case-well: linear-gradient(180deg, #e4dece 0%, #ece8de 100%); --cx-case-well-shade: rgb(70 50 15 / 30%);
+  --cx-case-shadow: rgb(70 50 15 / 24%); --cx-case-hi: rgb(255 248 228 / 80%);
+  --cx-plate-bg: linear-gradient(180deg, #f8ebc6 0%, #e2c88f 100%); --cx-plate-text: #3d2d0e;
 }
 :root[data-theme='dark'] .cx-root {
   --cx-bg: #15181d; --cx-text: #d8dee6; --cx-dim: #8b97a3; --cx-strong: #f1f4f7;
@@ -1120,11 +1308,18 @@ const CSS = `
   --cx-tip-bg: #1a2028; --cx-tip-line: #3f4c59; --cx-tip-shadow: rgb(0 0 0 / 60%); --cx-tip-text: #d8dee6; --cx-tip-sep: #2c3742;
   --cx-tip-pick-bg: #ffd27a; --cx-tip-pick-text: #0a0f15; --cx-ink-mix: 100%;
   --cx-ok: #7ee2a0; --cx-own: #ffd27a; --cx-muted: #9aa8b5; --cx-bad: #ff8a80; --cx-ph: #75828e;
-  --cx-brass-head: #c9a45c; --cx-brass-bg: linear-gradient(180deg, #2a2418 0%, #1b1710 55%, #15120c 100%); --cx-brass-line: #5a4a2a;
+  --cx-brass-bg: linear-gradient(180deg, #2a2418 0%, #1b1710 55%, #15120c 100%); --cx-brass-line: #5a4a2a;
   --cx-brass-inset: #15120c; --cx-brass-inner: #3d3220; --cx-brass-text: #cfc6b2; --cx-brass-name: #e8d6a6; --cx-brass-sub: #a89e88;
   --cx-brass-cost: #ffd27a; --cx-brass-hover: #8a7040; --cx-brass-can: #c9a45c;
   --cx-brass-have-bg: linear-gradient(180deg, #4a3a18 0%, #2e2410 60%, #1f180b 100%); --cx-brass-have-line: #ffd27a; --cx-brass-have-inset: #1f180b;
   --cx-brass-have-text: #f3e6c4; --cx-rivet: radial-gradient(circle at 35% 35%, #d6c08a, #5a4a2a); --cx-stud-line: #0b1016;
+  --cx-bezel-edge: #17130c; --cx-bezel-mid: #2b2416; --cx-bezel-line: #6b5630; --cx-bezel-tick: #a08550; --cx-bezel-stud: #a5823f;
+  --cx-corona-a: 0.3; --cx-corona-lit-a: 0.7;
+  --cx-field: #7d8d9c; --cx-field-a: 0.26; --cx-field-pulse: #c9a45c; --cx-vignette: rgb(0 0 0 / 42%);
+  --cx-case-frame: linear-gradient(180deg, #5c4b2a 0%, #3b3019 48%, #2a2212 100%); --cx-case-line: #7a6236;
+  --cx-case-well: linear-gradient(180deg, #0f1216 0%, #13161b 100%); --cx-case-well-shade: rgb(0 0 0 / 60%);
+  --cx-case-shadow: rgb(0 0 0 / 55%); --cx-case-hi: rgb(214 192 138 / 30%);
+  --cx-plate-bg: linear-gradient(180deg, #6e5a32 0%, #43361d 100%); --cx-plate-text: #f3e2b4;
 }
 .cx-root { display: flex; flex-direction: column; height: 100%; min-height: 0; color: var(--cx-text); background: var(--cx-bg);
   --cx-name-size: 21px; --cx-name-track: 7px; }
@@ -1139,9 +1334,35 @@ const CSS = `
 .cx-gates { display: flex; gap: 10px; align-items: center; margin-left: auto; font-size: 12px; }
 .cx-track { display: inline-block; width: 60px; height: 6px; background: var(--cx-track); border-radius: 3px; vertical-align: middle; overflow: hidden; }
 .cx-fill { display: block; height: 100%; background: var(--cx-accent); }
-.cx-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 250px; }
-.cx-tree { position: relative; min-height: 0; overflow: hidden; }
+/* The Theorem case on the left, the wheel on the right. The vignette darkens toward the edges,
+   clear out to just past the corona (the wheel's on-screen scale times a wheel radius). */
+.cx-main { flex: 1; min-height: 0; display: grid; --cx-side-w: 312px; grid-template-columns: var(--cx-side-w) minmax(0, 1fr);
+  background: radial-gradient(circle farthest-corner at calc(var(--cx-side-w) + (100% - var(--cx-side-w)) / 2) 50%,
+    transparent calc(var(--cx-scale, 0.7) * 640px), var(--cx-vignette) calc(var(--cx-scale, 0.7) * 640px + 420px)); }
+.cx-tree { position: relative; min-height: 0; overflow: hidden; grid-column: 2; grid-row: 1; }
 .cx-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; }
+.cx-field { position: absolute; inset: 0; width: 100%; height: 100%; display: block; pointer-events: none;
+  mask-image: radial-gradient(ellipse farthest-corner at 50% 50%, #000 62%, transparent 100%); }
+.cx-field path { fill: none; stroke: var(--cx-field); stroke-opacity: var(--cx-field-a); stroke-linecap: round; stroke-linejoin: round; }
+.cx-field-trace { stroke-width: 1; }
+.cx-field-dendrite { stroke-width: 1.3; }
+.cx-field .cx-field-soma, .cx-field .cx-field-bouton { fill: var(--cx-field); fill-opacity: calc(var(--cx-field-a) * 1.6); stroke: none; }
+.cx-field .cx-field-pulse { stroke: var(--cx-field-pulse); stroke-opacity: calc(var(--cx-field-a) * 2); stroke-width: 1.6;
+  stroke-dasharray: 6 600; animation: cx-synapse 7s linear infinite; }
+@keyframes cx-synapse { from { stroke-dashoffset: 606; } to { stroke-dashoffset: 0; } }
+
+.cx-bz-band { fill: none; stroke: url(#cx-bezel-fill); }
+.cx-bz-edge { fill: none; stroke: var(--cx-bezel-line); stroke-width: 1.6; }
+.cx-bz-fine { fill: none; stroke: var(--cx-bezel-line); stroke-width: 0.6; stroke-opacity: 0.7; }
+.cx-bz-tick { fill: none; stroke: var(--cx-bezel-tick); stroke-width: 0.9; }
+.cx-bz-major { stroke-width: 1.5; }
+.cx-bz-stud { fill: var(--cx-bezel-stud); stroke: var(--cx-bezel-line); stroke-width: 1; }
+.cx-corona-sector { opacity: var(--cx-corona-a); transition: opacity 0.2s; }
+.cx-corona-sector.cx-lit { opacity: var(--cx-corona-lit-a); }
+.cx-corona { animation: cx-corona 6s ease-in-out infinite alternate; }
+@keyframes cx-corona { from { opacity: 0.7; } to { opacity: 1; } }
+.cx-corona-fil { fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
+.cx-corona-tip { fill: currentColor; stroke: none; }
 .cx-flash { position: absolute; left: 12px; bottom: 8px; margin: 0; max-width: 46%; font-size: 12.5px; color: var(--cx-flash-text);
   background: var(--cx-flash-bg); border: 1px solid var(--cx-flash-line); border-radius: 4px; padding: 4px 9px; pointer-events: none; }
 
@@ -1214,7 +1435,7 @@ const CSS = `
 .cx-hover .cx-bezel { stroke: var(--cx-hover); stroke-width: 2.4; }
 .cx-refused .cx-bezel { stroke: var(--cx-refused); stroke-width: 3; }
 .cx-node:focus-visible .cx-bezel { stroke: var(--cx-hover); }
-@media (prefers-reduced-motion: reduce) { .cx-e-pulse, .cx-core-halo, .cx-buyable .cx-halo { animation: none; } }
+@media (prefers-reduced-motion: reduce) { .cx-e-pulse, .cx-core-halo, .cx-buyable .cx-halo, .cx-corona { animation: none; } .cx-field-pulse { display: none; } }
 
 .cx-tip { position: absolute; left: 0; top: 0; width: 270px; z-index: 5; pointer-events: none;
   background: var(--cx-tip-bg); border: 1px solid var(--cx-tip-line);
@@ -1238,16 +1459,27 @@ const CSS = `
 .cx-tip-bad { color: var(--cx-bad); font-weight: 600; }
 .cx-tip-ph { font-size: 10.5px; color: var(--cx-ph); font-style: italic; }
 
-/* Centered on the wheel's core (the middle of .cx-main) by auto margins, which fall to zero
-   when the column overflows, so a short window top-aligns it instead of clipping both ends. */
-.cx-side { display: flex; flex-direction: column; gap: 7px; min-height: 0; overflow: hidden; padding: 10px 12px 10px 4px; }
-.cx-side > :first-child { margin-top: auto; }
-.cx-side > :last-child { margin-bottom: auto; }
-/* The rim's sector-name style, at their on-screen size (their SVG size times the wheel's
-   scale), never below 12px; each line's trailing letter-space is balanced by a left pad so it centers. */
-.cx-side-head { margin: 0 0 2px; font-size: max(12px, calc(var(--cx-name-size) * var(--cx-scale, 1))); font-weight: 700; line-height: 1.15;
-  letter-spacing: calc(var(--cx-name-track) * var(--cx-scale, 1)); padding-left: calc(var(--cx-name-track) * var(--cx-scale, 1));
-  text-transform: uppercase; color: var(--cx-brass-head); text-align: center; }
+/* The left column, clear of the game's nav by a wide left pad. The case is centered on the
+   wheel's core (the middle of .cx-main) by auto margins, which fall to zero when it overflows,
+   so a short window top-aligns it instead of clipping both ends. */
+.cx-side { grid-column: 1; grid-row: 1; display: flex; flex-direction: column; min-height: 0; overflow: hidden; padding: 20px 4px 20px 30px; }
+.cx-case { position: relative; display: flex; flex-direction: column; min-height: 0; margin: auto 0; padding: 0 9px 9px;
+  background: var(--cx-case-frame); border: 1px solid var(--cx-case-line); border-radius: 7px;
+  box-shadow: inset 0 1px 0 var(--cx-case-hi), 0 8px 26px var(--cx-case-shadow); }
+.cx-corner { position: absolute; width: 9px; height: 9px; transform: rotate(45deg); background: var(--cx-rivet); border: 1px solid var(--cx-case-line); }
+.cx-corner-tl { top: -5px; left: -5px; }
+.cx-corner-tr { top: -5px; right: -5px; }
+.cx-corner-bl { bottom: -5px; left: -5px; }
+.cx-corner-br { bottom: -5px; right: -5px; }
+/* The title plate sits on the frame's top edge: a chamfered brass plate with a dark keyline. */
+.cx-case-plate { align-self: center; margin: -13px 0 7px; padding: 1.5px; background: var(--cx-case-line);
+  clip-path: polygon(11px 0, calc(100% - 11px) 0, 100% 50%, calc(100% - 11px) 100%, 11px 100%, 0 50%); }
+.cx-case-title { margin: 0; padding: 5px 22px 5px 26px; background: var(--cx-plate-bg); color: var(--cx-plate-text);
+  clip-path: polygon(10px 0, calc(100% - 10px) 0, 100% 50%, calc(100% - 10px) 100%, 10px 100%, 0 50%);
+  font-size: 14px; font-weight: 700; line-height: 1.2; letter-spacing: 4px; text-transform: uppercase; white-space: nowrap; }
+.cx-case-well { display: flex; flex-direction: column; gap: 7px; min-height: 0; overflow: hidden; padding: 8px;
+  background: var(--cx-case-well); border: 1px solid var(--cx-case-line); border-radius: 4px;
+  box-shadow: inset 0 2px 10px var(--cx-case-well-shade); }
 .cx-plaque { position: relative; flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%;
   padding: 7px 14px 6px; text-align: center; cursor: default; color: var(--cx-brass-text); background: var(--cx-brass-bg);
   border: 1px solid var(--cx-brass-line); border-radius: 4px; box-shadow: inset 0 0 0 3px var(--cx-brass-inset), inset 0 0 0 4px var(--cx-brass-inner); transition: box-shadow 0.15s; }
@@ -1267,7 +1499,8 @@ const CSS = `
 .cx-plaque-cost { font-size: 11px; color: var(--cx-brass-cost); letter-spacing: 1px; }
 .cx-plaque-cost .cx-dim { color: var(--cx-brass-sub); }
 @media (max-height: 860px) {
-  .cx-side { gap: 5px; padding-top: 6px; }
+  .cx-side { padding-top: 16px; padding-bottom: 16px; }
+  .cx-case-well { gap: 5px; padding: 6px; }
   .cx-plaque, .cx-plaque.cx-unified { padding: 4px 12px 3px; gap: 1px; }
   .cx-plaque-name { font-size: 11.5px; }
   .cx-plaque-text { font-size: 10px; line-height: 1.2; }

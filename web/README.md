@@ -122,7 +122,8 @@ for a later live base view: replace what it draws, keep its box.
   engine, revision, config hash, seed, action count and fingerprint; *Cortex mock in the left
   column*, which shows the button of a UI-only radial mock of the talent tree, a takeover
   view (`src/ui/CortexMock.tsx`, placeholders, no effect, in memory; follows the theme
-  on a plain ground; left-click adds a point or switches a socket's part, right-click takes
+  on a plain ground inside a brass bezel, decoration only outside it; Theorems in a case on
+  the left; left-click adds a point or switches a socket's part, right-click takes
   one back). **Cheats** (off by
   default, remembered in `hh.cheats`): grant a resource, set boredom, jump ahead N days;
   the **accelerators**: 2k and 10k speeds, the boost and the autopilot

@@ -175,6 +175,9 @@ not code rules. A new ruling, or a change to one, updates its line here in place
 - **Chip colors (028, default).** Resource, axis and rival chip colors stay TS maps in
   `icons.tsx` (the chip needs the hex for its ink-contrast choice, and they are the same in
   both themes); only the axis text colors are CSS tokens.
-- **Cortex mock (2026-11-22).** Contrast first: a plain solid ground per theme, no backdrop
-  art; it follows the app's theme. A socket's or fan's part switches with one click, free.
+- **Cortex mock (2026-11-22).** Contrast first: inside the wheel's rim a plain solid ground per
+  theme; decoration (a brass dial bezel, a neural corona, sparse neurons fading to a vignette,
+  dimmer in dark) only outside the rim, nothing crossing inside the bezel. It follows the app's
+  theme. The Grand Theorems sit left of the wheel in one framed brass case with a title plate,
+  clear of the game's nav, centered on the core. A socket's or fan's part switches with one click, free.
   For the record, not built: an Act 4 upgrade lets a fan hold several parts at once.
