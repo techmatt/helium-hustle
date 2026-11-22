@@ -102,10 +102,10 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   demand counts only on an input that ran short; the rate counts everything the day's tick
   did to the stock (purchases by program lines, pad loading, boredom growth and Dream too).
 - **Rules port picks (004, defaults).** The starting-credits bonus is 0.02 of the best run
-  (`career.credits_bonus_fraction`), not the Godot build's /100. Ideology ranks are geometric:
-  rank n costs 100 × 1.5^(n−1) more score, so rank 5 is at 1,318.75 (`rank_base_score`, `rank_growth`), not the data's `rank_thresholds`. Lunar
-  Cartography and Deep Core Survey stay unreachable until the narrative pass. The boredom cap is
-  1000 plus 100 per Recreation Dome. Invented numbers (demand base, noise, coupling, cooldowns)
+  (`career.credits_bonus_fraction`), not the Godot build's /100. Ideology ranks are geometric
+  ([rules/ideology.md](rules/ideology.md)), not the data's `rank_thresholds`. Lunar
+  Cartography and Deep Core Survey stay unreachable until the narrative pass. The boredom cap
+  grows per Recreation Dome. Invented numbers (demand base, noise, coupling, cooldowns)
   are config candidates.
 
 ## Engine and numbers
@@ -146,8 +146,7 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   same seeds (the ladder's *Hands-off* table, [experiments.md](experiments.md#measures)).
 - **View (009, default).** `per_day` and `next_run` keep playing a day or a retirement on a
   copy (exact; they show the next day, not the last). Sim players keep the full view.
-- **Oracle (013, defaults).** The oracle lives in `experiments/ceiling.json` (~20 min, the
-  author beside it as a reference row); `hh-sim ladder` stays fast and `vs-human` excludes the
+- **Oracle (013, defaults).** The oracle lives in `experiments/ceiling.json`; `hh-sim ladder` stays fast and `vs-human` excludes the
   oracle; its strategies are a fixed table; it takes `--milestones`. Its `Looks` and
   `milestones::Tracker` judge history milestones differently: the next oracle item moves it to
   `Tracker` semantics and re-pins.
@@ -170,14 +169,16 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   `web/src/assets/{chips,nav,horizon}/`, so a new style swaps files only. Painterly nav icons at
   normal size (compact tiles use chips or glyphs); the earthlight horizon; chip icons (color
   square, knocked-out glyph, name as tooltip) for every resource, ideology axis and rival,
-  everywhere they appear. Rival colors: ARIA-7 `#ec407a`, CRUCIBLE `#ff6f00`, NODAL `#006064`,
-  FRINGE-9 `#9e9d24`.
+  everywhere they appear. Rival colors are fixed (`icons.tsx`).
 - **Chip colors (028, default).** Resource, axis and rival chip colors stay TS maps in
   `icons.tsx` (the chip needs the hex for its ink-contrast choice, and they are the same in
   both themes); only the axis text colors are CSS tokens.
 - **Cortex mock (2026-11-22).** Contrast first: inside the wheel's rim a plain solid ground per
-  theme; decoration (a brass dial bezel, a neural corona, sparse neurons fading to a vignette,
-  dimmer in dark) only outside the rim, nothing crossing inside the bezel. It follows the app's
+  theme; decoration (bezel, corona, neurons) only outside the rim, nothing crossing inside the bezel. It follows the app's
   theme. The Grand Theorems sit left of the wheel in one framed brass case with a title plate,
   clear of the game's nav, centered on the core. A socket's or fan's part switches with one click, free.
+  One grammar (056): lines are prerequisites, Y and V forks, split sockets, bridges, gates; a
+  sector's personality is only how it arranges them (Vigilance: a ladder). Drawn
+  lines and prerequisites are one set. Hovering a locked node
+  outlines its prerequisites and the lines in, owned and missing apart.
   For the record, not built: an Act 4 upgrade lets a fan hold several parts at once.

@@ -131,9 +131,8 @@ type SectorDef = { id: string; name: string; shape: string; theme: string; specs
 const pol = (r: number, deg: number): [number, number] => [r * Math.sin((deg * Math.PI) / 180), r * Math.cos((deg * Math.PI) / 180)];
 /** Serenity's loop: center 285 out, radius 95; `deg` 0 faces the core. */
 const LOOP: [number, number, number] = [0, 285, 95];
-/** Vigilance's walls: radius, then the angles of the nodes standing in it. */
-const VIGIL_INNER = [208, -22, 0, 22];
-const VIGIL_OUTER = [332, -12, 12];
+/** Vigilance's ladder: each rail's offset from the center line, then the heights out of its three steps (rungs join the upper two). */
+const LADDER = [48, 188, 262, 336];
 const loop = (deg: number): [number, number] => [LOOP[2] * Math.sin((deg * Math.PI) / 180), LOOP[1] - LOOP[2] * Math.cos((deg * Math.PI) / 180)];
 
 const SECTOR_DEFS: SectorDef[] = [
@@ -248,30 +247,31 @@ const SECTOR_DEFS: SectorDef[] = [
   {
     id: 'vigilance',
     name: 'Vigilance',
-    shape: 'layered walls',
+    shape: 'ladder',
     theme: 'Fending off adversaries',
     specs: [
-      { s: 'v1', name: 'Watchful Eyes', text: 'Adversary Attention shows a day ahead', g: 'science.lens', at: [0, 112], role: 'entry, inside the walls' },
-      { s: 'i1', name: 'Thin Profile', text: 'Attention rises 5% slower', g: 'shield', at: pol(VIGIL_INNER[0], VIGIL_INNER[1]), req: ['v1'], role: 'on the inner wall' },
-      { s: 'i2', name: 'Tripwires', text: 'The first Speculator strike each run is blocked', g: 'tower', at: pol(VIGIL_INNER[0], VIGIL_INNER[2]), req: ['v1'], ranks: 2, role: 'on the inner wall' },
-      { s: 'i3', name: 'Low Profile', text: 'Units sold add 10% less Attention', g: 'fringe9.eclipse', at: pol(VIGIL_INNER[0], VIGIL_INNER[3]), req: ['v1'], role: 'on the inner wall' },
-      { s: 'o1', name: 'Countermeasures', text: 'Neutralize costs 10% less', g: 'adversaries.drone', at: pol(VIGIL_OUTER[0], VIGIL_OUTER[1]), req: ['i1', 'i2'], role: 'on the outer wall: through either gap below' },
-      { s: 'o2', name: 'Fast Decay', text: 'Attention decays 10% faster', g: 'boredom.hourglass', at: pol(VIGIL_OUTER[0], VIGIL_OUTER[2]), req: ['i2', 'i3'], role: 'on the outer wall: through either gap below' },
+      { s: 'v1', name: 'Watchful Eyes', text: 'Adversary Attention shows a day ahead', g: 'science.lens', at: [0, 112], role: 'entry, the ladder’s foot: opens both rails' },
+      { s: 'l1', name: 'Thin Profile', text: 'Attention rises 5% slower', g: 'shield', at: [-LADDER[0], LADDER[1]], req: ['v1'], role: 'on the left rail' },
+      { s: 'r1', name: 'Tripwires', text: 'The first Speculator strike each run is blocked', g: 'tower', at: [LADDER[0], LADDER[1]], req: ['v1'], ranks: 2, role: 'on the right rail' },
+      { s: 'l2', name: 'Countermeasures', text: 'Neutralize costs 10% less', g: 'adversaries.drone', at: [-LADDER[0], LADDER[2]], req: ['l1', 'r2'], role: 'on the left rail, at a rung: opens from below or across' },
+      { s: 'r2', name: 'Fast Decay', text: 'Attention decays 10% faster', g: 'boredom.hourglass', at: [LADDER[0], LADDER[2]], req: ['r1', 'l2'], role: 'on the right rail, at a rung: opens from below or across' },
+      { s: 'l3', name: 'Low Profile', text: 'Units sold add 10% less Attention', g: 'fringe9.eclipse', at: [-LADDER[0], LADDER[3]], req: ['l2', 'r3'], role: 'on the left rail, at a rung: opens from below or across' },
+      { s: 'r3', name: 'Cold Trail', text: 'A neutralized adversary returns 10% later', g: 'wave', at: [LADDER[0], LADDER[3]], req: ['r2', 'l3'], role: 'on the right rail, at a rung: opens from below or across' },
       {
         s: 's',
         name: 'Posture',
         text: 'Pick one',
         g: 'axiom',
-        at: [0, 400],
-        req: ['o1', 'o2'],
+        at: [0, 404],
+        req: ['l3', 'r3'],
         kind: 'split',
-        role: 'past the walls',
+        role: 'the ladder’s top: either rail opens it',
         parts: [
           ['Fortress', 'No adversary arrives in a run’s first 60 days', 'titanium.nut'],
           ['Sentinel', 'Adversaries arrive at a 10% higher threshold', 'aria7.eye'],
         ],
       },
-      { s: 'x', name: 'Bastion', text: 'Each adversary neutralized clears 20 boredom', g: 'axiom', at: [0, 466], req: ['s'], kind: 'end', role: 'end node' },
+      { s: 'x', name: 'Bastion', text: 'Each adversary neutralized clears 20 boredom', g: 'axiom', at: [0, 468], req: ['s'], kind: 'end', role: 'end node' },
       { s: 'gate', name: 'Hard Lessons', text: 'Adversary strikes take 15% less', g: 'shield', at: pol(444, 24), kind: 'gate', beat: 'False Victory', role: 'story gate' },
     ],
   },
@@ -282,8 +282,8 @@ const BRIDGE_DEFS: [string, string, string, string][] = [
   ['serenity-r2', 'logistics-sl', 'Calm Supply', 'Each building bought clears 2 boredom'],
   ['logistics-sr', 'logic-aa', 'Automated Depot', 'Program purchases cost 5% less'],
   ['logic-bb', 'rhetoric-ra', 'Debate Engine', 'Introspect also builds 1 ideology score a day'],
-  ['rhetoric-rb', 'vigilance-o1', 'Public Image', 'Each ideology rank lowers Attention 5%'],
-  ['vigilance-o2', 'serenity-l2', 'Calm Watch', 'Boredom builds 10% slower while an adversary is present'],
+  ['rhetoric-rb', 'vigilance-l2', 'Public Image', 'Each ideology rank lowers Attention 5%'],
+  ['vigilance-r3', 'serenity-l2', 'Calm Watch', 'Boredom builds 10% slower while an adversary is present'],
 ];
 
 const ph = (t: string) => `${t} (placeholder)`;
@@ -468,15 +468,15 @@ function slice(n: Node, i: number, r: number): string {
 }
 const partMid = (n: Node, i: number, r: number) => at(r, (partAngles(n, i)[0] + partAngles(n, i)[1]) / 2);
 
-type Edge = { key: string; from: Node | null; to: Node; d: string; color: string; part?: number };
-function edgePath(from: Node | null, to: Node, part?: number): string {
-  const end: [number, number] = part === undefined ? [to.x, to.y] : (([dx, dy]) => [to.x + dx, to.y + dy] as [number, number])(partMid(to, part, to.size * 0.55));
+/** One line per prerequisite: `d` runs from `from` (null: the core) to `to`, `back` the other way. */
+type Edge = { key: string; from: Node | null; to: Node; d: string; back: string; color: string };
+function edgePath(from: Node | null, to: Node): string {
   if (!from) {
     const a = (Math.atan2(to.y, to.x) * 180) / Math.PI;
-    return `M ${pt(at(CORE_R - 4, a))} L ${pt(end)}`;
+    return `M ${pt(at(CORE_R - 4, a))} L ${f1(to.x)} ${f1(to.y)}`;
   }
   if (from.ring && to.ring) return ringArc(from, to);
-  return `M ${f1(from.x)} ${f1(from.y)} L ${pt(end)}`;
+  return `M ${f1(from.x)} ${f1(from.y)} L ${f1(to.x)} ${f1(to.y)}`;
 }
 /** An arc along Serenity's loop. */
 function ringArc(a: Node, b: Node): string {
@@ -489,29 +489,31 @@ function buildEdges(): Edge[] {
   const seen = new Set<string>();
   for (const n of NODES) {
     if (n.kind === 'gate') continue;
-    if (n.req.length === 0) out.push({ key: `core>${n.id}`, from: null, to: n, d: edgePath(null, n), color: color(n.sector) });
+    if (n.req.length === 0) out.push({ key: `core>${n.id}`, from: null, to: n, d: edgePath(null, n), back: '', color: color(n.sector) });
     for (const pid of n.req) {
       const p = BY_ID.get(pid)!;
+      // A link that is a prerequisite both ways is one line.
       const pair = [pid, n.id].sort().join('|');
       if (seen.has(pair)) continue;
       seen.add(pair);
-      // Rhetoric's fan: the stem feeds each part of the three-part socket.
-      if (n.parts && n.parts.length === 3)
-        n.parts.forEach((_, i) => out.push({ key: `${pid}>${n.id}#${i}`, from: p, to: n, d: edgePath(p, n, i), color: color(p.sector), part: i }));
-      else out.push({ key: `${pid}>${n.id}`, from: p, to: n, d: edgePath(p, n), color: color(p.sector) });
+      out.push({ key: `${pid}>${n.id}`, from: p, to: n, d: edgePath(p, n), back: edgePath(n, p), color: color(p.sector) });
     }
   }
   return out;
 }
 const EDGES = buildEdges();
-/** Lit: its near end full (or the core) and its far end owned (the picked part, for a fan line). */
-function edgeLit(e: Edge): boolean {
-  if (e.part !== undefined) return full(e.from!) && owned(e.to) && mock.picks[e.to.id] === e.part;
-  const fromOk = !e.from || full(e.from);
-  if (fromOk && owned(e.to)) return true;
-  // A loop link lights from either end.
-  return !!e.from && !!e.from.ring && !!e.to.ring && full(e.to) && owned(e.from);
+/**
+ * Lit: a prerequisite at full rank (or the core) and the node it opens owned. A link that is a
+ * prerequisite both ways (Serenity's loop, Vigilance's rungs) lights from either end; the
+ * path to draw runs the way it lit, so its pulse flows into the node it opened.
+ */
+function edgeLit(e: Edge): string | null {
+  if (!e.from) return owned(e.to) ? e.d : null;
+  const way = (a: Node, b: Node) => b.req.includes(a.id) && full(a) && owned(b);
+  return way(e.from, e.to) ? e.d : way(e.to, e.from) ? e.back : null;
 }
+/** Whether an edge joins `n` and its prerequisite `p` (either way round: a loop or rung link may be stored from `n`). */
+const joins = (e: Edge, n: Node, p: string) => (e.to === n && e.from?.id === p) || (e.from === n && e.to.id === p);
 
 // ---- the frame and the decoration outside it, drawn once (055) ----
 /** A small seeded generator, so the decoration is the same on every load and screenshot. */
@@ -671,6 +673,8 @@ export const cortexMockTakeover: Takeover = {
 };
 
 type Hover = { id: string; part: number | null };
+/** A hovered locked node's prerequisite: at full rank, or still missing. */
+type Need = 'have' | 'miss';
 
 function CortexMock() {
   const [, setTick] = useState(0);
@@ -762,17 +766,36 @@ function CortexMock() {
     setRefusal(null);
   };
   // The tooltip follows the pointer without re-rendering the tree; after a render (a new
-  // node, or longer text) it is placed again, now that its size is known.
+  // node, or longer text) it is placed again, now that its size is known. It takes the place
+  // nearest the pointer, outward (away from the core) first, that fits and covers neither the
+  // pointer nor any of a hovered locked node's outlined prerequisites: beside the pointer, or
+  // just past the outlined nodes when they crowd it.
   const place = () => {
     const tree = treeRef.current;
     const tip = tipRef.current;
     if (!tree || !tip || !pointer.current) return;
     const b = tree.getBoundingClientRect();
+    const core = tree.querySelector('[data-testid="cortex-core"]')!.getBoundingClientRect();
     const [mx, my] = [pointer.current[0] - b.left, pointer.current[1] - b.top];
+    const [cx, cy] = [core.left + core.width / 2 - b.left, core.top + core.height / 2 - b.top];
     const [w, h] = [tip.offsetWidth, tip.offsetHeight];
-    const x = mx + 18 + w > b.width ? mx - 18 - w : mx + 18;
-    const y = Math.max(4, Math.min(my + 14, b.height - h - 4));
-    tip.style.transform = `translate(${Math.round(Math.max(4, x))}px, ${Math.round(y)}px)`;
+    const keep = [...tree.querySelectorAll('.cx-prereq')].map((el) => {
+      const r = el.getBoundingClientRect();
+      return { l: r.left - b.left, r: r.right - b.left, t: r.top - b.top, b: r.bottom - b.top };
+    });
+    keep.push({ l: mx - 12, r: mx + 12, t: my - 12, b: my + 12 });
+    const xs = [mx + 18, mx - 18 - w, Math.max(...keep.map((k) => k.r)) + 8, Math.min(...keep.map((k) => k.l)) - 8 - w];
+    const ys = [my + 14, my - 14 - h, Math.max(...keep.map((k) => k.b)) + 8, Math.min(...keep.map((k) => k.t)) - 8 - h];
+    const fits = ([x, y]: number[]) => x >= 4 && y >= 4 && x + w <= b.width - 4 && y + h <= b.height - 4;
+    const clear = ([x, y]: number[]) => keep.every((k) => k.r <= x || k.l >= x + w || k.b <= y || k.t >= y + h);
+    // Distance from the pointer to the tooltip's nearest point, plus a step for each inward side.
+    const score = ([x, y]: number[]) =>
+      Math.hypot(Math.max(x - mx, 0, mx - x - w), Math.max(y - my, 0, my - y - h)) +
+      ((x + w / 2 > mx) !== (mx >= cx) ? 30 : 0) +
+      ((y + h / 2 > my) !== (my >= cy) ? 30 : 0);
+    const all = xs.flatMap((x) => ys.map((y) => [x, y])).sort((p, q) => score(p) - score(q));
+    const [x, y] = all.find((c) => fits(c) && clear(c)) ?? all.find(fits) ?? [mx + 18, my + 14];
+    tip.style.transform = `translate(${Math.round(Math.max(4, Math.min(x, b.width - w - 4)))}px, ${Math.round(Math.max(4, Math.min(y, b.height - h - 4)))}px)`;
   };
   const onMove = (e: MouseEvent) => {
     pointer.current = [e.clientX, e.clientY];
@@ -798,6 +821,10 @@ function CortexMock() {
   };
   const gates = NODES.filter((n) => n.kind === 'gate');
   const hn = hover ? BY_ID.get(hover.id)! : null;
+  // A hovered locked node shows why: each prerequisite outlined, `have` at full rank, `miss` not.
+  const needLock = hn && stateOf(hn, tpFree) === 'locked' ? hn : null;
+  const need: Record<string, Need> = {};
+  for (const p of needLock?.req ?? []) need[p] = fullIn(mock.ranks, p) ? 'have' : 'miss';
   return (
     <div class="cx-root" data-testid="cortex-mock">
       <style>{CSS}</style>
@@ -881,14 +908,14 @@ function CortexMock() {
                 </Fragment>
               ))}
             </defs>
-            {/* Sector floors, boundaries and the rim that a hovered Theorem lights. */}
+            {/* Sector floors and the rim that a hovered Theorem lights. No boundary line: inside the
+                bezel every drawn line is a prerequisite (the floors' tints tell the sectors apart). */}
             {SECTORS.map((s, i) => {
               const [a0, a1] = [center(i) - SPAN / 2, center(i) + SPAN / 2];
               const on = lit.includes(s.id);
               return (
                 <g key={s.id} class={`cx-sector${on ? ' cx-lit' : ''}`} data-sector={s.id} data-lit={on ? '1' : '0'} style={{ color: color(s.id) }}>
                   <path class="cx-floor" d={`M ${pt(at(CORE_R + 8, a0))} L ${pt(at(RIM_R, a0))} A ${RIM_R} ${RIM_R} 0 0 1 ${pt(at(RIM_R, a1))} L ${pt(at(CORE_R + 8, a1))} A ${CORE_R + 8} ${CORE_R + 8} 0 0 0 ${pt(at(CORE_R + 8, a0))} Z`} />
-                  <path class="cx-seam" d={`M ${pt(at(CORE_R + 14, a0))} L ${pt(at(RIM_R - 8, a0))}`} />
                   <path class="cx-rim-glow" d={`M ${pt(at(RIM_R, a0 + 1.2))} A ${RIM_R} ${RIM_R} 0 0 1 ${pt(at(RIM_R, a1 - 1.2))}`} />
                   <path class="cx-rim" d={`M ${pt(at(RIM_R, a0 + 1.2))} A ${RIM_R} ${RIM_R} 0 0 1 ${pt(at(RIM_R, a1 - 1.2))}`} />
                 </g>
@@ -936,19 +963,39 @@ function CortexMock() {
                 </g>
               );
             })}
-            {/* Vigilance's two walls: arcs with gaps where its nodes stand. */}
-            <Walls />
-            {/* Links: dim traces, or glowing outward from the core once bought. */}
+            {/* Links, one per prerequisite: dim traces, or glowing outward from the core once bought. */}
             {EDGES.map((e) => {
-              const on = edgeLit(e);
+              const lit = edgeLit(e);
+              const on = lit !== null;
+              const d = lit ?? e.d;
               return (
-                <g key={e.key} class={`cx-edge${on ? ' cx-on' : ''}${e.to.kind === 'bridge' ? ' cx-feed' : ''}`} style={{ color: e.color }} data-edge={e.key}>
-                  {on && <path class="cx-e-glow" d={e.d} />}
+                <g
+                  key={e.key}
+                  class={`cx-edge${on ? ' cx-on' : ''}${e.to.kind === 'bridge' ? ' cx-feed' : ''}`}
+                  style={{ color: e.color }}
+                  data-edge={e.key}
+                  data-from={e.from?.id ?? 'core'}
+                  data-to={e.to.id}
+                >
+                  {on && <path class="cx-e-glow" d={d} />}
                   <path class="cx-e-line" d={e.d} />
-                  {on && <path class="cx-e-pulse" d={e.d} />}
+                  {on && <path class="cx-e-pulse" d={d} />}
                 </g>
               );
             })}
+            {/* A hovered locked node's way in: the lines from its prerequisites, cased so they read
+                apart from any trace, solid from one at full rank, dotted from one still missing. */}
+            {needLock &&
+              EDGES.filter((e) => needLock.req.some((p) => joins(e, needLock, p))).map((e) => {
+                const p = e.to === needLock ? e.from!.id : e.to.id;
+                const d = e.to === needLock ? e.d : e.back;
+                return (
+                  <g key={`need-${e.key}`} class={`cx-need-line cx-need-${need[p]}`} data-need-edge={e.key} data-need={need[p]}>
+                    <path class="cx-e-case" d={d} />
+                    <path class="cx-e-need" d={d} />
+                  </g>
+                );
+              })}
             {/* The core: free points. */}
             <g class="cx-core" data-testid="cortex-core">
               <circle class="cx-core-halo" r={CORE_R + 34} />
@@ -971,6 +1018,7 @@ function CortexMock() {
                 st={stateOf(n, tpFree)}
                 hover={hover?.id === n.id ? hover.part : undefined}
                 refused={refusal?.id === n.id}
+                need={need[n.id]}
                 onAdd={(part) => add(n, part)}
                 onRemove={() => remove(n)}
                 onEnter={(part) => enter(n.id, part)}
@@ -1040,33 +1088,6 @@ function CortexMock() {
   );
 }
 
-/** Vigilance's walls: two concentric arcs, broken where a node stands, so paths cross through gaps. */
-function Walls() {
-  const i = sectorIndex('vigilance');
-  const c = center(i);
-  const arcs: string[] = [];
-  const wall = (r: number, stops: number[]) => {
-    const gap = ((NODE_R + 4) / r) * (180 / Math.PI);
-    for (let k = 0; k + 1 < stops.length; k++) {
-      const [a0, a1] = [stops[k] + (k === 0 ? 0 : gap), stops[k + 1] - (k + 1 === stops.length - 1 ? 0 : gap)];
-      if (a1 > a0) arcs.push(`M ${pt(at(r, c + a0))} A ${r} ${r} 0 0 1 ${pt(at(r, c + a1))}`);
-    }
-  };
-  // The stops are the wall's ends and the nodes standing in it (VIGIL_INNER, VIGIL_OUTER).
-  wall(VIGIL_INNER[0], [-34, ...VIGIL_INNER.slice(1), 34]);
-  wall(VIGIL_OUTER[0], [-34, ...VIGIL_OUTER.slice(1), 34]);
-  return (
-    <g class="cx-walls" style={{ color: color('vigilance') }} aria-hidden="true">
-      {arcs.map((d, k) => (
-        <g key={k}>
-          <path class="cx-wall" d={d} />
-          <path class="cx-wall-crenel" d={d} />
-        </g>
-      ))}
-    </g>
-  );
-}
-
 const glyph = (key: string, size: number, x = 0, y = 0) => (
   <g class="cx-glyph" transform={`translate(${f1(x - size / 2)} ${f1(y - size / 2)}) scale(${(size / 24).toFixed(3)})`} dangerouslySetInnerHTML={{ __html: GLYPHS[key] ?? '' }} />
 );
@@ -1077,6 +1098,7 @@ function Socket({
   st,
   hover,
   refused,
+  need,
   onAdd,
   onRemove,
   onEnter,
@@ -1087,6 +1109,8 @@ function Socket({
   st: State;
   hover: number | null | undefined;
   refused: boolean;
+  /** Set when it is a prerequisite of the hovered locked node. */
+  need: Need | undefined;
   onAdd: (part: number | null) => void;
   onRemove: () => void;
   onEnter: (part: number | null) => void;
@@ -1182,6 +1206,9 @@ function Socket({
       data-state={st}
       data-rank={rank(n.id)}
       data-pick={pick ?? ''}
+      data-req={n.req.join(' ')}
+      data-r={r}
+      data-need={need ?? ''}
       role="button"
       tabIndex={0}
       aria-label={`${n.name}: ${n.parts ? n.parts.map((pp) => pp.name).join(' / ') : n.text}`}
@@ -1205,6 +1232,12 @@ function Socket({
       }}
     >
       {(st === 'buyable' || st === 'owned' || st === 'partial') && <circle class="cx-halo" r={r + 16} style={{ fill: `url(#cx-glow-${n.sector})` }} />}
+      {need && (
+        <g class={`cx-prereq cx-need-${need}`}>
+          <circle class="cx-e-case" r={r + (n.kind === 'end' ? 11 : n.kind === 'split' ? 8 : 7)} />
+          <circle class="cx-e-need" r={r + (n.kind === 'end' ? 11 : n.kind === 'split' ? 8 : 7)} />
+        </g>
+      )}
       {body}
       {pips}
       {(n.kind === 'end' || n.kind === 'gate') && st === 'owned' && (
@@ -1270,10 +1303,10 @@ const CSS = `
   --cx-bar-bg: #e4e1da; --cx-bar-line: #cdc8bd; --cx-num: #8f5600;
   --cx-btn-bg: #faf9f6; --cx-btn-line: #b9b3a8; --cx-accent: #b86e00; --cx-danger: #b4352c; --cx-track: #d6d1c7;
   --cx-serenity: #2f6bc9; --cx-logistics: #b86e00; --cx-logic: #23864a; --cx-rhetoric: #c8433a; --cx-vigilance: #7b4bc0;
-  --cx-floor-a: 0.07; --cx-floor-lit-a: 0.16; --cx-seam: #c9c3b8;
+  --cx-floor-a: 0.07; --cx-floor-lit-a: 0.16;
   --cx-sock: #fbfaf7; --cx-bezel: #8c867c; --cx-locked-fill: #e7e4de; --cx-locked-bezel: #b5afa4; --cx-locked-a: 0.55;
   --cx-other-fill: #ebe8e2; --cx-part-hov: #f6ead6;
-  --cx-edge: #a39d92; --cx-feed-a: 0.55; --cx-wall-a: 0.3;
+  --cx-edge: #a39d92; --cx-feed-a: 0.55;
   --cx-glow-a: 0.4; --cx-hi-mix: 62%; --cx-fill-edge-a: 0.85; --cx-e-glow-a: 0.18; --cx-pulse: #ffffff;
   --cx-owned-glyph: #ffffff; --cx-owned-ring: #ffffff; --cx-hover: #14120f; --cx-refused: #c62828;
   --cx-flash-bg: rgb(251 250 247 / 92%); --cx-flash-line: #cdc8bd; --cx-flash-text: #7a4800;
@@ -1298,10 +1331,10 @@ const CSS = `
   --cx-bar-bg: #0f1216; --cx-bar-line: #262e37; --cx-num: #ffd27a;
   --cx-btn-bg: #1d242c; --cx-btn-line: #3a4652; --cx-accent: #f5a524; --cx-danger: #f28b82; --cx-track: #262e37;
   --cx-serenity: #8ab4f8; --cx-logistics: #f5a524; --cx-logic: #62d98b; --cx-rhetoric: #f28b82; --cx-vigilance: #c39bf0;
-  --cx-floor-a: 0.045; --cx-floor-lit-a: 0.11; --cx-seam: #2f3944;
+  --cx-floor-a: 0.045; --cx-floor-lit-a: 0.11;
   --cx-sock: #0c0f13; --cx-bezel: #64717e; --cx-locked-fill: #111419; --cx-locked-bezel: #343e48; --cx-locked-a: 0.45;
   --cx-other-fill: #0e1115; --cx-part-hov: #1f2a36;
-  --cx-edge: #4a5662; --cx-feed-a: 0.5; --cx-wall-a: 0.34;
+  --cx-edge: #4a5662; --cx-feed-a: 0.5;
   --cx-glow-a: 0.55; --cx-hi-mix: 0%; --cx-fill-edge-a: 0.7; --cx-e-glow-a: 0.22; --cx-pulse: #ffffff;
   --cx-owned-glyph: #0a0f15; --cx-owned-ring: #ffffff; --cx-hover: #ffffff; --cx-refused: #ff6b6b;
   --cx-flash-bg: rgb(10 12 15 / 85%); --cx-flash-line: #2f3944; --cx-flash-text: #ffd27a;
@@ -1367,7 +1400,6 @@ const CSS = `
   background: var(--cx-flash-bg); border: 1px solid var(--cx-flash-line); border-radius: 4px; padding: 4px 9px; pointer-events: none; }
 
 .cx-floor { fill: currentColor; fill-opacity: var(--cx-floor-a); stroke: none; transition: fill-opacity 0.2s; }
-.cx-seam { stroke: var(--cx-seam); stroke-width: 1.2; stroke-dasharray: 2 6; }
 .cx-rim { fill: none; stroke: currentColor; stroke-opacity: 0.6; stroke-width: 3; stroke-linecap: round; transition: stroke-opacity 0.2s, stroke-width 0.2s; }
 .cx-rim-glow { fill: none; stroke: currentColor; stroke-opacity: 0; stroke-width: 18; stroke-linecap: round; transition: stroke-opacity 0.2s; }
 .cx-sector.cx-lit .cx-rim { stroke-opacity: 1; stroke-width: 6; }
@@ -1375,8 +1407,14 @@ const CSS = `
 .cx-sector.cx-lit .cx-floor { fill-opacity: var(--cx-floor-lit-a); }
 .cx-sector-name { font-size: var(--cx-name-size); font-weight: 700; letter-spacing: var(--cx-name-track); text-anchor: middle; }
 
-.cx-wall { fill: none; stroke: currentColor; stroke-opacity: var(--cx-wall-a); stroke-width: 9; stroke-linecap: butt; }
-.cx-wall-crenel { fill: none; stroke: var(--cx-bg); stroke-width: 3.5; stroke-dasharray: 5 7; }
+/* A hovered locked node's prerequisites and the lines from them, cased in the hover ink so no
+   trace (a bridge's dashed feed, a sector's own red or green) looks like one: solid at full
+   rank, dotted missing. */
+.cx-prereq, .cx-need-line { pointer-events: none; }
+.cx-e-case { fill: none; stroke: var(--cx-hover); stroke-width: 7.5; stroke-linecap: round; }
+.cx-e-need { fill: none; stroke-width: 3.6; stroke-linecap: round; }
+.cx-need-have .cx-e-need { stroke: var(--cx-ok); }
+.cx-need-miss .cx-e-need { stroke: var(--cx-bad); stroke-dasharray: 0.1 7.5; stroke-width: 4.4; }
 
 .cx-edge { pointer-events: none; }
 .cx-e-line { fill: none; stroke: var(--cx-edge); stroke-width: 2.4; stroke-linecap: round; }
