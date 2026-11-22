@@ -651,6 +651,18 @@ function CortexMock() {
     place();
   };
   useLayoutEffect(place);
+  // The wheel scales to fit its box; `--cx-scale` (screen px per wheel unit) lets the
+  // Theorem heading match the rim's sector names at any window size.
+  useLayoutEffect(() => {
+    const tree = treeRef.current;
+    if (!tree) return;
+    const main = tree.parentElement!;
+    const fit = () => main.style.setProperty('--cx-scale', String(Math.min(tree.clientWidth, tree.clientHeight) / (2 * VIEW)));
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(tree);
+    return () => ro.disconnect();
+  }, []);
   /** Keyboard focus: the tooltip goes by the node, not the last pointer place. */
   const focusAt = (el: Element) => {
     const r = el.getBoundingClientRect();
@@ -1114,7 +1126,8 @@ const CSS = `
   --cx-brass-have-bg: linear-gradient(180deg, #4a3a18 0%, #2e2410 60%, #1f180b 100%); --cx-brass-have-line: #ffd27a; --cx-brass-have-inset: #1f180b;
   --cx-brass-have-text: #f3e6c4; --cx-rivet: radial-gradient(circle at 35% 35%, #d6c08a, #5a4a2a); --cx-stud-line: #0b1016;
 }
-.cx-root { display: flex; flex-direction: column; height: 100%; min-height: 0; color: var(--cx-text); background: var(--cx-bg); }
+.cx-root { display: flex; flex-direction: column; height: 100%; min-height: 0; color: var(--cx-text); background: var(--cx-bg);
+  --cx-name-size: 21px; --cx-name-track: 7px; }
 .cx-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 18px; padding: 5px 12px;
   background: var(--cx-bar-bg); border-bottom: 1px solid var(--cx-bar-line); font-size: 13px; }
 .cx-bar b { font-family: var(--font-mono); color: var(--cx-num); }
@@ -1139,7 +1152,7 @@ const CSS = `
 .cx-sector.cx-lit .cx-rim { stroke-opacity: 1; stroke-width: 6; }
 .cx-sector.cx-lit .cx-rim-glow { stroke-opacity: 0.22; }
 .cx-sector.cx-lit .cx-floor { fill-opacity: var(--cx-floor-lit-a); }
-.cx-sector-name { font-size: 21px; font-weight: 700; letter-spacing: 7px; text-anchor: middle; }
+.cx-sector-name { font-size: var(--cx-name-size); font-weight: 700; letter-spacing: var(--cx-name-track); text-anchor: middle; }
 
 .cx-wall { fill: none; stroke: currentColor; stroke-opacity: var(--cx-wall-a); stroke-width: 9; stroke-linecap: butt; }
 .cx-wall-crenel { fill: none; stroke: var(--cx-bg); stroke-width: 3.5; stroke-dasharray: 5 7; }
@@ -1225,8 +1238,16 @@ const CSS = `
 .cx-tip-bad { color: var(--cx-bad); font-weight: 600; }
 .cx-tip-ph { font-size: 10.5px; color: var(--cx-ph); font-style: italic; }
 
+/* Centered on the wheel's core (the middle of .cx-main) by auto margins, which fall to zero
+   when the column overflows, so a short window top-aligns it instead of clipping both ends. */
 .cx-side { display: flex; flex-direction: column; gap: 7px; min-height: 0; overflow: hidden; padding: 10px 12px 10px 4px; }
-.cx-side-head { margin: 0 0 2px; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--cx-brass-head); text-align: center; }
+.cx-side > :first-child { margin-top: auto; }
+.cx-side > :last-child { margin-bottom: auto; }
+/* The rim's sector-name style, at their on-screen size (their SVG size times the wheel's
+   scale), never below 12px; each line's trailing letter-space is balanced by a left pad so it centers. */
+.cx-side-head { margin: 0 0 2px; font-size: max(12px, calc(var(--cx-name-size) * var(--cx-scale, 1))); font-weight: 700; line-height: 1.15;
+  letter-spacing: calc(var(--cx-name-track) * var(--cx-scale, 1)); padding-left: calc(var(--cx-name-track) * var(--cx-scale, 1));
+  text-transform: uppercase; color: var(--cx-brass-head); text-align: center; }
 .cx-plaque { position: relative; flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%;
   padding: 7px 14px 6px; text-align: center; cursor: default; color: var(--cx-brass-text); background: var(--cx-brass-bg);
   border: 1px solid var(--cx-brass-line); border-radius: 4px; box-shadow: inset 0 0 0 3px var(--cx-brass-inset), inset 0 0 0 4px var(--cx-brass-inner); transition: box-shadow 0.15s; }
