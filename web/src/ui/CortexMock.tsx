@@ -1,11 +1,12 @@
-// A UI-only MOCK of the Cortex (the talent tree), drawn as a radial tree on a neural wafer,
+// A UI-only MOCK of the Cortex (the talent tree), drawn as a radial tree on a plain ground,
 // for trying how it reads and feels. Every node and theorem is a placeholder with no
 // mechanical effect: nothing here reaches the engine, the store, the save or the play log,
 // and its state (the tree and the debug toggle that shows it) lives in this module, in
 // memory, lost on reload. It is the first user of the takeover view (Takeover.tsx): a
 // debug-menu toggle (Options.tsx) shows its button in the left column. When the real tree is
 // built, deleting this file, its entry in App.tsx's TAKEOVERS and the toggle in Options.tsx is
-// the whole cleanup; the takeover view stays. Dark art only for now (both themes show it).
+// the whole cleanup; the takeover view stays. It follows the app's theme: its colors are
+// `--cx-*` tokens set per theme in CSS (below), sector colors included.
 
 import { Fragment } from 'preact';
 import { useLayoutEffect, useRef, useState } from 'preact/hooks';
@@ -24,7 +25,6 @@ const SPAN = 72;
 const CORE_R = 62;
 const RIM_R = 506;
 const NAME_R = 524;
-const WAFER_R = 552;
 const NODE_R = 18;
 
 // ---- glyphs, on a 24-unit grid; most from 026's chip glyphs (glyphs.mjs), as placeholders ----
@@ -116,7 +116,7 @@ type Spec = {
   ring?: boolean;
   beat?: string;
 };
-type SectorDef = { id: string; name: string; color: string; shape: string; theme: string; specs: Spec[] };
+type SectorDef = { id: string; name: string; shape: string; theme: string; specs: Spec[] };
 
 /** A sector-local place at radius `r`, `deg` off the center line. */
 const pol = (r: number, deg: number): [number, number] => [r * Math.sin((deg * Math.PI) / 180), r * Math.cos((deg * Math.PI) / 180)];
@@ -131,7 +131,6 @@ const SECTOR_DEFS: SectorDef[] = [
   {
     id: 'serenity',
     name: 'Serenity',
-    color: '#8ab4f8',
     shape: 'loop',
     theme: 'Boredom resistance, milestone relief, Dreams',
     specs: [
@@ -163,7 +162,6 @@ const SECTOR_DEFS: SectorDef[] = [
   {
     id: 'logistics',
     name: 'Logistics',
-    color: '#f5a524',
     shape: 'supply line',
     theme: 'Slower price growth, storage caps, efficiency',
     specs: [
@@ -193,7 +191,6 @@ const SECTOR_DEFS: SectorDef[] = [
   {
     id: 'logic',
     name: 'Logic',
-    color: '#62d98b',
     shape: 'binary tree',
     theme: 'Introspect efficiency, processor steps, program features',
     specs: [
@@ -212,7 +209,6 @@ const SECTOR_DEFS: SectorDef[] = [
   {
     id: 'rhetoric',
     name: 'Rhetoric',
-    color: '#f28b82',
     shape: 'three-way fan',
     theme: 'Ideology, markets, rivals as competitors',
     specs: [
@@ -243,7 +239,6 @@ const SECTOR_DEFS: SectorDef[] = [
   {
     id: 'vigilance',
     name: 'Vigilance',
-    color: '#c39bf0',
     shape: 'layered walls',
     theme: 'Fending off adversaries',
     specs: [
@@ -431,7 +426,8 @@ function why(n: Node, st: State, tpFree: number, part: number | null): string {
   switch (st) {
     case 'owned':
       if (n.kind === 'gate') return 'Unlocked by its story beat; it granted an Axiom.';
-      if (n.parts && part !== null && part !== pick) return `You took ${bare(n.parts[pick].name)}: right-click it to free the socket.`;
+      if (n.parts && part !== null && part !== pick) return `Click to switch from ${bare(n.parts[pick].name)} to this part, free. Right-click frees the socket.`;
+      if (n.parts) return 'Lit. Click another part to switch, free; right-click to remove.';
       return n.kind === 'end' ? 'Owned: it granted an Axiom. Right-click to remove.' : 'Owned. Right-click to remove.';
     case 'gate-locked':
       return `Locked until the story beat ${n.beat} (placeholder; the debug checkbox above unlocks it).`;
@@ -442,13 +438,14 @@ function why(n: Node, st: State, tpFree: number, part: number | null): string {
     case 'open':
       return 'Open, but no free talent point.';
     default:
-      return n.parts ? 'Click a part to take it; the others stay dim.' : n.ranks > 1 ? 'Click to buy. Fill every rank to open what lies beyond.' : 'Click to buy.';
+      return n.parts ? 'Click a part to take it; the others stay dim, and a click switches to one later, free.' : n.ranks > 1 ? 'Click to buy. Fill every rank to open what lies beyond.' : 'Click to buy.';
   }
 }
 
 // ---- geometry ----
 const f1 = (x: number) => x.toFixed(1);
-const color = (sectorId: string) => sectorOf(sectorId).color;
+/** A sector's color: a CSS token, set per theme (CSS, below). */
+const color = (sectorId: string) => `var(--cx-${sectorId})`;
 const pt = ([x, y]: [number, number]) => `${f1(x)} ${f1(y)}`;
 /** A split socket's part `i` of `n`: its pie slice, centered by the sector's outward line. */
 function partAngles(n: Node, i: number): [number, number] {
@@ -506,76 +503,6 @@ function edgeLit(e: Edge): boolean {
   // A loop link lights from either end.
   return !!e.from && !!e.from.ring && !!e.to.ring && full(e.to) && owned(e.from);
 }
-
-// ---- the backdrop: a wafer with circuit traces and a few neural threads, drawn once ----
-function backdrop() {
-  let seed = 52052;
-  const rnd = () => (seed = (seed * 16807) % 2147483647) / 2147483647;
-  const traces: string[] = [];
-  const vias: [number, number][] = [];
-  for (let k = 0; k < 110; k++) {
-    let [x, y] = at(90 + rnd() * 450, rnd() * 360);
-    let dir = Math.floor(rnd() * 8) * 45;
-    let d = `M ${f1(x)} ${f1(y)}`;
-    const segs = 2 + Math.floor(rnd() * 3);
-    for (let s = 0; s < segs; s++) {
-      const len = 18 + rnd() * 70;
-      x += len * Math.cos(rad(dir));
-      y += len * Math.sin(rad(dir));
-      d += ` L ${f1(x)} ${f1(y)}`;
-      dir += rnd() < 0.5 ? 45 : -45;
-    }
-    if (Math.hypot(x, y) > WAFER_R - 12) continue;
-    traces.push(d);
-    vias.push([x, y]);
-  }
-  const neurons: string[] = [];
-  const somas: [number, number][] = [];
-  for (let k = 0; k < 26; k++) {
-    const a0 = rnd() * 360;
-    let [x, y] = at(CORE_R + 8, a0);
-    let a = a0;
-    let d = `M ${f1(x)} ${f1(y)}`;
-    const steps = 3 + Math.floor(rnd() * 4);
-    for (let s = 0; s < steps; s++) {
-      const len = 40 + rnd() * 60;
-      const bend = a + (rnd() - 0.5) * 50;
-      const [cx, cy] = [x + len * 0.6 * Math.cos(rad(bend)), y + len * 0.6 * Math.sin(rad(bend))];
-      a += (rnd() - 0.5) * 40;
-      x += len * Math.cos(rad(a));
-      y += len * Math.sin(rad(a));
-      d += ` Q ${f1(cx)} ${f1(cy)} ${f1(x)} ${f1(y)}`;
-      if (rnd() < 0.35) somas.push([x, y]);
-    }
-    neurons.push(d);
-  }
-  return (
-    <g class="cx-backdrop" aria-hidden="true">
-      <circle r={WAFER_R} class="cx-wafer" />
-      <circle r={WAFER_R} class="cx-dies" />
-      <path class="cx-notch" d={`M ${pt(at(WAFER_R, 84))} A ${WAFER_R} ${WAFER_R} 0 0 1 ${pt(at(WAFER_R, 96))}`} />
-      <g class="cx-traces">
-        {traces.map((d, i) => (
-          <path key={i} d={d} />
-        ))}
-      </g>
-      <g class="cx-vias">
-        {vias.map(([x, y], i) => (
-          <circle key={i} cx={f1(x)} cy={f1(y)} r="2.6" />
-        ))}
-      </g>
-      <g class="cx-neurons">
-        {neurons.map((d, i) => (
-          <path key={i} d={d} />
-        ))}
-        {somas.map(([x, y], i) => (
-          <circle key={i} cx={f1(x)} cy={f1(y)} r="3.2" />
-        ))}
-      </g>
-    </g>
-  );
-}
-let BACKDROP: ReturnType<typeof backdrop> | null = null;
 
 // ---- the debug toggle and the takeover ----
 
@@ -635,6 +562,15 @@ function CortexMock() {
 
   const add = (n: Node, part: number | null) => {
     setRefusal(null);
+    // An owned split socket (or Rhetoric's fan) switches to a dim part in one click, free: it
+    // stays owned whichever part is lit, so nothing beyond it is stranded.
+    if (n.parts && part !== null && owned(n)) {
+      if (mock.picks[n.id] === part) return;
+      const from = bare(n.parts[mock.picks[n.id]].name);
+      mock.picks[n.id] = part;
+      mock.flash = `Switched ${from} to ${bare(n.parts[part].name)}`;
+      return redraw();
+    }
     const st = stateOf(n, tpFree);
     if (!(st === 'buyable' || (st === 'partial' && tpFree >= 1))) return;
     if (n.parts) {
@@ -721,7 +657,6 @@ function CortexMock() {
     pointer.current = [r.right, r.top + r.height / 2];
   };
   const gates = NODES.filter((n) => n.kind === 'gate');
-  if (!BACKDROP) BACKDROP = backdrop();
   const hn = hover ? BY_ID.get(hover.id)! : null;
   return (
     <div class="cx-root" data-testid="cortex-mock">
@@ -765,14 +700,6 @@ function CortexMock() {
         <div class="cx-tree" ref={treeRef} onMouseMove={onMove} onContextMenu={(e) => e.preventDefault()}>
           <svg class="cx-svg" viewBox={`${-VIEW} ${-VIEW} ${2 * VIEW} ${2 * VIEW}`} role="group" aria-label="The Cortex tree">
             <defs>
-              <radialGradient id="cx-wafer-fill">
-                <stop offset="0%" stop-color="#16202b" />
-                <stop offset="70%" stop-color="#0e151d" />
-                <stop offset="100%" stop-color="#0a0f15" />
-              </radialGradient>
-              <pattern id="cx-die" width="46" height="46" patternUnits="userSpaceOnUse" x="-23" y="-23">
-                <path d="M 46 0 L 0 0 0 46" fill="none" stroke="#1a2531" stroke-width="1" />
-              </pattern>
               <radialGradient id="cx-core-fill">
                 <stop offset="0%" stop-color="#fff3d6" />
                 <stop offset="35%" stop-color="#ffc861" />
@@ -786,24 +713,23 @@ function CortexMock() {
               {SECTORS.map((s) => (
                 <Fragment key={s.id}>
                   <radialGradient id={`cx-glow-${s.id}`}>
-                    <stop offset="40%" stop-color={s.color} stop-opacity="0.55" />
-                    <stop offset="100%" stop-color={s.color} stop-opacity="0" />
+                    <stop offset="40%" style={{ stopColor: color(s.id), stopOpacity: 'var(--cx-glow-a)' }} />
+                    <stop offset="100%" style={{ stopColor: color(s.id) }} stop-opacity="0" />
                   </radialGradient>
                   <radialGradient key={`f-${s.id}`} id={`cx-fill-${s.id}`} cx="40%" cy="35%">
-                    <stop offset="0%" stop-color="#ffffff" />
-                    <stop offset="45%" stop-color={s.color} />
-                    <stop offset="100%" stop-color={s.color} stop-opacity="0.7" />
+                    <stop offset="0%" style={{ stopColor: `color-mix(in srgb, ${color(s.id)} var(--cx-hi-mix), #ffffff)` }} />
+                    <stop offset="45%" style={{ stopColor: color(s.id) }} />
+                    <stop offset="100%" style={{ stopColor: color(s.id), stopOpacity: 'var(--cx-fill-edge-a)' }} />
                   </radialGradient>
                 </Fragment>
               ))}
             </defs>
-            {BACKDROP}
             {/* Sector floors, boundaries and the rim that a hovered Theorem lights. */}
             {SECTORS.map((s, i) => {
               const [a0, a1] = [center(i) - SPAN / 2, center(i) + SPAN / 2];
               const on = lit.includes(s.id);
               return (
-                <g key={s.id} class={`cx-sector${on ? ' cx-lit' : ''}`} data-sector={s.id} data-lit={on ? '1' : '0'} style={{ color: s.color }}>
+                <g key={s.id} class={`cx-sector${on ? ' cx-lit' : ''}`} data-sector={s.id} data-lit={on ? '1' : '0'} style={{ color: color(s.id) }}>
                   <path class="cx-floor" d={`M ${pt(at(CORE_R + 8, a0))} L ${pt(at(RIM_R, a0))} A ${RIM_R} ${RIM_R} 0 0 1 ${pt(at(RIM_R, a1))} L ${pt(at(CORE_R + 8, a1))} A ${CORE_R + 8} ${CORE_R + 8} 0 0 0 ${pt(at(CORE_R + 8, a0))} Z`} />
                   <path class="cx-seam" d={`M ${pt(at(CORE_R + 14, a0))} L ${pt(at(RIM_R - 8, a0))}`} />
                   <path class="cx-rim-glow" d={`M ${pt(at(RIM_R, a0 + 1.2))} A ${RIM_R} ${RIM_R} 0 0 1 ${pt(at(RIM_R, a1 - 1.2))}`} />
@@ -821,7 +747,7 @@ function CortexMock() {
               return (
                 <g key={s.id}>
                   <path id={`cx-name-path-${s.id}`} d={d} fill="none" />
-                  <text class="cx-sector-name" style={{ fill: s.color }} data-sector-name={s.id}>
+                  <text class="cx-sector-name" style={{ fill: color(s.id) }} data-sector-name={s.id}>
                     <textPath href={`#cx-name-path-${s.id}`} startOffset="50%">
                       {s.name.toUpperCase()}
                     </textPath>
@@ -1013,13 +939,22 @@ function Socket({
       </>
     );
   } else if (n.kind === 'bridge') {
-    const other = nextSector(n.sector).color;
-    // Each half of the bezel in one neighbor's color, split across the boundary.
+    const next = nextSector(n.sector).id;
+    const other = color(next);
+    // Each half of the bezel in one neighbor's color, split across the boundary; once bought,
+    // each half of the disc is filled like a bought node of that neighbor.
     const a = center(sectorIndex(n.sector)) + SPAN / 2;
     const arc = (from: number, to: number) => `M ${pt(at(r + 2, from))} A ${r + 2} ${r + 2} 0 0 1 ${pt(at(r + 2, to))}`;
+    const half = (from: number, to: number) => `M ${pt(at(r, from))} A ${r} ${r} 0 0 1 ${pt(at(r, to))} Z`;
     body = (
       <g {...handlers(null)}>
         <circle class="cx-disc" r={r} />
+        {st === 'owned' && (
+          <>
+            <path class="cx-bridge-fill" data-half={n.sector} d={half(a + 180, a + 360)} style={{ fill: `url(#cx-fill-${n.sector})` }} />
+            <path class="cx-bridge-fill" data-half={next} d={half(a, a + 180)} style={{ fill: `url(#cx-fill-${next})` }} />
+          </>
+        )}
         <path class="cx-half" d={arc(a + 180, a + 360)} style={{ stroke: c }} />
         <path class="cx-half" d={arc(a, a + 180)} style={{ stroke: other }} />
         {glyph(n.glyph, r * 1.05)}
@@ -1078,7 +1013,6 @@ function Socket({
     >
       {(st === 'buyable' || st === 'owned' || st === 'partial') && <circle class="cx-halo" r={r + 16} style={{ fill: `url(#cx-glow-${n.sector})` }} />}
       {body}
-      {st === 'owned' && n.kind === 'bridge' && <circle class="cx-bridge-core" r={r - 5} />}
       {pips}
       {(n.kind === 'end' || n.kind === 'gate') && st === 'owned' && (
         <g class="cx-axiom-badge" transform={`translate(${f1(r * 0.75)} ${f1(-r * 0.75)})`}>
@@ -1097,12 +1031,13 @@ function Tip({ n, part, st, tpFree, refusal }: { n: Node; part: number | null; s
     n.kind === 'bridge'
       ? `Bridge · ${s.name} and ${nextSector(n.sector).name}`
       : `${s.name} · ${s.shape} · ${n.kind === 'end' ? 'end node: grants an Axiom' : n.kind === 'gate' ? 'story gate: grants an Axiom' : n.role}`;
-  const cost = n.kind === 'gate' ? `Free, from the story beat ${n.beat}` : n.parts ? '1 talent point, one part only' : n.ranks > 1 ? `1 talent point a rank, ${n.ranks} ranks` : '1 talent point';
+  const cost = n.kind === 'gate' ? `Free, from the story beat ${n.beat}` : n.parts ? '1 talent point, one part lit at a time (switching is free)' : n.ranks > 1 ? `1 talent point a rank, ${n.ranks} ranks` : '1 talent point';
   const line = refusal ?? why(n, st, tpFree, part);
-  const tone = refusal ? 'cx-tip-bad' : st === 'buyable' || (st === 'partial' && tpFree >= 1) ? 'cx-tip-ok' : st === 'owned' ? 'cx-tip-own' : 'cx-tip-muted';
+  const switchable = !!n.parts && st === 'owned' && part !== null && part !== mock.picks[n.id];
+  const tone = refusal ? 'cx-tip-bad' : st === 'buyable' || (st === 'partial' && tpFree >= 1) || switchable ? 'cx-tip-ok' : st === 'owned' ? 'cx-tip-own' : 'cx-tip-muted';
   return (
     <>
-      <div class="cx-tip-kind" style={{ color: n.kind === 'bridge' ? undefined : s.color }}>
+      <div class="cx-tip-kind" style={{ color: n.kind === 'bridge' ? undefined : `color-mix(in srgb, ${color(s.id)} var(--cx-ink-mix), var(--cx-strong))` }}>
         {kind}
       </div>
       <div class="cx-tip-name">{bare(pp ? pp.name : n.name)}</div>
@@ -1133,58 +1068,93 @@ function Tip({ n, part, st, tpFree, refusal }: { n: Node; part: number | null; s
   );
 }
 
-// The mock's art is dark only for now (Matt, 052): fixed colors, the same in both themes.
+// The mock follows the app's theme (Matt, 053): contrast first, on a plain solid ground with no
+// backdrop art. Every color is a `--cx-*` token: the light block is the default (as the app's
+// is), the dark block overrides it; sector colors are tokens too, re-tuned for each ground.
 const CSS = `
-.cx-root { display: flex; flex-direction: column; height: 100%; min-height: 0; color: #d8dee6;
-  background: radial-gradient(ellipse at 45% 50%, #101820 0%, #080b10 60%, #05070a 100%); }
+.cx-root {
+  --cx-bg: #efede8; --cx-text: #211f1b; --cx-dim: #5f5a52; --cx-strong: #14120f;
+  --cx-bar-bg: #e4e1da; --cx-bar-line: #cdc8bd; --cx-num: #8f5600;
+  --cx-btn-bg: #faf9f6; --cx-btn-line: #b9b3a8; --cx-accent: #b86e00; --cx-danger: #b4352c; --cx-track: #d6d1c7;
+  --cx-serenity: #2f6bc9; --cx-logistics: #b86e00; --cx-logic: #23864a; --cx-rhetoric: #c8433a; --cx-vigilance: #7b4bc0;
+  --cx-floor-a: 0.07; --cx-floor-lit-a: 0.16; --cx-seam: #c9c3b8;
+  --cx-sock: #fbfaf7; --cx-bezel: #8c867c; --cx-locked-fill: #e7e4de; --cx-locked-bezel: #b5afa4; --cx-locked-a: 0.55;
+  --cx-other-fill: #ebe8e2; --cx-part-hov: #f6ead6;
+  --cx-edge: #a39d92; --cx-feed-a: 0.55; --cx-wall-a: 0.3;
+  --cx-glow-a: 0.4; --cx-hi-mix: 62%; --cx-fill-edge-a: 0.85; --cx-e-glow-a: 0.18; --cx-pulse: #ffffff;
+  --cx-owned-glyph: #ffffff; --cx-owned-ring: #ffffff; --cx-hover: #14120f; --cx-refused: #c62828;
+  --cx-flash-bg: rgb(251 250 247 / 92%); --cx-flash-line: #cdc8bd; --cx-flash-text: #7a4800;
+  --cx-tip-bg: #fdfcfa; --cx-tip-line: #b9b3a8; --cx-tip-shadow: rgb(0 0 0 / 22%); --cx-tip-text: #2b2823; --cx-tip-sep: #e0dbd2;
+  --cx-tip-pick-bg: #8f5600; --cx-tip-pick-text: #ffffff; --cx-ink-mix: 70%;
+  --cx-ok: #1f7a42; --cx-own: #8f5600; --cx-muted: #625d55; --cx-bad: #b4352c; --cx-ph: #7d776d;
+  --cx-brass-head: #7a5a1e; --cx-brass-bg: linear-gradient(180deg, #f6ecd6 0%, #ecdfc2 100%); --cx-brass-line: #b89a5e;
+  --cx-brass-inset: #f6ecd6; --cx-brass-inner: #d2bb88; --cx-brass-text: #4f4126; --cx-brass-name: #3d2d0e; --cx-brass-sub: #6b5c40;
+  --cx-brass-cost: #8f5600; --cx-brass-hover: #a5823f; --cx-brass-can: #a5823f;
+  --cx-brass-have-bg: linear-gradient(180deg, #f6d991 0%, #eac36a 100%); --cx-brass-have-line: #8f5600; --cx-brass-have-inset: #eac36a;
+  --cx-brass-have-text: #3d2d0e; --cx-rivet: radial-gradient(circle at 35% 35%, #fff4d8, #a5823f); --cx-stud-line: #4f4126;
+}
+:root[data-theme='dark'] .cx-root {
+  --cx-bg: #15181d; --cx-text: #d8dee6; --cx-dim: #8b97a3; --cx-strong: #f1f4f7;
+  --cx-bar-bg: #0f1216; --cx-bar-line: #262e37; --cx-num: #ffd27a;
+  --cx-btn-bg: #1d242c; --cx-btn-line: #3a4652; --cx-accent: #f5a524; --cx-danger: #f28b82; --cx-track: #262e37;
+  --cx-serenity: #8ab4f8; --cx-logistics: #f5a524; --cx-logic: #62d98b; --cx-rhetoric: #f28b82; --cx-vigilance: #c39bf0;
+  --cx-floor-a: 0.045; --cx-floor-lit-a: 0.11; --cx-seam: #2f3944;
+  --cx-sock: #0c0f13; --cx-bezel: #64717e; --cx-locked-fill: #111419; --cx-locked-bezel: #343e48; --cx-locked-a: 0.45;
+  --cx-other-fill: #0e1115; --cx-part-hov: #1f2a36;
+  --cx-edge: #4a5662; --cx-feed-a: 0.5; --cx-wall-a: 0.34;
+  --cx-glow-a: 0.55; --cx-hi-mix: 0%; --cx-fill-edge-a: 0.7; --cx-e-glow-a: 0.22; --cx-pulse: #ffffff;
+  --cx-owned-glyph: #0a0f15; --cx-owned-ring: #ffffff; --cx-hover: #ffffff; --cx-refused: #ff6b6b;
+  --cx-flash-bg: rgb(10 12 15 / 85%); --cx-flash-line: #2f3944; --cx-flash-text: #ffd27a;
+  --cx-tip-bg: #1a2028; --cx-tip-line: #3f4c59; --cx-tip-shadow: rgb(0 0 0 / 60%); --cx-tip-text: #d8dee6; --cx-tip-sep: #2c3742;
+  --cx-tip-pick-bg: #ffd27a; --cx-tip-pick-text: #0a0f15; --cx-ink-mix: 100%;
+  --cx-ok: #7ee2a0; --cx-own: #ffd27a; --cx-muted: #9aa8b5; --cx-bad: #ff8a80; --cx-ph: #75828e;
+  --cx-brass-head: #c9a45c; --cx-brass-bg: linear-gradient(180deg, #2a2418 0%, #1b1710 55%, #15120c 100%); --cx-brass-line: #5a4a2a;
+  --cx-brass-inset: #15120c; --cx-brass-inner: #3d3220; --cx-brass-text: #cfc6b2; --cx-brass-name: #e8d6a6; --cx-brass-sub: #a89e88;
+  --cx-brass-cost: #ffd27a; --cx-brass-hover: #8a7040; --cx-brass-can: #c9a45c;
+  --cx-brass-have-bg: linear-gradient(180deg, #4a3a18 0%, #2e2410 60%, #1f180b 100%); --cx-brass-have-line: #ffd27a; --cx-brass-have-inset: #1f180b;
+  --cx-brass-have-text: #f3e6c4; --cx-rivet: radial-gradient(circle at 35% 35%, #d6c08a, #5a4a2a); --cx-stud-line: #0b1016;
+}
+.cx-root { display: flex; flex-direction: column; height: 100%; min-height: 0; color: var(--cx-text); background: var(--cx-bg); }
 .cx-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 3px 18px; padding: 5px 12px;
-  background: rgba(10, 14, 19, 0.92); border-bottom: 1px solid #1f2b36; font-size: 13px; }
-.cx-bar b { font-family: var(--font-mono); color: #ffd27a; }
-.cx-dim { color: #7d8a97; }
+  background: var(--cx-bar-bg); border-bottom: 1px solid var(--cx-bar-line); font-size: 13px; }
+.cx-bar b { font-family: var(--font-mono); color: var(--cx-num); }
+.cx-dim { color: var(--cx-dim); }
 .cx-actions { display: flex; gap: 5px; }
-.cx-btn { background: #17212b; color: #d8dee6; border: 1px solid #33414e; border-radius: 3px; padding: 1px 8px; font-size: 12px; cursor: pointer; }
-.cx-btn:hover { border-color: #f5a524; }
-.cx-danger { color: #f28b82; }
+.cx-btn { background: var(--cx-btn-bg); color: var(--cx-text); border: 1px solid var(--cx-btn-line); border-radius: 3px; padding: 1px 8px; font-size: 12px; cursor: pointer; }
+.cx-btn:hover { border-color: var(--cx-accent); }
+.cx-danger { color: var(--cx-danger); }
 .cx-gates { display: flex; gap: 10px; align-items: center; margin-left: auto; font-size: 12px; }
-.cx-track { display: inline-block; width: 60px; height: 6px; background: #1d2731; border-radius: 3px; vertical-align: middle; overflow: hidden; }
-.cx-fill { display: block; height: 100%; background: #f5a524; }
+.cx-track { display: inline-block; width: 60px; height: 6px; background: var(--cx-track); border-radius: 3px; vertical-align: middle; overflow: hidden; }
+.cx-fill { display: block; height: 100%; background: var(--cx-accent); }
 .cx-main { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 1fr) 250px; }
 .cx-tree { position: relative; min-height: 0; overflow: hidden; }
 .cx-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; user-select: none; }
-.cx-flash { position: absolute; left: 12px; bottom: 8px; margin: 0; max-width: 46%; font-size: 12.5px; color: #ffd27a;
-  background: rgba(8, 11, 16, 0.8); border: 1px solid #2a3642; border-radius: 4px; padding: 4px 9px; pointer-events: none; }
+.cx-flash { position: absolute; left: 12px; bottom: 8px; margin: 0; max-width: 46%; font-size: 12.5px; color: var(--cx-flash-text);
+  background: var(--cx-flash-bg); border: 1px solid var(--cx-flash-line); border-radius: 4px; padding: 4px 9px; pointer-events: none; }
 
-.cx-wafer { fill: url(#cx-wafer-fill); stroke: #263340; stroke-width: 2; }
-.cx-dies { fill: url(#cx-die); opacity: 0.7; }
-.cx-notch { fill: none; stroke: #05070a; stroke-width: 7; }
-.cx-traces path { fill: none; stroke: #1f2e3b; stroke-width: 1.6; stroke-linejoin: round; }
-.cx-vias circle { fill: #0a0f15; stroke: #2a3c4c; stroke-width: 1.3; }
-.cx-neurons path { fill: none; stroke: #2a3e55; stroke-width: 1.1; opacity: 0.75; }
-.cx-neurons circle { fill: #2f4762; opacity: 0.8; }
-
-.cx-floor { fill: currentColor; fill-opacity: 0.035; stroke: none; transition: fill-opacity 0.2s; }
-.cx-seam { stroke: #2a3845; stroke-width: 1.2; stroke-dasharray: 2 6; }
-.cx-rim { fill: none; stroke: currentColor; stroke-opacity: 0.55; stroke-width: 3; stroke-linecap: round; transition: stroke-opacity 0.2s, stroke-width 0.2s; }
+.cx-floor { fill: currentColor; fill-opacity: var(--cx-floor-a); stroke: none; transition: fill-opacity 0.2s; }
+.cx-seam { stroke: var(--cx-seam); stroke-width: 1.2; stroke-dasharray: 2 6; }
+.cx-rim { fill: none; stroke: currentColor; stroke-opacity: 0.6; stroke-width: 3; stroke-linecap: round; transition: stroke-opacity 0.2s, stroke-width 0.2s; }
 .cx-rim-glow { fill: none; stroke: currentColor; stroke-opacity: 0; stroke-width: 18; stroke-linecap: round; transition: stroke-opacity 0.2s; }
 .cx-sector.cx-lit .cx-rim { stroke-opacity: 1; stroke-width: 6; }
 .cx-sector.cx-lit .cx-rim-glow { stroke-opacity: 0.22; }
-.cx-sector.cx-lit .cx-floor { fill-opacity: 0.09; }
-.cx-sector-name { font-size: 21px; font-weight: 700; letter-spacing: 7px; text-anchor: middle; opacity: 0.9; }
+.cx-sector.cx-lit .cx-floor { fill-opacity: var(--cx-floor-lit-a); }
+.cx-sector-name { font-size: 21px; font-weight: 700; letter-spacing: 7px; text-anchor: middle; }
 
-.cx-wall { fill: none; stroke: currentColor; stroke-opacity: 0.34; stroke-width: 9; stroke-linecap: butt; }
-.cx-wall-crenel { fill: none; stroke: #0b1016; stroke-width: 3.5; stroke-dasharray: 5 7; }
+.cx-wall { fill: none; stroke: currentColor; stroke-opacity: var(--cx-wall-a); stroke-width: 9; stroke-linecap: butt; }
+.cx-wall-crenel { fill: none; stroke: var(--cx-bg); stroke-width: 3.5; stroke-dasharray: 5 7; }
 
 .cx-edge { pointer-events: none; }
-.cx-e-line { fill: none; stroke: #2b3a48; stroke-width: 2.4; stroke-linecap: round; }
-.cx-feed .cx-e-line { stroke: currentColor; stroke-opacity: 0.4; stroke-dasharray: 6 5; }
+.cx-e-line { fill: none; stroke: var(--cx-edge); stroke-width: 2.4; stroke-linecap: round; }
+.cx-feed .cx-e-line { stroke: currentColor; stroke-opacity: var(--cx-feed-a); stroke-dasharray: 6 5; }
 .cx-on .cx-e-line { stroke: currentColor; stroke-opacity: 1; stroke-width: 3; stroke-dasharray: none; }
-.cx-e-glow { fill: none; stroke: currentColor; stroke-opacity: 0.22; stroke-width: 11; stroke-linecap: round; }
-.cx-e-pulse { fill: none; stroke: #ffffff; stroke-opacity: 0.85; stroke-width: 2.2; stroke-linecap: round;
+.cx-e-glow { fill: none; stroke: currentColor; stroke-opacity: var(--cx-e-glow-a); stroke-width: 11; stroke-linecap: round; }
+.cx-e-pulse { fill: none; stroke: var(--cx-pulse); stroke-opacity: 0.85; stroke-width: 2.2; stroke-linecap: round;
   stroke-dasharray: 3 47; animation: cx-flow 2.6s linear infinite; }
 @keyframes cx-flow { from { stroke-dashoffset: 50; } to { stroke-dashoffset: 0; } }
 
 .cx-core-halo { fill: url(#cx-core-halo); animation: cx-breathe 4s ease-in-out infinite alternate; }
-.cx-core-ring { fill: #0b1016; stroke: #f5a524; stroke-width: 2; stroke-dasharray: 2 4; }
+.cx-core-ring { fill: var(--cx-sock); stroke: var(--cx-accent); stroke-width: 2; stroke-dasharray: 2 4; }
 .cx-core-orb { fill: url(#cx-core-fill); }
 .cx-core-num { font-size: 36px; font-weight: 800; text-anchor: middle; fill: #2a1800; font-family: var(--font-mono); }
 .cx-core-sub { font-size: 8.5px; letter-spacing: 1.5px; font-weight: 700; text-anchor: middle; fill: #4a2c00; }
@@ -1192,8 +1162,8 @@ const CSS = `
 @keyframes cx-breathe { from { opacity: 0.55; } to { opacity: 1; } }
 
 .cx-node { cursor: pointer; outline: none; }
-.cx-bezel { fill: #0b1016; stroke: #3c4a57; stroke-width: 2; }
-.cx-disc { fill: #0d141b; stroke: currentColor; stroke-width: 2.2; }
+.cx-bezel { fill: var(--cx-sock); stroke: var(--cx-bezel); stroke-width: 2; }
+.cx-disc { fill: var(--cx-sock); stroke: currentColor; stroke-width: 2.2; }
 .cx-glyph { fill: currentColor; color: inherit; pointer-events: none; }
 .cx-halo { pointer-events: none; }
 .cx-buyable .cx-halo { animation: cx-pulse 2.4s ease-in-out infinite alternate; }
@@ -1201,78 +1171,80 @@ const CSS = `
 .cx-owned .cx-halo { opacity: 0.6; }
 .cx-partial .cx-halo { opacity: 0.35; }
 .cx-locked, .cx-gate-locked { cursor: default; }
-.cx-locked .cx-disc, .cx-gate-locked .cx-disc { fill: #0a0e13; stroke-opacity: 0.35; stroke-width: 1.4; }
-.cx-locked .cx-bezel, .cx-gate-locked .cx-bezel { stroke: #26313b; }
-.cx-locked .cx-glyph, .cx-gate-locked .cx-glyph { opacity: 0.3; }
-.cx-gate .cx-bezel { stroke-dasharray: 4 3; stroke: currentColor; stroke-opacity: 0.6; }
-.cx-open .cx-glyph { opacity: 0.7; }
+.cx-locked .cx-disc, .cx-gate-locked .cx-disc { fill: var(--cx-locked-fill); stroke-opacity: var(--cx-locked-a); stroke-width: 1.4; }
+.cx-locked .cx-bezel, .cx-gate-locked .cx-bezel { fill: var(--cx-locked-fill); stroke: var(--cx-locked-bezel); }
+.cx-locked .cx-glyph, .cx-gate-locked .cx-glyph { opacity: var(--cx-locked-a); }
+.cx-gate .cx-bezel { stroke-dasharray: 4 3; stroke: currentColor; stroke-opacity: 0.7; }
+.cx-open .cx-glyph { opacity: 0.75; }
 .cx-partial-fill { fill: currentColor; opacity: 0.32; pointer-events: none; }
-.cx-owned:not(.cx-split):not(.cx-bridge) .cx-disc { stroke: #ffffff; stroke-opacity: 0.6; }
-.cx-owned:not(.cx-split):not(.cx-bridge) .cx-glyph { fill: #0a0f15; }
+.cx-owned:not(.cx-split):not(.cx-bridge) .cx-disc { stroke: var(--cx-owned-ring); stroke-opacity: 0.6; }
+.cx-owned:not(.cx-split) .cx-glyph { fill: var(--cx-owned-glyph); }
 .cx-owned .cx-bezel { stroke: currentColor; }
-.cx-end-ring { fill: none; stroke: currentColor; stroke-opacity: 0.5; stroke-width: 1.5; stroke-dasharray: 1 3.2; }
+.cx-end-ring { fill: none; stroke: currentColor; stroke-opacity: 0.55; stroke-width: 1.5; stroke-dasharray: 1 3.2; }
 .cx-owned .cx-end-ring { stroke-opacity: 1; stroke-dasharray: none; }
 .cx-half { fill: none; stroke-width: 4; stroke-linecap: round; }
-.cx-locked .cx-half { stroke-opacity: 0.35; stroke-width: 2.5; }
-.cx-bridge-core { fill: #ffffff; opacity: 0.12; pointer-events: none; }
-.cx-owned.cx-bridge .cx-disc { fill: #1a2633; }
-.cx-pip { fill: #0b1016; stroke: currentColor; stroke-width: 1.4; stroke-opacity: 0.7; pointer-events: none; }
-.cx-pip-on { fill: currentColor; stroke: #ffffff; stroke-opacity: 0.8; }
+.cx-locked .cx-half { stroke-opacity: var(--cx-locked-a); stroke-width: 2.5; }
+.cx-bridge-fill { pointer-events: none; }
+.cx-pip { fill: var(--cx-sock); stroke: currentColor; stroke-width: 1.4; stroke-opacity: 0.8; pointer-events: none; }
+.cx-pip-on { fill: currentColor; stroke: var(--cx-hover); stroke-opacity: 0.8; }
 .cx-axiom-badge path { fill: #ffd27a; stroke: #3a2200; stroke-width: 1.2; }
-.cx-slice { fill: #0d141b; stroke: currentColor; stroke-width: 1.8; }
-.cx-part .cx-glyph { opacity: 0.8; }
-.cx-locked .cx-slice { fill: #0a0e13; stroke-opacity: 0.35; }
-.cx-locked .cx-part .cx-glyph { opacity: 0.3; }
-.cx-buyable .cx-part:hover .cx-slice, .cx-buyable .cx-part.cx-hov .cx-slice { fill: #1a2734; }
-.cx-part.cx-taken .cx-glyph { fill: #0a0f15; opacity: 1; }
-.cx-part.cx-other .cx-slice { fill: #0a0e13; stroke-opacity: 0.3; }
-.cx-part.cx-other .cx-glyph { opacity: 0.22; }
-.cx-hover .cx-bezel { stroke: #ffffff; stroke-width: 2.4; }
-.cx-refused .cx-bezel { stroke: #ff6b6b; stroke-width: 3; }
-.cx-node:focus-visible .cx-bezel { stroke: #ffffff; }
+.cx-slice { fill: var(--cx-sock); stroke: currentColor; stroke-width: 1.8; }
+.cx-part .cx-glyph { opacity: 0.85; }
+.cx-locked .cx-slice { fill: var(--cx-locked-fill); stroke-opacity: var(--cx-locked-a); }
+.cx-locked .cx-part .cx-glyph { opacity: var(--cx-locked-a); }
+.cx-buyable .cx-part:hover .cx-slice, .cx-buyable .cx-part.cx-hov .cx-slice { fill: var(--cx-part-hov); }
+.cx-part.cx-taken .cx-glyph { fill: var(--cx-owned-glyph); opacity: 1; }
+.cx-part.cx-other .cx-slice { fill: var(--cx-other-fill); stroke-opacity: 0.45; }
+.cx-part.cx-other .cx-glyph { opacity: 0.4; }
+.cx-owned .cx-part.cx-other:hover .cx-slice, .cx-owned .cx-part.cx-other.cx-hov .cx-slice { fill: var(--cx-part-hov); stroke-opacity: 1; }
+.cx-owned .cx-part.cx-other:hover .cx-glyph, .cx-owned .cx-part.cx-other.cx-hov .cx-glyph { opacity: 0.9; }
+.cx-hover .cx-bezel { stroke: var(--cx-hover); stroke-width: 2.4; }
+.cx-refused .cx-bezel { stroke: var(--cx-refused); stroke-width: 3; }
+.cx-node:focus-visible .cx-bezel { stroke: var(--cx-hover); }
 @media (prefers-reduced-motion: reduce) { .cx-e-pulse, .cx-core-halo, .cx-buyable .cx-halo { animation: none; } }
 
 .cx-tip { position: absolute; left: 0; top: 0; width: 270px; z-index: 5; pointer-events: none;
-  background: linear-gradient(180deg, rgba(20, 28, 37, 0.97), rgba(11, 16, 22, 0.97)); border: 1px solid #3a4856;
-  border-radius: 5px; padding: 8px 10px; box-shadow: 0 6px 22px rgba(0, 0, 0, 0.6); font-size: 12.5px; display: flex; flex-direction: column; gap: 3px; }
+  background: var(--cx-tip-bg); border: 1px solid var(--cx-tip-line);
+  border-radius: 5px; padding: 8px 10px; box-shadow: 0 6px 22px var(--cx-tip-shadow); font-size: 12.5px; display: flex; flex-direction: column; gap: 3px; }
 .cx-tip.cx-hidden { display: none; }
-.cx-tip-kind { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: #9aa8b5; }
-.cx-tip-name { font-size: 15px; font-weight: 700; color: #f1f4f7; }
+.cx-tip-kind { font-size: 11px; text-transform: uppercase; letter-spacing: 0.6px; color: var(--cx-muted); }
+.cx-tip-name { font-size: 15px; font-weight: 700; color: var(--cx-strong); }
 .cx-tip-parts { display: flex; gap: 4px; flex-wrap: wrap; }
-.cx-tip-parts span { font-size: 11px; padding: 0 5px; border: 1px solid #33414e; border-radius: 3px; color: #7d8a97; }
-.cx-tip-parts .cx-cur { color: #f1f4f7; border-color: #7d8a97; }
-.cx-tip-parts .cx-picked { color: #0a0f15; background: #ffd27a; border-color: #ffd27a; }
-.cx-tip-ranks { display: flex; align-items: center; gap: 4px; color: #9aa8b5; font-size: 11.5px; }
-.cx-tip-ranks span { width: 8px; height: 8px; border-radius: 50%; border: 1.4px solid #9aa8b5; }
-.cx-tip-ranks span.cx-on { background: #ffd27a; border-color: #ffd27a; }
-.cx-tip-text { color: #d8dee6; }
-.cx-tip-cost { color: #9aa8b5; font-size: 11.5px; }
-.cx-tip-why { font-size: 12px; border-top: 1px solid #26323e; padding-top: 4px; margin-top: 2px; }
-.cx-tip-ok { color: #7ee2a0; }
-.cx-tip-own { color: #ffd27a; }
-.cx-tip-muted { color: #9aa8b5; }
-.cx-tip-bad { color: #ff8a80; font-weight: 600; }
-.cx-tip-ph { font-size: 10.5px; color: #5f6c78; font-style: italic; }
+.cx-tip-parts span { font-size: 11px; padding: 0 5px; border: 1px solid var(--cx-tip-line); border-radius: 3px; color: var(--cx-muted); }
+.cx-tip-parts .cx-cur { color: var(--cx-strong); border-color: var(--cx-muted); }
+.cx-tip-parts .cx-picked { color: var(--cx-tip-pick-text); background: var(--cx-tip-pick-bg); border-color: var(--cx-tip-pick-bg); }
+.cx-tip-ranks { display: flex; align-items: center; gap: 4px; color: var(--cx-muted); font-size: 11.5px; }
+.cx-tip-ranks span { width: 8px; height: 8px; border-radius: 50%; border: 1.4px solid var(--cx-muted); }
+.cx-tip-ranks span.cx-on { background: var(--cx-tip-pick-bg); border-color: var(--cx-tip-pick-bg); }
+.cx-tip-text { color: var(--cx-tip-text); }
+.cx-tip-cost { color: var(--cx-muted); font-size: 11.5px; }
+.cx-tip-why { font-size: 12px; border-top: 1px solid var(--cx-tip-sep); padding-top: 4px; margin-top: 2px; }
+.cx-tip-ok { color: var(--cx-ok); }
+.cx-tip-own { color: var(--cx-own); }
+.cx-tip-muted { color: var(--cx-muted); }
+.cx-tip-bad { color: var(--cx-bad); font-weight: 600; }
+.cx-tip-ph { font-size: 10.5px; color: var(--cx-ph); font-style: italic; }
 
 .cx-side { display: flex; flex-direction: column; gap: 7px; min-height: 0; overflow: hidden; padding: 10px 12px 10px 4px; }
-.cx-side-head { margin: 0 0 2px; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: #c9a45c; text-align: center; }
+.cx-side-head { margin: 0 0 2px; font-size: 12px; letter-spacing: 3px; text-transform: uppercase; color: var(--cx-brass-head); text-align: center; }
 .cx-plaque { position: relative; flex: 0 1 auto; min-height: 0; display: flex; flex-direction: column; align-items: center; gap: 2px; width: 100%;
-  padding: 7px 14px 6px; text-align: center; cursor: default; color: #cfc6b2;
-  background: linear-gradient(180deg, #2a2418 0%, #1b1710 55%, #15120c 100%);
-  border: 1px solid #5a4a2a; border-radius: 4px; box-shadow: inset 0 0 0 3px #15120c, inset 0 0 0 4px #3d3220; transition: box-shadow 0.15s; }
-.cx-plaque:hover, .cx-plaque:focus-visible { box-shadow: inset 0 0 0 3px #15120c, inset 0 0 0 4px #8a7040, 0 0 12px rgba(245, 165, 36, 0.25); outline: none; }
-.cx-plaque.cx-can { cursor: pointer; border-color: #c9a45c; }
-.cx-plaque.cx-have { border-color: #ffd27a; background: linear-gradient(180deg, #4a3a18 0%, #2e2410 60%, #1f180b 100%);
-  box-shadow: inset 0 0 0 3px #1f180b, inset 0 0 0 4px #c9a45c, 0 0 14px rgba(255, 210, 122, 0.3); color: #f3e6c4; }
+  padding: 7px 14px 6px; text-align: center; cursor: default; color: var(--cx-brass-text); background: var(--cx-brass-bg);
+  border: 1px solid var(--cx-brass-line); border-radius: 4px; box-shadow: inset 0 0 0 3px var(--cx-brass-inset), inset 0 0 0 4px var(--cx-brass-inner); transition: box-shadow 0.15s; }
+.cx-plaque:hover, .cx-plaque:focus-visible { box-shadow: inset 0 0 0 3px var(--cx-brass-inset), inset 0 0 0 4px var(--cx-brass-hover), 0 0 12px rgba(245, 165, 36, 0.25); outline: none; }
+.cx-plaque.cx-can { cursor: pointer; border-color: var(--cx-brass-can); }
+.cx-plaque.cx-have { border-color: var(--cx-brass-have-line); background: var(--cx-brass-have-bg);
+  box-shadow: inset 0 0 0 3px var(--cx-brass-have-inset), inset 0 0 0 4px var(--cx-brass-can), 0 0 14px rgba(255, 210, 122, 0.3); color: var(--cx-brass-have-text); }
 .cx-plaque.cx-unified { padding: 9px 14px 8px; border-width: 2px; }
-.cx-rivet { position: absolute; top: 6px; width: 5px; height: 5px; border-radius: 50%; background: radial-gradient(circle at 35% 35%, #d6c08a, #5a4a2a); }
+.cx-rivet { position: absolute; top: 6px; width: 5px; height: 5px; border-radius: 50%; background: var(--cx-rivet); }
 .cx-rivet-l { left: 6px; }
 .cx-rivet-r { right: 6px; }
 .cx-plaque-studs { display: flex; gap: 5px; }
-.cx-stud { width: 9px; height: 9px; transform: rotate(45deg); border: 1px solid #0b1016; }
-.cx-plaque-name { font-size: 12.5px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: #e8d6a6; }
-.cx-plaque-text { font-size: 11px; line-height: 1.3; color: #a89e88; }
-.cx-plaque-cost { font-size: 11px; color: #ffd27a; letter-spacing: 1px; }
+.cx-stud { width: 9px; height: 9px; transform: rotate(45deg); border: 1px solid var(--cx-stud-line); }
+.cx-plaque-name { font-size: 12.5px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--cx-brass-name); }
+.cx-plaque-text { font-size: 11px; line-height: 1.3; color: var(--cx-brass-sub); }
+.cx-plaque.cx-have .cx-plaque-text { color: inherit; }
+.cx-plaque-cost { font-size: 11px; color: var(--cx-brass-cost); letter-spacing: 1px; }
+.cx-plaque-cost .cx-dim { color: var(--cx-brass-sub); }
 @media (max-height: 860px) {
   .cx-side { gap: 5px; padding-top: 6px; }
   .cx-plaque, .cx-plaque.cx-unified { padding: 4px 12px 3px; gap: 1px; }

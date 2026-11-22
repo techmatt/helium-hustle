@@ -151,9 +151,7 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   oracle; its strategies are a fixed table; it takes `--milestones`. Its `Looks` and
   `milestones::Tracker` judge history milestones differently: the next oracle item moves it to
   `Tracker` semantics and re-pins.
-- **Warning checks.** On: native = wasm parity, tunables in code, platform floats in `hh-core`,
-  docs over 15 KB, balance (`hh-sim balance`, judged on the author and casual players), and by
-  hand a rules change without its history row or golden move (CLAUDE.md, *Warning checks*).
+- **Warning checks.** Surfaced, never gating; which are on: CLAUDE.md, *Warning checks*.
 
 ## Art and UI
 
@@ -177,3 +175,6 @@ not code rules. A new ruling, or a change to one, updates its line here in place
 - **Chip colors (028, default).** Resource, axis and rival chip colors stay TS maps in
   `icons.tsx` (the chip needs the hex for its ink-contrast choice, and they are the same in
   both themes); only the axis text colors are CSS tokens.
+- **Cortex mock (2026-11-22).** Contrast first: a plain solid ground per theme, no backdrop
+  art; it follows the app's theme. A socket's or fan's part switches with one click, free.
+  For the record, not built: an Act 4 upgrade lets a fan hold several parts at once.
