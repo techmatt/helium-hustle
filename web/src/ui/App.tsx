@@ -1,7 +1,7 @@
 // The page: left column, the active panel, the right column, the status bar, and the
 // retirement summary over everything when a run ends.
 
-import { useEffect, useState } from 'preact/hooks';
+import { useCallback, useEffect, useState } from 'preact/hooks';
 import { SPEEDS, type Speed } from '../clock';
 import { capitalize, mult, num, perDay } from '../format';
 import {
@@ -33,6 +33,11 @@ import {
 } from './panels';
 import { Right } from './Right';
 import { Dyson, EarthLab, Ending, MetaController, Timeline, Vault } from './Saga';
+import { TakeoverView, useTakeoversChanged, type Takeover } from './Takeover';
+import { cortexMockTakeover } from './CortexMock';
+
+/** The takeover views, in their left-column order. */
+const TAKEOVERS: Takeover[] = [cortexMockTakeover];
 
 /** Keys 1-5 pick the speeds after pause, in order. */
 const KEY_SPEEDS: Record<string, Speed> = Object.fromEntries(SPEEDS.slice(1).map((sp, i) => [String(i + 1), sp]));
@@ -41,6 +46,8 @@ export function App() {
   const s = useStore();
   const [panel, setPanel] = useState('buildings');
   const [program, setProgram] = useState(0);
+  const [takeoverId, setTakeoverId] = useState<string | null>(null);
+  useTakeoversChanged();
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       const t = e.target as HTMLElement;
@@ -58,15 +65,23 @@ export function App() {
   }, []);
   // A panel whose tile hides (a new run re-gates it) falls back to Buildings.
   const shown = navShown(s.view, panel) ? panel : 'buildings';
+  // A takeover whose button hides closes with it.
+  const takeover = TAKEOVERS.find((t) => t.id === takeoverId && t.shown(s)) ?? null;
+  const closeTakeover = useCallback(() => setTakeoverId(null), []);
   return (
-    <div class="app">
+    <div class={`app${takeover ? ' taking-over' : ''}`}>
       <Left
         s={s}
-        panel={shown}
+        panel={takeover ? null : shown}
         open={(id) => {
           noteOpened('panel', id);
           setPanel(id);
+          // A panel picked from the nav replaces an open takeover.
+          setTakeoverId(null);
         }}
+        takeovers={TAKEOVERS}
+        takeover={takeover?.id ?? null}
+        toggleTakeover={(id) => setTakeoverId((cur) => (cur === id ? null : id))}
       />
       <main class="col-mid">
         <Sky />
@@ -100,6 +115,7 @@ export function App() {
           setProgram(i);
         }}
       />
+      {takeover && <TakeoverView s={s} t={takeover} close={closeTakeover} />}
       <StatusBar s={s} />
       {s.summary && <Summary s={s} />}
       <Ending v={s.view} />

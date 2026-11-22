@@ -8,6 +8,7 @@ import { useEffect, useState } from 'preact/hooks';
 import { Breakdown, RateCell, Section, isCapped, navShown, risingIsBad } from './common';
 import { Chip, Horizon, NavIcon } from './icons';
 import { CalendarStrip } from './Saga';
+import { TakeoverButtons, type Takeover } from './Takeover';
 
 /** The Resources panel's first group, in this order; every other resource follows in a
  * second group, in the engine's order. Display order only. */
@@ -23,7 +24,22 @@ function resourceGroups<R extends { id: string }>(shown: R[]): R[][] {
  * without scrolling (at 768 px it was about one row over); a click opens it. */
 const IDEOLOGY_OPEN_MIN_HEIGHT = 800;
 
-export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: string) => void }) {
+export function Left({
+  s,
+  panel,
+  open,
+  takeovers,
+  takeover,
+  toggleTakeover,
+}: {
+  s: Store;
+  /** The panel shown, or null while a takeover covers it. */
+  panel: string | null;
+  open: (id: string) => void;
+  takeovers: Takeover[];
+  takeover: string | null;
+  toggleTakeover: (id: string) => void;
+}) {
   const v = s.view;
   const tiles = v.nav.filter((t) => t.visible);
   // Past nine tiles they turn compact (icon beside the name), so a late career's column
@@ -60,6 +76,7 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
           </button>
         ))}
       </nav>
+      <TakeoverButtons s={s} list={takeovers} open={takeover} toggle={toggleTakeover} />
       <div class="speed">
         <div class="label">Game Speed</div>
         <div class="speeds" id="speeds" role="group" aria-label="Speed">

@@ -72,6 +72,12 @@ Three columns and a status bar:
   each with an unread count.
 - **Bottom:** day and run, the cheated mark, Boredom and Energy bars with their rates
   (capped as in Resources; "cap tomorrow" the day before a forced retirement).
+- **Takeover views** (`Takeover.tsx`): a large view that covers the middle and right
+  columns while the left stays, opened and closed by its button under the nav grid, or
+  closed with Esc or a nav tile. A slim strip on top shows the day, Boredom, Energy,
+  Credits, He-3 and Science, and pause. The game runs on behind it: the covered columns
+  stay mounted, only hidden. A view is one `Takeover` entry in `App.tsx`'s `TAKEOVERS`.
+  Its only user so far is the Cortex mock (below); later large views are meant to use it.
 - **Run summary:** when a run ends a summary covers the screen, the clock stopped until
   Continue.
 
@@ -112,8 +118,9 @@ for a later live base view: replace what it draws, keep its box.
   sees the change (`storage` event), stops and says to reload.
 - **Debug menu** (Options → Debug): the theme, a scenario (`scenarios/`) or a new game from
   a seed; *Check replay* replays the record in wasm and compares fingerprints; a line with
-  engine, revision, config hash, seed, action count and fingerprint; *Cortex mock*, a UI-only
-  mock of the talent tree (`src/ui/CortexMock.tsx`, placeholders, no effect). **Cheats** (off by
+  engine, revision, config hash, seed, action count and fingerprint; *Cortex mock in the left
+  column*, which shows the button of a UI-only radial mock of the talent tree, a takeover
+  view (`src/ui/CortexMock.tsx`, placeholders, no effect, in memory). **Cheats** (off by
   default, remembered in `hh.cheats`): grant a resource, set boredom, jump ahead N days;
   the **accelerators**: 2k and 10k speeds, the boost and the autopilot
   ([simulator.md](../docs/simulator.md#accelerators)). Engine actions, so replay stays

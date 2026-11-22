@@ -303,6 +303,81 @@ ul.plain {
   font-family: var(--font-mono);
   font-size: 13px;
 }
+/* ---- takeover views (Takeover.tsx): over the middle and right columns, which stay
+   mounted but hidden, so their state survives and the game runs on behind ---- */
+.app.taking-over > .col-mid,
+.app.taking-over > .col-right {
+  display: none;
+}
+.takeover {
+  grid-column: 2 / 4;
+  grid-row: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--page);
+}
+.takeover-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 12px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+}
+.takeover-head h2 {
+  margin: 0;
+  white-space: nowrap;
+}
+.takeover-strip {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  font-size: 13px;
+}
+.takeover-day {
+  font-weight: 600;
+  white-space: nowrap;
+}
+.takeover-bored {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 1 220px;
+  min-width: 120px;
+}
+.takeover-bored .bar {
+  flex: 1;
+  height: 16px;
+}
+.takeover-res {
+  white-space: nowrap;
+  font-family: var(--font-mono);
+}
+.takeover-pause {
+  margin-left: auto;
+  white-space: nowrap;
+}
+.takeover-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 10px 12px;
+}
+.takeover-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 8px 0 0;
+}
+.takeover-button.active {
+  background: var(--sel-bg);
+  border-color: var(--accent);
+  color: var(--sel-text);
+}
+
 .cheated {
   background: var(--neg);
   color: var(--on-neg);

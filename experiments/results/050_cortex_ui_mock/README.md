@@ -1,5 +1,8 @@
 # 050: Cortex UI mock
 
+Superseded by 051 (`../051_cortex_radial_takeover/`): the mock is now a radial tree in a
+takeover view, and this folder's `shots.mjs` no longer runs against it.
+
 A UI-only mock of the talent tree (the Cortex), in `web/src/ui/CortexMock.tsx`, opened from
 Options → Debug → *Cortex mock…*. Every node and theorem is a placeholder with no effect; the
 state lives in that module, in memory, and is lost on reload. To remove it: delete the file,
