@@ -26,7 +26,7 @@ npm run preview                              # serve web/dist/
 - **The wasm build:** `scripts/build-wasm.mjs` runs `wasm-pack build crates/hh-wasm
   --target web --release` into `web/src/wasm/` (git-ignored); `HH_WASM_PROFILE=dev` builds
   unoptimized. It skips the build when its inputs' hash (list: the script) matches
-  `web/src/wasm/.inputs`; `HH_WASM_FORCE=1` builds anyway. It honors `CARGO_TARGET_DIR` (absolute: cargo runs in `crates/hh-wasm`).
+  `web/src/wasm/.inputs`; `HH_WASM_FORCE=1` builds anyway. It reads a relative `CARGO_TARGET_DIR` from the repo root.
 - **While the dev server runs**, editing `crates/hh-core`, `crates/hh-wasm`, `content/` or
   `scenarios/` rebuilds the wasm and reloads the page; a `configs/baseline.json` edit reloads it. A failed rebuild keeps the last good
   engine; the error is in the dev server's terminal.

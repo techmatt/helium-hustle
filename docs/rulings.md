@@ -60,10 +60,14 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   (replacing `tier`: Long-Term is `timeline`, Strategic `run`). A `forever` project's
   progress survives a timeline's end as well as its completions. A building gated on a
   project's reward follows that project's scope: it requires the project's completion, not a
-  career flag that outlives it. *Defaults (046):* a repeatable row's rewards live once however
+  career flag that outlives it. Every repeatable project carries `max_completions` (typically
+  5). *Defaults (046):* a repeatable row's rewards live once however
   many completions, and it keeps its rates across completions; every row's `min_days` is its
   largest cost over 30 rounded up (the old flat cap's fastest finish); the `completed
   <project>` reading is the completion count.
+- **Bonus stacking (2026-11-21).** Bonuses from one source add (+5% ×10 is +50%); separate
+  sources multiply. Exponential stacking only for a few named exceptions (Paradigms, late
+  techs, the catastrophic-success tech); repeatable projects are rare exceptions.
 - **Folded guard readings and a golden program (2026-11-20).** Exact guards come from folded
   readings, not more `and` clauses; the golden game's scripted policy runs a short condition
   program, so the golden pins the interpreter. *Defaults (040):* `free processors` is granted
@@ -102,11 +106,13 @@ not code rules. A new ruling, or a change to one, updates its line here in place
 ## Saves
 
 - **Saves (locked).** A localStorage autosave tagged with the rules revision and config hash,
-  discarded on a mismatch, never migrated. Named scenario starts in the debug menu double as
+  discarded on a mismatch. Named scenario starts in the debug menu double as
   sim starting states.
 - **Breaking changes.** No saves are live, so a rules change needs no caution: err on the side
   of breaking things, keep save handling minimal, and add no compatibility code for old saves
   until the game is more stable.
+- **Save migration (2026-11-21).** An easy migration is fine when it helps development;
+  otherwise avoid it (technical debt). It matters once the game is released.
 
 ## Simulation and measurement
 

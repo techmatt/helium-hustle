@@ -79,7 +79,8 @@ Locked by Matt: changing any of these is his decision, not an implementation det
   `web/node_modules`: run `npm ci` in `web/` before the first web build or check.
 - **Browser checks, sweeps and e2e run against `vite preview`** (a static build), never the dev
   server: its watcher rebuilds the wasm and reloads the page when engine sources change.
-- **One cargo at a time in a target dir.** Parallel helpers need their own `CARGO_TARGET_DIR`.
+- **One cargo at a time in a target dir.** Parallel helpers need their own `CARGO_TARGET_DIR`,
+  absolute and under the root `out/` (README, *Build and test*): a relative one lands in `crates/`.
 - **Write-up scripts under `experiments/results/` may read `web/src` source as text.** When
   you remove or move a name from `web/src`, grep `experiments/results/` for it.
 - **Write files with Write/Edit, not a shell heredoc or `sed`.** Scripts that write files:

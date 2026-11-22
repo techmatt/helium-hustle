@@ -5,8 +5,8 @@
 //   HH_WASM_FORCE=1       build even when nothing the wasm is built from has changed
 //
 // A build is skipped (in well under a second) when web/src/wasm/ already holds a build of
-// the same inputs: every file under crates/hh-core and crates/hh-wasm (but target/ and
-// pkg/), content/ and scenarios/, the workspace Cargo.toml and Cargo.lock, this script
+// the same inputs: every file under crates/hh-core, crates/hh-sim and crates/hh-wasm (but
+// target/, out/ and pkg/), content/ and scenarios/, the workspace Cargo.toml and Cargo.lock, this script
 // and the profile,
 // hashed by content into web/src/wasm/.inputs. A build that runs costs most of a warm
 // start even when the Rust is unchanged (wasm-opt reruns every time).
@@ -14,7 +14,7 @@
 import { spawnSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const web = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -31,7 +31,7 @@ function files(dir) {
   for (const e of readdirSync(dir, { withFileTypes: true }).sort((a, b) => (a.name < b.name ? -1 : 1))) {
     const p = join(dir, e.name);
     if (e.isDirectory()) {
-      if (e.name !== 'target' && e.name !== 'pkg' && e.name !== 'node_modules') out.push(...files(p));
+      if (!['target', 'out', 'pkg', 'node_modules'].includes(e.name)) out.push(...files(p));
     } else if (e.isFile()) out.push(p);
   }
   return out;
@@ -67,12 +67,26 @@ if (!process.env.HH_WASM_FORCE && built && existsSync(stamp) && readFileSync(sta
   process.exit(0);
 }
 
+// wasm-pack runs cargo in crates/hh-wasm, and cargo resolves a relative CARGO_TARGET_DIR
+// from where it runs: `out/x` would land in crates/hh-wasm/out/x. Pin it to the repo root,
+// and refuse one that climbs out of the repo (`../out/x` typed from web/).
+const env = { ...process.env };
+if (env.CARGO_TARGET_DIR && !isAbsolute(env.CARGO_TARGET_DIR)) {
+  const pinned = resolve(repo, env.CARGO_TARGET_DIR);
+  const rel = relative(repo, pinned);
+  if (rel.startsWith('..') || isAbsolute(rel)) {
+    console.error(`CARGO_TARGET_DIR=${env.CARGO_TARGET_DIR} leaves the repo when read from its root; give it relative to the root (out/...) or absolute`);
+    process.exit(1);
+  }
+  env.CARGO_TARGET_DIR = pinned;
+}
+
 // A build that fails part way must not leave a stamp vouching for the old files.
 rmSync(stamp, { force: true });
 const build = spawnSync(
   'wasm-pack',
   ['build', crate, '--target', 'web', profile, '--out-dir', outDir, '--out-name', 'hh_wasm', '--no-pack'],
-  { stdio: 'inherit', shell: process.platform === 'win32' },
+  { stdio: 'inherit', shell: process.platform === 'win32', env },
 );
 if (build.error) {
   console.error(`Could not run wasm-pack (cargo install wasm-pack --locked): ${build.error.message}`);

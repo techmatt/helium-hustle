@@ -75,6 +75,13 @@ with no second `--`, so `cargo test-all -j 6` fails (`Unrecognized option: 'j'`)
 jobs with `CARGO_BUILD_JOBS=6 cargo test-all`. Tests play whole games, so the test profile
 is optimized (`opt-level = 1`) and keeps overflow checks.
 
+**A second target dir** (a parallel helper, a copy under `out/`) is set absolute:
+`CARGO_TARGET_DIR="$(git rev-parse --show-toplevel)/out/target-<name>"`. Cargo reads a
+relative one from the directory it runs in, and wasm-pack runs it in `crates/hh-wasm`, so
+`out/x` lands in `crates/hh-wasm/out/x`. `build-wasm.mjs` and `warning_checks.py` pin a
+relative one to the repo root; bare `cargo` can't (the variable outranks `.cargo/config.toml`).
+`/crates/**/out/` is git-ignored as a backstop.
+
 **Rules changes:** the `golden_game` test (`crates/hh-core/src/tests/mod.rs`) pins the final
 state of one fixed game: baseline config, seed `u64::MAX`, 2000 ticks of the scripted
 policy (`driver.rs`: it ships, runs a condition program once program logic opens, is retired

@@ -125,7 +125,8 @@ can't change an old record.
   oracle's rollouts, [agents.md](agents.md#the-oracle-oracle)).
 - **Fingerprint**: FNV-1a of the state's JSON, 16 hex digits.
 - **Web saves**: the state, tagged with `RULES_REVISION` and the config hash; a mismatch
-  discards the save. No migration code, ever.
+  discards the save. No migration code now; an easy one is allowed when it helps development
+  ([rulings.md](rulings.md#saves)).
 
 ## The view
 

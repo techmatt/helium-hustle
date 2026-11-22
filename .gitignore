@@ -1,4 +1,6 @@
 /out/
+# Backstop: a relative CARGO_TARGET_DIR read from a crate directory (README, *Build and test*).
+/crates/**/out/
 # Shared generated art, linked into every worktree; never committed.
 /art
 /target/
