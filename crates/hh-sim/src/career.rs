@@ -1,5 +1,5 @@
 //! Plays one career: an agent for N retirements, in game time, measured tick
-//! by tick (docs/simulator.md, *Measures*).
+//! by tick (docs/experiments.md, *Measures*).
 //!
 //! The loop: at each look the agent reads the view and acts, then says how
 //! many ticks to skip to its next look ([`crate::agents::Agent::next_look`]);
@@ -66,6 +66,10 @@ pub struct RunResult {
     pub research: u32,
     /// Its best credits earned a day over the milestones' longest window.
     pub best_credit_rate: f64,
+    /// Projects completed in it, every scope (Strategic included), in order
+    /// (the career log's `project` lines of this run; absent before 048).
+    #[serde(default)]
+    pub projects: Vec<String>,
 }
 
 /// The run's totals as last seen (a retirement resets them).
@@ -273,6 +277,7 @@ impl<'a> Meter<'a> {
             buildings_built: t.buildings,
             research: t.research,
             best_credit_rate: best,
+            projects: s.state.career.log.iter().filter(|e| e.kind == "project" && e.run == run).map(|e| e.id.clone()).collect(),
         }
     }
 

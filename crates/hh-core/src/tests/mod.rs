@@ -25,7 +25,12 @@ pub(crate) fn f(s: &str) -> crate::Fx {
     crate::Fx::parse(s).unwrap()
 }
 
-/// Sets `res`'s amount in the run.
+/// Sets `res`'s amount in the run. Caps don't bind here but in the day's
+/// clamp: a new game's caps are each resource's `cap` in
+/// `content/resources.json` (energy 100, regolith 50, ice and propellant 30,
+/// titanium and He-3 20, circuits 10) plus storage buildings, so a `set` past
+/// one is cut at the next tick's end. Energy in a brownout can sit a few
+/// 10^-6 above 0, not at 0: assert it with a tolerance.
 pub(crate) fn set(g: &mut crate::GameState, res: &str, v: &str) {
     g.run.resources.insert(res.into(), f(v));
 }

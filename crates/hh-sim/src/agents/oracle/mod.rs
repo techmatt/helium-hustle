@@ -1,4 +1,4 @@
-//! `oracle`: the ceiling (docs/agents.md, *The oracle*). A two-level rollout
+//! `oracle`: the ceiling (docs/oracle.md). A two-level rollout
 //! planner over the author, which plays every look. The oracle tries goals on
 //! copies of the game (its privilege: [`Player::fork`], the future included)
 //! and keeps what scores best:

@@ -476,6 +476,8 @@ export interface View {
   /** `if`, `wait until`, `build` and `buy land` may be queued (a career first). */
   program_logic: boolean;
   logic_unlock_processors: number;
+  /** Most lines in one program (`max_entries`). */
+  max_program_lines: number;
   /** The loadout library (career): saved programs, in slot order. */
   library: Loadout[];
   library_slots: number;

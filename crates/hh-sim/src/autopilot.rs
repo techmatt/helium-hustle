@@ -26,8 +26,9 @@ use crate::milestones::{Milestones, Tracker};
 /// Both are the author, kept on in a run while it lasts (a quest asks for
 /// years survived) and dreaming from the first boredom (the boost's slow
 /// boredom never reaches its usual threshold); the first ships every good
-/// made (`diversify`), the second doesn't (its `all_research` is a no-op
-/// since 046: no open project holds research back).
+/// made (`diversify`), the second doesn't, and buys all visible research
+/// (`all_research`: past [`author::RESEARCH`](crate::agents::author::RESEARCH),
+/// today only the draft Novelty Simulation, visible after Q7).
 pub const DEFAULT_AGENT: &str =
     "author:stale_days=4000,dream_at=1,diversify=1|author:stale_days=4000,dream_at=1,all_research=1";
 

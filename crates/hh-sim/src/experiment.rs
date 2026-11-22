@@ -1,4 +1,4 @@
-//! The experiment harness (docs/simulator.md, *Grids and specs*): a spec's grid of
+//! The experiment harness (docs/experiments.md, *Grids and specs*): a spec's grid of
 //! configs × variants × players over a seed range, every game on its own
 //! thread slot, results in game order whatever the thread count. Players play
 //! in game time; the spec's `humans` add real-time projections. `ladder` is
@@ -571,7 +571,7 @@ fn row_label(c: &Cell, multi: bool) -> String {
     }
 }
 
-/// How far automation alone carries a run (docs/simulator.md, *Hands-off*):
+/// How far automation alone carries a run (docs/experiments.md, *Measures*, Hands-off):
 /// each `handsoff` row against the `author` row of its config and variant,
 /// on the same seeds: credits a finished run from run 2 on, and milestones
 /// first met from run 2 on (run 1 is the author's in both).

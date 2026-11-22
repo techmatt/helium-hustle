@@ -14,7 +14,7 @@ Checks:
 - platform-floats: a platform float function reaching hh-core past clippy (any
   call by name not through `libm::`, an `#[allow]` of the ban, the ban's `deny`
   removed, a name missing from clippy.toml).
-- docs: a doc (README, CLAUDE.md, web/README, docs/, docs/rules/) over 15 KB, or
+- docs: a doc (README, CLAUDE.md, web/README and TESTING, docs/, docs/rules/) over 15 KB, or
   inside the 1 KB margin below it (over 14,336 bytes, `wc -c`).
 - balance: each target the judge misses (`hh-sim balance` on experiments/balance.json,
   the judge's one home; targets in docs/principles.md).
@@ -252,7 +252,7 @@ DOC_MARGIN = 1024
 def check_docs():
     """Each doc under about 15 KB (CLAUDE.md, *Docs rules*): over the cap is a warning,
     and so is a doc inside the 1 KB margin the rules ask to leave free."""
-    docs = [ROOT / "README.md", ROOT / "CLAUDE.md", ROOT / "web" / "README.md",
+    docs = [ROOT / "README.md", ROOT / "CLAUDE.md", ROOT / "web" / "README.md", ROOT / "web" / "TESTING.md",
             *sorted((ROOT / "docs").glob("*.md")), *sorted((ROOT / "docs" / "rules").glob("*.md"))]
     for p in docs:
         n = p.stat().st_size
@@ -265,7 +265,7 @@ def check_docs():
 def check_balance():
     """The judge's cells (experiments/balance.json) against the targets in
     configs/sim/milestones.json: `hh-sim balance` prints the `balance:` lines.
-    Its cost: docs/simulator.md, *Costs*."""
+    Its cost: docs/experiments.md, *Costs*."""
     r = run(["cargo", "run", "--release", "-q", "-p", "hh-sim", "--", "balance"], timeout=300)
     if r.returncode != 0:
         warn("balance", f"hh-sim balance failed: {(r.stderr or r.stdout).strip().splitlines()[-1:]}")

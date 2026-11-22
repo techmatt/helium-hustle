@@ -61,7 +61,7 @@ the run). A reward lives once, however many completions:
 - `set_flag`: a career flag, set at completion. Flags outlive a timeline's end.
 - `boredom_modifiers`: `base_rate_mult` multiplies boredom growth
   ([boredom.md](boredom.md)); `command_boredom` replaces the named commands' flat boredom
-  per execution ([programs.md](programs.md)).
+  per execution ([commands.md](commands.md)).
 - `research_discount`: research bought in an earlier run costs `mult` of its price
   ([research.md](research.md)).
 

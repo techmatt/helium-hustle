@@ -78,7 +78,7 @@ A good's speculator pool shows once it has been above 0 this run (set by a burst
 ## Actions
 
 None of its own. Promote (`promote_*`, after Trade Promotion) and Disrupt Speculators (after
-Market Awareness) are commands run by programs ([programs.md](programs.md)); as effect
+Market Awareness) are commands run by programs ([commands.md](commands.md)); as effect
 commands they need their full cost. Loading priority, which Disrupt reads, is set by
 `set_loading_priority` ([shipments.md](shipments.md)).
 

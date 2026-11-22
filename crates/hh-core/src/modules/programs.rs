@@ -430,7 +430,7 @@ pub fn boredom_cost(g: &GameState, c: &Command) -> Fx {
     b
 }
 
-/// Runs one execution of a command (docs/rules/programs.md, *Running a
+/// Runs one execution of a command (docs/rules/commands.md, *Running a
 /// command*). `src` names the program for the breakdown; a run short of an
 /// input notes it under `short`.
 /// `only`: a `launch pads` or `load pads` line's good (its effect touches

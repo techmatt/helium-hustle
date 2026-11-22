@@ -12,7 +12,7 @@
 //! With no side program saved, the hand lines go in the build order. A
 //! processor an unpaid Data Center stopped is no longer reseated (it was by
 //! hand): the shortfall comes off the build order, last in line.
-//! docs/agents.md says the same; docs/simulator.md has the measure.
+//! docs/agents.md says the same; docs/experiments.md has the measure.
 
 use hh_core::state::{Amount, Clause, Cmp, Condition, Entry, Join, Joined, Op, Reading, Verb};
 use hh_core::{Action, Fx, View};
@@ -31,8 +31,6 @@ pub fn knobs() -> Vec<&'static str> {
 /// goes to them (the main program takes the rest).
 const SLOTS: &[(usize, &str)] = &[(BUILD, BUILD_ORDER), (DREAM, DREAM_WATCH), (FUND, FUND_NAME), (MARKET, MARKET_NAME)];
 
-/// Most lines in a program (mirrors configs/baseline.json `max_entries`).
-const MAX_LINES: usize = 128;
 
 /// The build order's lead: while no Launch Pad stands, the ship program has
 /// nothing to ship, so the build order takes every processor (its buy of a
@@ -189,9 +187,9 @@ fn fund_lines() -> Vec<Entry> {
 
 /// The research the author's build order leaves to its looks (this player
 /// has no looks to buy it on), to go after the build order's own lines, so
-/// the essential research there comes first.
+/// the plan's research ([`author::PLAN_RESEARCH`]) there comes first.
 fn research_tail(v: &View) -> Vec<Entry> {
-    let rest: Vec<&str> = author::RESEARCH.iter().copied().filter(|id| !author::ESSENTIAL.contains(id)).collect();
+    let rest: Vec<&str> = author::RESEARCH.iter().copied().filter(|id| !author::PLAN_RESEARCH.contains(id)).collect();
     author::research_lines(v, &rest)
 }
 
@@ -313,17 +311,17 @@ impl Agent for HandsOff {
                     let held = &v.library.iter().find(|l| l.name == name)?.entries;
                     Some((s, name, held.clone()))
                 });
-                let side = side.filter(|(_, _, h)| !h.is_empty() && h.len() + extra.len() <= MAX_LINES);
+                let side = side.filter(|(_, _, h)| !h.is_empty() && h.len() + extra.len() <= v.max_program_lines);
                 if side.is_none() {
                     // No side program to carry them: the hand lines (retire
                     // included) lead the build order when they fit.
                     let hands = hand_lines(self.stale_days);
-                    if plan.len() + lead.len() + hands.len() <= MAX_LINES {
+                    if plan.len() + lead.len() + hands.len() <= v.max_program_lines {
                         lead.extend(hands);
                     }
                 }
                 self.lines = [plan.len(), lead.len(), side.as_ref().map_or(0, |(_, _, h)| h.len()), extra.len()];
-                if plan.len() + lead.len() <= MAX_LINES {
+                if plan.len() + lead.len() <= v.max_program_lines {
                     plan.splice(0..0, lead);
                 }
                 p.put_program(BUILD as u32, plan, Some(BUILD_ORDER));

@@ -3,7 +3,7 @@
 What bug hunts found in the playable game, and what became of each: **fixed** (with the
 check that now guards it, where one could), **deferred** to Matt with a recommendation, or
 **won't fix** with the reason. Read this before a hunt and never re-report an item on it.
-The checker that finds most of these is `web/scripts/qa.mjs` ([web/README.md](../web/README.md),
+The checker that finds most of these is `web/scripts/qa.mjs` ([web/TESTING.md](../web/TESTING.md),
 *QA checker*).
 
 ## Fixed

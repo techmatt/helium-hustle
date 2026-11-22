@@ -40,9 +40,9 @@ the career log records it. A new run starts with no research.
 
 - `boredom_rate_multiplier`: multiplies boredom growth ([boredom.md](boredom.md)).
 - `command_cost_override`: replaces one resource cost of one command, before the
-  command's scale modifier ([programs.md](programs.md)).
+  command's scale modifier ([commands.md](commands.md)).
 - `overclock_cap`: the overclock cap becomes the larger of the base cap and `value`
-  ([programs.md](programs.md)).
+  ([commands.md](commands.md)).
 - `load_per_execution`: replaces the config's units per Load, before
   `cargo_capacity_mult` ([shipments.md](shipments.md)).
 - `reveal_demand` (Market Awareness): the view shows each good's exact demand instead of

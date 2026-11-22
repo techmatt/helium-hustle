@@ -272,7 +272,7 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
             for (tick, n) in notes {
                 let _ = writeln!(t, "{tick:>6}  # {n}");
             }
-            t.push_str(&crate::objectives::career_log(&sess));
+            t.push_str(&crate::objectives::career_log(&sess.state));
             let c = &sess.state.career;
             let _ = writeln!(
                 t,
@@ -321,9 +321,12 @@ fn state_at(s: &Session, note: &str) -> String {
             b.short
         );
     }
-    for p in v.programs.iter().filter(|p| !p.entries.is_empty()) {
-        let lines: Vec<String> = p.entries.iter().map(|e| e.describe()).collect();
-        let _ = writeln!(t, "  program procs {}: {}", p.processors, lines.join(", "));
+    // A program's lines one to a row, numbered as the editor shows them.
+    for (n, p) in v.programs.iter().enumerate().filter(|(_, p)| !p.entries.is_empty()) {
+        let _ = writeln!(t, "  program {} procs {}:", n + 1, p.processors);
+        for (i, e) in p.entries.iter().enumerate() {
+            let _ = writeln!(t, "    {:>3}. {}", i + 1, e.describe());
+        }
     }
     for m in &v.markets {
         let _ = writeln!(t, "  market {:10} demand {:?} tier {}", m.good, m.demand.map(|d| d.to_string()), m.tier);

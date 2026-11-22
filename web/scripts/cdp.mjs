@@ -191,12 +191,36 @@ export function driver(b, { url, poll = 100, settle = 500, readyMs = 10000, clic
     await setValue('#cheat-amount', String(amount));
     await click('#cheat-grant', 'grant');
   };
+  /** A per-target command (Buy, Promote, Fund, Overclock) shares its verb's card: pick it
+   * in the card's target dropdown so its Add button shows. */
+  const pickCommand = (cmd) =>
+    evaluate(`(() => {
+      const o = document.querySelector('.panel[data-panel="commands"] select option[value="${cmd}"]');
+      if (o && o.parentElement.value !== '${cmd}') {
+        o.parentElement.value = '${cmd}';
+        o.parentElement.dispatchEvent(new Event('change', { bubbles: true }));
+      }
+    })()`);
+  /** Program 1 runs just `cmd`: Reset, then add it from the Commands panel. `lines` is the
+   * program's commands now (nothing to do when it is just `cmd`). With `skipDisabled`, a
+   * disabled Add button is left alone instead of failing the click. */
+  const runOnly = async (cmd, lines, { skipDisabled = false } = {}) => {
+    if (lines.length === 1 && lines[0] === cmd) return;
+    await click('.prog-tabs button[data-program="0"]', 'program 1 tab');
+    if (lines.length) await click('.prog-procs button[title="Clear this program"]', 'clear program');
+    await panel('commands');
+    await pickCommand(cmd);
+    if (skipDisabled && !(await exists(`[data-testid="add-${cmd}"]:not([disabled])`))) return;
+    await click(`[data-testid="add-${cmd}"]`, `add ${cmd}`);
+  };
   return {
     waitFor,
     exists,
     click,
     setValue,
     load,
+    pickCommand,
+    runOnly,
     day: () => number('day'),
     run: () => number('run'),
     speed: (s) => click(`#speeds button[data-speed="${s}"]`, `speed ${s}`),

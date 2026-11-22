@@ -12,7 +12,7 @@ happens when a program runs a Fund command; the career's bests are tracked at th
 `fund_push × fund_cross_penalty × ideology_cross_mult` (the modifier is 0 once the draft
 Consensus Engine is held, [timeline.md](timeline.md); else 1) from each of the other two (+1 / −0.5 / −0.5 at baseline).
 Scores are unbounded either way and may go negative. A Fund command is an effect command: it
-runs only if its full cost can be paid ([programs.md](programs.md)).
+runs only if its full cost can be paid ([commands.md](commands.md)).
 
 **Ranks.** Rank *n* costs `rank_base_score × rank_growth^(n−1)` score, so the score that
 reaches rank *n* is
@@ -36,7 +36,7 @@ too costly to represent is never reached.
 | Rationalist | buildings' science production ([economy.md](economy.md)) | research price ([research.md](research.md)); aligned buildings' price |
 
 Rationalist also multiplies overclock duration by `overclock_duration_factor ^ r` (whole
-days, [programs.md](programs.md)). A building is aligned by its content `ideology` field; its
+days, [commands.md](commands.md)). A building is aligned by its content `ideology` field; its
 whole price (every resource) takes its axis's discount. All per-rank powers are exact
 (`Fx::pow_int`).
 

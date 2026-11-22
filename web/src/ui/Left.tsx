@@ -5,7 +5,7 @@ import { DEBUG_SPEEDS, SPEEDS } from '../clock';
 import { capitalize, num, perDay } from '../format';
 import { navHasNews, seen, setSpeed, type Store } from '../store';
 import { useEffect, useState } from 'preact/hooks';
-import { Breakdown, CappedRate, Section, ShortRate, navShown, risingIsBad } from './common';
+import { Breakdown, RateCell, Section, isCapped, navShown, risingIsBad } from './common';
 import { Chip, Horizon, NavIcon } from './icons';
 import { CalendarStrip } from './Saga';
 
@@ -91,25 +91,21 @@ export function Left({ s, panel, open }: { s: Store; panel: string; open: (id: s
                 // cap it reads the surplus the cap throws away, muted and marked; capped
                 // Energy's surplus is spare power, good news: it shows green. Short, it reads
                 // the demand left unmet, marked.
-                const capped = r.id !== 'boredom' && Number(r.overflow) > 0;
-                let rate: ComponentChildren = capped ? (
-                  <CappedRate net={r.per_day} lost={r.overflow} compact spare={r.id === 'energy'} />
-                ) : Number(r.unmet) > 0 ? (
-                  <ShortRate rate={r.per_day} unmet={r.unmet} change={r.change_per_day} compact />
-                ) : (
-                  perDay(r.per_day)
-                );
+                const capped = isCapped(r);
+                // The plain rate's text (null when capped or short), or the text that replaces it.
+                let text: string | null = capped || Number(r.unmet) > 0 ? null : perDay(r.per_day);
                 if (r.id === 'processors') {
                   shown = `${v.processors - v.processors_free} / ${v.processors}`;
                   // Data Centers short of upkeep: fewer run than are assigned.
-                  rate = v.processors_running < v.processors - v.processors_free ? `${v.processors_running} running` : `${v.processors_free} free`;
+                  text = v.processors_running < v.processors - v.processors_free ? `${v.processors_running} running` : `${v.processors_free} free`;
                 }
-                if (r.id === 'land') rate = 'free';
+                if (r.id === 'land') text = 'free';
                 // The next day retires the run: its rates (all 0) say nothing.
-                else if (v.retires_next && r.id !== 'processors') rate = '—';
+                else if (v.retires_next && r.id !== 'processors') text = '—';
+                const rate: ComponentChildren = text ?? <RateCell r={r} compact />;
                 // Boredom rising is bad news: its rate reads the other way round.
                 // A rate too small to show reads "0/day", uncolored.
-                const rateNum = capped || rate === '0/day' ? 0 : Number(r.per_day) * (risingIsBad(r.id) ? -1 : 1);
+                const rateNum = capped || text === '0/day' ? 0 : Number(r.per_day) * (risingIsBad(r.id) ? -1 : 1);
                 const isOpen = expanded === r.id;
                 // Processors are counted from buildings, not made or spent: no breakdown.
                 const opens = r.id !== 'processors';

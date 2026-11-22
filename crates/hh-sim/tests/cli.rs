@@ -24,6 +24,11 @@ fn a_saved_record_replays() {
     run(&args(&["run", "--config", &c, "--scenario", "rich", "--ticks", "50", "--policy", "greedy", "--save", &rec])).unwrap();
     let out = run(&args(&["replay", &rec])).unwrap();
     assert!(out.contains("tick 50"), "{out}");
+    // --summary: the end state as `run` prints it.
+    let out = run(&args(&["replay", "--summary", &rec])).unwrap();
+    for want in ["tick 50, run 1 day ", "  Energy ", "career log (tick, run, day):"] {
+        assert!(out.contains(want), "{want}: {out}");
+    }
 }
 
 #[test]
@@ -317,7 +322,7 @@ fn the_oracle_plays_on_copies_and_its_game_replays() {
 #[test]
 fn trace_at_prints_the_state_at_a_tick() {
     let out = run(&grid("trace", "author", &["--at", "300"])).unwrap();
-    for want in ["tick 300 run 1 day ","solar_panel", "program procs", "  # target ", "career: retirements 0"] {
+    for want in ["tick 300 run 1 day ","solar_panel", "  program 1 procs ", "      1. ", "  # target ", "career: retirements 0"] {
         assert!(out.contains(want), "{want}: {out}");
     }
     assert!(matches!(run(&grid("experiment", "author", &["--at", "300"])), Err(Fail::Usage(_))));

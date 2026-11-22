@@ -24,7 +24,7 @@
 // It writes `<out>/report.json`, one PNG per moment in `<out>/<seed>-<width>-<theme>/`, and
 // `<out>/contact-<seed>-<width>-<theme>.png` (a contact sheet of that pass). Exits 1 on any
 // finding.
-//   HH_URL     the page, required: a `vite preview` of a static build (README)
+//   HH_URL     the page, required: a `vite preview` of a static build (TESTING.md)
 //   HH_SEEDS   comma-separated seeds (default 11,12,13)
 //   HH_WIDTHS  comma-separated window widths (default 1280,1920)
 //   HH_HEIGHT  the window height (default 900)
@@ -685,21 +685,6 @@ async function pass(seed, width, theme) {
         }
         return out;
       })()`);
-    const runOnly = async (cmd, lines) => {
-      if (lines.length === 1 && lines[0] === cmd) return;
-      await click('.prog-tabs button[data-program="0"]', 'program 1 tab');
-      if (lines.length) await click('.prog-procs button[title="Clear this program"]', 'clear program');
-      await panel('commands');
-      // A per-target command shares its verb's card: pick it so its Add button shows.
-      await evaluate(`(() => {
-        const o = document.querySelector('.panel[data-panel="commands"] select option[value="${cmd}"]');
-        if (o && o.parentElement.value !== '${cmd}') {
-          o.parentElement.value = '${cmd}';
-          o.parentElement.dispatchEvent(new Event('change', { bubbles: true }));
-        }
-      })()`);
-      if (await exists(`[data-testid="add-${cmd}"]:not([disabled])`)) await click(`[data-testid="add-${cmd}"]`, `add ${cmd}`);
-    };
     const seenNav = new Set();
     let quest = null;
     let story = null;
@@ -760,7 +745,7 @@ async function pass(seed, width, theme) {
         if (short.includes('titanium') && credits >= 25) cmd = 'buy_titanium';
         else if (short.includes('regolith') && credits >= 12) cmd = 'buy_regolith';
       }
-      await runOnly(cmd, s.lines);
+      await page.runOnly(cmd, s.lines, { skipDisabled: true });
       await sleep(60);
     }
     // The program panel's frame at a person's speed and the span coloring above 10x.

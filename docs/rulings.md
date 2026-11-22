@@ -122,7 +122,7 @@ not code rules. A new ruling, or a change to one, updates its line here in place
 - **Hands-off measure (036, default).** "Runs are smooth" (Act 1's exit) is read by the
   `handsoff` player: run 1 the author's, then only loads at each reset and processors. Its
   measure is its credits a run and milestones from run 2 on as a share of the author's on the
-  same seeds (the ladder's *Hands-off* table, [simulator.md](simulator.md)).
+  same seeds (the ladder's *Hands-off* table, [experiments.md](experiments.md#measures)).
 - **View (009, default).** `per_day` and `next_run` keep playing a day or a retirement on a
   copy (exact; they show the next day, not the last). Sim players keep the full view.
 - **Oracle (013, defaults).** The oracle lives in `experiments/ceiling.json` (~20 min, the

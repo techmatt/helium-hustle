@@ -378,7 +378,7 @@ pub enum Cmp {
     Eq,
 }
 
-/// What a condition reads (docs/rules/programs.md, *Readings*).
+/// What a condition reads (docs/rules/programs.md, *Conditions*).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Reading {
@@ -521,6 +521,11 @@ pub struct RunStats {
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Today {
+    /// What passed through [`GameState::produce`] / [`GameState::consume`]
+    /// today, and nothing else: writers that call `add` directly (boredom
+    /// growth and command boredom, Dream, land, pad switch returns, timeline
+    /// grants) are not here. Everything the tick did to a stock is the
+    /// rate's snapshot (`programs::note_day_net`, `Run.day_net`).
     pub produced: BTreeMap<String, Fx>,
     pub consumed: BTreeMap<String, Fx>,
     /// Production lost to a cap at the end-of-tick clamp.

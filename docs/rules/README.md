@@ -26,7 +26,7 @@ table is generated from `REGISTRY` and the baseline (`hh-sim params --write`; a 
 | `boredom` | `phased` | [boredom.md](boredom.md) | Growth by phase of the run's day, the cap, forced retirement. |
 | `economy` | `arc1` | [economy.md](economy.md) | Resources, caps, buildings and their daily resolution, land. |
 | `demand` | `arc1` | [demand.md](demand.md) | Demand per tradeable good: noise, speculators, rivals, saturation, Promote. |
-| `programs` | `arc1` | [programs.md](programs.md) | Programs, processors, instructions (`if` blocks, `build`), running commands, overclocks. |
+| `programs` | `arc1` | [programs.md](programs.md), [commands.md](commands.md) | Programs, processors, instructions (`if` blocks, `build`); running commands, overclocks (commands.md). |
 | `dream` | `flat` | [dream.md](dream.md) | What Dream does to boredom. |
 | `projects` | `drain` | [projects.md](projects.md) | Projects scoped to a run, a timeline or forever, funded over time. |
 | `shipments` | `arc1` | [shipments.md](shipments.md) | Launch pads, loading, launching, payouts. |

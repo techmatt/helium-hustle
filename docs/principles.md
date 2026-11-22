@@ -74,7 +74,7 @@ and **decisions** (looks that applied an action), never speed-dependent. The lad
 `random`, `greedy`, `author` (playing well, with condition programs kept in the library: about
 90 decisions a run), `casual` (the author looking at most every 120 ticks: about 12 a run),
 `handsoff` (the author's run 1, then only its saved programs: how far automation alone carries a
-run, [simulator.md](simulator.md)). Above them, in its own spec
+run, [experiments.md](experiments.md#measures)). Above them, in its own spec
 (`experiments/ceiling.json`), `oracle` (the ceiling: the author steered by rollouts that see
 the future; not read by the judge).
 
@@ -125,7 +125,7 @@ a balance item starts here:
 
 ## Measures
 
-Every game reports (`hh-sim ladder`, [simulator.md](simulator.md#measures)): time to each
+Every game reports (`hh-sim ladder`, [experiments.md](experiments.md#measures)): time to each
 milestone in ticks and runs (in real minutes under a human model); run length, decisions and
 boredom's share; the share of ticks with nothing to buy; resources sitting at cap and the
 production lost to caps; buildings never bought and commands never used; and simulation speed,

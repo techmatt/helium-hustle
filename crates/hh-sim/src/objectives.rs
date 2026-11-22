@@ -131,15 +131,15 @@ pub fn run(path: &str, text: &str, config: &Config, seed: u64, max_ticks: u64) -
     }
     let end = end_tick.map_or("not reached".to_string(), |k| format!("tick {k}"));
     let _ = writeln!(t, "end condition (boredom >= {}): {end}", sc.end_condition.threshold);
-    t.push_str(&career_log(&s));
+    t.push_str(&career_log(&s.state));
     Ok(t)
 }
 
 /// The career log: quests, achievements, projects, research, retirements, with ticks.
 /// (Not the M1-M14 milestones: those are `milestones.rs`.)
-pub fn career_log(s: &Session) -> String {
+pub fn career_log(g: &hh_core::GameState) -> String {
     let mut t = String::from("career log (tick, run, day):\n");
-    for e in &s.state.career.log {
+    for e in &g.career.log {
         let what = if e.id.is_empty() { e.kind.clone() } else { format!("{} {}", e.kind, e.id) };
         let _ = writeln!(t, "  {:>6}  run {} day {:>5}  {what}", e.tick, e.run, e.day);
     }

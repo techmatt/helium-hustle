@@ -16,7 +16,7 @@ import {
 } from '../store';
 import { Sky } from './art';
 import { Buildings } from './Buildings';
-import { Bar, CappedRate, Section, ShortRate, navShown } from './common';
+import { Bar, RateCell, Section, navShown } from './common';
 import { Chip } from './icons';
 import { Left } from './Left';
 import { Options } from './Options';
@@ -148,8 +148,6 @@ function StatusBar({ s }: { s: Store }) {
   const v = s.view;
   const energy = v.resources.find((r) => r.id === 'energy');
   const bored = v.resources.find((r) => r.id === 'boredom');
-  // At its cap: the surplus thrown away, muted and marked (as in Resources).
-  const energyCapped = energy !== undefined && Number(energy.overflow) > 0;
   return (
     <footer class="status">
       <span id="day" class="status-day">
@@ -176,15 +174,8 @@ function StatusBar({ s }: { s: Store }) {
         label={`${num(energy?.amount ?? '0')} / ${num(energy?.cap ?? '0')}`}
       />
       <span class="status-rate" data-testid="energy-rate">
-        {v.retires_next ? (
-          '—'
-        ) : energyCapped ? (
-          <CappedRate net={energy.per_day} lost={energy.overflow} spare />
-        ) : energy !== undefined && Number(energy.unmet) > 0 ? (
-          <ShortRate rate={energy.per_day} unmet={energy.unmet} change={energy.change_per_day} />
-        ) : (
-          perDay(energy?.per_day ?? '0')
-        )}
+        {/* Capped, short or plain, as in Resources. */}
+        {v.retires_next ? '—' : energy !== undefined ? <RateCell r={energy} /> : perDay('0')}
       </span>
     </footer>
   );

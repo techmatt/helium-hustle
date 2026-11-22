@@ -1,6 +1,6 @@
 //! How far a game is toward a milestone, 0 to 1: the oracle's milestone
 //! profile scores each open milestone's progress at a rollout's end, so goals
-//! longer than its horizon still pull (docs/agents.md, *The oracle*).
+//! longer than its horizon still pull (docs/oracle.md).
 //!
 //! Progress reads the state, plus what only a rollout saw: its closing credit
 //! income and the goods it shipped. A milestone met is 1.

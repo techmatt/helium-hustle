@@ -2,7 +2,7 @@
 
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import type { Amounts, FlowRow, Fx, ShortView, View } from '../engine';
+import type { Amounts, FlowRow, Fx, ResourceView, ShortView, View } from '../engine';
 import { num, perDay } from '../format';
 import { justMoved } from '../store';
 import { Chip } from './icons';
@@ -157,6 +157,20 @@ export function ShortRate({ rate, unmet, change, compact = false }: { rate: Fx; 
       {compact ? shown.replace('/day', '') : shown} <span class="cap-mark">{compact ? 'short' : '(short)'}</span>
     </span>
   );
+}
+
+/** Whether a resource's rate reads as capped: production thrown away at its cap (never
+ * boredom, whose cap ends the run). */
+export function isCapped(r: ResourceView): boolean {
+  return r.id !== 'boredom' && Number(r.overflow) > 0;
+}
+
+/** A resource's engine rate as shown in Resources and the status bar: capped (the
+ * surplus, muted; Energy's green as spare power), short (demand left unmet) or plain. */
+export function RateCell({ r, compact = false }: { r: ResourceView; compact?: boolean }) {
+  if (isCapped(r)) return <CappedRate net={r.per_day} lost={r.overflow} compact={compact} spare={r.id === 'energy'} />;
+  if (Number(r.unmet) > 0) return <ShortRate rate={r.per_day} unmet={r.unmet} change={r.change_per_day} compact={compact} />;
+  return <>{perDay(r.per_day)}</>;
 }
 
 /** Whether the nav tile (and so the panel) `id` shows. */

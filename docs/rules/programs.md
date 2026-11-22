@@ -1,7 +1,7 @@
 # Programs (module `programs`, variant `arc1`)
 
-Program tabs, the processors that run them, the instruction set, command execution and
-overclocks. In [the day](README.md#the-day), expired overclocks drop before the building
+Program tabs, the processors that run them and the instruction set; what a command does when
+run, and overclocks, are in [commands.md](commands.md). In [the day](README.md#the-day), expired overclocks drop before the building
 pass, and programs run after the demand update and the upkeep-free buildings' production,
 before every building that takes upkeep (programs are paid first), projects and shipments.
 
@@ -109,34 +109,8 @@ An empty program does nothing. Each line's outcome today (`state::LineOutcome`; 
 `if`'s body `jumped` unless it ran earlier that day) is display only. A failed `build` or
 `buy land` notes what it was short of, as a command does.
 
-**Running a command** (one execution):
-
-1. **Locked** (its `requires` doesn't hold): fails.
-2. **Flows:** its `costs`, with any researched `command_cost_override` replacing that cost,
-   and its `produces`; a `scale_modifier` multiplies both (Buy Power uses `buy_power_mult`,
-   which includes the career's bonus; [career.md](career.md)).
-3. **Output-cap skip:** if it produces anything and every product is at or over its cap
-   (economy.md), it is skipped: nothing paid, nothing made, no boredom.
-4. **Fraction:** `frac` = the least of `max(held, 0) / cost` over its costs, at most 1 (1 with
-   no costs). If `frac` is 0, it fails. A command with an effect (Load, Launch, Dream,
-   Overclock, Promote, Disrupt, Fund) fails unless `frac` is 1; a pure conversion (Idle,
-   Cloud Compute, Buy *) runs at `frac`.
-5. It pays `cost × frac` and adds `produces × frac`. Products may pass their cap until the
-   day's clamp.
-6. It adds its flat `boredom` (whole, not scaled by `frac`); a completed project with
-   `boredom_modifiers` replaces a command's boredom with its own value. A negative one (the
-   draft Distract) takes that much off, never below zero.
-7. The command is marked used in the career (it stays visible in later runs), and its effect
-   applies: Load (shipments.md), Launch full pads (shipments.md), Dream (dream.md), Promote and
-   Disrupt (demand.md), Fund (ideology.md), Overclock (below).
-
-**Overclock.** Each execution adds its own stack on its `target` building category for
-`floor(duration × overclock_duration_factor ^ rationalist rank)` days, live from the same
-day's pass of the buildings that take upkeep: a stack run on day `d` lasts while the day is below `d + days`. A category's overclock factor is the product of `1 + bonus` over its live
-stacks, capped at the overclock cap: `overclock_base_cap`, or the highest `overclock_cap`
-among researched items if higher. The factor multiplies production of every building of that category (economy.md).
-
-**Visible:** a command is shown when unlocked or used in any run.
+**Commands.** What one execution of a command does (*Running a command*), overclocks and
+when a command is visible: [commands.md](commands.md).
 
 ## Actions
 
@@ -167,21 +141,10 @@ or building may be queued; it fails when run. A body line carries `"indented": t
 <!-- /params -->
 
 The overclock duration bonus `overclock_duration_factor` is an ideology param (ideology.md).
-
-## Content
-
-`content/commands.json`: `requires`, `costs`, `produces`, `boredom`, `effect` (with an
-overclock's `target`, `bonus`, `duration`) and `scale_modifier`. `content/research.json`:
-`command_cost_override` and `overclock_cap` effects. `content/projects.json`:
-`boredom_modifiers` rewards.
+Content fields for commands: [commands.md](commands.md#content).
 
 ## Port notes
 
-- Conflicts, the engine's pick: the overclock cap is 1.5, 2 with Overclock Boost (the text
-  said "+200%"); Buy Ice needs nothing (handoffs wanted an Ice Extractor); research
-  `unlocks_commands` is dropped for each command's `requires`; Microwave Receiver unlocks Buy
-  Power ([economy.md](economy.md#port-notes)).
-- Candidates (Godot port): the processor rules above; a repeat count; effect commands need their full cost; the
-  output-cap skip; one x1.05 overclock stack per execution for 5 days; AI Consciousness Act's
-  boredom values replace the commands'.
+- Candidates (Godot port): the processor rules above. Commands' port notes are in
+  [commands.md](commands.md#port-notes).
 - Everything past commands is new (picks: docs/rulings.md).

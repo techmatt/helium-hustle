@@ -19,7 +19,7 @@
 //   4. The theme: light by default; the Options and debug toggles switch it with no
 //      element moving, and a reload keeps it.
 // Any uncaught page error fails the run.
-//   HH_URL      the page, required: a `vite preview` of a static build (README)
+//   HH_URL      the page, required: a `vite preview` of a static build (TESTING.md)
 //   HH_BROWSER  a browser off the usual paths
 //   HH_PROFILE  browser profile dir (default ../out/e2e-profile, wiped first)
 //   HH_SHOTS    <dir>: save a PNG of the page at each step worth seeing
@@ -35,7 +35,7 @@ const b = await launch({ width: 1600, height: 900, profileRoot: process.env.HH_P
 const { send, evaluate } = b;
 const pageErrors = b.errors;
 // settle: a dev server just after an edit may reload the page once more.
-const { waitFor, exists, click, setValue, load, day, run, speed, panel, debugMenu, grant } = driver(b, { url, settle: 700 });
+const { waitFor, exists, click, setValue, load, day, run, speed, panel, debugMenu, grant, runOnly } = driver(b, { url, settle: 700 });
 const noticeText = () => evaluate(`document.getElementById('notice')?.textContent ?? ''`);
 const enabled = (sel) => evaluate(`(() => { const b = document.querySelector(${q(sel)}); return !!b && !b.disabled; })()`);
 const navVisible = (id) => exists(`.nav-tile[data-nav="${id}"]`);
@@ -69,27 +69,6 @@ const buildings = () =>
       out[c.dataset.id] = { owned: Number(c.dataset.owned), short: c.dataset.short.split(' ').filter(Boolean), buyable: c.classList.contains('can-buy') };
     }
     return out;
-  })()`);
-
-/** Program 1 runs just `cmd`: Reset, then add it from the Commands panel. */
-const runOnly = async (cmd, lines) => {
-  if (lines.length === 1 && lines[0] === cmd) return;
-  await click('.prog-tabs button[data-program="0"]');
-  if (lines.length) await click('.prog-procs button[title="Clear this program"]');
-  await panel('commands');
-  await pickCommand(cmd);
-  await click(`[data-testid="add-${cmd}"]`);
-};
-
-/** A per-target command (Buy, Promote, Fund, Overclock) shares its verb's card: pick it
- * in the card's target dropdown so its Add button shows. */
-const pickCommand = (cmd) =>
-  evaluate(`(() => {
-    const o = document.querySelector('.panel[data-panel="commands"] select option[value="${cmd}"]');
-    if (o && o.parentElement.value !== '${cmd}') {
-      o.parentElement.value = '${cmd}';
-      o.parentElement.dispatchEvent(new Event('change', { bubbles: true }));
-    }
   })()`);
 
 /** Program 1, one processor, lines of counts 2, 1, 3: at 10x (a day a redraw) the
@@ -691,8 +670,16 @@ try {
     check(text > 20, `panel ${id} opens (${text} chars)`);
     await shot(`panel-${id}`);
   }
-  const navCount = JSON.parse(readFileSync(resolve(here, '../../content/nav.json'), 'utf8')).length;
-  check(tiles.length === navCount, `all ${navCount} nav tiles (content/nav.json) reachable: ${tiles.join(', ')}`);
+  // Act 1's tiles: every nav row but those whose panel only a DRAFT quest (Acts 2 and 3) opens.
+  const content = (f) => JSON.parse(readFileSync(resolve(here, `../../content/${f}`), 'utf8'));
+  const draftPanels = new Set(
+    content('events.json')
+      .filter((e) => (e.summary ?? '').startsWith('DRAFT'))
+      .flatMap((e) => (e.unlocks ?? []).filter((u) => u.type === 'enable_nav_panel').map((u) => u.panel)),
+  );
+  const act1 = content('nav.json').map((n) => n.id).filter((id) => !draftPanels.has(id));
+  const missing = act1.filter((id) => !tiles.includes(id));
+  check(!missing.length, `all ${act1.length} Act 1 nav tiles (content/nav.json) reachable: ${tiles.join(', ')}${missing.length ? `; missing ${missing.join(', ')}` : ''}`);
   check((await evaluate(`document.querySelector('.status').textContent`)).includes('CHEATED'), 'a cheated game is marked');
   await debugMenu();
   await setValue('#cheat-days', '30');

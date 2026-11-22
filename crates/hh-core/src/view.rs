@@ -26,11 +26,11 @@ use breakdown::{breakdown, short_view};
 mod breakdown;
 // The programs panel; the game's own programs module is `program_rules` here.
 mod programs;
-#[path = "view/projects.rs"]
-mod project_view;
+// The Projects panel; the game's own projects module is `modules::projects`.
+mod projects;
 mod saga;
 
-pub use project_view::{condition_text, ProjectView};
+pub use self::projects::{condition_text, ProjectView};
 pub use saga::{SagaView, TechView};
 
 pub use breakdown::{BreakdownView, FlowRow, ShortView};
@@ -333,6 +333,8 @@ pub struct View {
     /// first: the first day `logic_unlock_processors` processors work).
     pub program_logic: bool,
     pub logic_unlock_processors: u32,
+    /// Most lines in one program (`max_entries`).
+    pub max_program_lines: usize,
     /// The loadout library (career): saved programs, in slot order.
     pub library: Vec<Loadout>,
     /// Most loadouts the library holds, and the longest name.
@@ -449,7 +451,7 @@ fn event_story(r: &Rules, g: &GameState, e: &'static crate::content::Event) -> S
     if let crate::content::Trigger::BoredomPhase { phase } = e.trigger {
         let rates = &r.p.boredom.phase_rates;
         let i = (phase.max(1) as usize - 1).min(rates.len() - 1);
-        let shown = project_view::short(rates[i] * boredom::multiplier(r, g));
+        let shown = self::projects::short(rates[i] * boredom::multiplier(r, g));
         s.body = Cow::Owned(s.body.replace("{rate}", &shown));
     }
     s
@@ -639,6 +641,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         programs: programs::programs(r, g, &running),
         program_logic: program_rules::logic_unlocked(g),
         logic_unlock_processors: r.p.programs.logic_unlock_processors,
+        max_program_lines: r.p.programs.max_entries,
         library: g.career.library.clone(),
         library_slots: r.p.programs.library_slots,
         loadout_name_max: r.p.programs.loadout_name_max,
@@ -689,8 +692,8 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             })
             .collect(),
         ideology: axes(r, g),
-        projects: project_view::projects(r, g),
-        live_rewards: project_view::live_rewards(g),
+        projects: self::projects::projects(r, g),
+        live_rewards: self::projects::live_rewards(g),
         quest,
         completed_quests: c
             .events

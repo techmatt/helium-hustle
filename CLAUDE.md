@@ -59,13 +59,13 @@ Locked by Matt: changing any of these is his decision, not an implementation det
 - **Docs state the current game.** An item updates the current text in place. No per-item
   history sections ("NNN's changes"), no archive files; history is git and the item's write-up
   under `experiments/results/<item>/`.
-- **Each doc keeps under about 15 KB** (README, CLAUDE.md, web/README and every `docs/` page,
+- **Each doc keeps under about 15 KB** (README, CLAUDE.md, web/README, web/TESTING and every `docs/` page,
   `docs/rules/` included). Leave about 1 KB free: an item that fills a page trims it first,
   cutting what the code or a generated table already says, never moving text to an archive.
 - **Every rules change** updates the `docs/rules/` files it touches and adds its row to
   `docs/rules-history.md` (revision, what changed, why) in the same commit.
 - **Facts learned while working go in the page for their area**, never only in a report: build,
-  test and this machine in `README.md`; a run's cost and recipe in `docs/simulator.md`.
+  test and this machine in `README.md`; a read's cost and recipe in `docs/experiments.md`.
 
 ## Working rules
 

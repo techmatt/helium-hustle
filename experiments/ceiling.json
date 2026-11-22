@@ -1,6 +1,6 @@
 {
   "name": "ceiling",
-  "note": "The ceiling: the oracle (the author steered by rollouts on copies of the game, docs/agents.md, The oracle) beside the author it steers, on the ladder's grid (careers of 20 retirements from a new game). The oracle's careers set its cost: ~20 minutes on 6 threads.",
+  "note": "The ceiling: the oracle (the author steered by rollouts on copies of the game, docs/oracle.md) beside the author it steers, on the ladder's grid (careers of 20 retirements from a new game). The oracle's careers set its cost: ~20 minutes on 6 threads.",
   "configs": ["configs/baseline.json"],
   "agents": ["author", "oracle"],
   "humans": ["careful", "mixed", "brisk"],

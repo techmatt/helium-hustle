@@ -22,7 +22,7 @@ pub mod vs;
 
 pub const USAGE: &str = "usage:
   hh-sim run [--config F] [--seed S] [--ticks N] [--policy P] [--scenario NAME | --scenario-file F] [--save F] [--json]
-  hh-sim replay RECORD.json...
+  hh-sim replay [--summary] RECORD.json...   --summary: each end state as `run` prints it
   hh-sim show [--config F]
   hh-sim scenarios
   hh-sim golden
@@ -97,6 +97,7 @@ struct Opts {
     scenario: Option<Scenario>,
     save: Option<String>,
     json: bool,
+    summary: bool,
     rest: Vec<String>,
 }
 
@@ -110,6 +111,7 @@ fn parse(args: &[String]) -> Result<Opts, Fail> {
         scenario: None,
         save: None,
         json: false,
+        summary: false,
         rest: Vec::new(),
     };
     let mut it = args.iter();
@@ -142,6 +144,7 @@ fn parse(args: &[String]) -> Result<Opts, Fail> {
             }
             "--save" => o.save = Some(val("--save")?),
             "--json" => o.json = true,
+            "--summary" => o.summary = true,
             s if s.starts_with("--") => return usage(format!("unknown option {s}")),
             s => o.rest.push(s.to_string()),
         }
@@ -178,7 +181,7 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     }
     match cmd.as_str() {
         "run" => run_game(&o),
-        "replay" => replay(&o.rest),
+        "replay" => replay(&o.rest, o.summary),
         "show" => {
             let c = load_config(&o.config)?;
             Ok(format!(
@@ -242,7 +245,6 @@ fn run_game(o: &Opts) -> Result<String, Fail> {
             + "\n"
     } else {
         let mut t = String::new();
-        let v = s.rules.view(&s.state);
         let _ = writeln!(
             t,
             "{} (config {}, content {}), seed {}{}, rules revision {RULES_REVISION}",
@@ -252,22 +254,7 @@ fn run_game(o: &Opts) -> Result<String, Fail> {
             o.seed,
             o.scenario.as_ref().map(|s| format!(", scenario {}", s.name)).unwrap_or_default()
         );
-        let _ = writeln!(
-            t,
-            "tick {}, run {} day {}, {} actions",
-            s.state.tick,
-            v.run,
-            v.day,
-            rec.actions.len()
-        );
-        for r in &v.resources {
-            let cap = r.cap.map(|c| format!(" / {c}")).unwrap_or_default();
-            let _ = writeln!(t, "  {:<16} {}{cap}  ({} per day)", r.name, r.amount, r.per_day);
-        }
-        for b in v.buildings.iter().filter(|b| b.owned > 0) {
-            let _ = writeln!(t, "  {:<20} {} owned, {} active", b.name, b.owned, b.active);
-        }
-        t.push_str(&objectives::career_log(&s));
+        t.push_str(&state_summary(&s.rules, &s.state, rec.actions.len()));
         let _ = writeln!(t, "fingerprint {}", s.state.fingerprint());
         let _ = writeln!(t, "replay {}", if replay_ok { "ok" } else { "MISMATCH" });
         t
@@ -348,16 +335,38 @@ fn summarize_cmd(args: &[String]) -> Result<String, Fail> {
     Ok(summary::tables(&games, &ms))
 }
 
-fn replay(paths: &[String]) -> Result<String, Fail> {
+/// The end of a game as `run` prints it: tick, run and day, each resource,
+/// the buildings owned and the career log.
+fn state_summary(rules: &hh_core::Rules, g: &hh_core::GameState, actions: usize) -> String {
+    let mut t = String::new();
+    let v = rules.view(g);
+    let _ = writeln!(t, "tick {}, run {} day {}, {actions} actions", g.tick, v.run, v.day);
+    for r in &v.resources {
+        let cap = r.cap.map(|c| format!(" / {c}")).unwrap_or_default();
+        let _ = writeln!(t, "  {:<16} {}{cap}  ({} per day)", r.name, r.amount, r.per_day);
+    }
+    for b in v.buildings.iter().filter(|b| b.owned > 0) {
+        let _ = writeln!(t, "  {:<20} {} owned, {} active", b.name, b.owned, b.active);
+    }
+    t.push_str(&objectives::career_log(g));
+    t
+}
+
+fn replay(paths: &[String], summary: bool) -> Result<String, Fail> {
     if paths.is_empty() {
         return usage("replay: no record given");
     }
     let mut out = String::new();
     let mut bad = false;
     for p in paths {
-        match Record::from_json(&read(p)?).and_then(|r| r.replay()) {
+        let rec = Record::from_json(&read(p)?);
+        match rec.as_ref().map_err(Clone::clone).and_then(|r| r.replay()) {
             Ok((g, warnings)) => {
                 let _ = writeln!(out, "{p}: tick {}, fingerprint {}", g.tick, g.fingerprint());
+                if let (true, Ok(r)) = (summary, &rec) {
+                    let rules = hh_core::Rules::new(&r.config).map_err(Fail::Usage)?;
+                    out.push_str(&state_summary(&rules, &g, r.actions.len()));
+                }
                 for w in &warnings {
                     let _ = writeln!(out, "  warning: {w}");
                 }

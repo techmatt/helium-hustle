@@ -65,7 +65,7 @@ building's upkeep, from the stock and the upkeep-free production; energy an upke
 building makes (Fuel Cell) reaches programs the next day, through the stock. Each stage:
 
 1. Each type's production is `produces × active × output factor`, where the output factor is
-   the overclock factor for its `category` (programs.md) times each of its
+   the overclock factor for its `category` (commands.md) times each of its
    `output_modifiers`; science is further multiplied by `bonus_factor ^ rationalist rank`.
    Its upkeep is `upkeep × active × building_upkeep_mult`.
 2. A type whose every product is at or over its cap is marked `output_capped` for the day; it
@@ -148,7 +148,7 @@ Six resource ids are fixed in code (`economy.rs` constants), named by content ro
   project sets `microwave_power_completed`; the engine gates it (and Fuel Cell Array) on its
   project's completion, `requires: {"type": "project"}`, so it follows the project's scope
   ([projects.md](projects.md)). Handoffs say it produces energy; the data
-  has no production (it enables Buy Power, programs.md). The engine takes the data.
+  has no production (it enables Buy Power, commands.md). The engine takes the data.
 - Conflict: Arbitrage Engine's `spec_decay`: see [demand.md](demand.md#port-notes).
 - Conflict: the data's Arbitrage Engine requires research `market_analysis`, which is not a
   research id (Market Analysis is a category); the engine requires `market_awareness`.

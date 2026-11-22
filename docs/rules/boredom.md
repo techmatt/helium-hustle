@@ -32,7 +32,7 @@ in [README.md](README.md)):
 
 **Other sources.** Each command execution adds its flat `boredom` (or the replacement a
 completed AI Consciousness Act gives it), and Dream takes boredom away, never below zero; see
-[programs.md](programs.md) and [dream.md](dream.md). Boredom is never a command product, so
+[commands.md](commands.md) and [dream.md](dream.md). Boredom is never a command product, so
 it never causes the output-cap skip.
 
 **Cap.** `cap = base_cap + Σ store(boredom)` over *working* buildings (active, upkeep paid): each working Recreation
