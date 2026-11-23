@@ -206,7 +206,7 @@ fn complete(g: &mut GameState, p: &Project) {
         g.run.project_rates.remove(&p.id);
     }
     for reward in &p.rewards {
-        if let ProjectReward::SetFlag { flag } = reward {
+        if let ProjectReward::SetFlag { flag, .. } = reward {
             g.career.flags.insert(flag.clone());
         }
     }

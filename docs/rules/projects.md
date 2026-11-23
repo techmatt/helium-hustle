@@ -60,7 +60,8 @@ at 0), and `n` times each starting building; the others live once (no row repeat
 - `starting_buildings`: free bonus buildings at the start of every run (owned and
   running, not counted in their price curve; [career.md](career.md), [economy.md](economy.md)).
 - `modifier`: a modifier `key` multiplied by `value` ([Modifiers](README.md#modifiers)).
-- `set_flag`: a career flag, set at completion. Flags outlive a timeline's end.
+- `set_flag`: a career flag, set at completion, and `text`, what the card says it gives.
+  Flags outlive a timeline's end.
 - `boredom_modifiers`: `base_rate_mult` multiplies boredom growth (stacking as a
   multiplier, [boredom.md](boredom.md)); `command_boredom` replaces the named commands' flat
   boredom per execution ([commands.md](commands.md)).

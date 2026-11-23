@@ -46,7 +46,8 @@ results folder; kept shots are also copied to the shared screenshots folder, CLA
 Any uncaught page error fails the run. Run it against `vite preview` (CLAUDE.md).
 `panel()` closes the debug menu: call `debugMenu()` again before a `grant()` after one.
 
-- **Under load it flakes:** section 3's 10x pointer walk fails beside a cargo build.
+- **Under load it flakes:** section 3's 10x pointer walk fails beside a cargo build, and
+  so do its "if held" and "guarded line built" outcome checks (066: beside `cargo test-all`).
 - **The late UI for screenshots:** `experiments/results/027_art_in_game/shots.mjs`
   (`pad_loading`, cheats, ~20 s); grants don't count toward `resource_cumulative`.
 - Edge needs an **absolute** `--user-data-dir` (the script resolves it).
@@ -69,7 +70,14 @@ playlog` (a release build, or `HH_SIM`: a fresh worktree has none, so build it f
 debug scenario (each played, its panels audited): every Resources row's breakdown opened
 and closed, Stats' breakdowns; program lines dragged; in `late_unlocks`, a loaded
 pad switched to another good (the stockpile gains what its tooltip promised) and Recent
-Activity's unread count (counts while folded, clears once read). The late panels again in
+Activity's unread count (counts while folded, clears once read); in `everything`, the
+takeovers (a program in every form the text grammar writes, pasted into the text editor:
+each line reads, the block view holds every line, the text reads back unchanged; the
+Cortex mock by its toggle, closed with Esc) and every open project's Max then − steps,
+each taken. A career short of 1.6 (Research) is played on by the debug autopilot's
+*Next quest step*, each step timed and checked to move the quest; after the scenarios its
+*Everything* plays to the ending (~15 s) and every later-act panel is audited. Building cards with no
+picture drawn yet (placeholder art) are not findings. The late panels again in
 the other theme; every building's card (`?all-cards`, a display-only URL flag) in both.
 Real mouse and key probes of click-to-buy and the program frame. Checks and `HH_*`
 settings: the script's header. Exit 1 on any finding.

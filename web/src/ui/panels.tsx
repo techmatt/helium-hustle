@@ -355,7 +355,9 @@ export function Project({ v, p, fresh }: { v: View; p: ProjectView; fresh: Set<s
     const cur = store.view.projects.find((x) => x.id === p.id) ?? p;
     const now = Number(cur.rates[res] ?? '0');
     const next = Math.max(0, Math.min(Number(p.max_rates[res] ?? '0'), now + by));
-    act({ type: 'set_project_rate', project: p.id, resource: res, rate: String(next) });
+    // Six places, as the engine reads a number: float sums of a max like 1.666667 carry
+    // more (0.6666669999999999), which it refuses.
+    act({ type: 'set_project_rate', project: p.id, resource: res, rate: next.toFixed(6) });
   };
   const locked = !p.unlocked && !p.completed;
   const funded = p.unlocked && Object.values(p.rates).some((r) => Number(r) > 0);

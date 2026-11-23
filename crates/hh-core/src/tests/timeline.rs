@@ -184,3 +184,14 @@ fn quiet_days_count_from_the_last_order() {
     r.advance(&mut g, 4);
     assert!(crate::modules::events::holds(&r, &g, "", &c));
 }
+
+#[test]
+fn a_rank_on_one_axis_shows_its_progress() {
+    // Quest 1.7's rows ("Rank 5 ...") count up, as `holds` reads them.
+    let r = rules();
+    let mut g = r.new_game(7);
+    let c = crate::content::Condition::IdeologyRank { axis: "humanist".into(), rank: 5 };
+    g.career.max_ideology_ranks.insert("humanist".into(), 3);
+    assert_eq!(crate::modules::events::progress(&r, &g, &c), Some((f("3"), f("5"))));
+    assert!(!crate::modules::events::holds(&r, &g, "", &c));
+}

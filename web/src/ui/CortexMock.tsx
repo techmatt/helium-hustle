@@ -1532,7 +1532,7 @@ const CSS = `
 .cx-rivet-r { right: 6px; }
 .cx-plaque-studs { display: flex; gap: 5px; }
 .cx-stud { width: 9px; height: 9px; transform: rotate(45deg); border: 1px solid var(--cx-stud-line); }
-.cx-plaque-name { font-size: 12.5px; font-weight: 700; letter-spacing: 1.2px; text-transform: uppercase; color: var(--cx-brass-name); }
+.cx-plaque-name { font-size: 12.5px; font-weight: 600; letter-spacing: 1.2px; text-transform: uppercase; color: var(--cx-brass-name); }
 .cx-plaque-text { font-size: 11px; line-height: 1.3; color: var(--cx-brass-sub); }
 .cx-plaque.cx-have .cx-plaque-text { color: inherit; }
 .cx-plaque-cost { font-size: 11px; color: var(--cx-brass-cost); letter-spacing: 1px; }

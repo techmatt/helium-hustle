@@ -49,6 +49,19 @@ and *storage blocked* checks.
 
 New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 
+| # | Finding | Fix | Guard |
+|---|---|---|---|
+| 78 | A notice or story banner raised while a takeover (text editor, Cortex mock) is open is hidden with the middle column until it closes | Shown at the top of the takeover | qa *hidden* (the notice was flagged covered) |
+| 79 | Projects: Max then − sends a float like `0.6666669999999999`; the engine refuses it and the rate stays at max (Deep Space Telescope's science, Conditional Logic, Foundation Grant, Dyson Sphere) | The step sends six places | qa project probe |
+| 80 | A verb line switched to Load (empty library) or Fund (no open project) is refused with an error | Such a verb is listed but not pickable, "(nothing to name yet)" | `npm run check` |
+| 81 | Quest 1.7's "Rank 5 …" rows never showed how far along they are | `events::progress` counts `ideology_rank` | `a_rank_on_one_axis_shows_its_progress` |
+| 82 | Conditional Logic's card says "Reward: Sets logic_if" (a flag id; Dyson Sphere too) | `set_flag` rewards carry their `text` (required) | content load |
+| 83 | Stats breakdown and Project rewards headings (h4), the DRAFT tag and Cortex plaque names drawn at weights the bundled fonts lack (browser-faked bold) | h4 at 600, Plex Mono 600 bundled | qa *assets* |
+| 84 | With Cheats on, eight speed buttons: "200x" wider than its button at 1280 | Smaller text and gap at eight | qa *overflow* |
+| 85 | A late career's left column (16 tiles, the calendar) scrolls at 1280×800, and its scrollbar clipped the Resources rates ("fre", "−8/da", the CAP chips) | The column keeps its scrollbar's room (17 px wider) | qa's autopilot-to-the-end audit |
+| 86 | The Saga's progress bars (Timeline's calendar, Vault's super timeline price) were only as wide as their label | A track of its own width | screenshots (qa `saga-*`) |
+| 87 | Esc with the run summary up closed a takeover behind it, trying to save the text editor's draft to the ended run | Esc does nothing to a takeover while the summary is up | manual |
+
 ## Deferred (Matt's decisions)
 
 | Finding | Recommendation |
@@ -77,3 +90,6 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | Finding | Why |
 |---|---|
 | Sell All's native `confirm()` lets game time run while it is open, then plays it before the sells | The clock catches up on wall time by design (as for a background tab); the sells land between the right ticks and a run that ended is refused with a notice |
+| Opening the Cortex mock takes one 300-400 ms frame (the whole wheel drawn at once) | A UI-only mock: the real Cortex's build decides how it draws |
+| Starting a debug scenario takes a 0.3-1.3 s frame | Debug menu only: a new game built and its first view drawn |
+| The debug autopilot's *Everything* ends on a 1.3-1.4 s frame (~28,000 days in ~12 s) | Debug only: its last chunk and the ending drawn at once |

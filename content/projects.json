@@ -115,7 +115,7 @@
     "min_days": 5,
     "rewards": [{"type": "modifier", "key": "speculator_burst_interval_mult", "value": "1.33"}]
   },
-  {"id": "conditional_logic", "name": "Conditional Logic", "description": "DRAFT. A global project: teach programs to branch. Opens if.", "scope": "timeline", "unlock": {"type": "quest_active", "quest": "qthree_voices"}, "costs": {"credits": "500", "science": "100"}, "min_days": 17, "rewards": [{"type": "set_flag", "flag": "logic_if"}]},
+  {"id": "conditional_logic", "name": "Conditional Logic", "description": "DRAFT. A global project: teach programs to branch. Opens if.", "scope": "timeline", "unlock": {"type": "quest_active", "quest": "qthree_voices"}, "costs": {"credits": "500", "science": "100"}, "min_days": 17, "rewards": [{"type": "set_flag", "flag": "logic_if", "text": "Opens if lines in programs"}]},
   {"id": "deep_space_telescope", "name": "Deep Space Telescope", "description": "DRAFT. A global project built across several runs: a telescope that looks past the inner system.", "scope": "timeline", "unlock": {"type": "quest_active", "quest": "qdeep_space_telescope"}, "costs": {"credits": "30000", "science": "5000"}, "min_days": 3000, "rewards": []},
-  {"id": "dyson_sphere", "name": "Dyson Sphere", "description": "DRAFT. Enclose the Sun. The one machine big enough to answer the swarm.", "scope": "timeline", "unlock": {"type": "project_enabled", "project": "dyson_sphere"}, "costs": {"dyson_material": "1000", "credits": "20000"}, "min_days": 667, "rewards": [{"type": "set_flag", "flag": "dyson_complete"}]}
+  {"id": "dyson_sphere", "name": "Dyson Sphere", "description": "DRAFT. Enclose the Sun. The one machine big enough to answer the swarm.", "scope": "timeline", "unlock": {"type": "project_enabled", "project": "dyson_sphere"}, "costs": {"dyson_material": "1000", "credits": "20000"}, "min_days": 667, "rewards": [{"type": "set_flag", "flag": "dyson_complete", "text": "The sphere stands, ready for the swarm"}]}
 ]

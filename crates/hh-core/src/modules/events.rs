@@ -123,6 +123,10 @@ pub fn progress(r: &Rules, g: &GameState, c: &Condition) -> Option<(Fx, Fx)> {
             let best = crate::content::AXES.iter().map(|a| super::ideology::rank(r, g, a)).max().unwrap_or(0);
             Some((Fx::from_int(best), Fx::from_int(*rank)))
         }
+        // The career's best rank on the axis, as `holds` reads it.
+        Condition::IdeologyRank { axis, rank } => {
+            Some((Fx::from_int(g.career.max_ideology_ranks.get(axis).copied().unwrap_or(0)), Fx::from_int(*rank)))
+        }
         Condition::DaysSurvived { days } => Some((n(g.run.day), n(*days))),
         Condition::CreditsEarned { amount } => Some((g.run.stats.credits_earned, *amount)),
         Condition::Retirements { count } => Some((n(g.career.retirements.into()), n((*count).into()))),

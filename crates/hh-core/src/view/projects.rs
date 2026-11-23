@@ -107,7 +107,7 @@ fn reward_text(p: &Project) -> Vec<String> {
                 format!("Every run starts with {} free", list.join(" and "))
             }
             ProjectReward::Modifier { key, value } => format!("{} ×{}", modifier_name(key), short(*value)),
-            ProjectReward::SetFlag { flag } => format!("Sets {flag}"),
+            ProjectReward::SetFlag { text, .. } => text.clone(),
             ProjectReward::BoredomModifiers { base_rate_mult, command_boredom } => {
                 let cmds: Vec<String> =
                     command_boredom.iter().map(|(c, v)| format!("{} {}", name(c), short(*v))).collect();

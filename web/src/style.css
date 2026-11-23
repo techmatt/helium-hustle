@@ -98,7 +98,10 @@
   font-size: 14px;
   color: var(--text);
   background: var(--page);
-  --left: clamp(270px, 18vw, 440px);
+  /* 270 px at 1280 px plus a scrollbar's width: a late career's column (16 tiles, the
+     calendar) scrolls at 800 px high, and the scrollbar taking its width from a 270 px
+     column clipped the rates ("fre", "−8/da"). */
+  --left: clamp(287px, calc(18vw + 17px), 457px);
   /* Wide enough at 1280 px for a program line's full name ("Sell Cloud Compute") beside
      its controls. */
   --right: clamp(370px, calc(23vw + 30px), 590px);
@@ -174,7 +177,8 @@ select {
    600, never a 700 the browser would fake by smearing the 400. */
 strong,
 b,
-th {
+th,
+h4 {
   font-weight: 600;
 }
 h1,
@@ -672,6 +676,13 @@ ul.plain {
   min-width: 0;
   padding-left: 0;
   padding-right: 0;
+}
+/* With Cheats on, the two debug speeds make eight: "200x" fits only smaller. */
+.speeds:has(> :nth-child(7)) {
+  gap: 2px;
+}
+.speeds:has(> :nth-child(7)) button {
+  font-size: 12px;
 }
 .speeds button[aria-pressed='true'],
 .speeds button[aria-pressed='true']:hover,
@@ -1602,12 +1613,20 @@ button.go:hover:not(:disabled) {
   vertical-align: middle;
   font-family: var(--font-mono);
   font-size: 11px;
-  font-weight: 700;
+  /* Plex Mono ships at 400 and 600 (main.tsx). */
+  font-weight: 600;
   letter-spacing: 0.08em;
   color: var(--accent-text);
   border: 1px solid var(--accent);
   border-radius: 3px;
   padding: 0 5px;
+}
+/* A Saga panel's own progress bar (the calendar, the super timeline's price): a track of
+   its own width, not its label's. */
+.saga-bar .bar {
+  display: block;
+  max-width: 360px;
+  margin: 4px 0 8px;
 }
 .calendar-strip {
   background: var(--banner);

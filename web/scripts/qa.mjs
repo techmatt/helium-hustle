@@ -12,6 +12,10 @@
 //   text       placeholder or broken text on screen (undefined, NaN, [object ...], {x}),
 //              more than one program line framed, a frame on a program with no processor
 //   contrast   text against its solid background under 4.5:1 (3:1 large)
+//   text       (also) a program-grammar form the text editor reads red, a block view not
+//              holding every applied line, text not reading back as written
+//   input      (also) a project rate step the engine refused, an autopilot quest step that
+//              never finished or left the quest where it was
 //   assets     an image that failed to load; a building card picture missing, not 96 px or
 //              never shown; text in a bundled font at a weight or style it doesn't ship
 //   console    any page error or console.error, a failed replay check, a play log that
@@ -20,7 +24,8 @@
 //              count (click-to-buy, the program frame), a double-click on Continue reaching
 //              a card
 //   frame      a frame gap over FRAME_MS while the page is visible
-//   memory     JS heap growth over a pass past HEAP_GROWTH_MB, a save over 2 MB
+//   memory     JS heap growth over a pass past HEAP_GROWTH_MB (before the autopilot's
+//              Everything; past HEAP_ENDED_MB with its finished career), a save over 2 MB
 // It writes `<out>/report.json`, one PNG per moment in `<out>/<seed>-<width>-<theme>/`, and
 // `<out>/contact-<seed>-<width>-<theme>.png` (a contact sheet of that pass). Exits 1 on any
 // finding.
@@ -40,7 +45,7 @@
 //              save size and the worst frame each minute (`<out>/long/`)
 // The DevTools harness (launch, waitFor, load, panel...) is scripts/cdp.mjs.
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { READY, driver, launch as launchBrowser, pageUrl, q, sleep } from './cdp.mjs';
@@ -53,12 +58,48 @@ const outDir = resolve(process.env.HH_QA_OUT ?? resolve(here, '../../out/qa'));
 const RUN2_DAYS = Number(process.env.HH_RUN2 ?? 150);
 const themes = (process.env.HH_THEMES ?? 'light,dark').split(',').map((s) => s.trim()).filter(Boolean);
 const artIds = readdirSync(resolve(here, '../src/assets/buildings')).filter((f) => f.endsWith('.webp')).map((f) => f.slice(0, -5));
+/** Cards with no picture drawn yet (placeholder art, not a finding): content buildings with
+ * no WebP, and the debug Cheat Fountain. A card whose picture exists but isn't shown still is. */
+const NO_ART = [
+  'cheat_building',
+  ...JSON.parse(readFileSync(resolve(here, '../../content/buildings.json'), 'utf-8')).map((b) => b.id).filter((id) => !artIds.includes(id)),
+];
 /** Run 1's speed: 50 by default; 3 plays it as a person would (about 3 minutes to a shipment). */
 const RUN1_SPEED = Number(process.env.HH_SPEED ?? 50);
 const INPUT_MS = 300;
 const FRAME_MS = 250;
 const HEAP_GROWTH_MB = 40;
+/** The heap with a finished career in the page (the autopilot's Everything: ~28,000 days,
+ * the calendar and its timelines), from the pass's start. */
+const HEAP_ENDED_MB = 80;
 const HEIGHT = Number(process.env.HH_HEIGHT ?? 900);
+/** A program in every form the text grammar writes (program_text::to_text's canonical
+ * text, so it must read back unchanged): every verb, every reading, % and amounts, and/or. */
+const GRAMMAR = [
+  '# every form the grammar writes',
+  'sell cloud compute',
+  'buy ice 2',
+  'build solar panel',
+  'build data center up to 5',
+  'buy land',
+  'if credits above 100',
+  '  buy regolith',
+  'if helium-3 below 50% and free processors above 0',
+  '  load pads all',
+  'if energy per day below -5 or days since a purchase above 30',
+  '  launch pads helium-3',
+  'if free land above 1 or idle pads above 0',
+  '  pause smelter',
+  'set pads helium-3 up to 2',
+  'pause smelter 1',
+  'resume smelter all',
+  'research process telemetry',
+  'assign processors program 2 all',
+  'fund foundation grant 100',
+  'load qa program into program 2',
+  '#',
+  'idle',
+].join('\n');
 
 rmSync(outDir, { recursive: true, force: true });
 mkdirSync(outDir, { recursive: true });
@@ -92,7 +133,8 @@ const AUDIT = `(() => {
     // Text clipped by its own box (overflow hidden, or an ellipsis).
     // An ellipsis is fine where a tooltip (on it or a parent) carries the whole text.
     const tooltip = el.closest('[title]')?.getAttribute('title') ?? '';
-    const whole = (el.textContent || '').trim();
+    // Its text as shown: an icon's <title> (a chip's "Credits") is no clipped text.
+    const whole = [...el.querySelectorAll('svg')].reduce((t, s) => t.replace(s.textContent, ''), el.textContent || '').trim();
     if (hasText && (cs.overflowX !== 'visible' || cs.textOverflow === 'ellipsis') && el.scrollWidth > el.clientWidth + 1 && cs.overflowX !== 'auto' && cs.overflowX !== 'scroll' && !(whole && tooltip.includes(whole)))
       out.push({ kind: 'overflow', what: 'text clipped: ' + label(el) + ' (' + el.scrollWidth + ' > ' + el.clientWidth + ')' });
     // Text spilling past a fixed-size box (buttons, bars, cells, tiles).
@@ -157,7 +199,8 @@ const AUDIT = `(() => {
     if (!shown(el)) continue;
     for (const n of el.childNodes) {
       if (n.nodeType !== 3) continue;
-      const re = /\\S{4,}/g;
+      // A hyphen is a break of its own ("Meta-|Controller" reads fine): the parts between.
+      const re = /[^\\s-]{4,}/g;
       for (let m; (m = re.exec(n.textContent)); ) {
         const range = document.createRange();
         range.setStart(n, m.index);
@@ -240,7 +283,10 @@ const AUDIT = `(() => {
   for (const c of document.querySelectorAll('.card.building')) {
     if (!shown(c)) continue;
     const img = c.querySelector('img.card-art');
-    if (!img) { out.push({ kind: 'assets', what: 'building card with no picture: ' + c.dataset.id }); continue; }
+    if (!img) {
+      if (!${JSON.stringify(NO_ART)}.includes(c.dataset.id)) out.push({ kind: 'assets', what: 'building card with no picture: ' + c.dataset.id });
+      continue;
+    }
     const r = img.getBoundingClientRect();
     if (img.complete && (Math.round(r.width) !== 96 || Math.round(r.height) !== 96)) out.push({ kind: 'assets', what: 'card picture not 96 px: ' + c.dataset.id + ' ' + r.width + 'x' + r.height });
     const body = c.querySelector('.card-body')?.getBoundingClientRect();
@@ -349,6 +395,8 @@ async function pass(seed, width, theme) {
   const seenFindings = new Set();
   const artSeen = new Set();
   let moment = 0;
+  /** Heap samples before the autopilot's Everything (all of them until it runs). */
+  let heapBeforeEnd = Infinity;
   /** Clicks and times how long the screen takes to change (a render after the click). */
   const timedClick = async (sel, what = sel) => {
     const ms = await evaluate(`new Promise((done) => {
@@ -433,7 +481,9 @@ async function pass(seed, width, theme) {
     // Past the 0.5 s in which cards ignore pointer clicks after a story's OK or Continue
     // (qa-findings #31): a probe right after a story would otherwise report a lost buy.
     await sleep(600);
-    const card = (sel) => evaluate(`document.querySelector(${q(sel)})?.dataset.id ?? null`);
+    // Never the Cheat Fountain (debug, 1 credit): its boredom relief would keep the forced
+    // retirement after the late phase from ever coming.
+    const card = (sel) => evaluate(`[...document.querySelectorAll(${q(sel)})].find((c) => c.dataset.id !== 'cheat_building')?.dataset.id ?? null`);
     let id = await card('.card.building.can-buy');
     if (!id) return note('input', `card probe (${when}): no affordable card`);
     const desc = `.card.building[data-id="${id}"] .desc`;
@@ -623,6 +673,86 @@ async function pass(seed, width, theme) {
 
   /** Events' unread counts: Recent Activity folded counts what arrives while it is shut;
    * opened and on screen for over a second, the count clears. */
+  /** The takeover views (scenario everything): the text editor given a program in every
+   * form the grammar writes (each line must read, or say why in its gutter note), applied,
+   * the block view holding every line, the text reading back as written; then the Cortex
+   * mock opened by its debug toggle and closed with Esc. Each audited and captured. */
+  const takeoverProbe = async (when) => {
+    const AREA = '[data-testid="text-editor-area"]';
+    await speed(0);
+    if (!(await exists('[data-testid="text-editor-open"]'))) {
+      note('input', `${when}: no text editor button on the program panel`);
+      return;
+    }
+    await click('[data-testid="text-editor-open"]', 'open the text editor');
+    await waitFor(`!!document.querySelector(${q(AREA)})`, 'the text editor', 3000);
+    await setValue(AREA, GRAMMAR);
+    await sleep(400); // the debounced parse
+    const lines = await evaluate(`(() => {
+      const dots = [...document.querySelectorAll('.te-gutter [data-line-status]')];
+      const notes = [...document.querySelectorAll('.te-notes .te-row')];
+      return document.querySelector(${q(AREA)}).value.split('\\n').map((text, i) => ({ text, status: dots[i]?.dataset.lineStatus ?? '', note: notes[i]?.textContent ?? '' }));
+    })()`);
+    for (const l of lines) {
+      if (l.status === 'red') note('text', `${when}: the text editor reads a written form as red: "${l.text.trim()}" (${l.note})`);
+      else if (l.status === 'amber' && !l.note.trim()) note('text', `${when}: an amber line without its reason: "${l.text.trim()}"`);
+    }
+    await capture(`${when}-text-editor`);
+    if (await evaluate(`!document.querySelector('[data-testid="text-editor-apply"]')?.disabled`)) await click('[data-testid="text-editor-apply"]', 'apply');
+    await sleep(200);
+    await click('[data-takeover-close="text_editor"]', 'close the text editor');
+    await sleep(200);
+    const rows = await evaluate(`document.querySelectorAll('.lines li').length`);
+    const written = GRAMMAR.split('\n').filter((l) => l.trim() !== '').length;
+    if (rows !== written) note('text', `${when}: the block view shows ${rows} lines of the ${written} applied in the text editor`);
+    await capture(`${when}-block-view`);
+    await click('[data-testid="text-editor-open"]', 'reopen the text editor');
+    await sleep(300);
+    const back = (await evaluate(`document.querySelector(${q(AREA)}).value`)).trimEnd().split('\n');
+    const want = GRAMMAR.trimEnd().split('\n');
+    const differ = want.map((l, i) => [l, back[i] ?? '(none)']).filter(([a, b2]) => a !== b2);
+    if (differ.length) note('text', `${when}: text doesn't read back as written: ${differ.slice(0, 3).map(([a, b2]) => `"${a}" -> "${b2}"`).join('; ')}`);
+    await click('[data-takeover-close="text_editor"]', 'close the text editor');
+    // The Cortex mock, by its debug toggle.
+    await panel('options');
+    if (!(await exists('#cortex-mock-toggle'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
+    if (await exists('#cortex-mock-toggle')) {
+      if (!(await evaluate(`document.getElementById('cortex-mock-toggle').checked`))) await click('#cortex-mock-toggle', 'cortex mock toggle');
+      await click('[data-takeover-button="cortex"]', 'open the Cortex mock');
+      await sleep(400);
+      await capture(`${when}-cortex`);
+      await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`);
+      await sleep(200);
+      if (await exists('[data-takeover="cortex"]')) note('input', `${when}: Esc doesn't close the Cortex mock`);
+      await click('#cortex-mock-toggle', 'cortex mock toggle off');
+    } else note('input', `${when}: no Cortex mock toggle in the debug menu`);
+  };
+  /** Projects' rate buttons: on every open project's rows, Max then − steps down to 0, each
+   * click taken (a rate the engine refuses, like 0.6666669999999999, stays put). */
+  const projectProbe = async (when) => {
+    if (!(await exists('.nav-tile[data-nav="projects"]'))) return;
+    await speed(0);
+    await panel('projects');
+    const rows = await evaluate(`[...document.querySelectorAll('.card.project[data-id] .proj-row')].map((r) => r.closest('.card').dataset.id + '|' + r.querySelector('.proj-res').textContent.trim())`);
+    const rowSel = (i) => `(document.querySelectorAll('.card.project[data-id] .proj-row')[${i}])`;
+    const rate = (i) => evaluate(`${rowSel(i)}?.querySelector('.proj-rate')?.textContent ?? ''`);
+    const press = (i, label) => evaluate(`(() => { const b = [...${rowSel(i)}.querySelectorAll('button')].find((x) => x.textContent.trim() === ${q(label)}); if (!b || b.disabled) return false; b.click(); return true; })()`);
+    for (let i = 0; i < rows.length; i++) {
+      await press(i, 'Max');
+      await sleep(120);
+      for (let k = 0; k < 12; k++) {
+        const before = await rate(i);
+        if (!(await press(i, '−'))) break;
+        await sleep(120);
+        const after = await rate(i);
+        if (after === before) {
+          note('input', `${when}: project ${rows[i]}: − at ${before} wasn't taken (${(await evaluate(`document.getElementById('notice')?.textContent ?? ''`)).slice(0, 80)})`);
+          break;
+        }
+      }
+      while (await press(i, '−')) await sleep(60);
+    }
+  };
   const unreadProbe = async (when) => {
     const sec = '[data-testid="events-activity"]';
     const count = () => evaluate(`Number(document.querySelector('${sec}')?.dataset.unread ?? -1)`);
@@ -916,6 +1046,29 @@ async function pass(seed, width, theme) {
       if (await exists(`[data-testid="buy-${id}"].can-buy`)) await click(`[data-testid="buy-${id}"]`, `buy ${id}`);
       await grant();
     }
+    // A career not yet at 1.6 (Research opens there): the debug autopilot's "Next quest
+    // step" plays it on, a step at a time; each step must finish and move the quest.
+    for (let step = 0; step < 6 && !(await exists('.nav-tile[data-nav="research"]')); step++) {
+      await panel('options');
+      if (!(await exists('#accel-quest'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
+      const quest = await evaluate(`document.querySelector('.col-right')?.textContent.match(/\\d\\.\\d+ —[^\\n]{0,40}/)?.[0] ?? ''`);
+      const t0 = Date.now();
+      await click('#accel-quest', 'autopilot: next quest step');
+      try {
+        await waitFor(`document.getElementById('accel-status')?.dataset.running === '0'`, 'the autopilot step', 90000);
+      } catch (e) {
+        note('input', `the autopilot's next quest step from "${quest}" never finished: ${String(e).slice(0, 100)}`);
+        await click('#accel-stop', 'autopilot stop').catch(() => {});
+        break;
+      }
+      const after = await evaluate(`document.querySelector('.col-right')?.textContent.match(/\\d\\.\\d+ —[^\\n]{0,40}/)?.[0] ?? ''`);
+      const status = await evaluate(`document.getElementById('accel-status')?.textContent ?? ''`);
+      if (after === quest && !(await exists('[data-testid="summary"]'))) note('input', `the autopilot's next quest step left the quest at "${quest}" (${status.slice(0, 100)})`);
+      if (Date.now() - t0 > 30000) note('frame', `the autopilot's next quest step took ${Math.round((Date.now() - t0) / 1000)} s`);
+      await capture(`autopilot-step-${step + 1}`);
+      // A retirement on the way: its summary's Continue.
+      if (await exists('[data-testid="continue"]')) await click('[data-testid="continue"]', 'continue');
+    }
     if (!(await exists('.nav-tile[data-nav="research"]'))) note('input', 'the late phase never opened Research: its panels went unaudited');
     for (let round = 0; round < 4; round++) {
       await speed(10);
@@ -948,7 +1101,10 @@ async function pass(seed, width, theme) {
     // A forced retirement at 200x: boredom set just under its cap, the clock run.
     await panel('options');
     if (!(await exists('#cheats-toggle'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
-    await setValue('#cheat-boredom', '995');
+    // At the cap the Resources row shows ("229 / 1,200"; a tunable), not just under it: a
+    // career with Cheat Fountains loses boredom by the day and would never get there.
+    const boredomCap = await evaluate(`Number((document.querySelector('[data-res="boredom"]')?.closest('tr')?.textContent.match(/\\/\\s*([\\d,]+)/)?.[1] ?? '1000').replace(/,/g, ''))`);
+    await setValue('#cheat-boredom', String(boredomCap));
     await click('#cheat-set-boredom', 'set boredom');
     // The summary comes up over Buildings: a double-click on Continue must not let its
     // second click land on whatever the summary covered (a card buys on a click).
@@ -1013,10 +1169,37 @@ async function pass(seed, width, theme) {
       // Every scenario's breakdowns (at_cap's lost-to-cap rows, rich's spending); the late
       // panels' scenario also switches cargo on its loaded pads and reads unread counts.
       await breakdownProbe(sc);
+      if (sc === 'everything') {
+        await takeoverProbe(sc);
+        await projectProbe(sc);
+      }
       if (sc === 'late_unlocks') {
         await padProbe(sc);
         await unreadProbe(sc);
       }
+    }
+    // The later acts (the Saga draft): the debug autopilot's "Everything" plays this game
+    // to the ending, then every panel it opened is audited (16 tiles and the calendar in
+    // the left column).
+    try {
+      await panel('options');
+      if (!(await exists('#accel-end'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
+      heapBeforeEnd = heap.length;
+      const t0 = Date.now();
+      await click('#accel-end', 'autopilot: everything');
+      await waitFor(`document.getElementById('accel-status')?.dataset.running === '0'`, 'the autopilot to the end', 180000);
+      if (Date.now() - t0 > 60000) note('frame', `the autopilot's Everything took ${Math.round((Date.now() - t0) / 1000)} s`);
+      if (!(await exists('[data-testid="ending"]'))) note('input', `the autopilot's Everything ended without the ending: ${(await evaluate(`document.getElementById('accel-status')?.textContent ?? ''`)).slice(0, 120)}`);
+      await capture('ending');
+      await evaluate(`[...document.querySelectorAll('[data-testid="ending"] button')].find((b) => /Close/.test(b.textContent))?.click()`);
+      await sleep(300);
+      await moments(await look());
+      for (const id of (await look()).nav) {
+        await panel(id);
+        await capture(`saga-${id}`);
+      }
+    } catch (e) {
+      note('input', `the autopilot to the end: ${String(e).slice(0, 160)}`);
     }
     // A second tab on the same save: the first stands down with a notice.
     if (seed === seeds[0] && width === widths[0]) {
@@ -1086,8 +1269,10 @@ async function pass(seed, width, theme) {
     note('console', `the pass stopped: ${String(e).slice(0, 300)}`);
     await capture('failure').catch(() => {});
   }
-  const grown = (Math.max(...heap) - heap[0]) / 1e6;
+  const grown = (Math.max(...heap.slice(0, heapBeforeEnd)) - heap[0]) / 1e6;
   if (grown > HEAP_GROWTH_MB) note('memory', `JS heap grew ${grown.toFixed(1)} MB over the pass`);
+  const ended = (Math.max(...heap) - heap[0]) / 1e6;
+  if (ended > HEAP_ENDED_MB) note('memory', `JS heap grew ${ended.toFixed(1)} MB with the finished career`);
   // A contact sheet of the pass: its screenshots on one page, captured whole.
   const sheet = resolve(dir, 'contact.html');
   writeFileSync(

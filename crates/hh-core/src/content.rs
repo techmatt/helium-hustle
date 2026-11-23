@@ -369,7 +369,8 @@ pub enum ProjectReward {
     /// Free (bonus) buildings at the start of every run.
     StartingBuildings { buildings: BTreeMap<String, u32> },
     Modifier { key: String, value: Fx },
-    SetFlag { flag: String },
+    /// A career flag; `text` is what the card says it gives (never the flag's id).
+    SetFlag { flag: String, text: String },
     /// Multiplies the boredom growth rate; replaces commands' flat boredom.
     BoredomModifiers { base_rate_mult: Fx, command_boredom: Amounts },
     /// Research bought in an earlier run costs this much of its price.
@@ -691,7 +692,7 @@ impl Content {
         let mut set: BTreeSet<&str> = self.commands.iter().filter_map(|c| c.sets_flag.as_deref()).collect();
         for p in &self.projects {
             for reward in &p.rewards {
-                if let ProjectReward::SetFlag { flag } = reward {
+                if let ProjectReward::SetFlag { flag, .. } = reward {
                     set.insert(flag);
                 }
             }

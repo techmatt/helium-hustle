@@ -8,7 +8,7 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { num } from '../format';
-import { togglePause, type Store } from '../store';
+import { store, togglePause, type Store } from '../store';
 import { Bar, RateCell } from './common';
 import { Chip } from './icons';
 
@@ -83,10 +83,13 @@ export function TakeoverButtons({
 }
 
 /** The view itself, over the middle and right columns. Esc closes it. */
-export function TakeoverView({ s, t, close }: { s: Store; t: Takeover; close: () => void }) {
+export function TakeoverView({ s, t, close, banners }: { s: Store; t: Takeover; close: () => void; banners?: ComponentChildren }) {
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || e.ctrlKey || e.altKey || e.metaKey) return;
+      // Nothing behind the run summary acts: closing would try to save a draft to a run
+      // that has ended.
+      if (store.summary) return;
       e.preventDefault();
       close();
     };
@@ -102,6 +105,8 @@ export function TakeoverView({ s, t, close }: { s: Store; t: Takeover; close: ()
           ✕ Close
         </button>
       </div>
+      {/* The notice and story banner, which the hidden middle column would hold. */}
+      <div class="takeover-banners">{banners}</div>
       <div class={`takeover-body${t.bleed ? ' takeover-bleed' : ''}`}>{t.render(s)}</div>
     </section>
   );

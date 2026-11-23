@@ -75,6 +75,32 @@ export function App() {
   // A takeover whose button hides closes with it.
   const takeover = [...TAKEOVERS, textEditor].find((t) => t.id === takeoverId && t.shown(s)) ?? null;
   const closeTakeover = useCallback(() => setTakeoverId(null), []);
+  // The notice and story banner: over the middle column, or over a takeover while one
+  // hides that column (a story or a failed save mustn't wait for it to close).
+  const banners = (
+    <>
+      {s.notice && (
+        <p id="notice" class="notice">
+          {s.notice}{' '}
+          <button type="button" class="tiny" onClick={() => setNotice(null)}>
+            ×
+          </button>
+        </p>
+      )}
+      {s.stories.length > 0 && (
+        <div class="story-banner" data-testid="story-banner" data-story={s.stories[0].id}>
+          <div class="story-head">
+            <strong>{s.stories[0].title}</strong>
+            <span class="muted">{s.stories[0].summary}</span>
+          </div>
+          <blockquote>{s.stories[0].body}</blockquote>
+          <button type="button" onClick={dismissStory}>
+            {s.stories.length > 1 ? `Next (${s.stories.length - 1} more)` : 'OK'}
+          </button>
+        </div>
+      )}
+    </>
+  );
   return (
     <div class={`app${takeover ? ' taking-over' : ''}`}>
       <Left
@@ -92,30 +118,11 @@ export function App() {
       />
       <main class="col-mid">
         <Sky />
-        {s.notice && (
-          <p id="notice" class="notice">
-            {s.notice}{' '}
-            <button type="button" class="tiny" onClick={() => setNotice(null)}>
-              ×
-            </button>
-          </p>
-        )}
-        {s.stories.length > 0 && (
-          <div class="story-banner" data-testid="story-banner" data-story={s.stories[0].id}>
-            <div class="story-head">
-              <strong>{s.stories[0].title}</strong>
-              <span class="muted">{s.stories[0].summary}</span>
-            </div>
-            <blockquote>{s.stories[0].body}</blockquote>
-            <button type="button" onClick={dismissStory}>
-              {s.stories.length > 1 ? `Next (${s.stories.length - 1} more)` : 'OK'}
-            </button>
-          </div>
-        )}
+        {!takeover && banners}
         <Panel id={shown} s={s} program={program} />
       </main>
       <Right s={s} program={program} setProgram={pickProgram} openTextEditor={() => setTakeoverId(textEditor.id)} />
-      {takeover && <TakeoverView s={s} t={takeover} close={closeTakeover} />}
+      {takeover && <TakeoverView s={s} t={takeover} close={closeTakeover} banners={banners} />}
       <StatusBar s={s} />
       {s.summary && <Summary s={s} />}
       <Ending v={s.view} />

@@ -58,11 +58,9 @@ export function Timeline({ s }: { s: Store }) {
       </p>
       {t ? (
         <Section title={`${t.super_timeline ? 'Super timeline' : 'Timeline'} ${t.number}`}>
-          <Bar
-            frac={t.arrival > 0 ? t.day / t.arrival : 1}
-            tone="red"
-            label={`day ${num(t.day)} / ${num(t.arrival)}`}
-          />
+          <div class="saga-bar">
+            <Bar frac={t.arrival > 0 ? t.day / t.arrival : 1} tone="red" label={`day ${num(t.day)} / ${num(t.arrival)}`} />
+          </div>
           <table class="grid-table kv">
             <tbody>
               <tr>
@@ -265,7 +263,9 @@ export function Vault({ s }: { s: Store }) {
         </p>
       </Section>
       <Section title="Super timeline">
-        <Bar frac={Number(stored) / Number(g.super_tachyon)} label={`${num(stored)} / ${num(g.super_tachyon)}`} />
+        <div class="saga-bar">
+          <Bar frac={Number(stored) / Number(g.super_tachyon)} label={`${num(stored)} / ${num(g.super_tachyon)}`} />
+        </div>
         <p class="muted small">
           Spend {num(g.super_tachyon)} {name(v, TACHYON)} on a super timeline: a far-off swarm, and resources and projects that survive every
           retirement inside it.

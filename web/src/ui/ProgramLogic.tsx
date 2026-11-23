@@ -140,6 +140,8 @@ function ClauseEdit({ v, c, now, set }: { v: View; c: Clause; now?: { value: str
     <span class="clause">
       <select
         aria-label="Reading"
+        // A long reading ("Days since a purchase") is cut at narrow widths.
+        title={options[at]?.label}
         value={String(at)}
         onChange={(ev) => set({ ...c, reading: options[Number(ev.currentTarget.value)].reading })}
       >
@@ -402,11 +404,17 @@ function ActEdit({ v, e, set }: { v: View; e: Extract<Entry, { op: 'act' }>; set
   return (
     <span class="line-logic" data-verb={e.verb}>
       <select aria-label="Verb" value={e.verb} onChange={(ev) => set({ ...newAct(v, ev.currentTarget.value as Verb), indented: e.indented })}>
-        {v.verbs.map((x) => (
-          <option key={x.verb} value={x.verb}>
-            {x.label}
-          </option>
-        ))}
+        {/* A verb with nothing to name yet (Load with an empty library, Fund with no
+            open project) would make a line the engine refuses: offered, not pickable. */}
+        {v.verbs.map((x) => {
+          const none = !!x.targets && x.targets.length === 0 && !x.target_all && x.verb !== e.verb;
+          return (
+            <option key={x.verb} value={x.verb} disabled={none}>
+              {x.label}
+              {none ? ' (nothing to name yet)' : ''}
+            </option>
+          );
+        })}
       </select>
       {options && (
         <select aria-label="Target" value={e.target ?? ''} onChange={(ev) => set({ ...e, target: ev.currentTarget.value === '' ? null : ev.currentTarget.value })}>
