@@ -132,6 +132,18 @@ pub fn scarcest(g: &GameState, needs: &Amounts, ran: Fx) -> Option<Short> {
     best.map(|(_, s)| s)
 }
 
+/// The Resources panel shows `res`: from the start, once a building making it is
+/// or was owned, a command making it was ever used, or while some is held.
+pub fn shown(g: &GameState, res: &crate::content::Resource) -> bool {
+    let c = content();
+    res.always_visible
+        || c.buildings.iter().any(|b| {
+            b.produces.contains_key(&res.id) && (g.owned(&b.id) > 0 || g.career.owned_buildings.contains(&b.id))
+        })
+        || c.commands.iter().any(|cmd| cmd.produces.contains_key(&res.id) && g.career.used_commands.contains(&cmd.id))
+        || g.amount(&res.id) > Fx::ZERO
+}
+
 /// `resource`'s storage cap now: its base plus every working (active, upkeep-paid)
 /// building's `store` effect, times `storage_cap_mult` for everything but energy.
 /// Boredom's is the boredom module's. `None` is uncapped.

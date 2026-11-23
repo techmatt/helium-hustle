@@ -18,11 +18,13 @@ served page: `HH_URL`, required (it exits naming `vite preview` when unset),
    launched (1.1 and 1.2, around day 400 at 50x); no Retirement tile (it opens at 1.5
    Burnout), so on at 200x to the forced retirement at the boredom cap (around day 1,650,
    ~10 s); the run summary holding the clock, run 2 (known tiles and resources still shown,
-   not cheated).
+   not cheated). Its double-click-on-Continue check failed once (058: a buy hint under
+   it, nothing bought) and passed on a rerun: a timing flake, not yet fixed.
 2. **Every panel**: scenario `late_unlocks` opens Research, Projects and Ideologies (1.6 Lab
    is past a second run); a locked project's condition, a funded one's days to done; every
    nav tile shown opens, and every Act 1 tile is shown (all of `content/nav.json` but panels
-   only a DRAFT quest opens); the cheated mark, a jump ahead and the replay check.
+   only a DRAFT quest opens); the cheated mark, a jump ahead, the cheat building (1 credit,
+   no card with Cheats off) and Complete all research, and the replay check.
 3. A program's frame at 10x and 50x, each speed's days per second, pause, click-to-buy, a
    reload keeping the save, another revision's save discarded, the scenarios; in `late_unlocks`, an `if` /
    `build` / `wait until` program written through the editor, which then builds; saved,

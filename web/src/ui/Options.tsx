@@ -145,7 +145,7 @@ function Debug({ s }: { s: Store }) {
           checked={s.cheatsEnabled}
           onChange={(e) => setCheatsEnabled((e.target as HTMLInputElement).checked)}
         />{' '}
-        Show cheats (a cheat marks the game as cheated for good)
+        Cheats (a cheat marks the game as cheated for good)
       </label>
       {s.cheatsEnabled && (
         <div class="cheats" data-testid="cheats">
@@ -176,6 +176,12 @@ function Debug({ s }: { s: Store }) {
               Set
             </button>
           </p>
+          <p>
+            <button type="button" id="cheat-complete-research" onClick={() => act({ type: 'cheat', cheat: { kind: 'complete_research' } })}>
+              Complete all research
+            </button>{' '}
+            <span class="muted small">The cheat building is on the Buildings panel while Cheats is on.</span>
+          </p>
           <Accelerators s={s} />
           <p>
             Jump ahead{' '}
@@ -198,43 +204,20 @@ function Debug({ s }: { s: Store }) {
   );
 }
 
-/** The accelerators (docs/simulator.md, *Accelerators*): the boost, and the autopilot,
- * a sim player playing the game on honestly toward the next milestone, main-quest step
- * or the end. Either marks the career accelerated, so its play log is no human pace. */
+/** The autopilot (docs/simulator.md, *Accelerators*): the default sim player, with its
+ * default boost, playing the game on honestly toward the next milestone, main-quest step
+ * or the end. It marks the career accelerated, so its play log is no human pace. */
+/** The autopilot's budget in days. */
+const PILOT_BUDGET = 500_000;
+
 function Accelerators({ s }: { s: Store }) {
   const v = s.view;
   const info = engine.autopilotInfo();
-  const [boost, setBoost] = useState(info.boost);
-  const [agent, setAgent] = useState(info.agent);
-  const [budget, setBudget] = useState('500000');
-  const go = (target: AutopilotTarget) => {
-    const n = Math.floor(Number(budget));
-    if (!(n > 0 && n <= 10_000_000)) return setNotice('Autopilot: give a budget of 1 to 10,000,000 days.');
-    runAutopilot(target, agent, boost, n);
-  };
-  const setBoostOnly = () => {
-    const [production, research, bored] = boost.split(',').map((x) => x.trim());
-    act({ type: 'cheat', cheat: { kind: 'boost', production, research, boredom: bored ?? '' } });
-  };
-  const b = v.boost;
+  const go = (target: AutopilotTarget) => runAutopilot(target, info.agent, info.boost, PILOT_BUDGET);
   return (
     <div class="accelerators" data-testid="accelerators">
       <p>
-        Boost (production, research, boredom){' '}
-        <input id="accel-boost" size={12} value={boost} onInput={(e) => setBoost((e.target as HTMLInputElement).value)} />{' '}
-        <button type="button" id="accel-set-boost" onClick={setBoostOnly}>
-          Set boost
-        </button>{' '}
-        <span class="muted small" id="accel-boost-now">
-          {b ? `now ×${b.production}, ×${b.research}, boredom ×${b.boredom}` : 'off'}
-          {v.accelerated ? ' · ACCELERATED' : ''}
-        </span>
-      </p>
-      <p>
-        Autopilot: player <input id="accel-agent" size={34} value={agent} onInput={(e) => setAgent((e.target as HTMLInputElement).value)} />{' '}
-        budget <input id="accel-budget" size={8} value={budget} onInput={(e) => setBudget((e.target as HTMLInputElement).value)} /> days
-      </p>
-      <p>
+        Autopilot{' '}
         <button type="button" id="accel-milestone" disabled={pilotStatus.running} onClick={() => go('milestone')}>
           Next milestone
         </button>{' '}
@@ -249,7 +232,8 @@ function Accelerators({ s }: { s: Store }) {
         </button>
       </p>
       <p class="muted small" id="accel-status" data-running={pilotStatus.running ? '1' : '0'}>
-        {pilotStatus.text ?? 'The autopilot plays with the boost above (empty: none); its days take no play time in the log.'}
+        {pilotStatus.text ?? `The autopilot plays with boost ${info.boost}; its days take no play time in the log.`}
+        {v.accelerated ? ' · ACCELERATED' : ''}
       </p>
     </div>
   );

@@ -77,6 +77,7 @@ fn source_label(g: &GameState, source: &str) -> String {
             "growth" => "Daily growth",
             "dream" => "Dream",
             "cap" => "Lost to cap",
+            crate::cheat::CHEAT_SOURCE => "Cheat Fountain",
             other => other,
         }
         .to_string(),

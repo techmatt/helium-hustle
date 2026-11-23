@@ -55,7 +55,70 @@ export function Buildings({ s }: { s: Store }) {
           </Section>
         );
       })}
+      {s.cheatsEnabled && <CheatCard v={v} />}
     </div>
+  );
+}
+
+/** The cheat building (`Cheat::CheatBuilding`, crates/hh-core/src/cheat.rs): only while
+ * Options → Debug → Cheats is on. 1 credit; each one adds 10 a day to every shown income
+ * and takes 10 a day off boredom for the rest of the run. Buying one marks the game cheated. */
+function CheatCard({ v }: { v: View }) {
+  const c = v.cheat_building;
+  const ok = c.affordable;
+  const buy = (times: number) => {
+    for (let i = 0; i < times; i++) {
+      if (!store.view.cheat_building.affordable || !act({ type: 'cheat', cheat: { kind: 'cheat_building' } })) return;
+    }
+  };
+  return (
+    <Section title="CHEATS" dark>
+      <div class="cards">
+        <div
+          class={`card building cheat-card ${ok ? 'can-buy' : 'cannot-buy'}`}
+          data-id="cheat_building"
+          data-owned={c.owned}
+          data-short={ok ? '' : 'credits'}
+          data-testid="buy-cheat_building"
+          aria-disabled={!ok}
+          title={ok ? 'CHEAT: click to build one (Shift-click: up to 10)' : undefined}
+          {...cardButton(buy, 10)}
+        >
+          <div class="card-head">
+            <h3>
+              <span class="cheat-icon" aria-hidden="true">
+                🃏
+              </span>{' '}
+              Cheat Fountain
+            </h3>
+            <span class="cheated">CHEAT</span>
+            <span class="owned" title="owned this run">
+              ({c.owned})
+            </span>
+          </div>
+          <div class="card-body">
+            <div class="card-text">
+              <p class="desc">A debug cheat, not part of the game. Marks the game as cheated for good.</p>
+              <div class="effects">
+                <p>+{num(c.rate)} / day to every income</p>
+                <p>−{num(c.rate)} / day boredom</p>
+              </div>
+            </div>
+          </div>
+          <hr />
+          <table class="costs">
+            <tbody>
+              <tr class={ok ? '' : 'short'}>
+                <td>
+                  <ResChip v={v} id="credits" /> {name(v, 'credits')}
+                </td>
+                <td class="num">{num(c.cost)}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </Section>
   );
 }
 

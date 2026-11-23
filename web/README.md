@@ -126,10 +126,13 @@ for a later live base view: replace what it draws, keep its box.
   prerequisite, and hovering a locked node outlines its prerequisites; Theorems in a case on
   the left; left-click adds a point or switches a socket's part, right-click takes
   one back). **Cheats** (off by
-  default, remembered in `hh.cheats`): grant a resource, set boredom, jump ahead N days;
-  the **accelerators**: 2k and 10k speeds, the boost and the autopilot
+  default, remembered in `hh.cheats`): grant a resource, set boredom, complete all
+  research, jump ahead N days, the **cheat building** (a hazard-striped *Cheat Fountain*
+  card at the foot of the Buildings panel, only while Cheats are on: 1 credit, +10 a day
+  to every income, −10 boredom); the **accelerators**: 2k and 10k speeds and the
+  autopilot with its default player and boost
   ([simulator.md](../docs/simulator.md#accelerators)). Engine actions, so replay stays
-  exact; any cheat marks the game CHEATED, a boost or autopilot ACCELERATED too.
+  exact; any cheat marks the game CHEATED, the autopilot ACCELERATED too.
 
 ## Play logs
 

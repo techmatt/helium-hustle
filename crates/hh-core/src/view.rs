@@ -256,6 +256,17 @@ pub struct NavView {
     pub visible: bool,
 }
 
+/// The cheat building: owned this run, its price in credits, what each adds a
+/// day to every shown income (and takes off boredom), and whether one is
+/// affordable now.
+#[derive(Debug, Clone, Serialize)]
+pub struct CheatBuildingView {
+    pub owned: u32,
+    pub cost: Fx,
+    pub rate: Fx,
+    pub affordable: bool,
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct BoredomView {
     pub amount: Fx,
@@ -328,6 +339,9 @@ pub struct View {
     pub accelerated: bool,
     /// The debug boost now, if set.
     pub boost: Option<crate::action::Boost>,
+    /// The debug cheat building (`Cheat::CheatBuilding`); the client shows it
+    /// only while its Cheats are on.
+    pub cheat_building: CheatBuildingView,
     /// The later acts (draft): calendar, swarm, Earth techs, vault, ending.
     pub saga: SagaView,
     pub resources: Vec<ResourceView>,
@@ -491,14 +505,6 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         .resources
         .iter()
         .map(|res| {
-            let made_by_owned = c.buildings.iter().any(|b| {
-                b.produces.contains_key(&res.id)
-                    && (g.owned(&b.id) > 0 || g.career.owned_buildings.contains(&b.id))
-            });
-            let made_by_used = c
-                .commands
-                .iter()
-                .any(|cmd| cmd.produces.contains_key(&res.id) && g.career.used_commands.contains(&cmd.id));
             ResourceView {
                 id: &res.id,
                 name: &res.name,
@@ -508,7 +514,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 change_per_day: if same_run { next.amount(&res.id) - g.amount(&res.id) } else { Fx::ZERO },
                 overflow: if same_run { next.run.today.overflow.get(&res.id).copied().unwrap_or(Fx::ZERO) } else { Fx::ZERO },
                 unmet: if same_run { next.run.today.unmet.get(&res.id).copied().unwrap_or(Fx::ZERO) } else { Fx::ZERO },
-                visible: res.always_visible || made_by_owned || made_by_used || g.amount(&res.id) > Fx::ZERO,
+                visible: economy::shown(g, res),
                 grantable: crate::cheat::grantable(&res.id),
             }
         })
@@ -647,6 +653,12 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         cheated: g.cheated,
         accelerated: g.accelerated,
         boost: g.boost,
+        cheat_building: CheatBuildingView {
+            owned: g.run.cheat_buildings,
+            cost: Fx::from_int(crate::cheat::CHEAT_BUILDING_COST),
+            rate: Fx::from_int(crate::cheat::CHEAT_BUILDING_RATE),
+            affordable: g.amount(economy::CREDITS) >= Fx::from_int(crate::cheat::CHEAT_BUILDING_COST),
+        },
         saga: saga::build(r, g),
         resources,
         buildings,

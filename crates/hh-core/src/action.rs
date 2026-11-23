@@ -74,6 +74,12 @@ pub enum Cheat {
     /// playing on toward `target`); its actions follow as usual, so a replay
     /// plays them like any others. Marks the game accelerated.
     Autopilot { target: String },
+    /// Buys one cheat building for `cheat::CHEAT_BUILDING_COST` credits: each
+    /// adds `cheat::CHEAT_BUILDING_RATE` a day to every shown income and takes
+    /// as much off boredom, for the rest of the run.
+    CheatBuilding,
+    /// Completes every research item not done this run, free.
+    CompleteResearch,
 }
 
 /// The career's debug boost (`Cheat::Boost`): factors, 1 = off.

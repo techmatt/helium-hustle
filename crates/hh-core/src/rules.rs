@@ -89,6 +89,8 @@ impl Rules {
         // The stock as the day begins: the `rate` reading is the day's change.
         let start = g.run.resources.clone();
         boredom::grow(self, g);
+        // Debug only: a no-op unless the cheat building was bought.
+        crate::cheat::tick(g);
         programs::expire_overclocks(g);
         demand::update(self, g);
         // Programs are paid before buildings that take upkeep, from the stock

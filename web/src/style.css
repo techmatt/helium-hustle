@@ -935,6 +935,14 @@ tr.is-new td:first-child {
   align-items: center;
   gap: 8px;
 }
+/* The debug cheat building: hazard stripes, so it never passes for game content. */
+.card.cheat-card {
+  border: 2px dashed var(--neg);
+  background-image: repeating-linear-gradient(135deg, transparent 0 14px, color-mix(in srgb, var(--neg) 12%, transparent) 14px 28px);
+}
+.cheat-card .cheat-icon {
+  font-size: 18px;
+}
 .cheats {
   border: 1px dashed var(--neg);
   padding: 4px 10px;

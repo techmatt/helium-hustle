@@ -673,6 +673,14 @@ pub struct Run {
     /// `quiet_days` condition, draft). Absent until the first.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_order: Option<u64>,
+    /// Cheat buildings bought this run (`Cheat::CheatBuilding`, `cheat.rs`);
+    /// absent from the JSON while none.
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub cheat_buildings: u32,
+}
+
+fn is_zero(n: &u32) -> bool {
+    *n == 0
 }
 
 /// One scope's projects: progress toward the next completion, and how many
@@ -841,10 +849,16 @@ impl GameState {
     /// Adds production: the resource, today's flow (by source) and the run's total.
     /// Every resource made passes here, so the debug boost applies here alone.
     pub(crate) fn produce(&mut self, source: &str, resource: &str, v: Fx) {
+        let v = crate::cheat::boosted(self, resource, v);
+        self.produce_unboosted(source, resource, v);
+    }
+
+    /// [`produce`](Self::produce) without the debug boost (the cheat building's
+    /// flat amount).
+    pub(crate) fn produce_unboosted(&mut self, source: &str, resource: &str, v: Fx) {
         if v <= Fx::ZERO {
             return;
         }
-        let v = crate::cheat::boosted(self, resource, v);
         self.track(source, resource, v, Fx::ZERO);
         self.add(resource, v);
         let t = self.run.today.produced.entry(resource.to_string()).or_insert(Fx::ZERO);

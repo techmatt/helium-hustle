@@ -76,8 +76,8 @@ bought nothing), with each side's next five purchases. `--json`: one line, every
 
 ### Accelerators
 
-Debug only. The debug menu's cheats add 2k and 10k speeds, the **boost**
-([rules](rules/README.md#cheats)) and the **autopilot** (`autopilot.rs`): a sim player
+Debug only. The debug menu's cheats add 2k and 10k speeds and the **autopilot**
+(`autopilot.rs`, with its default boost, [rules](rules/README.md#cheats)): a sim player
 plays on honestly toward the **next milestone**, the **next main-quest step** (an `all_of`
 sub-objective counts) or **everything**. Steps: `configs/sim/milestones.json` and the
 `story` events not `never`. Its drivers (`DEFAULT_AGENT`) switch after a long stall. A boost or autopilot marks the career

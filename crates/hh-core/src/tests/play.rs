@@ -690,6 +690,73 @@ fn the_boost_scales_production_marks_the_game_accelerated_and_replays() {
 }
 
 #[test]
+fn the_cheat_building_adds_ten_to_every_shown_income_and_takes_ten_off_boredom() {
+    let r = rules();
+    let cheat = |c: crate::Cheat| Action::Cheat { cheat: c };
+    let mut honest = Session::new(&baseline(), 11, Some(scenario("everything").unwrap())).unwrap();
+    assert!(!honest.state.to_json().contains("cheat_buildings"), "absent while none");
+    let mut s = Session::new(&baseline(), 11, Some(scenario("everything").unwrap())).unwrap();
+    for x in [&mut honest, &mut s] {
+        x.apply(&cheat(crate::Cheat::SetBoredom { amount: f("100") })).unwrap();
+    }
+    // Spend all but half a credit: one short of the price, it refuses.
+    let mut broke = s.state.clone();
+    broke.run.resources.insert("credits".into(), f("0.5"));
+    assert!(crate::cheat::apply(&r, &mut broke, &crate::Cheat::CheatBuilding).is_err());
+    s.apply(&cheat(crate::Cheat::CheatBuilding)).unwrap();
+    assert_eq!(s.state.amount("credits"), honest.state.amount("credits") - f("1"));
+    assert_eq!(r.view(&s.state).cheat_building.owned, 1);
+    let (a, b) = (r.view(&honest.state), r.view(&s.state));
+    for (h, c) in a.resources.iter().zip(&b.resources) {
+        let want = match c.id {
+            "boredom" => f("-10"),
+            "land" | "processors" => Fx::ZERO,
+            _ if c.visible => f("10"),
+            _ => Fx::ZERO,
+        };
+        assert_eq!(c.per_day - h.per_day, want, "{}", c.id);
+    }
+    // A replay plays it the same; a new run has none.
+    s.advance(5);
+    let (g, warnings) = Record::from_json(&s.record().to_json()).unwrap().replay().unwrap();
+    assert!(warnings.is_empty(), "{warnings:?}");
+    assert_eq!(g.fingerprint(), s.state.fingerprint());
+    assert!(g.cheated);
+    s.apply(&Action::Retire).unwrap();
+    s.advance(1);
+    assert_eq!((s.state.career.run_number, s.state.run.cheat_buildings), (2, 0));
+}
+
+#[test]
+fn complete_all_research_finishes_every_item_and_marks_the_game() {
+    let mut s = Session::new(&baseline(), 12, None).unwrap();
+    s.apply(&Action::Cheat { cheat: crate::Cheat::CompleteResearch }).unwrap();
+    assert!(s.state.cheated);
+    let c = crate::content::content();
+    assert!(c.research.iter().all(|i| s.state.run.research.contains(&i.id)));
+    assert_eq!(s.state.run.stats.research_completed as usize, c.research.len());
+    assert_eq!(s.state.amount("science"), Fx::ZERO, "free");
+}
+
+#[test]
+fn the_everything_scenario_opens_every_act_1_view() {
+    let r = rules();
+    let mut g = r.start(13, Some(scenario("everything").unwrap()));
+    r.advance(&mut g, 1);
+    let v = r.view(&g);
+    let shown: Vec<&str> = v.nav.iter().filter(|t| t.visible).map(|t| t.id).collect();
+    for id in ["buildings", "commands", "launch_pads", "research", "projects", "ideologies", "adversaries", "stats", "story", "retirement", "options"] {
+        assert!(shown.contains(&id), "{id} hidden: {shown:?}");
+    }
+    assert!(!shown.contains(&"timeline"), "Act 2 stays shut");
+    assert!(g.career.flags.contains("logic_if") && g.career.flags.contains("logic_wait_until"));
+    assert_eq!(crate::modules::events::active_quest(&g).map(|e| e.id.as_str()), Some("qdeep_space_telescope"));
+    assert!(g.amount("processors") >= f("6"));
+    assert!(!g.cheated, "a scenario is no cheat");
+    r.advance(&mut g, 30);
+}
+
+#[test]
 fn the_view_shows_nav_tiles_from_content_and_the_next_run() {
     let r = rules();
     let mut g = r.new_game(1);

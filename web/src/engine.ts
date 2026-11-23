@@ -464,6 +464,8 @@ export interface View {
   accelerated: boolean;
   /** The debug boost's factors, if set. */
   boost: { production: Fx; research: Fx; boredom: Fx } | null;
+  /** The debug cheat building, shown only while Cheats are on. */
+  cheat_building: { owned: number; cost: Fx; rate: Fx; affordable: boolean };
   /** The later acts (draft). */
   saga: SagaView;
   resources: ResourceView[];

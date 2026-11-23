@@ -69,7 +69,12 @@ pub const MAX_SPEED: u32 = 200;
 
 /// An accelerator's action (`Cheat::Boost`, `Cheat::Autopilot`).
 pub fn is_accelerator(a: &Action) -> bool {
-    matches!(a, Action::Cheat { cheat: Cheat::Boost { .. } | Cheat::Autopilot { .. } })
+    matches!(
+        a,
+        Action::Cheat {
+            cheat: Cheat::Boost { .. } | Cheat::Autopilot { .. } | Cheat::CheatBuilding | Cheat::CompleteResearch
+        }
+    )
 }
 
 fn field<'a>(v: &'a Value, k: &str, line: usize) -> Result<&'a Value, String> {

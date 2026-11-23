@@ -58,6 +58,11 @@
         "file": "crates/hh-core/src/cheat.rs",
         "literal": "1000",
         "why": "the debug boost's largest factor (an overflow guard on a cheat, not a rule of play)"
+      },
+      {
+        "file": "crates/hh-core/src/cheat.rs",
+        "literal": "10",
+        "why": "the debug cheat building's daily amount (Matt's 058 spec; a cheat, not a rule of play)"
       }
     ]
   }

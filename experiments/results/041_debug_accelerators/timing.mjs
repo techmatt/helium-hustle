@@ -39,7 +39,8 @@ for (const seed of seeds) {
   await click('#check-replay');
   await waitFor(`/Replay/.test(document.querySelector('.notice')?.textContent ?? document.body.textContent)`, 'the replay check', 120000);
   const replay = await evaluate(`(document.body.textContent.match(/Replay (ok|MISMATCH|failed)[^·]{0,40}/) ?? [''])[0]`);
-  const marked = await evaluate(`document.getElementById('accel-boost-now').textContent`);
+  // 058 removed the boost row (and its `accel-boost-now` readout): the mark is on the status line.
+  const marked = await evaluate(`/ACCELERATED/.test(document.getElementById('accel-status').textContent) ? 'ACCELERATED' : ''`);
   const row = { seed, secs, status, replay, marked };
   console.log(JSON.stringify(row));
   rows.push(row);

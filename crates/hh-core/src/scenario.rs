@@ -22,6 +22,8 @@ use crate::fx::Fx;
 use crate::state::{Entry, GameState, Holding};
 
 const FILES: &[(&str, &str)] = &[
+    // First: the debug menu's default pick.
+    ("everything.json", include_str!("../../../scenarios/everything.json")),
     ("rich.json", include_str!("../../../scenarios/rich.json")),
     ("at_cap.json", include_str!("../../../scenarios/at_cap.json")),
     ("late_unlocks.json", include_str!("../../../scenarios/late_unlocks.json")),
@@ -44,6 +46,11 @@ pub struct Start {
     /// game's start, README *Rules changes*).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub flags: Vec<String>,
+    /// Events taken as already fired, in order: each one's unlocks apply,
+    /// it counts as seen, and a quest or side quest among them as completed
+    /// (the story beats done).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub events: Vec<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -78,6 +85,11 @@ impl Scenario {
         for p in &self.start.panels {
             if !c.nav.iter().any(|t| matches!(&t.visible, NavCondition::Panel { panel } if panel == p)) {
                 errors.push(format!("start.panels: {p:?} is no nav tile's panel"));
+            }
+        }
+        for e in &self.start.events {
+            if !c.events.iter().any(|x| &x.id == e) {
+                errors.push(format!("start.events: {e:?} is no event"));
             }
         }
         for (i, entries) in self.start.programs.iter().enumerate() {
@@ -123,6 +135,15 @@ impl Scenario {
         }
         g.run.enabled_panels.extend(self.start.panels.iter().cloned());
         g.career.flags.extend(self.start.flags.iter().cloned());
+        for id in &self.start.events {
+            let e = content().events.iter().find(|x| &x.id == id).expect("checked");
+            if e.is_quest() || e.is_side() {
+                g.career.completed_quests.insert(e.id.clone());
+            }
+            g.run.events.insert(e.id.clone());
+            g.career.seen_events.insert(e.id.clone());
+            crate::modules::events::apply_unlocks(g, e);
+        }
         for (p, entries) in g.run.programs.iter_mut().zip(&self.start.programs) {
             p.entries = entries.clone();
         }

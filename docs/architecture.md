@@ -109,13 +109,17 @@ The modules are Arc 1's ([rules/README.md](rules/README.md)).
 
 Named starting states (`scenarios/*.json`, listed in `scenario.rs` `FILES`), laid over a
 new game: `{"name", "description", "start": {"tick", "resources", "buildings", "panels",
-"programs"}}`, every key required; a listed resource or building (owned and active) replaces
+"programs"}}`, every key required, and optional `flags` (career flags set) and `events`
+(taken as fired: unlocks applied, seen, a quest among them completed); a listed resource or
+building (owned and active) replaces
 the new game's value, panels add to the run's enabled panels, programs replace queues from the
 first (command lines only), the tick sets the run's day too and shifts the run's burst and rival schedules by
 as much (they start from that day, not day 0), and processors gained go to the first program. Unknown ids are
 errors naming them. `hh-sim run --scenario NAME` (or `--scenario-file F`) and the web
 debug menu use them. A record carries its scenario in full, so a later edit to the file
-can't change an old record.
+can't change an old record. `everything` (first, the menu's default) is Matt's test-all
+start: Act 1's beats 1.1-1.8, 1.a and 1.b done, every Act 1 view open, a rich working base;
+the rest serve tests and e2e (`golden_start` the golden).
 
 ## Records and saves
 

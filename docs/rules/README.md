@@ -44,7 +44,8 @@ One tick is one in-game day. Each tick, in this order (`Rules::tick`, `rules.rs`
 
 1. Yesterday's flows fold into the breakdown's rolling average and the day's record
    clears (economy; display only).
-2. **Boredom** grows by the phase rate (boredom).
+2. **Boredom** grows by the phase rate (boredom); then the debug **cheat building**, if
+   bought, makes and relieves (*Cheats*).
 3. **Overclocks** past their last day expire (programs).
 4. **Attention** decays (attention), then **demand** decays its forces and is set for the
    day (demand).
@@ -152,8 +153,14 @@ disclosure (`visible` flags, nav tiles); the "new" markers are the UI's own, not
 The web debug menu's cheats are actions (`Action::Cheat`, `cheat.rs`), so a cheated game
 replays exactly: **grant** adds to a resource up to its cap (not processors or boredom),
 **set boredom** sets it up to its cap (at the cap the run retires on the next tick), and
-**jump ahead** marks a jump whose days then pass as usual. Any cheat sets the state's
-`cheated` mark for good (absent from an honest game's JSON); no rule reads it.
+**jump ahead** marks a jump whose days then pass as usual, **complete research** finishes
+every research item not done this run (free; known to the career as if bought, so later
+runs see it), and the **cheat building** (1 credit, `Run`'s `cheat_buildings`, absent while
+0, gone at retirement) adds 10 a day per copy, unboosted, to every resource the Resources
+panel shows (but land, processors and boredom) and takes as much off boredom, down to 0
+(`cheat::tick`, after boredom grows). Its numbers are debug constants in
+`cheat.rs`, not config; the UI offers it only while Cheats are on. Any cheat sets the
+state's `cheated` mark for good (absent from an honest game's JSON); no rule reads it.
 
 Two cheats are **accelerators**, debug-only, for zooming a career through the arc
 ([simulator.md](../simulator.md#accelerators)). **Boost** sets the career's factors (1 is
@@ -161,5 +168,6 @@ off; state `boost`, absent until set): `production` multiplies every resource ma
 science (buildings, commands, launch payouts: one place, `GameState::produce`), `research`
 science made, `boredom` boredom's growth (the boredom multiplier). **Autopilot** marks
 where a sim player took over toward a target; its actions follow as any others. Either
-also sets `accelerated` (absent while false), which `hh-sim vs-human` refuses. No honest
-game, the golden, a sim agent or a report sets either, so neither moves `RULES_REVISION`.
+also sets `accelerated` (absent while false), which `hh-sim vs-human` refuses; so do the
+cheat building and complete research. No honest
+game, the golden, a sim agent or a report uses a cheat, so none moves `RULES_REVISION`.

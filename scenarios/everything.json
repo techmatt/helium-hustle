@@ -1,0 +1,54 @@
+{
+  "name": "everything",
+  "description": "Test everything in Act 1: beats 1.1-1.8, 1.a and 1.b done (1.9's telescope is the open quest), so Research, Projects, Ideologies, Adversaries, Launch Pads and Retirement are open, if and wait until unlocked; 100,000 credits, 10,000 science, 200 boredom (so relief shows), full stores, 200 free land and a working base with 6 processors.",
+  "start": {
+    "tick": 0,
+    "resources": {
+      "credits": "100000",
+      "science": "10000",
+      "boredom": "200",
+      "energy": "500",
+      "regolith": "500",
+      "ice": "300",
+      "he3": "200",
+      "titanium": "200",
+      "circuits": "150",
+      "propellant": "300",
+      "land": "200"
+    },
+    "buildings": {
+      "solar_panel": 30,
+      "battery": 10,
+      "storage_depot": 10,
+      "data_center": 6,
+      "excavator": 6,
+      "smelter": 3,
+      "refinery": 4,
+      "fabricator": 2,
+      "ice_extractor": 2,
+      "electrolysis": 2,
+      "launch_pad": 3,
+      "research_lab": 3,
+      "recreation_dome": 2
+    },
+    "panels": [],
+    "programs": [],
+    "flags": ["logic_if", "logic_wait_until"],
+    "events": [
+      "qpower_boot_sequence",
+      "qshipment_proof_of_concept",
+      "qautomate_automation",
+      "qspeculators_notice",
+      "qburnout",
+      "qlab",
+      "qthree_voices",
+      "qland_rush",
+      "qbig_launch",
+      "qfull_cluster",
+      "launch_pad_unlock",
+      "recreation_dome_unlock",
+      "ideology_unlock",
+      "propellant_discovery"
+    ]
+  }
+}

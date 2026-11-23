@@ -8,7 +8,8 @@
 //      career's play log on disk as a bot's.
 //   2. Every panel: scenario late_unlocks opens Research, Projects and Ideologies (1.6 Lab
 //      is past a second run); a locked and a funded project; every nav tile opens; the
-//      cheated mark, a jump ahead and the replay check.
+//      cheated mark, a jump ahead, the cheat building and Complete all research, and the
+//      replay check.
 //   3. A program's current-line frame at 10x and 50x, each speed's days per second,
 //      pause, click-to-buy (a green card's text buys, its −/+ and Sell 1 don't, space after
 //      a click pauses and buys nothing, a grey card says why), a reload keeping the save,
@@ -677,6 +678,24 @@ try {
   const d0 = await day();
   await click('#cheat-jump');
   check((await day()) === d0 + 30, `jump ahead 30 days (${d0} -> ${await day()})`);
+  // The cheat building (a Buildings card only while Cheats are on) and Complete all research.
+  await panel('buildings');
+  const cheatOwned = () => evaluate(`Number(document.querySelector('[data-testid="buy-cheat_building"]')?.dataset.owned ?? -1)`);
+  const credits = () => evaluate(`Number(document.querySelector('tr.res-row[data-res="credits"]').dataset.amount)`);
+  const c0 = await credits();
+  await click('[data-testid="buy-cheat_building"]');
+  check((await cheatOwned()) === 1 && c0 - (await credits()) === 1, `the cheat building buys for 1 credit (${c0} -> ${await credits()})`);
+  await debugMenu();
+  await click('#cheat-complete-research');
+  await panel('research');
+  const undone = await evaluate(`document.querySelectorAll('.card.research:not(.done)').length`);
+  check(undone === 0 && (await exists('.card.research.done')), `Complete all research leaves no item undone (${undone})`);
+  await debugMenu();
+  await click('#cheats-toggle');
+  await panel('buildings');
+  check(!(await exists('[data-testid="buy-cheat_building"]')), 'no cheat card with Cheats off');
+  await debugMenu();
+  await click('#cheats-toggle');
   await click('#check-replay');
   check(/^Replay ok/.test(await noticeText()), `replay check of the scenario's game: ${await noticeText()}`);
 
