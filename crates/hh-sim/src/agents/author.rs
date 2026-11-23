@@ -57,7 +57,7 @@ use hh_core::{Action, Fx, View};
 use super::builder::{Builder, BRIDGES, INPUT_BRIDGES};
 
 mod templates;
-pub use templates::{research_lines, LEAD_LINES};
+pub use templates::LEAD_LINES;
 use templates::*;
 use super::{amount, cap, command_cost, command_unlocked, credits_price, made, Agent, Knobs, Player};
 
@@ -68,7 +68,7 @@ pub const KNOBS: &[&str] = &[
 ];
 
 /// Library names of the condition programs (`cond`): one saved copy each,
-/// loaded back at every new run. The hands-off player loads them by name.
+/// loaded back at every new run.
 pub const SHIP: &str = "ship";
 pub const DREAM_WATCH: &str = "dream watch";
 pub const BUILD_ORDER: &str = "build order";
@@ -347,11 +347,6 @@ impl Author {
             plan_from: 0,
             stop_at_retire: false,
         }
-    }
-
-    /// The build order program it holds (empty before a run has ended).
-    pub fn build_order(&self) -> &[Entry] {
-        &self.plan
     }
 
     /// Notes purchases since the last look. At a new run, a last run that

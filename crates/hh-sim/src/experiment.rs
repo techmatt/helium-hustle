@@ -591,7 +591,7 @@ fn hands_off(t: &mut String, sums: &[Summary], multi: bool) {
     if pairs.is_empty() {
         return;
     }
-    let _ = writeln!(t, "\n## Hands-off (its programs alone from run 2, against the author on the same seeds)\n");
+    let _ = writeln!(t, "\n## Hands-off (its loadout file once `if` opens; from run 2, against the author on the same seeds)\n");
     let _ = writeln!(
         t,
         "| Player | Credits a run from run 2 | Author's | Share | Milestones first met from run 2 | Author's | Share |"

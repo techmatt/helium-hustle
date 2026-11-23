@@ -73,8 +73,8 @@ and skips stretches that need none ([agents.md](agents.md#when-it-looks)), so re
 and **decisions** (looks that applied an action), never speed-dependent. The ladder's players:
 `random`, `greedy`, `author` (playing well, with condition programs kept in the library: about
 90 decisions a run), `casual` (the author looking at most every 120 ticks: about 12 a run),
-`handsoff` (the author's run 1, then only its saved programs: how far automation alone carries a
-run, [experiments.md](experiments.md#measures)). Above them, in its own spec
+`handsoff` (the author's first runs, then the best known loadout at each reset: how far
+automation alone carries a run, [experiments.md](experiments.md#measures)). Above them, in its own spec
 (`experiments/ceiling.json`), `oracle` (the ceiling: the author steered by rollouts that see
 the future; not read by the judge).
 

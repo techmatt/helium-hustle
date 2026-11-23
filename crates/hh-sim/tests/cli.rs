@@ -110,6 +110,7 @@ fn grid(cmd: &str, agents: &str, extra: &[&str]) -> Vec<String> {
 /// (a refactor) keeps these, as the core's `golden_game` does for the rules.
 /// One that changes play updates them and says so; a rules change moves them
 /// all. Copy them from the failing assertion (or the test's `games.jsonl`).
+/// (The handsoff rows play only the author's runs: [`HANDSOFF_PIN`] pins its loadout.)
 const PINNED: &[(&str, u64, &str)] = &[
     ("random", 1, "8ab374efd84be2da"),
     ("random", 2, "bfb480b70b453889"),
@@ -176,6 +177,31 @@ fn the_ladder_prints_its_tables_and_writes_results() {
     for want in ["## Runs (10 games", "| author | 1 | 1 |", "| casual | 2 | 2 |","## Milestones", "| M1 |", "## Career at the end"] {
         assert!(s.contains(want), "{want}: {s}");
     }
+}
+
+/// The hands-off player's own play, pinned: the small grid's careers end
+/// before it loads its loadout (`if` opens in run 2 on seeds 1-2, so PINNED's
+/// handsoff games are the author's), so this one goes to run 3 on seed 1,
+/// where the loadout file plays, and ships and buys. A new loadout file moves
+/// the pin: copy it from the failing assertion.
+const HANDSOFF_PIN: &str = "f5ec00fd9a81b82a";
+
+#[test]
+#[ignore = "slow lane: a 3-run career (~2 s)"]
+fn the_handsoff_loadout_ships_and_buys_in_run_3() {
+    let dir = root("out/hh-sim-tests/handsoff");
+    let mut a = grid("experiment", "handsoff", &["--out", &dir]);
+    for (k, v) in [("--seeds", "1"), ("--retirements", "3")] {
+        let i = a.iter().position(|x| x == k).unwrap();
+        a[i + 1] = v.into();
+    }
+    run(&a).unwrap();
+    let games = std::fs::read_to_string(format!("{dir}/games.jsonl")).unwrap();
+    let v: serde_json::Value = serde_json::from_str(games.lines().next().unwrap()).unwrap();
+    let run3 = v["runs"].as_array().unwrap().iter().find(|r| r["run"] == 3).expect("run 3 finished");
+    assert!(run3["shipments"].as_u64().unwrap() > 0 && run3["buildings_built"].as_u64().unwrap() > 0, "{run3}");
+    assert_eq!(v["replay_ok"], true);
+    assert_eq!(v["fingerprint"], HANDSOFF_PIN, "the hands-off player played another game (HANDSOFF_PIN's doc)");
 }
 
 #[test]

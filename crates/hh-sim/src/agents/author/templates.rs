@@ -234,9 +234,10 @@ pub(super) fn when(first: Clause, and: Option<Clause>) -> Entry {
 pub(super) const FUEL: i64 = 20;
 pub(super) const LOAD: i64 = 5;
 
-/// Lines the build order leaves free for the hands-off player's lead
-/// (`handsoff::processor_lines`, 10 stock lines, and `handsoff::seat_lines`,
-/// 8 with three side programs), with room to spare.
+/// Lines the build order leaves free: once room for the old hands-off
+/// player's lead, which 061 retired (it plays a loadout file now). Kept as is
+/// so the author plays the same moves; dropping it lengthens the author's
+/// build order (an author change, re-pinned on its own).
 pub const LEAD_LINES: usize = 16 + 12;
 
 /// The main program with conditions, written from the view: its numbers are
@@ -298,8 +299,7 @@ pub(super) fn dream_watch(dream_at: i64, filler: &str) -> Vec<Entry> {
 /// author buys the rest at its looks.
 /// Returns the lines and how many of `order`'s purchases they cover.
 pub(super) fn build_order_program(v: &View, order: &[(String, u32, Vec<Bridge>)], filler: &str) -> (Vec<Entry>, usize) {
-    // The config's `max_entries`, less the hands-off player's lead
-    // (`handsoff::processor_lines`).
+    // The config's `max_entries`, less [`LEAD_LINES`].
     let max_lines = v.max_program_lines.saturating_sub(LEAD_LINES);
     let mut lines = Vec::new();
     let land = order

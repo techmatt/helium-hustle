@@ -141,9 +141,11 @@ not code rules. A new ruling, or a change to one, updates its line here in place
 - **Sim players.** The default sim player is independent of game speed: it acts whenever a
   decision is useful and skips ahead through stretches that need none. Attention and speed are a
   separate, occasional human model that maps ticks to real minutes ([agents.md](agents.md)).
-- **Hands-off measure (036, default).** "Runs are smooth" (Act 1's exit) is read by the
-  `handsoff` player: run 1 the author's, then only loads at each reset and processors, and
-  (059: no reading for it) a hand retirement after `stale_days` with nothing bought. Its
+- **Hands-off measure (036, default; redefined 2026-11-22).** "Runs are smooth" (Act 1's exit)
+  is read by the `handsoff` player: it loads the best known loadout at every reset; its only
+  hand move is a stale-run retirement (`stale_days` with nothing bought; no reading for it).
+  Its programs are data, a loadout file in the repo, updated when the rules or the best
+  loadout change; runs until `if` opens (and that one) are the author's. Its
   measure is its credits a run and milestones from run 2 on as a share of the author's on the
   same seeds (the ladder's *Hands-off* table, [experiments.md](experiments.md#measures)).
 - **View (009, default).** `per_day` and `next_run` keep playing a day or a retirement on a
