@@ -27,7 +27,7 @@ against: [principles.md](principles.md); how they're run: [simulator.md](simulat
 |---|---|---|
 | `random` | Each look, `actions` times: one action uniform over what the view offers (an affordable building or research, land, a random 1-4 line program on a random program, free processors to a random program, a random rate on an open project); retires with chance 1 in `retire_odds` a look; looks every `every` ticks. | `actions` 2, `retire_odds` 500, `every` 5 |
 | `greedy` | The **builder**: buys the best-scored building it can afford (land included), up to `buys` a look, never saving; the cheapest affordable research; one command on the first program with every processor, chosen afresh each look. No projects, no voluntary retirement. Looks again when its target comes within reach, at most `max_gap` ticks on. | `buys` 3, `decay`, `starved` 100, `reserve` 3, `min_gap` 1, `max_gap` 10 |
-| `author` | The **program author**: the builder's score, but saves for its target; writes condition programs kept in the library; research, projects, ideology, Dream, market commands; retires a stale run. | the builder's, `min_gap` 1, `max_gap` 10, `compute` 1, `hand_gap` 60, `loads` 20, `pause` 1, `wait_demand` 0, `dream_at` 60, `stale_days` 300, `project_rate` 3, `fund` 1, `market` 1, `construct` 1, `cond` 1, `diversify` 0, `all_research` 0 (1: also research outside its list, today Process Telemetry and the draft Novelty Simulation), `science_share` 50 |
+| `author` | The **program author**: the builder's score, but saves for its target; writes condition programs kept in the library; research, projects, ideology, Dream, market commands; retires a stale run. | the builder's, `min_gap` 1, `max_gap` 10, `compute` 1, `hand_gap` 60, `loads` 20, `pause` 1, `wait_demand` 0, `dream_at` 60, `stale_days` 300, `project_rate` 3, `fund` 1, `market` 1, `construct` 1, `cond` 1, `diversify` 0, `all_research` 0 (1: also research outside its list, today Process Telemetry and the draft Novelty Simulation), `science_share` 50, `ship_loads` 2, `fill` 8, `dream_fill` 1 |
 | `handsoff` | **Automation alone**: the author's until the run `if` opens in (the loadout guards with `if`), then from the next run it loads the best known loadout (`configs/sim/handsoff_loadout.txt`) and seats processors at each reset; its one hand is a stale-run retirement, a backstop to the loadout's own `retire` line. | the author's, `every` 10 |
 | `planner` | **Not built.** A strategic player that plans across retirements without peeking: the hook is `Agent::new_run`, called once a run: at the first look after a forced retirement, before `act`; after a retirement the agent chose, at the end of that look (whatever else `act` did in the new run came first, so a planner should retire last in its look). | |
 | `oracle` | The **ceiling**: the author steered by rollouts on copies of the game, the future included ([oracle.md](oracle.md)). Profiles: `profile` 0 milestones, 1 credits, 2 ideology, 3 builder, 4 quests. | `profile` 0, `every` 50, `horizon` 600, `width` 5, `beam` 1, `margin` 20, `long` 2000, `replan` 500, `strategy` -1 (search), `retire` 1, `min_run` 1000, `retire_margin` 0, `first_margin` 0, `early` and `ideology` (the profile's weights), `tail` 400, `hoard_at` 5000, `stale_days` 300, `max_gap` 10, `roll_gap` = `max_gap` |
@@ -74,18 +74,20 @@ How it writes the main program depends on the gap to its next look (*When it loo
 
 **Condition programs** (`cond` 1 once `if` is open; the oracle runs the table's, `cond` 0)
 read the game, not this look's counts, so each is saved once by name; side programs load at
-each reset and keep their lines while unassigned (`author/templates.rs`): `ship` (1, its
-numbers percents of the caps when written: fuel while Propellant is under a launch's worth
-and a pad is idle, `launch pads all` while fewer than all pads are idle (once one stands),
-`load pads all` while Helium-3 holds a load, `set pads he3 up to 1` while a pad is idle,
-the same `up to 1` for a good above 99% while two are idle; the filler; a hand plan replaces it while the target waits on a bought
-input), `dream watch` (2), `fund`, `market`, and `build order` (5: the last run's purchases
-as `build X up to N`, one line a building in the order first bought (no count reading since
-059, so a step can't wait on the one before), each under `if Credits above <its price when
-written>`, a short input bought first, `research` once science covers it;
-rewritten when a run bought past it). With 13 readings, done lines (`load pads` with nothing
-to load, a researched item, a finished `build`) cost a step each loop while their guard
-holds.
+each reset and keep their lines while unassigned (`author/templates.rs`). Every `if` costs a
+step (rev 19) and a bare line that can't act costs the same one step, so they guard only what
+a bare line would waste (065): `ship` (1, its numbers percents of the caps when written; with
+no pad, the filler alone; once one stands, fuel while Propellant is under a launch's worth
+and a pad holds cargo, `launch pads all` bare, `load pads all` `ship_loads` times once
+Helium-3 holds that many loads; with two pads or more, `set pads he3 up to 1` bare and the same
+`up to 1` for a good above 99% while two are idle; then the filler × `fill`; a hand plan
+replaces it while the target waits on a bought input), `dream watch` (2: dream past
+`dream_at`, else the filler × `dream_fill`), `fund`, `market`, and `build order` (5: the last run's
+purchases as bare `build X up to N`, one line a building in the order first bought (no count
+reading since 059, so a step can't wait on the one before; short of credits it fails in a
+step), a short input bought first under `if` it is short `and` credits cover it, bare
+`research` lines; rewritten when a run bought past it). Done lines (a researched item, a
+finished `build`) cost a step each loop.
 
 A program is rewritten only when its text changes (a rewrite restarts its pointer), through
 the library (`Player::put_program`). Extra pads carry a good other
@@ -128,7 +130,8 @@ run has bought nothing (buildings, research, land) for `stale_days` days; the fi
 `if days since a purchase above 299` / `retire` usually comes first (062).
 The file holds 060's L5 (three tabs: build and seat, ship, research Dream Protocols and
 dream), picked over L4 on the hands-off measure (061), with Process Telemetry and that
-`retire` in the Dream tab (062's write-up).
+`retire` in the Dream tab (062's write-up), and for rev 19's step cost its build tab's
+compute at × 100 a pass, its idle block gone (065's write-up).
 
 ## The oracle (`oracle/`)
 

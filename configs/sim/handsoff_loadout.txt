@@ -5,7 +5,10 @@
 #
 # Now: 060's L5 (experiments/results/060_loadout_exploration/loadouts/L5_dream_tab.txt),
 # chosen in 061 over L4 on the ladder's hands-off measure (credits a run from run 2:
-# 281% of the author against L4's 213%, milestones tied; 060's seeds 3119-3124).
+# 281% of the author against L4's 213%, milestones tied; 060's seeds 3119-3124),
+# rewritten in 065 for rules 19's step cost (every `if` a step): Program 1's
+# compute runs x100 a pass, not x10, so its guards cost a few steps in a hundred,
+# and the `if energy below 21%` / `idle x5` block is gone (065's write-up).
 #
 # Program 1 builds (and seats processors as Data Centers add them), Program 2
 # ships, Program 3 researches Process Telemetry, retires a run that has bought
@@ -20,9 +23,7 @@ if free processors above 0
 if energy below 60% and credits above 20
   build solar_panel
 if energy above 20%
-  cloud_compute x10
-if energy below 21%
-  idle x5
+  cloud_compute x100
 if titanium above 99% or regolith above 99%
   build storage_depot
 if free land below 5 and credits above 200

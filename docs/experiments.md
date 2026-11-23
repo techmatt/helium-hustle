@@ -84,6 +84,11 @@ about 11 s on 6 threads; `ceiling` about 20 minutes, set by the oracle's careers
 player looks (random and the author every 5-10 ticks, the casual author every ~130): a view
 (~150-200 µs) costs ten state copies, so a rollout that plays an agent is view-bound.
 
+**Tuning a sim player:** one ladder with named knob variants, `--agents
+"a=author:fill=4,b=author:fill=8" --seeds 6` (9 author variants × 6 seeds about 1-2 minutes),
+needs no rebuild. The hands-off loadout is built in (`include_str!`): a variant is an edit of
+`configs/sim/handsoff_loadout.txt` and a rebuild, one variant a build (065).
+
 ## Reads against another revision
 
 Every read of another tree runs from that tree's root (*Paths*, above): a base binary run in

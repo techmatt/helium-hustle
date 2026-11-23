@@ -116,12 +116,12 @@ const PINNED: &[(&str, u64, &str)] = &[
     ("random", 2, "7923ca8e32379ed0"),
     ("greedy", 1, "b17768938e38c882"),
     ("greedy", 2, "e467866c14cbd7db"),
-    ("author", 1, "5d074ae563023dc3"),
-    ("author", 2, "a07abe3cbc7e1a84"),
+    ("author", 1, "d1ee8a6216d48c89"),
+    ("author", 2, "8092d81248b51db5"),
     ("casual", 1, "8268ac8b317db4d3"),
     ("casual", 2, "3a2668289d84b6d5"),
-    ("handsoff", 1, "5d074ae563023dc3"),
-    ("handsoff", 2, "3e98479f62c7ea83"),
+    ("handsoff", 1, "d1ee8a6216d48c89"),
+    ("handsoff", 2, "6744f077e7ef4396"),
 ];
 
 #[test]
@@ -184,7 +184,7 @@ fn the_ladder_prints_its_tables_and_writes_results() {
 /// handsoff games are the author's), so this one goes to run 3 on seed 1,
 /// where the loadout file plays, and ships and buys. A new loadout file moves
 /// the pin: copy it from the failing assertion.
-const HANDSOFF_PIN: &str = "46d34232950639a7";
+const HANDSOFF_PIN: &str = "cdeacb895f5c113c";
 
 #[test]
 #[ignore = "slow lane: a 3-run career (~2 s)"]

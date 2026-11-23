@@ -19,6 +19,8 @@ The engine rules that bind every item are in [CLAUDE.md](../../CLAUDE.md), *Engi
   hashes the state less its config; the config is pinned beside it (`Config::hash`, the
   golden's `GOLDEN_CONFIG_HASH`, as `GOLDEN_CONTENT_HASH` pins content), so a config key that
   changes no play moves no pinned fingerprint.
+- **Rules history rows (2026-11-22, docs rule).** A `docs/rules-history.md` row stays under
+  about 400 bytes; rows older than the last ten revisions are trimmed to a line.
 
 ## Saves
 

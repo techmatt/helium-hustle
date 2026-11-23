@@ -31,6 +31,8 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   programs for different stages and loads one into any program tab. Programs still empty on
   retirement; loading is how they come back. *Defaults (035):* 12 slots, display names up to
   40 characters, open from run 1, loading leaves processors as assigned.
+- **Programs persist (2026-11-22).** A player's programs carry over across runs (a saved
+  library); building it is its own item when Matt asks.
 - **"Add to Program" (2026-11-22)**, not "Add to Program 1": the active program is implied.
 - **Text editor (2026-11-22).** A "Text editor" takeover on the active program:
   the block editor's words, `#` notes kept, aliases fine; live gutter (green ran, grey

@@ -36,6 +36,9 @@ Programs have their own part ([programs.md](programs.md)).
   Horizons and Q7 Signal Detected left the quest line: performance tests belong in
   achievements (not built yet; candidates in arc.md). Placeholder techniques stand for 1.8
   (Contest Claims) and 1.a (Disrupt Speculators).
+- **Act 1 is mostly a tutorial (2026-11-22).** The phase before programming is fully
+  unlocked gets no special design effort, trivial special cases at most. So program players
+  get no count or rate readings before research unlocks them (059's default stands).
 - **Adversaries on minimal Attention (2026-11-21).** Speculators and rivals each have one
   Attention, raised by a driver, present at a threshold (one tier), decaying linearly, with
   a neutralize stub. All placeholders ([rules/attention.md](../rules/attention.md)).

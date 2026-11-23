@@ -63,7 +63,7 @@ use super::{amount, cap, command_cost, command_unlocked, credits_price, made, Ag
 pub const KNOBS: &[&str] = &[
     "decay", "starved", "reserve", "buys", "compute", "dream_at", "stale_days", "project_rate", "fund", "market",
     "hand_gap", "loads", "pause", "wait_demand", "min_gap", "max_gap", "construct", "cond", "diversify",
-    "all_research", "science_share",
+    "all_research", "science_share", "ship_loads", "fill", "dream_fill",
 ];
 
 /// Library names of the condition programs (`cond`): one saved copy each,
@@ -273,6 +273,13 @@ pub struct Author {
     run: u32,
     hand_gap: u64,
     loads: u32,
+    /// The ship cycle's loads a batch ([`ship_cycle`]), and the filler's count
+    /// a loop in the ship cycle (`fill`) and the Dream watch (`dream_fill`):
+    /// each `if` costs a step (rev 19), so a longer filler spends fewer on
+    /// guards (and dreams less often in the watch).
+    ship_loads: i64,
+    fill: u32,
+    dream_fill: u32,
     min_gap: u64,
     max_gap: u64,
     /// The ticks to its next look, chosen at this one.
@@ -331,6 +338,9 @@ impl Author {
             run: 0,
             hand_gap: k.get("hand_gap", 60).max(0) as u64,
             loads: k.get("loads", 20).clamp(1, 1000) as u32,
+            ship_loads: k.get("ship_loads", 2).clamp(1, 100),
+            fill: k.get("fill", 8).clamp(1, 1000) as u32,
+            dream_fill: k.get("dream_fill", 1).clamp(1, 1000) as u32,
             min_gap,
             max_gap: (k.get("max_gap", 10).max(1) as u64).max(min_gap),
             gap: min_gap,
@@ -725,7 +735,7 @@ impl Author {
         // a purchase brings: then the main program is a hand plan that buys it.
         let ship = cond && !bridge_due(v, target);
         want[main] = if ship {
-            ship_cycle(v, filler)
+            ship_cycle(v, filler, self.ship_loads, self.fill)
         } else if gap <= self.hand_gap {
             // Twice what reaches the latest next look; a constant, so the text
             // changes only when what is due does.
@@ -749,7 +759,7 @@ impl Author {
             }
         } else if cond && building && command_unlocked(v, "dream") && left > 1 && dream < want.len() {
             // The Dream watch: dreams past `dream_at`% of the cap, else computes.
-            want[dream] = dream_watch(self.dream_at, filler);
+            want[dream] = dream_watch(self.dream_at, filler, self.dream_fill);
             procs[dream] = 1;
             left -= 1;
         } else if !cond && bored && building && command_unlocked(v, "dream") && left > 1 && dream < want.len() {
