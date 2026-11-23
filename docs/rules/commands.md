@@ -36,7 +36,8 @@ day's pass of the buildings that take upkeep: a stack run on day `d` lasts while
 below `d + days`. A category's overclock factor is the product of `1 + bonus` over its live
 stacks, capped at the overclock cap: `overclock_base_cap`, or the highest `overclock_cap`
 among researched items if higher. The factor multiplies production of every building of that
-category (economy.md). `overclock_duration_factor` is an ideology param (ideology.md).
+category (economy.md). `overclock_duration_factor` is an ideology param (ideology.md). The
+view fills a description's `{days}` with those days at the current rank ("4 days", "1 day").
 
 **Visible:** a command is shown when unlocked or used in any run.
 

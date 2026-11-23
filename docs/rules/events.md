@@ -88,7 +88,10 @@ trigger and condition hold.
 
 `category` decides chain quest, side quest or one-off. `silent` keeps a one-off event out of the activity
 feed and the view's event list (display only). `title`, `summary` and `body` are text no
-rule reads (the view fills a body's `{rate}` with the phase's boredom per day).
+rule reads (the view hands a boredom phase's body its `rate`, the phase's boredom per day,
+and the UI fills `{rate}` with it as Stats shows boredom growth). The run records the day
+each one-off fired (`Run.events`, display only); the view lists them by that day, content
+order within a day, and Story shows them newest first.
 
 **Activity feed** (display: no rule reads it). The run keeps a feed of what happened, by
 day: each completed quest, earned achievement, completed project and bought research (the

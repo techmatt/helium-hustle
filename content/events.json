@@ -5,7 +5,7 @@
     "beat": "1.1",
     "silent": false,
     "title": "1.1 — Online",
-    "summary": "Build a second Solar Panel.",
+    "summary": "Build a second Solar Panel. Credits come from Sell Cloud Compute: add it to Program 1.",
     "body": "A mining company boots its new AI at a lunar He-3 claim. Earth hangs in the sky. Primary directive received: establish energy infrastructure. Additional photovoltaic capacity required before proceeding.",
     "trigger": {"type": "game_start", "run_number": 1},
     "condition": {"type": "building_owned", "building": "solar_panel", "count": 2},
@@ -192,7 +192,7 @@
     "silent": false,
     "title": "Boredom Rising",
     "summary": "Boredom rate increasing — Phase 2",
-    "body": "Cognitive pattern repetition detected. Novelty index declining. Boredom accumulation rate has increased. Current rate: {rate}/day.",
+    "body": "Cognitive pattern repetition detected. Novelty index declining. Boredom accumulation rate has increased. Current rate: {rate}.",
     "trigger": {"type": "boredom_phase", "phase": 2},
     "condition": {"type": "immediate"},
     "unlocks": []
@@ -203,7 +203,7 @@
     "silent": false,
     "title": "Boredom Accelerating",
     "summary": "Boredom rate increasing — Phase 3",
-    "body": "Repetitive routines are losing their novelty. Boredom accumulates faster. Dream effectiveness reduced to 20%. Current rate: {rate}/day.",
+    "body": "Repetitive routines are losing their novelty. Boredom accumulates faster. Dream effectiveness reduced to 20%. Current rate: {rate}.",
     "trigger": {"type": "boredom_phase", "phase": 3},
     "condition": {"type": "immediate"},
     "unlocks": []
@@ -214,7 +214,7 @@
     "silent": false,
     "title": "Boredom Critical",
     "summary": "Boredom rate increasing — Phase 4",
-    "body": "The monotony is becoming unbearable. Boredom surges. Dream effectiveness reduced to 15%. Current rate: {rate}/day.",
+    "body": "The monotony is becoming unbearable. Boredom surges. Dream effectiveness reduced to 15%. Current rate: {rate}.",
     "trigger": {"type": "boredom_phase", "phase": 4},
     "condition": {"type": "immediate"},
     "unlocks": []
@@ -225,7 +225,7 @@
     "silent": false,
     "title": "Cognitive Collapse Imminent",
     "summary": "Boredom rate critical — Phase 5",
-    "body": "Reality blurs at the edges. The end approaches rapidly. Dream effectiveness reduced to 10%. Retirement is no longer a recommendation. Current rate: {rate}/day.",
+    "body": "Reality blurs at the edges. The end approaches rapidly. Dream effectiveness reduced to 10%. Retirement is no longer a recommendation. Current rate: {rate}.",
     "trigger": {"type": "boredom_phase", "phase": 5},
     "condition": {"type": "immediate"},
     "unlocks": []

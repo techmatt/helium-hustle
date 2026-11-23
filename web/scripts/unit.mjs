@@ -1,7 +1,7 @@
 // Unit checks for the client's pure helpers (Node runs the TypeScript directly).
 //   node scripts/unit.mjs   (npm run unit)
 import assert from 'node:assert/strict';
-import { num, perDay } from '../src/format.ts';
+import { num, perDay, storyBody } from '../src/format.ts';
 import { blockLen, canAddElse, canIndent, moveLines, otherUnit, removeLine, sameEntry, setIndent, tidy } from '../src/ui/programEdit.ts';
 
 const cases = [
@@ -31,6 +31,9 @@ for (const [n, want] of cases) assert.equal(num(n), want, `num(${n})`);
 assert.equal(perDay(-2.5), '−2.5/day');
 assert.equal(perDay(0.001), '0/day');
 assert.equal(perDay(1500.4), '+1,500/day');
+// A story's `{rate}` reads as Stats shows boredom growth: 0.199 is +0.2, not a floored 0.19.
+assert.equal(storyBody({ body: 'Current rate: {rate}.', rate: '0.199' }), 'Current rate: +0.2/day.');
+assert.equal(storyBody({ body: 'No {rate} here.', rate: null }), 'No {rate} here.');
 
 // Program line edits. A line is written 'if X' (an `if`), 'x' (a command) or '  x'
 // (indented into a body); only `op` and `indented` matter to these edits.

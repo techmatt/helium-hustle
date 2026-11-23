@@ -230,7 +230,7 @@ pub fn apply_unlocks(g: &mut GameState, e: &Event) {
 }
 
 fn fire(g: &mut GameState, e: &Event) {
-    g.run.events.insert(e.id.clone());
+    g.run.events.insert(e.id.clone(), g.run.day);
     g.career.seen_events.insert(e.id.clone());
     apply_unlocks(g, e);
 }
@@ -258,7 +258,7 @@ pub fn check(r: &Rules, g: &mut GameState) {
         }
     }
     for e in content().events.iter().filter(|e| !e.is_quest() && !e.is_side()) {
-        if !g.run.events.contains(&e.id) && triggered(g, e) && holds(r, g, &e.id, &e.condition) {
+        if !g.run.events.contains_key(&e.id) && triggered(g, e) && holds(r, g, &e.id, &e.condition) {
             fire(g, e);
             if !e.silent {
                 g.activity("event", &e.id, None, None);

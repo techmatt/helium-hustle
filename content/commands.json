@@ -117,7 +117,7 @@
     "effect": {"type": "overclock", "target": "extraction", "bonus": "0.05", "duration": 5},
     "scale_modifier": null,
     "sets_flag": null,
-    "description": "+5% extractor output for 5 days. Stacks multiplicatively, up to +50% (+100% with Overclock Boost)."
+    "description": "+5% extractor output for {days}. Stacks multiplicatively, up to +50% (+100% with Overclock Boost)."
   },
   {
     "id": "overclock_factories",
@@ -129,7 +129,7 @@
     "effect": {"type": "overclock", "target": "processing", "bonus": "0.05", "duration": 5},
     "scale_modifier": null,
     "sets_flag": null,
-    "description": "+5% processing output for 5 days. Stacks multiplicatively, up to +50% (+100% with Overclock Boost)."
+    "description": "+5% processing output for {days}. Stacks multiplicatively, up to +50% (+100% with Overclock Boost)."
   },
   {
     "id": "promote_he3",

@@ -95,9 +95,12 @@ projects, boredom growth, Dream, and `cap`, the clamp's cut). Player actions aft
 tick count in that day. Who ran short is recorded too (`today.shorts`): a building type
 in the partial pass, or a program line short of a cost (failed, or a conversion run part
 way): the scarcest input, the need, what there was and the fraction run. At each tick's
-start the day folds into a rolling average, `avg += (day − avg) / flow_average_days`
-(a source new to it starts at its day's value; a step too small to move it lands on the
-day's value, so a quiet source reaches zero and drops out). The view's `breakdown` lists both per resource, sources first.
+start the day folds into a rolling average, `avg += (day − avg) / k`, `k` the days folded
+this run up to `flow_average_days` (`Run.flow_days`, counted from the first fold with a
+flow: actions before the first tick are one): a source new to it enters at zero and one
+absent from the day counts zero, so it is a true mean over the run's first `k` days (a
+one-off 200 on day 30 reads 10); a step too small to move it lands on the day's value, so a quiet source
+reaches zero and drops out. The view's `breakdown` lists both per resource, sources first.
 
 **New run:** resources from `starting_resources`, buildings from `starting_buildings` (owned
 and active, no land taken), then run-start bonus buildings from projects and achievements

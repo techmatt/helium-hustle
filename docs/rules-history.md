@@ -6,6 +6,7 @@ about 400 bytes; rows older than the last ten revisions are trimmed to a line (M
 
 | Revision | Item | What changed | Why |
 |---|---|---|---|
+| 21 | 068_bug_hunt_030_deferrals | Display only, no play change: `Run.events` records each event's day (Story by day); the 20-day average is a true mean over the run's days so far; texts: Q1 names Sell Cloud Compute, overclock `{days}`, Ideologies "the next day". Bumped from the constant (20 → 21). | Matt (030's deferrals): state moved the fingerprint. |
 | 20 | 067_program_else | Programs get `else` (JSON `{"op":"else"}`): a free line after an `if` or its body, its indented lines run when that `if` was false; a locked `if` passes both bodies. Old programs play the same. Bumped from the constant (19 → 20). | Matt (2026-11-23): one decision per `if`, both branches, no complementary guard. |
 | 19 | 064_general_cleanup | An `if` costs a step; a false one jumps its body in it. A locked line passes free (a locked `if` with its body). The fingerprint leaves out the config (`GOLDEN_CONFIG_HASH`). Bumped from the constant (18 → 19). | Matt (2026-11-22): one step per `if`, easy to follow at 1×; locked lines free; a no-play config key moves no pin. |
 | 18 | 063_program_text_editor | Free `note` and `unparsed` lines. `set_program` keeps lines not unlocked this run (they fail or read false when run); new param `line_text_max` (200). | Matt (2026-11-22): a text editor whose red and amber lines are kept, so a loadout with lines not open yet still loads. |

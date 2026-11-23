@@ -10,9 +10,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 
 // Must equal GOLDEN_* in crates/hh-core/src/tests/mod.rs (a fast-lane test checks it).
-const GOLDEN_REVISION = 20;
-const GOLDEN_FINGERPRINT = '176c4fea64a96ed9';
-const GOLDEN_CONTENT_HASH = '95efeca07a5c24b3';
+const GOLDEN_REVISION = 21;
+const GOLDEN_FINGERPRINT = '1a7936aae8607204';
+const GOLDEN_CONTENT_HASH = 'c6dcf22ed5fd682f';
 const GOLDEN_CONFIG_HASH = 'c6f158e1d0485a48';
 // The golden game (crates/hh-core/src/driver.rs): baseline, seed u64::MAX, 2000 ticks of
 // the scripted policy.

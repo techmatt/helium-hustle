@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useState } from 'preact/hooks';
 import { SPEEDS, type Speed } from '../clock';
-import { capitalize, mult, num, perDay } from '../format';
+import { capitalize, mult, num, perDay, storyBody } from '../format';
 import {
   continueAfterRetirement,
   dismissStory,
@@ -93,7 +93,7 @@ export function App() {
             <strong>{s.stories[0].title}</strong>
             <span class="muted">{s.stories[0].summary}</span>
           </div>
-          <blockquote>{s.stories[0].body}</blockquote>
+          <blockquote>{storyBody(s.stories[0])}</blockquote>
           <button type="button" onClick={dismissStory}>
             {s.stories.length > 1 ? `Next (${s.stories.length - 1} more)` : 'OK'}
           </button>

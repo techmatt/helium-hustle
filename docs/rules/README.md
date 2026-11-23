@@ -1,6 +1,6 @@
 # Rules
 
-The rules as implemented, rules revision **20** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **21** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
 The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
@@ -96,7 +96,8 @@ The port renamed the Godot data's short ids: `eng` energy, `reg` regolith, `ti` 
 solar_panel; commands `promote_ti`/`_cir`/`_prop` to `promote_titanium`/`_circuits`/
 `_propellant`, `disrupt_spec` to `disrupt_speculators`. Requirements name quests by their
 event ids (`qpower_boot_sequence`, not `QPower`). Narrative text (names, descriptions,
-event bodies) is the Godot data's placeholders, verbatim.
+event bodies) is the Godot data's placeholders, but where a text was made to say what the
+game does (bug hunts, `docs/qa-findings.md`).
 
 ## Numbers
 

@@ -4,7 +4,7 @@
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import type { Fx, ProjectView, ResearchView, View } from '../engine';
-import { capitalize, mult, num, perDay } from '../format';
+import { capitalize, mult, num, perDay, storyBody } from '../format';
 import { act, seen, store, type Store } from '../store';
 import { Bar, Breakdown, FlowLines, Quest, ResChip, Section, cardButton, freshClass, name, numBelow, useHint } from './common';
 import { Chip } from './icons';
@@ -628,7 +628,7 @@ export function Story({ s }: { s: Store }) {
                 ✓ {e.title}
               </button>{' '}
               <span class="muted">{e.summary}</span>
-              {openId === e.id && <blockquote>{e.body}</blockquote>}
+              {openId === e.id && <blockquote>{storyBody(e)}</blockquote>}
             </li>
           ))}
         </ul>
@@ -662,10 +662,11 @@ export function Story({ s }: { s: Store }) {
       </Section>
       <Section title={`Events this run (${v.event_texts.length})`}>
         {v.event_texts.length === 0 && <p class="muted">None yet.</p>}
-        {v.event_texts.map((e) => (
+        {/* Newest first, as the right column's Story. */}
+        {[...v.event_texts].reverse().map((e) => (
           <div key={e.id} class="event-text">
             <strong>{e.title}</strong> <span class="muted">{e.summary}</span>
-            <blockquote>{e.body}</blockquote>
+            <blockquote>{storyBody(e)}</blockquote>
           </div>
         ))}
       </Section>

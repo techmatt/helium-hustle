@@ -43,6 +43,11 @@ export function perDay(x: Fx | number, digits = 1): string {
   return `${n < 0 ? '−' : '+'}${shown}/day`;
 }
 
+/** A story text's body with its `{rate}` filled as the Stats panel shows boredom growth. */
+export function storyBody(s: { body: string; rate?: Fx | null }): string {
+  return s.rate == null ? s.body : s.body.replaceAll('{rate}', perDay(s.rate, 2));
+}
+
 /** A multiplier: "×1.05". */
 export function mult(x: Fx | number): string {
   const n = typeof x === 'number' ? x : Number(x);

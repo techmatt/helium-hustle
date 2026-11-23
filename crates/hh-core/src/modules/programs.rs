@@ -558,14 +558,9 @@ pub fn execute(r: &Rules, g: &mut GameState, c: &Command, src: &str, short: &str
         Some(CommandEffect::LaunchFullPads) => super::shipments::launch_full(r, g, only),
         Some(CommandEffect::Dream) => super::dream::dream(r, g),
         Some(CommandEffect::Overclock { target, bonus, duration }) => {
-            // Live from today's building pass (after programs) for
-            // `duration` days (times the Rationalist duration bonus, whole days).
-            let days = Fx::from_int(*duration as i64) * super::ideology::overclock_duration(r, g);
-            g.run.overclocks.push(Overclock {
-                target: target.clone(),
-                bonus: *bonus,
-                until_day: g.run.day + days.floor_int().max(0) as u64,
-            });
+            // Live from today's building pass (after programs).
+            let days = overclock_days(r, g, *duration);
+            g.run.overclocks.push(Overclock { target: target.clone(), bonus: *bonus, until_day: g.run.day + days });
         }
         Some(CommandEffect::Promote { good }) => super::demand::promote(r, g, good),
         Some(CommandEffect::DisruptSpeculators) => super::demand::disrupt(r, g),
@@ -989,6 +984,13 @@ pub fn overclock_cap(r: &Rules, g: &GameState) -> Fx {
         }
     }
     cap
+}
+
+/// Days an overclock run now lasts: its `duration` times the Rationalist duration
+/// bonus, in whole days (the command cards' `{days}`).
+pub fn overclock_days(r: &Rules, g: &GameState, duration: u32) -> u64 {
+    let days = Fx::from_int(duration as i64) * super::ideology::overclock_duration(r, g);
+    days.floor_int().max(0) as u64
 }
 
 /// The output multiplier for buildings of `category` today: each live

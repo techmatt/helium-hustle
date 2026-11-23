@@ -604,8 +604,9 @@ pub struct Run {
     pub project_rates: BTreeMap<String, BTreeMap<String, Fx>>,
     /// `run`-scoped projects' progress and completions.
     pub projects: ProjectBook,
-    /// Events fired this run.
-    pub events: BTreeSet<String>,
+    /// Events fired this run, each with the run day it fired on (display only:
+    /// Story's order; rules read only which fired).
+    pub events: BTreeMap<String, u64>,
     /// Unlocked by event effects this run (re-applied from seen events at start).
     pub enabled_buildings: BTreeSet<String>,
     pub enabled_panels: BTreeSet<String>,
@@ -617,6 +618,9 @@ pub struct Run {
     /// Each day's `today.flows` folded into a rolling average over the
     /// economy's `flow_average_days` (display only: no rule reads it).
     pub flow_average: BTreeMap<String, BTreeMap<String, Flow>>,
+    /// Days folded into `flow_average` this run, at most `flow_average_days`
+    /// (`economy::fold_flow_average`; display only).
+    pub flow_days: u64,
     /// Per resource, the last full day's rate (`programs::note_day_net`):
     /// what its tick did to the stock before the cap's cut, less the demand it
     /// left unmet. On the view's next day, the Resources panel's per-day

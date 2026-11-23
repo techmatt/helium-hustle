@@ -4,7 +4,7 @@
 import type { ComponentChildren } from 'preact';
 import { useRef, useState } from 'preact/hooks';
 import type { Activity, Entry, View } from '../engine';
-import { num } from '../format';
+import { num, storyBody } from '../format';
 import { daysPerWake } from '../clock';
 import { act, eventItems, markRead, store, unreadIn, type EventSection, type Store } from '../store';
 import { Quest, ResChip, Section, ShortNote, name, shortText } from './common';
@@ -298,7 +298,7 @@ function Events({ v }: { v: View }) {
           <div key={key} class={`event-item${story.includes(key) ? ' is-unread' : ''}`} data-event={e.id}>
             <div class="event-title">{e.title}</div>
             <div class="muted">{e.summary}</div>
-            <div class="event-body">{e.body}</div>
+            <div class="event-body">{storyBody(e)}</div>
           </div>
         ))}
       </Section>

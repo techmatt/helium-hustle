@@ -37,7 +37,7 @@ pub fn visible(g: &GameState, item: &Research) -> bool {
     }
     match &item.visible_when {
         Visibility::Always => true,
-        Visibility::EventCompleted { event } => g.run.events.contains(event),
+        Visibility::EventCompleted { event } => g.run.events.contains_key(event),
         Visibility::BoredomAbove { threshold } => g.amount(BOREDOM) > *threshold,
         Visibility::ResearchPurchased { research } => g.run.research.contains(research),
         Visibility::BuildingCount { building, count } => g.owned(building) >= *count,

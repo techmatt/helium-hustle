@@ -140,7 +140,7 @@ impl Scenario {
             if e.is_quest() || e.is_side() {
                 g.career.completed_quests.insert(e.id.clone());
             }
-            g.run.events.insert(e.id.clone());
+            g.run.events.insert(e.id.clone(), g.run.day);
             g.career.seen_events.insert(e.id.clone());
             crate::modules::events::apply_unlocks(g, e);
         }

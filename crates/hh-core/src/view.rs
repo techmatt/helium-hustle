@@ -109,7 +109,8 @@ pub struct BuildingView {
 pub struct CommandView {
     pub id: Text,
     pub name: Text,
-    pub description: Text,
+    /// Owned only when an overclock's `{days}` was filled in.
+    pub description: Cow<'static, str>,
     pub unlocked: bool,
     pub visible: bool,
     pub costs: BTreeMap<String, Fx>,
@@ -216,8 +217,10 @@ pub struct StoryView {
     pub id: Text,
     pub title: Text,
     pub summary: Text,
-    /// Owned only when a `{rate}` was filled in.
-    pub body: Cow<'static, str>,
+    pub body: Text,
+    /// A boredom-phase event's boredom per day, for the UI to fill `{rate}` in
+    /// `body` with (the Stats panel's formatting); `None` for the rest.
+    pub rate: Option<Fx>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -468,20 +471,50 @@ fn axes(r: &Rules, g: &GameState) -> Vec<AxisView> {
 }
 
 fn story(e: &'static crate::content::Event) -> StoryView {
-    StoryView { id: &e.id, title: &e.title, summary: &e.summary, body: Cow::Borrowed(&e.body) }
+    StoryView { id: &e.id, title: &e.title, summary: &e.summary, body: &e.body, rate: None }
 }
 
-/// An event's text with its `{rate}` filled in: for a boredom-phase event, that phase's
-/// boredom per day under this run's multiplier (display only, to two places).
+/// An event's text with the number its `{rate}` takes: for a boredom-phase event, that
+/// phase's boredom per day under this run's multiplier (display only; the UI formats it).
 fn event_story(r: &Rules, g: &GameState, e: &'static crate::content::Event) -> StoryView {
     let mut s = story(e);
     if let crate::content::Trigger::BoredomPhase { phase } = e.trigger {
         let rates = &r.p.boredom.phase_rates;
         let i = (phase.max(1) as usize - 1).min(rates.len() - 1);
-        let shown = self::projects::short(rates[i] * boredom::multiplier(r, g));
-        s.body = Cow::Owned(s.body.replace("{rate}", &shown));
+        s.rate = Some(rates[i] * boredom::multiplier(r, g));
     }
     s
+}
+
+/// A command's description with an overclock's `{days}` filled in: the days one run
+/// lasts under this run's Rationalist rank ("4 days", "1 day").
+fn command_description(r: &Rules, g: &GameState, cmd: &'static crate::content::Command) -> Cow<'static, str> {
+    match &cmd.effect {
+        Some(CommandEffect::Overclock { duration, .. }) => {
+            let n = program_rules::overclock_days(r, g, *duration);
+            let days = if n == 1 { "1 day".to_string() } else { format!("{n} days") };
+            Cow::Owned(cmd.description.replace("{days}", &days))
+        }
+        _ => Cow::Borrowed(&cmd.description),
+    }
+}
+
+/// The one-off events fired this run, oldest first by the day each fired (content order
+/// within a day), but of the boredom-phase events only the latest phase's.
+fn event_texts(r: &Rules, g: &GameState, latest_phase: Option<u32>) -> Vec<StoryView> {
+    let mut fired: Vec<(u64, &'static crate::content::Event)> = content()
+        .events
+        .iter()
+        .filter(|e| !e.is_quest() && !e.silent)
+        .filter_map(|e| g.run.events.get(&e.id).map(|&day| (day, e)))
+        .filter(|(_, e)| match e.trigger {
+            crate::content::Trigger::BoredomPhase { phase } => Some(phase) == latest_phase,
+            _ => true,
+        })
+        .collect();
+    // Stable: same-day events keep content order.
+    fired.sort_by_key(|&(day, _)| day);
+    fired.into_iter().map(|(_, e)| event_story(r, g, e)).collect()
 }
 
 pub fn build(r: &Rules, g: &GameState) -> View {
@@ -492,7 +525,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
     let latest_phase = c
         .events
         .iter()
-        .filter(|e| !e.silent && g.run.events.contains(&e.id))
+        .filter(|e| !e.silent && g.run.events.contains_key(&e.id))
         .filter_map(|e| match e.trigger {
             crate::content::Trigger::BoredomPhase { phase } => Some(phase),
             _ => None,
@@ -587,7 +620,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 target,
                 id: &cmd.id,
                 name: &cmd.name,
-                description: &cmd.description,
+                description: command_description(r, g, cmd),
                 unlocked: program_rules::unlocked(g, cmd),
                 visible: program_rules::visible(g, cmd),
                 costs,
@@ -728,16 +761,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             .map(|e| e.id.as_str())
             .collect(),
         story: c.events.iter().filter(|e| g.career.completed_quests.contains(&e.id)).map(story).collect(),
-        event_texts: c
-            .events
-            .iter()
-            .filter(|e| !e.is_quest() && !e.silent && g.run.events.contains(&e.id))
-            .filter(|e| match e.trigger {
-                crate::content::Trigger::BoredomPhase { phase } => Some(phase) == latest_phase,
-                _ => true,
-            })
-            .map(|e| event_story(r, g, e))
-            .collect(),
+        event_texts: event_texts(r, g, latest_phase),
         achievement_list: c
             .achievements
             .iter()

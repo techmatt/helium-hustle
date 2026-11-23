@@ -542,18 +542,32 @@ pub fn clamp(r: &Rules, g: &mut GameState) {
 }
 
 /// Folds the day just ended (`today.flows`) into the rolling average:
-/// `avg += (day − avg) / flow_average_days` for every source already in it, a
-/// source absent from the day counting zero; a source new to it starts at its
-/// day's value. A step too small to move the average lands on the day's value,
-/// so a source gone quiet reaches zero and drops out. Display only.
+/// `avg += (day − avg) / k`, `k` the days folded this run (this one included) up
+/// to `flow_average_days`, for every source, one absent from the day counting
+/// zero and one new to the average entering at zero: a true mean over the run's
+/// first `k` days, so a one-off flow on day 30 reads 1/20 of itself. Counting
+/// starts at the run's first fold with a flow in it (actions before its first
+/// tick are one; an empty one is not). A step too small to move the average
+/// lands on the day's value, so a source gone quiet reaches zero and drops out.
+/// Display only.
 pub fn fold_flow_average(r: &Rules, g: &mut GameState) {
-    let n = r.p.economy.flow_average_days;
+    let n = r.p.economy.flow_average_days as u64;
+    if g.run.flow_days > 0 || !g.run.today.flows.is_empty() {
+        g.run.flow_days = (g.run.flow_days + 1).min(n);
+    }
+    let k = g.run.flow_days.max(1) as i64;
     let step = |avg: Fx, day: Fx| {
-        let next = avg + (day - avg).mul_ratio(1, n);
+        let next = avg + (day - avg).mul_ratio(1, k);
         if next == avg { day } else { next }
     };
     let today = &g.run.today.flows;
     let avg = &mut g.run.flow_average;
+    for (res, by) in today {
+        let a = avg.entry(res.clone()).or_default();
+        for src in by.keys() {
+            a.entry(src.clone()).or_default();
+        }
+    }
     for (res, a) in avg.iter_mut() {
         let day = today.get(res);
         for (src, f) in a.iter_mut() {
@@ -561,13 +575,6 @@ pub fn fold_flow_average(r: &Rules, g: &mut GameState) {
             *f = Flow { produced: step(f.produced, d.produced), consumed: step(f.consumed, d.consumed) };
         }
         a.retain(|_, f| *f != Flow::default());
-    }
-    // A source new to the average starts at its day's value, not ramping up from zero.
-    for (res, by) in today {
-        let a = avg.entry(res.clone()).or_default();
-        for (src, &d) in by {
-            a.entry(src.clone()).or_insert(d);
-        }
     }
     avg.retain(|_, a| !a.is_empty());
 }

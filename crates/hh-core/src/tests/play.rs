@@ -787,13 +787,18 @@ fn the_view_fills_every_text_placeholder() {
         if e.is_quest() {
             g.career.completed_quests.insert(e.id.clone());
         } else {
-            g.run.events.insert(e.id.clone());
+            g.run.events.insert(e.id.clone(), 0);
         }
     }
     let v = r.view(&g);
     let placeholder = |t: &str| t.split('{').skip(1).any(|rest| rest.split('}').next().is_some_and(|n| !n.is_empty() && n.chars().all(|c| c.is_ascii_lowercase() || c == '_')));
+    // `{rate}` is the UI's to fill (with Stats' formatting), from the view's `rate`.
+    let unfilled = |s: &crate::view::StoryView| placeholder(&s.body.replace("{rate}", if s.rate.is_some() { "" } else { "{rate}" }));
     for s in v.event_texts.iter().chain(&v.story) {
-        assert!(!placeholder(&s.body) && !placeholder(s.title) && !placeholder(s.summary), "{}: {}", s.id, s.body);
+        assert!(!unfilled(s) && !placeholder(s.title) && !placeholder(s.summary), "{}: {}", s.id, s.body);
+    }
+    for c in &v.commands {
+        assert!(!placeholder(&c.description), "{}: {}", c.id, c.description);
     }
     // Only the latest boredom phase is listed; each earlier one's text fills in when it is
     // the latest. Phase 2's rate is its baseline 0.2 per day (no modifiers yet).
@@ -801,12 +806,13 @@ fn the_view_fills_every_text_placeholder() {
         g.run.events.remove(later);
         let v = r.view(&g);
         for s in &v.event_texts {
-            assert!(!placeholder(&s.body), "{}: {}", s.id, s.body);
+            assert!(!unfilled(s), "{}: {}", s.id, s.body);
         }
     }
     let v = r.view(&g);
     let p2 = v.event_texts.iter().find(|s| s.id == "boredom_phase_2").unwrap();
-    assert!(p2.body.ends_with("Current rate: 0.2/day."), "{}", p2.body);
+    assert!(p2.body.ends_with("Current rate: {rate}."), "{}", p2.body);
+    assert_eq!(p2.rate, Some(f("0.2")));
 }
 
 #[test]
@@ -814,12 +820,85 @@ fn story_lists_only_the_latest_boredom_phase() {
     let r = rules();
     let mut g = r.new_game(1);
     for id in ["propellant_discovery", "boredom_phase_2", "boredom_phase_3"] {
-        g.run.events.insert(id.to_string());
+        g.run.events.insert(id.to_string(), 0);
     }
     let v = r.view(&g);
     let ids: Vec<&str> = v.event_texts.iter().map(|s| s.id).collect();
     // The one-off beat stays; phase 3 supersedes phase 2 (still fired in the state).
     assert_eq!(ids, ["propellant_discovery", "boredom_phase_3"]);
+}
+
+#[test]
+fn story_lists_events_by_the_day_they_fired() {
+    // Content order is propellant_discovery before boredom_phase_2; fired the other way
+    // round, Story lists them the other way round (oldest first: the UI shows newest first).
+    let r = rules();
+    let mut g = r.new_game(1);
+    g.run.events.insert("boredom_phase_2".into(), 3);
+    g.run.events.insert("propellant_discovery".into(), 40);
+    let v = r.view(&g);
+    let ids: Vec<&str> = v.event_texts.iter().map(|s| s.id).collect();
+    assert_eq!(ids, ["boredom_phase_2", "propellant_discovery"]);
+    // A same-day pair keeps content order.
+    g.run.events.insert("propellant_discovery".into(), 3);
+    let v = r.view(&g);
+    let ids: Vec<&str> = v.event_texts.iter().map(|s| s.id).collect();
+    assert_eq!(ids, ["propellant_discovery", "boredom_phase_2"]);
+}
+
+#[test]
+fn an_event_records_the_day_it_fired() {
+    let mut s = Session::new(&baseline(), 2, None).unwrap();
+    play(&mut s, 400, Policy::Script);
+    let g = &s.state;
+    assert!(!g.run.events.is_empty());
+    for (id, &day) in &g.run.events {
+        assert!(day < g.run.day, "{id} fired on day {day}, run at {}", g.run.day);
+    }
+}
+
+#[test]
+fn overclock_cards_say_the_days_a_run_lasts() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    let text = |g: &GameState| {
+        let v = r.view(g);
+        v.commands.iter().find(|c| c.id == "overclock_mining").unwrap().description.to_string()
+    };
+    assert!(text(&g).contains("for 5 days."), "{}", text(&g));
+    // The first negative Rationalist rank: 5 × 1.03^-1 is 4 whole days, card and effect.
+    let mut score = Fx::ZERO;
+    while crate::modules::ideology::rank(&r, &g, "rationalist") >= 0 {
+        score -= Fx::ONE;
+        g.run.ideology.insert("rationalist".into(), score);
+    }
+    assert_eq!(crate::modules::ideology::rank(&r, &g, "rationalist"), -1);
+    assert!(text(&g).contains("for 4 days."), "{}", text(&g));
+    assert_eq!(crate::modules::programs::overclock_days(&r, &g, 5), 4);
+}
+
+#[test]
+fn a_one_off_flow_enters_the_average_at_its_share_of_the_days() {
+    // Average over the run's days so far, up to flow_average_days (20), a source absent
+    // on a day counting zero: a one-off 200 on day 30 reads 10, not 200.
+    let r = rules();
+    let mut g = r.new_game(1);
+    r.advance(&mut g, 30);
+    g.track("land", "credits", Fx::ZERO, f("200"));
+    r.advance(&mut g, 1);
+    let a = g.run.flow_average["credits"]["land"];
+    assert_eq!(a.consumed, f("10"));
+    // A source there from day 1 is its plain mean early on, not a twentieth of it.
+    let mut g = r.new_game(1);
+    r.advance(&mut g, 2);
+    let solar = g.run.flow_average["energy"]["building:solar_panel"].produced;
+    let day = g.run.today.flows["energy"]["building:solar_panel"].produced;
+    assert_eq!(solar, day);
+    // A buy before the run's first tick is a day of its own: halved by the next, not gone.
+    let mut g = r.new_game(1);
+    g.track("land", "credits", Fx::ZERO, f("200"));
+    r.advance(&mut g, 2);
+    assert_eq!(g.run.flow_average["credits"]["land"].consumed, f("100"));
 }
 
 #[test]

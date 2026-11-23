@@ -337,7 +337,11 @@ export interface StoryView {
   id: string;
   title: string;
   summary: string;
+  /** May hold `{rate}`: fill it with `storyBody` (format.ts). */
   body: string;
+  /** A boredom-phase event's boredom per day, for `{rate}`; null for the rest (absent on
+   * a quest told through the story banner). */
+  rate?: Fx | null;
 }
 
 export interface AchievementView {

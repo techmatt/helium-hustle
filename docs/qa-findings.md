@@ -61,17 +61,18 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | 85 | A late career's left column (16 tiles, the calendar) scrolls at 1280×800, and its scrollbar clipped the Resources rates ("fre", "−8/da", the CAP chips) | The column keeps its scrollbar's room (17 px wider) | qa's autopilot-to-the-end audit |
 | 86 | The Saga's progress bars (Timeline's calendar, Vault's super timeline price) were only as wide as their label | A track of its own width | screenshots (qa `saga-*`) |
 | 87 | Esc with the run summary up closed a takeover behind it, trying to save the text editor's draft to the ended run | Esc does nothing to a takeover while the summary is up | manual |
+| 88 | At 1x a new player waits with 0 credits until Sell Cloud Compute is in a program (179 days idle seen) | Q1's summary (the quest pin) names it and Program 1; never pre-filled | content |
+| 89 | A breakdown source new to the 20-day average starts at its whole day's value (a one-off land buy shows −200 in "Avg 20d") | A true mean over the run's days so far, up to 20: a new source enters at zero (rules 21, display only) | `a_one_off_flow_enters_the_average_at_its_share_of_the_days` |
+| 90 | Story lists its texts in reversed content order, not newest first | `Run.events` records each event's day; the view sorts by it (rules 21, display only) | `story_lists_events_by_the_day_they_fired` |
+| 91 | Overclock commands say "for 5 days"; a negative Rationalist rank gives 4 | `{days}` in the text, filled by the view from the effect's own `overclock_days` | `overclock_cards_say_the_days_a_run_lasts` |
+| 92 | Geopolitical Intelligence's Ideologies panel opens the day after | Its text says "the next day" | content |
+| 93 | A boredom story's `{rate}` floors to 0.19 where Stats rounds to +0.2 | The view sends `rate`; the UI fills `{rate}` with Stats' `perDay(rate, 2)` | `npm run unit`, `the_view_fills_every_text_placeholder` |
 
 ## Deferred (Matt's decisions)
 
 | Finding | Recommendation |
 |---|---|
-| Silicon Valley wants 1,000 circuits on hand; the cap is 10 + 20 per Storage Depot (about 50 depots) | (Matt's call) A reachable threshold (a rules change) or say so in its text |
-| Overclock commands say "for 5 days"; a negative Rationalist rank gives 4 | The effective days in the view |
-| Geopolitical Intelligence's Ideologies panel opens the day after (events are checked in the tick) | "from the next day" in its text, or check events after a research buy (a rules change) |
-| A boredom story's `{rate}` is built in `hh-core` and floors to 0.19 where Stats rounds to +0.2 | Fill `{rate}` in the UI with `num` |
 | The first visit always starts seed 0 | Random seed, as *Start a new career* |
-| At 1x a new player waits with 0 credits until Sell Cloud Compute is in a program (seen again: 179 days idle) | Name it in Q1's text, or start with it in Program 1 |
 | Speculator Analysis promises burst timing, targets and sizes; nothing shows them | Build the reveal, or rewrite the text |
 | Project cards never say what completing them gives | A `reward_description` per project |
 | Stats shows internal modifier and overclock keys | Display names in content |
@@ -80,9 +81,7 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | A save holds every action: ~40,000 actions outgrow localStorage | Record in the play log, or compress |
 | At 10x a late wake runs two days per redraw and the frame skips a line (an e2e flake under load) | Frame from the days actually run |
 | "Output at cap" beside its resource at 0: the stall is judged before production | A rules item for the balance work (Matt) |
-| Story lists its texts in reversed content order, not newest first: the run keeps which events fired, not when | Record each event's day in run state (display only) and sort by it |
-| Boredom phases 3 to 5 say "Dream effectiveness reduced to 20%/15%/10%"; Dream is flat (the rules pages keep the text by ruling) | (Matt's call) Drop the sentence: players read it as a rule and stop using Dream |
-| A breakdown source new to the 20-day average starts at its whole day's value (a one-off land buy shows −200 in "Avg 20d" and fades 5% a day) | (Matt's call) Ramp in from zero for a true mean, or label the column "recent" |
+| e2e's "the if held once Credits above 800" (067) reads line outcomes after the program moved on: the new Battery drops Energy below 50% and the top `if` runs instead (failed 5 of 7 runs in 068, also with 068's last engine change reverted) | Check the depot was built and the `if`'s ✓, not that day's line outcomes |
 
 
 ## Won't fix
@@ -93,3 +92,6 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | Opening the Cortex mock takes one 300-400 ms frame (the whole wheel drawn at once) | A UI-only mock: the real Cortex's build decides how it draws |
 | Starting a debug scenario takes a 0.3-1.3 s frame | Debug menu only: a new game built and its first view drawn |
 | The debug autopilot's *Everything* ends on a 1.3-1.4 s frame (~28,000 days in ~12 s) | Debug only: its last chunk and the ending drawn at once |
+| Silicon Valley wants 1,000 circuits on hand; the cap is 10 + 20 per Storage Depot (about 50 depots) | Placeholder content, Matt's call in 068 |
+| Boredom phases 3 to 5 say "Dream effectiveness reduced to 20%/15%/10%"; Dream is flat | Placeholder content, Matt's call in 068 |
+| A first note ("needs …") on a program line grows that line once | Matt's call in 068: the row is kept on purpose, so a note coming and going day to day moves no line below it |
