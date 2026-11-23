@@ -18,7 +18,7 @@ against: [principles.md](principles.md); how they're run: [simulator.md](simulat
   differ between native and wasm. Every game's record is replayed and must reach its state.
 - **Spec syntax:** `[name=]kind[:knob=value,...]`, integer knobs; a name labels a player
   (`casual=author:min_gap=120`, the ladder's casual player); an unknown knob is an error.
-- **Agent code is player code** ([rulings.md](rulings.md)).
+- **Agent code is player code** ([rulings/sim.md](rulings/sim.md)).
 - **Pinned games.** An agent edit changes how a player plays, not the game: no
   `RULES_REVISION` bump. Agent edits are guarded by the pinned games (`PINNED` and the
   oracle's, in `crates/hh-sim/tests/cli.rs`): a refactor keeps them.

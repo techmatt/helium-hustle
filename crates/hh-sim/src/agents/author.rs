@@ -57,7 +57,6 @@ use hh_core::{Action, Fx, View};
 use super::builder::{Builder, BRIDGES, INPUT_BRIDGES};
 
 mod templates;
-pub use templates::LEAD_LINES;
 use templates::*;
 use super::{amount, cap, command_cost, command_unlocked, credits_price, made, Agent, Knobs, Player};
 
@@ -69,11 +68,11 @@ pub const KNOBS: &[&str] = &[
 
 /// Library names of the condition programs (`cond`): one saved copy each,
 /// loaded back at every new run.
-pub const SHIP: &str = "ship";
-pub const DREAM_WATCH: &str = "dream watch";
+pub(crate) const SHIP: &str = "ship";
+pub(crate) const DREAM_WATCH: &str = "dream watch";
 pub const BUILD_ORDER: &str = "build order";
-pub const FUND_NAME: &str = "fund";
-pub const MARKET_NAME: &str = "market";
+pub(crate) const FUND_NAME: &str = "fund";
+pub(crate) const MARKET_NAME: &str = "market";
 
 /// Research, first wanted first.
 pub const RESEARCH: &[&str] = &[
@@ -92,7 +91,7 @@ pub const RESEARCH: &[&str] = &[
 
 /// Research the main plan buys by program line every run, once science
 /// covers its price (the rest the author buys on its looks).
-pub const PLAN_RESEARCH: &[&str] = &[
+pub(crate) const PLAN_RESEARCH: &[&str] = &[
     "propellant_synthesis",
     "market_awareness",
     "dream_protocols",
@@ -103,7 +102,7 @@ pub const PLAN_RESEARCH: &[&str] = &[
 /// Projects the author funds: the first open non-`run` one in this order,
 /// beside the cheapest open `run` one whose costs can move (order only
 /// breaks ties).
-pub const PROJECTS: &[&str] = &[
+pub(crate) const PROJECTS: &[&str] = &[
     "conditional_logic",
     "deep_space_telescope",
     "lunar_cartography",
@@ -132,11 +131,11 @@ const AXES: &[(&str, &str)] = &[
 /// shows no prices).
 const DEAREST: &[&str] = &["circuits", "he3", "titanium", "propellant"];
 
-pub const MAIN: usize = 0;
-pub const DREAM: usize = 1;
-pub const FUND: usize = 2;
-pub const MARKET: usize = 3;
-pub const BUILD: usize = 4;
+pub(crate) const MAIN: usize = 0;
+pub(crate) const DREAM: usize = 1;
+pub(crate) const FUND: usize = 2;
+pub(crate) const MARKET: usize = 3;
+pub(crate) const BUILD: usize = 4;
 
 /// Goals a planner sets on top of the author's own choices (the oracle,
 /// docs/agents.md). Unset, the author plays as itself.
@@ -353,7 +352,7 @@ impl Author {
     /// Notes purchases since the last look. At a new run, a last run that
     /// bought more than the build order covers rewrites it (the order fell
     /// short); otherwise the saved one stands.
-    pub fn track(&mut self, v: &View) {
+    pub(crate) fn track(&mut self, v: &View) {
         if !self.cond {
             return;
         }
@@ -786,7 +785,8 @@ impl Author {
             }
         }
         // Construction: buy the target the day it comes within reach, between
-        // looks. Its `if`s are free, so the processor computes on other days.
+        // looks. Its `if`s cost a step each (one when false), so the filler
+        // computes less than it did while they were free (rev 19).
         // With conditions, the build order from the last runs, once there is one.
         if self.construct && cond && !self.plan.is_empty() && left > 1 && BUILD < want.len() && BUILD != main {
             want[BUILD] = self.plan.clone();

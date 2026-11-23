@@ -747,10 +747,14 @@ impl GameState {
         serde_json::from_str(json).map_err(|e| format!("bad state JSON: {e}"))
     }
 
-    /// FNV-1a of the JSON form, as 16 hex digits: equal fingerprints, equal
-    /// games (the replay and native = wasm checks).
+    /// FNV-1a of the JSON form less the config, as 16 hex digits: equal
+    /// fingerprints, equal play (the replay and native = wasm checks). The
+    /// config is pinned apart (`Config::hash`, the golden's config hash), so
+    /// a config key that changes no play moves no fingerprint.
     pub fn fingerprint(&self) -> String {
-        hex(fnv1a64(self.to_json().as_bytes()))
+        let mut v = serde_json::to_value(self).expect("state serializes");
+        v.as_object_mut().expect("state is an object").remove("config");
+        hex(fnv1a64(v.to_string().as_bytes()))
     }
 
     pub fn amount(&self, resource: &str) -> Fx {

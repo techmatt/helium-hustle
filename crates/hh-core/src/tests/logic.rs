@@ -1,7 +1,7 @@
 //! Program instructions beyond commands: `if` blocks, `build` and `buy land`
 //! (docs/rules/programs.md).
 
-use super::{f, rules, set};
+use super::{f, outcomes, rules, set};
 use crate::modules::{economy, programs};
 use crate::state::{Clause, Cmp, Condition, Entry, GameState, Holding, Join, Joined, LineOutcome as O, Op, Reading};
 use crate::{Action, Fx, Rules};
@@ -37,10 +37,6 @@ fn when(c: Condition) -> Entry {
 
 fn put(r: &Rules, g: &mut GameState, entries: Vec<Entry>) -> Result<(), String> {
     r.apply(g, &Action::SetProgram { program: 0, entries })
-}
-
-fn outcomes(g: &GameState) -> Vec<Option<O>> {
-    crate::view::LinesRun::today(g).lines[0].clone()
 }
 
 #[test]
@@ -87,7 +83,7 @@ fn the_briefs_program_builds_a_base_unattended() {
 }
 
 #[test]
-fn a_false_if_jumps_its_body_for_free_and_a_true_one_runs_it_whole() {
+fn a_false_if_jumps_its_body_in_its_one_step_and_a_true_one_runs_it_whole() {
     let r = rules();
     let mut g = game(&r);
     set(&mut g, "credits", "10");
@@ -98,17 +94,21 @@ fn a_false_if_jumps_its_body_for_free_and_a_true_one_runs_it_whole() {
         Entry::command("cloud_compute", 1),
     ];
     put(&r, &mut g, entries).unwrap();
-    // False: the one processor's step goes to line 3, the body jumped at no cost.
+    // False: the `if` is the one processor's step; the whole body is jumped with it.
     r.advance(&mut g, 1);
     assert_eq!(outcomes(&g)[..3], [Some(O::False), Some(O::Jumped), Some(O::Jumped)]);
+    assert_eq!(g.run.programs[0].entry, 3);
+    r.advance(&mut g, 1);
     assert!(outcomes(&g)[3].is_some());
     assert_eq!(g.run.programs[0].entry, 0);
-    // True on entry: both body lines run, though the condition turns false midway.
+    // True on entry: its step, then both body lines run, though the condition turns false midway.
     set(&mut g, "credits", "50");
     r.advance(&mut g, 1);
-    assert_eq!(outcomes(&g)[..2], [Some(O::True), Some(O::Ran)]);
-    assert_eq!(g.run.programs[0].entry, 2);
+    assert_eq!(outcomes(&g)[0], Some(O::True));
+    assert_eq!(g.run.programs[0].entry, 1);
     set(&mut g, "credits", "0");
+    r.advance(&mut g, 1);
+    assert_eq!(outcomes(&g)[1], Some(O::Ran));
     r.advance(&mut g, 1);
     assert_eq!(outcomes(&g)[2], Some(O::Ran));
     assert_eq!(g.run.programs[0].entry, 3);
@@ -118,12 +118,12 @@ fn a_false_if_jumps_its_body_for_free_and_a_true_one_runs_it_whole() {
 fn a_body_line_that_ran_today_keeps_its_outcome_when_its_if_turns_false() {
     let r = rules();
     let mut g = game(&r);
-    g.run.buildings.insert("data_center".into(), Holding { owned: 2, active: 2, bonus: 0, free: 0, unpaid: 0 });
+    g.run.buildings.insert("data_center".into(), Holding { owned: 3, active: 3, bonus: 0, free: 0, unpaid: 0 });
     economy::refresh(&mut g);
-    r.apply(&mut g, &Action::SetProcessors { program: 0, processors: 2 }).unwrap();
+    r.apply(&mut g, &Action::SetProcessors { program: 0, processors: 3 }).unwrap();
     set(&mut g, "credits", "1000");
     set(&mut g, "titanium", "500");
-    // The first step builds a Solar Panel with credits, the next finds the `if` false.
+    // The `if` holds, the next step builds a Solar Panel with credits, the third finds the `if` false.
     let rich = one(amount("credits", Cmp::Gt, "999"));
     put(&r, &mut g, vec![when(rich), build("solar_panel", None).indent()]).unwrap();
     r.advance(&mut g, 1);
@@ -144,7 +144,7 @@ fn a_program_of_only_false_ifs_idles_after_one_loop() {
 }
 
 #[test]
-fn a_done_line_costs_its_step_and_a_guarded_one_is_skipped_free() {
+fn a_done_line_costs_its_step_and_a_guarded_one_is_jumped() {
     let r = rules();
     let mut g = game(&r);
     assert_eq!(g.run.programs[0].processors, 1, "one step a day");
@@ -157,11 +157,13 @@ fn a_done_line_costs_its_step_and_a_guarded_one_is_skipped_free() {
     assert_eq!(g.amount("credits"), credits, "a done line pays nothing");
     r.advance(&mut g, 1);
     assert_eq!(outcomes(&g), [None, Some(O::Ran)], "the next step is the next line");
-    // Guarded: the false `if` skips its body for free and Idle runs the same day.
+    // Guarded: the false `if` takes the step and jumps its body; Idle runs the next day.
     let never = one(amount("credits", Cmp::Lt, "0"));
     put(&r, &mut g, vec![when(never), build("solar_panel", Some(1)).indent(), Entry::command("idle", 1)]).unwrap();
     r.advance(&mut g, 1);
-    assert_eq!(outcomes(&g), [Some(O::False), Some(O::Jumped), Some(O::Ran)]);
+    assert_eq!(outcomes(&g), [Some(O::False), Some(O::Jumped), None]);
+    r.advance(&mut g, 1);
+    assert_eq!(outcomes(&g), [None, None, Some(O::Ran)]);
 }
 
 #[test]
@@ -286,8 +288,8 @@ fn a_loadout_saved_in_one_run_loads_and_runs_in_the_next() {
     assert_eq!(r.view(&g).library.len(), 1, "the library is career state");
     r.apply(&mut g, &Action::LoadLoadout { loadout: 0, program: 0 }).unwrap();
     assert_eq!(g.run.programs[0].entries, lines);
-    r.advance(&mut g, 1);
-    assert_eq!(outcomes(&g), vec![Some(O::True), Some(O::Ran)]);
+    r.advance(&mut g, 2);
+    assert_eq!(outcomes(&g), vec![None, Some(O::Ran)], "day 1 the `if`, day 2 its body");
     // Overwrite, rename, delete; the refusals change nothing.
     put(&r, &mut g, vec![Entry::command("idle", 3)]).unwrap();
     save(&mut g, Some(0), "Idle").unwrap();
@@ -312,7 +314,7 @@ fn a_loadout_saved_in_one_run_loads_and_runs_in_the_next() {
 }
 
 #[test]
-fn a_loaded_line_this_career_has_not_unlocked_fails_or_reads_false() {
+fn a_loaded_line_this_career_has_not_unlocked_is_skipped_free() {
     let r = rules();
     let mut g = r.new_game(1);
     g.career.flags.insert(programs::LOGIC_FLAG.into());
@@ -326,10 +328,11 @@ fn a_loaded_line_this_career_has_not_unlocked_fails_or_reads_false() {
     put(&r, &mut g, vec![when(any.clone())]).unwrap();
     assert!(r.view(&g).programs[0].locked[0].as_deref().is_some_and(|w| w.contains("Conditional Logic")));
     r.apply(&mut g, &Action::LoadLoadout { loadout: 0, program: 0 }).unwrap();
+    let credits = g.amount("credits");
     r.advance(&mut g, 1);
-    let o = outcomes(&g);
-    assert_eq!(o[0], Some(O::False), "if not open: false");
-    assert_eq!(o[2], Some(O::Failed), "Dream not researched: fails and advances");
+    // `if` not open: skipped free with its body; Dream not researched: skipped free.
+    assert_eq!(outcomes(&g), vec![None, Some(O::Jumped), None]);
+    assert!(g.amount("credits") >= credits, "nothing ran");
     // The loaded program stays editable, new locked lines and all.
     let mut lines = g.run.programs[0].entries.clone();
     lines.push(Entry::command("idle", 2));

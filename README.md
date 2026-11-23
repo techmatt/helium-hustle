@@ -27,7 +27,7 @@ implemented (the Godot build's Arc 1, ported): [docs/rules/](docs/rules/README.m
 | `scenarios/` | Named starting states for the sim and the web debug menu, embedded in `hh-core`. |
 | `experiments/` | Experiment specs (`ladder.json`, `ceiling.json` the oracle's, `balance.json` the judge's); `results/<item>/` holds an item's write-up and working papers when it left any (bug hunts record into `docs/qa-findings.md`). A read's `games.jsonl`: `hh-sim summarize`. |
 | `scripts/` | `wasm-smoke.mjs` (native = wasm), `wasm-speed.mjs` (engine speed in wasm), `warning_checks.py` (CLAUDE.md, *Warning checks*), `set_golden.py` (re-pins the golden game), `seeds.py` (fresh seeds from the ledger, [docs/simulator.md](docs/simulator.md) *Seeds*), `baseline.py` (a built copy of another revision for reads against it, [docs/experiments.md](docs/experiments.md)). |
-| `docs/` | `rules/` (the rules as implemented) and `rules-history.md`; `rulings.md` (Matt's standing rulings); `architecture.md`; `principles.md` (targets and the judge); `simulator.md`, `experiments.md` (grid reads, measures, costs), `agents.md` and `oracle.md` (hh-sim); `qa-findings.md` (bug hunts). |
+| `docs/` | `rules/` (the rules as implemented) and `rules-history.md`; `rulings.md` and `rulings/` (Matt's standing rulings, by area); `architecture.md`; `principles.md` (targets and the judge); `simulator.md`, `experiments.md` (grid reads, measures, costs), `agents.md` and `oracle.md` (hh-sim); `qa-findings.md` (bug hunts). |
 | `reference/` | The Godot snapshot ([reference/README.md](reference/README.md)). Never edited. |
 | `art/` | Generated art and picker images: a link to the main checkout's `art/`, shared by every worktree and never committed. The scripts that draw it are committed with their item's write-up in `experiments/results/<item>/`. Painted art is drawn by Codex CLI's image tool on Matt's ChatGPT login (no API key), 37–97 s a draw, 3–4 at once: recipe in [018's write-up](experiments/results/018_building_art_round/README.md); drawing against a fixed guide image (`codex exec -i`, isometric patches) in [019's](experiments/results/019_painterly_iso_round/README.md); the shipped building card pictures (draw, cut to WebP, picker) in [020's](experiments/results/020_building_card_art/README.md). **What ships** is in `web/src/assets/`: painted art cut to WebP (020's `process.py`, 027's `images.py`), and chip and compact-nav glyphs as SVG written by 027's `export.mjs` from [026's `glyphs.mjs`](experiments/results/026_icon_art_r1/) (which reads `icons.tsx`'s color maps as text, and holds the nav colors). Finished pickers (`art/pickers/`, mock-ups only) and superseded rounds (`art/buildings/r1/`) move to the Drive archive, `C:\Code\gdrive-sync\helium-hustle\archive\` at the same relative path; a new picker writes `art/pickers/` afresh. |
 | `out/` | Scratch and run output, git-ignored. |
@@ -90,18 +90,21 @@ open from tick 0, `driver::golden_start`), 2000 ticks of the scripted policy
 boredom and starts run 2). An intended play
 change bumps `RULES_REVISION`
 (`crates/hh-core/src/lib.rs`, and the revision line in `docs/rules/README.md`), adds its
-`docs/rules-history.md` row, and updates the three golden constants, `GOLDEN_REVISION`,
-`GOLDEN_FINGERPRINT` and `GOLDEN_CONTENT_HASH`, both in `crates/hh-core/src/tests/mod.rs`
-and in `scripts/wasm-smoke.mjs` (`wasm_smoke_expects_the_golden_constants` fails until they
-match; it also checks the smoke plays the golden game through `play_golden`, which runs
-`hh_core::driver` itself in wasm, with the same seed and length). `GOLDEN_CONTENT_HASH`
-moves with any `content/` byte, play or not; `GOLDEN_FINGERPRINT` with any
-`configs/baseline.json` value (the config is part of the state). Never type them: `python scripts/set_golden.py`
-copies all six from `hh-sim golden` (or copy each from the failing assertion's left side).
-The sim players' pinned games are separate: `PINNED` and the oracle's in
-`crates/hh-sim/tests/cli.rs` (an agent refactor keeps them; a rules change moves those whose
-play it changes), which `set_golden.py` doesn't touch: copy them from the failing assertion. A rename or
-refactor that plays the same moves no golden constant; if it does, play changed.
+`docs/rules-history.md` row, and updates the four golden constants, `GOLDEN_REVISION`,
+`GOLDEN_FINGERPRINT`, `GOLDEN_CONTENT_HASH` and `GOLDEN_CONFIG_HASH`, both in
+`crates/hh-core/src/tests/mod.rs` and in `scripts/wasm-smoke.mjs`
+(`wasm_smoke_expects_the_golden_constants` fails until they match; it also checks the smoke
+plays the golden game through `play_golden`, which runs `hh_core::driver` itself in wasm, with
+the same seed and length). The content hash moves with any `content/` byte and the config hash
+with any `configs/baseline.json` value, play or not; the fingerprint (`GameState::fingerprint`,
+the state less its config) only with play. **Step:** `python scripts/set_golden.py` sets all
+eight from `hh-sim golden`; never type them. The sim players' pinned games are separate:
+`PINNED`, `HANDSOFF_PIN` and the oracle's in `crates/hh-sim/tests/cli.rs` (an agent refactor
+keeps them; a rules change moves those whose play it changes): run `cargo test-all`, then
+`python scripts/set_pins.py` copies them from the games those tests wrote. A rename,
+refactor or new config key that plays the same moves no fingerprint; if it does, play changed.
+Content ids are also named outside `content/` (`configs/sim/milestones.json`, the sim agents,
+tests, `web/scripts/e2e.mjs`): `git grep` an id before removing it.
 
 **A new module** touches its `modules/<id>.rs`, `modules/mod.rs` (`mod`, `REGISTRY`, `Params`),
 `configs/baseline.json` and a `docs/rules/<id>.md` page whose `<!-- params:<id> -->` block
@@ -109,8 +112,10 @@ refactor that plays the same moves no golden constant; if it does, play changed.
 them), `content.rs` (`Condition`, `condition_ok`), `events.rs` (`holds`, `progress`, `kind`),
 `view/projects.rs` (`condition_text`) and `hh-sim`'s `agents/progress.rs` (`condition`).
 
-**A new program reading** touches `state::Reading` (and `describe`), `modules/programs.rs`
-(`check_entries`, `reading`), `view/programs.rs` (`readings`, the editor's list), the web
+**A new program reading** touches `state::Reading` (`describe`, and `researched` for a
+research-gated one), `modules/programs.rs` (`check_line`, `reading`; `locked` for a gated
+one), `program_text.rs` (its text both ways), `view/programs.rs` (`readings`, the editor's
+list), the web
 `Reading` type (`engine.ts`) and `readingLabel` (`ui/ProgramLogic.tsx`), and
 `docs/rules/programs.md`; `npm run check` is the only check on the web two.
 

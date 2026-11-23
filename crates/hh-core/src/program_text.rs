@@ -364,7 +364,7 @@ pub fn parse_op(line: &str) -> Result<Op, String> {
 }
 
 /// How a text line stands: `ok`, `amber` (reads, but not unlocked yet this
-/// run: kept, fails or reads false when run), `red` (doesn't read: kept as
+/// run: kept, skipped free when run), `red` (doesn't read: kept as
 /// an `unparsed` line), `note` or `blank` (dropped).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct TextLine {

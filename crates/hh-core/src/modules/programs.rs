@@ -25,7 +25,7 @@ pub static DEF: ModuleDef = ModuleDef {
             param("logic_unlock_processors", K::Int, Some(("0", "1000")), "working processors that first open every line but plain commands (a career first)"),
             param("library_slots", K::Int, Some(("0", "1000")), "saved programs the loadout library holds (career state)"),
             param("loadout_name_max", K::Int, Some(("1", "1000")), "most characters in a loadout's name"),
-            param("fund_verb", K::Int, Some(("0", "1")), "1: the `fund <project>` verb is on; 0: off (a line with it fails when run)"),
+            param("fund_verb", K::Int, Some(("0", "1")), "1: the `fund <project>` verb is on; 0: off (a line with it is locked: skipped free)"),
             param("line_text_max", K::Int, Some(("1", "10000")), "most characters in a note or unparsed line's text"),
         ],
         rng: &[],
@@ -125,8 +125,8 @@ fn program_mut(g: &mut GameState, program: u32) -> Result<&mut Program, String> 
 }
 
 /// Replaces a program's queue; its pointer restarts at the top. What this run
-/// hasn't unlocked yet is accepted: such a line fails, or its `if` reads
-/// false, when run ([`locked`] says why).
+/// hasn't unlocked yet is accepted: run, such a line is passed over free
+/// ([`locked`] says why).
 pub fn set_program(r: &Rules, g: &mut GameState, program: u32, entries: &[Entry]) -> Result<(), String> {
     check_entries(r, g, program, entries)?;
     put_entries(g, program, entries)
@@ -224,7 +224,7 @@ pub fn check_line(r: &Rules, g: &GameState, e: &Entry, in_block: bool) -> Result
 /// Why a line won't run yet this run, if it won't: what it needs isn't
 /// unlocked (program logic, `if`, a researched reading, the fund verb, a
 /// command, building, research item or project). Such a line is kept; run,
-/// it fails, or its `if` reads false.
+/// it is passed over free like a note (an `if` with its body).
 pub fn locked(r: &Rules, g: &GameState, e: &Entry) -> Option<String> {
     let c = content();
     match &e.op {
@@ -806,9 +806,27 @@ fn past_body(p: &Program, line: usize) -> usize {
     j % p.entries.len()
 }
 
-/// One processor's step of program `i`: free lines (`if`s) are passed over
-/// until a line that costs the step runs, done or not. A whole loop of free
-/// lines idles the step.
+/// Jumps the body of program `i`'s `if` at `line`: marks its lines
+/// [`LineOutcome::Jumped`] (one that ran earlier today keeps that outcome;
+/// notes and unparsed lines never have one) and returns the line after it.
+fn jump_body(g: &mut GameState, i: usize, line: usize) -> usize {
+    let n = g.run.programs[i].entries.len();
+    let to = past_body(&g.run.programs[i], line);
+    let end = if to > line { to } else { n };
+    for l in line + 1..end {
+        if g.run.programs[i].entries[l].op.is_text() {
+            continue;
+        }
+        g.run.today.lines.entry(i as u32).or_default().entry(l as u32).or_insert(LineOutcome::Jumped);
+    }
+    to
+}
+
+/// One processor's step of program `i`: free lines (notes, unparsed and
+/// locked lines; a locked `if` with its body) are passed over until a line
+/// that costs the step runs, done or not. Every `if` costs the step and can't
+/// fail; a false one jumps its whole body. A whole loop of free lines idles
+/// the step.
 fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
     let n = g.run.programs[i].entries.len();
     for _ in 0..n {
@@ -822,40 +840,30 @@ fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
             g.run.today.lines.entry(i as u32).or_default().insert(l as u32, o);
         };
         let next = (line + 1) % n;
-        // (outcome, where the pointer goes, whether the step is spent)
-        let (outcome, to, spent) = match &op {
-            // Free, never run, no outcome: passed over like a true `if`.
-            Op::Note { .. } | Op::Unparsed { .. } => {
-                let p = &mut g.run.programs[i];
-                p.step = 0;
-                p.entry = next as u32;
-                continue;
-            }
-            // Before program logic opens, every line but a command fails
-            // (a held or loaded one; programs.md, *Locked lines*).
-            Op::Build { .. } | Op::BuyLand {} | Op::Act { .. } if !logic_unlocked(g) => (LineOutcome::Failed, next, true),
+        // Free, never run, no outcome: notes, unparsed lines and lines this
+        // run hasn't unlocked (programs.md, *Locked lines*). A locked `if`
+        // passes over its body too.
+        if op.is_text() || locked(r, g, &g.run.programs[i].entries[line]).is_some() {
+            let to = if matches!(op, Op::If { .. }) { jump_body(g, i, line) } else { next };
+            let p = &mut g.run.programs[i];
+            p.step = 0;
+            p.entry = to as u32;
+            continue;
+        }
+        // (outcome, where the pointer goes)
+        let (outcome, to) = match &op {
+            Op::Note { .. } | Op::Unparsed { .. } => unreachable!("passed over above"),
             Op::If { when } => {
-                // A loaded `if` this career hasn't opened is false.
-                if if_unlocked(g) && holds(r, g, when) {
-                    (LineOutcome::True, next, false)
+                if holds(r, g, when) {
+                    (LineOutcome::True, next)
                 } else {
-                    let to = past_body(&g.run.programs[i], line);
-                    let end = if to > line { to } else { n };
-                    // A body line that ran earlier today keeps that outcome.
-                    for l in line + 1..end {
-                        // Note and unparsed lines never have an outcome.
-                        if g.run.programs[i].entries[l].op.is_text() {
-                            continue;
-                        }
-                        g.run.today.lines.entry(i as u32).or_default().entry(l as u32).or_insert(LineOutcome::Jumped);
-                    }
-                    (LineOutcome::False, to, false)
+                    (LineOutcome::False, jump_body(g, i, line))
                 }
             }
             // Done: nothing to buy, the step only.
-            Op::Build { building, up_to: Some(most) } if g.owned(building) >= *most => (LineOutcome::Done, next, true),
-            Op::Build { building, .. } => (build(r, g, building, &short), next, true),
-            Op::BuyLand {} => (buy_land(r, g, &short), next, true),
+            Op::Build { building, up_to: Some(most) } if g.owned(building) >= *most => (LineOutcome::Done, next),
+            Op::Build { building, .. } => (build(r, g, building, &short), next),
+            Op::BuyLand {} => (buy_land(r, g, &short), next),
             Op::Act { verb: Verb::LoadProgram, target, tab: Some(t), .. } if *t as usize == i => {
                 // Loading into its own tab: the new lines start at the top
                 // (their first runs at the next step).
@@ -864,9 +872,9 @@ fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
                         return;
                     }
                 }
-                (LineOutcome::Failed, next, true)
+                (LineOutcome::Failed, next)
             }
-            Op::Act { verb, target, tab, amount } => (act(r, g, *verb, target.as_deref(), *tab, *amount, src, &short), next, true),
+            Op::Act { verb, target, tab, amount } => (act(r, g, *verb, target.as_deref(), *tab, *amount, src, &short), next),
             Op::Command { command, count } => {
                 let c = content().command(command).expect("set_program checked");
                 let outcome = execute(r, g, c, src, &short, None);
@@ -876,16 +884,14 @@ fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
                     mark(g, line, outcome);
                     return;
                 }
-                (outcome, next, true)
+                (outcome, next)
             }
         };
         mark(g, line, outcome);
         let p = &mut g.run.programs[i];
         p.step = 0;
         p.entry = to as u32;
-        if spent {
-            return;
-        }
+        return;
     }
 }
 

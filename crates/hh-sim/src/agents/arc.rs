@@ -2,7 +2,7 @@
 //! through them, not to play them well. It engages only once the swarm is
 //! revealed (the Deep Space Telescope, 1.9) and the calendar runs, so Act 1
 //! play, the ladder and the balance reads never meet it. Player strategy: its
-//! numbers are knobs' kind, not rules (docs/rulings.md).
+//! numbers are knobs' kind, not rules (docs/rulings/sim.md).
 
 use hh_core::{Action, Fx};
 

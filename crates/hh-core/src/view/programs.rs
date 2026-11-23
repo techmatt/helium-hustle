@@ -29,7 +29,7 @@ pub struct ProgramView {
     /// Per line, an `if` line's condition as it reads now.
     pub conditions: Vec<Option<ConditionView>>,
     /// Per line, why it won't run yet this run (`programs::locked`): kept,
-    /// it fails or its `if` reads false.
+    /// and skipped free when run (an `if` with its body).
     pub locked: Vec<Option<String>>,
     /// Per line, an `unparsed` line's reason it doesn't read.
     pub errors: Vec<Option<String>>,

@@ -234,12 +234,6 @@ pub(super) fn when(first: Clause, and: Option<Clause>) -> Entry {
 pub(super) const FUEL: i64 = 20;
 pub(super) const LOAD: i64 = 5;
 
-/// Lines the build order leaves free: once room for the old hands-off
-/// player's lead, which 061 retired (it plays a loadout file now). Kept as is
-/// so the author plays the same moves; dropping it lengthens the author's
-/// build order (an author change, re-pinned on its own).
-pub const LEAD_LINES: usize = 16 + 12;
-
 /// The main program with conditions, written from the view: its numbers are
 /// percents of the caps now and its pad lines read the pads now, so the text
 /// changes (and is rewritten) when a cap or the pad count does. Once a pad
@@ -295,12 +289,12 @@ pub(super) fn dream_watch(dream_at: i64, filler: &str) -> Vec<Entry> {
 /// nothing made then (bought with `buy_*` in that run) is led by `if` the
 /// input is under what that price asked `and` the credits cover that price
 /// and the buy: buy one (as the hand plan buys inputs only from credits past
-/// the target's price). At most `max_entries` less [`LEAD_LINES`] lines: the
-/// author buys the rest at its looks.
+/// the target's price). At most `max_entries` lines: the author buys the
+/// rest at its looks.
 /// Returns the lines and how many of `order`'s purchases they cover.
 pub(super) fn build_order_program(v: &View, order: &[(String, u32, Vec<Bridge>)], filler: &str) -> (Vec<Entry>, usize) {
-    // The config's `max_entries`, less [`LEAD_LINES`].
-    let max_lines = v.max_program_lines.saturating_sub(LEAD_LINES);
+    // The config's `max_entries`.
+    let max_lines = v.max_program_lines;
     let mut lines = Vec::new();
     let land = order
         .iter()
@@ -353,8 +347,8 @@ pub(super) fn build_order_program(v: &View, order: &[(String, u32, Vec<Bridge>)]
             lines.push(Entry::command(&format!("buy_{r}"), 1).indent());
         }
         // Guarded on credits for one at its price when written: while short,
-        // the false `if` skips it for free (so the filler earns); a finished
-        // step still costs a step while credits last.
+        // the false `if` takes a step and jumps its body; a finished step
+        // costs the `if`'s step and its own while credits last.
         let price = v.buildings.iter().find(|b| b.id == id).map_or(Fx::ZERO, credits_price);
         lines.push(when(stock_at_least(v, "credits", price), None));
         lines.push(Entry::new(Op::Build { building: id.to_string(), up_to: Some(c) }).indent());

@@ -193,7 +193,7 @@ async function playToFirstShipment() {
 /** Section 6, from scenario late_unlocks (two processors; cheats on): the instructions
  * unlock after a day, a program of the shape `if` / `build` / `buy land` / `if` is
  * written through the editor, shows live values and builds unattended; verb lines;
- * a done line costs its step and a false `if` skips it free. Shot `program-logic.png`. */
+ * a done line costs its step and a false `if` takes one and jumps its body. Shot `program-logic.png`. */
 async function programLogic(grant) {
   await debugMenu();
   await speed(0);
@@ -305,7 +305,9 @@ async function programLogic(grant) {
   await speed(0);
   const after = await now();
   const built = (await classes()).split(' ');
-  check(/✓$/.test(after[5]) && built[5] === 'out-true', `the if held once Credits above 800: ${after[5]} (${built[5]})`);
+  // The `if` takes its own step, so the day its body builds it may show no outcome.
+  check(/✓$/.test(after[5]) && (built[5] === 'out-true' || built[6] === 'out-ran'),
+    `the if held once Credits above 800: ${after[5]} (${built[5]} ${built[6]})`);
   check(built[6] === 'out-ran' || built[6] === 'out-done', `the guarded line built, then is done: ${built.join(' ')}`);
   // A number being typed survives the game's redraws, and is sent on Enter or leaving.
   await speed(10);
@@ -395,9 +397,9 @@ async function programLogic(grant) {
   check(true, 'pause and resume ran from verb lines');
   await shot('program-verbs');
 
-  // Every non-`if` line costs a step: on one processor a done `build ... up to 1` takes the
-  // day's step and Idle the next; guarded by a false `if`, it is skipped free and Idle runs
-  // every day.
+  // Every line costs a step: on one processor a done `build ... up to 1` takes the day's
+  // step and Idle the next; guarded by a false `if`, the `if` takes the day's step and jumps
+  // its body, and Idle runs the next day.
   while (Number(await evaluate(`document.querySelector('.prog-procs span').textContent.match(/\\d+/)[0]`)) > 1) {
     await click('[data-testid="proc-minus"]');
   }
@@ -430,8 +432,8 @@ async function programLogic(grant) {
   await indent(1);
   await click('[data-testid="add-idle"]');
   const guarded = await days(3500);
-  check(guarded.includes('out-false out-jumped out-ran') && guarded.every((d) => !d.includes('out-done')),
-    `guarded by a false if: skipped free, Idle runs every day (${guarded.join('; ')})`);
+  check(guarded.includes('out-false out-jumped -') && guarded.includes('- - out-ran') && guarded.every((d) => !d.includes('out-done')),
+    `guarded by a false if: the if takes a day's step and jumps its body, Idle the next (${guarded.join('; ')})`);
 }
 
 /** Section 7, from scenario everything (cheats on): the program text editor. L4's Program 1

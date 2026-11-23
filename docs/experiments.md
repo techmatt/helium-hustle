@@ -101,4 +101,6 @@ the branch's worktree reads the branch's `configs/` and may fail to load them.
   ([README](../README.md#build-and-test)), run from it. A `--set` is enough for a param.
 - **Golden plays the same** (a refactor, or a state-only change): diff a pre-change binary's
   `run --policy script --seed 18446744073709551615 --ticks 2000` printout against the new
-  one's; when play is unchanged only the fingerprint lines differ.
+  one's; when play is unchanged only the fingerprint lines differ. A config-only change
+  (a new key) that plays the same moves no fingerprint at all (the fingerprint leaves the
+  config out), so the ladder's pins prove it directly.

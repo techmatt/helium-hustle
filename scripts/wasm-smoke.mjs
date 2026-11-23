@@ -10,9 +10,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 
 // Must equal GOLDEN_* in crates/hh-core/src/tests/mod.rs (a fast-lane test checks it).
-const GOLDEN_REVISION = 18;
-const GOLDEN_FINGERPRINT = '23dafde9c04e55ef';
+const GOLDEN_REVISION = 19;
+const GOLDEN_FINGERPRINT = '176c4fea64a96ed9';
 const GOLDEN_CONTENT_HASH = '06736d0dd6677f44';
+const GOLDEN_CONFIG_HASH = 'c6f158e1d0485a48';
 // The golden game (crates/hh-core/src/driver.rs): baseline, seed u64::MAX, 2000 ticks of
 // the scripted policy.
 const SEED = '18446744073709551615';
@@ -37,6 +38,7 @@ const record = golden.record;
 check(m.rules_revision() === GOLDEN_REVISION, `rules revision ${m.rules_revision()} (golden ${GOLDEN_REVISION})`);
 check(golden.fingerprint === GOLDEN_FINGERPRINT, `golden fingerprint ${golden.fingerprint} (native ${GOLDEN_FINGERPRINT}), ${record.actions.length} actions`);
 check(m.content_hash() === GOLDEN_CONTENT_HASH, `content hash ${m.content_hash()} (golden ${GOLDEN_CONTENT_HASH})`);
+check(golden.config_hash === GOLDEN_CONFIG_HASH, `config hash ${golden.config_hash} (golden ${GOLDEN_CONFIG_HASH})`);
 check(record.seed === SEED && record.ticks === TICKS, `golden record: seed ${record.seed}, ${record.ticks} ticks`);
 
 // The same actions through the JSON API, one call at a time, from the golden's

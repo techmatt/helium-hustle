@@ -207,9 +207,10 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
             let c = load_config(BASELINE)?;
             let s = hh_core::driver::golden_session(&c).map_err(Fail::Usage)?;
             Ok(format!(
-                "revision {RULES_REVISION} fingerprint {} content {}\n",
+                "revision {RULES_REVISION} fingerprint {} content {} config {}\n",
                 s.state.fingerprint(),
-                content_hash()
+                content_hash(),
+                c.hash()
             ))
         }
         other => usage(format!("unknown command {other:?}")),

@@ -13,7 +13,7 @@ $S replay out/r.json                                    # rebuild and check reco
 $S objectives reference/scenarios/run1_fresh.json      # a Godot optimizer scenario, scored
 $S show                                                 # resolved config, hashes, revision
 $S scenarios                                            # the embedded scenarios
-$S golden                                               # the golden game's fingerprint
+$S golden                                               # the golden game's fingerprint and hashes
 ```
 
 ## Measuring play

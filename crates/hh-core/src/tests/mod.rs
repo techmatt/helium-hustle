@@ -43,12 +43,19 @@ pub(crate) fn set(g: &mut crate::GameState, res: &str, v: &str) {
     g.run.resources.insert(res.into(), f(v));
 }
 
-// The golden constants: update all three together on a `RULES_REVISION` bump
+/// Program 1's line outcomes today (`None`: no outcome: not reached, a note,
+/// or a locked line skipped free). The step-rule tests read days with it.
+pub(crate) fn outcomes(g: &crate::GameState) -> Vec<Option<crate::state::LineOutcome>> {
+    crate::view::LinesRun::today(g).lines[0].clone()
+}
+
+// The golden constants: update all four together on a `RULES_REVISION` bump
 // with `python scripts/set_golden.py` (it also sets `GOLDEN_*` in
 // scripts/wasm-smoke.mjs); never type them (README, *Rules changes*).
-const GOLDEN_REVISION: u32 = 18;
-const GOLDEN_FINGERPRINT: &str = "23dafde9c04e55ef";
+const GOLDEN_REVISION: u32 = 19;
+const GOLDEN_FINGERPRINT: &str = "176c4fea64a96ed9";
 const GOLDEN_CONTENT_HASH: &str = "06736d0dd6677f44";
+const GOLDEN_CONFIG_HASH: &str = "c6f158e1d0485a48";
 
 pub(crate) fn golden_session() -> Session {
     crate::driver::golden_session(&baseline()).unwrap()
@@ -66,6 +73,7 @@ fn golden_game() {
         (GOLDEN_REVISION, GOLDEN_FINGERPRINT)
     );
     assert_eq!(content_hash(), GOLDEN_CONTENT_HASH);
+    assert_eq!(baseline().hash(), GOLDEN_CONFIG_HASH);
 }
 
 /// The golden script's condition program (`driver::guard_lines`) does its work
@@ -125,6 +133,10 @@ fn wasm_smoke_expects_the_golden_constants() {
     assert!(
         smoke.contains(&format!("'{GOLDEN_CONTENT_HASH}'")),
         "scripts/wasm-smoke.mjs holds another content hash"
+    );
+    assert!(
+        smoke.contains(&format!("'{GOLDEN_CONFIG_HASH}'")),
+        "scripts/wasm-smoke.mjs holds another config hash"
     );
     assert!(
         smoke.contains(&format!("GOLDEN_REVISION = {GOLDEN_REVISION};")),

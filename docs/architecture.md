@@ -127,10 +127,11 @@ the rest serve tests and e2e (`golden_start` the golden).
   `[{tick, action}]`, the final tick, fingerprint and rules revision. `Session` plays a
   game and keeps its record; `Session::fork` copies the game with an empty record (the
   oracle's rollouts, [oracle.md](oracle.md)).
-- **Fingerprint**: FNV-1a of the state's JSON, 16 hex digits.
+- **Fingerprint**: FNV-1a of the state's JSON less its config, 16 hex digits: it pins play;
+  the config is pinned beside it by its hash (`Config::hash`).
 - **Web saves**: the state, tagged with `RULES_REVISION` and the config hash; a mismatch
   discards the save. No migration code now; an easy one is allowed when it helps development
-  ([rulings.md](rulings.md#saves)).
+  ([rulings/engine.md](rulings/engine.md#saves)).
 
 ## The view
 

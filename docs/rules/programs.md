@@ -19,8 +19,9 @@ Center) starts unassigned. Each day at most the processors resource (economy.md:
 *working*, upkeep-paid Data Center) runs: when fewer work than are assigned, the shortfall
 comes off the last programs first for that day, and their assignments stay.
 
-**Instructions** (`state::Op`; flat, `<verb> <target> [amount]`: docs/rulings.md). All but
-`if` and the two text lines cost a processor step, with something to do or not:
+**Instructions** (`state::Op`; flat, `<verb> <target> [amount]`: docs/rulings/programs.md). Every line
+but the two text lines and locked ones (*Locked lines*) costs a processor step, with something
+to do or not:
 
 | Line | JSON `op` | What it does |
 |---|---|---|
@@ -29,7 +30,7 @@ comes off the last programs first for that day, and their assignments stay.
 | `build <building> up to N` | `build` (`up_to` N) | The same while fewer than N are owned; with N owned it is **done**: the step, nothing else. |
 | `buy land` | `buy_land` | Buys land, as the Buy Land action would; unaffordable, it fails. |
 | a verb | `act` (`verb`, `target`, `tab`, `amount`) | *Verbs*, below. |
-| `if <condition>` | `if` (`when`) | **Free.** Checked once, when the pointer reaches it. True: the pointer moves into its body, which then runs whole, whatever the condition does meanwhile. False: the pointer jumps past the body. |
+| `if <condition>` | `if` (`when`) | Its step, nothing else; it never fails. Checked once, when the pointer reaches it. True: the pointer moves into its body, which then runs whole, whatever the condition does meanwhile. False: the pointer jumps past the whole body at once, however long. |
 | `# <text>` | `note` (`text`) | **Free**, never runs, no outcome: a comment kept with the program. |
 | a line that doesn't read | `unparsed` (`text`) | **Free**, never runs, no outcome: a text-editor line kept as written until fixed (*Text form*). |
 
@@ -89,8 +90,8 @@ slot or over one; loading replaces a program's lines with a slot's, as `set_prog
 processors unchanged. A saved program keeps every line, locked, note and unparsed ones too.
 
 **Locked lines.** A line whose need this run hasn't met is kept, never refused, by
-`set_program`, a loadout or the `load` verb; when run it fails (an `if`: reads false), and
-runs once unlocked (`programs::locked`; the view's per-line `locked` says why). Needs: program
+`set_program`, a loadout or the `load` verb; when run it is passed over free, like a note (a
+locked `if` with its whole body), and runs once unlocked (`programs::locked`; the view's per-line `locked` says why). Needs: program
 logic (every line but a command), `if`'s flag, a researched reading's research, the fund
 verb's switch, and the line's command, building (`build`, `pause`, `resume`), research item
 (shown) or project (open to funding).
@@ -102,10 +103,10 @@ reward ([projects.md](projects.md)); content must set it. A loaded `if` the care
 opened runs as false: it skips its body. The view's `if_open` says whether it is open.
 
 **Running** (each day): programs in order; each running processor of a program takes one
-step from the shared pointer. A step passes over free lines (`if`s, notes, unparsed lines) until it reaches a line
-that costs it: that line runs once and the pointer advances
+step from the shared pointer. A step passes over free lines (notes, unparsed and locked lines; a locked `if` with its
+body) until it reaches a line that costs it: that line runs once and the pointer advances
 whatever the outcome (ran, skipped, failed or done): a command line's run count rises and,
-at its `count`, the pointer moves on; any other line moves on at once. The pointer wraps from the last line to the first. A step that passes as
+at its `count`, the pointer moves on; an `if` moves into or past its body; any other line moves on at once. The pointer wraps from the last line to the first. A step that passes as
 many free lines as the program has (one loop) idles.
 An empty program does nothing. Each line's outcome today (`state::LineOutcome`; a false
 `if`'s body `jumped` unless it ran earlier that day) is display only. A failed `build` or
@@ -162,7 +163,7 @@ statement is red (a comment goes on its own line). **Aliases:** an id for a name
 | `logic_unlock_processors` | 2 | 0 to 1000 | Working processors that first open every line but plain commands (a career first). |
 | `library_slots` | 12 | 0 to 1000 | Saved programs the loadout library holds (career state). |
 | `loadout_name_max` | 40 | 1 to 1000 | Most characters in a loadout's name. |
-| `fund_verb` | 1 | 0 to 1 | 1: the `fund <project>` verb is on; 0: off (a line with it fails when run). |
+| `fund_verb` | 1 | 0 to 1 | 1: the `fund <project>` verb is on; 0: off (a line with it is locked: skipped free). |
 | `line_text_max` | 200 | 1 to 10000 | Most characters in a note or unparsed line's text. |
 <!-- /params -->
 
@@ -173,4 +174,4 @@ Content fields for commands: [commands.md](commands.md#content).
 
 - Candidates (Godot port): the processor rules above. Commands' port notes are in
   [commands.md](commands.md#port-notes).
-- Everything past commands is new (picks: docs/rulings.md).
+- Everything past commands is new (picks: docs/rulings/programs.md).

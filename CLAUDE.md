@@ -15,8 +15,9 @@ Helium Hustle: a Rust simulation core (`hh-core`) under a native CLI (`hh-sim`),
 - **Read `docs/rules/README.md`, then only the files your task touches.** Never describe code
   as doing more than it does.
 - **Matt's standing rulings** (pillars, speed, saves, art, sim players, and executor defaults
-  that stand until he overrides them) are in [docs/rulings.md](docs/rulings.md). A new ruling,
-  or a change to one, updates its line there in the same commit.
+  that stand until he overrides them) are in [docs/rulings.md](docs/rulings.md), an index of
+  parts by area under `docs/rulings/`. A new ruling, or a change to one, updates its line in its
+  part in the same commit; a part near the size margin splits, never trims a ruling.
 
 ## Engine rules
 
@@ -45,7 +46,7 @@ Locked by Matt: changing any of these is his decision, not an implementation det
   does, play changed.
 - **Every tunable number lives in a config** under `configs/`, with **no defaults in code**: a
   missing key is a load error, never a silent fallback. A test may build its own config. Sim
-  agents' numbers are player strategy, not rules, and exempt (docs/rulings.md).
+  agents' numbers are player strategy, not rules, and exempt (docs/rulings/sim.md).
 - **Mechanics are modules, alternatives are variants, content is data.** A new system (shipments,
   boredom, research) is a module; another way of doing one is a variant chosen in the config;
   buildings, commands, research, events and the like are rows in `content/`, not code.
@@ -77,6 +78,8 @@ Locked by Matt: changing any of these is his decision, not an implementation det
   process (the `cargo`, `node` or test binary), never on a launcher that returns before the work
   is done. A fresh worktree's first build takes minutes: give it its time. It also has no
   `web/node_modules`: run `npm ci` in `web/` before the first web build or check.
+- **A before/after read** (main, another commit, new rules with old agents) builds its other
+  side with `python scripts/baseline.py` (docs/experiments.md, *Reads against another revision*).
 - **Browser checks, sweeps and e2e run against `vite preview`** (a static build), never the dev
   server: its watcher rebuilds the wasm and reloads the page when engine sources change.
 - **One cargo at a time in a target dir.** Parallel helpers need their own `CARGO_TARGET_DIR`,
@@ -89,6 +92,9 @@ Locked by Matt: changing any of these is his decision, not an implementation det
 - **Times are local, 12-hour clock** (2:45pm), in reports, docs and progress lines.
 - **American English everywhere:** content, docs, UI, comments and names.
 - Scratch and run output go in `out/` (git-ignored), never `%TEMP%`.
+- **Screenshots** an item makes go in its results folder and are also copied to
+  `C:\Code\gdrive-sync\helium-hustle\screenshots\` as `NNN_*.png` (NNN: the item's number):
+  a standing exception to writing only inside the worktree (docs/rulings/ui.md).
 
 ## Report
 

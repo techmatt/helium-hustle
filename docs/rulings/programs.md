@@ -1,0 +1,50 @@
+# Rulings: programs
+
+Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **default** mean).
+The rules as implemented: [rules/programs.md](../rules/programs.md).
+
+- **One flat program template (2026-11-20).** Every line is `<verb> <target> [amount]`: the
+  target slot is typed by the verb, the amount `N`, `up to N` or `all`. No nesting, variables,
+  labels or jumps; a new capability is a new verb or reading, never new grammar; per-target
+  commands (Buy X, Fund X) are one verb with a target. Conditions stay
+  `<reading> <above | below> <number>` with one optional `and` / `or`; the right side is
+  always a number. Pads are addressed only by good. Every line is open wherever program logic
+  is, but `if`, which has its own unlock (*Program logic unlocks*, below). No `wait until`
+  (2026-11-22): programs run every day, so `if` covers it. *Defaults (037):* the pad verbs run
+  the Launch / Load commands' rows; `retire` retires at the day's end like the button.
+- **Every line costs a step (2026-11-22, 064; replaces 2026-11-20's free `if`).** Each line
+  that runs takes one processor step, so play is easy to follow at 1×. A line with nothing to
+  do (`research X` once researched, `pause` with nothing running, `set pads` already at N,
+  `launch pads` with no pad ready, `build X up to N` with N owned) still takes its step, and
+  nothing else: no resources, no boredom. An `if` takes its step too, costs nothing else and
+  can't fail; a false `if` skips its whole body at once, however long. Notes and locked lines
+  are free. *Default (038):* `load pads` is done when no pad of the good would take cargo.
+- **Locked lines (2026-11-22, 064; replaces 063's "fails and advances").** A line for
+  something not unlocked this run (program logic, `if`, a reading's research, a command,
+  building, research item or project) is kept (loaded, pasted or set) and skipped for free,
+  like a note; a locked `if` skips its body free too. The Text editor's amber status stays.
+- **Program logic unlocks (2026-11-21).** `if` is not available from the start: a cheap
+  global project offered after 1.6 unlocks it. Side quest 1.b's reward is a placeholder
+  (059, default): every run starts with 50 Science (a `grant` unlock).
+- **Program loadouts (2026-11-20).** Each program has save / load buttons. A saved program
+  goes into a library that persists across retirements (career state), so a player keeps
+  programs for different stages and loads one into any program tab. Programs still empty on
+  retirement; loading is how they come back. *Defaults (035):* 12 slots, display names up to
+  40 characters, open from run 1, loading leaves processors as assigned.
+- **"Add to Program" (2026-11-22)**, not "Add to Program 1": the active program is implied.
+- **Text editor (2026-11-22).** A "Text editor" takeover on the active program:
+  the block editor's words, `#` notes kept, aliases fine; live gutter (green ran, grey
+  skipped, red unparsed, amber locked, fired k/10 on `if`s); red and amber lines kept; saved
+  on Apply or leaving; copy/paste is import/export. *Defaults (063):* blanks dropped.
+- **`fund <project>` (2026-11-20).** A `fund <project> [amount]` verb funding a project the
+  way the Projects panel does; it may be switched off later, one config change
+  (`fund_verb`). *Defaults (039):* `fund P N` sets N a day on every cost of P (rules in
+  programs.md); JSON verb `fund`, so a later `fund <axis>` can share it.
+- **Readings (2026-11-22).** One reading per thing, only what the player has
+  unlocked ([rules/programs.md](../rules/programs.md)). A capped
+  reading's number box has a % / amount unit toggle, no new entries; Energy per day and Days
+  since a purchase are research-unlocked (Process Telemetry, 062's pick); no building counts
+  yet. The golden game runs a short condition program, pinning the interpreter, from the
+  `golden_start` scenario with `if` open (049_1). *Defaults (040):* `free processors` is
+  granted by active buildings less assigned (what `assign processors ... all` would add);
+  `idle pads` is pads with no cargo (a cooling pad counts).

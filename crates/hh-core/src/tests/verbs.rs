@@ -1,7 +1,7 @@
 //! `act` lines (`<verb> <target> [amount]`) and the readings that guard them
 //! (docs/rules/programs.md, *Verbs*, *Conditions*).
 
-use super::{f, rules, set};
+use super::{f, outcomes, rules, set};
 use crate::modules::{career, economy, programs};
 use crate::state::{Amount, Entry, GameState, Holding, LineOutcome as O, Op, Reading, Verb};
 use crate::{Action, Fx, Rules};
@@ -24,11 +24,17 @@ fn put(r: &Rules, g: &mut GameState, entries: Vec<Entry>) -> Result<(), String> 
     r.apply(g, &Action::SetProgram { program: 0, entries })
 }
 
-/// Runs line 0 of program 0 once (one step; nothing else in the day matters here).
-fn run_one(r: &Rules, g: &mut GameState, e: Entry) -> O {
+/// Runs line 0 of program 0 once (one step; nothing else in the day matters
+/// here): its outcome, `None` for a locked line (skipped free).
+fn run_line(r: &Rules, g: &mut GameState, e: Entry) -> Option<O> {
     put(r, g, vec![e]).unwrap();
     r.advance(g, 1);
-    crate::view::LinesRun::today(g).lines[0][0].expect("ran")
+    outcomes(g)[0]
+}
+
+/// [`run_line`] for a line that runs.
+fn run_one(r: &Rules, g: &mut GameState, e: Entry) -> O {
+    run_line(r, g, e).expect("ran")
 }
 
 fn own(r: &Rules, g: &mut GameState, b: &str, n: u32) {
@@ -41,14 +47,18 @@ fn own(r: &Rules, g: &mut GameState, b: &str, n: u32) {
 fn pause_and_resume_take_n_or_all_and_are_done_with_nothing_to_do() {
     let r = rules();
     let mut g = game(&r);
+    // Excavators aren't unlocked in a new game: the line is locked, skipped free.
     own(&r, &mut g, "excavator", 3);
-    assert_eq!(run_one(&r, &mut g, act(Verb::Pause, Some("excavator"), None, None)), O::Ran);
-    assert_eq!(g.active("excavator"), 2, "no amount: one");
-    assert_eq!(run_one(&r, &mut g, act(Verb::Pause, Some("excavator"), None, Some(Amount::N(5)))), O::Ran);
-    assert_eq!(g.active("excavator"), 0, "N past what runs pauses what runs");
-    assert_eq!(run_one(&r, &mut g, act(Verb::Pause, Some("excavator"), None, Some(Amount::All))), O::Done);
-    assert_eq!(run_one(&r, &mut g, act(Verb::Resume, Some("excavator"), None, Some(Amount::All))), O::Ran);
+    assert_eq!(run_line(&r, &mut g, act(Verb::Pause, Some("excavator"), None, None)), None);
     assert_eq!(g.active("excavator"), 3);
+    own(&r, &mut g, "solar_panel", 3);
+    assert_eq!(run_one(&r, &mut g, act(Verb::Pause, Some("solar_panel"), None, None)), O::Ran);
+    assert_eq!(g.active("solar_panel"), 2, "no amount: one");
+    assert_eq!(run_one(&r, &mut g, act(Verb::Pause, Some("solar_panel"), None, Some(Amount::N(5)))), O::Ran);
+    assert_eq!(g.active("solar_panel"), 0, "N past what runs pauses what runs");
+    assert_eq!(run_one(&r, &mut g, act(Verb::Pause, Some("solar_panel"), None, Some(Amount::All))), O::Done);
+    assert_eq!(run_one(&r, &mut g, act(Verb::Resume, Some("solar_panel"), None, Some(Amount::All))), O::Ran);
+    assert_eq!(g.active("solar_panel"), 3);
 }
 
 #[test]
@@ -75,7 +85,7 @@ fn pad_verbs_with_nothing_to_do_cost_the_step_only() {
     let r = rules();
     let mut g = game(&r);
     let mut no_pad = g.clone();
-    assert_eq!(run_one(&r, &mut no_pad, act(Verb::LaunchPads, None, None, None)), O::Failed, "locked: no Launch Pad");
+    assert_eq!(run_line(&r, &mut no_pad, act(Verb::LaunchPads, None, None, None)), None, "locked (no Launch Pad): skipped free");
     own(&r, &mut g, "launch_pad", 1);
     own(&r, &mut g, "solar_panel", 10);
     set(&mut g, "he3", "0");
@@ -225,8 +235,8 @@ fn fund_sets_every_cost_rate_as_the_panel_does() {
     let r = rules();
     let mut g = game(&r);
     let fund = |a| act(Verb::Fund, Some("foundation_grant"), None, a);
-    // Locked: fails, no rate.
-    assert_eq!(run_one(&r, &mut g, fund(Some(Amount::N(3)))), O::Failed);
+    // Locked: skipped free, no rate.
+    assert_eq!(run_line(&r, &mut g, fund(Some(Amount::N(3)))), None);
     assert!(g.run.project_rates.is_empty());
     g.run.enabled_projects.insert("foundation_grant".into());
     set(&mut g, "credits", "0");
@@ -250,9 +260,9 @@ fn fund_sets_every_cost_rate_as_the_panel_does() {
     assert!(rates(&g).is_empty(), "0 stops it");
     assert_eq!(run_one(&r, &mut g, fund(None)), O::Ran);
     assert_eq!(rates(&g).get("science"), Some(&science_max), "no amount: the most, as all");
-    // Completed: no longer open, so it fails.
+    // Completed: no longer open, so it is locked (skipped free).
     g.career.projects.completions.insert("foundation_grant".into(), 1);
-    assert_eq!(run_one(&r, &mut g, fund(Some(Amount::All))), O::Failed);
+    assert_eq!(run_line(&r, &mut g, fund(Some(Amount::All))), None);
     assert!(put(&r, &mut g, vec![act(Verb::Fund, Some("no_such"), None, None)]).is_err());
     assert!(put(&r, &mut g, vec![act(Verb::Fund, None, None, None)]).is_err());
 }
@@ -267,11 +277,11 @@ fn the_fund_verb_switches_off_in_config() {
     assert_eq!(r.view(&g).programs[0].locked[0].as_deref(), Some("the fund verb is off"));
     let v = crate::view::build(&r, &g);
     assert!(!v.verbs.iter().any(|x| x.verb == Verb::Fund));
-    // Held (as a loadout brings it), the fund line fails when run.
+    // Held (as a loadout brings it), the fund line is skipped free when run.
     g.run.enabled_projects.insert("foundation_grant".into());
     g.run.programs[0].entries = vec![fund];
     r.advance(&mut g, 1);
-    assert_eq!(crate::view::LinesRun::today(&g).lines[0][0], Some(O::Failed));
+    assert_eq!(outcomes(&g)[0], None);
     assert!(g.run.project_rates.is_empty());
 }
 

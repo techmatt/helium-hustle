@@ -10,7 +10,8 @@ and serving the page: [README.md](README.md). e2e and qa share the DevTools harn
 `npm run e2e` (`scripts/e2e.mjs`) drives headless Edge or Chrome over the DevTools
 protocol (no packages; the harness, shared with qa, is `scripts/cdp.mjs`) against a
 served page: `HH_URL`, required (it exits naming `vite preview` when unset),
-`HH_BROWSER` for a browser off the usual paths, `HH_SHOTS=<dir>` to save PNGs. About
+`HH_BROWSER` for a browser off the usual paths, `HH_SHOTS=<dir>` to save PNGs (an item's
+results folder; kept shots are also copied to the shared screenshots folder, CLAUDE.md). About
 100 s. It plays, in order:
 
 1. **A fresh game through the normal UI only** (no debug menu): a build order, Program 1

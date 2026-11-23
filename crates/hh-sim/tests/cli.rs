@@ -112,16 +112,16 @@ fn grid(cmd: &str, agents: &str, extra: &[&str]) -> Vec<String> {
 /// all. Copy them from the failing assertion (or the test's `games.jsonl`).
 /// (The handsoff rows play only the author's runs: [`HANDSOFF_PIN`] pins its loadout.)
 const PINNED: &[(&str, u64, &str)] = &[
-    ("random", 1, "34d5b39f32ef7e01"),
-    ("random", 2, "a55ad8f70dc04760"),
-    ("greedy", 1, "a54012af181416fc"),
-    ("greedy", 2, "f08e0bfb13019c7d"),
-    ("author", 1, "5c99ec9563065522"),
-    ("author", 2, "615f809b4fe31725"),
-    ("casual", 1, "7935350657de72af"),
-    ("casual", 2, "51403be07af1f667"),
-    ("handsoff", 1, "5c99ec9563065522"),
-    ("handsoff", 2, "70dc97314f7394a2"),
+    ("random", 1, "35ada6b77b5daf6d"),
+    ("random", 2, "7923ca8e32379ed0"),
+    ("greedy", 1, "b17768938e38c882"),
+    ("greedy", 2, "e467866c14cbd7db"),
+    ("author", 1, "5d074ae563023dc3"),
+    ("author", 2, "a07abe3cbc7e1a84"),
+    ("casual", 1, "8268ac8b317db4d3"),
+    ("casual", 2, "3a2668289d84b6d5"),
+    ("handsoff", 1, "5d074ae563023dc3"),
+    ("handsoff", 2, "3e98479f62c7ea83"),
 ];
 
 #[test]
@@ -184,7 +184,7 @@ fn the_ladder_prints_its_tables_and_writes_results() {
 /// handsoff games are the author's), so this one goes to run 3 on seed 1,
 /// where the loadout file plays, and ships and buys. A new loadout file moves
 /// the pin: copy it from the failing assertion.
-const HANDSOFF_PIN: &str = "f56df2d9474d4409";
+const HANDSOFF_PIN: &str = "46d34232950639a7";
 
 #[test]
 #[ignore = "slow lane: a 3-run career (~2 s)"]
@@ -340,7 +340,7 @@ fn the_oracle_plays_on_copies_and_its_game_replays() {
     let half = fingerprints.len() / 2;
     assert_eq!(fingerprints[..half], fingerprints[half..]);
     // Seeds 1 and 2 of the oracle, then of the pinned one.
-    assert_eq!(fingerprints[..half], ["57505d837257d3cd", "a74b53766a58a1cc","ff81b869efc4dccd", "1ec1acc9c1ece2ef"]);
+    assert_eq!(fingerprints[..half], ["b4e0fbfd1931ad64", "c59dec04ebd14ec7", "61519b7f4ae2744c", "bb58961b942a2704"]);
 }
 
 /// `trace --at T` prints the state at career tick T: what walls a run in.

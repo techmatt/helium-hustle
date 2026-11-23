@@ -1,7 +1,7 @@
 //! The text editor's form (`program_text`): reading, writing, the round trip,
 //! line status, and the note, unparsed and locked lines it keeps.
 
-use super::rules;
+use super::{outcomes, rules};
 use crate::modules::programs;
 use crate::program_text::{parse, parse_op, to_text};
 use crate::state::{Amount, Entry, GameState, Loadout, Op, Verb};
@@ -109,9 +109,9 @@ fn every_verb_round_trips() {
 }
 
 #[test]
-fn a_locked_line_fails_when_run_and_says_why() {
+fn a_locked_line_is_skipped_free_and_says_why() {
     let r = rules();
-    // Before program logic: a `build` line is taken, amber, and fails when run.
+    // Before program logic: a `build` line is taken, amber, and skipped free when run.
     let mut g = r.new_game(1);
     super::set(&mut g, "credits", "100000");
     let solar = g.owned("solar_panel");
@@ -120,9 +120,9 @@ fn a_locked_line_fails_when_run_and_says_why() {
     r.advance(&mut g, 1);
     if !programs::logic_unlocked(&g) {
         assert_eq!(g.owned("solar_panel"), solar, "nothing bought before program logic");
-        assert_eq!(crate::view::LinesRun::today(&g).lines[0][0], Some(crate::state::LineOutcome::Failed));
+        assert_eq!(outcomes(&g)[0], None);
     }
-    // With program logic open and no pad: the pad verb is amber, as it fails.
+    // With program logic open and no pad: the pad verb is amber, skipped when run.
     let g = open(&r);
     let p = parse(&r, &g, "launch pads all\n");
     assert_eq!(p.lines[0].status, "amber", "{:?}", p.lines[0]);
@@ -163,7 +163,7 @@ fn red_lines_say_why_and_stay_as_unparsed_lines() {
     r.apply(&mut g, &Action::SetProgram { program: 0, entries: p.entries.clone() }).unwrap();
     r.advance(&mut g, 3);
     assert_eq!(g.run.programs[0].entries, p.entries);
-    assert!(crate::view::LinesRun::today(&g).lines[0].iter().all(Option::is_none));
+    assert!(outcomes(&g).iter().all(Option::is_none));
     let v = crate::view::build(&r, &g);
     assert!(v.programs[0].errors[1].as_deref().is_some_and(|w| w.contains("castle")));
     // Back to text and read again: nothing lost.
@@ -189,9 +189,14 @@ fn notes_in_a_body_ride_with_it_and_cost_nothing() {
     let p = parse(&r, &g, "if credits above 999999\n  # never\n  idle\nidle\n# end\n");
     assert!(p.entries[1].indented, "a note may sit in a body");
     r.apply(&mut g, &Action::SetProgram { program: 0, entries: p.entries }).unwrap();
+    use crate::state::LineOutcome as O;
+    // The false `if` takes the day's step; its body (note aside) is jumped.
     r.advance(&mut g, 1);
-    let lines = &crate::view::LinesRun::today(&g).lines[0];
-    assert_eq!(lines[3], Some(crate::state::LineOutcome::Ran));
+    let lines = outcomes(&g);
+    assert_eq!(lines[..3], [Some(O::False), None, Some(O::Jumped)]);
+    r.advance(&mut g, 1);
+    let lines = outcomes(&g);
+    assert_eq!(lines[3], Some(O::Ran));
     assert_eq!((lines[1], lines[4]), (None, None));
 }
 

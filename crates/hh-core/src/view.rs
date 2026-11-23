@@ -115,7 +115,7 @@ pub struct CommandView {
     pub costs: BTreeMap<String, Fx>,
     pub produces: BTreeMap<String, Fx>,
     pub boredom: Fx,
-    /// A per-target command folded into one verb (docs/rulings.md, the flat
+    /// A per-target command folded into one verb (docs/rulings/programs.md, the flat
     /// template): its verb (`Buy`, `Promote`, `Fund`, `Overclock`) and its
     /// target's label (the name past the verb). `None` for the rest.
     pub verb: Option<&'static str>,
