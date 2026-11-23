@@ -109,12 +109,8 @@ function BlockEditor({ s, program, setProgram, bar }: { s: Store; program: numbe
           ))}
         </div>
       </div>
-      <p class="te-help muted small">
-        Click a row to pick it, then an instruction to add it below; drag to reorder, ⇥ to move a line into the block above, × to remove. Every edit runs at once.
-      </p>
       <div class="te-main">
         <div class="block-main">
-          {entries.length === 0 && <p class="muted hint">Empty. Add instructions from the panel on the right.</p>}
           <ProgramLines s={s} program={at} blocks={{ selected, select: (row) => setPicked({ program: at, row }) }} />
           <AddLogic v={v} canElse={canAddElse(entries)} add={(e) => editProgram(at, (now) => [...now, e])} />
         </div>

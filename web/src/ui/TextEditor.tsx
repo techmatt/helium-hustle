@@ -269,10 +269,6 @@ function ProgramDraft({ s, program, setProgram, bar }: { s: Store; program: numb
           </>
         )}
       </p>
-      <p class="te-help muted small">
-        One line per statement, the words the Blocks mode shows, a repeat count first (<code>4x sell cloud compute</code>); the lines of an <code>if</code> indented under it, then optionally <code>else</code> and the lines to run when it is false; <code>#</code> starts a
-        note.
-      </p>
       <div class="te-main">
       <div class="te-editor">
         <div class="te-gutter" ref={gutter} aria-hidden="true">

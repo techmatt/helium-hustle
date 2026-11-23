@@ -62,6 +62,8 @@ export function ProgramLines({ s, program, blocks }: { s: Store; program: number
           const dragProps = {
             draggable: true,
             onDragStart: (ev: DragEvent) => {
+              // Only the row itself: text dragged out of a field in it moves no line.
+              if (ev.target !== ev.currentTarget) return;
               setDrag(i);
               ev.dataTransfer?.setData('text/plain', String(i));
             },

@@ -59,6 +59,10 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   edits apply at once (as the right column), Text on Apply or leaving; a Blocks row is
   selected by a click; a note's text is a field; a panel `if` goes after the selected
   row's whole block, so it never takes lines below into its body.
+  *No hint text (073):* the view carries no lines explaining unlocks or nudging the player
+  (no unlock hint, no how-to line in either mode, no empty-program hint); the rules they
+  described stand. A Blocks number field selects its text on a click or focus, and a drag
+  inside it selects text without dragging the row.
 - **Text mode (2026-11-22).** The block view's words, `#` notes kept, aliases fine; red
   and amber lines kept; saved on Apply or leaving; copy/paste is import/export.
   *Defaults (063):* blanks dropped.

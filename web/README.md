@@ -87,7 +87,9 @@ Three columns and a status bar:
   (`hh-programs-mode`), Blocks for a new player. **Blocks** is the right column's list
   (`ProgramLines.tsx`) with a run gutter first in each row, a row selected by a
   click, a repeat-count number field first on command rows and a note's text field; edits
-  apply at once. **Text** (`TextEditor.tsx`): program tabs, Apply, and a textarea between
+  apply at once. A number field (`NumberField`, a text input: a number input's selection
+  can't be set) selects its text on a click or Tab, and its row is undraggable while the
+  button is down in it, so a drag there selects text. **Text** (`TextEditor.tsx`): program tabs, Apply, and a textarea between
   the gutter and a notes column (reasons, "fired k/10" on `if`s, from the store's history
   of `advance_run`'s `if_true` bits). The engine parses (`parse_program_text`) and writes
   (`program_text`) the text (docs/rules/programs.md, *Text form*); a changed draft is

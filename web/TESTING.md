@@ -48,7 +48,9 @@ results folder; kept shots are also copied to the shared screenshots folder, CLA
    only below an `if` or its body, command and building hover cards show, it Applies with
    no red or amber, the block view shows `if` and its body, and the `if` runs at 1x. Then
    `programsBlocks`: in `everything` the Programs tile opens Programs in Blocks, an if/else and a `4x` line are built by
-   panel clicks, ⇤ and the count field only, Text shows the same lines, and at 1x the
+   panel clicks, ⇤ and the count field only, no help or hint line shows, a real click in the
+   count box selects its text (typing replaces it) and a drag inside it starts no row drag
+   (`numberBox`), Text shows the same lines, and at 1x the
    `4x` line's four dots fill 1/4 to 4/4; set to 12, it shows a bar titled `k/12`. Sections open Text through the nav tile
    (`openText`); the mode is remembered.
 6. **Readability** (before 4): capped rates, Resources' groups, affordable cards and Land,

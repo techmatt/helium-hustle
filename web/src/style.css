@@ -436,8 +436,7 @@ ul.plain {
   color: var(--muted);
   cursor: default;
 }
-.te-status,
-.te-help {
+.te-status {
   margin: 0;
 }
 .te-amber-text {

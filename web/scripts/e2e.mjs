@@ -223,7 +223,7 @@ async function programLogic(grant) {
   await speed(0);
   await setValue('#scenario', 'late_unlocks');
   await click('#start-scenario');
-  check(await exists('[data-testid="logic-locked"]'), 'before the unlock the editor says how If and Build unlock');
+  check(!(await exists('[data-testid="logic-add"]')), 'before the unlock no logic buttons, and no hint says how they unlock');
   await speed(1);
   await waitFor(`!!document.querySelector('[data-testid="logic-add"]')`, 'the instructions to unlock', 8000);
   await speed(0);
@@ -685,8 +685,7 @@ async function instructionPanel() {
     await click('.prog-tabs button[data-program="0"]');
     await openText();
     await sleep(300);
-    const help = await evaluate(`document.querySelector('.te-help').textContent`);
-    check(!/Copy and paste/.test(help), `the hint no longer says copy and paste: ${help.trim()}`);
+    check(!(await exists('.te-help')), 'the Text mode shows no help line');
     const groups = await evaluate(`[...document.querySelectorAll('.ins-group')].map((g) => g.dataset.group)`);
     check(groups[0] === 'Commands' && groups.at(-1) === 'Control flow', `instruction groups: ${groups.join(', ')}`);
     const ifs = await entries('[data-group="Control flow"] [data-instruction^="if "]');
@@ -767,6 +766,70 @@ async function instructionPanel() {
 /** Section 10: in scenario everything (`if` open; a fresh career's panel lists no `if`), a
  * program with an if/else and a 4x line built in Blocks only, the same lines in Text, and
  * the 4x line's run dots filling at 1x. */
+/** The last row's repeat-count box under a real mouse: a click selects its text (typing
+ * replaces the 4), a second click does again, and a drag inside it starts no row drag
+ * (a drag from the row's name does). Leaves the count at 4. */
+async function numberBox(rows) {
+  const box = `document.querySelector('[data-testid="block-lines"] > li:last-child [data-testid="repeat-count"]')`;
+  const rect = (sel) => evaluate(`(() => { const r = ${sel}.getBoundingClientRect(); return { l: r.left, r: r.right, y: r.top + r.height / 2 }; })()`);
+  const mouse = async (type, x, y) => send('Input.dispatchMouseEvent', { type, x, y, button: 'left', buttons: type === 'mouseReleased' ? 0 : 1, clickCount: type === 'mouseMoved' ? 0 : 1 });
+  const clickBox = async () => {
+    const b = await rect(box);
+    const x = (b.l + b.r) / 2;
+    await mouse('mousePressed', x, b.y);
+    await mouse('mouseReleased', x, b.y);
+    await sleep(100);
+  };
+  await clickBox();
+  await send('Input.insertText', { text: '7' });
+  const typed = await evaluate(`${box}.value`);
+  check((await evaluate(`document.activeElement === ${box}`)) && typed === '7', `a click in the number box selects it: typing gives "${typed}"`);
+  await clickBox();
+  await send('Input.insertText', { text: '4' });
+  const again = await evaluate(`${box}.value`);
+  await evaluate(`${box}.blur()`);
+  await sleep(250);
+  check(again === '4' && (await evaluate(`${box}.value`)) === '4', `a second click selects it again: "${again}"`);
+  // A drag inside the box: no row drag (the row is undraggable while the button is down).
+  await evaluate(`window.__drags = 0; document.addEventListener('dragstart', () => window.__drags++, true)`);
+  const drag = async (x0, x1, y, mid) => {
+    await mouse('mousePressed', x0, y);
+    const during = mid ? await evaluate(mid) : null;
+    for (let k = 1; k <= 6; k++) await mouse('mouseMoved', x0 + ((x1 - x0) * k) / 6, y + k * 3);
+    await mouse('mouseReleased', x1, y + 18);
+    await sleep(150);
+    return during;
+  };
+  const before = (await rows()).join(' ');
+  const b = await rect(box);
+  const during = await drag(b.l + 3, b.r - 3, b.y, `${box}.closest('li').draggable`);
+  const after = (await rows()).join(' ');
+  const drags = await evaluate('window.__drags');
+  const back = await evaluate(`${box}.closest('li').draggable`);
+  check(during === false && back === true && drags === 0 && after === before, `a drag in the box moves no row (draggable while down: ${during}, after: ${back}, drags ${drags}, ${after})`);
+  // The drag highlighted the digit: typing replaces it. Then back to 4.
+  await send('Input.insertText', { text: '5' });
+  const dragged = await evaluate(`${box}.value`);
+  check(dragged === '5', `the drag selected the box's text: typing gives "${dragged}"`);
+  // A drag that starts on text a click selected selects again, rather than dragging it off.
+  await clickBox();
+  const b2 = await rect(box);
+  const during2 = await drag(b2.l + 3, b2.r - 3, b2.y, `${box}.closest('li').draggable`);
+  await send('Input.insertText', { text: '4' });
+  const redragged = await evaluate(`${box}.value`);
+  const drags2 = await evaluate('window.__drags');
+  check(during2 === false && drags2 === 0 && redragged === '4' && (await rows()).join(' ') === before, `a drag over selected text selects, no drag: typing gives "${redragged}", drags ${drags2}`);
+  await evaluate(`${box}.blur()`);
+  await sleep(250);
+  // The same drag from the row's name does start one.
+  const n = await rect(`document.querySelector('[data-testid="block-lines"] > li:last-child .line-name')`);
+  await drag(n.l + 3, n.r - 3, n.y, null);
+  const control = await evaluate('window.__drags');
+  check(control === 1, `a drag from the row's name starts a row drag: ${control} dragstart`);
+  const end = (await rows()).join(' ');
+  check(end === before && (await evaluate(`${box}.value`)) === '4', `the rows and count are as before: ${end}`);
+}
+
 async function programsBlocks() {
   const rows = () =>
     evaluate(`[...document.querySelectorAll('[data-testid="block-lines"] > li')].map((l) => (l.classList.contains('indented') ? '>' : '') + (l.dataset.op ?? 'command'))`);
@@ -809,6 +872,8 @@ async function programsBlocks() {
   await sleep(250);
   const shape = (await rows()).join(' ');
   check(shape === 'if >command else >command command', `Blocks builds an if/else and a line after it: ${shape}`);
+  check(!(await exists('.te-help')) && !(await exists('.block-main .hint')), 'no help or hint lines in the Programs view');
+  await numberBox(rows);
   await shot('programs-blocks');
   // Text: the same lines, the count first.
   await click('[data-testid="mode-text"]');

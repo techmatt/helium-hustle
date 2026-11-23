@@ -5,7 +5,7 @@
     "beat": "1.1",
     "silent": false,
     "title": "1.1 — Online",
-    "summary": "Build a second Solar Panel. Credits come from Sell Cloud Compute: add it to Program 1.",
+    "summary": "Build a second Solar Panel.",
     "body": "A mining company boots its new AI at a lunar He-3 claim. Earth hangs in the sky. Primary directive received: establish energy infrastructure. Additional photovoltaic capacity required before proceeding.",
     "trigger": {"type": "game_start", "run_number": 1},
     "condition": {"type": "building_owned", "building": "solar_panel", "count": 2},

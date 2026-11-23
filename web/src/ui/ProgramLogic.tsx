@@ -109,16 +109,76 @@ export function lineText(v: View, e: Entry): string {
   }
 }
 
+/** A press held in a field: where it went down (a click or a drag) and how it ends. */
+let held: { x: number; y: number; release: () => void } | null = null;
+
+/** The press is over: its row is draggable again. Safe to call twice. */
+function release() {
+  held?.release();
+  held = null;
+}
+
+/**
+ * A field inside a draggable row: focusing it, or a click in it, selects its whole text,
+ * so typing replaces it; a drag in it selects text as usual and moves no row (the row is
+ * undraggable from the press until the button comes up).
+ */
+const fieldSelect = {
+  // Focus from the keyboard (Tab) selects at once; a press waits for its mouseup, so a
+  // drag selects what it covers.
+  onFocus: (ev: FocusEvent) => held === null && (ev.currentTarget as HTMLInputElement).select(),
+  onMouseDown: (ev: MouseEvent) => {
+    if (ev.button !== 0) return;
+    release();
+    const el = ev.currentTarget as HTMLInputElement;
+    // A press on selected text would drag it off as text: collapse it first, so the press
+    // places the caret and a drag selects from there.
+    if (document.activeElement === el && el.selectionStart !== el.selectionEnd) el.setSelectionRange(el.selectionEnd, el.selectionEnd);
+    const row = el.closest<HTMLElement>('[draggable="true"]');
+    if (row) row.draggable = false;
+    // The row's `draggable` is set once by Preact (an unchanged prop isn't set again): it
+    // comes back when the button comes up anywhere (after the field's own mouseup), or the
+    // window loses the press (a context menu, a switch away).
+    const end = (e: Event) => (e instanceof MouseEvent && e.button !== 0 ? undefined : release());
+    held = {
+      x: ev.clientX,
+      y: ev.clientY,
+      release: () => {
+        if (row) row.draggable = true;
+        window.removeEventListener('mouseup', end);
+        window.removeEventListener('blur', end);
+      },
+    };
+    window.addEventListener('mouseup', end);
+    window.addEventListener('blur', end);
+  },
+  onMouseUp: (ev: MouseEvent) => {
+    if (ev.button !== 0) return;
+    const at = held;
+    release();
+    // A click (no drag): the whole text, not a caret where it landed.
+    if (at && Math.abs(ev.clientX - at.x) < 4 && Math.abs(ev.clientY - at.y) < 4) {
+      ev.preventDefault();
+      (ev.currentTarget as HTMLInputElement).select();
+    }
+  },
+};
+
 /** A number field that keeps what is being typed through redraws (the game redraws
  * every day) and sends it when the field is left or Enter is pressed: a rewrite restarts
- * the program. `commit` returns false to refuse the text, which then reverts. */
+ * the program. `commit` checks the text and refuses what it can't use, which then reverts.
+ * A text input (`inputmode` numeric), not `type="number"`: a number input's selection
+ * can't be set, so a press on its selected text would drag the text rather than select. */
 export function NumberField({ value, commit, ...rest }: { value: string; commit: (text: string) => void } & Record<string, unknown>) {
   const [draft, setDraft] = useState<string | null>(null);
   // Redraws after every change, so refused text goes back to the value at once.
   const [, redraw] = useState(0);
   return (
     <input
-      type="number"
+      type="text"
+      inputMode="decimal"
+      autoComplete="off"
+      {...fieldSelect}
       {...rest}
       value={draft ?? value}
       onInput={(ev) => setDraft(ev.currentTarget.value)}
@@ -126,8 +186,7 @@ export function NumberField({ value, commit, ...rest }: { value: string; commit:
         const text = ev.currentTarget.value.trim();
         setDraft(null);
         redraw((n) => n + 1);
-        // Text a number field can't parse ("1e", "-") reads as empty: not a commit.
-        if (!ev.currentTarget.validity.badInput) commit(text);
+        commit(text);
       }}
       onBlur={() => setDraft(null)}
     />
@@ -163,7 +222,6 @@ function ClauseEdit({ v, c, now, set }: { v: View; c: Clause; now?: { value: str
         ))}
       </select>
       <NumberField
-        step="any"
         aria-label="Number"
         title={c.reading.kind === 'percent' ? 'A percent of its cap' : c.reading.kind === 'energy_per_day' ? 'Energy a day (negative: a loss)' : 'An amount'}
         // The engine's "500.000000" as 500.
@@ -280,8 +338,7 @@ export function ProgramLine(props: {
       {setCount && (
         <label class="repeat-count" title="Runs of this line in a row (its repeat count)">
           <NumberField
-            min="1"
-            step="1"
+            inputMode="numeric"
             aria-label="Repeat count"
             data-testid="repeat-count"
             value={String(e.count)}
@@ -352,7 +409,6 @@ export function LogicBody({ v, e, now, set }: { v: View; e: Entry; now: Conditio
       return (
         <span class="line-logic">
           <b>Else</b>
-          <span class="muted">the lines under it run when the if before it is false</span>
         </span>
       );
     case 'build': {
@@ -371,8 +427,7 @@ export function LogicBody({ v, e, now, set }: { v: View; e: Entry; now: Conditio
           <label class="up-to">
             up to
             <NumberField
-              min="1"
-              step="1"
+              inputMode="numeric"
               placeholder="any"
               aria-label="Up to"
               title="Stop once this many are owned (empty: build one every pass)"
@@ -498,7 +553,7 @@ function ActEdit({ v, e, set }: { v: View; e: Extract<Entry, { op: 'act' }>; set
           {spec.amount === 'up_to' ? 'up to' : ''}
           {/* A draft survives the daily redraws (NumberField); refused text reverts. */}
           <NumberField
-            type="text"
+            inputMode="text"
             size={4}
             aria-label="Amount"
             placeholder={spec.amount === 'optional' ? '1' : ''}
@@ -518,16 +573,9 @@ function ActEdit({ v, e, set }: { v: View; e: Extract<Entry, { op: 'act' }>; set
   );
 }
 
-/** The buttons adding non-command lines, or how they unlock. */
+/** The buttons adding non-command lines, once they unlock (nothing before). */
 export function AddLogic({ v, add, canElse }: { v: View; add: (e: Entry) => void; canElse: boolean }) {
-  if (!v.program_logic) {
-    return (
-      <p class="muted hint" data-testid="logic-locked">
-        Build, Buy Land and verb lines unlock for good the first day {v.logic_unlock_processors} processors work; If opens with
-        the Conditional Logic global project.
-      </p>
-    );
-  }
+  if (!v.program_logic) return null;
   const first = v.readings[0]?.reading;
   const when: Condition | null = first ? { first: { reading: first, cmp: 'gt', value: '0' }, rest: null } : null;
   const building = v.buildings.find((b) => b.visible)?.id;
