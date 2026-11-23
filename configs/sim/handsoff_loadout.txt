@@ -7,8 +7,9 @@
 # chosen in 061 over L4 on the ladder's hands-off measure (credits a run from run 2:
 # 281% of the author against L4's 213%, milestones tied; 060's seeds 3119-3124),
 # rewritten in 065 for rules 19's step cost (every `if` a step): Program 1's
-# compute runs x100 a pass, not x10, so its guards cost a few steps in a hundred,
-# and the `if energy < 21%` / `idle x5` block is gone (065's write-up).
+# compute runs 100x a pass, not 10x, so its guards cost a few steps in a hundred,
+# and the `if energy < 21%` / `5x idle` block is gone (065's write-up). 071: repeat
+# counts lead (`100x cloud_compute`).
 # 069 (rules 22: a new pad has No cargo) added Program 2's `set pads he3 up to 1`: keep its
 # N at least Program 1's `build launch_pad up to` N, or the extra pads idle all run.
 #
@@ -25,7 +26,7 @@ if free processors > 0
 if energy < 60% and credits > 20
   build solar_panel
 if energy > 20%
-  cloud_compute x100
+  100x cloud_compute
 if titanium > 99% or regolith > 99%
   build storage_depot
 if free land < 5 and credits > 200
@@ -34,7 +35,7 @@ if circuits > 79% and credits > 150
   build data_center up to 6
   build research_lab up to 2
 if ice < 30% and credits > 200
-  buy_ice x10
+  10x buy_ice
 if credits > 150 and energy > 70%
   build excavator up to 2
   build smelter up to 1
@@ -44,10 +45,10 @@ if credits > 150 and energy > 70%
 [2]
 set pads he3 up to 1
 if he3 > 10%
-  load_pads x5
+  5x load_pads
 launch pads all
 if propellant < 67% and energy > 30%
-  buy_propellant x5
+  5x buy_propellant
 [3]
 if science > 49
   research process_telemetry
@@ -56,4 +57,4 @@ if days since a purchase > 299
 if science > 300
   research dream_protocols
 if boredom > 50%
-  dream x5
+  5x dream

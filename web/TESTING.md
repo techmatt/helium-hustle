@@ -34,7 +34,7 @@ results folder; kept shots are also copied to the shared screenshots folder, CLA
    pause/resume verb lines under `if`s run.
 4. **The theme:** the toggles switch it with every element's box unchanged (to 0.01 px);
    a reload keeps it.
-5. **The text editor** (before 6, after 3), from `everything`: 060's L4 Program 1
+5. **Programs, Text mode** (before 6, after 3), from `everything`: 060's L4 Program 1
    pasted with a junk line (red, its reason) and a locked building (amber), Apply, green
    and grey dots and an `if`'s fired count; the block editor keeps every line (unparsed
    and locked rows); the text round-trips; a tab switch saves; 130 lines are red past 128,
@@ -47,7 +47,11 @@ results folder; kept shots are also copied to the shared screenshots folder, CLA
    (caret there), `else` offered only below an `if` or its body, command and building
    hover cards, an Apply (the locked `if` amber) matching the block view; in `everything`
    the same clicks Apply with no red or amber, the block view
-   shows `if` and its body, and the `if` runs at 1x.
+   shows `if` and its body, and the `if` runs at 1x. Then `programsBlocks`: on a new game
+   the Programs tile opens Programs in Blocks, an if/else and a `4x` line are built by
+   panel clicks, ⇤ and the count field only, Text shows the same lines, and at 1x the
+   `4x` line's four dots fill 1/4 to 4/4; set to 12, it shows a bar titled `k/12`. Sections open Text through the nav tile
+   (`openText`); the mode is remembered.
 6. **Readability** (before 4): capped rates, Resources' groups, affordable cards and Land,
    a pad starting with No cargo (status, red nav dot) given Helium-3, short of fuel then
    Ready, Story.

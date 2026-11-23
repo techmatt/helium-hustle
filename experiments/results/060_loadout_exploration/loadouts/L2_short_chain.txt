@@ -3,7 +3,7 @@ seat: 1=all
 [1]
 if energy < 60% and credits > 20
   build solar_panel
-cloud_compute x10
+10x cloud_compute
 if titanium > 99% or regolith > 99%
   build storage_depot
 if credits > 150 and energy > 70%
@@ -13,7 +13,7 @@ if credits > 150 and energy > 70%
   build launch_pad up to 1
   set pads he3 up to 1
   build refinery up to 2
-load_pads x5
+5x load_pads
 launch pads all
 if propellant < 67% and credits > 300
-  buy_propellant x5
+  5x buy_propellant

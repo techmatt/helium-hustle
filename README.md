@@ -124,8 +124,9 @@ list), the web
 **A new program line kind** (as `else`, 067) touches `state::Op` (`describe`),
 `modules/programs.rs` (`check_line`, `Block` if it opens or joins a block, `locked`, `step`),
 `program_text.rs` (`op_text`, `parse_op`), the web `Op` (`engine.ts`), `ProgramLogic.tsx`
-(`lineText`, `LogicBody`, `AddLogic`), `Right.tsx`'s row, `programEdit.ts` (the block shape,
-with its checks in `scripts/unit.mjs`), the Text editor's gutter (`TextEditor.tsx`), and
+(`lineText`, `LogicBody`, `AddLogic`), `ProgramLines.tsx`'s row (both the right column and
+the Programs view's Blocks mode), `programEdit.ts` (the block shape, with its
+checks in `scripts/unit.mjs`), the run gutter (`Gutter.tsx` `entryStatus`), and
 `docs/rules/programs.md`.
 
 ## This machine

@@ -91,7 +91,7 @@ export function conditionText(v: View, when: Condition): string {
 export function lineText(v: View, e: Entry): string {
   switch (e.op) {
     case 'command':
-      return `${name(v, e.command)} (x${e.count})`;
+      return e.count > 1 ? `${e.count}x ${name(v, e.command)}` : name(v, e.command);
     case 'build':
       return `Build ${name(v, e.building)}${e.up_to != null ? ` up to ${e.up_to}` : ''}`;
     case 'buy_land':
@@ -112,7 +112,7 @@ export function lineText(v: View, e: Entry): string {
 /** A number field that keeps what is being typed through redraws (the game redraws
  * every day) and sends it when the field is left or Enter is pressed: a rewrite restarts
  * the program. `commit` returns false to refuse the text, which then reverts. */
-function NumberField({ value, commit, ...rest }: { value: string; commit: (text: string) => void } & Record<string, unknown>) {
+export function NumberField({ value, commit, ...rest }: { value: string; commit: (text: string) => void } & Record<string, unknown>) {
   const [draft, setDraft] = useState<string | null>(null);
   // Redraws after every change, so refused text goes back to the value at once.
   const [, redraw] = useState(0);
@@ -224,7 +224,7 @@ function ConditionEdit({ v, when, now, set }: { v: View; when: Condition; now: C
 
 /**
  * One command line's row: its chips and name, progress bar, count −/+ and why it failed.
- * The caller (Right.tsx `Programs`) gives what it shares with the logic lines: the row's
+ * The caller (ProgramLines.tsx) gives what it shares with the logic lines: the row's
  * class, drag handlers, tooltip tail (`ranText`) and indent button. `noted` holds the lines
  * that have shown a note since the program's lines last changed: such a line keeps the
  * note's row, so a note coming and going day to day moves no line below it.
@@ -246,10 +246,14 @@ export function ProgramLine(props: {
   drag: LiHTMLAttributes<HTMLLIElement>;
   indent: ComponentChildren;
   noted: Set<number>;
+  /** Blocks mode: the run gutter, first in the row. */
+  gutter?: ComponentChildren;
+  /** Blocks mode: the repeat count is a number field, first (`4x sell cloud compute`). */
+  setCount?: (n: number) => void;
   bump: (by: number) => void;
   remove: () => void;
 }) {
-  const { v, e, i, outcome, current, step, short, ranText, rowClass, drag, indent, noted, bump, remove } = props;
+  const { v, e, i, outcome, current, step, short, ranText, rowClass, drag, indent, noted, gutter, setCount, bump, remove } = props;
   const frac = current && step > 0 ? step / e.count : outcome ? 1 : 0;
   // A failed line says why (today's last run of it); the tooltip has it in full.
   // A conversion that ran part way says so too, as a starved building does.
@@ -269,24 +273,44 @@ export function ProgramLine(props: {
       // The name can be cut short at narrow widths: the tooltip carries it whole.
       title={`${lineText(v, e)}: ${ranText}${why ? `. ${shortText(v, why)}` : locked ? `. Locked this run${lockedWhy ? `: ${lockedWhy}` : ''}.` : ''}`}
     >
+      {gutter}
       <span class="grip" aria-hidden>
         ⠿
       </span>
+      {setCount && (
+        <label class="repeat-count" title="Runs of this line in a row (its repeat count)">
+          <NumberField
+            min="1"
+            step="1"
+            aria-label="Repeat count"
+            data-testid="repeat-count"
+            value={String(e.count)}
+            commit={(text) => {
+              if (/^\d{1,9}$/.test(text) && Number(text) >= 1) setCount(Number(text));
+            }}
+          />
+          x
+        </label>
+      )}
       {/* The current line is marked by its frame (style.css `.line.current`), never by
           text in the name, so no line's text moves as the pointer walks. */}
       <span class="line-name">
         {Object.keys(command?.produces ?? {}).map((res) => (
           <ResChip key={res} v={v} id={res} />
         ))}{' '}
-        {name(v, e.command)} (x{e.count})
+        {setCount ? name(v, e.command) : `${name(v, e.command)} (x${e.count})`}
       </span>
       <Bar frac={frac} tone={outcome === 'failed' ? 'red' : outcome === 'skipped' ? 'gray' : 'green'} />
-      <button type="button" class="tiny" disabled={e.count <= 1} onClick={() => bump(-1)}>
-        −
-      </button>
-      <button type="button" class="tiny" onClick={() => bump(1)}>
-        +
-      </button>
+      {!setCount && (
+        <>
+          <button type="button" class="tiny" disabled={e.count <= 1} onClick={() => bump(-1)}>
+            −
+          </button>
+          <button type="button" class="tiny" onClick={() => bump(1)}>
+            +
+          </button>
+        </>
+      )}
       <span class="line-buttons">
         {indent}
         <button type="button" class="tiny" title="Remove" onClick={remove}>
@@ -378,10 +402,11 @@ export function LogicBody({ v, e, now, set }: { v: View; e: Entry; now: Conditio
     case 'act':
       return <ActEdit v={v} e={e} set={set} />;
     case 'note':
-      // A `#` comment kept from the text editor: shown, never run.
+      // A `#` comment: shown, never run; its text edited in place.
       return (
         <span class="line-logic line-note" data-note>
-          # {e.text}
+          #
+          <NoteField text={e.text} commit={(text) => set({ ...e, text })} />
         </span>
       );
     case 'unparsed':
@@ -394,6 +419,25 @@ export function LogicBody({ v, e, now, set }: { v: View; e: Entry; now: Conditio
     case 'command':
       return null;
   }
+}
+
+/** A note's text: kept through the daily redraws, sent when left or on Enter. */
+function NoteField({ text, commit }: { text: string; commit: (text: string) => void }) {
+  const [draft, setDraft] = useState<string | null>(null);
+  return (
+    <input
+      type="text"
+      class="note-field"
+      aria-label="Note"
+      placeholder="a note"
+      value={draft ?? text}
+      onInput={(ev) => setDraft(ev.currentTarget.value)}
+      onChange={(ev) => {
+        setDraft(null);
+        if (ev.currentTarget.value !== text) commit(ev.currentTarget.value);
+      }}
+    />
+  );
 }
 
 /** A fresh `act` line for `verb`: its first target (or all) and its default amount. */

@@ -392,6 +392,8 @@ ul.plain {
 .text-editor {
   --te-line: 22px;
   --te-pad: 6px;
+  /* The run gutter: a status dot, or up to 8 run dots. */
+  --gutter-w: 60px;
   height: 100%;
   box-sizing: border-box;
   display: flex;
@@ -445,7 +447,7 @@ ul.plain {
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: 26px minmax(0, 1fr) minmax(200px, 34%);
+  grid-template-columns: var(--gutter-w) minmax(0, 1fr) minmax(200px, 34%);
   border: 1px solid var(--line);
   border-radius: 4px;
   background: var(--card);
@@ -1722,6 +1724,117 @@ button.go:hover:not(:disabled) {
 }
 .ending-back {
   z-index: 20;
+}
+/* The Programs view (Programs.tsx): the Text | Blocks toggle, and the Blocks mode's rows
+   with the run gutter first. */
+.mode-toggle {
+  display: inline-flex;
+}
+.mode-toggle button {
+  font-family: var(--font-head);
+  font-weight: 700;
+  border-radius: 0;
+}
+.mode-toggle button:first-child {
+  border-radius: 4px 0 0 4px;
+}
+.mode-toggle button:last-child {
+  border-radius: 0 4px 4px 0;
+  margin-left: -1px;
+}
+.mode-toggle button.active {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--sel-text);
+  cursor: default;
+}
+.block-main {
+  overflow: auto;
+  min-height: 0;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+  padding: 6px 8px;
+}
+.block-lines .line {
+  grid-template-columns: var(--gutter-w) 14px auto minmax(0, 1fr) 48px auto;
+  cursor: pointer;
+}
+.block-lines .line.logic {
+  grid-template-columns: var(--gutter-w) 14px minmax(0, 1fr) auto;
+}
+.block-lines .line .line-why {
+  grid-column: 3 / -1;
+}
+/* Dashed, so it never reads as the current line's solid frame. */
+.block-lines .line.selected {
+  outline: 2px dashed var(--accent);
+  outline-offset: 1px;
+}
+.block-lines .line-logic select,
+.block-lines .line-logic input {
+  max-width: 220px;
+}
+.block-gutter {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 14px;
+}
+.repeat-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-weight: 700;
+}
+.repeat-count input {
+  width: 48px;
+  font: inherit;
+  font-size: 12px;
+  padding: 1px 2px;
+}
+.note-field {
+  width: 260px;
+  max-width: 100%;
+}
+/* A repeated line's runs: a dot each up to 8 (green done, red failed, hollow pending), a
+   short bar past that. */
+.rep-dots {
+  display: inline-flex;
+  gap: 2px;
+  align-items: center;
+}
+.rep-dot {
+  width: 5px;
+  height: 5px;
+  box-sizing: border-box;
+  border-radius: 50%;
+}
+.rep-done {
+  background: var(--pos);
+}
+.rep-failed {
+  background: var(--neg);
+}
+.rep-pending {
+  border: 1px solid var(--muted);
+}
+.rep-bar {
+  display: inline-flex;
+  width: calc(var(--gutter-w) - 10px);
+  height: 6px;
+  border: 1px solid var(--muted);
+  border-radius: 3px;
+  overflow: hidden;
+}
+.rep-bar-ok {
+  background: var(--pos);
+}
+.rep-bar-failed {
+  background: var(--neg);
+}
+.rep-stale {
+  opacity: 0.4;
 }
 .modal.ending {
   border-top: 4px solid var(--accent);

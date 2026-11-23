@@ -6,4 +6,4 @@ if days since a purchase > 299
 if science > 300
   research daydreaming
 if boredom > 50%
-  dream 5
+  5x dream

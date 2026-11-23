@@ -6,13 +6,13 @@
 // (closing, Esc, a nav tile, another program's tab, the page closing), so a half-typed
 // line never runs.
 
+import type { ComponentChildren } from 'preact';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
-import { daysPerWake } from '../clock';
-import { engine, type Entry, type LineOutcome, type ParsedText, type ProgramView, type View } from '../engine';
-import { act, ifFired, parseProgramText, setNotice, store, type Store } from '../store';
-import { shortText } from './common';
+import { engine, type Entry, type ParsedText, type ProgramView, type View } from '../engine';
+import { act, parseProgramText, setNotice, store, type Store } from '../store';
+import { DOT_TITLE, GutterMark, entryStatus, type Dot, type LineStatus } from './Gutter';
 import { InstructionPanel } from './Instructions';
-import type { Takeover } from './Takeover';
+import { insertLine } from './programEdit';
 
 /** Wait this long after the last keystroke before re-parsing. */
 const PARSE_DEBOUNCE_MS = 80;
@@ -24,25 +24,14 @@ const REPARSE_MS = 1000;
  * just ended), by program: the next open starts from it, so leaving never loses the text. */
 const unsaved = new Map<number, string>();
 
-/** The takeover entry: opened by the program panel's Text editor button, on `program`. */
-export function textEditorTakeover(program: number, setProgram: (i: number) => void): Takeover {
-  return {
-    id: 'text_editor',
-    label: 'Text editor',
-    title: 'Text editor',
-    bleed: true,
-    noButton: true,
-    shown: () => true,
-    render: (s) => <TextEditor s={s} program={program} setProgram={setProgram} />,
-  };
-}
-
-function TextEditor({ s, program, setProgram }: { s: Store; program: number; setProgram: (i: number) => void }) {
+/** The Programs view's Text mode on `program` (Programs.tsx); `bar` is drawn in its top bar
+ * (the Text | Blocks toggle). */
+export function TextEditor({ s, program, setProgram, bar }: { s: Store; program: number; setProgram: (i: number) => void; bar: ComponentChildren }) {
   const n = s.view.programs.length;
   if (n === 0) return null;
   const p = Math.min(program, n - 1);
   // One draft per program: switching tabs unmounts it, which applies a changed draft.
-  return <ProgramDraft key={p} s={s} program={p} setProgram={setProgram} />;
+  return <ProgramDraft key={p} s={s} program={p} setProgram={setProgram} bar={bar} />;
 }
 
 /** The program's text as the engine writes it. */
@@ -93,7 +82,7 @@ function applyDraft(program: number, text: string): { entries: Entry[] } | { err
   return { entries: store.view.programs[program]?.entries ?? [] };
 }
 
-function ProgramDraft({ s, program, setProgram }: { s: Store; program: number; setProgram: (i: number) => void }) {
+function ProgramDraft({ s, program, setProgram, bar }: { s: Store; program: number; setProgram: (i: number) => void; bar: ComponentChildren }) {
   const v = s.view;
   const p = v.programs[program];
   const currentJson = JSON.stringify(p.entries);
@@ -159,7 +148,7 @@ function ProgramDraft({ s, program, setProgram }: { s: Store; program: number; s
         // Shown in the notice line once the view is gone.
         if ('error' in r) {
           unsaved.set(program, l.draft);
-          setNotice(`Text editor: Program ${program + 1} not saved (${r.error}); the text is kept there.`);
+          setNotice(`Programs: Program ${program + 1} not saved (${r.error}); the text is kept there.`);
         } else latest.current.base = { entries: JSON.stringify(r.entries), text: l.draft };
       }
     };
@@ -195,18 +184,7 @@ function ProgramDraft({ s, program, setProgram }: { s: Store; program: number; s
   // moves to the new line (the body line for a block).
   const insert = (line: string) => {
     const a = area.current;
-    const text = a ? a.value : draft;
-    const lines = text.split('\n');
-    const at = Math.min(cursor, lines.length - 1);
-    const here = lines[at] ?? '';
-    const opens = /^(if\s|else\s*$)/i.test(here);
-    const indent = opens ? '  ' : (/^[ \t]*/.exec(here)?.[0] ?? '');
-    const block = line.startsWith('if ') || line === 'else';
-    const added = block ? [line, '  '] : [indent + line];
-    const blank = here.trim() === '';
-    const first = blank ? at : at + 1;
-    lines.splice(first, blank ? 1 : 0, ...added);
-    const last = first + added.length - 1;
+    const { lines, last } = insertLine((a ? a.value : draft).split('\n'), cursor, line);
     caretAfter.current = lines.slice(0, last + 1).join('\n').length;
     setApplyError(null);
     setDraft(lines.join('\n'));
@@ -242,6 +220,7 @@ function ProgramDraft({ s, program, setProgram }: { s: Store; program: number; s
   return (
     <div class="text-editor" data-testid="text-editor" data-program={program}>
       <div class="te-bar">
+        {bar}
         <div class="te-tabs" role="tablist">
           {v.programs.map((q, i) => (
             <button
@@ -291,7 +270,7 @@ function ProgramDraft({ s, program, setProgram }: { s: Store; program: number; s
         )}
       </p>
       <p class="te-help muted small">
-        One line per statement, the words the block editor shows; the lines of an <code>if</code> indented under it, then optionally <code>else</code> and the lines to run when it is false; <code>#</code> starts a
+        One line per statement, the words the Blocks mode shows, a repeat count first (<code>4x sell cloud compute</code>); the lines of an <code>if</code> indented under it, then optionally <code>else</code> and the lines to run when it is false; <code>#</code> starts a
         note.
       </p>
       <div class="te-main">
@@ -302,13 +281,7 @@ function ProgramDraft({ s, program, setProgram }: { s: Store; program: number; s
               const st = statuses[k];
               return (
                 <div key={k} class="te-row">
-                  <span
-                    class={`te-dot te-${st?.dot ?? 'blank'}`}
-                    data-line={k}
-                    data-line-status={st?.dot ?? 'blank'}
-                    data-fired={st?.fired ? `${st.fired.fired}/${st.fired.of}` : undefined}
-                    title={st?.title}
-                  />
+                  <GutterMark st={st ?? null} line={k} />
                 </div>
               );
             })}
@@ -371,47 +344,10 @@ function ProgramDraft({ s, program, setProgram }: { s: Store; program: number; s
   );
 }
 
-/** A gutter dot: ran (green), skipped by its `if` (grey), won't parse (red), not unlocked
- * this run (amber), failed (a hollow red ring), not run (an empty ring), a note (none). */
-type Dot = 'green' | 'grey' | 'red' | 'amber' | 'failed' | 'none' | 'note' | 'blank';
-
-interface LineStatus {
-  dot: Dot;
-  /** The notes column's text: why it is red, amber or failed. */
-  note: string | null;
-  title: string;
-  /** An `if` line's days true of the last few. */
-  fired: { fired: number; of: number } | null;
-}
-
-const DOT_OF: Record<LineOutcome, Dot> = {
-  ran: 'green',
-  done: 'green',
-  true: 'green',
-  skipped: 'green',
-  jumped: 'grey',
-  false: 'grey',
-  failed: 'failed',
-};
-
-const DOT_TITLE: Record<Dot, string> = {
-  green: 'Ran on the last day',
-  grey: 'Skipped by its if on the last day',
-  red: "Doesn't parse",
-  amber: 'Valid, but not unlocked yet this run',
-  failed: 'Failed on the last day',
-  none: 'Not run on the last day',
-  note: 'A note',
-  blank: '',
-};
-
 /** Each text line's status: red and amber from the parse; an ok line takes the outcome of
  * the program line it matches (the draft's lines may differ from the program's). */
 function lineStatuses(v: View, s: Store, program: number, p: ProgramView, r: ParsedText, count: number): (LineStatus | null)[] {
   const map = matchLines(r.entries, p.entries);
-  // Above 10x one redraw covers several days: each line's outcome over them, as the block editor.
-  const span = daysPerWake(s.speed) > 1;
-  const outcomes = span ? (s.lines?.lines[program] ?? []) : p.outcomes;
   const out: (LineStatus | null)[] = [];
   for (let k = 0; k < count; k++) {
     const l = r.lines[k];
@@ -422,23 +358,18 @@ function lineStatuses(v: View, s: Store, program: number, p: ProgramView, r: Par
     // An `else` line never runs (its `if` decides): free, like a note.
     if (l.status === 'note' || (l.status === 'ok' && l.entry !== null && r.entries[l.entry]?.op === 'else')) {
       const title = l.status === 'note' ? DOT_TITLE.note : 'Else: free; its if decides which body runs';
-      out.push({ dot: 'note', note: null, title, fired: null });
+      out.push({ dot: 'note', note: null, title, fired: null, repeat: null });
       continue;
     }
     if (l.status === 'red' || l.status === 'amber') {
       const dot: Dot = l.status;
       const note = l.reason ? (dot === 'amber' ? `locked: ${l.reason}` : l.reason) : null;
-      out.push({ dot, note, title: `${DOT_TITLE[dot]}${l.reason ? `: ${l.reason}` : ''}`, fired: null });
+      out.push({ dot, note, title: `${DOT_TITLE[dot]}${l.reason ? `: ${l.reason}` : ''}`, fired: null, repeat: null });
       continue;
     }
+    // The program line it is (the Blocks mode's status for it), or a new line not run yet.
     const j = l.entry === null ? null : map[l.entry];
-    const outcome = j === null || j === undefined ? null : (outcomes[j] ?? null);
-    const dot: Dot = outcome ? DOT_OF[outcome] : 'none';
-    const short = dot === 'failed' && j !== null && j !== undefined ? (p.shorts[j] ?? null) : null;
-    const note = dot === 'failed' ? (short ? `failed: ${shortText(v, short)}` : 'failed') : null;
-    const isIf = l.entry !== null && r.entries[l.entry]?.op === 'if';
-    const fired = isIf && j !== null && j !== undefined ? ifFired(program, j) : null;
-    out.push({ dot, note, title: note ?? DOT_TITLE[dot], fired });
+    out.push(j === null || j === undefined ? { dot: 'none', note: null, title: DOT_TITLE.none, fired: null, repeat: null } : entryStatus(v, s, program, j));
   }
   return out;
 }

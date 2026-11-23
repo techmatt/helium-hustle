@@ -43,6 +43,16 @@ export function blockLen(es: Entry[], i: number): number {
   return n;
 }
 
+/** The last line of the block line `i` is in (an `if`, its body and its `else` with that
+ * body), or `i` for a line in none: where a new `if` goes in the Blocks mode, so it never
+ * takes lines below it from the block. */
+export function blockEnd(es: Entry[], i: number): number {
+  if (i < 0 || i >= es.length) return i;
+  let h = i;
+  while (h > 0 && (es[h].indented || es[h].op === 'else')) h--;
+  return es[h].op === 'if' ? h + blockLen(es, h) - 1 : i;
+}
+
 /** Whether line `e` may sit indented under a block `block`: it is neither an `if` nor an
  * `else`, and a block is open. */
 function fitsIn(e: Entry | undefined, block: Block): boolean {
@@ -136,4 +146,23 @@ export function otherUnit(r: Reading): Reading {
   if (r.kind === 'percent') return { kind: 'amount', resource: r.resource };
   if (r.kind === 'amount') return { kind: 'percent', resource: r.resource };
   return r;
+}
+
+/** An instruction's line (`line`, unindented, as the instruction panel lists it) put into a
+ * program's text lines: below line `cursor` with its indent (in the body under an `if` or
+ * `else` line; an `if` or `else` itself at the top level, with an empty body line under
+ * it), or on line `cursor` when that is empty. Returns the lines and the new cursor line
+ * (the body line for a block). Both Programs modes add through it. */
+export function insertLine(lines: string[], cursor: number, line: string): { lines: string[]; last: number } {
+  const out = lines.length === 0 ? [''] : [...lines];
+  const at = Math.max(0, Math.min(cursor, out.length - 1));
+  const here = out[at] ?? '';
+  const opens = /^(if\s|else\s*$)/i.test(here);
+  const indent = opens ? '  ' : (/^[ \t]*/.exec(here)?.[0] ?? '');
+  const block = line.startsWith('if ') || line === 'else';
+  const added = block ? [line, '  '] : [indent + line];
+  const blank = here.trim() === '';
+  const first = blank ? at : at + 1;
+  out.splice(first, blank ? 1 : 0, ...added);
+  return { lines: out, last: first + added.length - 1 };
 }

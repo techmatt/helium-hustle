@@ -9,7 +9,7 @@ use super::{names, BuildingView, ResourceView};
 use crate::fx::Fx;
 use crate::modules::*;
 use crate::rules::Rules;
-use crate::state::{Clause, Condition as When, Entry, GameState, LineOutcome, Op, Reading, Verb};
+use crate::state::{Clause, Condition as When, Entry, GameState, LineOutcome, Op, Reading, Repeat, Verb};
 
 #[derive(Debug, Clone, Serialize)]
 pub struct ProgramView {
@@ -33,6 +33,8 @@ pub struct ProgramView {
     pub locked: Vec<Option<String>>,
     /// Per line, an `unparsed` line's reason it doesn't read.
     pub errors: Vec<Option<String>>,
+    /// Per repeated command line, its current or last pass (the gutter's dots).
+    pub repeats: Vec<Option<Repeat>>,
 }
 
 /// A condition now: whether it holds, and each clause's reading (`None`:
@@ -106,6 +108,7 @@ pub(super) fn programs(r: &Rules, g: &GameState, running: &[u32]) -> Vec<Program
                     _ => None,
                 })
                 .collect(),
+            repeats: (0..p.entries.len() as u32).map(|l| p.repeats.get(&l).copied()).collect(),
         })
         .collect()
 }

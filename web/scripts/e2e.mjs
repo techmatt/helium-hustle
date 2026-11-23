@@ -34,6 +34,11 @@
 //      entries and clicks writing an `if ... > 0` with its body, else only where it fits,
 //      hover cards; in scenario everything the same clicks Apply cleanly, the block view
 //      matches and the `if` runs at 1x. Shot instructions.png.
+//  10. (Run before 5.) The Programs view's Blocks mode, on a new game: the nav tile opens
+//      it in Blocks (a new player's mode), an if/else and a 4x line built by clicks and
+//      number fields only, Text shows the same lines (the count first), and at 1x the 4x
+//      line's run dots fill day by day. Shots programs-blocks.png, programs-text.png,
+//      programs-dots.png.
 // Any uncaught page error fails the run.
 //   HH_URL      the page, required: a `vite preview` of a static build (TESTING.md)
 //   HH_BROWSER  a browser off the usual paths
@@ -55,6 +60,13 @@ const { waitFor, exists, click, setValue, load, day, run, speed, panel, debugMen
 const noticeText = () => evaluate(`document.getElementById('notice')?.textContent ?? ''`);
 const enabled = (sel) => evaluate(`(() => { const b = document.querySelector(${q(sel)}); return !!b && !b.disabled; })()`);
 const navVisible = (id) => exists(`.nav-tile[data-nav="${id}"]`);
+/** Opens the Programs view from its nav tile, in Text mode (the view remembers the mode). */
+const openText = async () => {
+  await click('.nav-tile[data-nav="programs"]');
+  await waitFor(`!!document.querySelector('[data-testid="mode-text"]')`, 'the Programs view', 3000);
+  if (!(await exists('[data-testid="text-editor"]'))) await click('[data-testid="mode-text"]');
+  await waitFor(`!!document.querySelector('[data-testid="text-editor"]')`, 'its Text mode', 3000);
+};
 
 /** With HH_SHOTS=<dir>, saves a PNG of the page at each named moment. */
 const shot = async (name) => {
@@ -483,7 +495,7 @@ async function textEditor() {
   const p2 = readFileSync(resolve(results, 'L4_program2.txt'), 'utf8').replace(/\r/g, '').trimEnd();
   const entries = (text) => text.split('\n').filter((l) => l.trim() !== '').length;
 
-  await click('[data-testid="text-editor-open"]');
+  await openText();
   await waitFor(`!!document.querySelector('[data-testid="text-editor"]')`, 'the text editor', 3000);
   check((await evaluate(`document.querySelector('[data-testid="text-editor-tab-0"]').getAttribute('aria-selected')`)) === 'true', 'the text editor opens on the active program');
   await paste(p1);
@@ -512,7 +524,7 @@ async function textEditor() {
   check(lineOf(g1, 'frobnicate 3')?.status === 'red' && lineOf(g1, 'build fuel cell array')?.status === 'amber', 'red and amber stay flagged after the days');
   check((await area()) === applied, 'the draft and caret text survive the redraws');
   await shot('text-editor');
-  await click('[data-takeover-close="text_editor"]');
+  await click('[data-takeover-close="programs"]');
   await sleep(100);
   const block = () =>
     evaluate(`[...document.querySelectorAll('.lines li')].map((l) => ({ op: l.dataset.op ?? 'command', locked: l.classList.contains('is-locked'), why: l.querySelector('.line-why')?.textContent ?? '' }))`);
@@ -522,7 +534,7 @@ async function textEditor() {
   check(unparsed.length === 1 && /frobnicate/.test(unparsed[0].why), `the junk line is an unparsed row with its reason: ${JSON.stringify(unparsed)}`);
   check(b1.filter((l) => l.locked).length === 1 && b1.some((l) => l.locked && /locked this run/.test(l.why)), `the locked line is dimmed, saying why: ${JSON.stringify(b1.filter((l) => l.locked))}`);
   check(b1.filter((l) => l.op === 'note').length === 1, 'the # line is a note row');
-  await click('[data-testid="text-editor-open"]');
+  await openText();
   await sleep(200);
   // The engine's text ends with a newline; the pasted one didn't.
   check((await area()).trimEnd() === applied.trimEnd(), 'reopened, the text round-trips');
@@ -542,8 +554,8 @@ async function textEditor() {
   check(!(await exists('[data-testid="text-editor"]')) && (await block()).length === entries(p2), `Esc closes onto Program 2's ${entries(p2)} lines`);
   // Too many lines: the ones past the limit are red, Apply refuses, and a leave that
   // couldn't save keeps the draft for the next open.
-  const tooMany = Array.from({ length: 130 }, () => 'idle 1').join('\n');
-  await click('[data-testid="text-editor-open"]');
+  const tooMany = Array.from({ length: 130 }, () => 'idle').join('\n');
+  await openText();
   await sleep(200);
   await paste(tooMany);
   const g2 = await gutter();
@@ -554,17 +566,17 @@ async function textEditor() {
   await sleep(200);
   const refused = await evaluate(`document.querySelector('[data-testid="text-editor-status"]').textContent`);
   check(/^Not applied/.test(refused), `Apply refuses them: ${refused}`);
-  await click('[data-takeover-close="text_editor"]');
+  await click('[data-takeover-close="programs"]');
   await sleep(200);
   check((await block()).length === entries(p2) && /not saved/.test(await noticeText()), `closing can't save them either, and says so: ${await noticeText()}`);
-  await click('[data-testid="text-editor-open"]');
+  await openText();
   await sleep(200);
   check((await area()) === tooMany, 'reopened, the unsaved 130-line draft is still there');
   await paste(p2);
   await click('[data-testid="text-editor-apply"]');
   await sleep(200);
   check(!(await enabled('[data-testid="text-editor-apply"]')) && (await area()).trimEnd() === p2, 'a valid program applies again');
-  await click('[data-takeover-close="text_editor"]');
+  await click('[data-takeover-close="programs"]');
   await sleep(100);
 
   // A loadout of those lines, loaded at a fresh run: every line kept, the locked one dimmed.
@@ -615,8 +627,8 @@ async function programElse() {
   const AREA = '[data-testid="text-editor-area"]';
   const area = () => evaluate(`document.querySelector(${q(AREA)}).value`);
   // Free land is never 100000: the first if is true every pass, the second false.
-  const typed = 'if free land < 100000\n  idle\nelse\n  idle 2\nif free land > 100000\n  idle\nELSE\n  idle 2';
-  await click('[data-testid="text-editor-open"]');
+  const typed = 'if free land < 100000\n  idle\nelse\n  2x idle\nif free land > 100000\n  idle\nELSE\n  2x idle';
+  await openText();
   await sleep(200);
   await setValue(AREA, typed);
   await sleep(300);
@@ -625,7 +637,7 @@ async function programElse() {
   await click('[data-testid="text-editor-apply"]');
   await sleep(200);
   const applied = await area();
-  await click('[data-takeover-close="text_editor"]');
+  await click('[data-takeover-close="programs"]');
   await sleep(100);
   const rows = () =>
     evaluate(`[...document.querySelectorAll('.lines li')].map((l) => ({ op: l.dataset.op ?? 'command', indented: l.classList.contains('indented'), out: [...l.classList].find((c) => c.startsWith('out-')) ?? null }))`);
@@ -633,12 +645,12 @@ async function programElse() {
   const r0 = await rows();
   const want = 'if >command else >command if >command else >command';
   check(shape(r0) === want, `the block view shows the same lines: ${shape(r0)}`);
-  await click('[data-testid="text-editor-open"]');
+  await openText();
   await sleep(200);
   // The engine writes the canonical form: `ELSE` as `else`.
   const back = (await area()).trimEnd();
   check(back === typed.replace('ELSE', 'else') && applied.trimEnd() === typed, `and back: the text reads the same (${JSON.stringify(back)})`);
-  await click('[data-takeover-close="text_editor"]');
+  await click('[data-takeover-close="programs"]');
   await sleep(100);
   // At 1x: each day's outcomes, once a whole pass ran (the processors cover it from day 1).
   const wantOut = 'out-true out-ran - out-jumped out-false out-jumped - out-ran';
@@ -671,7 +683,7 @@ async function instructionPanel() {
   };
   const build = async () => {
     await click('.prog-tabs button[data-program="0"]');
-    await click('[data-testid="text-editor-open"]');
+    await openText();
     await sleep(300);
     const help = await evaluate(`document.querySelector('.te-help').textContent`);
     check(!/Copy and paste/.test(help), `the hint no longer says copy and paste: ${help.trim()}`);
@@ -717,7 +729,7 @@ async function instructionPanel() {
   const freshDots = await evaluate(`[...document.querySelectorAll('.te-gutter [data-line-status]')].map((d) => d.dataset.lineStatus)`);
   const freshSaved = await evaluate(`document.querySelector('[data-testid="text-editor-status"]').textContent`);
   check(/Saved/.test(freshSaved) && !freshDots.includes('red'), `on a fresh career it applies: ${freshSaved} (${freshDots.join(' ')})`);
-  await click('[data-takeover-close="text_editor"]');
+  await click('[data-takeover-close="programs"]');
   await sleep(100);
   const freshShape = await evaluate(`[...document.querySelectorAll('.lines li')].map((l) => (l.classList.contains('indented') ? '>' : '') + (l.dataset.op ?? 'command')).join(' ')`);
   check(freshShape === 'if >command >command', `and the block view shows the same lines: ${freshShape}`);
@@ -740,7 +752,7 @@ async function instructionPanel() {
   const status = await evaluate(`[...document.querySelectorAll('.te-gutter [data-line-status]')].map((d) => d.dataset.lineStatus)`);
   const saved = await evaluate(`document.querySelector('[data-testid="text-editor-status"]').textContent`);
   check(/Saved/.test(saved) && !status.includes('red') && !status.includes('amber'), `it applies cleanly: ${saved} (${status.join(' ')})`);
-  await click('[data-takeover-close="text_editor"]');
+  await click('[data-takeover-close="programs"]');
   await sleep(100);
   const rows = () => evaluate(`[...document.querySelectorAll('.lines li')].map((l) => ({ op: l.dataset.op ?? 'command', indented: l.classList.contains('indented'), out: [...l.classList].find((c) => c.startsWith('out-')) ?? null }))`);
   const shape = (await rows()).map((r) => `${r.indented ? '>' : ''}${r.op}`).join(' ');
@@ -751,6 +763,91 @@ async function instructionPanel() {
   await speed(0);
   const ran = (await rows()).map((r) => r.out ?? '-');
   check(ran[0] === 'out-true' || ran[0] === 'out-false', `at 1x the if runs: ${ran.join(' ')}`);
+}
+
+/** Section 10: on a new game, a program with an if/else and a 4x line built in Blocks only,
+ * the same lines in Text, and the 4x line's run dots filling at 1x. */
+async function programsBlocks() {
+  const rows = () =>
+    evaluate(`[...document.querySelectorAll('[data-testid="block-lines"] > li')].map((l) => (l.classList.contains('indented') ? '>' : '') + (l.dataset.op ?? 'command'))`);
+  await debugMenu();
+  await speed(0);
+  await click('#new-game');
+  await sleep(500);
+  // A new player's mode: Blocks.
+  await evaluate(`localStorage.removeItem('hh-programs-mode')`);
+  await click('.prog-tabs button[data-program="0"]');
+  await click('.nav-tile[data-nav="programs"]');
+  await waitFor(`!!document.querySelector('[data-takeover="programs"]')`, 'the Programs view', 3000);
+  const title = await evaluate(`document.querySelector('[data-takeover="programs"] h2').textContent`);
+  check(title === 'Programs' && (await exists('[data-testid="block-editor"]')), `the Programs tile opens "${title}" in Blocks`);
+  check(!(await exists('[data-testid="text-editor-open"]')), 'no Text editor button in the program panel');
+  const ins = (sel) => evaluate(`[...document.querySelectorAll(${q(sel)})].map((b) => ({ text: b.dataset.instruction, locked: !!b.dataset.locked }))`);
+  const cmd = (await ins('[data-group="Commands"] .ins-item')).find((x) => !x.locked);
+  const add = async (sel) => {
+    await click(sel);
+    await sleep(250);
+  };
+  await add('[data-group="Control flow"] [data-instruction^="if "]');
+  await add(`[data-group="Commands"] [data-instruction=${q(cmd.text)}]`);
+  await add('[data-instruction="else"]');
+  await add(`[data-group="Commands"] [data-instruction=${q(cmd.text)}]`);
+  await add(`[data-group="Commands"] [data-instruction=${q(cmd.text)}]`);
+  // The last one out of the else's body, then 4 runs in its number field.
+  await click('[data-testid="block-lines"] > li:last-child [data-testid="line-outdent"]');
+  await sleep(250);
+  await evaluate(`(() => {
+    const el = document.querySelector('[data-testid="block-lines"] > li:last-child [data-testid="repeat-count"]');
+    el.value = '4';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  })()`);
+  await sleep(250);
+  const shape = (await rows()).join(' ');
+  check(shape === 'if >command else >command command', `Blocks builds an if/else and a line after it: ${shape}`);
+  await shot('programs-blocks');
+  // Text: the same lines, the count first.
+  await click('[data-testid="mode-text"]');
+  await waitFor(`!!document.querySelector('[data-testid="text-editor-area"]')`, 'the Text mode', 3000);
+  const text = await evaluate(`document.querySelector('[data-testid="text-editor-area"]').value`);
+  const ifText = (await ins('[data-group="Control flow"] [data-instruction^="if "]'))[0]?.text;
+  const want = `${ifText}\n  ${cmd.text}\nelse\n  ${cmd.text}\n4x ${cmd.text}\n`;
+  check(text === want, `Text shows the same lines: ${JSON.stringify(text)}`);
+  await shot('programs-text');
+  await click('[data-testid="mode-blocks"]');
+  await waitFor(`!!document.querySelector('[data-testid="block-editor"]')`, 'the Blocks mode', 3000);
+  check((await evaluate(`localStorage.getItem('hh-programs-mode')`)) === 'blocks', 'the view remembers the mode');
+  // At 1x with a processor on it, the 4x line's dots fill a run a day (the locked if passes free).
+  await click('[data-takeover-close="programs"]');
+  while (await enabled('[data-testid="proc-plus"]')) await click('[data-testid="proc-plus"]');
+  await click('.nav-tile[data-nav="programs"]');
+  await waitFor(`!!document.querySelector('[data-testid="block-editor"]')`, 'the Blocks mode', 3000);
+  const rep = () => evaluate(`document.querySelector('[data-testid="block-lines"] > li:last-child [data-repeat]')?.dataset.repeat ?? null`);
+  const seen = [await rep()];
+  await speed(1);
+  for (let t = 0; t < 150 && !seen.includes('4/4'); t++) {
+    await sleep(100);
+    const r = await rep();
+    if (r !== seen.at(-1)) seen.push(r);
+  }
+  await speed(0);
+  const dots = await evaluate(`document.querySelectorAll('[data-testid="block-lines"] > li:last-child .rep-dot').length`);
+  check(dots === 4 && ['1/4', '2/4', '3/4', '4/4'].every((x) => seen.includes(x)), `at 1x the 4x line's 4 dots fill: ${seen.join(' → ')}`);
+  await shot('programs-dots');
+  // Above 8 runs: a short bar, "done/total, N failed" on hover.
+  await evaluate(`(() => {
+    const el = document.querySelector('[data-testid="block-lines"] > li:last-child [data-testid="repeat-count"]');
+    el.value = '12';
+    el.dispatchEvent(new Event('input', { bubbles: true }));
+    el.dispatchEvent(new Event('change', { bubbles: true }));
+  })()`);
+  await speed(1);
+  const bar = `document.querySelector('[data-testid="block-lines"] > li:last-child .rep-bar')`;
+  await waitFor(`/^[1-9]\\d*\\/12$/.test(${bar}?.dataset.repeat ?? '')`, 'a run of the 12x line', 8000);
+  await speed(0);
+  const barTitle = await evaluate(`${bar}.title`);
+  check(/^\d+\/12(, \d+ failed)?$/.test(barTitle) && !(await exists('[data-testid="block-lines"] > li:last-child .rep-dot')), `a 12x line shows a bar, not dots: "${barTitle}"`);
+  await click('[data-takeover-close="programs"]');
 }
 
 /** Section 5, from scenario at_cap (paused, cheats on; `grant` from section 2). Shots
@@ -1019,7 +1116,8 @@ try {
   check(/Done in 17 days/.test(fundedText), `a funded project shows its days to done: ${(fundedText.match(/Done in \d+ days?/) ?? ['none'])[0]}`);
   await shot('projects-locked-and-funded');
   const tiles = await evaluate(`[...document.querySelectorAll('.nav-tile')].map((t) => t.dataset.nav)`);
-  for (const id of tiles) {
+  // The Programs tile opens a takeover (section 10), not a panel.
+  for (const id of tiles.filter((t) => t !== 'programs')) {
     await panel(id);
     const text = await evaluate(`document.querySelector('[data-panel="${id}"]').textContent.length`);
     check(text > 20, `panel ${id} opens (${text} chars)`);
@@ -1153,6 +1251,8 @@ try {
   await programElse();
   // ---- 9. the All instructions panel (before 5) ----
   await instructionPanel();
+  // ---- 10. the Programs view's Blocks mode (before 5) ----
+  await programsBlocks();
   await debugMenu();
   await setValue('#scenario', 'at_cap');
   await click('#start-scenario');

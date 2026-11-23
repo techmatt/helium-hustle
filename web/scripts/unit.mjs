@@ -2,7 +2,7 @@
 //   node scripts/unit.mjs   (npm run unit)
 import assert from 'node:assert/strict';
 import { num, perDay, storyBody } from '../src/format.ts';
-import { blockLen, canAddElse, canIndent, moveLines, otherUnit, removeLine, sameEntry, setIndent, tidy } from '../src/ui/programEdit.ts';
+import { blockEnd, blockLen, canAddElse, canIndent, insertLine, moveLines, otherUnit, removeLine, sameEntry, setIndent, tidy } from '../src/ui/programEdit.ts';
 
 const cases = [
   [0, '0'],
@@ -101,5 +101,28 @@ assert.ok(!sameEntry(pct, { kind: 'percent', resource: 'ice' }));
 assert.ok(sameEntry({ kind: 'energy_per_day' }, { kind: 'energy_per_day' }));
 assert.ok(!sameEntry({ kind: 'energy_per_day' }, { kind: 'days_since_purchase' }));
 edits += 7;
+
+// The instruction panel's insert, both Programs modes: below the cursor's line with its
+// indent; into an if's or else's body; an if or else with an empty body line; an empty
+// line filled in place; an empty program.
+assert.deepEqual(insertLine([], 0, 'idle'), { lines: ['idle'], last: 0 });
+assert.deepEqual(insertLine(['idle'], 0, 'if credits > 0'), { lines: ['idle', 'if credits > 0', '  '], last: 2 });
+assert.deepEqual(insertLine(['if credits > 0', '  '], 1, 'idle'), { lines: ['if credits > 0', '  idle'], last: 1 });
+assert.deepEqual(insertLine(['if credits > 0', '  idle'], 0, '4x idle'), { lines: ['if credits > 0', '  4x idle', '  idle'], last: 1 });
+assert.deepEqual(insertLine(['else'], 0, 'idle'), { lines: ['else', '  idle'], last: 1 });
+assert.deepEqual(insertLine(['  idle'], 0, 'else'), { lines: ['  idle', 'else', '  '], last: 2 });
+edits += 6;
+
+// Where the Blocks mode puts a new `if`: after the selected row's whole block.
+{
+  const c = (indented = false) => ({ op: 'command', command: 'idle', count: 1, indented });
+  const iff = { op: 'if', when: { first: { reading: { kind: 'free_land' }, cmp: 'gt', value: '0' }, rest: null }, indented: false };
+  const es = [c(), iff, c(true), c(true), { op: 'else', indented: false }, c(true), c()];
+  assert.equal(blockEnd(es, 0), 0);
+  for (const i of [1, 2, 3, 4, 5]) assert.equal(blockEnd(es, i), 5, `blockEnd(${i})`);
+  assert.equal(blockEnd(es, 6), 6);
+  assert.equal(blockEnd([], -1), -1);
+}
+edits += 8;
 
 console.log(`unit ok (${cases.length + 3 + edits} checks)`);

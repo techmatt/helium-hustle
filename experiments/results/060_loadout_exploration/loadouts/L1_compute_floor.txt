@@ -3,4 +3,4 @@ seat: 1=all
 [1]
 if energy < 50% and credits > 20
   build solar_panel
-cloud_compute x10
+10x cloud_compute

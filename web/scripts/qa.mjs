@@ -78,7 +78,7 @@ const HEIGHT = Number(process.env.HH_HEIGHT ?? 900);
 const GRAMMAR = [
   '# every form the grammar writes',
   'sell cloud compute',
-  'buy ice 2',
+  '2x buy ice',
   'build solar panel',
   'build data center up to 5',
   'buy land',
@@ -678,14 +678,20 @@ async function pass(seed, width, theme) {
    * form the grammar writes (each line must read, or say why in its gutter note), applied,
    * the block view holding every line, the text reading back as written; then the Cortex
    * mock opened by its debug toggle and closed with Esc. Each audited and captured. */
+  /** Opens the Programs view from its nav tile in Text mode (the view remembers the mode). */
+  const openText = async () => {
+    await click('.nav-tile[data-nav="programs"]', 'open Programs');
+    await waitFor(`!!document.querySelector('[data-testid="mode-text"]')`, 'the Programs view', 3000);
+    if (!(await exists('[data-testid="text-editor"]'))) await click('[data-testid="mode-text"]', 'Text mode');
+  };
   const takeoverProbe = async (when) => {
     const AREA = '[data-testid="text-editor-area"]';
     await speed(0);
-    if (!(await exists('[data-testid="text-editor-open"]'))) {
-      note('input', `${when}: no text editor button on the program panel`);
+    if (!(await exists('.nav-tile[data-nav="programs"]'))) {
+      note('input', `${when}: no Programs nav tile`);
       return;
     }
-    await click('[data-testid="text-editor-open"]', 'open the text editor');
+    await openText();
     await waitFor(`!!document.querySelector(${q(AREA)})`, 'the text editor', 3000);
     await setValue(AREA, GRAMMAR);
     await sleep(400); // the debounced parse
@@ -701,19 +707,19 @@ async function pass(seed, width, theme) {
     await capture(`${when}-text-editor`);
     if (await evaluate(`!document.querySelector('[data-testid="text-editor-apply"]')?.disabled`)) await click('[data-testid="text-editor-apply"]', 'apply');
     await sleep(200);
-    await click('[data-takeover-close="text_editor"]', 'close the text editor');
+    await click('[data-takeover-close="programs"]', 'close the text editor');
     await sleep(200);
     const rows = await evaluate(`document.querySelectorAll('.lines li').length`);
     const written = GRAMMAR.split('\n').filter((l) => l.trim() !== '').length;
     if (rows !== written) note('text', `${when}: the block view shows ${rows} lines of the ${written} applied in the text editor`);
     await capture(`${when}-block-view`);
-    await click('[data-testid="text-editor-open"]', 'reopen the text editor');
+    await openText();
     await sleep(300);
     const back = (await evaluate(`document.querySelector(${q(AREA)}).value`)).trimEnd().split('\n');
     const want = GRAMMAR.trimEnd().split('\n');
     const differ = want.map((l, i) => [l, back[i] ?? '(none)']).filter(([a, b2]) => a !== b2);
     if (differ.length) note('text', `${when}: text doesn't read back as written: ${differ.slice(0, 3).map(([a, b2]) => `"${a}" -> "${b2}"`).join('; ')}`);
-    await click('[data-takeover-close="text_editor"]', 'close the text editor');
+    await click('[data-takeover-close="programs"]', 'close the text editor');
     // The Cortex mock, by its debug toggle.
     await panel('options');
     if (!(await exists('#cortex-mock-toggle'))) await click('[data-testid="debug"] .fold-head', 'debug fold');

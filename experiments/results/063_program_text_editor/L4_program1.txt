@@ -5,9 +5,9 @@ if free processors > 0
 if energy < 60% and credits > 20
   build solar panel
 if energy > 20%
-  sell cloud compute 10
+  10x sell cloud compute
 if energy < 21%
-  idle 5
+  5x idle
 if titanium > 99% or regolith > 99%
   build storage depot
 if free land < 5 and credits > 200
@@ -15,7 +15,7 @@ if free land < 5 and credits > 200
 if circuit boards > 79% and credits > 150
   build data center up to 6
 if ice < 30% and credits > 200
-  buy ice 10
+  10x buy ice
 if credits > 150 and energy > 70%
   build regolith excavator up to 2
   build smelter up to 1

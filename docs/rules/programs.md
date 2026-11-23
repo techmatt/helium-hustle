@@ -33,7 +33,7 @@ to do or not:
 | `if <condition>` | `if` (`when`) | Its step, nothing else; it never fails. Checked once, when the pointer reaches it. True: the pointer moves into its body, which then runs whole, whatever the condition does meanwhile. False: the pointer jumps past the whole body at once, however long, into its `else`'s body when one follows. |
 | `else` | `else` | **Free**, no outcome: its `if` decides. Reached from the `if`'s body (it was true), the pointer passes it and jumps its body. |
 | `# <text>` | `note` (`text`) | **Free**, never runs, no outcome: a comment kept with the program. |
-| a line that doesn't read | `unparsed` (`text`) | **Free**, never runs, no outcome: a text-editor line kept as written until fixed (*Text form*). |
+| a line that doesn't read | `unparsed` (`text`) | **Free**, never runs, no outcome: a Text-mode line kept as written until fixed (*Text form*). |
 
 **Blocks.** A line may be `indented`: it is in the body of the `if` or `else` above it. One
 level only: an `if` or `else` is never indented (no nesting, no `else if`), and an indented
@@ -133,15 +133,16 @@ carries `"indented": true`.
 
 ## Text form
 
-`program_text` (`to_text`, `parse`; wasm `program_text`, `parse_program_text`): the text
-editor's form and copy/paste import and export, read by the sim's loadout files too. One line
-a program line in the block editor's words (display names, lowercase when written), an indent
-(spaces or a tab) for a body line, `#` for a note, `else` alone on its line, a command as
-`<name> [count]`:
+`program_text` (`to_text`, `parse`; wasm `program_text`, `parse_program_text`): the
+Programs view's Text mode and copy/paste import and export, read by the sim's loadout files
+too. One line a program line in the Blocks mode's words (display names, lowercase when
+written), an indent (spaces or a tab) for a body line, `#` for a note, `else` alone on its
+line, a command as `[Nx] <name>`, its repeat count first; a trailing number is always an
+argument (a verb's), so `sell cloud compute 10` is red:
 
 ```
 if propellant < 20%
-  buy propellant 10
+  10x buy propellant
 else
   sell propellant
 launch pads all
@@ -152,7 +153,7 @@ Reading is case-insensitive with any spacing. `20%` is a `percent` reading, `20`
 where it is, is **red** and kept as an `unparsed` line (an indent it can't hold stays in its
 text); one that reads but is locked is **amber**; blank lines are dropped. A `#` after a
 statement is red (a comment goes on its own line). **Aliases:** an id for a name
-(`solar_panel`); `≥`, `≤` for `>=`, `<=` (comparisons are symbols only); a count as `xN`, `(xN)`, `×N`, `*N` or `x N`; `launch` for `launch pads all`;
+(`solar_panel`); `≥`, `≤` for `>=`, `<=` (comparisons are symbols only); a count as `NX`, `N×`, `N*` or `N x`; `launch` for `launch pads all`;
 `set pads <good> N` for `up to N`; a program tab as `program N`, `tab N`, `pN` or `N`;
 `days since purchase` for `days since a purchase`. Written: `assign processors program N
 <N | all>`, `load <saved program> into program N` (the name keeps its case).

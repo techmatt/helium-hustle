@@ -36,7 +36,7 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
 - **Locked lines (2026-11-22, 064; replaces 063's "fails and advances").** A line for
   something not unlocked this run (program logic, `if`, a reading's research, a command,
   building, research item or project) is kept (loaded, pasted or set) and skipped for free,
-  like a note; a locked `if` skips its body free too. The Text editor's amber status stays.
+  like a note; a locked `if` skips its body free too. The amber status stays (both modes).
 - **Program logic unlocks (2026-11-21).** `if` is not available from the start: a cheap
   global project offered after 1.6 unlocks it. Side quest 1.b's reward is a placeholder
   (059, default): every run starts with 50 Science (a `grant` unlock).
@@ -48,12 +48,33 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
 - **Programs persist (2026-11-22).** A player's programs carry over across runs (a saved
   library); building it is its own item when Matt asks.
 - **"Add to Program" (2026-11-22)**, not "Add to Program 1": the active program is implied.
-- **Text editor (2026-11-22).** A "Text editor" takeover on the active program:
-  the block editor's words, `#` notes kept, aliases fine; live gutter (green ran, grey
-  skipped, red unparsed, amber locked, fired k/10 on `if`s); red and amber lines kept; saved
-  on Apply or leaving; copy/paste is import/export. *Defaults (063):* blanks dropped.
-- **All instructions panel (2026-11-23).** Right of the Text editor (Text editor only, no
-  search): Commands; Build; Pads; Buildings on/off; Research and projects; Programs;
+- **Programs view (2026-11-23, replaces the Text editor's button and title).** A
+  **Programs** nav tile opens a full-width takeover titled "Programs" on the active
+  program; the Commands tab and the right column's at-a-glance program stay. **Text |
+  Blocks**, both first-class, edit the same program: the game is beatable without typing
+  (everything the text says, `if`/`else`, repeats, every instruction and its numbers,
+  builds in Blocks). The view remembers the last mode; a new player starts in Blocks.
+  Blocks is the block editor, controls minimal (add, drag, indent, delete, number fields).
+  *Defaults (071):* the mode is a browser preference (localStorage), not game state; Blocks
+  edits apply at once (as the right column), Text on Apply or leaving; a Blocks row is
+  selected by a click; a note's text is a field; a panel `if` goes after the selected
+  row's whole block, so it never takes lines below into its body.
+- **Text mode (2026-11-22).** The block view's words, `#` notes kept, aliases fine; red
+  and amber lines kept; saved on Apply or leaving; copy/paste is import/export.
+  *Defaults (063):* blanks dropped.
+- **One gutter (2026-11-23).** Both modes show run state the same way: green ran, grey
+  skipped, red unparsed, amber locked, fired k/10 on `if`s, the reasons. A repeated line
+  shows one small dot per run up to 8 (green done, red failed, hollow pending, filling left
+  to right); above 8, a short bar with "done/total, N failed" on hover; a single-run line
+  keeps its one dot. *Default (071):* a repeated line shows its current pass, else its last
+  (engine display state `Program.repeats`, cleared when the lines change).
+- **Repeat counts lead (2026-11-23).** `4x sell cloud compute`; a trailing number is always
+  an argument (`pause data center 1`, `build solar panel up to 2`, `fund <project> 50`). The
+  old trailing count no longer reads (red, its reason naming the new form); saved state is
+  unaffected. *Default (071):* `4X`, `4×`, `4*` and `4 x` read as `4x`.
+- **All instructions panel (2026-11-23).** Right of the program in both modes (no
+  search; a click adds a line in Text, a block in Blocks, below the caret's or selected
+  row): Commands; Build; Pads; Buildings on/off; Research and projects; Programs;
   Control flow (one `if <reading> > 0` per reading on offer, `else` only where legal at the
   cursor, `#`). Only what is revealed; known-but-locked entries amber with the locked
   reason. Hover: the live card of the Commands / Buildings panel. Click: a new row below

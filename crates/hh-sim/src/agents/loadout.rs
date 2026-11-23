@@ -8,7 +8,7 @@
 //! [1]                  # Program 1's lines follow
 //! if energy < 60% and credits > 20
 //!   build solar_panel  # indented: in the body of the `if` above
-//! cloud_compute x10
+//! 10x cloud_compute
 //! ```
 //!
 //! Each line is read by the game's text form (`hh_core::program_text`, the
@@ -21,7 +21,7 @@
 //! `%`, its amount without (a capped one too). Verbs: `build X [up to N]`, `buy land`,
 //! `launch pads G|all`, `load pads G|all`, `set pads G up to N`,
 //! `pause|resume X [N|all]`, `research X`, `assign processors <tab> N|all`,
-//! `fund P [N|all]`, `retire`; anything else is a command `id [xN]`.
+//! `fund P [N|all]`, `retire`; anything else is a command `[Nx] id` (its repeat count first).
 //! A line it can't read is an error, never a silent skip.
 
 #[cfg(test)]
@@ -125,7 +125,7 @@ fn line_060(text: &str) -> Result<Entry, String> {
         ["fund", p, n] => act(Verb::Fund, Some(p), None, Some(amount(n)?)),
         ["retire"] => act(Verb::Retire, None, None, None),
         [c] => Op::Command { command: c.to_string(), count: 1 },
-        [c, x] if x.starts_with('x') => Op::Command { command: c.to_string(), count: x[1..].parse().map_err(|_| format!("bad count {x:?}"))? },
+        [x, c] if x.ends_with('x') => Op::Command { command: c.to_string(), count: x[..x.len() - 1].parse().map_err(|_| format!("bad count {x:?}"))? },
         _ => return Err(format!("can't read {text:?}")),
     };
     Ok(Entry { op, indented })
@@ -167,7 +167,7 @@ mod tests {
     fn it_reads_every_form() {
         let l = parse(
             "seat: 1=all 2=1 # c\n[2]\nif he3 > 10% or credits < 20\n  load pads all\nlaunch pads he3\n\
-             set pads he3 up to 1\nbuild smelter up to 2\nbuy land\nassign processors 3 all\nfund foundation_grant 3\ndream x5\nretire\n",
+             set pads he3 up to 1\nbuild smelter up to 2\nbuy land\nassign processors 3 all\nfund foundation_grant 3\n5x dream\nretire\n",
         )
         .unwrap();
         assert_eq!(l.seat, vec![(0, Amount::All), (1, Amount::N(1))]);

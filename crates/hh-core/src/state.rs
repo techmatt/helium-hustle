@@ -425,6 +425,20 @@ pub struct Program {
     pub processors: u32,
     pub entry: u32,
     pub step: u32,
+    /// Display only: per repeated command line (count over 1), its current or
+    /// last pass, so the gutter shows each run. Cleared when the lines change.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub repeats: BTreeMap<u32, Repeat>,
+}
+
+/// A repeated line's pass: runs done of it, how many failed, and which of the
+/// first eight (bit k: run k) failed.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Repeat {
+    pub done: u32,
+    pub failed: u32,
+    pub first_fails: u8,
 }
 
 /// A launch pad (one per Launch Pad owned, in purchase order).

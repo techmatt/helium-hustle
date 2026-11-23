@@ -43,7 +43,9 @@ const text =
 async function editorShot(theme) {
   // The Buildings panel behind, for the block editor's shot.
   await page.panel('buildings');
-  await click('[data-testid="text-editor-open"]', 'open the text editor');
+  // 071: the Programs nav tile opens the view; Text is one of its two modes.
+  await click('.nav-tile[data-nav="programs"]', 'open Programs');
+  if (!(await exists('[data-testid="text-editor"]'))) await click('[data-testid="mode-text"]', 'Text mode');
   await waitFor(`!!document.querySelector('[data-testid="text-editor"]')`, 'the text editor');
   await page.speed(3);
   // At least ten days counted, and a line of each color on the last.
@@ -52,7 +54,7 @@ async function editorShot(theme) {
   const s = await statuses();
   check(['green', 'grey', 'red', 'amber', 'note'].every((x) => s.includes(x)), `${theme}: the gutter shows ${[...new Set(s)].join(', ')}`);
   await shot(`text_editor_${theme}`);
-  await click('[data-takeover-close="text_editor"]', 'close');
+  await click('[data-takeover-close="programs"]', 'close');
   await sleep(100);
   // The block editor, scrolled so the note (top) to the unparsed and locked rows (foot) show.
   check((await exists('.lines li.note-line')) && (await exists('.lines li.unparsed-line')) && (await exists('.lines li.is-locked')), `${theme}: note, unparsed and locked rows`);
@@ -74,13 +76,15 @@ try {
   await page.speed(0);
   await click('.prog-tabs button[data-program="0"]', 'program 1');
   while (await evaluate(`!document.querySelector('[data-testid="proc-plus"]').disabled`)) await click('[data-testid="proc-plus"]', 'a processor');
-  await click('[data-testid="text-editor-open"]', 'open the text editor');
+  // 071: the Programs nav tile opens the view; Text is one of its two modes.
+  await click('.nav-tile[data-nav="programs"]', 'open Programs');
+  if (!(await exists('[data-testid="text-editor"]'))) await click('[data-testid="mode-text"]', 'Text mode');
   await setValue(AREA, text);
   await sleep(300);
   await click('[data-testid="text-editor-apply"]', 'Apply');
   await sleep(200);
   check(await evaluate(`document.querySelector(${q('[data-testid="text-editor-apply"]')}).disabled`), 'applied (Apply off again)');
-  await click('[data-takeover-close="text_editor"]', 'close');
+  await click('[data-takeover-close="programs"]', 'close');
   await editorShot('dark');
   await debugMenu();
   await click('[data-theme-pick="light"]', 'light');

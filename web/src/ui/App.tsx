@@ -35,7 +35,7 @@ import { Right } from './Right';
 import { Dyson, EarthLab, Ending, MetaController, Timeline, Vault } from './Saga';
 import { TakeoverView, useTakeoversChanged, type Takeover } from './Takeover';
 import { cortexMockTakeover } from './CortexMock';
-import { textEditorTakeover } from './TextEditor';
+import { programsTakeover } from './Programs';
 
 /** The takeover views, in their left-column order. */
 const TAKEOVERS: Takeover[] = [cortexMockTakeover];
@@ -70,10 +70,10 @@ export function App() {
     noteOpened('program_tab', i);
     setProgram(i);
   }, []);
-  // The text editor works on the program tab the right column shows; the program panel opens it.
-  const textEditor = textEditorTakeover(program, pickProgram);
+  // The Programs view works on the program tab the right column shows; its nav tile opens it.
+  const programs = programsTakeover(program, pickProgram);
   // A takeover whose button hides closes with it.
-  const takeover = [...TAKEOVERS, textEditor].find((t) => t.id === takeoverId && t.shown(s)) ?? null;
+  const takeover = [...TAKEOVERS, programs].find((t) => t.id === takeoverId && t.shown(s)) ?? null;
   const closeTakeover = useCallback(() => setTakeoverId(null), []);
   // The notice and story banner: over the middle column, or over a takeover while one
   // hides that column (a story or a failed save mustn't wait for it to close).
@@ -105,9 +105,14 @@ export function App() {
     <div class={`app${takeover ? ' taking-over' : ''}`}>
       <Left
         s={s}
-        panel={takeover ? null : shown}
+        panel={takeover ? (takeover.id === programs.id ? programs.id : null) : shown}
         open={(id) => {
           noteOpened('panel', id);
+          // The Programs tile opens its takeover (again: closes it); the middle panel stays.
+          if (id === programs.id) {
+            setTakeoverId((cur) => (cur === id ? null : id));
+            return;
+          }
           setPanel(id);
           // A panel picked from the nav replaces an open takeover.
           setTakeoverId(null);
@@ -121,7 +126,7 @@ export function App() {
         {!takeover && banners}
         <Panel id={shown} s={s} program={program} />
       </main>
-      <Right s={s} program={program} setProgram={pickProgram} openTextEditor={() => setTakeoverId(textEditor.id)} />
+      <Right s={s} program={program} setProgram={pickProgram} />
       {takeover && <TakeoverView s={s} t={takeover} close={closeTakeover} banners={banners} />}
       <StatusBar s={s} />
       {s.summary && <Summary s={s} />}

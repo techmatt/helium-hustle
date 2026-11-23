@@ -10,7 +10,7 @@ use crate::content::{content, Command, CommandEffect, ProjectReward, ResearchEff
 use crate::fx::Fx;
 use crate::modifiers::modifier;
 use crate::rules::Rules;
-use crate::state::{Amount, Clause, Cmp, Condition, Entry, GameState, Join, Joined, LineOutcome, Loadout, Op, Overclock, Program, Reading, Verb};
+use crate::state::{Amount, Clause, Cmp, Condition, Entry, GameState, Join, Joined, LineOutcome, Loadout, Op, Overclock, Program, Reading, Repeat, Verb};
 
 use super::economy::{BOREDOM, PROCESSORS};
 
@@ -365,6 +365,7 @@ fn put_entries(g: &mut GameState, program: u32, entries: &[Entry]) -> Result<(),
     p.entries = entries.to_vec();
     p.entry = 0;
     p.step = 0;
+    p.repeats.clear();
     // Today's line outcomes named the old lines.
     g.run.today.lines.remove(&program);
     let prefix = format!("program:{program}:");
@@ -939,6 +940,20 @@ fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
                 let c = content().command(command).expect("set_program checked");
                 let outcome = execute(r, g, c, src, &short, None);
                 let p = &mut g.run.programs[i];
+                if *count > 1 {
+                    // A pass's first run starts its record afresh.
+                    let rep = p.repeats.entry(line as u32).or_default();
+                    if p.step == 0 {
+                        *rep = Repeat::default();
+                    }
+                    if outcome == LineOutcome::Failed {
+                        rep.failed += 1;
+                        if rep.done < u8::BITS {
+                            rep.first_fails |= 1 << rep.done;
+                        }
+                    }
+                    rep.done += 1;
+                }
                 p.step += 1;
                 if p.step < *count {
                     mark(g, line, outcome);

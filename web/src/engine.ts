@@ -220,6 +220,15 @@ export interface ProgramView {
   locked: (string | null)[];
   /** Per line, why an `unparsed` line doesn't parse. */
   errors: (string | null)[];
+  /** Per repeated command line, its current or last pass (the run gutter's dots). */
+  repeats: (Repeat | null)[];
+}
+
+/** A repeated line's pass: runs done, failed, and bit k set when run k (of the first 8) failed. */
+export interface Repeat {
+  done: number;
+  failed: number;
+  first_fails: number;
 }
 
 /** The program lines run over a span of days: per program, per line in queue order,

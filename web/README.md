@@ -70,8 +70,7 @@ Three columns and a status bar:
   Above 10x a redraw covers several days: each line shows its outcome over them
   (`advance_run`'s `lines`), no frame. A note line (`#`) is muted text, an unparsed one a
   red-tinted disabled row with its reason, a locked one dimmed with "locked this run" (the
-  view's `errors` and `locked`). **Text editor** opens the text editor takeover on the
-  active program (below). Below, Events: Story (side story and the latest
+  view's `errors` and `locked`). Below, Events: Story (side story and the latest
   boredom phase), completed quests, and Recent Activity (green good, red bad, blue news),
   each with an unread count.
 - **Bottom:** day and run, the cheated mark, Boredom and Energy bars with their rates
@@ -82,18 +81,26 @@ Three columns and a status bar:
   Credits, He-3 and Science, and pause. The game runs on behind it: the covered columns
   stay mounted, only hidden. A view is one `Takeover` entry in `App.tsx`'s `TAKEOVERS`;
   `bleed` drops the body's padding and scrolling for a view that fits itself to it.
-  `noButton` keeps a view out of the left column. Users: the Cortex mock (below) and the
-  **Text editor** (`TextEditor.tsx`): program tabs, Apply, and a textarea between a gutter
-  of status dots (green ran, grey skipped, red unparsed, amber locked, hollow failed) and a
-  notes column (reasons, "fired k/10" on `if`s, from the store's history of `advance_run`'s
-  `if_true` bits). The engine parses (`parse_program_text`) and writes (`program_text`) the
-  text (docs/rules/programs.md, *Text form*); a changed draft is applied on Apply, on a tab
-  switch and on closing. Right of it, **All instructions** (`Instructions.tsx`): the
-  engine's list (`program_instructions`: revealed lines by group, amber with the locked
-  reason, `else` only where it fits at the caret); a click inserts the line below the
-  caret's line with its indent (`if` / `else` at the top level with an empty body line, an
-  empty caret line filled in place) and moves the caret there; a hover shows the live card
-  of its command, building, research or project.
+  `noButton` keeps a view out of the left column. Users: the Cortex mock (below) and
+  **Programs** (`Programs.tsx`), opened by its nav tile (a takeover, not a panel), with a
+  **Text | Blocks** toggle on the same program; the last mode is kept in localStorage
+  (`hh-programs-mode`), Blocks for a new player. **Blocks** is the right column's list
+  (`ProgramLines.tsx`) with a run gutter first in each row, a row selected by a
+  click, a repeat-count number field first on command rows and a note's text field; edits
+  apply at once. **Text** (`TextEditor.tsx`): program tabs, Apply, and a textarea between
+  the gutter and a notes column (reasons, "fired k/10" on `if`s, from the store's history
+  of `advance_run`'s `if_true` bits). The engine parses (`parse_program_text`) and writes
+  (`program_text`) the text (docs/rules/programs.md, *Text form*); a changed draft is
+  applied on Apply, on a tab switch, a mode switch and on closing. **The gutter**
+  (`Gutter.tsx`): a status dot (green ran, grey skipped, red unparsed, amber locked, hollow
+  failed); a repeated line's runs as dots up to 8 (green done, red failed, hollow pending;
+  the view's `repeats`), a bar past 8. Right of either mode, **All instructions**
+  (`Instructions.tsx`): the engine's list (`program_instructions`: revealed lines by group,
+  amber with the locked reason, `else` only where it fits at the caret or selected row); a
+  click inserts the line below the caret's line or selected row with its indent (`if` /
+  `else` at the top level with an empty body line, an empty caret line filled in place;
+  `programEdit.ts` `insertLine`) and moves the caret or selection there; a hover shows the
+  live card of its command, building, research or project.
 - **Run summary:** when a run ends a summary covers the screen, the clock stopped until
   Continue.
 

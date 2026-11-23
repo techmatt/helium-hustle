@@ -45,8 +45,10 @@ def line(text):
         return f"{w[0].capitalize()} {N[w[1]]}" + (f" {w[2]}" if len(w) > 2 else "")
     if w[0] == "retire":
         return "Retire"
-    count = w[1][1:] if len(w) > 1 else "1"
-    return f"{N[w[0]]} (x{count})"
+    # A repeat count leads (071): `10x cloud_compute`.
+    if len(w) > 1:
+        return f"{N[w[1]]} (x{w[0][:-1]})"
+    return f"{N[w[0]]} (x1)"
 
 def render(path):
     out, tab = [], None

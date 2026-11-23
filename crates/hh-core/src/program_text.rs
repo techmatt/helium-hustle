@@ -68,7 +68,7 @@ fn clause_text(c: &Clause) -> String {
 pub fn op_text(op: &Op) -> String {
     match op {
         Op::Command { command, count: 1 } => name_of(command),
-        Op::Command { command, count } => format!("{} {count}", name_of(command)),
+        Op::Command { command, count } => format!("{count}x {}", name_of(command)),
         Op::Build { building, up_to: None } => format!("build {}", name_of(building)),
         Op::Build { building, up_to: Some(n) } => format!("build {} up to {n}", name_of(building)),
         Op::BuyLand {} => "buy land".to_string(),
@@ -143,11 +143,33 @@ fn count(s: &str) -> Result<u32, String> {
     s.parse::<u32>().map_err(|_| format!("{s:?} isn't a whole number"))
 }
 
-/// A command line's count token: `N`, `xN`, `(xN)`, `×N` or `*N`.
-fn count_token(s: &str) -> Option<u32> {
-    let s = s.trim_start_matches('(').trim_end_matches(')');
-    let s = s.strip_prefix(['x', 'X', '×', '*']).unwrap_or(s);
-    s.parse().ok()
+/// A command line's leading repeat count, `Nx` (or `N×`, `N*`, `N x`), and
+/// the words after it; `None` when the line doesn't start with one.
+fn lead_count<'a, 'b>(w: &'a [&'b str]) -> Option<(u32, &'a [&'b str])> {
+    let first = w.first()?;
+    if let Some(n) = first.strip_suffix(['x', '×', '*']).and_then(|n| n.parse().ok()) {
+        return Some((n, &w[1..]));
+    }
+    match w {
+        [n, "x" | "×" | "*", rest @ ..] => n.parse().ok().map(|n| (n, rest)),
+        _ => None,
+    }
+}
+
+/// A trailing count on a command (the old form, no longer read): its
+/// command's id.
+fn trailing_count(w: &[&str]) -> Option<String> {
+    let (last, rest) = w.split_last()?;
+    let last = last.trim_start_matches('(').trim_end_matches(')');
+    let bare = last.strip_prefix(['x', '×', '*']).unwrap_or(last);
+    if bare.parse::<u32>().is_err() {
+        return None;
+    }
+    let mut rest = rest.to_vec();
+    if matches!(rest.last(), Some(&("x" | "×" | "*"))) {
+        rest.pop();
+    }
+    command(&rest.join(" "))
 }
 
 /// Splits a trailing amount (`N` or `all`) off `words`.
@@ -296,22 +318,20 @@ pub fn parse_op(line: &str) -> Result<Op, String> {
         };
         return Ok(Op::If { when });
     }
-    // A command's name (or id), then with a trailing count.
+    // A command's name (or id), its repeat count first: `4x sell cloud compute`.
     if let Some(c) = command(&w.join(" ")) {
         return Ok(Op::Command { command: c, count: 1 });
     }
-    if let Some((n, rest)) = w.split_last().and_then(|(last, rest)| count_token(last).map(|n| (n, rest))) {
-        let mut rest = rest.to_vec();
-        // `cloud compute x 10`
-        if matches!(rest.last(), Some(&("x" | "×" | "*"))) {
-            rest.pop();
+    if let Some((n, rest)) = lead_count(&w) {
+        let c = command(&rest.join(" ")).ok_or_else(|| format!("no command {:?} to repeat", rest.join(" ")))?;
+        if n == 0 {
+            return Err("a command runs at least once".to_string());
         }
-        if let Some(c) = command(&rest.join(" ")) {
-            if n == 0 {
-                return Err("a command runs at least once".to_string());
-            }
-            return Ok(Op::Command { command: c, count: n });
-        }
+        return Ok(Op::Command { command: c, count: n });
+    }
+    // A trailing number is an argument, and a command takes none.
+    if let Some(c) = trailing_count(&w) {
+        return Err(format!("a repeat count goes first: {}x {}", w.last().map_or("", |s| s.trim_matches(['(', ')', 'x', '×', '*'])), name_of(&c)));
     }
     let act = |verb, target: Option<String>, tab: Option<u32>, amount: Option<Amount>| Op::Act { verb, target, tab, amount };
     let up_to = |rest: &[&str]| -> Result<(String, Option<u32>), String> {

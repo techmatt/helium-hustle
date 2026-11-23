@@ -26,9 +26,9 @@ if free processors > 0
 if Energy < 60% and credits > 20
   build solar panel
 if energy >= 20%
-  Sell Cloud Compute x10
+  10X Sell Cloud Compute
 if energy < 21%
-  idle 5
+  5x idle
 if titanium > 99% or regolith > 99%
   build storage_depot
 if free land < 5 and credits > 200
@@ -37,7 +37,7 @@ if circuit boards > 79% and credits > 150
   build data center up to 6
   build research lab up to 2
 if ice < 30% and credits > 200
-  buy ice (x10)
+  10 x buy ice
 if credits > 150 and energy > 70%
   build regolith excavator up to 2
   build smelter up to 1
@@ -45,16 +45,16 @@ if credits > 150 and energy > 70%
   build launch pad up to 1
   build fabricator up to 1
 if helium-3 > 10%
-  load_pads x5
+  5× load_pads
 launch pads all
 if propellant < 67% and energy > 30%
-  buy propellant 5
+  5x buy propellant
 if science > 49
   research process_telemetry
 if days since a purchase > 299
   retire
 if boredom > 50%
-  dream x5
+  5x dream
 ";
 
 #[test]
@@ -74,7 +74,7 @@ fn text_reads_every_form_and_round_trips() {
     let again = parse(&r, &g, &text);
     assert_eq!(again.entries, p.entries);
     assert_eq!(to_text(&again.entries), text);
-    assert!(text.contains("  sell cloud compute 10\n"), "{text}");
+    assert!(text.contains("  10x sell cloud compute\n"), "{text}");
     assert!(text.contains("if energy < 60% and credits > 20\n"), "{text}");
     // And `set_program` takes it whole.
     let mut g = g;
@@ -136,14 +136,32 @@ fn aliases_read_as_the_canonical_form() {
         ("if energy≥50%", "if energy >= 50%"),
         ("if energy≤50%", "if energy <= 50%"),
         ("if propellant<20", "if propellant < 20"),
-        ("buy_ice * 3", "buy ice 3"),
-        ("buy ice x 3", "buy ice 3"),
+        ("3* buy_ice", "3x buy ice"),
+        ("3 x buy ice", "3x buy ice"),
+        ("3X Buy Ice", "3x buy ice"),
+        ("3× buy ice", "3x buy ice"),
         ("set pads he3 2", "set pads helium-3 up to 2"),
         ("load builder into tab 2", "load builder into program 2"),
     ] {
         assert_eq!(parse_op(a), parse_op(b), "{a} / {b}");
         assert!(parse_op(a).is_ok(), "{a}: {:?}", parse_op(a));
     }
+}
+
+#[test]
+fn a_repeat_count_leads_and_a_trailing_number_is_an_argument() {
+    let op = parse_op("4x sell cloud compute").unwrap();
+    assert_eq!(op, Op::Command { command: "cloud_compute".into(), count: 4 });
+    assert_eq!(crate::program_text::op_text(&op), "4x sell cloud compute");
+    // The old trailing form is no longer read; the reason shows the new one.
+    for old in ["sell cloud compute 4", "sell cloud compute x4", "cloud_compute (x4)", "sell cloud compute x 4"] {
+        let why = parse_op(old).unwrap_err();
+        assert_eq!(why, "a repeat count goes first: 4x sell cloud compute", "{old}");
+    }
+    assert!(parse_op("0x idle").is_err());
+    assert!(parse_op("4x castle").is_err());
+    // Verbs keep their trailing argument.
+    assert_eq!(parse_op("pause data center 1").unwrap(), Op::Act { verb: Verb::Pause, target: Some("data_center".into()), tab: None, amount: Some(Amount::N(1)) });
 }
 
 #[test]
@@ -187,7 +205,7 @@ fn over_long_text_and_too_many_lines_are_red() {
 fn else_reads_writes_and_says_why_where_it_cant_stand() {
     let r = rules();
     let g = open(&r);
-    let text = "if energy < 20%\n  idle\nELSE\n  sell cloud compute 2\n  # a note\nidle\nif credits > 5\nelse\n";
+    let text = "if energy < 20%\n  idle\nELSE\n  2x sell cloud compute\n  # a note\nidle\nif credits > 5\nelse\n";
     let p = parse(&r, &g, text);
     assert!(p.lines.iter().all(|l| l.status != "red"), "{:?}", p.lines);
     assert_eq!(p.entries[2].op, Op::Else {});
@@ -295,7 +313,7 @@ fn hand_entries_match_the_text_form() {
     // The text of a held program is what the editor shows; an empty program is empty text.
     assert_eq!(to_text(&[]), "");
     let e = vec![Entry::command("idle", 3), Entry::new(Op::Note { text: String::new() })];
-    assert_eq!(to_text(&e), "idle 3\n#\n");
+    assert_eq!(to_text(&e), "3x idle\n#\n");
 }
 
 #[test]

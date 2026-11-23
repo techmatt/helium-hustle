@@ -7,9 +7,9 @@ if free processors > 0
 if energy < 60% and credits > 20
   build solar_panel
 if energy > 20%
-  cloud_compute x10
+  10x cloud_compute
 if energy < 21%
-  idle x5
+  5x idle
 if titanium > 99% or regolith > 99%
   build storage_depot
 if free land < 5 and credits > 200
@@ -17,7 +17,7 @@ if free land < 5 and credits > 200
 if circuits > 79% and credits > 150
   build data_center up to 6
 if ice < 30% and credits > 200
-  buy_ice x10
+  10x buy_ice
 if credits > 150 and energy > 70%
   build excavator up to 2
   build smelter up to 1
@@ -26,7 +26,7 @@ if credits > 150 and energy > 70%
   build fabricator up to 1
 [2]
 if he3 > 10%
-  load_pads x5
+  5x load_pads
 launch pads all
 if propellant < 67% and energy > 30%
-  buy_propellant x5
+  5x buy_propellant
