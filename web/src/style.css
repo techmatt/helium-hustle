@@ -602,15 +602,6 @@ ul.plain {
   font-family: var(--font-mono);
   font-size: 13px;
 }
-.ins-locked,
-.ins-locked:hover {
-  color: var(--accent-text);
-}
-.ins-why {
-  display: block;
-  font-size: 11px;
-  padding-left: 1em;
-}
 /* The hovered entry's card, to its left; looked at, never clicked. */
 .ins-card {
   position: fixed;

@@ -184,11 +184,6 @@ function StatusBar({ s }: { s: Store }) {
       <span id="run" class="status-run">
         Run {v.run}
       </span>
-      {v.cheated && (
-        <span class="cheated" title="A cheat was used in this game">
-          CHEATED
-        </span>
-      )}
       <span class="status-label">Boredom</span>
       <Bar frac={Number(v.boredom.amount) / Number(v.boredom.cap)} tone="red" label={`${num(v.boredom.amount)} / ${num(v.boredom.cap)}`} />
       <span class="status-rate">

@@ -266,7 +266,10 @@ pub struct NavView {
 pub struct CheatBuildingView {
     pub owned: u32,
     pub cost: Fx,
+    /// A day's income to every shown resource but credits, and off boredom.
     pub rate: Fx,
+    /// A day's income to credits.
+    pub credits_rate: Fx,
     pub affordable: bool,
 }
 
@@ -688,6 +691,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             owned: g.run.cheat_buildings,
             cost: Fx::from_int(crate::cheat::CHEAT_BUILDING_COST),
             rate: Fx::from_int(crate::cheat::CHEAT_BUILDING_RATE),
+            credits_rate: Fx::from_int(crate::cheat::CHEAT_BUILDING_CREDITS_RATE),
             affordable: g.amount(economy::CREDITS) >= Fx::from_int(crate::cheat::CHEAT_BUILDING_COST),
         },
         saga: saga::build(r, g),

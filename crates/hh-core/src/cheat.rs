@@ -19,6 +19,8 @@ pub const CHEAT_BUILDING_COST: i64 = 1;
 /// What each cheat building adds a day to every shown income and takes off
 /// boredom (debug only, so not a config number).
 pub const CHEAT_BUILDING_RATE: i64 = 10;
+/// What each cheat building adds a day to credits instead (debug only).
+pub const CHEAT_BUILDING_CREDITS_RATE: i64 = 1000;
 /// The source name a cheat building's flows show under.
 pub const CHEAT_SOURCE: &str = "cheat_building";
 
@@ -104,18 +106,21 @@ pub fn apply(r: &Rules, g: &mut GameState, c: &Cheat) -> Result<(), String> {
 
 /// After boredom grows each day: each cheat building makes `CHEAT_BUILDING_RATE`
 /// of every resource the Resources panel shows (but land, processors and
-/// boredom) and takes as much off boredom (down to 0). Nothing without one.
+/// boredom; credits get `CHEAT_BUILDING_CREDITS_RATE`) and takes
+/// `CHEAT_BUILDING_RATE` off boredom (down to 0). Nothing without one.
 pub fn tick(g: &mut GameState) {
     let n = g.run.cheat_buildings;
     if n == 0 {
         return;
     }
-    let v = Fx::from_int(CHEAT_BUILDING_RATE) * Fx::from_int(i64::from(n));
+    let n = Fx::from_int(i64::from(n));
+    let v = Fx::from_int(CHEAT_BUILDING_RATE) * n;
+    let credits = Fx::from_int(CHEAT_BUILDING_CREDITS_RATE) * n;
     for res in &content().resources {
         if [LAND, PROCESSORS, BOREDOM].contains(&res.id.as_str()) || !economy::shown(g, res) {
             continue;
         }
-        g.produce_unboosted(CHEAT_SOURCE, &res.id, v);
+        g.produce_unboosted(CHEAT_SOURCE, &res.id, if res.id == CREDITS { credits } else { v });
     }
     let off = v.min(g.amount(BOREDOM).max(Fx::ZERO));
     g.consume(CHEAT_SOURCE, BOREDOM, off);

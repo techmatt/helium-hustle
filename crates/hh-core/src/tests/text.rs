@@ -343,9 +343,13 @@ fn the_instruction_panel_lists_what_is_revealed_and_each_line_reads() {
     assert!(!else_fits(&r, &g, text, 0) && else_fits(&r, &g, text, 1));
     assert!(!else_fits(&r, &g, text, 2) && !else_fits(&r, &g, text, 3) && !else_fits(&r, &g, text, 4));
     assert!(else_fits(&r, &g, "if credits > 0", 0) && else_fits(&r, &g, "if credits > 0\n  idle\n\nidle", 1));
-    // Before program logic, the lines past commands are amber (locked), not hidden.
+    // Only what can be used now: before program logic, nothing locked (amber) is listed.
     let fresh = r.new_game(1);
     let groups = instructions(&r, &fresh, "", 0);
-    let build = groups.iter().find(|x| x.name == "Build").unwrap();
-    assert!(build.items.iter().all(|i| i.locked.is_some()));
+    assert!(groups.iter().all(|x| x.name != "Build"), "{groups:?}");
+    for item in groups.iter().flat_map(|x| &x.items) {
+        let p = parse(&r, &fresh, &item.text);
+        assert!(["ok", "note"].contains(&p.lines[0].status), "{}: {:?}", item.text, p.lines[0]);
+    }
+    assert!(!groups.is_empty(), "the commands are usable on a fresh career");
 }

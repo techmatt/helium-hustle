@@ -61,8 +61,8 @@ export function Buildings({ s }: { s: Store }) {
 }
 
 /** The cheat building (`Cheat::CheatBuilding`, crates/hh-core/src/cheat.rs): only while
- * Options → Debug → Cheats is on. 1 credit; each one adds 10 a day to every shown income
- * and takes 10 a day off boredom for the rest of the run. Buying one marks the game cheated. */
+ * Options → Debug → Cheats is on. 1 credit; each one adds 1000 credits a day, 10 a day to
+ * every other shown income and takes 10 a day off boredom for the rest of the run. Buying one marks the game cheated. */
 function CheatCard({ v }: { v: View }) {
   const c = v.cheat_building;
   const ok = c.affordable;
@@ -100,7 +100,8 @@ function CheatCard({ v }: { v: View }) {
             <div class="card-text">
               <p class="desc">A debug cheat, not part of the game. Marks the game as cheated for good.</p>
               <div class="effects">
-                <p>+{num(c.rate)} / day to every income</p>
+                <p>+{num(c.credits_rate)} / day credits</p>
+                <p>+{num(c.rate)} / day to every other income</p>
                 <p>−{num(c.rate)} / day boredom</p>
               </div>
             </div>

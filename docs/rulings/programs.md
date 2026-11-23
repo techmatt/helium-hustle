@@ -76,13 +76,13 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   search; a click adds a line in Text, a block in Blocks, below the caret's or selected
   row): Commands; Build; Pads; Buildings on/off; Research and projects; Programs;
   Control flow (one `if <reading> > 0` per reading on offer, `else` only where legal at the
-  cursor, `#`). Only what is revealed; known-but-locked entries amber with the locked
-  reason. Hover: the live card of the Commands / Buildings panel. Click: a new row below
+  cursor, `#`). Only what the player can use right now: nothing locked
+  (no amber entries; 2026-11-23, replacing 070's amber default). Hover: the live card of the Commands / Buildings panel. Click: a new row below
   the cursor's line with its indent, cursor moved there; an `if` adds an empty indented line
   with the cursor on it; number slots 1, `up to N` owned + 1. *Defaults (070):* `if` and
   `else` go in unindented (they can't be indented) and `else` gets a body line too; an
-  empty cursor line is filled in place; before program logic the non-command groups show
-  amber; research and project entries hover their panels' cards.
+  empty cursor line is filled in place; research and project entries hover their panels'
+  cards.
 - **`fund <project>` (2026-11-20).** A `fund <project> [amount]` verb funding a project the
   way the Projects panel does; it may be switched off later, one config change
   (`fund_verb`). *Defaults (039):* `fund P N` sets N a day on every cost of P (rules in

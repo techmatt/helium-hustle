@@ -667,15 +667,15 @@ async function programElse() {
 }
 
 /** Section 9 (before 5): the text editor's All instructions panel. On a new game (a fresh
- * career) its groups show, past Commands amber (locked), and clicking `if ... > 0` then a
- * command writes an `if` with its body, the caret on it; `else` is offered only below an
- * `if` or its body; hovering a command or a building shows its card. Then in scenario
- * everything (`if` open) the same clicks Apply cleanly, the block view shows the same
- * lines, and at 1x the `if` runs. Shot `instructions.png`. */
+ * career) it lists only what can be used now: Commands and a `#`, nothing locked. Then in
+ * scenario everything (`if` open) clicking `if ... > 0` then a command writes an `if` with
+ * its body, the caret on it; `else` is offered only below an `if` or its body; hovering a
+ * command or a building shows its card; it Applies cleanly, the block view shows the same
+ * lines, and at 1x the `if` runs. Shots `instructions-fresh.png`, `instructions.png`. */
 async function instructionPanel() {
   const AREA = '[data-testid="text-editor-area"]';
   const area = () => evaluate(`document.querySelector(${q(AREA)}).value`);
-  const entries = (sel) => evaluate(`[...document.querySelectorAll(${q(sel)})].map((b) => ({ text: b.dataset.instruction, locked: !!b.dataset.locked }))`);
+  const entries = (sel) => evaluate(`[...document.querySelectorAll(${q(sel)})].map((b) => ({ text: b.dataset.instruction }))`);
   const hover = async (sel) => {
     await evaluate(`document.querySelector(${q(sel)}).dispatchEvent(new MouseEvent('mouseenter'))`);
     await sleep(150);
@@ -694,7 +694,7 @@ async function instructionPanel() {
     check(!(await exists('[data-instruction="else"]')), 'no else in an empty program');
     await click('[data-group="Control flow"] [data-instruction^="if "]');
     await sleep(300);
-    const cmd = (await entries('[data-group="Commands"] .ins-item')).find((x) => !x.locked);
+    const [cmd] = await entries('[data-group="Commands"] .ins-item');
     await click(`[data-group="Commands"] [data-instruction=${q(cmd.text)}]`);
     await sleep(300);
     const text = await area();
@@ -719,20 +719,20 @@ async function instructionPanel() {
   await speed(0);
   await click('#new-game');
   await sleep(500);
-  const fresh = await build();
-  const amber = await entries('[data-group="Build"] .ins-item');
-  check(amber.length > 0 && amber.every((x) => x.locked), `on a fresh career, Build entries are amber: ${amber.length}`);
-  await shot('instructions-fresh');
-  // It applies (the locked if kept, amber, no red) and the block view shows the same lines.
-  await click('[data-testid="text-editor-apply"]');
+  await click('.prog-tabs button[data-program="0"]');
+  await openText();
   await sleep(300);
-  const freshDots = await evaluate(`[...document.querySelectorAll('.te-gutter [data-line-status]')].map((d) => d.dataset.lineStatus)`);
-  const freshSaved = await evaluate(`document.querySelector('[data-testid="text-editor-status"]').textContent`);
-  check(/Saved/.test(freshSaved) && !freshDots.includes('red'), `on a fresh career it applies: ${freshSaved} (${freshDots.join(' ')})`);
+  // Only what the player can use now: the commands and a note, nothing locked (no amber).
+  const freshGroups = await evaluate(`[...document.querySelectorAll('.ins-group')].map((g) => g.dataset.group)`);
+  const flowFresh = (await entries('[data-group="Control flow"] .ins-item')).map((x) => x.text);
+  const panelText = await evaluate(`document.querySelector('[data-testid="instructions"]').textContent`);
+  check(
+    freshGroups.join(',') === 'Commands,Control flow' && flowFresh.join(',') === '#' && !/opens at|isn't|Locked/.test(panelText) && !(await exists('.ins-locked, [data-locked]')),
+    `on a fresh career only usable entries: ${freshGroups.join(', ')}; control flow ${flowFresh.join(' ')}`,
+  );
+  await shot('instructions-fresh');
   await click('[data-takeover-close="programs"]');
   await sleep(100);
-  const freshShape = await evaluate(`[...document.querySelectorAll('.lines li')].map((l) => (l.classList.contains('indented') ? '>' : '') + (l.dataset.op ?? 'command')).join(' ')`);
-  check(freshShape === 'if >command >command', `and the block view shows the same lines: ${freshShape}`);
 
   await debugMenu();
   await speed(0);
@@ -745,7 +745,6 @@ async function instructionPanel() {
   await click('.prog-procs button[title="Clear this program"]');
   while (await enabled('[data-testid="proc-plus"]')) await click('[data-testid="proc-plus"]');
   const open = await build();
-  check(!open.ifs[0].locked, `with if open, the if entry is not amber (${fresh.ifs[0].locked} on a fresh career)`);
   await shot('instructions');
   await click('[data-testid="text-editor-apply"]');
   await sleep(300);
@@ -765,25 +764,30 @@ async function instructionPanel() {
   check(ran[0] === 'out-true' || ran[0] === 'out-false', `at 1x the if runs: ${ran.join(' ')}`);
 }
 
-/** Section 10: on a new game, a program with an if/else and a 4x line built in Blocks only,
- * the same lines in Text, and the 4x line's run dots filling at 1x. */
+/** Section 10: in scenario everything (`if` open; a fresh career's panel lists no `if`), a
+ * program with an if/else and a 4x line built in Blocks only, the same lines in Text, and
+ * the 4x line's run dots filling at 1x. */
 async function programsBlocks() {
   const rows = () =>
     evaluate(`[...document.querySelectorAll('[data-testid="block-lines"] > li')].map((l) => (l.classList.contains('indented') ? '>' : '') + (l.dataset.op ?? 'command'))`);
   await debugMenu();
   await speed(0);
-  await click('#new-game');
-  await sleep(500);
+  await setValue('#scenario', 'everything');
+  await click('#start-scenario');
+  await speed(1);
+  await waitFor(`!!document.querySelector('[data-testid="logic-add"]')`, 'the instructions to unlock', 8000);
+  await speed(0);
   // A new player's mode: Blocks.
   await evaluate(`localStorage.removeItem('hh-programs-mode')`);
   await click('.prog-tabs button[data-program="0"]');
+  await click('.prog-procs button[title="Clear this program"]');
   await click('.nav-tile[data-nav="programs"]');
   await waitFor(`!!document.querySelector('[data-takeover="programs"]')`, 'the Programs view', 3000);
   const title = await evaluate(`document.querySelector('[data-takeover="programs"] h2').textContent`);
   check(title === 'Programs' && (await exists('[data-testid="block-editor"]')), `the Programs tile opens "${title}" in Blocks`);
   check(!(await exists('[data-testid="text-editor-open"]')), 'no Text editor button in the program panel');
-  const ins = (sel) => evaluate(`[...document.querySelectorAll(${q(sel)})].map((b) => ({ text: b.dataset.instruction, locked: !!b.dataset.locked }))`);
-  const cmd = (await ins('[data-group="Commands"] .ins-item')).find((x) => !x.locked);
+  const ins = (sel) => evaluate(`[...document.querySelectorAll(${q(sel)})].map((b) => ({ text: b.dataset.instruction }))`);
+  const [cmd] = await ins('[data-group="Commands"] .ins-item');
   const add = async (sel) => {
     await click(sel);
     await sleep(250);
@@ -817,9 +821,10 @@ async function programsBlocks() {
   await click('[data-testid="mode-blocks"]');
   await waitFor(`!!document.querySelector('[data-testid="block-editor"]')`, 'the Blocks mode', 3000);
   check((await evaluate(`localStorage.getItem('hh-programs-mode')`)) === 'blocks', 'the view remembers the mode');
-  // At 1x with a processor on it, the 4x line's dots fill a run a day (the locked if passes free).
+  // At 1x with one processor on it, the 4x line's dots fill a run a day (more would run it whole in a day).
   await click('[data-takeover-close="programs"]');
-  while (await enabled('[data-testid="proc-plus"]')) await click('[data-testid="proc-plus"]');
+  while (await enabled('[data-testid="proc-minus"]')) await click('[data-testid="proc-minus"]');
+  await click('[data-testid="proc-plus"]');
   await click('.nav-tile[data-nav="programs"]');
   await waitFor(`!!document.querySelector('[data-testid="block-editor"]')`, 'the Blocks mode', 3000);
   const rep = () => evaluate(`document.querySelector('[data-testid="block-lines"] > li:last-child [data-repeat]')?.dataset.repeat ?? null`);
@@ -1133,8 +1138,9 @@ try {
   const act1 = content('nav.json').map((n) => n.id).filter((id) => !draftPanels.has(id));
   const missing = act1.filter((id) => !tiles.includes(id));
   check(!missing.length, `all ${act1.length} Act 1 nav tiles (content/nav.json) reachable: ${tiles.join(', ')}${missing.length ? `; missing ${missing.join(', ')}` : ''}`);
-  check((await evaluate(`document.querySelector('.status').textContent`)).includes('CHEATED'), 'a cheated game is marked');
+  check(!(await evaluate(`document.querySelector('.status').textContent`)).includes('CHEATED'), 'the bottom bar shows no CHEATED tag');
   await debugMenu();
+  check((await evaluate(`document.getElementById('debug-info').textContent`)).includes('CHEATED'), 'a cheated game is still marked (debug info)');
   await setValue('#cheat-days', '30');
   const d0 = await day();
   await click('#cheat-jump');
@@ -1144,6 +1150,8 @@ try {
   const cheatOwned = () => evaluate(`Number(document.querySelector('[data-testid="buy-cheat_building"]')?.dataset.owned ?? -1)`);
   const credits = () => evaluate(`Number(document.querySelector('tr.res-row[data-res="credits"]').dataset.amount)`);
   const c0 = await credits();
+  const cheatText = await evaluate(`document.querySelector('[data-testid="buy-cheat_building"] .effects').textContent`);
+  check(cheatText.includes('+1,000 / day credits') || cheatText.includes('+1000 / day credits'), `the Cheat Fountain reads +1000 credits a day: ${cheatText}`);
   await click('[data-testid="buy-cheat_building"]');
   check((await cheatOwned()) === 1 && c0 - (await credits()) === 1, `the cheat building buys for 1 credit (${c0} -> ${await credits()})`);
   await debugMenu();

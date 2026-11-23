@@ -251,12 +251,11 @@ export interface ParsedText {
   lines: { entry: number | null; status: TextLineStatus; reason: string | null }[];
 }
 
-/** One entry of the text editor's instruction panel (`program_instructions`): a line as
- * text, why it won't run yet this run (amber), and the card a hover shows
- * (`command:<id>`, `building:<id>`, `research:<id>`, `project:<id>`). */
+/** One entry of the text editor's instruction panel (`program_instructions`, only what can
+ * be used now): a line as text and the card a hover shows (`command:<id>`, `building:<id>`,
+ * `research:<id>`, `project:<id>`). */
 export interface Instruction {
   text: string;
-  locked: string | null;
   card: string | null;
 }
 
@@ -508,7 +507,7 @@ export interface View {
   /** The debug boost's factors, if set. */
   boost: { production: Fx; research: Fx; boredom: Fx } | null;
   /** The debug cheat building, shown only while Cheats are on. */
-  cheat_building: { owned: number; cost: Fx; rate: Fx; affordable: boolean };
+  cheat_building: { owned: number; cost: Fx; rate: Fx; credits_rate: Fx; affordable: boolean };
   /** The later acts (draft). */
   saga: SagaView;
   resources: ResourceView[];

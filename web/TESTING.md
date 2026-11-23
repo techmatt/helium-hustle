@@ -24,7 +24,7 @@ results folder; kept shots are also copied to the shared screenshots folder, CLA
 2. **Every panel**: scenario `late_unlocks` opens Research, Projects and Ideologies (1.6 Lab
    is past a second run); a locked project's condition, a funded one's days to done; every
    nav tile shown opens, and every Act 1 tile is shown (all of `content/nav.json` but panels
-   only a DRAFT quest opens); the cheated mark, a jump ahead, the cheat building (1 credit,
+   only a DRAFT quest opens); no CHEATED tag in the bottom bar (the mark in the debug info), a jump ahead, the cheat building (+1000 credits a day, 1 credit,
    no card with Cheats off) and Complete all research, and the replay check.
 3. A program's frame at 10x and 50x, each speed's days per second, pause, click-to-buy, a
    reload keeping the save, another revision's save discarded, the scenarios; in `late_unlocks`, an `if` /
@@ -43,12 +43,11 @@ results folder; kept shots are also copied to the shared screenshots folder, CLA
    Then `programElse`: an if/else typed there shows the same lines in the block view
    (an Else row, both bodies indented) and back, and at 1x each day's pass runs the
    branch its `if` picks. Then `instructionPanel`: on a new game the All instructions
-   panel's groups (Build amber), clicks writing an `if … > 0` and a body line under it
-   (caret there), `else` offered only below an `if` or its body, command and building
-   hover cards, an Apply (the locked `if` amber) matching the block view; in `everything`
-   the same clicks Apply with no red or amber, the block view
-   shows `if` and its body, and the `if` runs at 1x. Then `programsBlocks`: on a new game
-   the Programs tile opens Programs in Blocks, an if/else and a `4x` line are built by
+   panel lists only usable entries (Commands and `#`, nothing locked); in `everything`
+   clicks write an `if … > 0` and a body line under it (caret there), `else` is offered
+   only below an `if` or its body, command and building hover cards show, it Applies with
+   no red or amber, the block view shows `if` and its body, and the `if` runs at 1x. Then
+   `programsBlocks`: in `everything` the Programs tile opens Programs in Blocks, an if/else and a `4x` line are built by
    panel clicks, ⇤ and the count field only, Text shows the same lines, and at 1x the
    `4x` line's four dots fill 1/4 to 4/4; set to 12, it shows a bar titled `k/12`. Sections open Text through the nav tile
    (`openText`); the mode is remembered.

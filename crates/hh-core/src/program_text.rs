@@ -478,13 +478,12 @@ pub fn parse(r: &Rules, g: &GameState, text: &str) -> Parsed {
     Parsed { entries, lines }
 }
 
-/// One entry of the text editor's instruction panel: a line as text, why it
-/// won't run yet this run (amber, `programs::locked`), and the card a hover
-/// shows (`command:<id>`, `building:<id>`, `research:<id>`, `project:<id>`).
+/// One entry of the text editor's instruction panel: a line as text and the
+/// card a hover shows (`command:<id>`, `building:<id>`, `research:<id>`,
+/// `project:<id>`).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize)]
 pub struct Instruction {
     pub text: String,
-    pub locked: Option<String>,
     pub card: Option<String>,
 }
 
@@ -496,14 +495,15 @@ pub struct InstructionGroup {
 
 /// The instruction panel's groups, only what the game has revealed (the
 /// editor's lists: visible commands, buildings and research, open projects,
-/// the library, the readings on offer). Number slots hold 1; `up to N` the
-/// count owned + 1. `else` is listed only when an `else` line inserted
-/// unindented below text line `cursor` of `text` reads where it stands.
+/// the library, the readings on offer) and the player can use right now: an
+/// entry `programs::locked` this run is left out, and a group left empty
+/// with it. Number slots hold 1; `up to N` the count owned + 1. `else` is
+/// listed only when an `else` line inserted unindented below text line
+/// `cursor` of `text` reads where it stands.
 pub fn instructions(r: &Rules, g: &GameState, text: &str, cursor: usize) -> Vec<InstructionGroup> {
     let v = r.view(g);
     let item = |op: Op, card: Option<String>| {
-        let locked = programs::locked(r, g, &Entry::new(op.clone()));
-        Instruction { text: op_text(&op), locked, card }
+        programs::locked(r, g, &Entry::new(op.clone())).is_none().then(|| Instruction { text: op_text(&op), card })
     };
     let act = |verb, target: Option<&str>, tab: Option<u32>, amount: Option<Amount>| Op::Act { verb, target: target.map(str::to_string), tab, amount };
     let one = Some(Amount::N(1));
@@ -512,7 +512,8 @@ pub fn instructions(r: &Rules, g: &GameState, text: &str, cursor: usize) -> Vec<
     };
     let buildings: Vec<_> = v.buildings.iter().filter(|b| b.visible).collect();
     let mut groups = Vec::new();
-    let mut group = |name: &'static str, items: Vec<Instruction>| {
+    let mut group = |name: &'static str, items: Vec<Option<Instruction>>| {
+        let items: Vec<Instruction> = items.into_iter().flatten().collect();
         if !items.is_empty() {
             groups.push(InstructionGroup { name, items });
         }
@@ -561,19 +562,19 @@ pub fn instructions(r: &Rules, g: &GameState, text: &str, cursor: usize) -> Vec<
     }
     group("Buildings on/off", onoff);
 
-    let mut rp: Vec<Instruction> = targets(Verb::Research).iter().map(|t| item(act(Verb::Research, Some(t), None, None), Some(format!("research:{t}")))).collect();
+    let mut rp: Vec<_> = targets(Verb::Research).iter().map(|t| item(act(Verb::Research, Some(t), None, None), Some(format!("research:{t}")))).collect();
     if v.verbs.iter().any(|x| x.verb == Verb::Fund) {
         rp.extend(targets(Verb::Fund).iter().map(|t| item(act(Verb::Fund, Some(t), None, one), Some(format!("project:{t}")))));
     }
     group("Research and projects", rp);
 
-    let mut progs: Vec<Instruction> = targets(Verb::LoadProgram).iter().map(|t| item(act(Verb::LoadProgram, Some(t), Some(0), None), None)).collect();
+    let mut progs: Vec<_> = targets(Verb::LoadProgram).iter().map(|t| item(act(Verb::LoadProgram, Some(t), Some(0), None), None)).collect();
     progs.push(item(act(Verb::AssignProcessors, None, Some(0), one), None));
     progs.push(item(act(Verb::Retire, None, None, None), None));
     group("Programs", progs);
 
     let zero = Fx::ZERO;
-    let mut flow: Vec<Instruction> = v
+    let mut flow: Vec<_> = v
         .readings
         .iter()
         .map(|o| item(Op::If { when: Condition { first: Clause { reading: o.reading.clone(), cmp: Cmp::Gt, value: zero }, rest: None } }, None))

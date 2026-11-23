@@ -732,7 +732,7 @@ fn the_boost_scales_production_marks_the_game_accelerated_and_replays() {
 }
 
 #[test]
-fn the_cheat_building_adds_ten_to_every_shown_income_and_takes_ten_off_boredom() {
+fn the_cheat_building_adds_a_thousand_credits_and_ten_to_every_other_shown_income_and_takes_ten_off_boredom() {
     let r = rules();
     let cheat = |c: crate::Cheat| Action::Cheat { cheat: c };
     let mut honest = Session::new(&baseline(), 11, Some(scenario("everything").unwrap())).unwrap();
@@ -753,6 +753,7 @@ fn the_cheat_building_adds_ten_to_every_shown_income_and_takes_ten_off_boredom()
         let want = match c.id {
             "boredom" => f("-10"),
             "land" | "processors" => Fx::ZERO,
+            "credits" => f("1000"),
             _ if c.visible => f("10"),
             _ => Fx::ZERO,
         };

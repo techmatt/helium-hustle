@@ -157,11 +157,12 @@ replays exactly: **grant** adds to a resource up to its cap (not processors or b
 **jump ahead** marks a jump whose days then pass as usual, **complete research** finishes
 every research item not done this run (free; known to the career as if bought, so later
 runs see it), and the **cheat building** (1 credit, `Run`'s `cheat_buildings`, absent while
-0, gone at retirement) adds 10 a day per copy, unboosted, to every resource the Resources
-panel shows (but land, processors and boredom) and takes as much off boredom, down to 0
-(`cheat::tick`, after boredom grows). Its numbers are debug constants in
+0, gone at retirement) adds per copy, unboosted, 1000 credits a day and 10 a day to every
+other resource the Resources panel shows (but land, processors and boredom) and takes 10
+a day off boredom, down to 0 (`cheat::tick`, after boredom grows). Its numbers are debug constants in
 `cheat.rs`, not config; the UI offers it only while Cheats are on. Any cheat sets the
-state's `cheated` mark for good (absent from an honest game's JSON); no rule reads it.
+state's `cheated` mark for good (absent from an honest game's JSON; the UI shows it only
+in the debug info, not the bottom bar); no rule reads it.
 
 Two cheats are **accelerators**, debug-only, for zooming a career through the arc
 ([simulator.md](../simulator.md#accelerators)). **Boost** sets the career's factors (1 is

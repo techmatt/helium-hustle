@@ -73,7 +73,7 @@ Three columns and a status bar:
   view's `errors` and `locked`). Below, Events: Story (side story and the latest
   boredom phase), completed quests, and Recent Activity (green good, red bad, blue news),
   each with an unread count.
-- **Bottom:** day and run, the cheated mark, Boredom and Energy bars with their rates
+- **Bottom:** day and run, Boredom and Energy bars with their rates
   (capped as in Resources; "cap tomorrow" the day before a forced retirement).
 - **Takeover views** (`Takeover.tsx`): a large view that covers the middle and right
   columns while the left stays, opened and closed by its button under the nav grid, or
@@ -95,8 +95,8 @@ Three columns and a status bar:
   (`Gutter.tsx`): a status dot (green ran, grey skipped, red unparsed, amber locked, hollow
   failed); a repeated line's runs as dots up to 8 (green done, red failed, hollow pending;
   the view's `repeats`), a bar past 8. Right of either mode, **All instructions**
-  (`Instructions.tsx`): the engine's list (`program_instructions`: revealed lines by group,
-  amber with the locked reason, `else` only where it fits at the caret or selected row); a
+  (`Instructions.tsx`): the engine's list (`program_instructions`: by group, only lines
+  revealed and usable now, nothing locked, `else` only where it fits at the caret or selected row); a
   click inserts the line below the caret's line or selected row with its indent (`if` /
   `else` at the top level with an empty body line, an empty caret line filled in place;
   `programEdit.ts` `insertLine`) and moves the caret or selection there; a hover shows the
@@ -150,11 +150,12 @@ for a later live base view: replace what it draws, keep its box.
   one back). **Cheats** (off by
   default, remembered in `hh.cheats`): grant a resource, set boredom, complete all
   research, jump ahead N days, the **cheat building** (a hazard-striped *Cheat Fountain*
-  card at the foot of the Buildings panel, only while Cheats are on: 1 credit, +10 a day
-  to every income, −10 boredom); the **accelerators**: 2k and 10k speeds and the
+  card at the foot of the Buildings panel, only while Cheats are on: 1 credit, +1000 credits
+  a day, +10 to every other income, −10 boredom); the **accelerators**: 2k and 10k speeds and the
   autopilot with its default player and boost
   ([simulator.md](../docs/simulator.md#accelerators)). Engine actions, so replay stays
-  exact; any cheat marks the game CHEATED, the autopilot ACCELERATED too.
+  exact; any cheat marks the game cheated in its save (shown in the debug info, not the bottom bar),
+  the autopilot ACCELERATED too.
 
 ## Play logs
 

@@ -31,6 +31,9 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   prerequisites are one set. Hovering a locked node outlines its prerequisites and the lines
   in, owned and missing apart.
   Not built: an Act 4 upgrade lets a fan hold several parts at once.
+- **Cheats (2026-11-23).** No CHEATED tag in the bottom bar; a cheated career stays marked
+  in its save and files (and the debug info). The Cheat Fountain makes +1000 credits a day;
+  its other +10/day incomes and −10/day boredom are unchanged.
 - **Screenshots (2026-11-22).** An item that makes screenshots keeps them in its results
   folder and also copies them to `C:\Code\gdrive-sync\helium-hustle\screenshots\` as
   `NNN_*.png` (NNN: the item's number), a standing exception to the outside-the-worktree

@@ -1,6 +1,6 @@
-// The text editor's "All instructions" panel: every line the game has revealed, by group,
-// as the engine lists them (`program_instructions`: their text, amber with the editor's
-// locked reason, `else` only where it fits at the caret). Clicking one inserts it below
+// The text editor's "All instructions" panel: every line the player can use right now, by
+// group, as the engine lists them (`program_instructions`: revealed and not locked this run,
+// `else` only where it fits at the caret). Clicking one inserts it below
 // the caret's line (TextEditor.tsx); hovering one shows the card its Commands, Buildings,
 // Research or Projects panel shows, drawn live from the view.
 
@@ -37,10 +37,9 @@ export function InstructionPanel({ s, text, cursor, insert }: { s: Store; text: 
               <li key={it.text}>
                 <button
                   type="button"
-                  class={`ins-item${it.locked ? ' ins-locked' : ''}`}
+                  class="ins-item"
                   data-instruction={it.text}
-                  data-locked={it.locked ? 'true' : undefined}
-                  title={it.locked ? `Locked: ${it.locked}` : 'Insert below the cursor'}
+                  title="Insert below the cursor"
                   // Keep the caret in the text area.
                   onMouseDown={(ev) => ev.preventDefault()}
                   onClick={() => insert(it.text)}
@@ -51,7 +50,6 @@ export function InstructionPanel({ s, text, cursor, insert }: { s: Store; text: 
                   }}
                 >
                   <code>{it.text}</code>
-                  {it.locked && <span class="ins-why">{it.locked}</span>}
                 </button>
               </li>
             ))}
