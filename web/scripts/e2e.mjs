@@ -237,8 +237,28 @@ async function programLogic(grant) {
   await pick(`${line(0)} input[aria-label="Up to"]`, '1');
   await add('If');
   await setClause(1, 1, 'Energy', 'below', '50');
-  const unit = await evaluate(`document.querySelector(${q(`${clause(1, 1)} [data-unit]`)})?.textContent ?? ''`);
-  check(unit === '%', `a fill reading's number shows its unit: "${unit}"`);
+  const unit = await evaluate(`document.querySelector(${q(`${clause(1, 1)} [data-unit-toggle]`)})?.textContent ?? ''`);
+  check(unit === '%', `a fill reading's number shows its unit, a toggle: "${unit}"`);
+  // The unit toggle: the same entry read as an amount, then back to a percent.
+  await click(`${clause(1, 1)} [data-unit-toggle]`);
+  await sleep(60);
+  const asAmount = await evaluate(`[document.querySelector(${q(`${clause(1, 1)} [data-unit-toggle]`)}).textContent, document.querySelector(${q(line(1))}).title.split(':')[0]]`);
+  check(asAmount[0] === 'amt' && asAmount[1] === 'If Energy below 50', `the toggle reads an amount: ${asAmount.join(', ')}`);
+  await click(`${clause(1, 1)} [data-unit-toggle]`);
+  await sleep(60);
+  const asPercent = await evaluate(`document.querySelector(${q(line(1))}).title.split(':')[0]`);
+  check(asPercent === 'If Energy below 50%', `and back to a percent: ${asPercent}`);
+  // Process Telemetry opens two readings in the reading list.
+  const readingOptions = () => evaluate(`[...document.querySelectorAll(${q(`${clause(1, 1)} select[aria-label="Reading"] option`)})].map((o) => o.textContent.trim())`);
+  const offeredBefore = await readingOptions();
+  check(!offeredBefore.includes('Energy per day') && !offeredBefore.includes('Days since a purchase') && offeredBefore.length <= 13, `before Process Telemetry, ${offeredBefore.length} readings`);
+  await grant('science', '50');
+  await panel('research');
+  await click('[data-testid="research-process_telemetry"]');
+  await sleep(100);
+  const offeredAfter = await readingOptions();
+  check(offeredAfter.slice(-2).join(', ') === 'Energy per day, Days since a purchase', `after it, two more: ${offeredAfter.slice(-2).join(', ')}`);
+  await debugMenu();
   await add('Build');
   await pick(`${line(2)} select[aria-label="Building"]`, 'Solar Panel');
   await indent(2);
@@ -246,7 +266,7 @@ async function programLogic(grant) {
   await setClause(3, 1, 'Free land', 'below', '1');
   await pick(`${line(3)} select[aria-label="Join"]`, 'and');
   await setClause(3, 2, 'Credits', 'above', '500');
-  check(!(await exists(`${clause(3, 2)} [data-unit]`)), 'an amount reading shows no % unit');
+  check(!(await exists(`${clause(3, 2)} [data-unit]`)) && !(await exists(`${clause(3, 2)} [data-unit-toggle]`)), 'an uncapped reading shows no unit and no toggle');
   await add('Buy Land');
   await indent(4);
   await add('If');

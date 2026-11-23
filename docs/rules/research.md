@@ -50,6 +50,11 @@ the career log records it. A new run starts with no research.
   `cargo_capacity_mult` ([shipments.md](shipments.md)).
 - `reveal_demand` (Market Awareness): the view shows each good's exact demand instead of
   a tier (display only, [demand.md](demand.md)).
+- `program_readings` (Process Telemetry, 50 science, always visible, its own category
+  *Program Analysis*): programs' `energy per day` and `days since a purchase` readings
+  open ([programs.md](programs.md)).
+
+A purchase of research (as of a building or land) sets the run's `last_purchase`.
 
 Items with no effect unlock things: a command or building whose `requires` is
 `{"type": "research", ...}` is available only while that item is bought this run, and a

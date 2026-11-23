@@ -98,7 +98,10 @@ pub(super) fn programs(r: &Rules, g: &GameState, running: &[u32]) -> Vec<Program
 /// The readings on offer, one per thing, only what the player has unlocked:
 /// the fill percent of each visible capped resource, then boredom's; the
 /// amount of each visible uncapped one (credits, science); free processors
-/// and free land; idle pads once there is a pad.
+/// and free land; idle pads once there is a pad; energy per day and days
+/// since a purchase once their research is done this run. A capped
+/// resource's entry is its percent; a clause may read its amount instead
+/// (the editor's unit toggle).
 pub(super) fn readings(r: &Rules, g: &GameState, resources: &[ResourceView]) -> Vec<ReadingView> {
     let mut out = Vec::new();
     let mut add = |reading: Reading, label: String| {
@@ -121,6 +124,10 @@ pub(super) fn readings(r: &Rules, g: &GameState, resources: &[ResourceView]) -> 
     add(Reading::FreeLand, "Free land".to_string());
     if !g.run.pads.is_empty() {
         add(Reading::IdlePads, "Idle pads".to_string());
+    }
+    if research::opens_program_readings(g) {
+        add(Reading::EnergyPerDay, "Energy per day".to_string());
+        add(Reading::DaysSincePurchase, "Days since a purchase".to_string());
     }
     out
 }

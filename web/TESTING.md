@@ -27,8 +27,9 @@ served page: `HH_URL`, required (it exits naming `vite preview` when unset),
    no card with Cheats off) and Complete all research, and the replay check.
 3. A program's frame at 10x and 50x, each speed's days per second, pause, click-to-buy, a
    reload keeping the save, another revision's save discarded, the scenarios; in `late_unlocks`, an `if` /
-   `build` program written through the editor (above/below, `%` on a fill), whose guarded
-   build waits for its `if`; saved, then loaded after a retirement, it runs in run 2;
+   `build` program written through the editor (above/below, a fill's % / amt toggle, and
+   Energy per day and Days since a purchase offered once Process Telemetry is researched;
+   `programLogic`), whose guarded build waits for its `if`; saved, then loaded after a retirement, it runs in run 2;
    pause/resume verb lines under `if`s run.
 4. **The theme:** the toggles switch it with every element's box unchanged (to 0.01 px);
    a reload keeps it.
@@ -36,6 +37,7 @@ served page: `HH_URL`, required (it exits naming `vite preview` when unset),
    a pad short of fuel then Ready, Story.
 
 Any uncaught page error fails the run. Run it against `vite preview` (CLAUDE.md).
+`panel()` closes the debug menu: call `debugMenu()` again before a `grant()` after one.
 
 - **Under load it flakes:** section 3's 10x pointer walk fails beside a cargo build.
 - **The late UI for screenshots:** `experiments/results/027_art_in_game/shots.mjs`

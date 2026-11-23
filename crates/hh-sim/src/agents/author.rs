@@ -156,8 +156,9 @@ pub struct Directives {
     /// from a third of the cap), and never retire for a stale run.
     pub sustain: bool,
     /// Buy all visible research, not only [`RESEARCH`]: it differs from the
-    /// plain author only on research outside that list (today the draft
-    /// Novelty Simulation, visible after 1.9), since no open project holds
+    /// plain author only on research outside that list (today Process
+    /// Telemetry, from 1.6, and the draft Novelty Simulation, after 1.9),
+    /// since no open project holds
     /// research back (046).
     pub all_research: bool,
     /// Run the market program (Promote what ships, Disrupt) on one processor

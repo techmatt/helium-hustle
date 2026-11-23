@@ -60,17 +60,26 @@ reading's unit. One reading per thing (`state::Reading`, JSON `kind`):
 | Reading | Reads | Resources |
 |---|---|---|
 | `percent` (`resource`) | Fill: `amount / cap × 100`, at most 100 (programs run before the day's clamp). | A capped resource (Energy, Regolith, Ice, Helium-3, Titanium, Circuit Boards, Propellant) or boredom (of its cap, boredom.md). |
-| `amount` (`resource`) | The amount held. | An uncapped resource but land, boredom and processors (Credits, Science). |
+| `amount` (`resource`) | The amount held; a capped one at most its cap. | Any resource but land and processors. |
 | `free_processors` | Processors active buildings grant that no program holds (`processors_free`): above 0 exactly when `assign processors <tab> all` would add some. | |
 | `free_land` | Land not built on. | |
 | `idle_pads` | Pads with no cargo aboard (a cooling pad counts). | |
+| `energy_per_day` | Energy's day's rate (`Run.day_net`, below) of the last full day; negative in a loss. | Researched. |
+| `days_since_purchase` | Days since this run last bought a building, land or research, by hand or by a program line (`Run.last_purchase`; none yet: the run's day). | Researched. |
 
-A `percent` of an uncapped resource, an `amount` of a capped one (or of land, boredom or
-processors) is refused. A clause whose reading reads nothing (a cap of 0) is false. The
-view's `readings` offer, in that order, each visible capped resource's fill, boredom's, each
-visible uncapped resource's amount, free processors, free land and, once there is a pad,
-idle pads (`view/programs.rs`): 13 in Act 1. The Resources panel's per-day number is the
-day's rate (`Run.day_net`): production less demand, a brownout's unmet demand counted.
+A `percent` of an uncapped resource, an `amount` of land or processors is refused. A capped
+resource (and boredom) is one entry of the list with a **unit toggle**: the editor's number
+box reads `%` (`percent`) or an amount (`amount`), "Propellant below 20%" or "below 20".
+**Researched readings** (`energy_per_day`, `days_since_purchase`) open while a research item
+with the `program_readings` effect (Process Telemetry, research.md) is done this run: before
+it, `set_program` refuses a clause new to the program that uses one, and a held or loaded one
+reads nothing. A clause whose reading reads nothing (a cap of 0, a researched reading not
+open) is false. The view's `readings` offer, in that order, each visible capped resource's
+fill, boredom's, each visible uncapped resource's amount, free processors, free land, once
+there is a pad idle pads, and once researched energy per day and days since a purchase
+(`view/programs.rs`): 13 in Act 1, 15 with the research. The Resources panel's per-day
+number is the day's rate (`Run.day_net`): production less demand, a brownout's unmet demand
+counted.
 
 **Loadouts.** The library (`Career.library`, kept across retirements) holds up to
 `library_slots` saved programs, each a display name (trimmed, 1 to `loadout_name_max`
@@ -102,7 +111,7 @@ when a command is visible: [commands.md](commands.md).
 
 | Action | Refused when |
 |---|---|
-| `set_program {program, entries}` | more than `max_entries` lines; an unknown command, building or resource; a `count` or `up_to` of 0; a line other than a command before the unlock, or an `if` before its flag (unless already in the program); an indented line with no `if` or body line above it; an indented `if`; a reading of the wrong kind for its resource (*Conditions*); a verb with an unknown or missing target (`load`: a blank name; one no loadout has fails when run), a tab or amount it doesn't take or lacks, an amount of 0 (but `assign_processors` and `fund`), `set_pads ... all`; a switched-off verb (unless already in the program); or no such program |
+| `set_program {program, entries}` | more than `max_entries` lines; an unknown command, building or resource; a `count` or `up_to` of 0; a line other than a command before the unlock, or an `if` before its flag (unless already in the program); an indented line with no `if` or body line above it; an indented `if`; a reading of the wrong kind for its resource (*Conditions*); a researched reading before its research (unless already in the program); a verb with an unknown or missing target (`load`: a blank name; one no loadout has fails when run), a tab or amount it doesn't take or lacks, an amount of 0 (but `assign_processors` and `fund`), `set_pads ... all`; a switched-off verb (unless already in the program); or no such program |
 | `set_processors {program, processors}` | no such program, or the other programs' processors plus this number exceed what the active Data Centers grant |
 | `save_loadout {program, slot, name}` (`slot` null: a new slot) | no such program or slot; an empty program; a blank or overlong name; a new slot with the library full |
 | `load_loadout {loadout, program}` | no such loadout or program; lines `set_program` refuses on their form (it skips the unlock checks) |

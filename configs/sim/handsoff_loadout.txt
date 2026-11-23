@@ -8,7 +8,9 @@
 # 281% of the author against L4's 213%, milestones tied; 060's seeds 3119-3124).
 #
 # Program 1 builds (and seats processors as Data Centers add them), Program 2
-# ships, Program 3 researches Dream Protocols and dreams when bored.
+# ships, Program 3 researches Process Telemetry, retires a run that has bought
+# nothing for 300 days (062: before the player's hand backstop), researches
+# Dream Protocols and dreams when bored.
 seat: 1=all
 [1]
 if free processors above 0
@@ -43,6 +45,10 @@ launch pads all
 if propellant below 67% and energy above 30%
   buy_propellant x5
 [3]
+if science above 49
+  research process_telemetry
+if days since a purchase above 299
+  retire
 if science above 300
   research dream_protocols
 if boredom above 50%

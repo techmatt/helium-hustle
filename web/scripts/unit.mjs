@@ -2,7 +2,7 @@
 //   node scripts/unit.mjs   (npm run unit)
 import assert from 'node:assert/strict';
 import { num, perDay } from '../src/format.ts';
-import { blockLen, canIndent, moveLines, removeLine, setIndent, tidy } from '../src/ui/programEdit.ts';
+import { blockLen, canIndent, moveLines, otherUnit, removeLine, sameEntry, setIndent, tidy } from '../src/ui/programEdit.ts';
 
 const cases = [
   [0, '0'],
@@ -69,5 +69,17 @@ edit(tidy(lines(['a', '  b', 'if X', '  c'])), ['a', 'b', 'if X', '  c'], 'tidy'
 assert.equal(blockLen(lines(['if X', '  b', '  c', 'd']), 0), 3);
 assert.equal(blockLen(lines(['a', '  b']), 0), 1);
 edits += 4;
+
+// The unit toggle: a resource's percent and amount are one entry of the reading list.
+const pct = { kind: 'percent', resource: 'propellant' };
+const amt = { kind: 'amount', resource: 'propellant' };
+assert.deepEqual(otherUnit(pct), amt);
+assert.deepEqual(otherUnit(amt), pct);
+assert.deepEqual(otherUnit({ kind: 'free_land' }), { kind: 'free_land' });
+assert.ok(sameEntry(pct, amt));
+assert.ok(!sameEntry(pct, { kind: 'percent', resource: 'ice' }));
+assert.ok(sameEntry({ kind: 'energy_per_day' }, { kind: 'energy_per_day' }));
+assert.ok(!sameEntry({ kind: 'energy_per_day' }, { kind: 'days_since_purchase' }));
+edits += 7;
 
 console.log(`unit ok (${cases.length + 3 + edits} checks)`);

@@ -77,6 +77,11 @@ pub fn reveals_demand(g: &GameState) -> bool {
     live_effects(g).any(|e| matches!(e, ResearchEffect::RevealDemand))
 }
 
+/// A research item opening programs' researched readings is done this run.
+pub fn opens_program_readings(g: &GameState) -> bool {
+    live_effects(g).any(|e| matches!(e, ResearchEffect::ProgramReadings))
+}
+
 /// Why `item` can't be bought now, if it can't.
 pub fn blocker(r: &Rules, g: &GameState, item: &Research) -> Option<String> {
     if !g.run.enabled_panels.contains(RESEARCH_PANEL) {
@@ -110,6 +115,7 @@ pub fn buy(r: &Rules, g: &mut GameState, id: &str) -> Result<(), String> {
     g.run.research.insert(item.id.clone());
     g.career.researched.insert(item.id.clone());
     g.run.stats.research_completed += 1;
+    g.run.last_purchase = Some(g.run.day);
     g.note("research", &item.id);
     Ok(())
 }

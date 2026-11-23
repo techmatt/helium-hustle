@@ -41,21 +41,17 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   but `if`, which has its own unlock (*Act 1*, below). No `wait until` (2026-11-22):
   programs run every day, so `if` covers it. *Defaults (037):* the pad verbs run the Launch / Load commands' rows; `retire` retires at
   the day's end like the button.
-- **"Add to Program" (2026-11-22).** A command card's button reads "Add to Program", not
-  "Add to Program 1": the active program is implied.
+- **"Add to Program" (2026-11-22)**, not "Add to Program 1": the active program is implied.
 - **Every non-`if` line costs a step (2026-11-20, replaces 037's "done and free").** A line
   with nothing to do (`research X` once researched, `pause` with nothing running, `set pads`
   already at N, `launch pads` with no pad ready, `build X up to N` with N owned) still takes a
   processor step, and nothing else: no resources, no boredom. A false `if` still skips its
-  whole block for free, conditions stay free. Guards are how a player saves steps: wrap a
-  finished line in an `if`. *Default (038):* `load pads` is done when no pad of the good
+  whole block for free. Guards save steps. *Default (038):* `load pads` is done when no pad of the good
   would take cargo.
 - **`fund <project>` (2026-11-20).** A `fund <project> [amount]` verb funding a project the
   way the Projects panel does; it may be switched off later, one config change
-  (`fund_verb`). *Defaults (039):* `fund
-  P N` sets N a day on every cost of P (each at most its resource's most a day, 046; `all` or
-  no amount the most; 0 stops it); the switches are 0/1 programs params; JSON verb `fund`, so
-  a later `fund <axis>` can share it.
+  (`fund_verb`). *Defaults (039):* `fund P N` sets N a day on every cost of P (rules in
+  programs.md); JSON verb `fund`, so a later `fund <axis>` can share it.
 - **Project scopes (2026-11-21).** A project's `scope` is `run`, `timeline` or `forever`
   (replacing `tier`; the player calls `timeline` ones **global projects**, `run` ones
   Strategic). A `forever` project's progress survives a timeline's end as well as its
@@ -89,8 +85,10 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   bringing a discrete major change; the ranks between scale.
 - **Readings (2026-11-22).** One reading per thing (about 13), only what the player has
   unlocked: fill % of each capped resource and boredom, the amount of Credits and Science,
-  free processors, free land, idle pads ([rules/programs.md](rules/programs.md)). The rest
-  are gone; rates may come back later as research-unlocked readings. The golden game's
+  free processors, free land, idle pads ([rules/programs.md](rules/programs.md)). A capped
+  reading's number box has a % / amount unit toggle, no new entries; Energy per day and Days
+  since a purchase are research-unlocked (Process Telemetry, 062's pick); no building counts
+  yet. The golden game's
   scripted policy runs a short condition program, so the golden pins the interpreter; it
   starts from the `golden_start` scenario with `if` open (Matt, 2026-11-21, question
   049_1). *Defaults (040):* `free processors` is granted by active buildings less assigned
@@ -143,7 +141,7 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   separate, occasional human model that maps ticks to real minutes ([agents.md](agents.md)).
 - **Hands-off measure (036, default; redefined 2026-11-22).** "Runs are smooth" (Act 1's exit)
   is read by the `handsoff` player: it loads the best known loadout at every reset; its only
-  hand move is a stale-run retirement (`stale_days` with nothing bought; no reading for it).
+  hand move is a stale-run retirement (`stale_days` with nothing bought), a backstop since 062's `retire` line.
   Its programs are data, a loadout file in the repo, updated when the rules or the best
   loadout change; runs until `if` opens (and that one) are the author's. Its
   measure is its credits a run and milestones from run 2 on as a share of the author's on the

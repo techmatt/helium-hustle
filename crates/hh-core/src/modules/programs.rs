@@ -140,14 +140,22 @@ fn check_entries(r: &Rules, g: &GameState, program: u32, entries: &[Entry], held
     }
     let n = program + 1;
     let c = content();
-    // One reading per thing: a fill percent for a capped resource (and
-    // boredom), an amount for an uncapped one; land and processors have their
-    // own `free` readings.
-    let one = |reading: &Reading| -> Result<(), String> {
+    // One reading per thing: a capped resource (and boredom) reads as a fill
+    // percent or an amount (the editor's unit toggle), an uncapped one as an
+    // amount; land and processors have their own `free` readings. A researched
+    // reading new to the program needs its research this run.
+    let one = |reading: &Reading, gated: bool| -> Result<(), String> {
         let (resource, percent) = match reading {
             Reading::Amount { resource } => (resource, false),
             Reading::Percent { resource } => (resource, true),
             Reading::FreeProcessors | Reading::FreeLand | Reading::IdlePads => return Ok(()),
+            Reading::EnergyPerDay | Reading::DaysSincePurchase => {
+                return if gated && !super::research::opens_program_readings(g) {
+                    Err(format!("Program {n}: {} needs its research first", reading.describe()))
+                } else {
+                    Ok(())
+                };
+            }
         };
         let Some(res) = c.resource(resource) else {
             return Err(format!("Program {n}: unknown resource {resource:?}"));
@@ -156,14 +164,13 @@ fn check_entries(r: &Rules, g: &GameState, program: u32, entries: &[Entry], held
         let own = resource == super::economy::LAND || resource == PROCESSORS;
         match (percent, capped) {
             (true, false) => Err(format!("Program {n}: {resource} has no cap to read a percent of")),
-            (false, true) => Err(format!("Program {n}: {resource} reads as a percent of its cap")),
             _ if own => Err(format!("Program {n}: {resource} reads as free {resource}")),
             _ => Ok(()),
         }
     };
-    let condition = |when: &Condition| -> Result<(), String> {
-        one(&when.first.reading)?;
-        when.rest.as_ref().map_or(Ok(()), |j| one(&j.clause.reading))
+    let condition = |when: &Condition, gated: bool| -> Result<(), String> {
+        one(&when.first.reading, gated)?;
+        when.rest.as_ref().map_or(Ok(()), |j| one(&j.clause.reading, gated))
     };
     // Whether the line above is an `if` or in a body: only then may a line be indented.
     let mut in_block = false;
@@ -201,7 +208,7 @@ fn check_entries(r: &Rules, g: &GameState, program: u32, entries: &[Entry], held
                 if e.indented {
                     return Err(format!("Program {n}: an if can't sit inside another if"));
                 }
-                condition(when)?;
+                condition(when, gated)?;
                 in_block = true;
             }
             Op::Act { verb, target, tab, amount } => {
@@ -496,7 +503,12 @@ pub fn if_unlocked(g: &GameState) -> bool {
 /// What a reading reads now (`None`: nothing to read, the clause is false).
 pub fn reading(r: &Rules, g: &GameState, what: &Reading) -> Option<Fx> {
     match what {
-        Reading::Amount { resource } => Some(g.amount(resource)),
+        // A capped resource's amount is at most its cap, as the panel shows it
+        // (below: programs run before the day's clamp).
+        Reading::Amount { resource } => {
+            let held = g.amount(resource);
+            Some(super::economy::cap(r, g, resource).map_or(held, |cap| held.min(cap)))
+        }
         Reading::Percent { resource } => {
             // At most 100: programs run before the day's clamp, so a stock
             // may stand past its cap then; the fill reads as the panel shows it.
@@ -508,6 +520,14 @@ pub fn reading(r: &Rules, g: &GameState, what: &Reading) -> Option<Fx> {
         Reading::IdlePads => {
             let n = (0..g.run.pads.len()).filter(|&i| super::shipments::idle(g, i)).count();
             Some(Fx::from_int(n as i64))
+        }
+        // Researched readings read nothing (the clause is false) until their
+        // research is done this run.
+        Reading::EnergyPerDay | Reading::DaysSincePurchase if !super::research::opens_program_readings(g) => None,
+        Reading::EnergyPerDay => Some(g.run.day_net.get(super::economy::ENERGY).copied().unwrap_or(Fx::ZERO)),
+        Reading::DaysSincePurchase => {
+            let since = g.run.day.saturating_sub(g.run.last_purchase.unwrap_or(0));
+            Some(Fx::from_int(since as i64))
         }
     }
 }

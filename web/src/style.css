@@ -1107,6 +1107,12 @@ tr.is-new td:first-child {
   margin-left: -2px;
   font-size: 12px;
 }
+/* A capped reading's unit is a toggle: % or amt (an amount). */
+.line-logic .unit-toggle {
+  min-width: 34px;
+  padding: 0 4px;
+  cursor: pointer;
+}
 .cond-now {
   font-size: 12px;
   font-variant-numeric: tabular-nums;

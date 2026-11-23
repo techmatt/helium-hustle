@@ -370,11 +370,11 @@ fn set_program_refuses_what_the_language_does_not_allow() {
         vec![build("nope", None)],
         vec![build("solar_panel", Some(0))],
         vec![when(one(amount("nope", Cmp::Gt, "1")))],
-        // One reading per thing: a capped stock reads a percent, an uncapped
-        // one an amount, land and processors their free counts.
-        vec![when(one(amount("energy", Cmp::Gt, "1")))],
-        vec![when(one(amount("boredom", Cmp::Gt, "1")))],
+        // An uncapped stock has no percent; land and processors read their
+        // free counts; the researched readings need their research.
         vec![when(one(amount("land", Cmp::Gt, "1")))],
+        vec![when(one(clause(Reading::EnergyPerDay, Cmp::Lt, "0")))],
+        vec![when(one(clause(Reading::DaysSincePurchase, Cmp::Gt, "300")))],
         vec![when(one(amount("processors", Cmp::Gt, "1")))],
         vec![when(one(clause(Reading::Percent { resource: "credits".into() }, Cmp::Gt, "1")))],
     ];
@@ -383,6 +383,61 @@ fn set_program_refuses_what_the_language_does_not_allow() {
     }
     let boredom = one(clause(Reading::Percent { resource: "boredom".into() }, Cmp::Gt, "1"));
     put(&r, &mut g, vec![when(cond), Entry::new(Op::BuyLand {}).indent(), when(boredom)]).unwrap();
+    // The unit toggle: a capped stock, boredom too, may read its amount.
+    put(&r, &mut g, vec![when(one(amount("energy", Cmp::Gt, "1"))), when(one(amount("boredom", Cmp::Gt, "1")))]).unwrap();
+}
+
+#[test]
+fn a_capped_amount_reads_the_stock_up_to_its_cap() {
+    let r = rules();
+    let mut g = game(&r);
+    let read = |g: &GameState, res: &str| programs::reading(&r, g, &Reading::Amount { resource: res.into() });
+    set(&mut g, "energy", "25");
+    assert_eq!(read(&g, "energy"), Some(f("25")));
+    let cap = economy::cap(&r, &g, "energy").unwrap();
+    set(&mut g, "energy", "100000");
+    assert_eq!(read(&g, "energy"), Some(cap), "as the panel shows it, before the day's clamp");
+    // A clause on it: "Energy below 30" against "Energy below 30%".
+    set(&mut g, "energy", "40");
+    assert!(programs::clause_holds(&r, &g, &amount("energy", Cmp::Gt, "30")));
+    assert_eq!(programs::reading(&r, &g, &Reading::Percent { resource: "energy".into() }), Some(f("40") / cap * f("100")));
+}
+
+#[test]
+fn the_researched_readings_open_with_process_telemetry() {
+    let r = rules();
+    let mut g = game(&r);
+    let read = |g: &GameState, what: Reading| programs::reading(&r, g, &what);
+    let offered = |g: &GameState| r.view(g).readings.iter().map(|x| x.label.clone()).collect::<Vec<_>>();
+    let rate = one(clause(Reading::EnergyPerDay, Cmp::Lt, "0"));
+    let stale = one(clause(Reading::DaysSincePurchase, Cmp::Gt, "5"));
+    // Before the research: not offered, a new clause refused, a held one reads nothing.
+    assert!(!offered(&g).iter().any(|l| l == "Energy per day" || l == "Days since a purchase"));
+    assert!(put(&r, &mut g, vec![when(rate.clone())]).is_err());
+    assert_eq!(read(&g, Reading::EnergyPerDay), None);
+    assert_eq!(read(&g, Reading::DaysSincePurchase), None);
+    // Research it (the panel open, science enough): offered last, and readable.
+    g.run.enabled_panels.insert(crate::modules::research::RESEARCH_PANEL.into());
+    set(&mut g, "science", "50");
+    r.advance(&mut g, 3);
+    r.apply(&mut g, &Action::Research { research: "process_telemetry".into() }).unwrap();
+    assert_eq!(g.run.last_purchase, Some(g.run.day), "research is a purchase");
+    let labels = offered(&g);
+    assert_eq!(&labels[labels.len() - 2..], ["Energy per day", "Days since a purchase"]);
+    put(&r, &mut g, vec![when(rate), when(stale)]).unwrap();
+    let bought = g.run.day;
+    r.advance(&mut g, 7);
+    assert_eq!(read(&g, Reading::DaysSincePurchase), Some(Fx::from_int((g.run.day - bought) as i64)));
+    assert_eq!(read(&g, Reading::EnergyPerDay), Some(g.run.day_net.get("energy").copied().unwrap_or(Fx::ZERO)));
+    // A building bought by hand resets it; so does land.
+    set(&mut g, "credits", "100000");
+    set(&mut g, "land", "10");
+    set(&mut g, "titanium", "50");
+    r.apply(&mut g, &Action::Buy { building: "solar_panel".into() }).unwrap();
+    assert_eq!(read(&g, Reading::DaysSincePurchase), Some(Fx::ZERO));
+    r.advance(&mut g, 2);
+    r.apply(&mut g, &Action::BuyLand).unwrap();
+    assert_eq!(read(&g, Reading::DaysSincePurchase), Some(Fx::ZERO));
 }
 
 #[test]

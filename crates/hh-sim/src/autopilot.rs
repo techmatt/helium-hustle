@@ -28,7 +28,7 @@ use crate::milestones::{Milestones, Tracker};
 /// never reaches its usual threshold); the first ships every good made
 /// (`diversify`), the second doesn't, and buys all visible research
 /// (`all_research`: past [`author::RESEARCH`](crate::agents::author::RESEARCH),
-/// today only the draft Novelty Simulation, visible after 1.9).
+/// today Process Telemetry, from 1.6, and the draft Novelty Simulation, after 1.9).
 pub const DEFAULT_AGENT: &str =
     "author:stale_days=4000,dream_at=1,diversify=1|author:stale_days=4000,dream_at=1,all_research=1";
 

@@ -7,7 +7,7 @@ import { useState } from 'preact/hooks';
 import type { Amount, Clause, Cmp, Condition, ConditionView, Entry, LineOutcome, Reading, ShortView, Verb, View } from '../engine';
 import { num } from '../format';
 import { Bar, ResChip, ShortNote, name, ranPercent, shortText } from './common';
-import { sameReading } from './programEdit';
+import { otherUnit, sameEntry } from './programEdit';
 
 const CMPS: [Cmp, string][] = [
   ['gt', 'above'],
@@ -28,7 +28,7 @@ export const OUTCOME_TEXT: Record<LineOutcome, string> = {
 /** A reading's label: the view's while it is on offer, else built from names (a line can
  * hold a reading not shown yet). */
 export function readingLabel(v: View, r: Reading): string {
-  const offered = v.readings.find((o) => sameReading(o.reading, r));
+  const offered = v.readings.find((o) => sameEntry(o.reading, r));
   if (offered) return offered.label;
   switch (r.kind) {
     case 'amount':
@@ -40,7 +40,18 @@ export function readingLabel(v: View, r: Reading): string {
       return 'Free land';
     case 'idle_pads':
       return 'Idle pads';
+    case 'energy_per_day':
+      return 'Energy per day';
+    case 'days_since_purchase':
+      return 'Days since a purchase';
   }
+}
+
+/** Whether a clause's reading takes the unit toggle: a capped resource (its list entry
+ * is a percent), read as a percent or an amount. */
+function toggles(v: View, r: Reading): boolean {
+  if (r.kind === 'percent') return true;
+  return r.kind === 'amount' && v.readings.some((o) => o.reading.kind === 'percent' && sameEntry(o.reading, r));
 }
 
 /** A reading's unit, shown after its number: `%` for a fill, none for an amount or a count. */
@@ -116,10 +127,10 @@ function NumberField({ value, commit, ...rest }: { value: string; commit: (text:
 
 /** One clause: `<reading> <above|below> <number>[%]`. */
 function ClauseEdit({ v, c, now, set }: { v: View; c: Clause; now?: { value: string | null; holds: boolean }; set: (c: Clause) => void }) {
-  const options = v.readings.some((o) => sameReading(o.reading, c.reading))
+  const options = v.readings.some((o) => sameEntry(o.reading, c.reading))
     ? v.readings
     : [{ reading: c.reading, label: readingLabel(v, c.reading), value: null }, ...v.readings];
-  const at = options.findIndex((o) => sameReading(o.reading, c.reading));
+  const at = options.findIndex((o) => sameEntry(o.reading, c.reading));
   return (
     <span class="clause">
       <select
@@ -143,17 +154,30 @@ function ClauseEdit({ v, c, now, set }: { v: View; c: Clause; now?: { value: str
       <NumberField
         step="any"
         aria-label="Number"
-        title={c.reading.kind === 'percent' ? 'A percent of its cap' : 'An amount'}
+        title={c.reading.kind === 'percent' ? 'A percent of its cap' : c.reading.kind === 'energy_per_day' ? 'Energy a day (negative: a loss)' : 'An amount'}
         // The engine's "500.000000" as 500.
         value={String(Number(c.value))}
         commit={(text) => {
           if (/^-?\d{1,12}(\.\d{1,6})?$/.test(text)) set({ ...c, value: text });
         }}
       />
-      {unit(c.reading) && (
-        <span class="unit" data-unit>
-          {unit(c.reading)}
-        </span>
+      {toggles(v, c.reading) ? (
+        <button
+          type="button"
+          class="unit unit-toggle"
+          data-unit-toggle
+          aria-label="Unit"
+          title={c.reading.kind === 'percent' ? 'A percent of its cap: click for an amount' : 'An amount: click for a percent of its cap'}
+          onClick={() => set({ ...c, reading: otherUnit(c.reading) })}
+        >
+          {c.reading.kind === 'percent' ? '%' : 'amt'}
+        </button>
+      ) : (
+        unit(c.reading) && (
+          <span class="unit" data-unit>
+            {unit(c.reading)}
+          </span>
+        )
       )}
       {now && (
         <span class={`cond-now ${now.holds ? 'is-true' : 'is-false'}`} data-cond-now title={`${readingLabel(v, c.reading)} now`}>

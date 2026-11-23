@@ -159,6 +159,9 @@ pub enum ResearchEffect {
     LoadPerExecution { value: Fx },
     /// Markets show exact demand (not a tier).
     RevealDemand,
+    /// Programs' `energy per day` and `days since a purchase` readings open
+    /// (docs/rules/programs.md, *Conditions*).
+    ProgramReadings,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

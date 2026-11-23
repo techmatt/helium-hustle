@@ -222,6 +222,8 @@ impl Reading {
             Reading::FreeProcessors => "free processors".to_string(),
             Reading::FreeLand => "free land".to_string(),
             Reading::IdlePads => "idle pads".to_string(),
+            Reading::EnergyPerDay => "energy per day".to_string(),
+            Reading::DaysSincePurchase => "days since a purchase".to_string(),
         }
     }
 }
@@ -353,8 +355,9 @@ pub enum Cmp {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Reading {
-    /// An uncapped resource's amount (credits, science): not land, boredom
-    /// or processors, which have readings of their own.
+    /// A resource's amount (credits, science; a capped one or boredom too,
+    /// at most its cap): not land or processors, which have readings of
+    /// their own.
     Amount { resource: String },
     /// A capped resource's fill, or boredom's: its amount as a percent of
     /// its cap.
@@ -366,6 +369,19 @@ pub enum Reading {
     FreeLand,
     /// Pads with no cargo aboard (a cooling pad counts).
     IdlePads,
+    /// Energy's last full day's rate (`Run.day_net`): production less demand,
+    /// a brownout's unmet demand counted. Researched (`program_readings`).
+    EnergyPerDay,
+    /// Days since this run's last purchase of a building, land or research
+    /// (`Run.last_purchase`; none yet: the run's day). Researched.
+    DaysSincePurchase,
+}
+
+impl Reading {
+    /// Opened by research (`program_readings`), not offered before it.
+    pub fn researched(&self) -> bool {
+        matches!(self, Reading::EnergyPerDay | Reading::DaysSincePurchase)
+    }
 }
 
 /// A program tab: a command queue, the processors assigned to it and its
@@ -588,6 +604,11 @@ pub struct Run {
     pub activity: Vec<Activity>,
     /// A program's `retire` ran today: the run retires at the day's end.
     pub retire_asked: bool,
+    /// The run's day of its last purchase of a building, land or research, by
+    /// hand or by a program line (the `days_since_purchase` reading). Absent
+    /// until the first.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub last_purchase: Option<u64>,
     /// The run's day of the player's last order (any action but a cheat; the
     /// `quiet_days` condition, draft). Absent until the first.
     #[serde(default, skip_serializing_if = "Option::is_none")]

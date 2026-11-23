@@ -8,12 +8,17 @@
 //! on, at each reset it puts the loadout's tabs in their programs through the
 //! library, as a player keeping them would (written and saved as
 //! `hands-off N` the first time, loaded after), and seats processors by the
-//! loadout's `seat` line. Its only hand move after that is a stale-run
-//! retirement: once the run has bought nothing (building, research or land)
-//! for `stale_days` days, it retires (programs have no reading for it).
+//! loadout's `seat` line. A tab whose `if`s read a researched reading
+//! (`energy per day`, `days since a purchase`) can't be written before that
+//! research: the first time, it writes the tab without those blocks and
+//! rewrites it whole once the research is done, as a player would (once a
+//! career: the library holds it after). Its only other hand move is a
+//! stale-run retirement: once the run has bought nothing (building, research
+//! or land) for `stale_days` days, it retires (a backstop: the loadout's own
+//! `retire` line, on `days since a purchase`, comes first once researched).
 //! docs/agents.md says the same; docs/experiments.md has the measure.
 
-use hh_core::state::Amount;
+use hh_core::state::{Amount, Entry, Op};
 use hh_core::{Action, Fx};
 
 use super::author::{self, Author};
@@ -36,6 +41,23 @@ fn slot_name(tab: usize) -> String {
     format!("hands-off {}", tab + 1)
 }
 
+/// The lines without each `if` block reading a researched reading.
+fn without_researched(entries: &[Entry]) -> Vec<Entry> {
+    let mut out = Vec::new();
+    let mut skip = false;
+    for e in entries {
+        if let Op::If { when } = &e.op {
+            skip = when.first.reading.researched() || when.rest.as_ref().is_some_and(|j| j.clause.reading.researched());
+        } else if !e.indented {
+            skip = false;
+        }
+        if !skip {
+            out.push(e.clone());
+        }
+    }
+    out
+}
+
 pub struct HandsOff {
     author: Author,
     loadout: Loadout,
@@ -43,6 +65,9 @@ pub struct HandsOff {
     loaded_run: u32,
     stale_days: u64,
     every: u64,
+    /// Tabs written without their researched blocks, to rewrite whole once
+    /// the research is done.
+    pending: Vec<usize>,
     /// What it has bought this run (buildings owned and research done, and
     /// the land price, which rises with each land bought) and the day that
     /// last changed: the stale-run retirement's clock.
@@ -62,6 +87,7 @@ impl HandsOff {
             stale_days: k.get("stale_days", 300).max(1) as u64,
             every: k.get("every", 10).max(1) as u64,
             bought: ((0, Fx::ZERO), 0),
+            pending: Vec::new(),
         })
     }
 
@@ -70,13 +96,21 @@ impl HandsOff {
     }
 
     /// The reset: each of the loadout's tabs into its program, then the seats.
-    fn load(&self, p: &mut Player) {
+    fn load(&mut self, p: &mut Player) {
+        self.pending.clear();
         for (tab, entries) in &self.loadout.programs {
             let _ = p.put_program(*tab as u32, entries.clone(), Some(&slot_name(*tab)));
+            let held = |p: &mut Player, want: &[Entry]| p.view().programs.get(*tab).is_some_and(|x| x.entries == want);
+            if held(p, entries) {
+                continue;
+            }
+            // Not researched yet: without those blocks for now.
+            let part = without_researched(entries);
+            let _ = p.put_program(*tab as u32, part.clone(), None);
             // A tab the game refused would sit empty every run and the read
             // mean nothing: never silently.
-            let held = p.view().programs.get(*tab).is_some_and(|x| x.entries == *entries);
-            assert!(held, "configs/sim/handsoff_loadout.txt: Program {} refused at run {}", tab + 1, p.view().run);
+            assert!(held(p, &part), "configs/sim/handsoff_loadout.txt: Program {} refused at run {}", tab + 1, p.view().run);
+            self.pending.push(*tab);
         }
         let v = p.view();
         let n = v.programs.len();
@@ -115,7 +149,17 @@ impl Agent for HandsOff {
             return;
         }
         if self.loaded_run == run {
-            // Between resets: the stale-run retirement alone.
+            // Between resets: a pending tab rewritten once its research is done.
+            if !self.pending.is_empty() && v.readings.iter().any(|r| r.reading.researched()) {
+                for tab in std::mem::take(&mut self.pending) {
+                    let entries = self.loadout.programs.iter().find(|(t, _)| *t == tab).map(|(_, e)| e.clone()).unwrap_or_default();
+                    let _ = p.put_program(tab as u32, entries.clone(), Some(&slot_name(tab)));
+                    let held = p.view().programs.get(tab).is_some_and(|x| x.entries == entries);
+                    assert!(held, "configs/sim/handsoff_loadout.txt: Program {} refused once researched", tab + 1);
+                }
+                return;
+            }
+            // The stale-run retirement.
             let owned = v.buildings.iter().map(|b| b.owned).sum::<u32>() + v.research.iter().filter(|r| r.done).count() as u32;
             let have = (owned, v.land_price);
             if have != self.bought.0 {

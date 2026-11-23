@@ -14,8 +14,9 @@
 //! Ids are the content's (buildings, commands, resources, research,
 //! projects). A condition is `<reading> above|below <number>[%]`, with one
 //! optional `and`/`or`: `free processors`, `free land` and `idle pads` read
-//! their count; any other reading is a resource, its fill percent with `%`,
-//! its amount without. Verbs: `build X [up to N]`, `buy land`,
+//! their count, `energy per day` and `days since a purchase` their number
+//! (both researched); any other reading is a resource, its fill percent with
+//! `%`, its amount without (a capped one too). Verbs: `build X [up to N]`, `buy land`,
 //! `launch pads G|all`, `load pads G|all`, `set pads G up to N`,
 //! `pause|resume X [N|all]`, `research X`, `assign processors <tab> N|all`,
 //! `fund P [N|all]`, `retire`; anything else is a command `id [xN]`.
@@ -58,11 +59,17 @@ fn clause(words: &[&str]) -> Result<Clause, String> {
     let value = Fx::parse(raw.trim_end_matches('%'))?;
     let what = words[..at].join(" ");
     let pct = raw.ends_with('%');
+    let counted = ["free processors", "free land", "idle pads", "energy per day", "days since a purchase"];
+    if pct && counted.contains(&what.as_str()) {
+        return Err(format!("{what} has no percent: {words:?}"));
+    }
     let reading = match what.as_str() {
         "" => return Err(format!("no reading in {words:?}")),
         "free processors" => Reading::FreeProcessors,
         "free land" => Reading::FreeLand,
         "idle pads" => Reading::IdlePads,
+        "energy per day" => Reading::EnergyPerDay,
+        "days since a purchase" => Reading::DaysSincePurchase,
         r if pct => Reading::Percent { resource: r.to_string() },
         r => Reading::Amount { resource: r.to_string() },
     };
@@ -167,7 +174,7 @@ mod tests {
 
     #[test]
     fn it_refuses_what_it_cannot_read() {
-        for bad in ["build x", "[1]\nif energy 50%", "[1]\nbuild a up to many", "[0]", "[1]\n[1]", "seat: 1", "[1]\nif above 5"] {
+        for bad in ["build x", "[1]\nif energy 50%", "[1]\nbuild a up to many", "[0]", "[1]\n[1]", "seat: 1", "[1]\nif above 5", "[1]\nif energy per day below 0%"] {
             assert!(parse(bad).is_err(), "{bad:?}");
         }
     }

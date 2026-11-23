@@ -27,8 +27,8 @@ against: [principles.md](principles.md); how they're run: [simulator.md](simulat
 |---|---|---|
 | `random` | Each look, `actions` times: one action uniform over what the view offers (an affordable building or research, land, a random 1-4 line program on a random program, free processors to a random program, a random rate on an open project); retires with chance 1 in `retire_odds` a look; looks every `every` ticks. | `actions` 2, `retire_odds` 500, `every` 5 |
 | `greedy` | The **builder**: buys the best-scored building it can afford (land included), up to `buys` a look, never saving; the cheapest affordable research; one command on the first program with every processor, chosen afresh each look. No projects, no voluntary retirement. Looks again when its target comes within reach, at most `max_gap` ticks on. | `buys` 3, `decay`, `starved` 100, `reserve` 3, `min_gap` 1, `max_gap` 10 |
-| `author` | The **program author**: the builder's score, but saves for its target; writes condition programs kept in the library; research, projects, ideology, Dream, market commands; retires a stale run. | the builder's, `min_gap` 1, `max_gap` 10, `compute` 1, `hand_gap` 60, `loads` 20, `pause` 1, `wait_demand` 0, `dream_at` 60, `stale_days` 300, `project_rate` 3, `fund` 1, `market` 1, `construct` 1, `cond` 1, `diversify` 0, `all_research` 0 (1: also research outside its list, today only the draft Novelty Simulation), `science_share` 50 |
-| `handsoff` | **Automation alone**: the author's until the run `if` opens in (the loadout guards with `if`), then from the next run it loads the best known loadout (`configs/sim/handsoff_loadout.txt`) and seats processors at each reset; its one hand is a stale-run retirement. | the author's, `every` 10 |
+| `author` | The **program author**: the builder's score, but saves for its target; writes condition programs kept in the library; research, projects, ideology, Dream, market commands; retires a stale run. | the builder's, `min_gap` 1, `max_gap` 10, `compute` 1, `hand_gap` 60, `loads` 20, `pause` 1, `wait_demand` 0, `dream_at` 60, `stale_days` 300, `project_rate` 3, `fund` 1, `market` 1, `construct` 1, `cond` 1, `diversify` 0, `all_research` 0 (1: also research outside its list, today Process Telemetry and the draft Novelty Simulation), `science_share` 50 |
+| `handsoff` | **Automation alone**: the author's until the run `if` opens in (the loadout guards with `if`), then from the next run it loads the best known loadout (`configs/sim/handsoff_loadout.txt`) and seats processors at each reset; its one hand is a stale-run retirement, a backstop to the loadout's own `retire` line. | the author's, `every` 10 |
 | `planner` | **Not built.** A strategic player that plans across retirements without peeking: the hook is `Agent::new_run`, called once a run: at the first look after a forced retirement, before `act`; after a retirement the agent chose, at the end of that look (whatever else `act` did in the new run came first, so a planner should retire last in its look). | |
 | `oracle` | The **ceiling**: the author steered by rollouts on copies of the game, the future included ([oracle.md](oracle.md)). Profiles: `profile` 0 milestones, 1 credits, 2 ideology, 3 builder, 4 quests. | `profile` 0, `every` 50, `horizon` 600, `width` 5, `beam` 1, `margin` 20, `long` 2000, `replan` 500, `strategy` -1 (search), `retire` 1, `min_run` 1000, `retire_margin` 0, `first_margin` 0, `early` and `ideology` (the profile's weights), `tail` 400, `hoard_at` 5000, `stale_days` 300, `max_gap` 10, `roll_gap` = `max_gap` |
 
@@ -121,10 +121,14 @@ wasm match), replaced when the rules or the best loadout change (then re-pin `HA
 the author until the run `if` opens in (049: the loadout guards with `if`), counted as its
 first; from the next run, at each reset it puts each of the file's tabs in its program through
 the library (written and saved as `hands-off N` once, loaded after) and seats processors by
-the file's `seat` line. Then nothing by hand but the retirement once the run has bought
-nothing (buildings, research, land) for `stale_days` days (no reading says so since 059).
-The file now holds 060's L5 (three tabs, 34 lines: build and seat, ship, research Dream
-Protocols and dream), picked over L4 on the hands-off measure (061's write-up).
+the file's `seat` line. A tab reading a researched reading can't be written before that
+research: the first time, it goes in without those `if` blocks and is rewritten whole once
+the research is done (once a career). Then nothing by hand but a backstop retirement once the
+run has bought nothing (buildings, research, land) for `stale_days` days; the file's own
+`if days since a purchase above 299` / `retire` usually comes first (062).
+The file holds 060's L5 (three tabs: build and seat, ship, research Dream Protocols and
+dream), picked over L4 on the hands-off measure (061), with Process Telemetry and that
+`retire` in the Dream tab (062's write-up).
 
 ## The oracle (`oracle/`)
 

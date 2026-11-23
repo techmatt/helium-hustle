@@ -184,7 +184,7 @@ fn the_ladder_prints_its_tables_and_writes_results() {
 /// handsoff games are the author's), so this one goes to run 3 on seed 1,
 /// where the loadout file plays, and ships and buys. A new loadout file moves
 /// the pin: copy it from the failing assertion.
-const HANDSOFF_PIN: &str = "f5ec00fd9a81b82a";
+const HANDSOFF_PIN: &str = "a3087c0add9154dc";
 
 #[test]
 #[ignore = "slow lane: a 3-run career (~2 s)"]
@@ -340,7 +340,7 @@ fn the_oracle_plays_on_copies_and_its_game_replays() {
     let half = fingerprints.len() / 2;
     assert_eq!(fingerprints[..half], fingerprints[half..]);
     // Seeds 1 and 2 of the oracle, then of the pinned one.
-    assert_eq!(fingerprints[..half], ["57505d837257d3cd", "7999425046bf076f", "ff81b869efc4dccd", "1ec1acc9c1ece2ef"]);
+    assert_eq!(fingerprints[..half], ["57505d837257d3cd", "a74b53766a58a1cc","ff81b869efc4dccd", "1ec1acc9c1ece2ef"]);
 }
 
 /// `trace --at T` prints the state at career tick T: what walls a run in.

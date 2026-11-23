@@ -75,3 +75,18 @@ export function setIndent(es: Entry[], i: number, indented: boolean): Entry[] {
 export function sameReading(a: Reading, b: Reading): boolean {
   return JSON.stringify(Object.entries(a).sort()) === JSON.stringify(Object.entries(b).sort());
 }
+
+/** Whether two readings are one entry of the reading list: the same reading, or a
+ * resource's percent and amount (the unit toggle switches between them). */
+export function sameEntry(a: Reading, b: Reading): boolean {
+  const res = (r: Reading) => (r.kind === 'amount' || r.kind === 'percent' ? r.resource : null);
+  const ra = res(a);
+  return ra !== null ? ra === res(b) : sameReading(a, b);
+}
+
+/** A capped reading in the other unit: a percent as an amount, an amount as a percent. */
+export function otherUnit(r: Reading): Reading {
+  if (r.kind === 'percent') return { kind: 'amount', resource: r.resource };
+  if (r.kind === 'amount') return { kind: 'percent', resource: r.resource };
+  return r;
+}

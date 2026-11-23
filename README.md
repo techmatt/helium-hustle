@@ -72,7 +72,8 @@ every change. `cargo test-all` (a `.cargo/config.toml` alias for `cargo test --w
 --include-ignored`) is the full run, before every commit: a test slower than about a second
 is marked `#[ignore = "slow lane: ..."]`, and `cargo test-slow` runs only those. Anything after an alias goes to the test binary,
 with no second `--`, so `cargo test-all -j 6` fails (`Unrecognized option: 'j'`): limit
-jobs with `CARGO_BUILD_JOBS=6 cargo test-all`. Tests play whole games, so the test profile
+jobs with `CARGO_BUILD_JOBS=6 cargo test-all`; past a failing crate,
+`cargo test --workspace --no-fail-fast -- --include-ignored`. Tests play whole games, so the test profile
 is optimized (`opt-level = 1`) and keeps overflow checks.
 
 **A second target dir** (a parallel helper, a copy under `out/`) is set absolute:

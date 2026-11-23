@@ -119,10 +119,11 @@ export type Cmp = 'lt' | 'gt';
 
 /** What a condition reads (hh-core `state::Reading`): one reading per thing. `amount`
  * for the uncapped resources (credits, science), `percent` for a capped resource's fill
- * or boredom's. */
+ * or boredom's, or its `amount` (the editor's unit toggle). `energy_per_day` and
+ * `days_since_purchase` open with research (`program_readings`). */
 export type Reading =
   | { kind: 'amount' | 'percent'; resource: string }
-  | { kind: 'free_processors' | 'free_land' | 'idle_pads' };
+  | { kind: 'free_processors' | 'free_land' | 'idle_pads' | 'energy_per_day' | 'days_since_purchase' };
 
 /** `<reading> <cmp> <value>`: the right side is always a number. */
 export interface Clause {
