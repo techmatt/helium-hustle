@@ -141,7 +141,7 @@ impl Holding {
 }
 
 /// One line of a program: an instruction, and whether it sits in the body of
-/// the `if` above it (one level: a body can't hold another `if`).
+/// the `if` or `else` above it (one level: a body can't hold another `if`).
 /// JSON: `{"op": "command", "command": "idle", "count": 1}`, with
 /// `"indented": true` for a body line.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -193,6 +193,7 @@ impl Entry {
             Op::Build { building, up_to: Some(n) } => format!("build {building} up to {n}"),
             Op::BuyLand {} => "buy land".to_string(),
             Op::If { when } => format!("if {}", when.describe()),
+            Op::Else {} => "else".to_string(),
             Op::Act { verb, target, tab, amount } => {
                 let mut t = serde_json::to_value(verb).ok().and_then(|v| v.as_str().map(str::to_string)).unwrap_or_default();
                 if let Some(x) = target {
@@ -261,8 +262,14 @@ pub enum Op {
     Build { building: String, up_to: Option<u32> },
     /// Buy land (a processor step). A struct variant, so a stray key is refused.
     BuyLand {},
-    /// Free. True: the indented lines below run. False: the pointer jumps past them.
+    /// A processor step. True: the indented lines below run (and an `else`'s
+    /// body after them is jumped). False: the pointer jumps past them, into
+    /// the `else`'s body when one follows.
     If { when: Condition },
+    /// Free, never runs, no outcome: follows an `if` or its body; the indented
+    /// lines below run when that `if` was false. Reached from the `if`'s body,
+    /// the pointer jumps past its own body. A struct variant, so a stray key is refused.
+    Else {},
     /// `<verb> <target> [amount]` (a processor step; docs/rules/programs.md,
     /// *Verbs*). The target slot is typed by the verb: `target` a building,
     /// good, research item or saved program's name, `tab` a program (0-based).

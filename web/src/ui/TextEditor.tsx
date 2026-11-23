@@ -247,7 +247,7 @@ function ProgramDraft({ s, program, setProgram }: { s: Store; program: number; s
         )}
       </p>
       <p class="te-help muted small">
-        One line per statement, the words the block editor shows; the lines of an <code>if</code> indented under it; <code>#</code> starts a
+        One line per statement, the words the block editor shows; the lines of an <code>if</code> indented under it, then optionally <code>else</code> and the lines to run when it is false; <code>#</code> starts a
         note. Copy and paste the text to share a program.
       </p>
       <div class="te-editor">
@@ -366,8 +366,10 @@ function lineStatuses(v: View, s: Store, program: number, p: ProgramView, r: Par
       out.push(null);
       continue;
     }
-    if (l.status === 'note') {
-      out.push({ dot: 'note', note: null, title: DOT_TITLE.note, fired: null });
+    // An `else` line never runs (its `if` decides): free, like a note.
+    if (l.status === 'note' || (l.status === 'ok' && l.entry !== null && r.entries[l.entry]?.op === 'else')) {
+      const title = l.status === 'note' ? DOT_TITLE.note : 'Else: free; its if decides which body runs';
+      out.push({ dot: 'note', note: null, title, fired: null });
       continue;
     }
     if (l.status === 'red' || l.status === 'amber') {

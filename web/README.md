@@ -61,11 +61,12 @@ Three columns and a status bar:
 - **Right:** the main quest in its own slot at the top, which nothing else takes; program
   tabs 1 to 5 with processors −/+, Reset, Save / Load (`Library.tsx`: the loadout library;
   save new or over a slot, load, rename, delete); a line per instruction, dragged to reorder
-  (an `if` takes its body), tinted by today's outcome (a failed line says why: "needs ⚡2,
-  had 0"), the next line to run in an accent frame. Once unlocked, Add: If,
-  Build, Buy Land, Verb (`ProgramLogic.tsx`; one editor for all verbs): a condition is
+  (an `if` takes its body and its `else`; an `else` moves only with it), tinted by today's outcome (a failed line says why: "needs ⚡2,
+  had 0"), the next line to run in an accent frame. Once unlocked, Add: If, Else (after an
+  `if` or its body, at the end), Build, Buy Land, Verb (`ProgramLogic.tsx`; one editor for all verbs): a condition is
   a reading (the view's list), above or below, and a number (with `%` for a fill), and
-  `and`/`or` one more; each clause with its live value and ✓/✗; body lines indented under the `if` (⇥/⇤), greyed with it when false.
+  `and`/`or` one more; each clause with its live value and ✓/✗; body lines indented under the `if` or `else` (⇥/⇤), greyed with it when jumped; an `else`
+  row has no outcome (free: its `if` decides).
   Above 10x a redraw covers several days: each line shows its outcome over them
   (`advance_run`'s `lines`), no frame. A note line (`#`) is muted text, an unparsed one a
   red-tinted disabled row with its reason, a locked one dimmed with "locked this run" (the

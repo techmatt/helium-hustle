@@ -11,7 +11,7 @@ import { Quest, ResChip, Section, ShortNote, name, shortText } from './common';
 import { Chip } from './icons';
 import { AddLogic, LogicBody, OUTCOME_TEXT, ProgramLine, lineText } from './ProgramLogic';
 import { Library, type LibraryMode } from './Library';
-import { canIndent, moveLines, removeLine, setIndent } from './programEdit';
+import { canAddElse, canIndent, moveLines, removeLine, setIndent } from './programEdit';
 import { editProgram } from './programStore';
 
 export function Right({
@@ -198,12 +198,13 @@ function Programs({
             : outcome
               ? `last run today: ${OUTCOME_TEXT[outcome]}`
               : 'not run today';
-          // In or out of the `if` above (a drag onto a body line does the same).
-          const indent = e.op !== 'if' && (e.indented || canIndent(entries, i)) && (
+          // In or out of the `if` or `else` above (a drag onto a body line does the same).
+          const indent = e.op !== 'if' && e.op !== 'else' && (e.indented || canIndent(entries, i)) && (
             <button
               type="button"
               class="tiny"
-              title={e.indented ? 'Move out of the if block' : 'Move into the if block above'}
+              data-testid={e.indented ? 'line-outdent' : 'line-indent'}
+              title={e.indented ? 'Move out of the block' : 'Move into the block above'}
               onClick={() => editProgram(program, (now) => setIndent(now, i, !now[i]?.indented))}
             >
               {e.indented ? '⇤' : '⇥'}
@@ -211,8 +212,8 @@ function Programs({
           );
           if (e.op !== 'command') {
             const why = outcome === 'failed' ? (p.shorts[i] ?? null) : null;
-            // A note or an unparsed line (from the text editor) never runs: no outcome.
-            const kept = e.op === 'note' ? 'note-line' : e.op === 'unparsed' ? 'unparsed-line' : '';
+            // A note, an unparsed line (from the text editor) or an else never runs: no outcome.
+            const kept = e.op === 'note' ? 'note-line' : e.op === 'unparsed' ? 'unparsed-line' : e.op === 'else' ? 'else-line' : '';
             const error = e.op === 'unparsed' ? (p.errors?.[i] ?? null) : null;
             const tail = error ? `: doesn't parse: ${error}` : locked ? `: locked this run: ${locked}` : kept ? '' : `: ${ranText}${why ? `. ${shortText(v, why)}` : ''}`;
             return (
@@ -267,7 +268,7 @@ function Programs({
           );
         })}
       </ol>
-      <AddLogic v={v} add={(e) => editProgram(program, (now) => [...now, e])} />
+      <AddLogic v={v} canElse={canAddElse(entries)} add={(e) => editProgram(program, (now) => [...now, e])} />
     </div>
   );
 }

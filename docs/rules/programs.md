@@ -20,7 +20,7 @@ Center) starts unassigned. Each day at most the processors resource (economy.md:
 comes off the last programs first for that day, and their assignments stay.
 
 **Instructions** (`state::Op`; flat, `<verb> <target> [amount]`: docs/rulings/programs.md). Every line
-but the two text lines and locked ones (*Locked lines*) costs a processor step, with something
+but the two text lines, `else` and locked ones (*Locked lines*) costs a processor step, with something
 to do or not:
 
 | Line | JSON `op` | What it does |
@@ -30,13 +30,16 @@ to do or not:
 | `build <building> up to N` | `build` (`up_to` N) | The same while fewer than N are owned; with N owned it is **done**: the step, nothing else. |
 | `buy land` | `buy_land` | Buys land, as the Buy Land action would; unaffordable, it fails. |
 | a verb | `act` (`verb`, `target`, `tab`, `amount`) | *Verbs*, below. |
-| `if <condition>` | `if` (`when`) | Its step, nothing else; it never fails. Checked once, when the pointer reaches it. True: the pointer moves into its body, which then runs whole, whatever the condition does meanwhile. False: the pointer jumps past the whole body at once, however long. |
+| `if <condition>` | `if` (`when`) | Its step, nothing else; it never fails. Checked once, when the pointer reaches it. True: the pointer moves into its body, which then runs whole, whatever the condition does meanwhile. False: the pointer jumps past the whole body at once, however long, into its `else`'s body when one follows. |
+| `else` | `else` | **Free**, no outcome: its `if` decides. Reached from the `if`'s body (it was true), the pointer passes it and jumps its body. |
 | `# <text>` | `note` (`text`) | **Free**, never runs, no outcome: a comment kept with the program. |
 | a line that doesn't read | `unparsed` (`text`) | **Free**, never runs, no outcome: a text-editor line kept as written until fixed (*Text form*). |
 
-**Blocks.** A line may be `indented`: it is in the body of the `if` above it. One level only:
-an `if` is never indented (no nesting), there is no `else`, and an indented line must follow
-an `if` or another indented line. Any other line (a note too) may sit in a body.
+**Blocks.** A line may be `indented`: it is in the body of the `if` or `else` above it. One
+level only: an `if` or `else` is never indented (no nesting, no `else if`), and an indented
+line must follow an `if`, an `else` or another indented line. An `else` follows an `if` or
+its body directly (an empty body is fine), one per `if`. Any other line (a note too) may sit
+in a body.
 
 **Verbs** (`act` lines; `state::Verb`). The target slot is typed by the verb; `tab` is a
 program (0-based); the amount is `{"n": N}` or `"all"`; JSON `verb` is the snake_case name.
@@ -75,8 +78,8 @@ resource (and boredom) is one entry of the list with a **unit toggle**: the edit
 box reads `%` (`percent`) or an amount (`amount`), "Propellant below 20%" or "below 20".
 **Researched readings** (`energy_per_day`, `days_since_purchase`) open while a research item
 with the `program_readings` effect (Process Telemetry, research.md) is done this run: before
-it, a clause using one is locked (below) and reads nothing. A clause whose reading reads nothing (a cap of 0, a researched reading not
-open) is false. The view's `readings` offer, in that order, each visible capped resource's
+it, a clause using one is locked (below) and reads nothing. A clause whose reading reads nothing (a cap of 0) is false; an `if` with a
+researched reading not open is locked, never run (its body and its `else`'s passed over). The view's `readings` offer, in that order, each visible capped resource's
 fill, boredom's, each visible uncapped resource's amount, free processors, free land, once
 there is a pad idle pads, and once researched energy per day and days since a purchase
 (`view/programs.rs`): 13 in Act 1, 15 with the research. The Resources panel's per-day
@@ -91,8 +94,8 @@ processors unchanged. A saved program keeps every line, locked, note and unparse
 
 **Locked lines.** A line whose need this run hasn't met is kept, never refused, by
 `set_program`, a loadout or the `load` verb; when run it is passed over free, like a note (a
-locked `if` with its whole body), and runs once unlocked (`programs::locked`; the view's per-line `locked` says why). Needs: program
-logic (every line but a command), `if`'s flag, a researched reading's research, the fund
+locked `if` with its whole body and its `else`'s), and runs once unlocked (`programs::locked`; the view's per-line `locked` says why). Needs: program
+logic (every line but a command), `if`'s flag (an `else` too: no flag of its own), a researched reading's research, the fund
 verb's switch, and the line's command, building (`build`, `pause`, `resume`), research item
 (shown) or project (open to funding).
 
@@ -100,16 +103,16 @@ verb's switch, and the line's command, building (`build`, `pause`, `resume`), re
 the first day `logic_unlock_processors` processors work, as programs start to run. `if` also
 needs its own career flag (draft, 049): `logic_if`, the Conditional Logic global project's
 reward ([projects.md](projects.md)); content must set it. A loaded `if` the career hasn't
-opened runs as false: it skips its body. The view's `if_open` says whether it is open.
+opened is locked: passed over free with its body and its `else`'s. The view's `if_open` says whether it is open.
 
 **Running** (each day): programs in order; each running processor of a program takes one
 step from the shared pointer. A step passes over free lines (notes, unparsed and locked lines; a locked `if` with its
-body) until it reaches a line that costs it: that line runs once and the pointer advances
+body and its `else`'s; an `else` with its body) until it reaches a line that costs it: that line runs once and the pointer advances
 whatever the outcome (ran, skipped, failed or done): a command line's run count rises and,
-at its `count`, the pointer moves on; an `if` moves into or past its body; any other line moves on at once. The pointer wraps from the last line to the first. A step that passes as
+at its `count`, the pointer moves on; an `if` moves into its body, or past it (into an `else`'s body); any other line moves on at once. The pointer wraps from the last line to the first. A step that passes as
 many free lines as the program has (one loop) idles.
 An empty program does nothing. Each line's outcome today (`state::LineOutcome`; a false
-`if`'s body `jumped` unless it ran earlier that day) is display only. A failed `build` or
+`if`'s body, and a passed `else`'s, `jumped` unless it ran earlier that day) is display only. A failed `build` or
 `buy land` notes what it was short of, as a command does.
 
 **Commands.** What one execution of a command does (*Running a command*), overclocks and
@@ -119,7 +122,7 @@ when a command is visible: [commands.md](commands.md).
 
 | Action | Refused when |
 |---|---|
-| `set_program {program, entries}` | more than `max_entries` lines; an unknown command, building or resource; a `count` or `up_to` of 0; an indented line with no `if` or body line above it; an indented `if`; a reading of the wrong kind for its resource (*Conditions*); a verb with an unknown or missing target (`load`: a blank name; one no loadout has fails when run), a tab or amount it doesn't take or lacks, an amount of 0 (but `assign_processors` and `fund`), `set_pads ... all`; a note or unparsed text over `line_text_max` characters or with a line break; or no such program. Never on what this run has unlocked (*Locked lines*) |
+| `set_program {program, entries}` | more than `max_entries` lines; an unknown command, building or resource; a `count` or `up_to` of 0; an indented line with no `if`, `else` or body line above it; an indented `if` or `else`; an `else` not after an `if` or its body, or a second one; a reading of the wrong kind for its resource (*Conditions*); a verb with an unknown or missing target (`load`: a blank name; one no loadout has fails when run), a tab or amount it doesn't take or lacks, an amount of 0 (but `assign_processors` and `fund`), `set_pads ... all`; a note or unparsed text over `line_text_max` characters or with a line break; or no such program. Never on what this run has unlocked (*Locked lines*) |
 | `set_processors {program, processors}` | no such program, or the other programs' processors plus this number exceed what the active Data Centers grant |
 | `save_loadout {program, slot, name}` (`slot` null: a new slot) | no such program or slot; an empty program; a blank or overlong name; a new slot with the library full |
 | `load_loadout {loadout, program}` | no such loadout or program; lines `set_program` refuses |
@@ -133,11 +136,14 @@ carries `"indented": true`.
 `program_text` (`to_text`, `parse`; wasm `program_text`, `parse_program_text`): the text
 editor's form and copy/paste import and export, read by the sim's loadout files too. One line
 a program line in the block editor's words (display names, lowercase when written), an indent
-(spaces or a tab) for a body line, `#` for a note, a command as `<name> [count]`:
+(spaces or a tab) for a body line, `#` for a note, `else` alone on its line, a command as
+`<name> [count]`:
 
 ```
 if propellant below 20%
   buy propellant 10
+else
+  sell propellant
 launch pads all
 ```
 

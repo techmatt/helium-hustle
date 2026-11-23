@@ -115,6 +115,99 @@ fn a_false_if_jumps_its_body_in_its_one_step_and_a_true_one_runs_it_whole() {
 }
 
 #[test]
+fn an_if_decides_its_else_in_its_one_step_and_the_else_line_is_free() {
+    let r = rules();
+    let mut g = game(&r);
+    let entries = vec![
+        when(one(amount("credits", Cmp::Gt, "49"))),
+        Entry::command("idle", 1).indent(),
+        Entry::new(Op::Else {}),
+        Entry::command("idle", 2).indent(),
+        Entry::command("idle", 1).indent(),
+        Entry::command("idle", 1),
+    ];
+    put(&r, &mut g, entries).unwrap();
+    // False: the `if`'s step jumps its body to the else's body.
+    set(&mut g, "credits", "10");
+    r.advance(&mut g, 1);
+    assert_eq!(outcomes(&g)[..3], [Some(O::False), Some(O::Jumped), None]);
+    assert_eq!(g.run.programs[0].entry, 3);
+    for _ in 0..2 {
+        r.advance(&mut g, 1);
+        assert_eq!(outcomes(&g)[3], Some(O::Ran));
+    }
+    r.advance(&mut g, 1);
+    assert_eq!(outcomes(&g)[4], Some(O::Ran));
+    r.advance(&mut g, 1);
+    assert_eq!(outcomes(&g)[5], Some(O::Ran));
+    assert_eq!(g.run.programs[0].entry, 0);
+    // True: the `if`'s step, then its body; the else line is passed free with its body.
+    set(&mut g, "credits", "50");
+    r.advance(&mut g, 1);
+    assert_eq!(outcomes(&g)[0], Some(O::True));
+    assert_eq!(g.run.programs[0].entry, 1);
+    r.advance(&mut g, 1);
+    assert_eq!(outcomes(&g)[1], Some(O::Ran));
+    assert_eq!(g.run.programs[0].entry, 2);
+    // The next step passes the else free and runs the last line.
+    r.advance(&mut g, 1);
+    assert_eq!(outcomes(&g)[2..], [None, Some(O::Jumped), Some(O::Jumped), Some(O::Ran)]);
+    assert_eq!(g.run.programs[0].entry, 0);
+}
+
+#[test]
+fn an_else_after_an_empty_if_body_and_a_locked_if_skips_both_bodies() {
+    let r = rules();
+    let mut g = game(&r);
+    set(&mut g, "credits", "10");
+    let entries = vec![
+        when(one(amount("credits", Cmp::Gt, "49"))),
+        Entry::new(Op::Else {}),
+        Entry::command("idle", 1).indent(),
+        Entry::command("cloud_compute", 1),
+    ];
+    put(&r, &mut g, entries.clone()).unwrap();
+    r.advance(&mut g, 1);
+    assert_eq!(g.run.programs[0].entry, 2, "false: into the else's body");
+    // A locked `if` passes over its body and its else's, free.
+    let mut g = r.new_game(1);
+    g.career.flags.insert(programs::LOGIC_FLAG.into());
+    set(&mut g, "credits", "10");
+    put(&r, &mut g, entries).unwrap();
+    assert!(r.view(&g).programs[0].locked[1].is_some(), "an else is open when its if is");
+    r.advance(&mut g, 1);
+    let lines = outcomes(&g);
+    assert_eq!(lines[..3], [None, None, Some(O::Jumped)]);
+    assert!(lines[3].is_some(), "the line after both bodies took the step");
+}
+
+#[test]
+fn an_else_stands_only_after_an_if_or_its_body_once() {
+    let r = rules();
+    let mut g = game(&r);
+    let yes = || when(one(amount("credits", Cmp::Gt, "49")));
+    let idle = || Entry::command("idle", 1);
+    let els = || Entry::new(Op::Else {});
+    let bad = [
+        vec![els()],
+        vec![idle(), els()],
+        vec![yes(), idle(), els()],
+        vec![yes(), els(), els()],
+        vec![yes(), els(), idle().indent(), els()],
+        vec![yes(), els().indent()],
+        vec![yes(), els(), yes().indent()],
+    ];
+    for entries in bad {
+        assert!(put(&r, &mut g, entries.clone()).is_err(), "{entries:?}");
+    }
+    for entries in [vec![yes(), els()], vec![yes(), idle().indent(), els(), idle().indent(), idle(), yes(), els()]] {
+        put(&r, &mut g, entries).unwrap();
+    }
+    let json = serde_json::to_string(&els()).unwrap();
+    assert_eq!(json, r#"{"op":"else"}"#);
+}
+
+#[test]
 fn a_body_line_that_ran_today_keeps_its_outcome_when_its_if_turns_false() {
     let r = rules();
     let mut g = game(&r);

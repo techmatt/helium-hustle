@@ -183,6 +183,39 @@ fn over_long_text_and_too_many_lines_are_red() {
 }
 
 #[test]
+fn else_reads_writes_and_says_why_where_it_cant_stand() {
+    let r = rules();
+    let g = open(&r);
+    let text = "if energy below 20%\n  idle\nELSE\n  sell cloud compute 2\n  # a note\nidle\nif credits above 5\nelse\n";
+    let p = parse(&r, &g, text);
+    assert!(p.lines.iter().all(|l| l.status != "red"), "{:?}", p.lines);
+    assert_eq!(p.entries[2].op, Op::Else {});
+    assert!(!p.entries[2].indented && p.entries[3].indented && p.entries[4].indented && !p.entries[5].indented);
+    assert_eq!(p.entries[7].op, Op::Else {});
+    let written = to_text(&p.entries);
+    assert_eq!(written, text.replace("ELSE", "else"));
+    assert_eq!(parse(&r, &g, &written).entries, p.entries);
+    let red = |t: &str| {
+        let p = parse(&r, &g, t);
+        p.lines.iter().find(|l| l.status == "red").and_then(|l| l.reason.clone())
+    };
+    assert_eq!(red("else\n").as_deref(), Some("an else needs an if above it"));
+    assert_eq!(red("if free land above 0\nelse\nelse\n").as_deref(), Some("an if has one else"));
+    assert_eq!(red("if free land above 0\n  idle\n  else\n").as_deref(), Some("an else can't sit inside an if"));
+    assert_eq!(red("if free land above 0\nelse if credits above 1\n").as_deref(), Some("no else if: an else's body holds no if"));
+    assert_eq!(red("if free land above 0\nelse\n  if credits above 1\n").as_deref(), Some("an if can't sit inside another if"));
+    assert!(red("if free land above 0\nelse idle\n").is_some());
+    // A red else's body lines are red too: nothing above them opens a block.
+    let p = parse(&r, &g, "else\n  idle\n");
+    assert_eq!(p.lines[1].reason.as_deref(), Some("an indented line needs an if above it"));
+    // Held as unparsed lines, the view says why each one doesn't read.
+    let mut g = g;
+    r.apply(&mut g, &Action::SetProgram { program: 0, entries: p.entries }).unwrap();
+    let v = r.view(&g);
+    assert_eq!(v.programs[0].errors[0].as_deref(), Some("an else needs an if above it"));
+}
+
+#[test]
 fn notes_in_a_body_ride_with_it_and_cost_nothing() {
     let r = rules();
     let mut g = open(&r);

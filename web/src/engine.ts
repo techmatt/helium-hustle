@@ -172,13 +172,15 @@ export type Op =
   | { op: 'build'; building: string; up_to: number | null }
   | { op: 'buy_land' }
   | { op: 'if'; when: Condition }
+  /** Follows an `if` or its body: its indented lines run when that `if` was false. Free. */
+  | { op: 'else' }
   | { op: 'act'; verb: Verb; target?: string | null; tab?: number | null; amount?: Amount | null }
   /** A `#` comment line from the text editor (text without the `#`): free, never runs. */
   | { op: 'note'; text: string }
   /** A text-editor line that doesn't parse, kept as typed until fixed: free, never runs. */
   | { op: 'unparsed'; text: string };
 
-/** A program line: an instruction, `indented` in the body of the `if` above it. */
+/** A program line: an instruction, `indented` in the body of the `if` or `else` above it. */
 export type Entry = Op & { indented?: boolean };
 
 export type LineOutcome = 'ran' | 'skipped' | 'failed' | 'true' | 'false' | 'jumped' | 'done';

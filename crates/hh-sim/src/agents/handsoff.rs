@@ -48,7 +48,7 @@ fn without_researched(entries: &[Entry]) -> Vec<Entry> {
     for e in entries {
         if let Op::If { when } = &e.op {
             skip = when.first.reading.researched() || when.rest.as_ref().is_some_and(|j| j.clause.reading.researched());
-        } else if !e.indented {
+        } else if !e.indented && !matches!(e.op, Op::Else {}) {
             skip = false;
         }
         if !skip {

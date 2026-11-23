@@ -96,6 +96,8 @@ export function lineText(v: View, e: Entry): string {
       return 'Buy Land';
     case 'if':
       return `If ${conditionText(v, e.when)}`;
+    case 'else':
+      return 'Else';
     case 'act':
       return actText(v, e);
     case 'note':
@@ -320,6 +322,13 @@ export function LogicBody({ v, e, now, set }: { v: View; e: Entry; now: Conditio
           <ConditionEdit v={v} when={e.when} now={now} set={(when) => set({ ...e, when })} />
         </span>
       );
+    case 'else':
+      return (
+        <span class="line-logic">
+          <b>Else</b>
+          <span class="muted">the lines under it run when the if above is false</span>
+        </span>
+      );
     case 'build': {
       const options = v.buildings.filter((b) => b.visible || b.id === e.building);
       const owned = v.buildings.find((b) => b.id === e.building)?.owned ?? 0;
@@ -464,7 +473,7 @@ function ActEdit({ v, e, set }: { v: View; e: Extract<Entry, { op: 'act' }>; set
 }
 
 /** The buttons adding non-command lines, or how they unlock. */
-export function AddLogic({ v, add }: { v: View; add: (e: Entry) => void }) {
+export function AddLogic({ v, add, canElse }: { v: View; add: (e: Entry) => void; canElse: boolean }) {
   if (!v.program_logic) {
     return (
       <p class="muted hint" data-testid="logic-locked">
@@ -487,6 +496,22 @@ export function AddLogic({ v, add }: { v: View; add: (e: Entry) => void }) {
         onClick={() => when && add({ op: 'if', when })}
       >
         If
+      </button>
+      <button
+        type="button"
+        class="tiny"
+        data-testid="add-else"
+        disabled={!v.if_open || !canElse}
+        title={
+          !v.if_open
+            ? 'Opens with If'
+            : canElse
+              ? 'Its indented lines run when the if above is false'
+              : 'Follows an if (or its body) at the end of the program, one per if'
+        }
+        onClick={() => add({ op: 'else' })}
+      >
+        Else
       </button>
       <button type="button" class="tiny" disabled={!building} title="Buys one building a step" onClick={() => building && add({ op: 'build', building, up_to: null })}>
         Build

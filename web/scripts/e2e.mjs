@@ -27,6 +27,9 @@
 //      and an if's fired count; the block editor keeps every line (unparsed and locked
 //      rows); the text round-trips; a tab switch saves; a loadout of it loads in the
 //      next run with every line. Shot text-editor.png.
+//   8. (Run before 5.) else: an if/else typed in the text editor shows the same lines in
+//      the block view and back, and at 1x each pass runs the branch its if picks. Shot
+//      program-else.png.
 // Any uncaught page error fails the run.
 //   HH_URL      the page, required: a `vite preview` of a static build (TESTING.md)
 //   HH_BROWSER  a browser off the usual paths
@@ -234,7 +237,7 @@ async function programLogic(grant) {
     await pick(`${clause(i, n)} input`, value);
   };
   const indent = async (i) => {
-    await click(`${line(i)} button[title="Move into the if block above"]`);
+    await click(`${line(i)} button[data-testid="line-indent"]`);
     await sleep(60);
   };
   await add('Build');
@@ -585,6 +588,63 @@ async function textEditor() {
   await click(`[data-testid="loadout-delete-${slot}"]`);
   await sleep(100);
   await click('[data-testid="loadout-load"]');
+}
+
+/** Section 8, from scenario everything: an if/else typed in the text editor shows the
+ * same lines in the block view (an Else row, both bodies indented) and reads back; at 1x
+ * each day's pass runs the branch its if picks (a true if's else body jumped, a false
+ * if's body jumped and its else body run), the else line free (a note's dot). Shot
+ * `program-else.png`. */
+async function programElse() {
+  await debugMenu();
+  await speed(0);
+  await setValue('#scenario', 'everything');
+  await click('#start-scenario');
+  await speed(1);
+  await waitFor(`!!document.querySelector('[data-testid="logic-add"]')`, 'the instructions to unlock', 8000);
+  await speed(0);
+  await click('.prog-tabs button[data-program="0"]');
+  while (await enabled('[data-testid="proc-plus"]')) await click('[data-testid="proc-plus"]');
+  const AREA = '[data-testid="text-editor-area"]';
+  const area = () => evaluate(`document.querySelector(${q(AREA)}).value`);
+  // Free land is never 100000: the first if is true every pass, the second false.
+  const typed = 'if free land below 100000\n  idle\nelse\n  idle 2\nif free land above 100000\n  idle\nELSE\n  idle 2';
+  await click('[data-testid="text-editor-open"]');
+  await sleep(200);
+  await setValue(AREA, typed);
+  await sleep(300);
+  const status = await evaluate(`[...document.querySelectorAll('.te-gutter [data-line-status]')].map((d) => d.dataset.lineStatus)`);
+  check(!status.includes('red') && !status.includes('amber') && status[2] === 'note' && status[6] === 'note', `the if/else text reads, each else a free line: ${status.join(' ')}`);
+  await click('[data-testid="text-editor-apply"]');
+  await sleep(200);
+  const applied = await area();
+  await click('[data-takeover-close="text_editor"]');
+  await sleep(100);
+  const rows = () =>
+    evaluate(`[...document.querySelectorAll('.lines li')].map((l) => ({ op: l.dataset.op ?? 'command', indented: l.classList.contains('indented'), out: [...l.classList].find((c) => c.startsWith('out-')) ?? null }))`);
+  const shape = (rs) => rs.map((r) => `${r.indented ? '>' : ''}${r.op}`).join(' ');
+  const r0 = await rows();
+  const want = 'if >command else >command if >command else >command';
+  check(shape(r0) === want, `the block view shows the same lines: ${shape(r0)}`);
+  await click('[data-testid="text-editor-open"]');
+  await sleep(200);
+  // The engine writes the canonical form: `ELSE` as `else`.
+  const back = (await area()).trimEnd();
+  check(back === typed.replace('ELSE', 'else') && applied.trimEnd() === typed, `and back: the text reads the same (${JSON.stringify(back)})`);
+  await click('[data-takeover-close="text_editor"]');
+  await sleep(100);
+  // At 1x: each day's outcomes, once a whole pass ran (the processors cover it from day 1).
+  const wantOut = 'out-true out-ran - out-jumped out-false out-jumped - out-ran';
+  await speed(1);
+  const seen = [];
+  for (let k = 0; k < 4; k++) {
+    const d = await day();
+    for (let t = 0; t < 50 && (await day()) === d; t++) await sleep(100);
+    seen.push((await rows()).map((r) => r.out ?? '-').join(' '));
+  }
+  await speed(0);
+  await shot('program-else');
+  check(seen.slice(1).every((s) => s === wantOut), `at 1x each pass runs the branch its if picks: ${seen.join(' | ')}`);
 }
 
 /** Section 5, from scenario at_cap (paused, cheats on; `grant` from section 2). Shots
@@ -968,6 +1028,8 @@ try {
   await programLogic(grant);
   // ---- 7. the program text editor (before 5) ----
   await textEditor();
+  // ---- 8. else (before 5): an if/else from the text editor ----
+  await programElse();
   await debugMenu();
   await setValue('#scenario', 'at_cap');
   await click('#start-scenario');

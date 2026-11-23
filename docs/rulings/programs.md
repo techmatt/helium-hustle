@@ -5,13 +5,25 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
 
 - **One flat program template (2026-11-20).** Every line is `<verb> <target> [amount]`: the
   target slot is typed by the verb, the amount `N`, `up to N` or `all`. No nesting, variables,
-  labels or jumps; a new capability is a new verb or reading, never new grammar; per-target
+  labels or jumps; a new capability is a new verb or reading, never new grammar (`else`,
+  below, is Matt's one addition); per-target
   commands (Buy X, Fund X) are one verb with a target. Conditions stay
   `<reading> <above | below> <number>` with one optional `and` / `or`; the right side is
   always a number. Pads are addressed only by good. Every line is open wherever program logic
   is, but `if`, which has its own unlock (*Program logic unlocks*, below). No `wait until`
   (2026-11-22): programs run every day, so `if` covers it. *Defaults (037):* the pad verbs run
   the Launch / Load commands' rows; `retire` retires at the day's end like the button.
+- **`else` (2026-11-23).** One level, as `if`: an `else` line directly follows an `if`'s
+  body (or the `if` itself, with an empty body), and its own indented lines are its body. No
+  `else if`, no nesting. The `if` keeps its one step and decides both branches: true runs the
+  if-body and jumps past the else-body; false jumps to the else-body. The `else` line costs no
+  step (like a note), so watching a program still shows one decision per `if`. Open whenever
+  `if` is (no unlock of its own); a locked `if` passes over its else-body too.
+- **The program language unlocks early (2026-11-23).** It opens mostly during Act 1
+  (instructions, readings and features may still open there through quests, research or
+  projects); after that no progression adds program functionality, so loadouts never depend
+  on a later unlock. The `if` step cost exists so a player can watch a program run line by
+  line.
 - **Every line costs a step (2026-11-22, 064; replaces 2026-11-20's free `if`).** Each line
   that runs takes one processor step, so play is easy to follow at 1×. A line with nothing to
   do (`research X` once researched, `pause` with nothing running, `set pads` already at N,

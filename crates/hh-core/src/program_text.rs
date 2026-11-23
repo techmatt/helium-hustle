@@ -1,7 +1,7 @@
 //! A program as text, the text editor's form and its copy/paste import and
 //! export (docs/rules/programs.md, *Text form*): one line a program line,
 //! the words the block editor shows, an indented line in the body of the `if`
-//! above, `#` a note line. Reading is case-insensitive with flexible spacing,
+//! or `else` above, `#` a note line. Reading is case-insensitive with flexible spacing,
 //! and takes the aliases listed there; writing gives one canonical form, so
 //! text read from `to_text` reads back to the same lines.
 
@@ -73,6 +73,7 @@ pub fn op_text(op: &Op) -> String {
         Op::Build { building, up_to: None } => format!("build {}", name_of(building)),
         Op::Build { building, up_to: Some(n) } => format!("build {} up to {n}", name_of(building)),
         Op::BuyLand {} => "buy land".to_string(),
+        Op::Else {} => "else".to_string(),
         Op::If { when } => match &when.rest {
             None => format!("if {}", clause_text(&when.first)),
             Some(j) => {
@@ -273,6 +274,13 @@ pub fn parse_op(line: &str) -> Result<Op, String> {
     if w.iter().any(|x| x.starts_with('#')) {
         return Err("a comment goes on its own line".to_string());
     }
+    if w.first() == Some(&"else") {
+        return match w.len() {
+            1 => Ok(Op::Else {}),
+            _ if w[1] == "if" => Err("no else if: an else's body holds no if".to_string()),
+            _ => Err("else stands alone: its lines go indented below it".to_string()),
+        };
+    }
     if w.first() == Some(&"if") {
         let rest = &w[1..];
         let joins: Vec<usize> = rest.iter().enumerate().filter(|(_, x)| **x == "and" || **x == "or").map(|(i, _)| i).collect();
@@ -393,20 +401,21 @@ pub fn parse(r: &Rules, g: &GameState, text: &str) -> Parsed {
     let max = r.p.programs.line_text_max;
     let mut entries: Vec<Entry> = Vec::new();
     let mut lines = Vec::new();
+    // The block the last line leaves open.
+    let mut block = programs::Block::None;
     for raw in text.split('\n') {
         let body = raw.trim();
         if body.is_empty() {
             lines.push(TextLine { entry: None, status: "blank", reason: None });
             continue;
         }
-        let in_block = entries.last().is_some_and(|e| e.indented || matches!(e.op, Op::If { .. }));
-        let indented = raw.starts_with([' ', '\t']) && in_block;
+        let indented = raw.starts_with([' ', '\t']) && block != programs::Block::None;
         let (op, status, reason) = if let Some(note) = body.strip_prefix('#') {
             (Op::Note { text: clip(note.trim(), max) }, "note", None)
         } else {
             let read = parse_op(body).and_then(|op| {
                 let e = Entry { op, indented: raw.starts_with([' ', '\t']) };
-                programs::check_line(r, g, &e, in_block).map(|_| e.op)
+                programs::check_line(r, g, &e, block).map(|_| e.op)
             });
             match read {
                 Ok(op) => {
@@ -434,7 +443,9 @@ pub fn parse(r: &Rules, g: &GameState, text: &str) -> Parsed {
             (status, reason)
         };
         lines.push(TextLine { entry: Some(entries.len()), status, reason });
-        entries.push(Entry { op, indented });
+        let e = Entry { op, indented };
+        block = block.after(&e);
+        entries.push(e);
     }
     // Lines past the most a program holds: red (set_program refuses the whole).
     let most = r.p.programs.max_entries;
@@ -445,11 +456,12 @@ pub fn parse(r: &Rules, g: &GameState, text: &str) -> Parsed {
     Parsed { entries, lines }
 }
 
-/// Why an `unparsed` line (held, as `in_block` places it) doesn't read now.
-pub fn unparsed_reason(r: &Rules, g: &GameState, text: &str, in_block: bool) -> String {
+/// Why an `unparsed` line doesn't read now: `indented` as it is held, `block`
+/// the one the line above leaves open.
+pub fn unparsed_reason(r: &Rules, g: &GameState, text: &str, indented: bool, block: programs::Block) -> String {
     // A kept indent (one the line couldn't hold) is the reason.
-    let indented = in_block || text.starts_with([' ', '\t']);
-    match parse_op(text.trim()).and_then(|op| programs::check_line(r, g, &Entry { op, indented }, in_block)) {
+    let indented = indented || text.starts_with([' ', '\t']);
+    match parse_op(text.trim()).and_then(|op| programs::check_line(r, g, &Entry { op, indented }, block)) {
         Err(why) => why,
         Ok(()) => "reads now, where it stands: edit it to keep it".to_string(),
     }

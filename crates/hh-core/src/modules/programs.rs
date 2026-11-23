@@ -142,18 +142,53 @@ fn check_entries(r: &Rules, g: &GameState, program: u32, entries: &[Entry]) -> R
     if program as usize >= g.run.programs.len() {
         return Err(format!("Program {n}: there are {}", g.run.programs.len()));
     }
-    // Whether the line above is an `if` or in a body: only then may a line be indented.
-    let mut in_block = false;
-    for (i, e) in entries.iter().enumerate() {
-        check_line(r, g, e, in_block).map_err(|why| format!("Program {n}, line {}: {why}", i + 1))?;
-        in_block = e.indented || matches!(e.op, Op::If { .. });
+    for ((i, e), block) in entries.iter().enumerate().zip(blocks(entries)) {
+        check_line(r, g, e, block).map_err(|why| format!("Program {n}, line {}: {why}", i + 1))?;
     }
     Ok(())
 }
 
-/// Whether one line may stand where it is (`in_block`: the line above is an
-/// `if` or in a body), on its form: `Err` says why not, in the player's words.
-pub fn check_line(r: &Rules, g: &GameState, e: &Entry, in_block: bool) -> Result<(), String> {
+/// The block a line may join: the one the line above leaves open.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum Block {
+    /// None: the line above is neither an `if`, an `else` nor in a body.
+    #[default]
+    None,
+    /// An `if` or its body: a line may be indented, or be its `else`.
+    If,
+    /// An `else` or its body: a line may be indented.
+    Else,
+}
+
+impl Block {
+    /// The block open below line `e`, when this one is open above it.
+    pub fn after(self, e: &Entry) -> Block {
+        match e.op {
+            Op::If { .. } => Block::If,
+            Op::Else {} => Block::Else,
+            _ if e.indented => self,
+            _ => Block::None,
+        }
+    }
+}
+
+/// The block open above each line of `entries`.
+pub fn blocks(entries: &[Entry]) -> Vec<Block> {
+    let mut block = Block::None;
+    entries
+        .iter()
+        .map(|e| {
+            let above = block;
+            block = block.after(e);
+            above
+        })
+        .collect()
+}
+
+/// Whether one line may stand where it is (`block`: the one the line above
+/// leaves open), on its form: `Err` says why not, in the player's words.
+pub fn check_line(r: &Rules, g: &GameState, e: &Entry, block: Block) -> Result<(), String> {
+    let in_block = block != Block::None;
     let c = content();
     // One reading per thing: a capped resource (and boredom) reads as a fill
     // percent or an amount (the editor's unit toggle), an uncapped one as an
@@ -207,6 +242,16 @@ pub fn check_line(r: &Rules, g: &GameState, e: &Entry, in_block: bool) -> Result
                 one(&j.clause.reading)?;
             }
         }
+        Op::Else {} => {
+            if e.indented {
+                return Err("an else can't sit inside an if".to_string());
+            }
+            match block {
+                Block::If => {}
+                Block::Else => return Err("an if has one else".to_string()),
+                Block::None => return Err("an else needs an if above it".to_string()),
+            }
+        }
         Op::Act { verb, target, tab, amount } => check_act(r, g, *verb, target.as_deref(), *tab, *amount)?,
         Op::Note { text } | Op::Unparsed { text } => {
             if text.contains('\n') {
@@ -248,6 +293,8 @@ pub fn locked(r: &Rules, g: &GameState, e: &Entry) -> Option<String> {
             }
             None
         }
+        // Open whenever `if` is: no unlock of its own.
+        Op::Else {} => (!if_unlocked(g)).then(|| "if isn't open yet (Conditional Logic)".to_string()),
         Op::Build { building, .. } | Op::Act { verb: Verb::Pause | Verb::Resume, target: Some(building), .. } => c
             .building(building)
             .filter(|b| !super::economy::unlocked(g, b))
@@ -822,11 +869,17 @@ fn jump_body(g: &mut GameState, i: usize, line: usize) -> usize {
     to
 }
 
+/// Whether program `i`'s line `line` is an `else`.
+fn is_else(g: &GameState, i: usize, line: usize) -> bool {
+    matches!(g.run.programs[i].entries.get(line).map(|e| &e.op), Some(Op::Else {}))
+}
+
 /// One processor's step of program `i`: free lines (notes, unparsed and
-/// locked lines; a locked `if` with its body) are passed over until a line
-/// that costs the step runs, done or not. Every `if` costs the step and can't
-/// fail; a false one jumps its whole body. A whole loop of free lines idles
-/// the step.
+/// locked lines; a locked `if` with its body and its `else`'s; an `else`
+/// reached from its `if`'s body, with its own body) are passed over until a
+/// line that costs the step runs, done or not. Every `if` costs the step and
+/// can't fail; a false one jumps its whole body, into an `else`'s body when
+/// one follows. A whole loop of free lines idles the step.
 fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
     let n = g.run.programs[i].entries.len();
     for _ in 0..n {
@@ -843,8 +896,18 @@ fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
         // Free, never run, no outcome: notes, unparsed lines and lines this
         // run hasn't unlocked (programs.md, *Locked lines*). A locked `if`
         // passes over its body too.
-        if op.is_text() || locked(r, g, &g.run.programs[i].entries[line]).is_some() {
-            let to = if matches!(op, Op::If { .. }) { jump_body(g, i, line) } else { next };
+        // An `else` reached here comes from its `if`'s body (a false `if`
+        // jumps into its body): it passes over its own body.
+        let is_else_line = matches!(op, Op::Else {});
+        if op.is_text() || is_else_line || locked(r, g, &g.run.programs[i].entries[line]).is_some() {
+            let to = match op {
+                Op::If { .. } => {
+                    let past = jump_body(g, i, line);
+                    if is_else(g, i, past) { jump_body(g, i, past) } else { past }
+                }
+                Op::Else {} => jump_body(g, i, line),
+                _ => next,
+            };
             let p = &mut g.run.programs[i];
             p.step = 0;
             p.entry = to as u32;
@@ -852,12 +915,13 @@ fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
         }
         // (outcome, where the pointer goes)
         let (outcome, to) = match &op {
-            Op::Note { .. } | Op::Unparsed { .. } => unreachable!("passed over above"),
+            Op::Note { .. } | Op::Unparsed { .. } | Op::Else {} => unreachable!("passed over above"),
             Op::If { when } => {
                 if holds(r, g, when) {
                     (LineOutcome::True, next)
                 } else {
-                    (LineOutcome::False, jump_body(g, i, line))
+                    let past = jump_body(g, i, line);
+                    (LineOutcome::False, if is_else(g, i, past) { (past + 1) % n } else { past })
                 }
             }
             // Done: nothing to buy, the step only.

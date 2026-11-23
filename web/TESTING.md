@@ -40,6 +40,9 @@ results folder; kept shots are also copied to the shared screenshots folder, CLA
    and locked rows); the text round-trips; a tab switch saves; 130 lines are red past 128,
    refused, and kept for the next open after a close; a loadout of it loads after
    a retirement with every line.
+   Then `programElse`: an if/else typed there shows the same lines in the block view
+   (an Else row, both bodies indented) and back, and at 1x each day's pass runs the
+   branch its `if` picks.
 6. **Readability** (before 4): capped rates, Resources' groups, affordable cards and Land,
    a pad short of fuel then Ready, Story.
 
@@ -47,7 +50,8 @@ Any uncaught page error fails the run. Run it against `vite preview` (CLAUDE.md)
 `panel()` closes the debug menu: call `debugMenu()` again before a `grant()` after one.
 
 - **Under load it flakes:** section 3's 10x pointer walk fails beside a cargo build, and
-  so do its "if held" and "guarded line built" outcome checks (066: beside `cargo test-all`).
+  so do its "if held" and "guarded line built" outcome checks (066: beside `cargo test-all`; 067: once with nothing beside it, then
+  passed on a rerun).
 - **The late UI for screenshots:** `experiments/results/027_art_in_game/shots.mjs`
   (`pad_loading`, cheats, ~20 s); grants don't count toward `resource_cumulative`.
 - Edge needs an **absolute** `--user-data-dir` (the script resolves it).

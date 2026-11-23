@@ -100,8 +100,9 @@ pub(super) fn programs(r: &Rules, g: &GameState, running: &[u32]) -> Vec<Program
             errors: p
                 .entries
                 .iter()
-                .map(|e| match &e.op {
-                    Op::Unparsed { text } => Some(crate::program_text::unparsed_reason(r, g, text, e.indented)),
+                .zip(programs::blocks(&p.entries))
+                .map(|(e, block)| match &e.op {
+                    Op::Unparsed { text } => Some(crate::program_text::unparsed_reason(r, g, text, e.indented, block)),
                     _ => None,
                 })
                 .collect(),
