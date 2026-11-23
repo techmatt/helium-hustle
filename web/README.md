@@ -67,7 +67,10 @@ Three columns and a status bar:
   a reading (the view's list), above or below, and a number (with `%` for a fill), and
   `and`/`or` one more; each clause with its live value and ✓/✗; body lines indented under the `if` (⇥/⇤), greyed with it when false.
   Above 10x a redraw covers several days: each line shows its outcome over them
-  (`advance_run`'s `lines`), no frame. Below, Events: Story (side story and the latest
+  (`advance_run`'s `lines`), no frame. A note line (`#`) is muted text, an unparsed one a
+  red-tinted disabled row with its reason, a locked one dimmed with "locked this run" (the
+  view's `errors` and `locked`). **Text editor** opens the text editor takeover on the
+  active program (below). Below, Events: Story (side story and the latest
   boredom phase), completed quests, and Recent Activity (green good, red bad, blue news),
   each with an unread count.
 - **Bottom:** day and run, the cheated mark, Boredom and Energy bars with their rates
@@ -78,7 +81,13 @@ Three columns and a status bar:
   Credits, He-3 and Science, and pause. The game runs on behind it: the covered columns
   stay mounted, only hidden. A view is one `Takeover` entry in `App.tsx`'s `TAKEOVERS`;
   `bleed` drops the body's padding and scrolling for a view that fits itself to it.
-  Its only user so far is the Cortex mock (below); later large views are meant to use it.
+  `noButton` keeps a view out of the left column. Users: the Cortex mock (below) and the
+  **Text editor** (`TextEditor.tsx`): program tabs, Apply, and a textarea between a gutter
+  of status dots (green ran, grey skipped, red unparsed, amber locked, hollow failed) and a
+  notes column (reasons, "fired k/10" on `if`s, from the store's history of `advance_run`'s
+  `if_true` bits). The engine parses (`parse_program_text`) and writes (`program_text`) the
+  text (docs/rules/programs.md, *Text form*); a changed draft is applied on Apply, on a tab
+  switch and on closing.
 - **Run summary:** when a run ends a summary covers the screen, the clock stopped until
   Continue.
 

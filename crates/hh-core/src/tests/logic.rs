@@ -322,19 +322,19 @@ fn a_loaded_line_this_career_has_not_unlocked_fails_or_reads_false() {
         name: "Later".into(),
         entries: vec![when(any.clone()), Entry::command("idle", 1).indent(), Entry::command("dream", 1)],
     });
-    assert!(put(&r, &mut g, vec![when(any.clone())]).is_err(), "set_program refuses it this run");
+    // set_program takes it too (063): kept, locked this run.
+    put(&r, &mut g, vec![when(any.clone())]).unwrap();
+    assert!(r.view(&g).programs[0].locked[0].as_deref().is_some_and(|w| w.contains("Conditional Logic")));
     r.apply(&mut g, &Action::LoadLoadout { loadout: 0, program: 0 }).unwrap();
     r.advance(&mut g, 1);
     let o = outcomes(&g);
     assert_eq!(o[0], Some(O::False), "if not open: false");
     assert_eq!(o[2], Some(O::Failed), "Dream not researched: fails and advances");
-    // The loaded program stays editable: an edit keeping that line goes through, a
-    // new such line is still refused.
+    // The loaded program stays editable, new locked lines and all.
     let mut lines = g.run.programs[0].entries.clone();
     lines.push(Entry::command("idle", 2));
-    put(&r, &mut g, lines.clone()).unwrap();
     lines.push(when(one(amount("credits", Cmp::Lt, "5"))));
-    assert!(put(&r, &mut g, lines).is_err());
+    put(&r, &mut g, lines).unwrap();
 }
 
 #[test]
@@ -358,8 +358,9 @@ fn set_program_refuses_what_the_language_does_not_allow() {
     let r = rules();
     let mut locked = r.new_game(1);
     let cond = one(amount("credits", Cmp::Gt, "1"));
-    let e = put(&r, &mut locked, vec![when(cond.clone())]).unwrap_err();
-    assert!(e.contains("only commands"), "{e}");
+    // Before the unlock a line is taken on its form (063), locked this run.
+    put(&r, &mut locked, vec![when(cond.clone())]).unwrap();
+    assert!(r.view(&locked).programs[0].locked[0].as_deref().is_some_and(|w| w.contains("program logic")));
     assert!(put(&r, &mut locked, vec![Entry::command("idle", 1)]).is_ok());
 
     let mut g = game(&r);
@@ -371,10 +372,8 @@ fn set_program_refuses_what_the_language_does_not_allow() {
         vec![build("solar_panel", Some(0))],
         vec![when(one(amount("nope", Cmp::Gt, "1")))],
         // An uncapped stock has no percent; land and processors read their
-        // free counts; the researched readings need their research.
+        // free counts.
         vec![when(one(amount("land", Cmp::Gt, "1")))],
-        vec![when(one(clause(Reading::EnergyPerDay, Cmp::Lt, "0")))],
-        vec![when(one(clause(Reading::DaysSincePurchase, Cmp::Gt, "300")))],
         vec![when(one(amount("processors", Cmp::Gt, "1")))],
         vec![when(one(clause(Reading::Percent { resource: "credits".into() }, Cmp::Gt, "1")))],
     ];
@@ -411,9 +410,10 @@ fn the_researched_readings_open_with_process_telemetry() {
     let offered = |g: &GameState| r.view(g).readings.iter().map(|x| x.label.clone()).collect::<Vec<_>>();
     let rate = one(clause(Reading::EnergyPerDay, Cmp::Lt, "0"));
     let stale = one(clause(Reading::DaysSincePurchase, Cmp::Gt, "5"));
-    // Before the research: not offered, a new clause refused, a held one reads nothing.
+    // Before the research: not offered, a clause taken but locked, reading nothing.
     assert!(!offered(&g).iter().any(|l| l == "Energy per day" || l == "Days since a purchase"));
-    assert!(put(&r, &mut g, vec![when(rate.clone())]).is_err());
+    put(&r, &mut g, vec![when(rate.clone())]).unwrap();
+    assert!(r.view(&g).programs[0].locked[0].as_deref().is_some_and(|w| w.contains("research")));
     assert_eq!(read(&g, Reading::EnergyPerDay), None);
     assert_eq!(read(&g, Reading::DaysSincePurchase), None);
     // Research it (the panel open, science enough): offered last, and readable.
@@ -464,7 +464,8 @@ fn if_opens_on_its_own_flag() {
     g.career.flags.insert(programs::LOGIC_FLAG.into());
     let cond = one(amount("credits", Cmp::Gt, "-1"));
     let iff = vec![when(cond), Entry::command("idle", 1).indent()];
-    assert!(put(&r, &mut g, iff.clone()).is_err(), "if needs the Conditional Logic flag");
+    put(&r, &mut g, iff.clone()).unwrap();
+    assert!(r.view(&g).programs[0].locked[0].is_some(), "if needs the Conditional Logic flag");
     assert!(put(&r, &mut g, vec![build("solar_panel", Some(9))]).is_ok(), "build needs only program logic");
     g.career.flags.insert(programs::IF_FLAG.into());
     assert!(put(&r, &mut g, iff).is_ok());

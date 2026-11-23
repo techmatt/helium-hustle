@@ -33,7 +33,13 @@ served page: `HH_URL`, required (it exits naming `vite preview` when unset),
    pause/resume verb lines under `if`s run.
 4. **The theme:** the toggles switch it with every element's box unchanged (to 0.01 px);
    a reload keeps it.
-5. **Readability** (before 4): capped rates, Resources' groups, affordable cards and Land,
+5. **The text editor** (before 6, after 3), from `everything`: 060's L4 Program 1
+   pasted with a junk line (red, its reason) and a locked building (amber), Apply, green
+   and grey dots and an `if`'s fired count; the block editor keeps every line (unparsed
+   and locked rows); the text round-trips; a tab switch saves; 130 lines are red past 128,
+   refused, and kept for the next open after a close; a loadout of it loads after
+   a retirement with every line.
+6. **Readability** (before 4): capped rates, Resources' groups, affordable cards and Land,
    a pad short of fuel then Ready, Story.
 
 Any uncaught page error fails the run. Run it against `vite preview` (CLAUDE.md).

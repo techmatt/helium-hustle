@@ -172,7 +172,11 @@ export type Op =
   | { op: 'build'; building: string; up_to: number | null }
   | { op: 'buy_land' }
   | { op: 'if'; when: Condition }
-  | { op: 'act'; verb: Verb; target?: string | null; tab?: number | null; amount?: Amount | null };
+  | { op: 'act'; verb: Verb; target?: string | null; tab?: number | null; amount?: Amount | null }
+  /** A `#` comment line from the text editor (text without the `#`): free, never runs. */
+  | { op: 'note'; text: string }
+  /** A text-editor line that doesn't parse, kept as typed until fixed: free, never runs. */
+  | { op: 'unparsed'; text: string };
 
 /** A program line: an instruction, `indented` in the body of the `if` above it. */
 export type Entry = Op & { indented?: boolean };
@@ -210,6 +214,10 @@ export interface ProgramView {
   shorts: (ShortView | null)[];
   /** Per line, an `if` line's condition as it reads now. */
   conditions: (ConditionView | null)[];
+  /** Per line, why it is not unlocked this run (it is kept, and skipped). */
+  locked: (string | null)[];
+  /** Per line, why an `unparsed` line doesn't parse. */
+  errors: (string | null)[];
 }
 
 /** The program lines run over a span of days: per program, per line in queue order,
@@ -217,6 +225,19 @@ export interface ProgramView {
 export interface LinesRun {
   days: number;
   lines: (LineOutcome | null)[][];
+  /** Per program, per line: the days an `if` line was true, as bits (bit 0: the span's
+   * last day, bit k: k days before it; the span's last 32 days only). */
+  if_true: number[][];
+}
+
+/** A text line's status from the engine's parse of the text editor's draft. */
+export type TextLineStatus = 'ok' | 'amber' | 'red' | 'note' | 'blank';
+
+/** `parse_program_text`: the draft's entries (a red line as `unparsed`, so they are always
+ * a valid `set_program`) and one item per text line; `entry` indexes `entries`. */
+export interface ParsedText {
+  entries: Entry[];
+  lines: { entry: number | null; status: TextLineStatus; reason: string | null }[];
 }
 
 export interface PadView {
@@ -542,6 +563,11 @@ export const engine = {
   view: (state: string): View => JSON.parse(wasm.view(state)),
   fingerprint: (state: string): string => wasm.fingerprint(state),
   replay: (record: unknown): Replayed => JSON.parse(wasm.replay(JSON.stringify(record))),
+  /** A program's lines as the text editor's text (display names, 2-space indent, `# ` notes). */
+  programText: (entries: Entry[]): string => wasm.program_text(JSON.stringify(entries)),
+  /** Parses the text editor's text against the state (for what is unlocked this run).
+   * Throws a string when the text can't be taken at all (too many lines). */
+  parseProgramText: (state: string, text: string): ParsedText => JSON.parse(wasm.parse_program_text(state, text)),
   /** The debug autopilot (an accelerator): a sim player plays the game on toward
    * `target`; `met`: step ids met earlier in the career. Free it when done. */
   autopilot: (state: string, target: AutopilotTarget, agent: string, boost: string, budget: number, met: string[]): wasm.Autopilot =>

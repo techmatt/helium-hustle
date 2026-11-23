@@ -214,9 +214,10 @@ fn set_program_refuses_act_lines_with_the_wrong_slots() {
     for e in bad {
         assert!(put(&r, &mut g, vec![e.clone()]).is_err(), "{e:?}");
     }
-    // Before the logic unlock, a verb line is refused like any line but a command.
+    // Before the logic unlock, a verb line is taken but locked, like any line but a command.
     g.career.flags.clear();
-    assert!(put(&r, &mut g, vec![act(Verb::Retire, None, None, None)]).is_err());
+    put(&r, &mut g, vec![act(Verb::Retire, None, None, None)]).unwrap();
+    assert!(r.view(&g).programs[0].locked[0].is_some());
 }
 
 #[test]
@@ -262,7 +263,8 @@ fn the_fund_verb_switches_off_in_config() {
     let r = Rules::new(&crate::Config::from_json(&json).unwrap()).unwrap();
     let mut g = game(&r);
     let fund = act(Verb::Fund, Some("foundation_grant"), None, Some(Amount::All));
-    assert!(put(&r, &mut g, vec![fund.clone()]).is_err(), "a new fund line is refused");
+    put(&r, &mut g, vec![fund.clone()]).unwrap();
+    assert_eq!(r.view(&g).programs[0].locked[0].as_deref(), Some("the fund verb is off"));
     let v = crate::view::build(&r, &g);
     assert!(!v.verbs.iter().any(|x| x.verb == Verb::Fund));
     // Held (as a loadout brings it), the fund line fails when run.

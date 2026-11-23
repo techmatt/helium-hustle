@@ -16,6 +16,7 @@ pub mod hash;
 pub mod math;
 pub mod modifiers;
 pub mod modules;
+pub mod program_text;
 pub mod record;
 pub mod rng;
 pub mod rules;
@@ -45,4 +46,4 @@ pub const VERSION: &str = env!("CARGO_PKG_VERSION");
 /// revision. The `golden_game` test fails on any play change until the golden
 /// constants move; bumping this with them is the executor's rule (CLAUDE.md),
 /// which no test can enforce (README, *Rules changes*).
-pub const RULES_REVISION: u32 = 17;
+pub const RULES_REVISION: u32 = 18;

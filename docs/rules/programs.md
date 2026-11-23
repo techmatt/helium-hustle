@@ -20,7 +20,7 @@ Center) starts unassigned. Each day at most the processors resource (economy.md:
 comes off the last programs first for that day, and their assignments stay.
 
 **Instructions** (`state::Op`; flat, `<verb> <target> [amount]`: docs/rulings.md). All but
-`if` cost a processor step, with something to do or not:
+`if` and the two text lines cost a processor step, with something to do or not:
 
 | Line | JSON `op` | What it does |
 |---|---|---|
@@ -30,10 +30,12 @@ comes off the last programs first for that day, and their assignments stay.
 | `buy land` | `buy_land` | Buys land, as the Buy Land action would; unaffordable, it fails. |
 | a verb | `act` (`verb`, `target`, `tab`, `amount`) | *Verbs*, below. |
 | `if <condition>` | `if` (`when`) | **Free.** Checked once, when the pointer reaches it. True: the pointer moves into its body, which then runs whole, whatever the condition does meanwhile. False: the pointer jumps past the body. |
+| `# <text>` | `note` (`text`) | **Free**, never runs, no outcome: a comment kept with the program. |
+| a line that doesn't read | `unparsed` (`text`) | **Free**, never runs, no outcome: a text-editor line kept as written until fixed (*Text form*). |
 
 **Blocks.** A line may be `indented`: it is in the body of the `if` above it. One level only:
 an `if` is never indented (no nesting), there is no `else`, and an indented line must follow
-an `if` or another indented line. Any other line may sit in a body.
+an `if` or another indented line. Any other line (a note too) may sit in a body.
 
 **Verbs** (`act` lines; `state::Verb`). The target slot is typed by the verb; `tab` is a
 program (0-based); the amount is `{"n": N}` or `"all"`; JSON `verb` is the snake_case name.
@@ -72,8 +74,7 @@ resource (and boredom) is one entry of the list with a **unit toggle**: the edit
 box reads `%` (`percent`) or an amount (`amount`), "Propellant below 20%" or "below 20".
 **Researched readings** (`energy_per_day`, `days_since_purchase`) open while a research item
 with the `program_readings` effect (Process Telemetry, research.md) is done this run: before
-it, `set_program` refuses a clause new to the program that uses one, and a held or loaded one
-reads nothing. A clause whose reading reads nothing (a cap of 0, a researched reading not
+it, a clause using one is locked (below) and reads nothing. A clause whose reading reads nothing (a cap of 0, a researched reading not
 open) is false. The view's `readings` offer, in that order, each visible capped resource's
 fill, boredom's, each visible uncapped resource's amount, free processors, free land, once
 there is a pad idle pads, and once researched energy per day and days since a purchase
@@ -85,8 +86,14 @@ counted.
 `library_slots` saved programs, each a display name (trimmed, 1 to `loadout_name_max`
 characters, duplicates allowed) and its lines. Saving copies a program's lines into a new
 slot or over one; loading replaces a program's lines with a slot's, as `set_program` does,
-processors unchanged. A loaded line this run hasn't unlocked fails (an `if`: reads false)
-when run: the run gates refuse only a line new to the program.
+processors unchanged. A saved program keeps every line, locked, note and unparsed ones too.
+
+**Locked lines.** A line whose need this run hasn't met is kept, never refused, by
+`set_program`, a loadout or the `load` verb; when run it fails (an `if`: reads false), and
+runs once unlocked (`programs::locked`; the view's per-line `locked` says why). Needs: program
+logic (every line but a command), `if`'s flag, a researched reading's research, the fund
+verb's switch, and the line's command, building (`build`, `pause`, `resume`), research item
+(shown) or project (open to funding).
 
 **Unlock.** Every line but a command needs the career flag `program_logic`: set (and logged)
 the first day `logic_unlock_processors` processors work, as programs start to run. `if` also
@@ -95,7 +102,7 @@ reward ([projects.md](projects.md)); content must set it. A loaded `if` the care
 opened runs as false: it skips its body. The view's `if_open` says whether it is open.
 
 **Running** (each day): programs in order; each running processor of a program takes one
-step from the shared pointer. A step passes over free lines (`if`s) until it reaches a line
+step from the shared pointer. A step passes over free lines (`if`s, notes, unparsed lines) until it reaches a line
 that costs it: that line runs once and the pointer advances
 whatever the outcome (ran, skipped, failed or done): a command line's run count rises and,
 at its `count`, the pointer moves on; any other line moves on at once. The pointer wraps from the last line to the first. A step that passes as
@@ -111,14 +118,38 @@ when a command is visible: [commands.md](commands.md).
 
 | Action | Refused when |
 |---|---|
-| `set_program {program, entries}` | more than `max_entries` lines; an unknown command, building or resource; a `count` or `up_to` of 0; a line other than a command before the unlock, or an `if` before its flag (unless already in the program); an indented line with no `if` or body line above it; an indented `if`; a reading of the wrong kind for its resource (*Conditions*); a researched reading before its research (unless already in the program); a verb with an unknown or missing target (`load`: a blank name; one no loadout has fails when run), a tab or amount it doesn't take or lacks, an amount of 0 (but `assign_processors` and `fund`), `set_pads ... all`; a switched-off verb (unless already in the program); or no such program |
+| `set_program {program, entries}` | more than `max_entries` lines; an unknown command, building or resource; a `count` or `up_to` of 0; an indented line with no `if` or body line above it; an indented `if`; a reading of the wrong kind for its resource (*Conditions*); a verb with an unknown or missing target (`load`: a blank name; one no loadout has fails when run), a tab or amount it doesn't take or lacks, an amount of 0 (but `assign_processors` and `fund`), `set_pads ... all`; a note or unparsed text over `line_text_max` characters or with a line break; or no such program. Never on what this run has unlocked (*Locked lines*) |
 | `set_processors {program, processors}` | no such program, or the other programs' processors plus this number exceed what the active Data Centers grant |
 | `save_loadout {program, slot, name}` (`slot` null: a new slot) | no such program or slot; an empty program; a blank or overlong name; a new slot with the library full |
-| `load_loadout {loadout, program}` | no such loadout or program; lines `set_program` refuses on their form (it skips the unlock checks) |
+| `load_loadout {loadout, program}` | no such loadout or program; lines `set_program` refuses |
 | `rename_loadout {loadout, name}` / `delete_loadout {loadout}` | no such loadout; a blank or overlong name (deleting moves later slots up) |
 
-`set_program` replaces the whole queue and restarts its pointer at the top. A locked command
-or building may be queued; it fails when run. A body line carries `"indented": true`.
+`set_program` replaces the whole queue and restarts its pointer at the top. A body line
+carries `"indented": true`.
+
+## Text form
+
+`program_text` (`to_text`, `parse`; wasm `program_text`, `parse_program_text`): the text
+editor's form and copy/paste import and export, read by the sim's loadout files too. One line
+a program line in the block editor's words (display names, lowercase when written), an indent
+(spaces or a tab) for a body line, `#` for a note, a command as `<name> [count]`:
+
+```
+if propellant below 20%
+  buy propellant 10
+launch pads all
+```
+
+Reading is case-insensitive with any spacing. `20%` is a `percent` reading, `20` an
+`amount`. Each line is checked as `set_program` would: one that doesn't read, or can't stand
+where it is, is **red** and kept as an `unparsed` line (an indent it can't hold stays in its
+text); one that reads but is locked is **amber**; blank lines are dropped. A `#` after a
+statement is red (a comment goes on its own line). **Aliases:** an id for a name
+(`solar_panel`); `>`, `>=`, `≥`, `over` for *above* and `<`, `<=`, `≤`, `under` for *below*
+(both strict); a count as `xN`, `(xN)`, `×N`, `*N` or `x N`; `launch` for `launch pads all`;
+`set pads <good> N` for `up to N`; a program tab as `program N`, `tab N`, `pN` or `N`;
+`days since purchase` for `days since a purchase`. Written: `assign processors program N
+<N | all>`, `load <saved program> into program N` (the name keeps its case).
 
 ## Params
 
@@ -131,7 +162,8 @@ or building may be queued; it fails when run. A body line carries `"indented": t
 | `logic_unlock_processors` | 2 | 0 to 1000 | Working processors that first open every line but plain commands (a career first). |
 | `library_slots` | 12 | 0 to 1000 | Saved programs the loadout library holds (career state). |
 | `loadout_name_max` | 40 | 1 to 1000 | Most characters in a loadout's name. |
-| `fund_verb` | 1 | 0 to 1 | 1: the `fund <project>` verb is on; 0: off (a new line refused, a held one fails). |
+| `fund_verb` | 1 | 0 to 1 | 1: the `fund <project>` verb is on; 0: off (a line with it fails when run). |
+| `line_text_max` | 200 | 1 to 10000 | Most characters in a note or unparsed line's text. |
 <!-- /params -->
 
 The overclock duration bonus `overclock_duration_factor` is an ideology param (ideology.md).

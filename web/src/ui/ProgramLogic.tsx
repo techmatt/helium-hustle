@@ -1,6 +1,7 @@
 // A program's lines: a command line's row (ProgramLine), the editors of the lines that
-// aren't commands (if, build, buy land, verbs) and the buttons that add them. Every
-// option, value and true/false mark is the view's.
+// aren't commands (if, build, buy land, verbs; the text editor's notes and unparsed
+// lines, shown but not edited here) and the buttons that add them. Every option, value
+// and true/false mark is the view's.
 
 import type { ComponentChildren, LiHTMLAttributes } from 'preact';
 import { useState } from 'preact/hooks';
@@ -97,6 +98,10 @@ export function lineText(v: View, e: Entry): string {
       return `If ${conditionText(v, e.when)}`;
     case 'act':
       return actText(v, e);
+    case 'note':
+      return `# ${e.text}`;
+    case 'unparsed':
+      return e.text;
   }
 }
 
@@ -228,6 +233,8 @@ export function ProgramLine(props: {
   /** Runs done of the current line. */
   step: number;
   short: ShortView | null;
+  /** Why the line isn't unlocked this run (the view's `locked`), if so. */
+  locked: string | null;
   ranText: string;
   rowClass: string;
   drag: LiHTMLAttributes<HTMLLIElement>;
@@ -242,8 +249,10 @@ export function ProgramLine(props: {
   // A conversion that ran part way says so too, as a starved building does.
   const why = outcome === 'failed' || outcome === 'ran' ? short : null;
   const command = v.commands.find((c) => c.id === e.command);
-  // A command locked again (used in an earlier run) fails with no input short.
-  const locked = outcome === 'failed' && !why && command?.unlocked === false;
+  // A command locked again (used in an earlier run): the view's reason, or, failing
+  // that, a failure with no input short.
+  const lockedWhy = props.locked;
+  const locked = lockedWhy !== null || (outcome === 'failed' && !why && command?.unlocked === false);
   if (why || locked) noted.add(i);
   return (
     <li
@@ -252,7 +261,7 @@ export function ProgramLine(props: {
       data-command={e.command}
       {...drag}
       // The name can be cut short at narrow widths: the tooltip carries it whole.
-      title={`${lineText(v, e)}: ${ranText}${why ? `. ${shortText(v, why)}` : locked ? '. Locked this run.' : ''}`}
+      title={`${lineText(v, e)}: ${ranText}${why ? `. ${shortText(v, why)}` : locked ? `. Locked this run${lockedWhy ? `: ${lockedWhy}` : ''}.` : ''}`}
     >
       <span class="grip" aria-hidden>
         ⠿
@@ -291,7 +300,7 @@ export function ProgramLine(props: {
               <ShortNote v={v} s={why} />
             </>
           ) : (
-            'locked this run'
+            `locked this run${lockedWhy ? `: ${lockedWhy}` : ''}`
           )}
         </span>
       )}
@@ -355,6 +364,20 @@ export function LogicBody({ v, e, now, set }: { v: View; e: Entry; now: Conditio
       );
     case 'act':
       return <ActEdit v={v} e={e} set={set} />;
+    case 'note':
+      // A `#` comment kept from the text editor: shown, never run.
+      return (
+        <span class="line-logic line-note" data-note>
+          # {e.text}
+        </span>
+      );
+    case 'unparsed':
+      // A text-editor line that doesn't parse, kept as typed until fixed there.
+      return (
+        <span class="line-logic line-unparsed" data-unparsed>
+          <b>unparsed:</b> <code>{e.text}</code>
+        </span>
+      );
     case 'command':
       return null;
   }

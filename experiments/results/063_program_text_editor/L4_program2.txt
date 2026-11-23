@@ -1,0 +1,6 @@
+# 060's L4, Program 2: the ship cycle
+if helium-3 above 10%
+  load launch pads 5
+launch pads all
+if propellant below 67% and energy above 30%
+  buy propellant 5

@@ -25,7 +25,8 @@ pub static DEF: ModuleDef = ModuleDef {
             param("logic_unlock_processors", K::Int, Some(("0", "1000")), "working processors that first open every line but plain commands (a career first)"),
             param("library_slots", K::Int, Some(("0", "1000")), "saved programs the loadout library holds (career state)"),
             param("loadout_name_max", K::Int, Some(("1", "1000")), "most characters in a loadout's name"),
-            param("fund_verb", K::Int, Some(("0", "1")), "1: the `fund <project>` verb is on; 0: off (a new line refused, a held one fails)"),
+            param("fund_verb", K::Int, Some(("0", "1")), "1: the `fund <project>` verb is on; 0: off (a line with it fails when run)"),
+            param("line_text_max", K::Int, Some(("1", "10000")), "most characters in a note or unparsed line's text"),
         ],
         rng: &[],
     }],
@@ -40,6 +41,7 @@ pub struct Params {
     pub library_slots: usize,
     pub loadout_name_max: usize,
     pub fund_verb: bool,
+    pub line_text_max: usize,
 }
 
 impl Params {
@@ -52,6 +54,7 @@ impl Params {
             library_slots: mc.int("library_slots") as usize,
             loadout_name_max: mc.int("loadout_name_max") as usize,
             fund_verb: mc.int("fund_verb") == 1,
+            line_text_max: mc.int("line_text_max") as usize,
         })
     }
 }
@@ -121,113 +124,155 @@ fn program_mut(g: &mut GameState, program: u32) -> Result<&mut Program, String> 
         .ok_or_else(|| format!("Program {}: there are {n}", program + 1))
 }
 
-/// Replaces a program's queue; its pointer restarts at the top.
+/// Replaces a program's queue; its pointer restarts at the top. What this run
+/// hasn't unlocked yet is accepted: such a line fails, or its `if` reads
+/// false, when run ([`locked`] says why).
 pub fn set_program(r: &Rules, g: &mut GameState, program: u32, entries: &[Entry]) -> Result<(), String> {
-    let held = g.run.programs.get(program as usize).map(|p| p.entries.clone()).unwrap_or_default();
-    check_entries(r, g, program, entries, Some(&held))?;
+    check_entries(r, g, program, entries)?;
     put_entries(g, program, entries)
 }
 
-/// Whether `entries` may go in a program. With `held` (the program's lines
-/// now), a line not already among them is also refused for what this run
-/// can't use yet (a line other than a command before the logic unlock, an
-/// `if` before its flag). A loaded loadout (`held` `None`) skips those, and
-/// so does an edit of a loaded program that keeps the line: such a line
-/// fails, or its `if` reads false, when run.
-fn check_entries(r: &Rules, g: &GameState, program: u32, entries: &[Entry], held: Option<&[Entry]>) -> Result<(), String> {
-    if entries.len() > r.p.programs.max_entries {
-        return Err(format!("Program {}: at most {} lines", program + 1, r.p.programs.max_entries));
-    }
+/// Whether `entries` may go in a program: on their form only, never on what
+/// this run has unlocked.
+fn check_entries(r: &Rules, g: &GameState, program: u32, entries: &[Entry]) -> Result<(), String> {
     let n = program + 1;
-    let c = content();
-    // One reading per thing: a capped resource (and boredom) reads as a fill
-    // percent or an amount (the editor's unit toggle), an uncapped one as an
-    // amount; land and processors have their own `free` readings. A researched
-    // reading new to the program needs its research this run.
-    let one = |reading: &Reading, gated: bool| -> Result<(), String> {
-        let (resource, percent) = match reading {
-            Reading::Amount { resource } => (resource, false),
-            Reading::Percent { resource } => (resource, true),
-            Reading::FreeProcessors | Reading::FreeLand | Reading::IdlePads => return Ok(()),
-            Reading::EnergyPerDay | Reading::DaysSincePurchase => {
-                return if gated && !super::research::opens_program_readings(g) {
-                    Err(format!("Program {n}: {} needs its research first", reading.describe()))
-                } else {
-                    Ok(())
-                };
-            }
-        };
-        let Some(res) = c.resource(resource) else {
-            return Err(format!("Program {n}: unknown resource {resource:?}"));
-        };
-        let capped = res.cap.is_some() || resource == BOREDOM;
-        let own = resource == super::economy::LAND || resource == PROCESSORS;
-        match (percent, capped) {
-            (true, false) => Err(format!("Program {n}: {resource} has no cap to read a percent of")),
-            _ if own => Err(format!("Program {n}: {resource} reads as free {resource}")),
-            _ => Ok(()),
-        }
-    };
-    let condition = |when: &Condition, gated: bool| -> Result<(), String> {
-        one(&when.first.reading, gated)?;
-        when.rest.as_ref().map_or(Ok(()), |j| one(&j.clause.reading, gated))
-    };
-    // Whether the line above is an `if` or in a body: only then may a line be indented.
-    let mut in_block = false;
-    for e in entries {
-        let gated = held.is_some_and(|h| !h.iter().any(|x| x.op == e.op));
-        if gated && !matches!(e.op, Op::Command { .. }) && !logic_unlocked(g) {
-            return Err(format!("Program {n}: only commands can be queued yet"));
-        }
-        if gated && matches!(e.op, Op::If { .. }) && !if_unlocked(g) {
-            return Err(format!("Program {n}: if is not unlocked yet"));
-        }
-        if e.indented && !in_block {
-            return Err(format!("Program {n}: an indented line needs an if above it"));
-        }
-        in_block = e.indented;
-        match &e.op {
-            Op::Command { command, count } => {
-                if c.command(command).is_none() {
-                    return Err(format!("Program {n}: unknown command {command:?}"));
-                }
-                if *count == 0 {
-                    return Err(format!("Program {n}: {command} runs 0 times"));
-                }
-            }
-            Op::Build { building, up_to } => {
-                if c.building(building).is_none() {
-                    return Err(format!("Program {n}: unknown building {building:?}"));
-                }
-                if *up_to == Some(0) {
-                    return Err(format!("Program {n}: build {building} up to 0"));
-                }
-            }
-            Op::BuyLand {} => {}
-            Op::If { when } => {
-                if e.indented {
-                    return Err(format!("Program {n}: an if can't sit inside another if"));
-                }
-                condition(when, gated)?;
-                in_block = true;
-            }
-            Op::Act { verb, target, tab, amount } => {
-                if gated && *verb == Verb::Fund && !r.p.programs.fund_verb {
-                    return Err(format!("Program {n}: the fund verb is off"));
-                }
-                check_act(r, g, n, *verb, target.as_deref(), *tab, *amount)?
-            }
-        }
+    if entries.len() > r.p.programs.max_entries {
+        return Err(format!("Program {n}: at most {} lines", r.p.programs.max_entries));
     }
     if program as usize >= g.run.programs.len() {
         return Err(format!("Program {n}: there are {}", g.run.programs.len()));
     }
+    // Whether the line above is an `if` or in a body: only then may a line be indented.
+    let mut in_block = false;
+    for (i, e) in entries.iter().enumerate() {
+        check_line(r, g, e, in_block).map_err(|why| format!("Program {n}, line {}: {why}", i + 1))?;
+        in_block = e.indented || matches!(e.op, Op::If { .. });
+    }
     Ok(())
+}
+
+/// Whether one line may stand where it is (`in_block`: the line above is an
+/// `if` or in a body), on its form: `Err` says why not, in the player's words.
+pub fn check_line(r: &Rules, g: &GameState, e: &Entry, in_block: bool) -> Result<(), String> {
+    let c = content();
+    // One reading per thing: a capped resource (and boredom) reads as a fill
+    // percent or an amount (the editor's unit toggle), an uncapped one as an
+    // amount; land and processors have their own `free` readings.
+    let one = |reading: &Reading| -> Result<(), String> {
+        let (resource, percent) = match reading {
+            Reading::Amount { resource } => (resource, false),
+            Reading::Percent { resource } => (resource, true),
+            Reading::FreeProcessors | Reading::FreeLand | Reading::IdlePads | Reading::EnergyPerDay | Reading::DaysSincePurchase => {
+                return Ok(())
+            }
+        };
+        let Some(res) = c.resource(resource) else {
+            return Err(format!("unknown resource {resource:?}"));
+        };
+        let capped = res.cap.is_some() || resource == BOREDOM;
+        let own = resource == super::economy::LAND || resource == PROCESSORS;
+        match (percent, capped) {
+            (true, false) => Err(format!("{} has no cap to read a percent of", res.name)),
+            _ if own => Err(format!("{resource} reads as free {resource}")),
+            _ => Ok(()),
+        }
+    };
+    if e.indented && !in_block {
+        return Err("an indented line needs an if above it".to_string());
+    }
+    match &e.op {
+        Op::Command { command, count } => {
+            if c.command(command).is_none() {
+                return Err(format!("unknown command {command:?}"));
+            }
+            if *count == 0 {
+                return Err(format!("{command} runs 0 times"));
+            }
+        }
+        Op::Build { building, up_to } => {
+            if c.building(building).is_none() {
+                return Err(format!("unknown building {building:?}"));
+            }
+            if *up_to == Some(0) {
+                return Err(format!("build {building} up to 0"));
+            }
+        }
+        Op::BuyLand {} => {}
+        Op::If { when } => {
+            if e.indented {
+                return Err("an if can't sit inside another if".to_string());
+            }
+            one(&when.first.reading)?;
+            if let Some(j) = &when.rest {
+                one(&j.clause.reading)?;
+            }
+        }
+        Op::Act { verb, target, tab, amount } => check_act(r, g, *verb, target.as_deref(), *tab, *amount)?,
+        Op::Note { text } | Op::Unparsed { text } => {
+            if text.contains('\n') {
+                return Err("a line's text is one line".to_string());
+            }
+            let max = r.p.programs.line_text_max;
+            if text.chars().count() > max {
+                return Err(format!("at most {max} characters"));
+            }
+        }
+    }
+    Ok(())
+}
+
+/// Why a line won't run yet this run, if it won't: what it needs isn't
+/// unlocked (program logic, `if`, a researched reading, the fund verb, a
+/// command, building, research item or project). Such a line is kept; run,
+/// it fails, or its `if` reads false.
+pub fn locked(r: &Rules, g: &GameState, e: &Entry) -> Option<String> {
+    let c = content();
+    match &e.op {
+        Op::Note { .. } | Op::Unparsed { .. } => return None,
+        Op::Command { command, .. } => {
+            return c.command(command).filter(|x| !unlocked(g, x)).map(|x| format!("{} isn't unlocked this run", x.name));
+        }
+        _ if !logic_unlocked(g) => {
+            return Some(format!("program logic opens at {} working processors", r.p.programs.logic_unlock_processors));
+        }
+        _ => {}
+    }
+    match &e.op {
+        Op::If { when } => {
+            if !if_unlocked(g) {
+                return Some("if isn't open yet (Conditional Logic)".to_string());
+            }
+            let researched = when.first.reading.researched() || when.rest.as_ref().is_some_and(|j| j.clause.reading.researched());
+            if researched && !super::research::opens_program_readings(g) {
+                return Some("its reading needs research first".to_string());
+            }
+            None
+        }
+        Op::Build { building, .. } | Op::Act { verb: Verb::Pause | Verb::Resume, target: Some(building), .. } => c
+            .building(building)
+            .filter(|b| !super::economy::unlocked(g, b))
+            .map(|b| format!("{} isn't unlocked this run", b.name)),
+        Op::Act { verb: Verb::Fund, target, .. } => {
+            if !r.p.programs.fund_verb {
+                return Some("the fund verb is off".to_string());
+            }
+            let p = target.as_deref().and_then(|t| c.project(t))?;
+            (!super::projects::unlocked(r, g, p)).then(|| format!("{} isn't open to funding", p.name))
+        }
+        Op::Act { verb: v @ (Verb::LaunchPads | Verb::LoadPads), .. } => {
+            pad_command(*v).filter(|x| !unlocked(g, x)).map(|x| format!("{} isn't unlocked this run", x.name))
+        }
+        Op::Act { verb: Verb::Research, target: Some(item), .. } => c
+            .research_item(item)
+            .filter(|it| !super::research::visible(g, it))
+            .map(|it| format!("{} isn't shown yet", it.name)),
+        _ => None,
+    }
 }
 
 /// What each verb's slots take (docs/rules/programs.md, *Verbs*): a slot the
 /// verb has no use for must be empty, and an amount is never 0.
-fn check_act(r: &Rules, g: &GameState, n: u32, verb: Verb, target: Option<&str>, tab: Option<u32>, amount: Option<Amount>) -> Result<(), String> {
+fn check_act(r: &Rules, g: &GameState, verb: Verb, target: Option<&str>, tab: Option<u32>, amount: Option<Amount>) -> Result<(), String> {
     let c = content();
     let traded = |good: &str| r.p.shipments.base_values.contains_key(good);
     #[derive(PartialEq)]
@@ -247,7 +292,7 @@ fn check_act(r: &Rules, g: &GameState, n: u32, verb: Verb, target: Option<&str>,
         Verb::Retire => (target.is_none(), false, Takes::No),
         Verb::Fund => (target.is_some_and(|p| c.project(p).is_some()), false, Takes::Optional),
     };
-    let what = format!("Program {n}: {verb:?}");
+    let what = format!("{verb:?}");
     if !target_ok {
         return Err(format!("{what}: no such target {target:?}"));
     }
@@ -330,7 +375,7 @@ pub fn save_loadout(r: &Rules, g: &mut GameState, program: u32, slot: Option<u32
 /// read nothing, when run.
 pub fn load_loadout(r: &Rules, g: &mut GameState, loadout: u32, program: u32) -> Result<(), String> {
     let entries = loadout_mut(g, loadout)?.entries.clone();
-    check_entries(r, g, program, &entries, None)?;
+    check_entries(r, g, program, &entries)?;
     put_entries(g, program, &entries)
 }
 
@@ -614,7 +659,13 @@ fn loadout_named(g: &GameState, name: Option<&str>) -> Option<u32> {
 
 /// The content command whose effect `is` (Launch Full Pads, Load Launch Pads):
 /// a pad verb runs it, its costs and boredom included.
-fn pad_command(is: fn(&CommandEffect) -> bool) -> Option<&'static Command> {
+/// The command a pad verb runs: Launch Full Pads or Load Launch Pads.
+fn pad_command(verb: Verb) -> Option<&'static Command> {
+    let is: fn(&CommandEffect) -> bool = if verb == Verb::LaunchPads {
+        |e| matches!(e, CommandEffect::LaunchFullPads)
+    } else {
+        |e| matches!(e, CommandEffect::LoadPads)
+    };
     content().commands.iter().find(|c| c.effect.as_ref().is_some_and(is))
 }
 
@@ -625,15 +676,10 @@ fn act(r: &Rules, g: &mut GameState, verb: Verb, target: Option<&str>, tab: Opti
     let ok = |res: Result<(), String>| if res.is_ok() { LineOutcome::Ran } else { LineOutcome::Failed };
     match verb {
         Verb::LaunchPads | Verb::LoadPads => {
-            let is: fn(&CommandEffect) -> bool = if verb == Verb::LaunchPads {
-                |e| matches!(e, CommandEffect::LaunchFullPads)
-            } else {
-                |e| matches!(e, CommandEffect::LoadPads)
-            };
             // Locked, it fails; with nothing to load or launch, done: the
             // step only, no costs or boredom. Else the command's row as the
             // command runs it.
-            let Some(c) = pad_command(is).filter(|c| unlocked(g, c)) else {
+            let Some(c) = pad_command(verb).filter(|c| unlocked(g, c)) else {
                 return LineOutcome::Failed;
             };
             let busy = if verb == Verb::LaunchPads {
@@ -778,6 +824,16 @@ fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
         let next = (line + 1) % n;
         // (outcome, where the pointer goes, whether the step is spent)
         let (outcome, to, spent) = match &op {
+            // Free, never run, no outcome: passed over like a true `if`.
+            Op::Note { .. } | Op::Unparsed { .. } => {
+                let p = &mut g.run.programs[i];
+                p.step = 0;
+                p.entry = next as u32;
+                continue;
+            }
+            // Before program logic opens, every line but a command fails
+            // (a held or loaded one; programs.md, *Locked lines*).
+            Op::Build { .. } | Op::BuyLand {} | Op::Act { .. } if !logic_unlocked(g) => (LineOutcome::Failed, next, true),
             Op::If { when } => {
                 // A loaded `if` this career hasn't opened is false.
                 if if_unlocked(g) && holds(r, g, when) {
@@ -787,6 +843,10 @@ fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
                     let end = if to > line { to } else { n };
                     // A body line that ran earlier today keeps that outcome.
                     for l in line + 1..end {
+                        // Note and unparsed lines never have an outcome.
+                        if g.run.programs[i].entries[l].op.is_text() {
+                            continue;
+                        }
                         g.run.today.lines.entry(i as u32).or_default().entry(l as u32).or_insert(LineOutcome::Jumped);
                     }
                     (LineOutcome::False, to, false)

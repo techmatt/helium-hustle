@@ -22,6 +22,11 @@
 //      for a second, and phase 3 superseding it in Story. Shots read-*.png, parked-*.png.
 //   4. The theme: light by default; the Options and debug toggles switch it with no
 //      element moving, and a reload keeps it.
+//   7. (Run before 5.) The program text editor, from scenario everything: a pasted
+//      program with a red (junk) and an amber (locked) line, Apply, green and grey dots
+//      and an if's fired count; the block editor keeps every line (unparsed and locked
+//      rows); the text round-trips; a tab switch saves; a loadout of it loads in the
+//      next run with every line. Shot text-editor.png.
 // Any uncaught page error fails the run.
 //   HH_URL      the page, required: a `vite preview` of a static build (TESTING.md)
 //   HH_BROWSER  a browser off the usual paths
@@ -429,6 +434,157 @@ async function programLogic(grant) {
     `guarded by a false if: skipped free, Idle runs every day (${guarded.join('; ')})`);
 }
 
+/** Section 7, from scenario everything (cheats on): the program text editor. L4's Program 1
+ * (experiments/results/063_program_text_editor) pasted with a junk line (red, its reason)
+ * and a locked building (amber); Apply; days run (green and grey dots, an if's fired
+ * count); the block editor keeps every line, the unparsed and locked ones marked; the
+ * text round-trips; another tab's paste saves on switching back; a loadout saved with
+ * those lines loads after a retirement with all of them, the locked one shown locked.
+ * Shot `text-editor.png`. */
+async function textEditor() {
+  await debugMenu();
+  await speed(0);
+  await setValue('#scenario', 'everything');
+  await click('#start-scenario');
+  // Program logic opens the first day two processors work.
+  await speed(1);
+  await waitFor(`!!document.querySelector('[data-testid="logic-add"]')`, 'the instructions to unlock', 8000);
+  await speed(0);
+  await click('.prog-tabs button[data-program="0"]');
+  while (await enabled('[data-testid="proc-plus"]')) await click('[data-testid="proc-plus"]');
+  const AREA = '[data-testid="text-editor-area"]';
+  const area = () => evaluate(`document.querySelector(${q(AREA)}).value`);
+  const paste = async (text) => {
+    await setValue(AREA, text);
+    await sleep(300); // the debounced parse
+  };
+  /** Each text line: its gutter status, fired count and note. */
+  const gutter = () =>
+    evaluate(`(() => {
+      const dots = [...document.querySelectorAll('.te-gutter [data-line-status]')];
+      const notes = [...document.querySelectorAll('.te-notes .te-row')];
+      return document.querySelector(${q(AREA)}).value.split('\\n').map((text, i) => ({ text: text.trim(), status: dots[i]?.dataset.lineStatus, fired: dots[i]?.dataset.fired ?? null, note: notes[i]?.textContent ?? '' }));
+    })()`);
+  const lineOf = (g, text) => g.find((l) => l.text === text);
+  const results = resolve(here, '../../experiments/results/063_program_text_editor');
+  const p1 = readFileSync(resolve(results, 'L4_program1.txt'), 'utf8').replace(/\r/g, '').trimEnd() + '\nfrobnicate 3\nbuild fuel cell array';
+  const p2 = readFileSync(resolve(results, 'L4_program2.txt'), 'utf8').replace(/\r/g, '').trimEnd();
+  const entries = (text) => text.split('\n').filter((l) => l.trim() !== '').length;
+
+  await click('[data-testid="text-editor-open"]');
+  await waitFor(`!!document.querySelector('[data-testid="text-editor"]')`, 'the text editor', 3000);
+  check((await evaluate(`document.querySelector('[data-testid="text-editor-tab-0"]').getAttribute('aria-selected')`)) === 'true', 'the text editor opens on the active program');
+  await paste(p1);
+  const g0 = await gutter();
+  const junk = lineOf(g0, 'frobnicate 3');
+  const locked = lineOf(g0, 'build fuel cell array');
+  check(junk?.status === 'red' && /frobnicate/.test(junk.note), `a junk line is red with its reason: ${JSON.stringify(junk)}`);
+  check(locked?.status === 'amber' && /locked/.test(locked.note), `a locked building is amber with its reason: ${JSON.stringify(locked)}`);
+  check(g0.filter((l) => l.status === 'red' || l.status === 'amber').length === 2 && lineOf(g0, "# 060's L4, Program 1: build, and seat processors as Data Centers add them")?.status === 'note',
+    `only those two flagged, the # line a note: ${g0.map((l) => l.status).join(' ')}`);
+  check(/1 line unparsed, 1 locked/.test(await evaluate(`document.querySelector('[data-testid="text-editor-status"]').textContent`)), 'the status line counts them');
+  check(await enabled('[data-testid="text-editor-apply"]'), 'Apply is on for a changed draft');
+  await click('[data-testid="text-editor-apply"]');
+  await sleep(200);
+  check(!(await enabled('[data-testid="text-editor-apply"]')), 'and off once applied');
+  const applied = await area();
+  // Days run: the gutter lights by each line's outcome, and an if counts its days true.
+  await speed(10);
+  await waitFor(`(() => { const s = [...document.querySelectorAll('.te-gutter [data-line-status]')].map((d) => d.dataset.lineStatus); return s.includes('green') && s.includes('grey'); })()`, 'green and grey lines', 10000);
+  await sleep(1500);
+  await speed(0);
+  const g1 = await gutter();
+  const fired = g1.filter((l) => l.fired);
+  check(fired.length > 0 && fired.every((l) => /^if /.test(l.text) && /^\d+\/\d+$/.test(l.fired) && l.note.includes(`fired ${l.fired}`)),
+    `if lines show their fired count: ${fired.map((l) => `${l.text.slice(0, 24)}: ${l.fired}`).join('; ')}`);
+  check(lineOf(g1, 'frobnicate 3')?.status === 'red' && lineOf(g1, 'build fuel cell array')?.status === 'amber', 'red and amber stay flagged after the days');
+  check((await area()) === applied, 'the draft and caret text survive the redraws');
+  await shot('text-editor');
+  await click('[data-takeover-close="text_editor"]');
+  await sleep(100);
+  const block = () =>
+    evaluate(`[...document.querySelectorAll('.lines li')].map((l) => ({ op: l.dataset.op ?? 'command', locked: l.classList.contains('is-locked'), why: l.querySelector('.line-why')?.textContent ?? '' }))`);
+  const b1 = await block();
+  check(b1.length === entries(p1), `the block editor keeps every line: ${b1.length} of ${entries(p1)}`);
+  const unparsed = b1.filter((l) => l.op === 'unparsed');
+  check(unparsed.length === 1 && /frobnicate/.test(unparsed[0].why), `the junk line is an unparsed row with its reason: ${JSON.stringify(unparsed)}`);
+  check(b1.filter((l) => l.locked).length === 1 && b1.some((l) => l.locked && /locked this run/.test(l.why)), `the locked line is dimmed, saying why: ${JSON.stringify(b1.filter((l) => l.locked))}`);
+  check(b1.filter((l) => l.op === 'note').length === 1, 'the # line is a note row');
+  await click('[data-testid="text-editor-open"]');
+  await sleep(200);
+  // The engine's text ends with a newline; the pasted one didn't.
+  check((await area()).trimEnd() === applied.trimEnd(), 'reopened, the text round-trips');
+  // Program 2: pasted, then saved by switching back to Program 1.
+  await click('[data-testid="text-editor-tab-1"]');
+  await sleep(100);
+  await paste(p2);
+  await click('[data-testid="text-editor-tab-0"]');
+  await sleep(200);
+  check((await area()).trimEnd() === applied.trimEnd(), 'switching tabs shows each program its own text');
+  await click('[data-testid="text-editor-tab-1"]');
+  await sleep(200);
+  check((await area()).trimEnd() === p2 && !(await enabled('[data-testid="text-editor-apply"]')), 'the other tab saved on switching away');
+  // Esc closes, back on the block editor of the tab open in the editor.
+  await evaluate(`document.querySelector(${q(AREA)}).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`);
+  await sleep(100);
+  check(!(await exists('[data-testid="text-editor"]')) && (await block()).length === entries(p2), `Esc closes onto Program 2's ${entries(p2)} lines`);
+  // Too many lines: the ones past the limit are red, Apply refuses, and a leave that
+  // couldn't save keeps the draft for the next open.
+  const tooMany = Array.from({ length: 130 }, () => 'idle 1').join('\n');
+  await click('[data-testid="text-editor-open"]');
+  await sleep(200);
+  await paste(tooMany);
+  const g2 = await gutter();
+  const over = g2.filter((l) => l.status === 'red');
+  check(over.length === 2 && over.every((l) => /at most 128 lines/.test(l.note)) && /2 lines unparsed/.test(await evaluate(`document.querySelector('[data-testid="text-editor-status"]').textContent`)),
+    `130 lines: the 2 past the limit are red, "${over[0]?.note}"`);
+  await click('[data-testid="text-editor-apply"]');
+  await sleep(200);
+  const refused = await evaluate(`document.querySelector('[data-testid="text-editor-status"]').textContent`);
+  check(/^Not applied/.test(refused), `Apply refuses them: ${refused}`);
+  await click('[data-takeover-close="text_editor"]');
+  await sleep(200);
+  check((await block()).length === entries(p2) && /not saved/.test(await noticeText()), `closing can't save them either, and says so: ${await noticeText()}`);
+  await click('[data-testid="text-editor-open"]');
+  await sleep(200);
+  check((await area()) === tooMany, 'reopened, the unsaved 130-line draft is still there');
+  await paste(p2);
+  await click('[data-testid="text-editor-apply"]');
+  await sleep(200);
+  check(!(await enabled('[data-testid="text-editor-apply"]')) && (await area()).trimEnd() === p2, 'a valid program applies again');
+  await click('[data-takeover-close="text_editor"]');
+  await sleep(100);
+
+  // A loadout of those lines, loaded at a fresh run: every line kept, the locked one dimmed.
+  await click('.prog-tabs button[data-program="0"]');
+  await click('[data-testid="loadout-save"]');
+  await setValue('[data-testid="loadout-name"]', 'Text L4');
+  await click('[data-testid="loadout-save-new"]');
+  await sleep(100);
+  const runBefore = await run();
+  await debugMenu();
+  await setValue('#cheat-boredom', '100000');
+  await click('#cheat-set-boredom');
+  await speed(1);
+  await waitFor(`!!document.querySelector('[data-testid="summary"]')`, 'the forced retirement', 8000);
+  await click('[data-testid="continue"]');
+  await sleep(800);
+  await speed(0);
+  check((await run()) > runBefore, `a new run: ${await run()}`);
+  await click('.prog-tabs button[data-program="0"]');
+  await click('[data-testid="loadout-load"]');
+  const slot = await evaluate(`[...document.querySelectorAll('[data-loadout]')].find((l) => l.querySelector('.loadout-name')?.textContent === 'Text L4')?.dataset.loadout ?? null`);
+  await click(`[data-testid="loadout-load-${slot}"]`);
+  await sleep(100);
+  const b2 = await block();
+  check(b2.length === entries(p1) && b2.some((l) => l.op === 'unparsed') && b2.some((l) => l.locked && /locked this run/.test(l.why)),
+    `the loadout loads every line in the new run, unparsed and locked ones kept: ${b2.length} lines, ${b2.filter((l) => l.locked).length} locked`);
+  await click('[data-testid="loadout-load"]');
+  await click(`[data-testid="loadout-delete-${slot}"]`);
+  await sleep(100);
+  await click('[data-testid="loadout-load"]');
+}
+
 /** Section 5, from scenario at_cap (paused, cheats on; `grant` from section 2). Shots
  * `read-*.png`. Leaves a notice up (the replay check's) for section 4. */
 async function readability(grant) {
@@ -808,6 +964,8 @@ try {
   // ---- 5. readability: capped income, affordable headers, pad readiness, quest pin ----
   // ---- 6. program instructions (before 5): if, build, buy land ----
   await programLogic(grant);
+  // ---- 7. the program text editor (before 5) ----
+  await textEditor();
   await debugMenu();
   await setValue('#scenario', 'at_cap');
   await click('#start-scenario');

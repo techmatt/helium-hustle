@@ -28,6 +28,11 @@ pub struct ProgramView {
     pub shorts: Vec<Option<ShortView>>,
     /// Per line, an `if` line's condition as it reads now.
     pub conditions: Vec<Option<ConditionView>>,
+    /// Per line, why it won't run yet this run (`programs::locked`): kept,
+    /// it fails or its `if` reads false.
+    pub locked: Vec<Option<String>>,
+    /// Per line, an `unparsed` line's reason it doesn't read.
+    pub errors: Vec<Option<String>>,
 }
 
 /// A condition now: whether it holds, and each clause's reading (`None`:
@@ -88,6 +93,15 @@ pub(super) fn programs(r: &Rules, g: &GameState, running: &[u32]) -> Vec<Program
                 .iter()
                 .map(|e| match &e.op {
                     Op::If { when } => Some(condition_view(r, g, when)),
+                    _ => None,
+                })
+                .collect(),
+            locked: p.entries.iter().map(|e| programs::locked(r, g, e)).collect(),
+            errors: p
+                .entries
+                .iter()
+                .map(|e| match &e.op {
+                    Op::Unparsed { text } => Some(crate::program_text::unparsed_reason(r, g, text, e.indented)),
                     _ => None,
                 })
                 .collect(),
@@ -214,6 +228,9 @@ pub(super) fn verbs(r: &Rules, g: &GameState, buildings: &[BuildingView]) -> Vec
 pub struct LinesRun {
     pub days: u64,
     pub lines: Vec<Vec<Option<LineOutcome>>>,
+    /// Per program, per line, the days of the span its `if` ended true: bit
+    /// 0 the span's last day, bit k the day k before (the last 32 days).
+    pub if_true: Vec<Vec<u32>>,
 }
 
 impl LinesRun {
@@ -223,13 +240,24 @@ impl LinesRun {
         let programs = &g.run.programs;
         // A retirement in the span leaves new (empty) programs: fit to the queues now.
         self.lines.resize(programs.len(), Vec::new());
+        self.if_true.resize(programs.len(), Vec::new());
         for (i, p) in programs.iter().enumerate() {
             let row = &mut self.lines[i];
             row.resize(p.entries.len(), None);
+            let bits = &mut self.if_true[i];
+            bits.resize(p.entries.len(), 0);
+            for b in bits.iter_mut() {
+                *b <<= 1;
+            }
             if let Some(today) = g.run.today.lines.get(&(i as u32)) {
                 for (&line, &o) in today {
                     if let Some(slot) = row.get_mut(line as usize) {
                         *slot = Some(o);
+                    }
+                    if o == LineOutcome::True {
+                        if let Some(b) = bits.get_mut(line as usize) {
+                            *b |= 1;
+                        }
                     }
                 }
             }

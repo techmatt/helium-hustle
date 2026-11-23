@@ -382,6 +382,169 @@ ul.plain {
   color: var(--sel-text);
 }
 
+/* ---- the program text editor (TextEditor.tsx): program tabs and Apply, a status line,
+   then three columns sharing one line height and the text area's vertical scroll: status
+   dots, the text, notes ---- */
+.text-editor {
+  --te-line: 22px;
+  --te-pad: 6px;
+  height: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px 12px;
+}
+.te-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.te-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.te-tabs button {
+  font-family: var(--font-head);
+  font-weight: 700;
+}
+.te-tabs button.active {
+  background: var(--sel-bg);
+  border-color: var(--accent);
+  color: var(--sel-text);
+  box-shadow: inset 0 -3px 0 var(--accent);
+  cursor: default;
+}
+.te-apply {
+  margin-left: auto;
+  font-weight: 600;
+}
+.te-apply:not(:disabled) {
+  border-color: var(--accent);
+  background: var(--sel-bg);
+  color: var(--sel-text);
+}
+.te-apply:disabled {
+  background: var(--disabled);
+  color: var(--muted);
+  cursor: default;
+}
+.te-status,
+.te-help {
+  margin: 0;
+}
+.te-amber-text {
+  color: var(--accent-text);
+}
+.te-editor {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr) minmax(200px, 34%);
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--card);
+}
+.te-gutter,
+.te-notes {
+  overflow: hidden;
+}
+.te-gutter {
+  border-right: 1px solid var(--line);
+  background: var(--panel);
+}
+.te-notes {
+  border-left: 1px solid var(--line);
+}
+/* Padding below the last row so the side columns can always scroll as far as the text
+   area (whose horizontal scrollbar takes height of its own). */
+.te-col {
+  padding: var(--te-pad) 0 60px;
+}
+.te-row {
+  height: var(--te-line);
+  line-height: var(--te-line);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.te-gutter .te-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.te-area {
+  display: block;
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  margin: 0;
+  padding: var(--te-pad) 8px;
+  border: 0;
+  border-radius: 0;
+  outline: none;
+  resize: none;
+  overflow: auto;
+  white-space: pre;
+  tab-size: 2;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  line-height: var(--te-line);
+  background: transparent;
+  color: var(--text);
+}
+.te-area:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+/* Status dots: filled for ran (green), skipped by its if (grey), won't parse (red), locked
+   this run (amber); a ring for failed (red) or not run (muted); none for notes and blanks. */
+.te-dot {
+  width: 10px;
+  height: 10px;
+  box-sizing: border-box;
+  border-radius: 50%;
+}
+.te-green {
+  background: var(--pos);
+}
+/* --muted, not --fill-gray: the gray fill all but vanishes on the dark gutter. */
+.te-grey {
+  background: var(--muted);
+}
+.te-red {
+  background: var(--neg);
+}
+.te-amber {
+  background: var(--accent);
+}
+.te-failed {
+  border: 2px solid var(--neg);
+}
+.te-none {
+  border: 1.5px solid var(--muted);
+  opacity: 0.6;
+}
+.te-note {
+  padding: 0 8px;
+  font-size: 12px;
+}
+.te-note-red {
+  color: var(--neg);
+  background: var(--bad-tint);
+}
+.te-note-amber {
+  color: var(--accent-text);
+  background: var(--warn-head);
+}
+.te-note-failed {
+  color: var(--neg);
+}
+.te-fired {
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
 .cheated {
   background: var(--neg);
   color: var(--on-neg);
@@ -1013,6 +1176,7 @@ tr.is-new td:first-child {
 }
 .prog-procs {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 4px;
   margin: 8px 0;
@@ -1127,6 +1291,30 @@ tr.is-new td:first-child {
 .line-buttons {
   display: inline-flex;
   gap: 4px;
+}
+/* The text editor's lines in the block editor: a `#` note (muted, italic), a line that
+   doesn't parse (red-tinted, kept as typed), a line not unlocked this run (dimmed). */
+.line-note {
+  color: var(--muted);
+  font-style: italic;
+}
+.line.unparsed-line {
+  background: var(--bad-tint);
+  border-color: var(--neg);
+}
+.line-unparsed code {
+  font-family: var(--font-mono);
+  font-size: 12px;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.line.is-locked .line-logic,
+.line.is-locked .line-name,
+.line.is-locked .bar {
+  opacity: 0.55;
+}
+.line-why.line-locked {
+  color: var(--accent-text);
 }
 .add-logic {
   display: flex;

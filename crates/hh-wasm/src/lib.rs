@@ -122,6 +122,24 @@ pub fn apply(state_json: &str, action_json: &str) -> Result<String, JsValue> {
     Ok(g.to_json())
 }
 
+/// A program's lines (a JSON entries array) as the text editor's text
+/// (`hh_core::program_text::to_text`).
+#[wasm_bindgen]
+pub fn program_text(entries_json: &str) -> Result<String, JsValue> {
+    let entries: Vec<hh_core::state::Entry> =
+        serde_json::from_str(entries_json).map_err(|e| err(format!("bad entries JSON: {e}")))?;
+    Ok(hh_core::program_text::to_text(&entries))
+}
+
+/// Reads the text editor's text for the state's run: `{"entries": [...],
+/// "lines": [{"entry", "status", "reason"}]}`, one `lines` item per text
+/// line (`hh_core::program_text::parse`).
+#[wasm_bindgen]
+pub fn parse_program_text(state_json: &str, text: &str) -> Result<String, JsValue> {
+    let (r, g) = load(state_json)?;
+    Ok(to_json(&hh_core::program_text::parse(&r, &g, text)))
+}
+
 /// Display data (`hh_core::View`, docs/architecture.md *The view*): everything a
 /// client shows and can do.
 #[wasm_bindgen]

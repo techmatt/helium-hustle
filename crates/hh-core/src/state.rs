@@ -208,6 +208,8 @@ impl Entry {
                 }
                 t
             }
+            Op::Note { text } => format!("# {text}"),
+            Op::Unparsed { text } => format!("unparsed: {text}"),
         };
         if self.indented { format!("> {text}") } else { text }
     }
@@ -273,6 +275,19 @@ pub enum Op {
         #[serde(default, skip_serializing_if = "Option::is_none")]
         amount: Option<Amount>,
     },
+    /// Free, never runs: a `#` comment kept with the program (the text
+    /// editor's, `program_text`), without its `#`.
+    Note { text: String },
+    /// Free, never runs: a text-editor line that doesn't parse, kept as its
+    /// text until fixed.
+    Unparsed { text: String },
+}
+
+impl Op {
+    /// A note or unparsed line: free, never runs, no outcome.
+    pub fn is_text(&self) -> bool {
+        matches!(self, Op::Note { .. } | Op::Unparsed { .. })
+    }
 }
 
 /// The verbs of an `act` line (docs/rules/programs.md, *Verbs*).

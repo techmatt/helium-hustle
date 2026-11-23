@@ -112,16 +112,16 @@ fn grid(cmd: &str, agents: &str, extra: &[&str]) -> Vec<String> {
 /// all. Copy them from the failing assertion (or the test's `games.jsonl`).
 /// (The handsoff rows play only the author's runs: [`HANDSOFF_PIN`] pins its loadout.)
 const PINNED: &[(&str, u64, &str)] = &[
-    ("random", 1, "8ab374efd84be2da"),
-    ("random", 2, "bfb480b70b453889"),
-    ("greedy", 1, "7caf0f0e4ef64ecf"),
-    ("greedy", 2, "fab3932fdb74f902"),
-    ("author", 1, "0f118da6884eaef7"),
-    ("author", 2, "17631f37250c3056"),
-    ("casual", 1, "3e39d9c312747098"),
-    ("casual", 2, "bb781bc30a041f7e"),
-    ("handsoff", 1, "0f118da6884eaef7"),
-    ("handsoff", 2, "a4a52df9fefb8843"),
+    ("random", 1, "34d5b39f32ef7e01"),
+    ("random", 2, "a55ad8f70dc04760"),
+    ("greedy", 1, "a54012af181416fc"),
+    ("greedy", 2, "f08e0bfb13019c7d"),
+    ("author", 1, "5c99ec9563065522"),
+    ("author", 2, "615f809b4fe31725"),
+    ("casual", 1, "7935350657de72af"),
+    ("casual", 2, "51403be07af1f667"),
+    ("handsoff", 1, "5c99ec9563065522"),
+    ("handsoff", 2, "70dc97314f7394a2"),
 ];
 
 #[test]
@@ -184,7 +184,7 @@ fn the_ladder_prints_its_tables_and_writes_results() {
 /// handsoff games are the author's), so this one goes to run 3 on seed 1,
 /// where the loadout file plays, and ships and buys. A new loadout file moves
 /// the pin: copy it from the failing assertion.
-const HANDSOFF_PIN: &str = "a3087c0add9154dc";
+const HANDSOFF_PIN: &str = "f56df2d9474d4409";
 
 #[test]
 #[ignore = "slow lane: a 3-run career (~2 s)"]

@@ -27,21 +27,24 @@ not code rules. A new ruling, or a change to one, updates its line here in place
 - **Program loadouts (2026-11-20).** Each program has save / load buttons. A saved program
   goes into a library that persists across retirements (career state), so a player keeps
   programs for different stages and loads one into any program tab. Programs still empty on
-  retirement; loading is how they come back. A loaded line not unlocked yet in this run fails
-  and advances. *Defaults (035):* 12 slots, display names up to 40 characters, open from
+  retirement; loading is how they come back. A line not unlocked yet in this run is kept
+  (loaded, pasted or set; 063), fails and advances. *Defaults (035):* 12 slots, display names up to 40 characters, open from
   run 1, loading leaves processors as assigned.
 - **One flat program template (2026-11-20).** Every line is `<verb> <target> [amount]`: the
-  target slot is typed by the verb (building, resource, good, ideology axis, research item,
-  saved program, program tab), the amount `N`, `up to N` or `all`. No nesting, variables,
+  target slot is typed by the verb, the amount `N`, `up to N` or `all`. No nesting, variables,
   labels or jumps; a new capability is a new verb or reading, never new grammar; per-target
-  commands (Buy X, Promote X, Fund X, Overclock X) are one verb with a target. Conditions stay
+  commands (Buy X, Fund X) are one verb with a target. Conditions stay
   `<reading> <above | below> <number>` with one optional `and` / `or`; the right side is
-  always a number (2026-11-22, replacing a reading times a number). Pads are addressed only
+  always a number. Pads are addressed only
   by good. Every verb costs a processor step. Every line is open wherever program logic is,
   but `if`, which has its own unlock (*Act 1*, below). No `wait until` (2026-11-22):
   programs run every day, so `if` covers it. *Defaults (037):* the pad verbs run the Launch / Load commands' rows; `retire` retires at
   the day's end like the button.
 - **"Add to Program" (2026-11-22)**, not "Add to Program 1": the active program is implied.
+- **Text editor (2026-11-22).** A "Text editor" takeover on the active program:
+  the block editor's words, `#` notes kept, aliases fine; live gutter (green ran, grey
+  skipped, red unparsed, amber locked, fired k/10 on `if`s); red and amber lines kept; saved
+  on Apply or leaving; copy/paste is import/export. *Defaults (063):* blanks dropped.
 - **Every non-`if` line costs a step (2026-11-20, replaces 037's "done and free").** A line
   with nothing to do (`research X` once researched, `pause` with nothing running, `set pads`
   already at N, `launch pads` with no pad ready, `build X up to N` with N owned) still takes a
@@ -83,15 +86,12 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   (059, default): every run starts with 50 Science (a `grant` unlock).
 - **Major ranks (2026-11-21).** Ideology rank 5 is a major rank (probably 10, 15 and 20 too)
   bringing a discrete major change; the ranks between scale.
-- **Readings (2026-11-22).** One reading per thing (about 13), only what the player has
-  unlocked: fill % of each capped resource and boredom, the amount of Credits and Science,
-  free processors, free land, idle pads ([rules/programs.md](rules/programs.md)). A capped
+- **Readings (2026-11-22).** One reading per thing, only what the player has
+  unlocked ([rules/programs.md](rules/programs.md)). A capped
   reading's number box has a % / amount unit toggle, no new entries; Energy per day and Days
   since a purchase are research-unlocked (Process Telemetry, 062's pick); no building counts
-  yet. The golden game's
-  scripted policy runs a short condition program, so the golden pins the interpreter; it
-  starts from the `golden_start` scenario with `if` open (Matt, 2026-11-21, question
-  049_1). *Defaults (040):* `free processors` is granted by active buildings less assigned
+  yet. The golden game runs a short condition program, pinning the interpreter, from the
+  `golden_start` scenario with `if` open (049_1). *Defaults (040):* `free processors` is granted by active buildings less assigned
   (what `assign processors ... all` would add); `idle pads` is pads with no cargo (a cooling
   pad counts).
 - **The day's rate is production less demand (2026-11-20).** What buildings and programs

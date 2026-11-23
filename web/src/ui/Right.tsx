@@ -14,7 +14,18 @@ import { Library, type LibraryMode } from './Library';
 import { canIndent, moveLines, removeLine, setIndent } from './programEdit';
 import { editProgram } from './programStore';
 
-export function Right({ s, program, setProgram }: { s: Store; program: number; setProgram: (i: number) => void }) {
+export function Right({
+  s,
+  program,
+  setProgram,
+  openTextEditor,
+}: {
+  s: Store;
+  program: number;
+  setProgram: (i: number) => void;
+  /** Opens the text editor takeover on this program. */
+  openTextEditor: () => void;
+}) {
   return (
     <aside class="col-right">
       {/* The main-story quest's own slot: nothing else is ever drawn here. */}
@@ -24,13 +35,23 @@ export function Right({ s, program, setProgram }: { s: Store; program: number; s
           <Quest v={s.view} />
         </div>
       )}
-      <Programs s={s} program={program} setProgram={setProgram} />
+      <Programs s={s} program={program} setProgram={setProgram} openTextEditor={openTextEditor} />
       <Events v={s.view} />
     </aside>
   );
 }
 
-function Programs({ s, program, setProgram }: { s: Store; program: number; setProgram: (i: number) => void }) {
+function Programs({
+  s,
+  program,
+  setProgram,
+  openTextEditor,
+}: {
+  s: Store;
+  program: number;
+  setProgram: (i: number) => void;
+  openTextEditor: () => void;
+}) {
   const v = s.view;
   const p = v.programs[program];
   const [drag, setDrag] = useState<number | null>(null);
@@ -126,6 +147,15 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
         >
           Load{v.library.length > 0 ? ` (${v.library.length})` : ''}
         </button>
+        <button
+          type="button"
+          class="tiny"
+          data-testid="text-editor-open"
+          title="Edit this program as text (also copy and paste in or out)"
+          onClick={openTextEditor}
+        >
+          Text editor
+        </button>
       </div>
       {library && <Library v={v} program={program} mode={library} close={() => setLibrary(null)} />}
       {entries.length === 0 && (
@@ -141,8 +171,10 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
           const outcome = span ? (spanOutcomes?.[i] ?? null) : p.outcomes[i];
           // No processor running the program: no line runs next, so none is framed.
           const current = !span && p.running > 0 && i === p.entry;
+          // Valid but not unlocked this run: kept, dimmed, skipped by the engine.
+          const locked = p.locked?.[i] ?? null;
           // Part way through its runs: that share; otherwise full once it ran today.
-          const rowClass = `line ${outcome ? `out-${outcome}` : ''} ${current ? 'current' : ''} ${e.indented ? 'indented' : ''}`;
+          const rowClass = `line ${outcome ? `out-${outcome}` : ''} ${current ? 'current' : ''} ${e.indented ? 'indented' : ''} ${locked ? 'is-locked' : ''}`;
           const dragProps = {
             draggable: true,
             onDragStart: (ev: DragEvent) => {
@@ -179,8 +211,12 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
           );
           if (e.op !== 'command') {
             const why = outcome === 'failed' ? (p.shorts[i] ?? null) : null;
+            // A note or an unparsed line (from the text editor) never runs: no outcome.
+            const kept = e.op === 'note' ? 'note-line' : e.op === 'unparsed' ? 'unparsed-line' : '';
+            const error = e.op === 'unparsed' ? (p.errors?.[i] ?? null) : null;
+            const tail = error ? `: doesn't parse: ${error}` : locked ? `: locked this run: ${locked}` : kept ? '' : `: ${ranText}${why ? `. ${shortText(v, why)}` : ''}`;
             return (
-              <li key={`${i}-${e.op}`} class={`${rowClass} logic`} data-line={i} data-op={e.op} {...dragProps} title={`${lineText(v, e)}: ${ranText}${why ? `. ${shortText(v, why)}` : ''}`}>
+              <li key={`${i}-${e.op}`} class={`${rowClass} logic ${kept}`} data-line={i} data-op={e.op} {...dragProps} title={`${lineText(v, e)}${tail}`}>
                 <span class="grip" aria-hidden>
                   ⠿
                 </span>
@@ -191,10 +227,20 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
                     ×
                   </button>
                 </span>
-                {why && (
+                {error !== null ? (
                   <span class="line-why" data-line-why>
-                    <ShortNote v={v} s={why} />
+                    {error}
                   </span>
+                ) : locked !== null ? (
+                  <span class="line-why line-locked" data-line-locked>
+                    locked this run: {locked}
+                  </span>
+                ) : (
+                  why && (
+                    <span class="line-why" data-line-why>
+                      <ShortNote v={v} s={why} />
+                    </span>
+                  )
                 )}
               </li>
             );
@@ -209,6 +255,7 @@ function Programs({ s, program, setProgram }: { s: Store; program: number; setPr
               current={current}
               step={p.step}
               short={p.shorts[i] ?? null}
+              locked={locked}
               ranText={ranText}
               rowClass={rowClass}
               drag={dragProps}

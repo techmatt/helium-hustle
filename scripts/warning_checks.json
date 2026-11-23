@@ -6,7 +6,8 @@
       "crates/hh-core/src/fx.rs": "representation: scale, places, i128 widths",
       "crates/hh-core/src/hash.rs": "FNV-1a constants and hex widths",
       "crates/hh-core/src/rng.rs": "ChaCha seed widths and hex parsing",
-      "crates/hh-core/src/driver.rs": "the golden game's fixed seed, length and policy, and the script's build order"
+      "crates/hh-core/src/driver.rs": "the golden game's fixed seed, length and policy, and the script's build order",
+      "crates/hh-core/src/program_text.rs": "a text form, no rules: word counts and a table's length"
     },
     "exceptions": [
       {

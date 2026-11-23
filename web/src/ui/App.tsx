@@ -35,6 +35,7 @@ import { Right } from './Right';
 import { Dyson, EarthLab, Ending, MetaController, Timeline, Vault } from './Saga';
 import { TakeoverView, useTakeoversChanged, type Takeover } from './Takeover';
 import { cortexMockTakeover } from './CortexMock';
+import { textEditorTakeover } from './TextEditor';
 
 /** The takeover views, in their left-column order. */
 const TAKEOVERS: Takeover[] = [cortexMockTakeover];
@@ -65,8 +66,14 @@ export function App() {
   }, []);
   // A panel whose tile hides (a new run re-gates it) falls back to Buildings.
   const shown = navShown(s.view, panel) ? panel : 'buildings';
+  const pickProgram = useCallback((i: number) => {
+    noteOpened('program_tab', i);
+    setProgram(i);
+  }, []);
+  // The text editor works on the program tab the right column shows; the program panel opens it.
+  const textEditor = textEditorTakeover(program, pickProgram);
   // A takeover whose button hides closes with it.
-  const takeover = TAKEOVERS.find((t) => t.id === takeoverId && t.shown(s)) ?? null;
+  const takeover = [...TAKEOVERS, textEditor].find((t) => t.id === takeoverId && t.shown(s)) ?? null;
   const closeTakeover = useCallback(() => setTakeoverId(null), []);
   return (
     <div class={`app${takeover ? ' taking-over' : ''}`}>
@@ -107,14 +114,7 @@ export function App() {
         )}
         <Panel id={shown} s={s} program={program} />
       </main>
-      <Right
-        s={s}
-        program={program}
-        setProgram={(i) => {
-          noteOpened('program_tab', i);
-          setProgram(i);
-        }}
-      />
+      <Right s={s} program={program} setProgram={pickProgram} openTextEditor={() => setTakeoverId(textEditor.id)} />
       {takeover && <TakeoverView s={s} t={takeover} close={closeTakeover} />}
       <StatusBar s={s} />
       {s.summary && <Summary s={s} />}

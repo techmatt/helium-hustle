@@ -13,6 +13,7 @@ import {
   type AutopilotTarget,
   type LastRun,
   type LinesRun,
+  type ParsedText,
   type Scenario,
   type Stamped,
   type StoryView,
@@ -283,6 +284,7 @@ function refresh(reset = false, story: 'load' | 'intro' | 'play' = reset ? 'load
   store.view = v;
   // Only the redraw after ticks has lines run; after an action or a load the queues may differ.
   store.lines = ranLines;
+  if (ranLines) noteIfTrue(v, ranLines);
   ranLines = null;
   store.seed = game.seed;
   store.scenario = game.scenario;
@@ -302,6 +304,59 @@ function refresh(reset = false, story: 'load' | 'intro' | 'play' = reset ? 'load
   if (reset) baselineRead(v);
   tell(v, story);
   emit();
+}
+
+// ---- `if` history (the text editor's "fired k/10") --------------------------------------
+
+/** Per program: the days each `if` line was true, as bits (bit 0: the last day played),
+ * over the `observed` days played since its lines last changed (`key`). Display only, not
+ * saved: a reload starts it again. */
+interface IfHistory {
+  key: string;
+  bits: number[];
+  observed: number;
+}
+const ifHistory: IfHistory[] = [];
+
+/** Folds a span's `if_true` bits into each program's history; a program whose lines
+ * changed starts over. */
+function noteIfTrue(v: View, ran: LinesRun): void {
+  const days = ran.days;
+  if (!ran.if_true || days <= 0) return;
+  v.programs.forEach((p, i) => {
+    const key = JSON.stringify(p.entries);
+    let h = ifHistory[i];
+    if (!h || h.key !== key) h = ifHistory[i] = { key, bits: [], observed: 0 };
+    const now = ran.if_true[i] ?? [];
+    h.bits = p.entries.map((_, j) => {
+      const span = (now[j] ?? 0) >>> 0;
+      // A shift by 32 or more is a shift by its low 5 bits in JS: the old bits are all out.
+      return days >= 32 ? span : (((h.bits[j] ?? 0) << days) | span) >>> 0;
+    });
+    h.observed = Math.min(h.observed + days, 1_000_000);
+  });
+}
+
+/** How many of a line's last `min(10, observed)` days its `if` was true (null: none
+ * observed since the program's lines last changed). */
+export function ifFired(program: number, line: number): { fired: number; of: number } | null {
+  const h = ifHistory[program];
+  const p = store.view.programs[program];
+  if (!h || !p || h.observed === 0 || h.key !== JSON.stringify(p.entries)) return null;
+  const of = Math.min(10, h.observed);
+  let bits = (h.bits[line] ?? 0) & ((1 << of) - 1);
+  let fired = 0;
+  while (bits) {
+    fired += bits & 1;
+    bits >>>= 1;
+  }
+  return { fired, of };
+}
+
+/** The engine's parse of a text-editor draft, against the game in play (what is
+ * unlocked this run). Throws the engine's error. */
+export function parseProgramText(text: string): ParsedText {
+  return engine.parseProgramText(game.state, text);
 }
 
 function runTicks(ticks: number): void {
@@ -405,6 +460,8 @@ export function newGame(seed: string, scenario: Scenario | null, why = 'new game
     playlog.log('career_end', { reason: why });
   }
   game = { state, seed, scenario, actions: [], careerId: '' };
+  // The `if` history was the old game's.
+  ifHistory.length = 0;
   store.view = undefined as unknown as View;
   game.careerId = openLog([]);
   playlog.log('new_game', { why, seed, scenario: scenario?.name ?? null });

@@ -11,7 +11,9 @@
 //! cloud_compute x10
 //! ```
 //!
-//! Ids are the content's (buildings, commands, resources, research,
+//! Each line is read by the game's text form (`hh_core::program_text`, the
+//! text editor's: display names or ids, aliases, docs/rules/programs.md
+//! *Text form*). Ids are the content's (buildings, commands, resources, research,
 //! projects). A condition is `<reading> above|below <number>[%]`, with one
 //! optional `and`/`or`: `free processors`, `free land` and `idle pads` read
 //! their count, `energy per day` and `days since a purchase` their number
@@ -22,7 +24,10 @@
 //! `fund P [N|all]`, `retire`; anything else is a command `id [xN]`.
 //! A line it can't read is an error, never a silent skip.
 
-use hh_core::state::{Amount, Clause, Cmp, Condition, Entry, Join, Joined, Op, Reading, Verb};
+#[cfg(test)]
+use hh_core::state::{Clause, Cmp, Condition, Join, Joined, Op, Reading, Verb};
+use hh_core::state::{Amount, Entry};
+#[cfg(test)]
 use hh_core::Fx;
 
 /// A parsed loadout: the reset's processor seats and each tab's lines
@@ -49,6 +54,7 @@ fn tab(s: &str) -> Result<usize, String> {
     }
 }
 
+#[cfg(test)]
 fn clause(words: &[&str]) -> Result<Clause, String> {
     let at = words.iter().position(|w| *w == "above" || *w == "below").ok_or_else(|| format!("no above/below in {words:?}"))?;
     let cmp = if words[at] == "above" { Cmp::Gt } else { Cmp::Lt };
@@ -76,7 +82,16 @@ fn clause(words: &[&str]) -> Result<Clause, String> {
     Ok(Clause { reading, cmp, value })
 }
 
+/// One line, read by the game's text form (`hh_core::program_text`, the text
+/// editor's), so a loadout file reads as the editor would.
 fn line(text: &str) -> Result<Entry, String> {
+    let op = hh_core::program_text::parse_op(text.trim())?;
+    Ok(Entry { op, indented: text.starts_with([' ', '\t']) })
+}
+
+/// 060's own line reader, kept to check the text form reads its files alike.
+#[cfg(test)]
+fn line_060(text: &str) -> Result<Entry, String> {
     let indented = text.starts_with(' ');
     let w: Vec<&str> = text.split_whitespace().collect();
     let act = |verb, target: Option<&str>, tab: Option<u32>, amount: Option<Amount>| Op::Act { verb, target: target.map(str::to_string), tab, amount };
@@ -170,6 +185,28 @@ mod tests {
             o => panic!("{o:?}"),
         }
         assert_eq!(e[8].op, Op::Command { command: "dream".into(), count: 5 });
+    }
+
+    #[test]
+    fn the_text_form_reads_the_loadout_files_as_060_did() {
+        let root = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");
+        let mut files = vec![format!("{root}/configs/sim/handsoff_loadout.txt")];
+        for f in ["L1_compute_floor", "L2_short_chain", "L3_one_tab", "L4_two_tabs", "L5_dream_tab"] {
+            files.push(format!("{root}/experiments/results/060_loadout_exploration/loadouts/{f}.txt"));
+        }
+        let mut n = 0;
+        for f in files {
+            let text = std::fs::read_to_string(&f).unwrap();
+            for raw in text.lines() {
+                let t = raw.split('#').next().unwrap_or("").trim_end();
+                if t.trim().is_empty() || t.starts_with("seat:") || t.starts_with('[') {
+                    continue;
+                }
+                assert_eq!(line(t), line_060(t), "{f}: {t}");
+                n += 1;
+            }
+        }
+        assert!(n > 100);
     }
 
     #[test]

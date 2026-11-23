@@ -1,6 +1,7 @@
 // The takeover view: a large view (the Cortex now; story mode, the achievements grid, the
 // Vault later) that covers the middle and right columns while the left column stays. A
-// button in the left column opens it and closes it again, as does Esc. The game keeps
+// button in the left column (for the text editor, the program panel's) opens it; that
+// button again, Esc or ✕ closes it. The game keeps
 // running behind it: the columns it covers stay mounted, only hidden, and a slim status
 // strip on top shows the day, boredom, a few key resources and pause.
 
@@ -20,6 +21,8 @@ export type Takeover = {
   title: ComponentChildren;
   /** The view draws edge to edge: no padding, and it fits itself to the body (no scrolling). */
   bleed?: boolean;
+  /** Opened from elsewhere (the program panel's Text editor), with no left-column button. */
+  noButton?: boolean;
   shown: (s: Store) => boolean;
   render: (s: Store) => ComponentChildren;
 };
@@ -58,7 +61,7 @@ export function TakeoverButtons({
   open: string | null;
   toggle: (id: string) => void;
 }) {
-  const shown = list.filter((t) => t.shown(s));
+  const shown = list.filter((t) => !t.noButton && t.shown(s));
   if (shown.length === 0) return null;
   return (
     <div class="takeover-buttons">
