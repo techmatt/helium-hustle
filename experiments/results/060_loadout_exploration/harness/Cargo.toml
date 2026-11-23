@@ -1,0 +1,13 @@
+[package]
+name = "loadout-harness"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+# Its own workspace: a scratch tool beside the repo's, not a member of it.
+[workspace]
+
+[dependencies]
+hh-core = { path = "../../../../crates/hh-core" }
+hh-sim = { path = "../../../../crates/hh-sim" }
+serde_json = "1"
