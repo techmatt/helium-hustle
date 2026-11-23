@@ -101,7 +101,7 @@ pub fn input_fraction(g: &GameState, needs: &Amounts) -> Fx {
 }
 
 /// Notes the demand a run of `needs` at `paid` (0 to 1) leaves unmet, for the
-/// `rate` reading: on each input held short of its full need, the need less
+/// day's rate (`Run.day_net`): on each input held short of its full need, the need less
 /// what is paid. An input held in full but left unused (another input ran
 /// short) is no shortage of it and counts nothing. Call before paying.
 pub fn note_unmet(g: &mut GameState, needs: &Amounts, paid: Fx) {
@@ -258,7 +258,6 @@ pub fn buy(r: &Rules, g: &mut GameState, id: &str) -> Result<(), String> {
     h.owned += 1;
     h.active += 1;
     g.run.stats.buildings_built += 1;
-    g.run.last_purchase = Some(g.run.day);
     g.career.owned_buildings.insert(b.id.clone());
     refresh(g);
     Ok(())
@@ -346,7 +345,6 @@ pub fn buy_land(r: &Rules, g: &mut GameState) -> Result<(), String> {
     g.track("land", CREDITS, Fx::ZERO, price);
     g.track("land", LAND, r.p.economy.land_per_purchase, Fx::ZERO);
     g.run.land_bought += 1;
-    g.run.last_purchase = Some(g.run.day);
     super::attention::on_land(r, g, r.p.economy.land_per_purchase);
     Ok(())
 }

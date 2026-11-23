@@ -84,7 +84,7 @@ relative one to the repo root; bare `cargo` can't (the variable outranks `.cargo
 
 **Rules changes:** the `golden_game` test (`crates/hh-core/src/tests/mod.rs`) pins the final
 state of one fixed game: baseline config, seed `u64::MAX`, the `golden_start` scenario (`if`
-and `wait until` open from tick 0, `driver::golden_start`), 2000 ticks of the scripted policy
+open from tick 0, `driver::golden_start`), 2000 ticks of the scripted policy
 (`driver.rs`: it ships, runs a condition program once program logic opens, is retired by
 boredom and starts run 2). An intended play
 change bumps `RULES_REVISION`
@@ -121,3 +121,5 @@ them), `content.rs` (`Condition`, `condition_ok`), `events.rs` (`holds`, `progre
 - Python writes cp1252 and CRLF by default: scripts open files with `encoding='utf-8',
   newline='\n'`.
 - Windows can't replace a running exe: copy a binary to `out/` to run it while rebuilding.
+  `warning_checks.py` rebuilds `target/release/hh-sim.exe`, so its parity and balance checks
+  fail ("Access is denied") while that binary runs.

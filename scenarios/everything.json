@@ -1,6 +1,6 @@
 {
   "name": "everything",
-  "description": "Test everything in Act 1: beats 1.1-1.8, 1.a and 1.b done (1.9's telescope is the open quest), so Research, Projects, Ideologies, Adversaries, Launch Pads and Retirement are open, if and wait until unlocked; 100,000 credits, 10,000 science, 200 boredom (so relief shows), full stores, 200 free land and a working base with 6 processors.",
+  "description": "Test everything in Act 1: beats 1.1-1.8, 1.a and 1.b done (1.9's telescope is the open quest), so Research, Projects, Ideologies, Adversaries, Launch Pads and Retirement are open, if unlocked; 100,000 credits, 10,000 science (and 1.b's 50), 200 boredom (so relief shows), full stores, 200 free land and a working base with 6 processors.",
   "start": {
     "tick": 0,
     "resources": {
@@ -33,7 +33,7 @@
     },
     "panels": [],
     "programs": [],
-    "flags": ["logic_if", "logic_wait_until"],
+    "flags": ["logic_if"],
     "events": [
       "qpower_boot_sequence",
       "qshipment_proof_of_concept",

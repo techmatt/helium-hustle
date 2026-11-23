@@ -1054,9 +1054,6 @@ tr.is-new td:first-child {
 .line.out-true {
   background: var(--ok-tint);
 }
-.line.out-waiting {
-  background: var(--warn-head);
-}
 .line.out-jumped,
 .line.out-done {
   color: var(--muted);
@@ -1069,7 +1066,7 @@ tr.is-new td:first-child {
 .line.indented.current {
   box-shadow: inset 4px 0 0 var(--accent), 0 0 0 1px var(--accent);
 }
-/* If, Wait until, Build, Buy Land: the editor takes the row, wrapping when narrow. */
+/* If, Build, Buy Land, verbs: the editor takes the row, wrapping when narrow. */
 .line.logic {
   grid-template-columns: 14px 1fr auto;
 }
@@ -1100,10 +1097,15 @@ tr.is-new td:first-child {
   align-items: center;
   gap: 3px;
 }
-/* A clause with a right-side reading is wider than the row: let it wrap. */
+/* A clause with its reading's value can be wider than a narrow row: let it wrap. */
 .line-logic .clause {
   flex-wrap: wrap;
   max-width: 100%;
+}
+/* The number's unit (`%` for a fill), set against its box. */
+.line-logic .unit {
+  margin-left: -2px;
+  font-size: 12px;
 }
 .cond-now {
   font-size: 12px;

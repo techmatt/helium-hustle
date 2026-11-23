@@ -26,7 +26,7 @@ pub struct ProgramView {
     /// Per line, the input it was short of the last time it ran today
     /// (failed, or a conversion run part way), if it was.
     pub shorts: Vec<Option<ShortView>>,
-    /// Per line, an `if` or `wait until` line's condition as it reads now.
+    /// Per line, an `if` line's condition as it reads now.
     pub conditions: Vec<Option<ConditionView>>,
 }
 
@@ -87,7 +87,7 @@ pub(super) fn programs(r: &Rules, g: &GameState, running: &[u32]) -> Vec<Program
                 .entries
                 .iter()
                 .map(|e| match &e.op {
-                    Op::If { when } | Op::WaitUntil { when } => Some(condition_view(r, g, when)),
+                    Op::If { when } => Some(condition_view(r, g, when)),
                     _ => None,
                 })
                 .collect(),
@@ -95,88 +95,32 @@ pub(super) fn programs(r: &Rules, g: &GameState, running: &[u32]) -> Vec<Program
         .collect()
 }
 
-/// The readings on offer: what the player can see now. Amount, percent of cap
-/// and days to cap (capped ones) and last-day rate per visible resource (land
-/// and processors: amount only); a count, running count and next cost per
-/// visible building; researched per visible research item; each program's
-/// processors and the free ones; the land price, the day, every N days (at 1:
-/// the editor sets N); once there is a pad, pads, idle pads, pads ready and
-/// cargo (all, and per good) and
-/// days since the last launch; days since the last purchase (unless switched
-/// off); demand per good once exact demand is revealed.
-pub(super) fn readings(r: &Rules, g: &GameState, resources: &[ResourceView], buildings: &[BuildingView]) -> Vec<ReadingView> {
+/// The readings on offer, one per thing, only what the player has unlocked:
+/// the fill percent of each visible capped resource, then boredom's; the
+/// amount of each visible uncapped one (credits, science); free processors
+/// and free land; idle pads once there is a pad.
+pub(super) fn readings(r: &Rules, g: &GameState, resources: &[ResourceView]) -> Vec<ReadingView> {
     let mut out = Vec::new();
     let mut add = |reading: Reading, label: String| {
         let value = programs::reading(r, g, &reading);
         out.push(ReadingView { reading, label, value });
     };
-    for res in resources.iter().filter(|x| x.visible) {
-        let id = res.id.to_string();
-        let stock = id != economy::LAND && id != economy::PROCESSORS;
-        let label = if id == economy::LAND { "Land free" } else { res.name };
-        add(Reading::Amount { resource: id.clone() }, label.to_string());
-        if res.cap.is_some() {
-            add(Reading::Percent { resource: id.clone() }, format!("{} %", res.name));
-        }
-        if stock && id != economy::BOREDOM {
-            add(Reading::Rate { resource: id }, format!("{} rate", res.name));
-        }
+    let shown = || resources.iter().filter(|x| x.visible);
+    // Land, boredom and processors read on their own lines below.
+    let own = |id: &str| id == economy::LAND || id == economy::BOREDOM || id == economy::PROCESSORS;
+    for res in shown().filter(|x| x.cap.is_some() && !own(x.id)) {
+        add(Reading::Percent { resource: res.id.to_string() }, res.name.to_string());
     }
-    for res in resources.iter().filter(|x| x.visible && x.cap.is_some()) {
-        let id = res.id.to_string();
-        if id != economy::LAND && id != economy::PROCESSORS && id != economy::BOREDOM {
-            add(Reading::DaysToCap { resource: id }, format!("Days to cap of {}", res.name));
-        }
+    for res in shown().filter(|x| x.id == economy::BOREDOM) {
+        add(Reading::Percent { resource: res.id.to_string() }, res.name.to_string());
     }
-    for b in buildings.iter().filter(|b| b.visible) {
-        add(Reading::Count { building: b.id.to_string() }, format!("{} count", b.name));
-    }
-    for b in buildings.iter().filter(|b| b.visible) {
-        add(Reading::Running { building: b.id.to_string() }, format!("{} running", b.name));
-    }
-    for b in buildings.iter().filter(|b| b.visible) {
-        add(Reading::NextCost { building: b.id.to_string() }, format!("Next cost of {}", b.name));
-    }
-    for it in crate::content::content().research.iter().filter(|it| research::visible(g, it)) {
-        add(Reading::Researched { item: it.id.clone() }, format!("Researched {}", it.name));
-    }
-    // Projects open now or completed: a guard for a `fund` line.
-    for p in crate::content::content().projects.iter() {
-        if projects::unlocked(r, g, p) || projects::completions(g, p) > 0 {
-            add(Reading::Completed { project: p.id.clone() }, format!("Completed {}", p.name));
-        }
-    }
-    for tab in 0..g.run.programs.len() as u32 {
-        add(Reading::Processors { tab }, format!("Program {} processors", tab + 1));
+    for res in shown().filter(|x| x.cap.is_none() && !own(x.id)) {
+        add(Reading::Amount { resource: res.id.to_string() }, res.name.to_string());
     }
     add(Reading::FreeProcessors, "Free processors".to_string());
-    add(Reading::LandPrice, "Land price".to_string());
-    add(Reading::Day, "Day".to_string());
-    // The editor sets N; offered at 1 (every day).
-    add(Reading::Every { days: 1 }, "Every N days".to_string());
-    let names = names();
+    add(Reading::FreeLand, "Free land".to_string());
     if !g.run.pads.is_empty() {
-        add(Reading::Pads { good: None }, "Pads (all)".to_string());
-        add(Reading::IdlePads { good: None }, "Idle pads (all)".to_string());
-        add(Reading::PadsReady { good: None }, "Ready pads (all)".to_string());
-        add(Reading::Cargo { good: None }, "Cargo of pads (all)".to_string());
-        for good in g.run.markets.keys() {
-            let name = names.get(good.as_str()).copied().unwrap_or(good);
-            add(Reading::Pads { good: Some(good.clone()) }, format!("Pads on {name}"));
-            add(Reading::IdlePads { good: Some(good.clone()) }, format!("Idle pads on {name}"));
-            add(Reading::PadsReady { good: Some(good.clone()) }, format!("Ready pads {name}"));
-            add(Reading::Cargo { good: Some(good.clone()) }, format!("Cargo of pads {name}"));
-        }
-        add(Reading::DaysSinceLaunch, "Days since last launch".to_string());
-    }
-    if r.p.programs.days_since_purchase_reading {
-        add(Reading::DaysSincePurchase, "Days since last purchase".to_string());
-    }
-    if research::reveals_demand(g) {
-        for good in g.run.markets.keys() {
-            let name = names.get(good.as_str()).copied().unwrap_or(good);
-            add(Reading::Demand { good: good.clone() }, format!("{name} demand"));
-        }
+        add(Reading::IdlePads, "Idle pads".to_string());
     }
     out
 }

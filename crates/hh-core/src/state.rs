@@ -193,7 +193,6 @@ impl Entry {
             Op::Build { building, up_to: Some(n) } => format!("build {building} up to {n}"),
             Op::BuyLand {} => "buy land".to_string(),
             Op::If { when } => format!("if {}", when.describe()),
-            Op::WaitUntil { when } => format!("wait until {}", when.describe()),
             Op::Act { verb, target, tab, amount } => {
                 let mut t = serde_json::to_value(verb).ok().and_then(|v| v.as_str().map(str::to_string)).unwrap_or_default();
                 if let Some(x) = target {
@@ -217,29 +216,12 @@ impl Entry {
 impl Reading {
     /// Terse text with content ids (traces and logs, not the UI).
     pub fn describe(&self) -> String {
-        let all = |g: &Option<String>| g.clone().unwrap_or_else(|| "all".to_string());
         match self {
             Reading::Amount { resource } => resource.clone(),
             Reading::Percent { resource } => format!("{resource} %"),
-            Reading::Rate { resource } => format!("{resource} rate"),
-            Reading::Count { building } => format!("{building} count"),
-            Reading::Day => "day".to_string(),
-            Reading::PadsReady { good } => format!("ready pads {}", all(good)),
-            Reading::Demand { good } => format!("{good} demand"),
-            Reading::NextCost { building } => format!("next cost of {building}"),
-            Reading::LandPrice => "land price".to_string(),
-            Reading::DaysToCap { resource } => format!("days to cap of {resource}"),
-            Reading::DaysSinceLaunch => "days since last launch".to_string(),
-            Reading::Cargo { good } => format!("cargo of pads {}", all(good)),
-            Reading::Every { days } => format!("every {days} days"),
-            Reading::Researched { item } => format!("researched {item}"),
-            Reading::Completed { project } => format!("completed {project}"),
-            Reading::Pads { good } => format!("pads on {}", all(good)),
-            Reading::Running { building } => format!("{building} running"),
-            Reading::Processors { tab } => format!("program {} processors", tab + 1),
-            Reading::DaysSincePurchase => "days since last purchase".to_string(),
             Reading::FreeProcessors => "free processors".to_string(),
-            Reading::IdlePads { good } => format!("idle pads {}", all(good)),
+            Reading::FreeLand => "free land".to_string(),
+            Reading::IdlePads => "idle pads".to_string(),
         }
     }
 }
@@ -247,18 +229,11 @@ impl Reading {
 impl Condition {
     pub fn describe(&self) -> String {
         let clause = |c: &Clause| {
-            let reading = c.reading.describe();
             let cmp = match c.cmp {
-                Cmp::Lt => "<",
-                Cmp::Le => "<=",
-                Cmp::Gt => ">",
-                Cmp::Ge => ">=",
-                Cmp::Eq => "=",
+                Cmp::Lt => "below",
+                Cmp::Gt => "above",
             };
-            match &c.against {
-                None => format!("{reading} {cmp} {}", c.value),
-                Some(a) => format!("{reading} {cmp} {} x {}", a.describe(), c.value),
-            }
+            format!("{} {cmp} {}", c.reading.describe(), c.value)
         };
         match &self.rest {
             None => clause(&self.first),
@@ -284,8 +259,6 @@ pub enum Op {
     BuyLand {},
     /// Free. True: the indented lines below run. False: the pointer jumps past them.
     If { when: Condition },
-    /// Free. Holds the pointer until true.
-    WaitUntil { when: Condition },
     /// `<verb> <target> [amount]` (a processor step; docs/rules/programs.md,
     /// *Verbs*). The target slot is typed by the verb: `target` a building,
     /// good, research item or saved program's name, `tab` a program (0-based).
@@ -357,89 +330,42 @@ pub enum Join {
     Or,
 }
 
-/// `<reading> <cmp> <value>`, or with `against`, `<reading> <cmp> <against> × <value>`.
+/// `<reading> <cmp> <value>`: the right side is always a number, in the
+/// reading's unit (a percent for `percent`, else an amount).
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Clause {
     pub reading: Reading,
     pub cmp: Cmp,
     pub value: Fx,
-    #[serde(default, skip_serializing_if = "Option::is_none")]
-    pub against: Option<Reading>,
 }
 
+/// The two comparators: `lt` (the editor's "below") and `gt` ("above").
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Cmp {
     Lt,
-    Le,
     Gt,
-    Ge,
-    Eq,
 }
 
-/// What a condition reads (docs/rules/programs.md, *Conditions*).
+/// What a condition reads (docs/rules/programs.md, *Conditions*): one
+/// reading per thing.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "kind", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Reading {
-    /// A resource's amount (land: the land free; boredom too).
+    /// An uncapped resource's amount (credits, science): not land, boredom
+    /// or processors, which have readings of their own.
     Amount { resource: String },
-    /// Its amount as a percent of its cap (no cap: the clause is false).
+    /// A capped resource's fill, or boredom's: its amount as a percent of
+    /// its cap.
     Percent { resource: String },
-    /// What it made less what it used over the last full day.
-    Rate { resource: String },
-    /// How many of a building are owned.
-    Count { building: String },
-    /// The run's day.
-    Day,
-    /// Pads full and able to launch now: of one good's pads, or all.
-    PadsReady {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        good: Option<String>,
-    },
-    /// A good's demand (needs exact demand revealed).
-    Demand { good: String },
-    /// The next one's price in credits (no credits cost: nothing).
-    NextCost { building: String },
-    /// The land price.
-    LandPrice,
-    /// Days until the resource reaches its cap at its `rate` (0 at the cap;
-    /// nothing with no cap or a rate of 0 or less).
-    DaysToCap { resource: String },
-    /// Days since this run's last launch (none yet: the run's day).
-    DaysSinceLaunch,
-    /// Cargo aboard one good's pads, or all.
-    Cargo {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        good: Option<String>,
-    },
-    /// 1 on a day that is a multiple of `days`, else 0 (`every N days`).
-    Every { days: u32 },
-    /// 1 once a research item is researched this run, else 0.
-    Researched { item: String },
-    /// How many times a project has completed in its scope (0 if never).
-    Completed { project: String },
-    /// Pads carrying one good, or every pad.
-    Pads {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        good: Option<String>,
-    },
-    /// How many of a building are running (owned and active).
-    Running { building: String },
-    /// Processors assigned to a program tab (0-based).
-    Processors { tab: u32 },
-    /// Days since this run's last purchase: a building, land or research
-    /// (none yet: the run's day).
-    DaysSincePurchase,
     /// Processors the active buildings grant that no program holds: what
     /// `assign processors <tab> all` would add.
     FreeProcessors,
-    /// Pads of one good, or every pad, with no cargo aboard (`set pads X` has
-    /// one to switch exactly when `idle pads (all) > idle pads X × 1`).
-    IdlePads {
-        #[serde(default, skip_serializing_if = "Option::is_none")]
-        good: Option<String>,
-    },
+    /// Land not built on.
+    FreeLand,
+    /// Pads with no cargo aboard (a cooling pad counts).
+    IdlePads,
 }
 
 /// A program tab: a command queue, the processors assigned to it and its
@@ -534,7 +460,7 @@ pub struct Today {
     pub overflow: BTreeMap<String, Fx>,
     /// Demand the day's tick left unmet, by resource: what buildings, program
     /// commands and projects wanted of an input they ran short of, less what
-    /// they got (`economy::note_unmet`; the `rate` reading).
+    /// they got (`economy::note_unmet`; the day's rate).
     pub unmet: BTreeMap<String, Fx>,
     pub stalls: BTreeMap<String, Stall>,
     /// What each program line did the last time a processor ran it today:
@@ -579,14 +505,12 @@ pub enum LineOutcome {
     Skipped,
     /// Locked, or short of its costs.
     Failed,
-    /// An `if` or `wait until` whose condition held.
+    /// An `if` whose condition held.
     True,
     /// An `if` whose condition didn't hold: its body was jumped.
     False,
     /// A body line jumped with its false `if` (and not run earlier today).
     Jumped,
-    /// A `wait until` holding the pointer.
-    Waiting,
     /// Nothing to do (a `build ... up to N` with N owned, a verb with nothing
     /// to act on): the step taken, nothing else.
     Done,
@@ -657,16 +581,11 @@ pub struct Run {
     pub flow_average: BTreeMap<String, BTreeMap<String, Flow>>,
     /// Per resource, the last full day's rate (`programs::note_day_net`):
     /// what its tick did to the stock before the cap's cut, less the demand it
-    /// left unmet. The `rate` reading, and (on the view's next day) the
-    /// Resources panel's per-day number.
+    /// left unmet. On the view's next day, the Resources panel's per-day
+    /// number.
     pub day_net: BTreeMap<String, Fx>,
     /// The run's activity feed, oldest first (display only: no rule reads it).
     pub activity: Vec<Activity>,
-    /// The day of this run's last launch (the `days_since_launch` reading).
-    pub last_launch: Option<u64>,
-    /// The day of this run's last purchase of a building, land or research
-    /// (the `days_since_purchase` reading).
-    pub last_purchase: Option<u64>,
     /// A program's `retire` ran today: the run retires at the day's end.
     pub retire_asked: bool,
     /// The run's day of the player's last order (any action but a cheat; the

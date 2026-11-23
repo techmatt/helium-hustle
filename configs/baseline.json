@@ -76,8 +76,7 @@
         "logic_unlock_processors": 2,
         "library_slots": 12,
         "loadout_name_max": 40,
-        "fund_verb": 1,
-        "days_since_purchase_reading": 1
+        "fund_verb": 1
       }
     },
     "dream": {

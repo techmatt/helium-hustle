@@ -333,7 +333,7 @@ function describe(v: View, a: Activity): ComponentChildren {
       return `Project complete: ${name(v, a.id)}`;
     case 'unlock':
       // The one unlock logged so far: the program instructions (`program_logic`).
-      return 'Programs can now use If, Wait until, Build and Buy Land';
+      return 'Programs can now use Build, Buy Land and verb lines';
     default:
       return name(v, a.id);
   }

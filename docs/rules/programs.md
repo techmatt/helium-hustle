@@ -20,7 +20,7 @@ Center) starts unassigned. Each day at most the processors resource (economy.md:
 comes off the last programs first for that day, and their assignments stay.
 
 **Instructions** (`state::Op`; flat, `<verb> <target> [amount]`: docs/rulings.md). All but
-`if` and `wait until` cost a processor step, with something to do or not:
+`if` cost a processor step, with something to do or not:
 
 | Line | JSON `op` | What it does |
 |---|---|---|
@@ -30,11 +30,10 @@ comes off the last programs first for that day, and their assignments stay.
 | `buy land` | `buy_land` | Buys land, as the Buy Land action would; unaffordable, it fails. |
 | a verb | `act` (`verb`, `target`, `tab`, `amount`) | *Verbs*, below. |
 | `if <condition>` | `if` (`when`) | **Free.** Checked once, when the pointer reaches it. True: the pointer moves into its body, which then runs whole, whatever the condition does meanwhile. False: the pointer jumps past the body. |
-| `wait until <condition>` | `wait_until` (`when`) | **Free.** True: passed over. False: the pointer stays, and every processor of the program idles that step. |
 
 **Blocks.** A line may be `indented`: it is in the body of the `if` above it. One level only:
 an `if` is never indented (no nesting), there is no `else`, and an indented line must follow
-an `if` or another indented line. Any other line may sit in a body, `wait until` included.
+an `if` or another indented line. Any other line may sit in a body.
 
 **Verbs** (`act` lines; `state::Verb`). The target slot is typed by the verb; `tab` is a
 program (0-based); the amount is `{"n": N}` or `"all"`; JSON `verb` is the snake_case name.
@@ -53,63 +52,45 @@ A verb with nothing to do is **done** (its step, nothing else); one that can't a
 | `retire` | Fails unless retiring is allowed (career.md); else the run retires at the day's end, as the Retire action. |
 | `fund <project> [N \| all]` | Sets its daily rate on each cost to N, as the Projects panel does, each at most its most a day (`all` or none: the most); 0 stops it. Done when so; fails when the project isn't open. |
 
-**Conditions.** `<reading> <cmp> <right side>`, or two such clauses joined by one `and` or
-`or` (`state::Condition`: `first`, `rest`). `cmp` is `lt`, `le`, `gt`, `ge` or `eq`; the right
-side is a number (`value`, an `Fx`) or, with `against`, another reading times that number
-(`Solar Panel count < Excavator count × 2`): one multiplier, no other math. Readings
-(`state::Reading`, JSON `kind`):
+**Conditions.** `<reading> <cmp> <number>`, or two such clauses joined by one `and` or `or`
+(`state::Condition`: `first`, `rest`). `cmp` is `lt` (the editor's *below*) or `gt`
+(*above*), both strict; the right side is always a number (`value`, an `Fx`) in the
+reading's unit. One reading per thing (`state::Reading`, JSON `kind`):
 
-| Reading | Reads |
-|---|---|
-| `amount` (`resource`) | The amount held. Land's is the land free; boredom is a resource too. |
-| `percent` (`resource`) | `amount / cap × 100`; a resource with no cap reads nothing. |
-| `rate` (`resource`) | Production less demand over the last full day (`Run.day_net`): the tick's change to the stock before the clamp, less demand left unmet (`today.unmet`) on a short input. A brownout reads the shortfall; a capped resource its uncapped rate; nothing done by hand counts; 0 on day 1. |
-| `days_to_cap` (`resource`) | `(cap − amount) / rate`; 0 at the cap; nothing with no cap or a rate of 0 or less. |
-| `count` (`building`) | How many are owned. |
-| `running` (`building`) | How many are owned and active. |
-| `researched` (`item`) | 1 once researched this run, else 0. |
-| `completed` (`project`) | Its completions in its scope. |
-| `pads` (`good`, null: all) | Pads carrying the good. |
-| `idle_pads` (`good`, null: all) | The good's pads with no cargo aboard (a cooling pad counts). `set pads X` can switch one exactly when `idle pads (all) > idle pads X × 1`. |
-| `processors` (`tab`) | Processors assigned to that program. |
-| `free_processors` | Processors active buildings grant that no program holds (`processors_free`): above 0 exactly when `assign processors <tab> all` would add some. |
-| `next_cost` (`building`) | The next one's price in credits (no credits cost: nothing). |
-| `land_price` | The land price. |
-| `day` | The run's day. |
-| `every` (`days`) | 1 on a day that is a multiple of N, else 0 (the editor's `every N days`, `= 1`). |
-| `pads_ready` (`good`, null: all) | Unpaused pads of the good holding a full load that can launch now (shipments.md). |
-| `cargo` (`good`, null: all) | Cargo aboard the good's pads. |
-| `days_since_launch` | Days since this run's last launch (none yet: the run's day). |
-| `days_since_purchase` | Days since this run last bought a building, land or research, by hand or line (none yet: the run's day); not commands or funding. |
-| `demand` (`good`) | The good's demand today; reads nothing until exact demand is revealed (Market Awareness, research.md). |
+| Reading | Reads | Resources |
+|---|---|---|
+| `percent` (`resource`) | Fill: `amount / cap × 100`, at most 100 (programs run before the day's clamp). | A capped resource (Energy, Regolith, Ice, Helium-3, Titanium, Circuit Boards, Propellant) or boredom (of its cap, boredom.md). |
+| `amount` (`resource`) | The amount held. | An uncapped resource but land, boredom and processors (Credits, Science). |
+| `free_processors` | Processors active buildings grant that no program holds (`processors_free`): above 0 exactly when `assign processors <tab> all` would add some. | |
+| `free_land` | Land not built on. | |
+| `idle_pads` | Pads with no cargo aboard (a cooling pad counts). | |
 
-A clause whose reading or right side reads nothing is false. Guards stay exact through
-folded readings like `free_processors` and `idle_pads`, not more `and` clauses. The view's
-`readings` offer what the player can see (`view/programs.rs`), its `verbs` each slot's
-choices now; neither offers one switched off (*Params*). The Resources
-panel's per-day number is `rate` for the next day.
+A `percent` of an uncapped resource, an `amount` of a capped one (or of land, boredom or
+processors) is refused. A clause whose reading reads nothing (a cap of 0) is false. The
+view's `readings` offer, in that order, each visible capped resource's fill, boredom's, each
+visible uncapped resource's amount, free processors, free land and, once there is a pad,
+idle pads (`view/programs.rs`): 13 in Act 1. The Resources panel's per-day number is the
+day's rate (`Run.day_net`): production less demand, a brownout's unmet demand counted.
 
 **Loadouts.** The library (`Career.library`, kept across retirements) holds up to
 `library_slots` saved programs, each a display name (trimmed, 1 to `loadout_name_max`
 characters, duplicates allowed) and its lines. Saving copies a program's lines into a new
 slot or over one; loading replaces a program's lines with a slot's, as `set_program` does,
-processors unchanged. A loaded line this run hasn't unlocked fails, or reads nothing, when
-run: the run gates refuse only a line new to the program.
+processors unchanged. A loaded line this run hasn't unlocked fails (an `if`: reads false)
+when run: the run gates refuse only a line new to the program.
 
 **Unlock.** Every line but a command needs the career flag `program_logic`: set (and logged)
-the first day `logic_unlock_processors` processors work, as programs start to run. Two
-lines also need their own career flag (draft, 049): `if` needs `logic_if` (the Conditional
-Logic global project's reward, [projects.md](projects.md)), `wait until` needs
-`logic_wait_until` (side quest 1.b Full Cluster, [events.md](events.md)); content must set
-both. A loaded line the career hasn't opened runs as if false: an `if` skips its body, a
-`wait until` is passed over. The view's `if_open` and `wait_open` say which are open.
+the first day `logic_unlock_processors` processors work, as programs start to run. `if` also
+needs its own career flag (draft, 049): `logic_if`, the Conditional Logic global project's
+reward ([projects.md](projects.md)); content must set it. A loaded `if` the career hasn't
+opened runs as false: it skips its body. The view's `if_open` says whether it is open.
 
 **Running** (each day): programs in order; each running processor of a program takes one
-step from the shared pointer. A step passes over free lines (an `if`, a `wait until` that
-holds) until it reaches a line that costs it: that line runs once and the pointer advances
+step from the shared pointer. A step passes over free lines (`if`s) until it reaches a line
+that costs it: that line runs once and the pointer advances
 whatever the outcome (ran, skipped, failed or done): a command line's run count rises and,
 at its `count`, the pointer moves on; any other line moves on at once. The pointer wraps from the last line to the first. A step that passes as
-many free lines as the program has (one loop) idles, as does one stopped at a `wait until`.
+many free lines as the program has (one loop) idles.
 An empty program does nothing. Each line's outcome today (`state::LineOutcome`; a false
 `if`'s body `jumped` unless it ran earlier that day) is display only. A failed `build` or
 `buy land` notes what it was short of, as a command does.
@@ -121,10 +102,10 @@ when a command is visible: [commands.md](commands.md).
 
 | Action | Refused when |
 |---|---|
-| `set_program {program, entries}` | more than `max_entries` lines; an unknown command, building or resource; a `count` or `up_to` of 0; a line other than a command before the unlock, or an `if` or `wait until` before its flag (unless already in the program); an indented line with no `if` or body line above it; an indented `if`; a `demand` reading of a good not traded, or before demand is revealed (unless already in the program); a verb with an unknown or missing target (`load`: a blank name; one no loadout has fails when run), a tab or amount it doesn't take or lacks, an amount of 0 (but `assign_processors` and `fund`), `set_pads ... all`; `every 0`; a switched-off verb or reading (unless already in the program); or no such program |
+| `set_program {program, entries}` | more than `max_entries` lines; an unknown command, building or resource; a `count` or `up_to` of 0; a line other than a command before the unlock, or an `if` before its flag (unless already in the program); an indented line with no `if` or body line above it; an indented `if`; a reading of the wrong kind for its resource (*Conditions*); a verb with an unknown or missing target (`load`: a blank name; one no loadout has fails when run), a tab or amount it doesn't take or lacks, an amount of 0 (but `assign_processors` and `fund`), `set_pads ... all`; a switched-off verb (unless already in the program); or no such program |
 | `set_processors {program, processors}` | no such program, or the other programs' processors plus this number exceed what the active Data Centers grant |
 | `save_loadout {program, slot, name}` (`slot` null: a new slot) | no such program or slot; an empty program; a blank or overlong name; a new slot with the library full |
-| `load_loadout {loadout, program}` | no such loadout or program; lines `set_program` refuses on their form (it skips the unlock and reveal checks) |
+| `load_loadout {loadout, program}` | no such loadout or program; lines `set_program` refuses on their form (it skips the unlock checks) |
 | `rename_loadout {loadout, name}` / `delete_loadout {loadout}` | no such loadout; a blank or overlong name (deleting moves later slots up) |
 
 `set_program` replaces the whole queue and restarts its pointer at the top. A locked command
@@ -142,7 +123,6 @@ or building may be queued; it fails when run. A body line carries `"indented": t
 | `library_slots` | 12 | 0 to 1000 | Saved programs the loadout library holds (career state). |
 | `loadout_name_max` | 40 | 1 to 1000 | Most characters in a loadout's name. |
 | `fund_verb` | 1 | 0 to 1 | 1: the `fund <project>` verb is on; 0: off (a new line refused, a held one fails). |
-| `days_since_purchase_reading` | 1 | 0 to 1 | 1: the `days since last purchase` reading is on; 0: off (a new clause refused, a held one reads nothing). |
 <!-- /params -->
 
 The overclock duration bonus `overclock_duration_factor` is an ideology param (ideology.md).

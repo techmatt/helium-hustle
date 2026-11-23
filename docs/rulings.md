@@ -35,24 +35,24 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   saved program, program tab), the amount `N`, `up to N` or `all`. No nesting, variables,
   labels or jumps; a new capability is a new verb or reading, never new grammar; per-target
   commands (Buy X, Promote X, Fund X, Overclock X) are one verb with a target. Conditions stay
-  `<reading> <op> <right side>` with one optional `and` / `or`; the right side is a number or
-  another reading times a number (one multiplier). Pads are addressed only by good. Every verb
-  costs a processor step. Every line is open wherever program logic is, but `if` and `wait
-  until`, which have their own unlocks (*Act 1*, below). *Defaults (037):* the pad verbs run the Launch / Load commands' rows; `retire` retires at
-  the day's end like the button; `every N days` reads 1.
+  `<reading> <above | below> <number>` with one optional `and` / `or`; the right side is
+  always a number (2026-11-22, replacing a reading times a number). Pads are addressed only
+  by good. Every verb costs a processor step. Every line is open wherever program logic is,
+  but `if`, which has its own unlock (*Act 1*, below). No `wait until` (2026-11-22):
+  programs run every day, so `if` covers it. *Defaults (037):* the pad verbs run the Launch / Load commands' rows; `retire` retires at
+  the day's end like the button.
+- **"Add to Program" (2026-11-22).** A command card's button reads "Add to Program", not
+  "Add to Program 1": the active program is implied.
 - **Every non-`if` line costs a step (2026-11-20, replaces 037's "done and free").** A line
   with nothing to do (`research X` once researched, `pause` with nothing running, `set pads`
   already at N, `launch pads` with no pad ready, `build X up to N` with N owned) still takes a
   processor step, and nothing else: no resources, no boredom. A false `if` still skips its
-  whole block for free, conditions stay free, `wait until` is unchanged. Guards are how a
-  player saves steps: wrap a finished line in an `if`. *Defaults (038):* guard readings
-  `researched <item>`, `pads <good | all>` (pads carrying it), `running <building>` and
-  `processors <tab>`; `load pads` is done when no pad of the good would take cargo.
-- **`days since last purchase` and `fund <project>` (2026-11-20).** A reading for days since
-  the last purchase, and a `fund <project> [amount]` verb funding a project the way the
-  Projects panel does; both may be switched off later, each one config change
-  (`days_since_purchase_reading`, `fund_verb`). *Defaults (039):* a purchase is a building,
-  land or research item, by hand or program (not commands, funding or free buildings); `fund
+  whole block for free, conditions stay free. Guards are how a player saves steps: wrap a
+  finished line in an `if`. *Default (038):* `load pads` is done when no pad of the good
+  would take cargo.
+- **`fund <project>` (2026-11-20).** A `fund <project> [amount]` verb funding a project the
+  way the Projects panel does; it may be switched off later, one config change
+  (`fund_verb`). *Defaults (039):* `fund
   P N` sets N a day on every cost of P (each at most its resource's most a day, 046; `all` or
   no amount the most; 0 stops it); the switches are 0/1 programs params; JSON verb `fund`, so
   a later `fund <axis>` can share it.
@@ -64,8 +64,7 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   project carries `max_completions` (typically 5), and its rewards stack per completion
   (2026-11-21, by *Bonus stacking*; replaces 046's apply-once default). *Defaults (046):* a
   repeatable row keeps its rates across completions; every row's `min_days` is its largest
-  cost over 30 rounded up (the old flat cap's fastest finish); the `completed <project>`
-  reading is the completion count.
+  cost over 30 rounded up (the old flat cap's fastest finish).
 - **Bonus stacking (2026-11-21).** Bonuses from one source add (+5% ×10 is +50%); separate
   sources multiply. Exponential stacking only for a few named exceptions (Paradigms, late
   techs, the catastrophic-success tech); repeatable projects are rare exceptions.
@@ -84,23 +83,25 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   built) and active programs; it keeps loadouts (which exist from the start and are always kept), bests
   and firsts, achievements, storyline progress, global projects, ideology and adversaries.
 - **Program logic unlocks (2026-11-21).** `if` is not available from the start: a cheap
-  global project offered after 1.6 unlocks it. `wait until` is side quest 1.b's reward.
+  global project offered after 1.6 unlocks it. Side quest 1.b's reward is a placeholder
+  (059, default): every run starts with 50 Science (a `grant` unlock).
 - **Major ranks (2026-11-21).** Ideology rank 5 is a major rank (probably 10, 15 and 20 too)
   bringing a discrete major change; the ranks between scale.
-- **Folded guard readings and a golden program (2026-11-20).** Exact guards come from folded
-  readings, not more `and` clauses; the golden game's scripted policy runs a short condition
-  program, so the golden pins the interpreter; since `if` no longer opens from the start,
-  the golden starts from the `golden_start` scenario with `if` and `wait until` open (Matt,
-  2026-11-21, question 049_1). *Defaults (040):* `free processors` is granted
-  by active buildings less assigned (what `assign processors ... all` would add); `idle pads
-  <good | all>` is pads with no cargo (a cooling pad counts), so `set pads X` has one to switch
-  exactly when `idle pads (all) > idle pads X × 1`.
-- **`rate` reads production less demand (2026-11-20).** What buildings and programs wanted
-  counts, met or not, so `Energy rate < 0` stays true all through a brownout; a capped
-  resource's rate is its uncapped rate. The condition's rate and the Resources panel's
-  per-day number are one quantity (the panel's for the next day). *Defaults (035):* unmet
-  demand counts only on an input that ran short; the rate counts everything the day's tick
-  did to the stock (purchases by program lines, pad loading, boredom growth and Dream too).
+- **Readings (2026-11-22).** One reading per thing (about 13), only what the player has
+  unlocked: fill % of each capped resource and boredom, the amount of Credits and Science,
+  free processors, free land, idle pads ([rules/programs.md](rules/programs.md)). The rest
+  are gone; rates may come back later as research-unlocked readings. The golden game's
+  scripted policy runs a short condition program, so the golden pins the interpreter; it
+  starts from the `golden_start` scenario with `if` open (Matt, 2026-11-21, question
+  049_1). *Defaults (040):* `free processors` is granted by active buildings less assigned
+  (what `assign processors ... all` would add); `idle pads` is pads with no cargo (a cooling
+  pad counts).
+- **The day's rate is production less demand (2026-11-20).** What buildings and programs
+  wanted counts, met or not, so Energy reads negative all through a brownout; a capped
+  resource's rate is its uncapped rate. It is the Resources panel's per-day number (for the
+  next day). *Defaults (035):* unmet demand counts only on an input that ran short; the rate
+  counts everything the day's tick did to the stock (purchases by program lines, pad
+  loading, boredom growth and Dream too).
 - **Rules port picks (004, defaults).** The starting-credits bonus is 0.02 of the best run
   (`career.credits_bonus_fraction`), not the Godot build's /100. Ideology ranks are geometric
   ([rules/ideology.md](rules/ideology.md)), not the data's `rank_thresholds`. Lunar
@@ -141,7 +142,8 @@ not code rules. A new ruling, or a change to one, updates its line here in place
   decision is useful and skips ahead through stretches that need none. Attention and speed are a
   separate, occasional human model that maps ticks to real minutes ([agents.md](agents.md)).
 - **Hands-off measure (036, default).** "Runs are smooth" (Act 1's exit) is read by the
-  `handsoff` player: run 1 the author's, then only loads at each reset and processors. Its
+  `handsoff` player: run 1 the author's, then only loads at each reset and processors, and
+  (059: no reading for it) a hand retirement after `stale_days` with nothing bought. Its
   measure is its credits a run and milestones from run 2 on as a share of the author's on the
   same seeds (the ladder's *Hands-off* table, [experiments.md](experiments.md#measures)).
 - **View (009, default).** `per_day` and `next_run` keep playing a day or a retirement on a

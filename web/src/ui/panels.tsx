@@ -72,7 +72,7 @@ export function Commands({ s, program }: { s: Store; program: number }) {
                 </div>
                 <div class="card-actions">
                   <button type="button" data-testid={`add-${c.id}`} disabled={!c.unlocked} onClick={() => add(c.id)}>
-                    {c.unlocked ? `Add to Program ${program + 1}` : 'Locked'}
+                    {c.unlocked ? 'Add to Program' : 'Locked'}
                   </button>
                 </div>
               </div>

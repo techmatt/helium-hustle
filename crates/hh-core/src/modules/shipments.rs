@@ -143,7 +143,7 @@ pub fn would_launch(r: &Rules, g: &GameState, only: Option<&str>) -> bool {
 }
 
 /// Pad `i` launches under Launch Full Pads for `only`: its good, unpaused,
-/// ready. The `pads_ready` reading counts these, so it guards `launch pads`.
+/// ready.
 pub fn launches(r: &Rules, g: &GameState, i: usize, only: Option<&str>) -> bool {
     on(g, i, only) && !g.run.pads[i].paused && ready(r, g, i)
 }
@@ -155,8 +155,7 @@ pub fn can_launch(r: &Rules, g: &GameState, i: usize) -> bool {
 }
 
 /// A pad is ready: full and able to launch now. The one rule behind Launch Full
-/// Pads, the `pads_ready` reading (unpaused pads: [`launches`]) and the view's
-/// Ready badge.
+/// Pads (unpaused pads: [`launches`]) and the view's Ready badge.
 pub fn ready(r: &Rules, g: &GameState, i: usize) -> bool {
     g.run.pads[i].cargo >= r.p.shipments.pad_cargo_capacity && can_launch(r, g, i)
 }
@@ -219,7 +218,6 @@ pub fn launch(r: &Rules, g: &mut GameState, i: usize) {
     let demand = g.run.markets.get(&good).map_or(Fx::ZERO, |m| m.demand);
     g.produce("launch", CREDITS, pay);
     g.run.stats.shipments += 1;
-    g.run.last_launch = Some(g.run.day);
     let cargo = g.run.pads[i].cargo;
     g.run.stats.best_launch = g.run.stats.best_launch.max(pay);
     super::attention::on_sale(r, g, cargo);

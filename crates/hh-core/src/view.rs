@@ -46,9 +46,8 @@ pub struct ResourceView {
     pub amount: Fx,
     /// Most that can be held, if capped.
     pub cap: Option<Fx>,
-    /// The next day's rate if nothing else is done: the same quantity as a
-    /// program's `rate` reading (`programs::note_day_net`), before the cap's
-    /// cut and with unmet demand counted.
+    /// The next day's rate if nothing else is done (`programs::note_day_net`),
+    /// before the cap's cut and with unmet demand counted.
     pub per_day: Fx,
     /// The stock's actual change over that day (after the cap, demand met
     /// only as far as it was): what an ETA wants.
@@ -353,13 +352,11 @@ pub struct View {
     pub commands: Vec<CommandView>,
     pub programs: Vec<ProgramView>,
     /// `build`, `buy land` and verb lines may be queued (a career first: the
-    /// first day `logic_unlock_processors` processors work); `if` and `wait
-    /// until` also need `if_open` / `wait_open`.
+    /// first day `logic_unlock_processors` processors work); `if` also needs
+    /// `if_open`.
     pub program_logic: bool,
     /// `if` may be queued (program logic and the Conditional Logic project).
     pub if_open: bool,
-    /// `wait until` may be queued (program logic and the Full Cluster side quest).
-    pub wait_open: bool,
     pub logic_unlock_processors: u32,
     /// Most lines in one program (`max_entries`).
     pub max_program_lines: usize,
@@ -644,7 +641,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
     };
     let procs = program_rules::capacity(g);
     let running = program_rules::running(g);
-    let readings = programs::readings(r, g, &resources, &buildings);
+    let readings = programs::readings(r, g, &resources);
     let verbs = programs::verbs(r, g, &buildings);
     View {
         tick: g.tick,
@@ -669,7 +666,6 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         programs: programs::programs(r, g, &running),
         program_logic: program_rules::logic_unlocked(g),
         if_open: program_rules::if_unlocked(g),
-        wait_open: program_rules::wait_unlocked(g),
         logic_unlock_processors: r.p.programs.logic_unlock_processors,
         max_program_lines: r.p.programs.max_entries,
         library: g.career.library.clone(),

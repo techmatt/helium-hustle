@@ -217,6 +217,10 @@ pub fn apply_unlocks(g: &mut GameState, e: &Event) {
             Unlock::SetFlag { flag } => {
                 g.career.flags.insert(flag.clone());
             }
+            Unlock::Grant { resource, amount } => {
+                g.add(resource, *amount);
+                g.track("event", resource, *amount, Fx::ZERO);
+            }
         }
     }
 }

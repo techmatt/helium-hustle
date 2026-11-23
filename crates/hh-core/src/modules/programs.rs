@@ -26,7 +26,6 @@ pub static DEF: ModuleDef = ModuleDef {
             param("library_slots", K::Int, Some(("0", "1000")), "saved programs the loadout library holds (career state)"),
             param("loadout_name_max", K::Int, Some(("1", "1000")), "most characters in a loadout's name"),
             param("fund_verb", K::Int, Some(("0", "1")), "1: the `fund <project>` verb is on; 0: off (a new line refused, a held one fails)"),
-            param("days_since_purchase_reading", K::Int, Some(("0", "1")), "1: the `days since last purchase` reading is on; 0: off (a new clause refused, a held one reads nothing)"),
         ],
         rng: &[],
     }],
@@ -41,7 +40,6 @@ pub struct Params {
     pub library_slots: usize,
     pub loadout_name_max: usize,
     pub fund_verb: bool,
-    pub days_since_purchase_reading: bool,
 }
 
 impl Params {
@@ -54,7 +52,6 @@ impl Params {
             library_slots: mc.int("library_slots") as usize,
             loadout_name_max: mc.int("loadout_name_max") as usize,
             fund_verb: mc.int("fund_verb") == 1,
-            days_since_purchase_reading: mc.int("days_since_purchase_reading") == 1,
         })
     }
 }
@@ -133,70 +130,40 @@ pub fn set_program(r: &Rules, g: &mut GameState, program: u32, entries: &[Entry]
 
 /// Whether `entries` may go in a program. With `held` (the program's lines
 /// now), a line not already among them is also refused for what this run
-/// can't use yet (a line other than a command before the logic unlock, a
-/// demand reading before demand is revealed). A loaded loadout (`held` `None`)
-/// skips those, and so does an edit of a loaded program that keeps the line:
-/// such a line fails, or its reading reads nothing, when run.
+/// can't use yet (a line other than a command before the logic unlock, an
+/// `if` before its flag). A loaded loadout (`held` `None`) skips those, and
+/// so does an edit of a loaded program that keeps the line: such a line
+/// fails, or its `if` reads false, when run.
 fn check_entries(r: &Rules, g: &GameState, program: u32, entries: &[Entry], held: Option<&[Entry]>) -> Result<(), String> {
     if entries.len() > r.p.programs.max_entries {
         return Err(format!("Program {}: at most {} lines", program + 1, r.p.programs.max_entries));
     }
     let n = program + 1;
     let c = content();
-    let traded = |good: &str| -> Result<(), String> {
-        r.p.shipments.base_values.contains_key(good).then_some(()).ok_or_else(|| format!("Program {n}: {good:?} is not a traded good"))
-    };
-    let building = |id: &str| -> Result<(), String> {
-        c.building(id).map(|_| ()).ok_or_else(|| format!("Program {n}: unknown building {id:?}"))
-    };
-    let one = |reading: &Reading, gated: bool| -> Result<(), String> {
-        let known = |res: &str| c.resource(res).is_some();
-        match reading {
-            Reading::Amount { resource }
-            | Reading::Percent { resource }
-            | Reading::Rate { resource }
-            | Reading::DaysToCap { resource } => {
-                known(resource).then_some(()).ok_or_else(|| format!("Program {n}: unknown resource {resource:?}"))
-            }
-            Reading::Count { building: b } | Reading::NextCost { building: b } | Reading::Running { building: b } => building(b),
-            Reading::Day | Reading::LandPrice | Reading::DaysSinceLaunch | Reading::FreeProcessors => Ok(()),
-            Reading::DaysSincePurchase => {
-                if gated && !r.p.programs.days_since_purchase_reading {
-                    return Err(format!("Program {n}: the days since last purchase reading is off"));
-                }
-                Ok(())
-            }
-            Reading::PadsReady { good } | Reading::Cargo { good } | Reading::Pads { good } | Reading::IdlePads { good } => {
-                good.as_deref().map_or(Ok(()), traded)
-            }
-            Reading::Researched { item } => {
-                c.research_item(item).map(|_| ()).ok_or_else(|| format!("Program {n}: unknown research {item:?}"))
-            }
-            Reading::Completed { project } => {
-                c.project(project).map(|_| ()).ok_or_else(|| format!("Program {n}: unknown project {project:?}"))
-            }
-            Reading::Processors { tab } => {
-                ((*tab as usize) < g.run.programs.len()).then_some(()).ok_or_else(|| format!("Program {n}: no program {}", tab + 1))
-            }
-            Reading::Every { days } => {
-                (*days > 0).then_some(()).ok_or_else(|| format!("Program {n}: every 0 days"))
-            }
-            Reading::Demand { good } => {
-                traded(good)?;
-                if gated && !super::research::reveals_demand(g) {
-                    return Err(format!("Program {n}: demand can't be read yet"));
-                }
-                Ok(())
-            }
+    // One reading per thing: a fill percent for a capped resource (and
+    // boredom), an amount for an uncapped one; land and processors have their
+    // own `free` readings.
+    let one = |reading: &Reading| -> Result<(), String> {
+        let (resource, percent) = match reading {
+            Reading::Amount { resource } => (resource, false),
+            Reading::Percent { resource } => (resource, true),
+            Reading::FreeProcessors | Reading::FreeLand | Reading::IdlePads => return Ok(()),
+        };
+        let Some(res) = c.resource(resource) else {
+            return Err(format!("Program {n}: unknown resource {resource:?}"));
+        };
+        let capped = res.cap.is_some() || resource == BOREDOM;
+        let own = resource == super::economy::LAND || resource == PROCESSORS;
+        match (percent, capped) {
+            (true, false) => Err(format!("Program {n}: {resource} has no cap to read a percent of")),
+            (false, true) => Err(format!("Program {n}: {resource} reads as a percent of its cap")),
+            _ if own => Err(format!("Program {n}: {resource} reads as free {resource}")),
+            _ => Ok(()),
         }
     };
-    let clause = |cl: &Clause, gated: bool| -> Result<(), String> {
-        one(&cl.reading, gated)?;
-        cl.against.as_ref().map_or(Ok(()), |a| one(a, gated))
-    };
-    let condition = |when: &Condition, gated: bool| -> Result<(), String> {
-        clause(&when.first, gated)?;
-        when.rest.as_ref().map_or(Ok(()), |j| clause(&j.clause, gated))
+    let condition = |when: &Condition| -> Result<(), String> {
+        one(&when.first.reading)?;
+        when.rest.as_ref().map_or(Ok(()), |j| one(&j.clause.reading))
     };
     // Whether the line above is an `if` or in a body: only then may a line be indented.
     let mut in_block = false;
@@ -207,9 +174,6 @@ fn check_entries(r: &Rules, g: &GameState, program: u32, entries: &[Entry], held
         }
         if gated && matches!(e.op, Op::If { .. }) && !if_unlocked(g) {
             return Err(format!("Program {n}: if is not unlocked yet"));
-        }
-        if gated && matches!(e.op, Op::WaitUntil { .. }) && !wait_unlocked(g) {
-            return Err(format!("Program {n}: wait until is not unlocked yet"));
         }
         if e.indented && !in_block {
             return Err(format!("Program {n}: an indented line needs an if above it"));
@@ -237,10 +201,9 @@ fn check_entries(r: &Rules, g: &GameState, program: u32, entries: &[Entry], held
                 if e.indented {
                     return Err(format!("Program {n}: an if can't sit inside another if"));
                 }
-                condition(when, gated)?;
+                condition(when)?;
                 in_block = true;
             }
-            Op::WaitUntil { when } => condition(when, gated)?,
             Op::Act { verb, target, tab, amount } => {
                 if gated && *verb == Verb::Fund && !r.p.programs.fund_verb {
                     return Err(format!("Program {n}: the fund verb is off"));
@@ -464,7 +427,7 @@ pub fn execute(r: &Rules, g: &mut GameState, c: &Command, src: &str, short: &str
         if let Some(s) = super::economy::scarcest(g, &costs, ran) {
             g.run.today.shorts.insert(short.to_string(), s);
         }
-        // What it wanted counts, met or not (the `rate` reading).
+        // What it wanted counts, met or not (the day's rate, `Run.day_net`).
         super::economy::note_unmet(g, &costs, ran);
     }
     if failed {
@@ -524,17 +487,10 @@ pub fn logic_unlocked(g: &GameState) -> bool {
 
 /// The career flag that opens `if` (a global project's reward).
 pub const IF_FLAG: &str = "logic_if";
-/// The career flag that opens `wait until` (the Full Cluster side quest's reward).
-pub const WAIT_FLAG: &str = "logic_wait_until";
 
 /// `if` lines are open: program logic and the `if` flag.
 pub fn if_unlocked(g: &GameState) -> bool {
     logic_unlocked(g) && g.career.flags.contains(IF_FLAG)
-}
-
-/// `wait until` lines are open: program logic and the `wait until` flag.
-pub fn wait_unlocked(g: &GameState) -> bool {
-    logic_unlocked(g) && g.career.flags.contains(WAIT_FLAG)
 }
 
 /// What a reading reads now (`None`: nothing to read, the clause is false).
@@ -542,80 +498,17 @@ pub fn reading(r: &Rules, g: &GameState, what: &Reading) -> Option<Fx> {
     match what {
         Reading::Amount { resource } => Some(g.amount(resource)),
         Reading::Percent { resource } => {
+            // At most 100: programs run before the day's clamp, so a stock
+            // may stand past its cap then; the fill reads as the panel shows it.
             let cap = super::economy::cap(r, g, resource).filter(|c| *c > Fx::ZERO)?;
-            Some((g.amount(resource) / cap).mul_int(PERCENT))
-        }
-        Reading::Rate { resource } => Some(g.run.day_net.get(resource).copied().unwrap_or(Fx::ZERO)),
-        Reading::Count { building } => Some(Fx::from_int(i64::from(g.owned(building)))),
-        Reading::Day => Some(Fx::from_int(i64::try_from(g.run.day).unwrap_or(i64::MAX))),
-        Reading::PadsReady { good } => {
-            // What `launch pads` would launch: ready and not paused.
-            let n = (0..g.run.pads.len()).filter(|&i| super::shipments::launches(r, g, i, good.as_deref())).count();
-            Some(Fx::from_int(n as i64))
-        }
-        Reading::Demand { good } => {
-            if !super::research::reveals_demand(g) {
-                return None;
-            }
-            g.run.markets.get(good).map(|m| m.demand)
-        }
-        Reading::NextCost { building } => {
-            let b = content().building(building)?;
-            super::economy::price(r, g, b).get(super::economy::CREDITS).copied()
-        }
-        Reading::LandPrice => Some(super::economy::land_price(r, g)),
-        Reading::DaysToCap { resource } => {
-            let cap = super::economy::cap(r, g, resource)?;
-            let left = cap - g.amount(resource);
-            if left <= Fx::ZERO {
-                return Some(Fx::ZERO);
-            }
-            let rate = g.run.day_net.get(resource).copied().unwrap_or(Fx::ZERO);
-            (rate > Fx::ZERO).then(|| left / rate)
-        }
-        Reading::DaysSinceLaunch => {
-            let since = g.run.day - g.run.last_launch.unwrap_or(0);
-            Some(Fx::from_int(i64::try_from(since).unwrap_or(i64::MAX)))
-        }
-        Reading::Cargo { good } => {
-            let only = good.as_deref();
-            let pads = (0..g.run.pads.len()).filter(|&i| super::shipments::on(g, i, only));
-            Some(pads.fold(Fx::ZERO, |s, i| s + g.run.pads[i].cargo))
-        }
-        Reading::Every { days } => Some(if g.run.day.is_multiple_of(u64::from((*days).max(1))) { Fx::ONE } else { Fx::ZERO }),
-        Reading::Researched { item } => Some(if g.run.research.contains(item) { Fx::ONE } else { Fx::ZERO }),
-        Reading::Completed { project } => {
-            content().project(project).map(|p| Fx::from_int(i64::from(super::projects::completions(g, p))))
-        }
-        Reading::Pads { good } => {
-            let only = good.as_deref();
-            Some(Fx::from_int((0..g.run.pads.len()).filter(|&i| super::shipments::on(g, i, only)).count() as i64))
-        }
-        Reading::Running { building } => Some(Fx::from_int(i64::from(g.active(building)))),
-        Reading::Processors { tab } => g.run.programs.get(*tab as usize).map(|p| Fx::from_int(i64::from(p.processors))),
-        Reading::DaysSincePurchase => {
-            if !r.p.programs.days_since_purchase_reading {
-                return None;
-            }
-            let since = g.run.day - g.run.last_purchase.unwrap_or(0);
-            Some(Fx::from_int(i64::try_from(since).unwrap_or(i64::MAX)))
+            Some((g.amount(resource).min(cap) / cap).mul_int(PERCENT))
         }
         Reading::FreeProcessors => Some(Fx::from_int(i64::from(free(g)))),
-        Reading::IdlePads { good } => {
-            let only = good.as_deref();
-            let n = (0..g.run.pads.len()).filter(|&i| super::shipments::on(g, i, only) && super::shipments::idle(g, i)).count();
+        Reading::FreeLand => Some(g.amount(super::economy::LAND)),
+        Reading::IdlePads => {
+            let n = (0..g.run.pads.len()).filter(|&i| super::shipments::idle(g, i)).count();
             Some(Fx::from_int(n as i64))
         }
-    }
-}
-
-/// What a clause compares its reading with: its number, or with `against`
-/// that reading times the number (`None`: it reads nothing, or the product
-/// is past `Fx`'s range).
-pub fn right_side(r: &Rules, g: &GameState, c: &Clause) -> Option<Fx> {
-    match &c.against {
-        None => Some(c.value),
-        Some(other) => reading(r, g, other).and_then(|v| v.checked_mul(c.value)),
     }
 }
 
@@ -623,15 +516,12 @@ pub fn right_side(r: &Rules, g: &GameState, c: &Clause) -> Option<Fx> {
 const PERCENT: i64 = 100;
 
 pub fn clause_holds(r: &Rules, g: &GameState, c: &Clause) -> bool {
-    let (Some(v), Some(w)) = (reading(r, g, &c.reading), right_side(r, g, c)) else {
+    let Some(v) = reading(r, g, &c.reading) else {
         return false;
     };
     match c.cmp {
-        Cmp::Lt => v < w,
-        Cmp::Le => v <= w,
-        Cmp::Gt => v > w,
-        Cmp::Ge => v >= w,
-        Cmp::Eq => v == w,
+        Cmp::Lt => v < c.value,
+        Cmp::Gt => v > c.value,
     }
 }
 
@@ -850,9 +740,9 @@ fn past_body(p: &Program, line: usize) -> usize {
     j % p.entries.len()
 }
 
-/// One processor's step of program `i`: free lines (an `if`, a passed `wait
-/// until`) are passed over until a line that costs the step runs, done or not.
-/// A `wait until` not yet true, or a whole loop of free lines, idles the step.
+/// One processor's step of program `i`: free lines (`if`s) are passed over
+/// until a line that costs the step runs, done or not. A whole loop of free
+/// lines idles the step.
 fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
     let n = g.run.programs[i].entries.len();
     for _ in 0..n {
@@ -880,15 +770,6 @@ fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
                         g.run.today.lines.entry(i as u32).or_default().entry(l as u32).or_insert(LineOutcome::Jumped);
                     }
                     (LineOutcome::False, to, false)
-                }
-            }
-            Op::WaitUntil { when } => {
-                // A loaded `wait until` this career hasn't opened is passed over.
-                if !wait_unlocked(g) || holds(r, g, when) {
-                    (LineOutcome::True, next, false)
-                } else {
-                    mark(g, line, LineOutcome::Waiting);
-                    return;
                 }
             }
             // Done: nothing to buy, the step only.

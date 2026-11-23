@@ -86,8 +86,8 @@ while an owed cost has no rate. The Stats panel lists every live project reward.
   resource not among its costs, or a rate below 0 or above that resource's most a day.
 
 A program's `fund <project> [N | all]` line sets the same rates, one N on every cost (each
-capped at its resource's most), and its `completed <project>` reading (the completion
-count) guards it ([programs.md](programs.md)).
+capped at its resource's most); a project not open (or completed) makes it fail
+([programs.md](programs.md)).
 
 ## Params
 

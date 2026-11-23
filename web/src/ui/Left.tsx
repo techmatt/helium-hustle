@@ -104,7 +104,7 @@ export function Left({
                 const full = cap !== null && amt >= cap;
                 const empty = amt <= 0;
                 let shown = r.cap === null ? num(r.amount) : `${num(r.amount)} / ${num(r.cap)}`;
-                // The rate is the engine's (a program's `rate` reading, for tomorrow). At its
+                // The rate is the engine's (tomorrow's). At its
                 // cap it reads the surplus the cap throws away, muted and marked; capped
                 // Energy's surplus is spare power, good news: it shows green. Short, it reads
                 // the demand left unmet, marked.

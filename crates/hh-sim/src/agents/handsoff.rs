@@ -7,10 +7,10 @@
 //! project, pad good, pause, processor or retirement by hand. What were its
 //! last hands are lines: its build order seats a processor gained mid-run by
 //! the reset's rule ([`seat_lines`]); its first side program (the Dream watch)
-//! hands a free one to the main program and `retire`s once the run has bought
-//! nothing for `stale_days` days ([`hand_lines`]; Dream could otherwise hold
-//! boredom off and stall the career), and funds projects ([`fund_lines`]).
-//! With no side program saved, the hand lines go in the build order. A
+//! funds projects ([`fund_lines`]). One hand stays: it retires by hand once the run has
+//! bought nothing for `stale_days` days (Dream could otherwise hold boredom
+//! off and stall the career; programs have no reading for it since 059).
+//! A
 //! processor an unpaid Data Center stopped is no longer reseated (it was by
 //! hand): the shortfall comes off the build order, last in line.
 //! docs/agents.md says the same; docs/experiments.md has the measure.
@@ -33,73 +33,34 @@ pub fn knobs() -> Vec<&'static str> {
 const SLOTS: &[(usize, &str)] = &[(BUILD, BUILD_ORDER), (DREAM, DREAM_WATCH), (FUND, FUND_NAME), (MARKET, MARKET_NAME)];
 
 
-/// The build order's lead: while no Launch Pad stands, the ship program has
-/// nothing to ship, so the build order takes every processor (its buy of a
-/// short input and the build it serves then fall on one day, before the
-/// day's clamp cuts the input back to its cap); once one stands, it keeps one
-/// and the ship program takes the rest. Every line is guarded on having
-/// something to do: a done line costs a step.
-///
-/// Then the stock lines: a maker whose product sits at its cap is paused (all
-/// of it) so its input builds up for the next purchase, and resumed once the
-/// product is under 90% of its cap; and while titanium sits at its cap, a
-/// Storage Depot once credits reach three times its price.
-fn processor_lines() -> Vec<Entry> {
-    let pads = |cmp| Clause { reading: Reading::Count { building: "launch_pad".to_string() }, cmp, value: Fx::ONE, against: None };
-    let pct = |res: &str, cmp, v: i64| Clause { reading: Reading::Percent { resource: res.to_string() }, cmp, value: Fx::from_int(v), against: None };
-    let act = |verb, target: Option<&str>, tab: Option<usize>, amount| {
-        Entry::new(Op::Act { verb, target: target.map(str::to_string), tab: tab.map(|t| t as u32), amount }).indent()
-    };
+/// The build order's lead, the stock lines: a maker whose product sits at
+/// its cap is paused (all of it) so its input builds up for the next
+/// purchase, and resumed once the product is under 90% of its cap; and while
+/// titanium sits at its cap, a Storage Depot once credits reach three times
+/// its price now (`depot`, a number: the right side is never a reading).
+/// With no reading for running counts, `pause` and `resume` are done steps
+/// while the product holds. (Before 059 the lead also moved processors
+/// between the build order and the ship program on whether a pad stood:
+/// no reading says so now; [`seat_lines`] seats them instead.)
+fn processor_lines(depot: Fx) -> Vec<Entry> {
+    let pct = |res: &str, cmp, v: i64| clause(Reading::Percent { resource: res.to_string() }, cmp, v);
+    let act = |verb, target: Option<&str>, amount| Entry::new(Op::Act { verb, target: target.map(str::to_string), tab: None, amount }).indent();
     let when = |c, and: Option<Clause>| Entry::new(Op::If { when: Condition { first: c, rest: and.map(|clause| Joined { join: Join::And, clause }) } });
-    // Each guard also reads whether its lines have anything to do (a done
-    // line costs a step): the build order short of every working processor
-    // (one gained before a pad stands is taken at once), or holding more than
-    // one; a maker still running, or not all running.
-    let on = |tab: usize, cmp, v: i64| Clause { reading: Reading::Processors { tab: tab as u32 }, cmp, value: Fx::from_int(v), against: None };
-    let short = Clause {
-        reading: Reading::Processors { tab: BUILD as u32 },
-        cmp: Cmp::Lt,
-        value: Fx::ONE,
-        against: Some(Reading::Amount { resource: "processors".to_string() }),
-    };
-    let running = |b: &str, cmp, v: i64| Clause { reading: Reading::Running { building: b.to_string() }, cmp, value: Fx::from_int(v), against: None };
-    let mut lines = vec![
-        when(pads(Cmp::Lt), Some(short)),
-        act(Verb::AssignProcessors, None, Some(MAIN), Some(Amount::N(0))),
-        act(Verb::AssignProcessors, None, Some(BUILD), Some(Amount::All)),
-        when(pads(Cmp::Ge), Some(on(BUILD, Cmp::Ge, 2))),
-        act(Verb::AssignProcessors, None, Some(BUILD), Some(Amount::N(1))),
-        act(Verb::AssignProcessors, None, Some(MAIN), Some(Amount::All)),
-    ];
+    let mut lines = Vec::new();
     for (maker, product) in STOCK {
-        lines.push(when(pct(product, Cmp::Ge, 100), Some(running(maker, Cmp::Ge, 1))));
-        lines.push(act(Verb::Pause, Some(maker), None, Some(Amount::All)));
-        let all = Clause {
-            reading: Reading::Running { building: maker.to_string() },
-            cmp: Cmp::Lt,
-            value: Fx::ONE,
-            against: Some(Reading::Count { building: maker.to_string() }),
-        };
-        lines.push(when(pct(product, Cmp::Lt, 90), Some(all)));
-        lines.push(act(Verb::Resume, Some(maker), None, Some(Amount::All)));
+        lines.push(when(pct(product, Cmp::Gt, 99), None));
+        lines.push(act(Verb::Pause, Some(maker), Some(Amount::All)));
+        lines.push(when(pct(product, Cmp::Lt, 90), None));
+        lines.push(act(Verb::Resume, Some(maker), Some(Amount::All)));
     }
-    let depot = Clause {
-        reading: Reading::Amount { resource: "credits".to_string() },
-        cmp: Cmp::Ge,
-        value: Fx::from_int(3),
-        against: Some(Reading::NextCost { building: "storage_depot".to_string() }),
-    };
-    lines.push(when(pct("titanium", Cmp::Ge, 100), Some(depot)));
+    let rich = Clause { reading: Reading::Amount { resource: "credits".to_string() }, cmp: Cmp::Gt, value: depot * Fx::from_int(3) - Fx::EPSILON };
+    lines.push(when(pct("titanium", Cmp::Gt, 99), Some(rich)));
     lines.push(Entry::new(Op::Build { building: "storage_depot".to_string(), up_to: None }).indent());
     lines
 }
 
 fn clause(reading: Reading, cmp: Cmp, v: i64) -> Clause {
-    Clause { reading, cmp, value: Fx::from_int(v), against: None }
-}
-
-fn when2(a: Clause, b: Clause) -> Entry {
-    Entry::new(Op::If { when: Condition { first: a, rest: Some(Joined { join: Join::And, clause: b }) } })
+    Clause { reading, cmp, value: Fx::from_int(v) }
 }
 
 fn assign(tab: usize, amount: Amount) -> Entry {
@@ -107,44 +68,20 @@ fn assign(tab: usize, amount: Amount) -> Entry {
 }
 
 /// The build order's seat lines, what was the reset's processor rule as
-/// lines for a processor gained mid-run: the first side program in `sides`
-/// takes one once 3 work (the build order's 1, its own, one for the main
-/// program), the rest together once `2 + sides` do; each taken from the
-/// build order (before a pad) or the main program (after), the rest handed
-/// back to the main program (the lead takes them back for the build order
-/// while no pad stands). Two blocks, not one a side, to fit the build
-/// order's room for its lead (`author::LEAD_LINES`).
+/// lines for a processor gained mid-run (it starts free): while one is free,
+/// the build order keeps one, the main program takes one, then each side
+/// program in `sides` one, the rest to the main program. An `assign` short
+/// of processors fails (a step), so with few the earlier ones win.
 fn seat_lines(sides: &[usize]) -> Vec<Entry> {
-    let mut lines = Vec::new();
-    let groups: Vec<(&[usize], i64)> = match sides.split_first() {
-        None => Vec::new(),
-        Some((first, [])) => vec![(std::slice::from_ref(first), 3)],
-        Some((first, rest)) => vec![(std::slice::from_ref(first), 3), (rest, 2 + sides.len() as i64)],
-    };
-    for (group, at) in groups {
-        let last = *group.last().expect("a group is never empty");
-        lines.push(when2(
-            clause(Reading::Processors { tab: last as u32 }, Cmp::Lt, 1),
-            clause(Reading::Amount { resource: "processors".to_string() }, Cmp::Ge, at),
-        ));
-        lines.push(assign(BUILD, Amount::N(1)));
-        lines.push(assign(MAIN, Amount::N(0)));
-        lines.extend(group.iter().map(|&s| assign(s, Amount::N(1))));
-        lines.push(assign(MAIN, Amount::All));
-    }
+    let mut lines = vec![
+        Entry::new(Op::If { when: Condition { first: clause(Reading::FreeProcessors, Cmp::Gt, 0), rest: None } }),
+        assign(BUILD, Amount::N(1)),
+        assign(MAIN, Amount::N(0)),
+        assign(MAIN, Amount::N(1)),
+    ];
+    lines.extend(sides.iter().map(|&s| assign(s, Amount::N(1))));
+    lines.push(assign(MAIN, Amount::All));
     lines
-}
-
-/// The side program's tail, the rest of what were hands: every `FREE_EVERY` days, once
-/// a pad stands, a processor left free goes to the main program; and a run
-/// that has bought nothing for `stale_days` days retires.
-fn hand_lines(stale_days: u64) -> Vec<Entry> {
-    vec![
-        when2(clause(Reading::Every { days: FREE_EVERY }, Cmp::Eq, 1), clause(Reading::Count { building: "launch_pad".to_string() }, Cmp::Ge, 1)),
-        assign(MAIN, Amount::All),
-        Entry::new(Op::If { when: Condition { first: clause(Reading::DaysSincePurchase, Cmp::Ge, stale_days as i64), rest: None } }),
-        Entry::new(Op::Act { verb: Verb::Retire, target: None, tab: None, amount: None }).indent(),
-    ]
 }
 
 /// Projects it funds, all at once (drained in file order): the author's
@@ -160,29 +97,21 @@ const PROJECTS: &[&str] = &[
     "speculator_dossier",
     "market_cornering",
 ];
-/// The daily rate per cost resource (the author's `project_rate`), the
-/// credits it waits for, and how often it looks (strategy). The period is
-/// odd: a one-processor program whose Dream runs every other day reads a
-/// guard on alternate days only, and an even period would then never land.
+/// The daily rate per cost resource (the author's `project_rate`) and the
+/// credits it waits for (strategy).
 const FUND_RATE: u32 = 3;
 const FUND_AT: i64 = 1000;
-const FREE_EVERY: u32 = 9;
 
-/// From the day each project opens: while it is not completed and credits
-/// are at `FUND_AT` or more, it is funded at `FUND_RATE` a day per cost. A
-/// rate set stays (the drain takes only what is in stock), so it needs no
-/// stop; a project not open fails, one already at the rate is done, each a
-/// step; a completed one's guard skips it for free.
+/// From the day each project opens: while credits are above `FUND_AT`, it
+/// is funded at `FUND_RATE` a day per cost. A rate set stays (the drain takes
+/// only what is in stock), so it needs no stop; a project not open (or
+/// completed) fails, one already at the rate is done, each a step.
 fn fund_lines() -> Vec<Entry> {
     let fund = |id: &str| Entry::new(Op::Act { verb: Verb::Fund, target: Some(id.to_string()), tab: None, amount: Some(Amount::N(FUND_RATE)) }).indent();
-    let mut lines = Vec::new();
-    for id in PROJECTS {
-        lines.push(when2(
-            clause(Reading::Completed { project: id.to_string() }, Cmp::Lt, 1),
-            clause(Reading::Amount { resource: "credits".to_string() }, Cmp::Ge, FUND_AT),
-        ));
-        lines.push(fund(id));
-    }
+    let mut lines = vec![Entry::new(Op::If {
+        when: Condition { first: clause(Reading::Amount { resource: "credits".to_string() }, Cmp::Gt, FUND_AT), rest: None },
+    })];
+    lines.extend(PROJECTS.iter().map(|id| fund(id)));
     lines
 }
 
@@ -209,6 +138,10 @@ pub struct HandsOff {
     /// Lines written: the build order's plan and lead, the side program's own
     /// and what it gained (hands, funding, research).
     lines: [usize; 4],
+    /// What it has bought this run (buildings owned and research done, and
+    /// the land price, which rises with each land bought) and the day that
+    /// last changed: the stale-run retirement's clock.
+    bought: ((u32, Fx), u64),
 }
 
 impl HandsOff {
@@ -223,6 +156,7 @@ impl HandsOff {
             stale_days: k.get("stale_days", 300).max(1) as u64,
             every: k.get("every", 10).max(1) as u64,
             lines: [0; 4],
+            bought: ((0, Fx::ZERO), 0),
         }
     }
 
@@ -289,10 +223,19 @@ impl Agent for HandsOff {
             self.author.act(p);
             return;
         }
-        // Between resets it does nothing: its programs hold the rest.
+        // Between resets it does nothing but the stale-run retirement: its
+        // programs hold the rest.
         if self.loaded_run == run {
+            let owned = v.buildings.iter().map(|b| b.owned).sum::<u32>() + v.research.iter().filter(|r| r.done).count() as u32;
+            let have = (owned, v.land_price);
+            if have != self.bought.0 {
+                self.bought = (have, v.day);
+            } else if v.day.saturating_sub(self.bought.1) >= self.stale_days {
+                let _ = p.apply(&Action::Retire);
+            }
             return;
         }
+        self.bought = ((u32::MAX, Fx::ZERO), v.day);
         if self.loaded_run == 0 {
             // The author's last act, once: its build order from run 1,
             // saved to the library (the author writes it at a new run).
@@ -302,15 +245,14 @@ impl Agent for HandsOff {
                 let v = p.view();
                 let sides: Vec<usize> =
                     SLOTS.iter().filter(|(s, name)| *s != BUILD && v.library.iter().any(|l| l.name == *name)).map(|(s, _)| *s).collect();
-                let mut lead = processor_lines();
+                let depot = v.buildings.iter().find(|b| b.id == "storage_depot").map_or(Fx::ZERO, super::credits_price);
+                let mut lead = processor_lines(depot);
                 lead.extend(seat_lines(&sides));
                 // The rest goes to the first side program (the Dream watch
                 // when saved): the build order has room for its lead only.
-                // Funding first: a true block's body takes the day's step, so
-                // a periodic guard after it misses that day (the free
-                // processor's misses a look now and then).
+                // (A free processor is seated by the build order's lead alone:
+                // a second taker in a shorter loop would always win it.)
                 let mut extra = fund_lines();
-                extra.extend(hand_lines(self.stale_days));
                 extra.extend(research_tail(v));
                 let side = sides.first().and_then(|&s| {
                     let name = SLOTS.iter().find(|(x, _)| *x == s)?.1;
@@ -318,14 +260,6 @@ impl Agent for HandsOff {
                     Some((s, name, held.clone()))
                 });
                 let side = side.filter(|(_, _, h)| !h.is_empty() && h.len() + extra.len() <= v.max_program_lines);
-                if side.is_none() {
-                    // No side program to carry them: the hand lines (retire
-                    // included) lead the build order when they fit.
-                    let hands = hand_lines(self.stale_days);
-                    if plan.len() + lead.len() + hands.len() <= v.max_program_lines {
-                        lead.extend(hands);
-                    }
-                }
                 self.lines = [plan.len(), lead.len(), side.as_ref().map_or(0, |(_, _, h)| h.len()), extra.len()];
                 if plan.len() + lead.len() <= v.max_program_lines {
                     plan.splice(0..0, lead);
@@ -333,9 +267,7 @@ impl Agent for HandsOff {
                 p.put_program(BUILD as u32, plan, Some(BUILD_ORDER));
                 if let Some((s, name, mut held)) = side {
                     // Before its last line (the Dream watch's filler), so a
-                    // step reads every guard each loop: after it, a
-                    // one-processor loop would read them every other day
-                    // only, and an even period on one parity never.
+                    // step reads every guard each loop.
                     let at = held.len() - 1;
                     held.splice(at..at, extra);
                     p.put_program(s as u32, held, Some(name));
@@ -373,7 +305,7 @@ mod tests {
     /// side program saved; else a full build order would drop it whole.
     #[test]
     fn the_lead_fits_the_build_orders_room() {
-        let lead = processor_lines().len() + seat_lines(&[DREAM, FUND, MARKET]).len();
+        let lead = processor_lines(Fx::ONE).len() + seat_lines(&[DREAM, FUND, MARKET]).len();
         assert!(lead <= author::LEAD_LINES, "{lead} > {}", author::LEAD_LINES);
     }
 }

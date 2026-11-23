@@ -62,10 +62,10 @@ Three columns and a status bar:
   tabs 1 to 5 with processors −/+, Reset, Save / Load (`Library.tsx`: the loadout library;
   save new or over a slot, load, rename, delete); a line per instruction, dragged to reorder
   (an `if` takes its body), tinted by today's outcome (a failed line says why: "needs ⚡2,
-  had 0"), the next line to run in an accent frame. Once unlocked, Add: If, Wait until,
-  Build, Buy Land, Verb (`ProgramLogic.tsx`; one editor for all verbs): conditions as
-  dropdowns (right side a number or a reading × it), each clause with its live
-  value and ✓/✗; body lines indented under the `if` (⇥/⇤), greyed with it when false.
+  had 0"), the next line to run in an accent frame. Once unlocked, Add: If,
+  Build, Buy Land, Verb (`ProgramLogic.tsx`; one editor for all verbs): a condition is
+  a reading (the view's list), above or below, and a number (with `%` for a fill), and
+  `and`/`or` one more; each clause with its live value and ✓/✗; body lines indented under the `if` (⇥/⇤), greyed with it when false.
   Above 10x a redraw covers several days: each line shows its outcome over them
   (`advance_run`'s `lines`), no frame. Below, Events: Story (side story and the latest
   boredom phase), completed quests, and Recent Activity (green good, red bad, blue news),

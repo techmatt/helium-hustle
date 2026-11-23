@@ -70,17 +70,22 @@ How it writes the main program depends on the gap to its next look (*When it loo
 | 2 | `dream` | 1 while boredom is past `dream_at`% of its cap and the run still builds |
 | 3 | `fund_<axis>`: the first of humanist, rationalist, nationalist whose persistent project isn't done | 1 when 3 or more are left |
 | 4 | `promote_<good>` per pad good, `disrupt_speculators` | 1 when 3 or more are left |
-| 5 (`construct`) | construction: `if Land free < its land and Credits >= the land price` / `buy land` (while short of land); `if Credits >= the target's price and <its scarcest other input> >= its price` / `build <target> up to owned + 1`; then the filler × 1 | 1 when 2 or more are left, once the game unlocks `if` and `build` (not under the oracle's `main_last`: the main program takes the slot) |
+| 5 (`construct`) | construction: `if Free land below its land and Credits above the land price` / `buy land` (while short of land); `if Credits above the target's price and <its scarcest other input> above its price` (a capped input as a percent of its cap now) / `build <target> up to owned + 1`; then the filler × 1 | 1 when 2 or more are left, once the game unlocks `if` and `build` (not under the oracle's `main_last`: the main program takes the slot) |
 
 **Condition programs** (`cond` 1 once `if` is open; the oracle runs the table's, `cond` 0)
 read the game, not this look's counts, so each is saved once by name; side programs load at
-each reset and keep their lines while unassigned (`author/templates.rs`): `ship` (1: once a pad stands, fuel, `launch pads all`, `load pads all` while
-`cargo of pads < Launch Pad count × 100`, `set pads he3 up to 1` while no pad carries He-3,
-the same `up to 1` for a good at its cap while two carry He-3; the filler; a hand plan replaces it while the target waits on a bought
+each reset and keep their lines while unassigned (`author/templates.rs`): `ship` (1, its
+numbers percents of the caps when written: fuel while Propellant is under a launch's worth
+and a pad is idle, `launch pads all` while fewer than all pads are idle (once one stands),
+`load pads all` while Helium-3 holds a load, `set pads he3 up to 1` while a pad is idle,
+the same `up to 1` for a good above 99% while two are idle; the filler; a hand plan replaces it while the target waits on a bought
 input), `dream watch` (2), `fund`, `market`, and `build order` (5: the last run's purchases
-as `build X up to N`, each gated on the one before and on fewer than N owned, a short input
-bought first, `research` once science covers it and it isn't researched; rewritten when a
-run bought past it). Guards skip done lines (a step each).
+as `build X up to N`, one line a building in the order first bought (no count reading since
+059, so a step can't wait on the one before), each under `if Credits above <its price when
+written>`, a short input bought first, `research` once science covers it;
+rewritten when a run bought past it). With 13 readings, done lines (`load pads` with nothing
+to load, a researched item, a finished `build`) cost a step each loop while their guard
+holds.
 
 A program is rewritten only when its text changes (a rewrite restarts its pointer), through
 the library (`Player::put_program`). Extra pads carry a good other
@@ -112,15 +117,14 @@ filler, never over one that reaches the next look: about 90 decisions a run.
 **The hands-off player** (`handsoff.rs`) is the author until the run `if` opens in (049: its
 programs guard with `if`), counted as its first; then at each new run it loads
 the five programs by name (run 1's build order saved first) and seats processors (build
-order first, one each while two are left, the rest to Program 1), and makes no other
-decision. Its build order leads with what were hands: processors (all to it until a pad
-stands, then one; a side program seated once enough work), Smelters and Fabricators paused
-while their product is at cap (on again under 90%), a Storage Depot while titanium is and
-credits reach 3× its price. The Dream watch gains, before its filler: per
-project, `if completed P < 1 and credits >= 1000`, `fund P 3` (most open projects, from the
-day each opens); every 9 days a free
-processor to Program 1; `retire` once `days since last purchase` reaches `stale_days`; the
-author's hand research (odd periods: a guard read every other day lands).
+order first, one each while two are left, the rest to Program 1); its one other decision
+is a hand: it retires once the run has bought nothing (buildings, research) for
+`stale_days` days, as no reading says so since 059. Its build order leads with what were
+hands: while a processor is free, one each to the build order, Program 1 and the side
+programs, the rest to Program 1; Smelters and Fabricators paused while their product is at
+cap (on again under 90%); a Storage Depot while titanium is at cap and credits above 3× its
+price when written. The Dream watch gains, before its filler: `if credits above 1000`,
+`fund P 3` per project (a project not open fails, a step); the author's hand research.
 
 ## The oracle (`oracle/`)
 

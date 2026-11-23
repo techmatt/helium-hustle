@@ -294,6 +294,9 @@ pub enum Unlock {
     EnableNavPanel { panel: String },
     EnableProject { project: String },
     SetFlag { flag: String },
+    /// Adds `amount` of `resource` to this run's stock (re-applied at each
+    /// later run's start, like every unlock: docs/rules/events.md).
+    Grant { resource: String, amount: Fx },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -637,6 +640,7 @@ impl Content {
                 let ok = match u {
                     Unlock::EnableBuilding { building } => bld(building),
                     Unlock::EnableProject { project } => self.project(project).is_some(),
+                    Unlock::Grant { resource, amount } => res(resource) && *amount > Fx::ZERO,
                     _ => true,
                 };
                 need(ok, format!("{w}: bad unlock"));
@@ -696,10 +700,9 @@ impl Content {
                 }
             }
         }
-        // `if` and `wait until` open on flags content must set (programs.md, *Unlock*).
-        for flag in [crate::modules::programs::IF_FLAG, crate::modules::programs::WAIT_FLAG] {
-            need(set.contains(flag), format!("programs: nothing sets flag {flag:?}"));
-        }
+        // `if` opens on a flag content must set (programs.md, *Unlock*).
+        let flag = crate::modules::programs::IF_FLAG;
+        need(set.contains(flag), format!("programs: nothing sets flag {flag:?}"));
         // The engine sets this one itself (programs.md, *Unlock*).
         set.insert(crate::modules::programs::LOGIC_FLAG);
         for b in &self.buildings {

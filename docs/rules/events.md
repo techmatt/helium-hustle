@@ -79,6 +79,7 @@ completed earlier in the same check can fire that same day.
 | `enable_nav_panel` | the panel is shown this run. Two gate a rule: `retirement` (the Retire action, [career.md](career.md)) and `research` (buying research, [research.md](research.md)); others (`adversaries` from 1.4, `projects`, `ideologies`, ...) are display. |
 | `enable_project` | a project whose unlock is `project_enabled` may be funded this run ([projects.md](projects.md)) |
 | `set_flag` | sets a career flag |
+| `grant` (`resource`, `amount`) | adds the amount to this run's stock; re-applied at each run start (below), a starting bonus from then on |
 
 **Run start.** Every event the career has seen (quests and one-offs alike) re-applies its
 unlocks at the start of each run, so an unlocked building, panel or project stays unlocked
@@ -116,8 +117,9 @@ Triggers, conditions and unlocks are content (`content/events.json`).
 
 `content/events.json`: 31 rows. Twenty-one `story`: Act 1's beats 1.1 Online to 1.9 Deep Space
 Telescope (the swarm's reveal; draft, [../arc.md](../arc.md)), then the draft Q8 to Q18 and the
-Epilogue. Two `side`: 1.a Big Launch (opens Disrupt Speculators) and 1.b Full Cluster (opens
-`wait until`; a cluster of 2 or more items, `min_items`). Eight `ongoing`: Launch Plans (50 He-3 made this run enables the Launch Pad),
+Epilogue. Two `side`: 1.a Big Launch (opens Disrupt Speculators) and 1.b Full Cluster (a placeholder
+reward: a `grant` of 50 Science, so every later run starts with it; a cluster of 2 or more
+items, `min_items`). Eight `ongoing`: Launch Plans (50 He-3 made this run enables the Launch Pad),
 the Recreation Dome unlock (once 1.6 is done), Political Currents, propellant discovery,
 boredom phases 2 to 5.
 

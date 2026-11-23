@@ -110,7 +110,6 @@ pub fn buy(r: &Rules, g: &mut GameState, id: &str) -> Result<(), String> {
     g.run.research.insert(item.id.clone());
     g.career.researched.insert(item.id.clone());
     g.run.stats.research_completed += 1;
-    g.run.last_purchase = Some(g.run.day);
     g.note("research", &item.id);
     Ok(())
 }

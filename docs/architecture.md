@@ -135,8 +135,8 @@ the rest serve tests and e2e (`golden_start` the golden).
 ## The view
 
 `Rules::view` (`view.rs`; the programs and breakdown parts in `view/`) gives everything a
-client shows and can do: resources (amount, cap, the next day's rate (the `rate` reading's
-quantity: before the cap's cut, unmet demand counted), the stock's actual change, whether
+client shows and can do: resources (amount, cap, the next day's rate (before the cap's cut,
+unmet demand counted), the stock's actual change, whether
 the cap cuts or demand goes short that day, visible, grantable by the debug grant), the
 loadout library, buildings (price, what's short, buyable, unlocked,
 visible, stall, description, ideology tag, content rates per copy, the action that buys
@@ -145,8 +145,7 @@ today and each condition's live value; the readings a condition may use), pads (
 ready: full and can launch), the run's totals, markets (demand
 once Market Awareness is researched, else a tier), research, ideology (with the scores of
 this rank and the next), projects, the active quest (with countable progress), quest and
-event texts (of the boredom phases, only the latest), achievements, rivals, adversaries (Attention, threshold, present), whether `if` and
-`wait until` are open, live overclocks and modifiers, boredom (cap, rate,
+event texts (of the boredom phases, only the latest), achievements, rivals, adversaries (Attention, threshold, present), whether `if` is open, live overclocks and modifiers, boredom (cap, rate,
 phase), the nav tiles (`content/nav.json`), the career's bests, the next run's bonuses if
 the run retired now (`career::retire` on a copy), the last finished run's summary, the
 run's activity feed, each resource's flow breakdown, display names by id and the cheat

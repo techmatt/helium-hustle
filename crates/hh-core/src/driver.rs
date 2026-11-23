@@ -223,35 +223,30 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
 }
 
 /// The condition program ahead of the day's command once program logic is
-/// open, so the golden game pins the interpreter (`if`, `and`, a reading
-/// against a reading, verbs, `build`, the step each line costs):
+/// open, so the golden game pins the interpreter (`if`, `and`, the readings
+/// against a number, verbs, `build`, the step each line costs):
 ///
 /// ```text
-/// if free processors > 0
+/// if free processors above 0
 ///     assign processors program 1 all
-/// if idle pads (all) >= 1 and credits >= next cost of Launch Pad x 1
+/// if idle pads above 0 and credits above 225
 ///     build launch_pad up to 2
 /// ```
 ///
-/// The build guard leaves out the count on purpose: with two pads owned the
-/// `build` is done, and still takes its step.
+/// 225 is this script's own threshold (the second Launch Pad's credits price
+/// at baseline), not a rule. The build guard leaves out the count on purpose:
+/// with two pads owned the `build` is done, and still takes its step.
 fn guard_lines(allowed: &Allowed) -> Vec<Entry> {
-    let clause = |reading: Reading, cmp: Cmp, value: i64, against: Option<Reading>| Clause {
-        reading,
-        cmp,
-        value: Fx::from_int(value),
-        against,
-    };
+    let clause = |reading: Reading, cmp: Cmp, value: i64| Clause { reading, cmp, value: Fx::from_int(value) };
     let mut lines = vec![
-        Entry::new(Op::If { when: Condition { first: clause(Reading::FreeProcessors, Cmp::Gt, 0, None), rest: None } }),
+        Entry::new(Op::If { when: Condition { first: clause(Reading::FreeProcessors, Cmp::Gt, 0), rest: None } }),
         Entry::new(Op::Act { verb: Verb::AssignProcessors, target: None, tab: Some(0), amount: Some(Amount::All) }).indent(),
     ];
     if allowed.building("launch_pad") {
         let credits = Reading::Amount { resource: "credits".to_string() };
-        let price = Reading::NextCost { building: "launch_pad".to_string() };
         let when = Condition {
-            first: clause(Reading::IdlePads { good: None }, Cmp::Ge, 1, None),
-            rest: Some(Joined { join: Join::And, clause: clause(credits, Cmp::Ge, 1, Some(price)) }),
+            first: clause(Reading::IdlePads, Cmp::Gt, 0),
+            rest: Some(Joined { join: Join::And, clause: clause(credits, Cmp::Gt, 225) }),
         };
         lines.push(Entry::new(Op::If { when }));
         lines.push(Entry::new(Op::Build { building: "launch_pad".to_string(), up_to: Some(2) }).indent());
@@ -297,7 +292,7 @@ fn choose_command(v: &View, goal: Option<&str>, allowed: &Allowed) -> &'static s
 }
 
 /// The golden game: baseline config, seed `u64::MAX`, the `golden_start`
-/// scenario (`if` and `wait until` open, so the golden pins the interpreter),
+/// scenario (`if` open, so the golden pins the interpreter),
 /// 2000 ticks of the script (README, *Rules changes*).
 pub const GOLDEN_SEED: u64 = u64::MAX;
 pub const GOLDEN_TICKS: u64 = 2000;

@@ -27,7 +27,7 @@ it and never hold it up.
 | 1.8 Land rush | `qland_rush` | 1.7 | rivals present (Attention from land claimed) | the Contest Claims command (neutralizes the rivals) | draft |
 | 1.9 Deep Space Telescope | `qdeep_space_telescope` | 1.8 | the Deep Space Telescope global project (30,000 credits and 5,000 science at no faster than 3,000 days, so several runs) | Act 2: the `swarm_revealed` flag, the calendar, the Timeline view, the Experiment Lab | draft |
 | 1.a Big launch | `qbig_launch` (side) | 1.4 | one launch pays 1,000+ credits | Disrupt Speculators (also takes speculator Attention off) | draft |
-| 1.b Full cluster | `qfull_cluster` (side) | 1.6 | every item of one research category of 2+ items bought in one run | `wait until` | draft |
+| 1.b Full cluster | `qfull_cluster` (side) | 1.6 | every item of one research category of 2+ items bought in one run | placeholder: every run starts with 50 Science | draft |
 
 Placeholder choices (049), all for Matt to keep or replace:
 

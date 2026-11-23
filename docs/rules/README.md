@@ -1,6 +1,6 @@
 # Rules
 
-The rules as implemented, rules revision **15** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **16** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
 The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
@@ -58,7 +58,7 @@ One tick is one in-game day. Each tick, in this order (`Rules::tick`, `rules.rs`
 9. **Pads** cool down (shipments).
 10. **Speculator bursts and rival dumps** when due, landing only while their adversary is
     present (demand).
-11. The day's **rate** per resource is kept for the programs' `rate` reading (programs),
+11. The day's **rate** per resource is kept for the Resources panel's per-day number (programs),
     then the **clamp**: every resource cut to its cap (overflow counted) and lifted to zero
     (economy).
 12. **Quests, side quests and events** check their conditions (events).
@@ -87,7 +87,7 @@ Buildings resolve in file order; quests chain in file order.
 A few content ids are fixed in code, each listed in its page's *Content*: resources
 ([economy.md](economy.md), [shipments.md](shipments.md)), `launch_pad`, the `retirement`
 panel ([career.md](career.md)), the `research` panel ([research.md](research.md)), the
-`logic_if` and `logic_wait_until` flags ([programs.md](programs.md)), the adversaries
+`logic_if` flag ([programs.md](programs.md)), the adversaries
 ([attention.md](attention.md)), the ideology axes ([ideology.md](ideology.md)) and the
 modifier keys (`content::MODIFIER_KEYS`, [Modifiers](#modifiers)).
 

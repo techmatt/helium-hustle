@@ -1,5 +1,5 @@
 // A program's lines: a command line's row (ProgramLine), the editors of the lines that
-// aren't commands (if, wait until, build, buy land) and the buttons that add them. Every
+// aren't commands (if, build, buy land, verbs) and the buttons that add them. Every
 // option, value and true/false mark is the view's.
 
 import type { ComponentChildren, LiHTMLAttributes } from 'preact';
@@ -10,11 +10,8 @@ import { Bar, ResChip, ShortNote, name, ranPercent, shortText } from './common';
 import { sameReading } from './programEdit';
 
 const CMPS: [Cmp, string][] = [
-  ['lt', '<'],
-  ['le', '≤'],
-  ['gt', '>'],
-  ['ge', '≥'],
-  ['eq', '='],
+  ['gt', 'above'],
+  ['lt', 'below'],
 ];
 
 /** What a line did, in words (tooltips). */
@@ -25,58 +22,30 @@ export const OUTCOME_TEXT: Record<LineOutcome, string> = {
   true: 'true',
   false: 'false, its lines skipped',
   jumped: 'skipped with its if',
-  waiting: 'waiting',
   done: 'nothing to do (a step)',
 };
 
-/** A reading's label: the view's while it is on offer, else built from names. */
+/** A reading's label: the view's while it is on offer, else built from names (a line can
+ * hold a reading not shown yet). */
 export function readingLabel(v: View, r: Reading): string {
-  // The view offers `every` at one N; a line holds its own.
-  if (r.kind === 'every') return `Every ${r.days} day${r.days === 1 ? '' : 's'}`;
   const offered = v.readings.find((o) => sameReading(o.reading, r));
   if (offered) return offered.label;
   switch (r.kind) {
     case 'amount':
-      return name(v, r.resource);
     case 'percent':
-      return `${name(v, r.resource)} %`;
-    case 'rate':
-      return `${name(v, r.resource)} rate`;
-    case 'count':
-      return `${name(v, r.building)} count`;
-    case 'demand':
-      return `${name(v, r.good)} demand`;
-    case 'day':
-      return 'Day';
-    case 'pads_ready':
-      return `Ready pads ${r.good ? name(v, r.good) : '(all)'}`;
-    case 'cargo':
-      return `Cargo of pads ${r.good ? name(v, r.good) : '(all)'}`;
-    case 'next_cost':
-      return `Next cost of ${name(v, r.building)}`;
-    case 'land_price':
-      return 'Land price';
-    case 'days_to_cap':
-      return `Days to cap of ${name(v, r.resource)}`;
-    case 'days_since_launch':
-      return 'Days since last launch';
-    case 'days_since_purchase':
-      return 'Days since last purchase';
-    case 'pads':
-      return r.good ? `Pads on ${name(v, r.good)}` : 'Pads (all)';
-    case 'running':
-      return `${name(v, r.building)} running`;
-    case 'researched':
-      return `Researched ${name(v, r.item)}`;
-    case 'completed':
-      return `Completed ${name(v, r.project)}`;
-    case 'processors':
-      return `Program ${r.tab + 1} processors`;
+      return name(v, r.resource);
     case 'free_processors':
       return 'Free processors';
+    case 'free_land':
+      return 'Free land';
     case 'idle_pads':
-      return r.good ? `Idle pads on ${name(v, r.good)}` : 'Idle pads (all)';
+      return 'Idle pads';
   }
+}
+
+/** A reading's unit, shown after its number: `%` for a fill, none for an amount or a count. */
+function unit(r: Reading): string {
+  return r.kind === 'percent' ? '%' : '';
 }
 
 /** The verb's display label: the view's. */
@@ -95,15 +64,12 @@ function actText(v: View, e: Extract<Entry, { op: 'act' }>): string {
 
 function shown(r: Reading, value: string | null): string {
   if (value === null) return '?';
-  return r.kind === 'percent' ? `${num(value)}%` : r.kind === 'rate' ? `${Number(value) > 0 ? '+' : ''}${num(value)}/day` : num(value, 2);
+  return r.kind === 'percent' ? `${num(value)}%` : num(value, 2);
 }
 
-/** A condition as text: display names, never ids. */
+/** A condition as text, display names, never ids: "Energy above 50%". */
 export function conditionText(v: View, when: Condition): string {
-  const one = (c: Clause) =>
-    c.reading.kind === 'every'
-      ? readingLabel(v, c.reading)
-      : `${readingLabel(v, c.reading)} ${CMPS.find(([k]) => k === c.cmp)?.[1] ?? c.cmp} ${c.against ? `${readingLabel(v, c.against)} × ` : ''}${num(c.value, 2)}`;
+  const one = (c: Clause) => `${readingLabel(v, c.reading)} ${CMPS.find(([k]) => k === c.cmp)?.[1] ?? c.cmp} ${num(c.value, 2)}${unit(c.reading)}`;
   return when.rest ? `${one(when.first)} ${when.rest.join} ${one(when.rest.clause)}` : one(when.first);
 }
 
@@ -118,8 +84,6 @@ export function lineText(v: View, e: Entry): string {
       return 'Buy Land';
     case 'if':
       return `If ${conditionText(v, e.when)}`;
-    case 'wait_until':
-      return `Wait until ${conditionText(v, e.when)}`;
     case 'act':
       return actText(v, e);
   }
@@ -150,32 +114,7 @@ function NumberField({ value, commit, ...rest }: { value: string; commit: (text:
   );
 }
 
-/** The right side's optional reading: `<number>` alone, or `<reading> × <number>`. */
-function AgainstEdit({ v, c, set }: { v: View; c: Clause; set: (c: Clause) => void }) {
-  const against = c.against ?? null;
-  const offered = v.readings.filter((o) => o.reading.kind !== 'every');
-  const options = !against || offered.some((o) => sameReading(o.reading, against)) ? offered : [{ reading: against, label: readingLabel(v, against), value: null }, ...offered];
-  const at = against ? options.findIndex((o) => sameReading(o.reading, against)) : -1;
-  return (
-    <select
-      aria-label="Times reading"
-      title="Compare with another reading times the number"
-      value={String(at)}
-      onChange={(ev) => {
-        const i = Number(ev.currentTarget.value);
-        set({ ...c, against: i < 0 ? null : options[i].reading });
-      }}
-    >
-      <option value="-1">number</option>
-      {options.map((o, i) => (
-        <option key={i} value={String(i)}>
-          {o.label} ×
-        </option>
-      ))}
-    </select>
-  );
-}
-
+/** One clause: `<reading> <above|below> <number>[%]`. */
 function ClauseEdit({ v, c, now, set }: { v: View; c: Clause; now?: { value: string | null; holds: boolean }; set: (c: Clause) => void }) {
   const options = v.readings.some((o) => sameReading(o.reading, c.reading))
     ? v.readings
@@ -186,11 +125,7 @@ function ClauseEdit({ v, c, now, set }: { v: View; c: Clause; now?: { value: str
       <select
         aria-label="Reading"
         value={String(at)}
-        onChange={(ev) => {
-          const reading = options[Number(ev.currentTarget.value)].reading;
-          // `every N days` is the clause `= 1`, with no right-side reading.
-          set(reading.kind === 'every' ? { reading, cmp: 'eq', value: '1', against: null } : { ...c, reading });
-        }}
+        onChange={(ev) => set({ ...c, reading: options[Number(ev.currentTarget.value)].reading })}
       >
         {options.map((o, i) => (
           <option key={i} value={String(i)}>
@@ -198,37 +133,27 @@ function ClauseEdit({ v, c, now, set }: { v: View; c: Clause; now?: { value: str
           </option>
         ))}
       </select>
-      {c.reading.kind === 'every' ? (
-        // `every N days` is true on its days: the clause is `= 1`, N its field.
-        <NumberField
-          min="1"
-          step="1"
-          aria-label="Days"
-          value={String(c.reading.days)}
-          commit={(text) => {
-            if (/^\d{1,6}$/.test(text) && Number(text) >= 1) set({ ...c, reading: { kind: 'every', days: Number(text) }, cmp: 'eq', value: '1', against: null });
-          }}
-        />
-      ) : (
-        <>
-          <select aria-label="Comparison" value={c.cmp} onChange={(ev) => set({ ...c, cmp: ev.currentTarget.value as Cmp })}>
-            {CMPS.map(([k, sign]) => (
-              <option key={k} value={k}>
-                {sign}
-              </option>
-            ))}
-          </select>
-          <AgainstEdit v={v} c={c} set={set} />
-          <NumberField
-            step="any"
-            aria-label="Number"
-            // The engine's "500.000000" as 500.
-            value={String(Number(c.value))}
-            commit={(text) => {
-              if (/^-?\d{1,12}(\.\d{1,6})?$/.test(text)) set({ ...c, value: text });
-            }}
-          />
-        </>
+      <select aria-label="Comparison" value={c.cmp} onChange={(ev) => set({ ...c, cmp: ev.currentTarget.value as Cmp })}>
+        {CMPS.map(([k, word]) => (
+          <option key={k} value={k}>
+            {word}
+          </option>
+        ))}
+      </select>
+      <NumberField
+        step="any"
+        aria-label="Number"
+        title={c.reading.kind === 'percent' ? 'A percent of its cap' : 'An amount'}
+        // The engine's "500.000000" as 500.
+        value={String(Number(c.value))}
+        commit={(text) => {
+          if (/^-?\d{1,12}(\.\d{1,6})?$/.test(text)) set({ ...c, value: text });
+        }}
+      />
+      {unit(c.reading) && (
+        <span class="unit" data-unit>
+          {unit(c.reading)}
+        </span>
       )}
       {now && (
         <span class={`cond-now ${now.holds ? 'is-true' : 'is-false'}`} data-cond-now title={`${readingLabel(v, c.reading)} now`}>
@@ -354,10 +279,9 @@ export function ProgramLine(props: {
 export function LogicBody({ v, e, now, set }: { v: View; e: Entry; now: ConditionView | null; set: (e: Entry) => void }) {
   switch (e.op) {
     case 'if':
-    case 'wait_until':
       return (
         <span class="line-logic" data-holds={now ? String(now.holds) : undefined}>
-          <b>{e.op === 'if' ? 'If' : 'Wait until'}</b>
+          <b>If</b>
           <ConditionEdit v={v} when={e.when} now={now} set={(when) => set({ ...e, when })} />
         </span>
       );
@@ -490,7 +414,7 @@ export function AddLogic({ v, add }: { v: View; add: (e: Entry) => void }) {
     return (
       <p class="muted hint" data-testid="logic-locked">
         Build, Buy Land and verb lines unlock for good the first day {v.logic_unlock_processors} processors work; If opens with
-        the Conditional Logic global project, Wait until with the Full Cluster side quest.
+        the Conditional Logic global project.
       </p>
     );
   }
@@ -508,15 +432,6 @@ export function AddLogic({ v, add }: { v: View; add: (e: Entry) => void }) {
         onClick={() => when && add({ op: 'if', when })}
       >
         If
-      </button>
-      <button
-        type="button"
-        class="tiny"
-        disabled={!when || !v.wait_open}
-        title={v.wait_open ? 'Holds the program here until it is true' : 'Opens with the Full Cluster side quest (1.b)'}
-        onClick={() => when && add({ op: 'wait_until', when })}
-      >
-        Wait until
       </button>
       <button type="button" class="tiny" disabled={!building} title="Buys one building a step" onClick={() => building && add({ op: 'build', building, up_to: null })}>
         Build

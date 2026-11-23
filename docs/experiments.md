@@ -68,7 +68,7 @@ goals.
 | Milestones | Per milestone, medians: career ticks (`t`), retirements before it (`r`; it fell in run r+1) and that run's day (`d`); `k/n` when only k of n seeds reached it. |
 | Run credits, Peak cr/day, Ships/run | Credits earned and shipments a finished run (means); each career's best credit rate over the milestones' longest `credit_rate` window, 100 days (median over seeds). |
 | Real time | With `humans`: per player and model, run 1's real minutes (median), a finished run's (mean), minutes a decision, and each milestone's minutes from the career's start (median). |
-| Hands-off | With a `handsoff` player and an `author` one: how far automation alone carries a run. Credits a finished run from run 2 on (mean) and milestones first met from run 2 on (summed over seeds), each against the author's on the same seeds and as a share of it (run 1 is the author's in both). Its runs end by its `retire` line or the boredom cap. |
+| Hands-off | With a `handsoff` player and an `author` one: how far automation alone carries a run. Credits a finished run from run 2 on (mean) and milestones first met from run 2 on (summed over seeds), each against the author's on the same seeds and as a share of it (run 1 is the author's in both). Its runs end by its hand retirement (`stale_days` with nothing bought: no reading says so since 059) or the boredom cap. |
 | Run-1 objectives | With a spec's `objectives`: each objective's median run-1 day against its Godot window (`in`, `early`, `late`). |
 | Never built, never used | Buildings never owned and commands never run in any seed's career. |
 

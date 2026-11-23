@@ -15,7 +15,6 @@ use crate::{content_hash, Config, Session, RULES_REVISION};
 fn the_golden_starts_with_if_open() {
     let s = crate::driver::golden_start(&baseline()).unwrap();
     assert!(s.state.career.flags.contains(crate::modules::programs::IF_FLAG));
-    assert!(s.state.career.flags.contains(crate::modules::programs::WAIT_FLAG));
     assert_eq!(s.state.tick, 0);
 }
 
@@ -46,9 +45,9 @@ pub(crate) fn set(g: &mut crate::GameState, res: &str, v: &str) {
 // The golden constants: update all three together on a `RULES_REVISION` bump
 // with `python scripts/set_golden.py` (it also sets `GOLDEN_*` in
 // scripts/wasm-smoke.mjs); never type them (README, *Rules changes*).
-const GOLDEN_REVISION: u32 = 15;
-const GOLDEN_FINGERPRINT: &str = "6993f91f56cc5bc4";
-const GOLDEN_CONTENT_HASH: &str = "02697048f11250f6";
+const GOLDEN_REVISION: u32 = 16;
+const GOLDEN_FINGERPRINT: &str = "4c7dd531dc3ae256";
+const GOLDEN_CONTENT_HASH: &str = "20e8a39f0b6a4bff";
 
 pub(crate) fn golden_session() -> Session {
     crate::driver::golden_session(&baseline()).unwrap()
@@ -98,7 +97,7 @@ fn golden_game_runs_its_condition_program() {
     }
     let has = |line: usize, o: O| seen[line].contains(&format!("{o:?}"));
     assert!(readings.contains(&Reading::FreeProcessors.describe()), "{readings:?}");
-    assert!(readings.contains(&Reading::IdlePads { good: None }.describe()), "{readings:?}");
+    assert!(readings.contains(&Reading::IdlePads.describe()), "{readings:?}");
     for (line, outcomes) in [(0, &[O::True, O::False][..]), (1, &[O::Ran]), (2, &[O::True, O::False]), (3, &[O::Ran, O::Done])] {
         for &o in outcomes {
             assert!(has(line, o), "line {line} never {o:?}: {seen:?}");

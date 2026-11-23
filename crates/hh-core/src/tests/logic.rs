@@ -1,22 +1,22 @@
-//! Program instructions beyond commands: `if` blocks, `wait until`, `build`
-//! and `buy land` (docs/rules/programs.md).
+//! Program instructions beyond commands: `if` blocks, `build` and `buy land`
+//! (docs/rules/programs.md).
 
 use super::{f, rules, set};
 use crate::modules::{economy, programs};
 use crate::state::{Clause, Cmp, Condition, Entry, GameState, Holding, Join, Joined, LineOutcome as O, Op, Reading};
 use crate::{Action, Fx, Rules};
 
-/// A new game with the instructions unlocked (`if` and `wait until` too).
+/// A new game with the instructions unlocked (`if` too).
 fn game(r: &Rules) -> GameState {
     let mut g = r.new_game(1);
-    for flag in [programs::LOGIC_FLAG, programs::IF_FLAG, programs::WAIT_FLAG] {
+    for flag in [programs::LOGIC_FLAG, programs::IF_FLAG] {
         g.career.flags.insert(flag.into());
     }
     g
 }
 
 fn clause(reading: Reading, cmp: Cmp, v: &str) -> Clause {
-    Clause { reading, cmp, value: f(v), against: None }
+    Clause { reading, cmp, value: f(v) }
 }
 
 fn amount(res: &str, cmp: Cmp, v: &str) -> Clause {
@@ -47,21 +47,21 @@ fn outcomes(g: &GameState) -> Vec<Option<O>> {
 fn the_briefs_program_builds_a_base_unattended() {
     let r = rules();
     let mut g = game(&r);
-    let rate = Reading::Rate { resource: "energy".into() };
+    let energy = Reading::Percent { resource: "energy".into() };
     let entries = vec![
         build("solar_panel", Some(4)),
-        when(one(clause(rate, Cmp::Lt, "0"))),
+        when(one(clause(energy, Cmp::Lt, "1"))),
         build("solar_panel", None).indent(),
         when(Condition {
-            first: amount("land", Cmp::Lt, "1"),
+            first: clause(Reading::FreeLand, Cmp::Lt, "1"),
             rest: Some(Joined { join: Join::And, clause: amount("credits", Cmp::Gt, "500") }),
         }),
         Entry::new(Op::BuyLand {}).indent(),
-        Entry::new(Op::WaitUntil { when: one(amount("credits", Cmp::Gt, "800")) }),
-        build("data_center", Some(3)),
+        when(one(amount("credits", Cmp::Gt, "800"))),
+        build("data_center", Some(3)).indent(),
     ];
     put(&r, &mut g, entries).unwrap();
-    // Materials arrive daily; credits only from day 20: the program waits for them.
+    // Materials arrive daily; credits only from day 20: the Data Centers wait for them.
     for day in 0..60 {
         // Past their caps (the day's clamp cuts them back): prices scale past them.
         set(&mut g, "titanium", "500");
@@ -73,11 +73,9 @@ fn the_briefs_program_builds_a_base_unattended() {
         }
         r.advance(&mut g, 1);
         if day == 10 {
-            assert_eq!(g.owned("solar_panel"), 2, "one bought a pass, and the pass is held at the wait");
             assert_eq!(g.owned("data_center"), 1, "waiting for credits");
-            assert_eq!(outcomes(&g)[5], Some(O::Waiting));
             let v = r.view(&g);
-            let c = v.programs[0].conditions[5].as_ref().expect("a wait until line");
+            let c = v.programs[0].conditions[5].as_ref().expect("an if line");
             assert!(!c.holds);
             assert_eq!(c.clauses[0].value, Some(g.amount("credits")));
             assert!(v.programs[0].conditions[0].is_none());
@@ -94,7 +92,7 @@ fn a_false_if_jumps_its_body_for_free_and_a_true_one_runs_it_whole() {
     let mut g = game(&r);
     set(&mut g, "credits", "10");
     let entries = vec![
-        when(one(amount("credits", Cmp::Ge, "50"))),
+        when(one(amount("credits", Cmp::Gt, "49"))),
         Entry::command("idle", 1).indent(),
         Entry::command("idle", 1).indent(),
         Entry::command("cloud_compute", 1),
@@ -125,9 +123,9 @@ fn a_body_line_that_ran_today_keeps_its_outcome_when_its_if_turns_false() {
     r.apply(&mut g, &Action::SetProcessors { program: 0, processors: 2 }).unwrap();
     set(&mut g, "credits", "1000");
     set(&mut g, "titanium", "500");
-    // One Solar Panel owned: the first step builds the second, the next finds the `if` false.
-    let fewer = one(clause(Reading::Count { building: "solar_panel".into() }, Cmp::Lt, "2"));
-    put(&r, &mut g, vec![when(fewer), build("solar_panel", None).indent()]).unwrap();
+    // The first step builds a Solar Panel with credits, the next finds the `if` false.
+    let rich = one(amount("credits", Cmp::Gt, "999"));
+    put(&r, &mut g, vec![when(rich), build("solar_panel", None).indent()]).unwrap();
     r.advance(&mut g, 1);
     assert_eq!(g.owned("solar_panel"), 2);
     assert_eq!(outcomes(&g), [Some(O::False), Some(O::Ran)]);
@@ -160,8 +158,8 @@ fn a_done_line_costs_its_step_and_a_guarded_one_is_skipped_free() {
     r.advance(&mut g, 1);
     assert_eq!(outcomes(&g), [None, Some(O::Ran)], "the next step is the next line");
     // Guarded: the false `if` skips its body for free and Idle runs the same day.
-    let fewer = one(clause(Reading::Count { building: "solar_panel".into() }, Cmp::Lt, "1"));
-    put(&r, &mut g, vec![when(fewer), build("solar_panel", Some(1)).indent(), Entry::command("idle", 1)]).unwrap();
+    let never = one(amount("credits", Cmp::Lt, "0"));
+    put(&r, &mut g, vec![when(never), build("solar_panel", Some(1)).indent(), Entry::command("idle", 1)]).unwrap();
     r.advance(&mut g, 1);
     assert_eq!(outcomes(&g), [Some(O::False), Some(O::Jumped), Some(O::Ran)]);
 }
@@ -197,42 +195,39 @@ fn readings_read_the_state() {
     let mut g = game(&r);
     let read = |g: &GameState, what: Reading| programs::reading(&r, g, &what);
     set(&mut g, "energy", "25");
+    set(&mut g, "land", "3");
     assert_eq!(read(&g, Reading::Percent { resource: "energy".into() }), Some(f("25")));
     assert_eq!(read(&g, Reading::Percent { resource: "credits".into() }), None, "no cap, nothing to read");
-    assert_eq!(read(&g, Reading::Count { building: "solar_panel".into() }), Some(f("1")));
-    assert_eq!(read(&g, Reading::Demand { good: "he3".into() }), None, "demand is not revealed yet");
-    assert_eq!(read(&g, Reading::PadsReady { good: None }), Some(Fx::ZERO));
-    // The rate is the last full day's production less use: one panel against one Data Center.
-    r.advance(&mut g, 2);
-    assert_eq!(read(&g, Reading::Day), Some(f("2")));
-    let (made, used) = (g.run.today.produced["energy"], g.run.today.consumed["energy"]);
-    assert_eq!(read(&g, Reading::Rate { resource: "energy".into() }), Some(made - used));
-    assert_eq!(read(&g, Reading::Rate { resource: "he3".into() }), Some(Fx::ZERO));
-    // The view offers only what the player can see, by display name.
+    assert_eq!(read(&g, Reading::Amount { resource: "credits".into() }), Some(g.amount("credits")));
+    assert_eq!(read(&g, Reading::FreeLand), Some(f("3")));
+    assert_eq!(read(&g, Reading::FreeProcessors), Some(Fx::ZERO), "the one processor is on Program 1");
+    assert_eq!(read(&g, Reading::IdlePads), Some(Fx::ZERO));
+    // The view offers one reading per thing the player can see, by display name.
     let v = r.view(&g);
     let labels: Vec<&str> = v.readings.iter().map(|x| x.label.as_str()).collect();
-    assert!(labels.contains(&"Energy rate") && labels.contains(&"Land free") && labels.contains(&"Solar Panel count"));
-    assert!(!labels.iter().any(|l| l.ends_with("demand") || l.starts_with("Helium-3")), "{labels:?}");
+    for want in ["Energy", "Regolith", "Titanium", "Boredom", "Credits", "Free processors", "Free land"] {
+        assert!(labels.contains(&want), "{want} in {labels:?}");
+    }
+    assert!(!labels.iter().any(|l| l.starts_with("Helium-3") || *l == "Idle pads" || *l == "Land"), "{labels:?}");
+    assert!(labels.len() <= 13, "{labels:?}");
 }
 
 #[test]
-fn rate_reads_demand_so_a_line_under_rate_below_zero_runs_every_day_of_a_brownout() {
+fn the_days_rate_reads_demand_all_through_a_brownout() {
     // Production less demand (docs/rules/programs.md): unmet upkeep counts, so
-    // Energy's rate stays negative after the store has drained.
+    // Energy's rate (the Resources panel's per-day number) stays negative
+    // after the store has drained.
     let r = rules();
     let mut g = game(&r);
     g.run.buildings.insert("data_center".into(), Holding { owned: 6, active: 6, bonus: 0, free: 0, unpaid: 0 });
     economy::refresh(&mut g);
-    let below = one(clause(Reading::Rate { resource: "energy".into() }, Cmp::Lt, "0"));
-    put(&r, &mut g, vec![when(below), Entry::command("idle", 1).indent()]).unwrap();
-    let rate = |g: &GameState| programs::reading(&r, g, &Reading::Rate { resource: "energy".into() }).unwrap();
+    let rate = |g: &GameState| g.run.day_net.get("energy").copied().unwrap_or(Fx::ZERO);
     r.advance(&mut g, 1);
     assert_eq!(rate(&g), f("-7"), "one panel's 5 against six Data Centers' 12");
     let mut brownout_days = 0;
     for _ in 0..60 {
         r.advance(&mut g, 1);
         assert_eq!(rate(&g), f("-7"), "the demand stays, met or not (day {})", g.run.day);
-        assert_eq!(outcomes(&g)[1], Some(O::Ran), "the body ran (day {})", g.run.day);
         if g.amount("energy") < f("0.01") {
             brownout_days += 1;
         }
@@ -255,7 +250,7 @@ fn unmet_demand_counts_only_on_the_input_that_ran_short() {
     set(&mut g, "energy", "0");
     set(&mut g, "regolith", "40");
     r.advance(&mut g, 1);
-    let read = |res: &str| programs::reading(&r, &g, &Reading::Rate { resource: res.into() }).unwrap();
+    let read = |res: &str| g.run.day_net.get(res).copied().unwrap_or(Fx::ZERO);
     assert_eq!(read("regolith"), g.amount("regolith") - f("40"), "regolith: actual use");
     assert!(!g.run.today.unmet.contains_key("regolith"));
     assert!(read("energy") < Fx::ZERO && g.run.today.unmet["energy"] > Fx::ZERO);
@@ -279,7 +274,7 @@ fn a_failed_command_and_a_short_project_count_as_demand() {
 fn a_loadout_saved_in_one_run_loads_and_runs_in_the_next() {
     let r = rules();
     let mut g = game(&r);
-    let lines = vec![when(one(amount("credits", Cmp::Ge, "0"))), Entry::command("idle", 1).indent()];
+    let lines = vec![when(one(amount("credits", Cmp::Gt, "-1"))), Entry::command("idle", 1).indent()];
     put(&r, &mut g, lines.clone()).unwrap();
     let save = |g: &mut GameState, slot: Option<u32>, name: &str| {
         r.apply(g, &Action::SaveLoadout { program: 0, slot, name: name.into() })
@@ -317,27 +312,28 @@ fn a_loadout_saved_in_one_run_loads_and_runs_in_the_next() {
 }
 
 #[test]
-fn a_loaded_line_this_run_has_not_unlocked_fails_or_reads_nothing() {
+fn a_loaded_line_this_career_has_not_unlocked_fails_or_reads_false() {
     let r = rules();
-    let mut g = game(&r);
-    // Demand revealed in an earlier run: a saved line reads it.
-    let demand = one(clause(Reading::Demand { good: "he3".into() }, Cmp::Gt, "0"));
+    let mut g = r.new_game(1);
+    g.career.flags.insert(programs::LOGIC_FLAG.into());
+    // `if` not open (a loadout from elsewhere, say): a saved line holds one.
+    let any = one(amount("credits", Cmp::Gt, "-1"));
     g.career.library.push(crate::state::Loadout {
         name: "Later".into(),
-        entries: vec![when(demand.clone()), Entry::command("idle", 1).indent(), Entry::command("dream", 1)],
+        entries: vec![when(any.clone()), Entry::command("idle", 1).indent(), Entry::command("dream", 1)],
     });
-    assert!(put(&r, &mut g, vec![when(demand)]).is_err(), "set_program refuses it this run");
+    assert!(put(&r, &mut g, vec![when(any.clone())]).is_err(), "set_program refuses it this run");
     r.apply(&mut g, &Action::LoadLoadout { loadout: 0, program: 0 }).unwrap();
     r.advance(&mut g, 1);
     let o = outcomes(&g);
-    assert_eq!(o[0], Some(O::False), "demand not revealed: reads nothing");
+    assert_eq!(o[0], Some(O::False), "if not open: false");
     assert_eq!(o[2], Some(O::Failed), "Dream not researched: fails and advances");
     // The loaded program stays editable: an edit keeping that line goes through, a
     // new such line is still refused.
     let mut lines = g.run.programs[0].entries.clone();
     lines.push(Entry::command("idle", 2));
     put(&r, &mut g, lines.clone()).unwrap();
-    lines.push(when(one(clause(Reading::Demand { good: "titanium".into() }, Cmp::Gt, "0"))));
+    lines.push(when(one(amount("credits", Cmp::Lt, "5"))));
     assert!(put(&r, &mut g, lines).is_err());
 }
 
@@ -374,13 +370,19 @@ fn set_program_refuses_what_the_language_does_not_allow() {
         vec![build("nope", None)],
         vec![build("solar_panel", Some(0))],
         vec![when(one(amount("nope", Cmp::Gt, "1")))],
-        vec![when(one(clause(Reading::Demand { good: "he3".into() }, Cmp::Gt, "1")))],
+        // One reading per thing: a capped stock reads a percent, an uncapped
+        // one an amount, land and processors their free counts.
+        vec![when(one(amount("energy", Cmp::Gt, "1")))],
+        vec![when(one(amount("boredom", Cmp::Gt, "1")))],
+        vec![when(one(amount("land", Cmp::Gt, "1")))],
+        vec![when(one(amount("processors", Cmp::Gt, "1")))],
+        vec![when(one(clause(Reading::Percent { resource: "credits".into() }, Cmp::Gt, "1")))],
     ];
     for entries in bad {
         assert!(put(&r, &mut g, entries.clone()).is_err(), "{entries:?}");
     }
-    let wait = Entry::new(Op::WaitUntil { when: cond.clone() });
-    put(&r, &mut g, vec![when(cond), wait.indent(), Entry::new(Op::BuyLand {}).indent()]).unwrap();
+    let boredom = one(clause(Reading::Percent { resource: "boredom".into() }, Cmp::Gt, "1"));
+    put(&r, &mut g, vec![when(cond), Entry::new(Op::BuyLand {}).indent(), when(boredom)]).unwrap();
 }
 
 #[test]
@@ -401,21 +403,16 @@ fn the_unlock_is_a_career_first_kept_across_retirement() {
 }
 
 #[test]
-fn if_and_wait_until_open_on_their_own_flags() {
+fn if_opens_on_its_own_flag() {
     let r = rules();
     let mut g = r.new_game(1);
     g.career.flags.insert(programs::LOGIC_FLAG.into());
-    let cond = one(amount("credits", Cmp::Ge, "0"));
-    let iff = vec![when(cond.clone()), Entry::command("idle", 1).indent()];
-    let wait = vec![Entry::new(Op::WaitUntil { when: cond })];
+    let cond = one(amount("credits", Cmp::Gt, "-1"));
+    let iff = vec![when(cond), Entry::command("idle", 1).indent()];
     assert!(put(&r, &mut g, iff.clone()).is_err(), "if needs the Conditional Logic flag");
-    assert!(put(&r, &mut g, wait.clone()).is_err(), "wait until needs the Full Cluster flag");
     assert!(put(&r, &mut g, vec![build("solar_panel", Some(9))]).is_ok(), "build needs only program logic");
     g.career.flags.insert(programs::IF_FLAG.into());
     assert!(put(&r, &mut g, iff).is_ok());
-    assert!(put(&r, &mut g, wait.clone()).is_err());
-    g.career.flags.insert(programs::WAIT_FLAG.into());
-    assert!(put(&r, &mut g, wait).is_ok());
 }
 
 #[test]
@@ -442,4 +439,14 @@ fn a_line_is_json_with_an_op_tag() {
     .unwrap();
     let Action::SetProgram { entries, .. } = a else { panic!() };
     assert_eq!(entries[1], Entry::new(Op::BuyLand {}).indent());
+    // Gone: `wait until`, a reading on the right side, comparators but above and below.
+    let clause = |rest: &str| format!(r#"{{"op":"if","when":{{"first":{{"reading":{{"kind":"amount","resource":"credits"}},{rest}}},"rest":null}}}}"#);
+    assert!(serde_json::from_str::<Entry>(&clause(r#""cmp":"gt","value":"5""#)).is_ok());
+    for bad in [
+        clause(r#""cmp":"ge","value":"5""#),
+        clause(r#""cmp":"gt","value":"5","against":{"kind":"land_price"}"#),
+        r#"{"op":"wait_until","when":{"first":{"reading":{"kind":"free_land"},"cmp":"lt","value":"1"},"rest":null}}"#.to_string(),
+    ] {
+        assert!(serde_json::from_str::<Entry>(&bad).is_err(), "{bad}");
+    }
 }

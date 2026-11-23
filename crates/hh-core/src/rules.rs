@@ -86,7 +86,7 @@ impl Rules {
         g.tick += 1;
         economy::fold_flow_average(self, g);
         g.run.today = Default::default();
-        // The stock as the day begins: the `rate` reading is the day's change.
+        // The stock as the day begins: the day's rate is the day's change.
         let start = g.run.resources.clone();
         boredom::grow(self, g);
         // Debug only: a no-op unless the cheat building was bought.

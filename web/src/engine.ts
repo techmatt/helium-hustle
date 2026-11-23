@@ -30,8 +30,7 @@ export interface ResourceView {
   name: string;
   amount: Fx;
   cap: Fx | null;
-  /** The next day's rate: the same quantity as a program's `rate` reading (before the
-   * cap's cut, unmet demand counted). */
+  /** The next day's rate (before the cap's cut, unmet demand counted). */
   per_day: Fx;
   /** The stock's actual change that day. */
   change_per_day: Fx;
@@ -115,28 +114,21 @@ export interface CommandView {
   target: string | null;
 }
 
-export type Cmp = 'lt' | 'le' | 'gt' | 'ge' | 'eq';
+/** `lt` is the editor's "below", `gt` its "above". */
+export type Cmp = 'lt' | 'gt';
 
-/** What a condition reads (hh-core `state::Reading`). */
+/** What a condition reads (hh-core `state::Reading`): one reading per thing. `amount`
+ * for the uncapped resources (credits, science), `percent` for a capped resource's fill
+ * or boredom's. */
 export type Reading =
-  | { kind: 'amount' | 'percent' | 'rate'; resource: string }
-  | { kind: 'count'; building: string }
-  | { kind: 'day' | 'land_price' | 'days_since_launch' | 'days_since_purchase' | 'free_processors' }
-  | { kind: 'pads_ready' | 'cargo' | 'pads' | 'idle_pads'; good?: string | null }
-  | { kind: 'demand'; good: string }
-  | { kind: 'next_cost' | 'running'; building: string }
-  | { kind: 'researched'; item: string }
-  | { kind: 'completed'; project: string }
-  | { kind: 'processors'; tab: number }
-  | { kind: 'days_to_cap'; resource: string }
-  | { kind: 'every'; days: number };
+  | { kind: 'amount' | 'percent'; resource: string }
+  | { kind: 'free_processors' | 'free_land' | 'idle_pads' };
 
-/** `<reading> <cmp> <value>`, or with `against`, `<reading> <cmp> <against> × <value>`. */
+/** `<reading> <cmp> <value>`: the right side is always a number. */
 export interface Clause {
   reading: Reading;
   cmp: Cmp;
   value: Fx;
-  against?: Reading | null;
 }
 
 /** The verbs of an `act` line (hh-core `state::Verb`). */
@@ -179,13 +171,12 @@ export type Op =
   | { op: 'build'; building: string; up_to: number | null }
   | { op: 'buy_land' }
   | { op: 'if'; when: Condition }
-  | { op: 'wait_until'; when: Condition }
   | { op: 'act'; verb: Verb; target?: string | null; tab?: number | null; amount?: Amount | null };
 
 /** A program line: an instruction, `indented` in the body of the `if` above it. */
 export type Entry = Op & { indented?: boolean };
 
-export type LineOutcome = 'ran' | 'skipped' | 'failed' | 'true' | 'false' | 'jumped' | 'waiting' | 'done';
+export type LineOutcome = 'ran' | 'skipped' | 'failed' | 'true' | 'false' | 'jumped' | 'done';
 
 export interface ConditionView {
   holds: boolean;
@@ -216,7 +207,7 @@ export interface ProgramView {
   outcomes: (LineOutcome | null)[];
   /** Per line, the input it was short of the last time it ran today. */
   shorts: (ShortView | null)[];
-  /** Per line, an `if` or `wait until` line's condition as it reads now. */
+  /** Per line, an `if` line's condition as it reads now. */
   conditions: (ConditionView | null)[];
 }
 
@@ -475,12 +466,10 @@ export interface View {
   can_buy_land: boolean;
   commands: CommandView[];
   programs: ProgramView[];
-  /** `if`, `wait until`, `build` and `buy land` may be queued (a career first). */
+  /** `build`, `buy land` and verb lines may be queued (a career first). */
   program_logic: boolean;
   /** `if` may be queued (program logic and the Conditional Logic project). */
   if_open: boolean;
-  /** `wait until` may be queued (program logic and the Full Cluster side quest). */
-  wait_open: boolean;
   logic_unlock_processors: number;
   /** Most lines in one program (`max_entries`). */
   max_program_lines: number;

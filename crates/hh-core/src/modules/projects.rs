@@ -179,7 +179,7 @@ pub fn drain(r: &Rules, g: &mut GameState) {
             let want = rate.min(need).max(Fx::ZERO);
             let take = want.min(g.amount(&res)).max(Fx::ZERO);
             if take < want {
-                // Funding the stock couldn't cover counts as unmet demand (`rate`).
+                // Funding the stock couldn't cover counts as unmet demand (the day's rate).
                 let u = g.run.today.unmet.entry(res.clone()).or_insert(Fx::ZERO);
                 *u = u.saturating_add(want - take);
             }

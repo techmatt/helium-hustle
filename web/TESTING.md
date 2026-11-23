@@ -27,9 +27,9 @@ served page: `HH_URL`, required (it exits naming `vite preview` when unset),
    no card with Cheats off) and Complete all research, and the replay check.
 3. A program's frame at 10x and 50x, each speed's days per second, pause, click-to-buy, a
    reload keeping the save, another revision's save discarded, the scenarios; in `late_unlocks`, an `if` /
-   `build` / `wait until` program written through the editor, which then builds; saved,
-   then loaded after a retirement, it runs in run 2; pause/resume verb lines under a
-   `reading ×` clause and `every N days` run.
+   `build` program written through the editor (above/below, `%` on a fill), whose guarded
+   build waits for its `if`; saved, then loaded after a retirement, it runs in run 2;
+   pause/resume verb lines under `if`s run.
 4. **The theme:** the toggles switch it with every element's box unchanged (to 0.01 px);
    a reload keeps it.
 5. **Readability** (before 4): capped rates, Resources' groups, affordable cards and Land,

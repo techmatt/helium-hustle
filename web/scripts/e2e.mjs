@@ -186,8 +186,8 @@ async function playToFirstShipment() {
 }
 
 /** Section 6, from scenario late_unlocks (two processors; cheats on): the instructions
- * unlock after a day, a program of the shape `if` / `build` / `buy land` / `wait until`
- * is written through the editor, shows live values and builds unattended; verb lines;
+ * unlock after a day, a program of the shape `if` / `build` / `buy land` / `if` is
+ * written through the editor, shows live values and builds unattended; verb lines;
  * a done line costs its step and a false `if` skips it free. Shot `program-logic.png`. */
 async function programLogic(grant) {
   await debugMenu();
@@ -236,48 +236,52 @@ async function programLogic(grant) {
   await pick(`${line(0)} select[aria-label="Building"]`, 'Battery');
   await pick(`${line(0)} input[aria-label="Up to"]`, '1');
   await add('If');
-  await setClause(1, 1, 'Energy rate', '<', '0');
+  await setClause(1, 1, 'Energy', 'below', '50');
+  const unit = await evaluate(`document.querySelector(${q(`${clause(1, 1)} [data-unit]`)})?.textContent ?? ''`);
+  check(unit === '%', `a fill reading's number shows its unit: "${unit}"`);
   await add('Build');
   await pick(`${line(2)} select[aria-label="Building"]`, 'Solar Panel');
   await indent(2);
   await add('If');
-  await setClause(3, 1, 'Land free', '<', '1');
+  await setClause(3, 1, 'Free land', 'below', '1');
   await pick(`${line(3)} select[aria-label="Join"]`, 'and');
-  await setClause(3, 2, 'Credits', '>', '500');
+  await setClause(3, 2, 'Credits', 'above', '500');
+  check(!(await exists(`${clause(3, 2)} [data-unit]`)), 'an amount reading shows no % unit');
   await add('Buy Land');
   await indent(4);
-  await add('Wait until');
-  await setClause(5, 1, 'Credits', '>', '800');
+  await add('If');
+  await setClause(5, 1, 'Credits', 'above', '800');
   await add('Build');
   await pick(`${line(6)} select[aria-label="Building"]`, 'Storage Depot');
   await pick(`${line(6)} input[aria-label="Up to"]`, '1');
+  await indent(6);
   const shape = await evaluate(`[...document.querySelectorAll('.lines li')].map((l) => l.dataset.op + (l.classList.contains('indented') ? '>' : '')).join(' ')`);
-  check(shape === 'build if build> if buy_land> wait_until build', `the program as written: ${shape}`);
+  check(shape === 'build if build> if buy_land> if build>', `the program as written: ${shape}`);
   const ids = await evaluate(`document.querySelector('.lines').textContent`);
   check(!/[a-z]_[a-z]/.test(ids), 'lines show display names, never ids');
   await grant('credits', '300');
   const now = () => evaluate(`[...document.querySelectorAll('.lines li')].map((l) => [...l.querySelectorAll('[data-cond-now]')].map((c) => c.textContent.trim()).join(' | '))`);
   const before = await now();
-  check(/\/day [✓✗]$/.test(before[1]) && before[3].split(' | ').length === 2 && /[✓✗]$/.test(before[5]), `conditions show live values: ${before[1]}; ${before[3]}; ${before[5]}`);
+  check(/% [✓✗]$/.test(before[1]) && before[3].split(' | ').length === 2 && /[✓✗]$/.test(before[5]), `conditions show live values: ${before[1]}; ${before[3]}; ${before[5]}`);
   await speed(10);
-  await waitFor(`document.querySelector(${q(line(5))})?.classList.contains('out-waiting')`, 'the program to reach its wait', 8000);
+  await waitFor(`document.querySelector(${q(line(5))})?.classList.contains('out-false')`, 'the program to reach its false if', 8000);
   await speed(0);
   await shot('program-logic');
   await panel('buildings');
   const b1 = await buildings();
-  check(b1.battery.owned === 1 && b1.storage_depot.owned === 0, `built unattended up to the wait: ${b1.battery.owned} Battery, ${b1.storage_depot.owned} Storage Depot`);
+  check(b1.battery.owned === 1 && b1.storage_depot.owned === 0, `built unattended, the guarded line held back: ${b1.battery.owned} Battery, ${b1.storage_depot.owned} Storage Depot`);
   const classes = () => evaluate(`[...document.querySelectorAll('.lines li')].map((l) => (l.className.match(/out-\\w+/) ?? ['-'])[0]).join(' ')`);
-  console.log(`     lines at the wait: ${await classes()}`);
+  console.log(`     lines at the false if: ${await classes()}`);
   await debugMenu();
   await grant('credits', '2000');
   await speed(10);
   await panel('buildings');
-  await waitFor(`document.querySelector('.card.building[data-id="storage_depot"]')?.dataset.owned === '1'`, 'the Storage Depot after the wait', 8000);
+  await waitFor(`document.querySelector('.card.building[data-id="storage_depot"]')?.dataset.owned === '1'`, 'the Storage Depot once the if holds', 8000);
   await speed(0);
   const after = await now();
   const built = (await classes()).split(' ');
-  check(/✓$/.test(after[5]) && built[5] === 'out-true', `the wait passed once Credits > 800: ${after[5]} (${built[5]})`);
-  check(built[6] === 'out-ran' || built[6] === 'out-done', `the last line built, then is done: ${built.join(' ')}`);
+  check(/✓$/.test(after[5]) && built[5] === 'out-true', `the if held once Credits above 800: ${after[5]} (${built[5]})`);
+  check(built[6] === 'out-ran' || built[6] === 'out-done', `the guarded line built, then is done: ${built.join(' ')}`);
   // A number being typed survives the game's redraws, and is sent on Enter or leaving.
   await speed(10);
   await evaluate(`(() => { const el = document.querySelector(${q(`${clause(5, 1)} input`)}); el.focus(); el.value = '12'; el.dispatchEvent(new Event('input', { bubbles: true })); })()`);
@@ -287,7 +291,7 @@ async function programLogic(grant) {
   check(typed === '12', `a number being typed survives the day's redraws: ${typed}`);
   await pick(`${clause(5, 1)} input`, '120');
   const sent = await evaluate(`document.querySelector(${q(line(5))}).title`);
-  check(/^Wait until Credits > 120:/.test(sent), `and is sent when the field is left: ${sent.split(':')[0]}`);
+  check(/^If Credits above 120:/.test(sent),`and is sent when the field is left: ${sent.split(':')[0]}`);
   // "Up to" refuses 0 (it would mean no limit) and goes back to what it was.
   await pick(`${line(0)} input[aria-label="Up to"]`, '0');
   const upTo = await evaluate(`[document.querySelector(${q(line(0))}).title.split(':')[0], document.querySelector(${q(`${line(0)} input[aria-label="Up to"]`)}).value]`);
@@ -296,7 +300,7 @@ async function programLogic(grant) {
   await click(`${line(3)} button[title="Remove"]`);
   await sleep(60);
   const left = await evaluate(`[...document.querySelectorAll('.lines li')].map((l) => l.dataset.op + (l.classList.contains('indented') ? '>' : '')).join(' ')`);
-  check(left === 'build if build> buy_land wait_until build', `removing an if un-indents its body: ${left}`);
+  check(left === 'build if build> buy_land if build>',`removing an if un-indents its body: ${left}`);
   await shot('program-logic-built');
 
   // The loadout library: a program saved in this run loads in the next and runs.
@@ -335,20 +339,19 @@ async function programLogic(grant) {
   check((await evaluate(`document.querySelectorAll('[data-loadout]').length`)) === 0, 'a loadout deletes');
   await click('[data-testid="loadout-load"]');
 
-  // Verb lines: one dropdown editor for every verb; a right side that is a reading times a
-  // number; `every N days`.
+  // Verb lines: one dropdown editor for every verb, each under an `if` that holds.
   await click('.prog-tabs button[data-program="0"]');
   await click('.prog-procs button[title="Clear this program"]');
   await add('If');
-  await setClause(0, 1, 'Solar Panel count', '≥', '1');
-  await pick(`${clause(0, 1)} select[aria-label="Times reading"]`, 'Battery count ×');
+  const cmps = await evaluate(`[...document.querySelectorAll(${q(`${clause(0, 1)} select[aria-label="Comparison"] option`)})].map((o) => o.textContent.trim()).join(' ')`);
+  check(cmps === 'above below', `two comparators: ${cmps}`);
+  await setClause(0, 1, 'Credits', 'above', '-1');
   await add('Verb');
   await pick(`${line(1)} select[aria-label="Verb"]`, 'Pause');
   await pick(`${line(1)} select[aria-label="Target"]`, 'Solar Panel');
   await indent(1);
   await add('If');
-  await pick(`${clause(2, 1)} select[aria-label="Reading"]`, 'Every N days');
-  await pick(`${clause(2, 1)} input[aria-label="Days"]`, '2');
+  await setClause(2, 1, 'Free processors', 'above', '-1');
   await add('Verb');
   await pick(`${line(3)} select[aria-label="Verb"]`, 'Resume');
   await pick(`${line(3)} select[aria-label="Target"]`, 'Solar Panel');
@@ -357,7 +360,7 @@ async function programLogic(grant) {
   const verbShape = await evaluate(`[...document.querySelectorAll('.lines li')].map((l) => l.dataset.op + (l.classList.contains('indented') ? '>' : '')).join(' ')`);
   check(verbShape === 'if act> if act>', `verb lines as written: ${verbShape}`);
   const verbText = await evaluate(`[...document.querySelectorAll('.lines li')].map((l) => l.title.split(':')[0]).join(' | ')`);
-  check(/Battery count × 1/.test(verbText) && /Pause Solar Panel/.test(verbText) && /Every 2 days/.test(verbText) && /Resume Solar Panel all/.test(verbText), `verb lines read as text: ${verbText}`);
+  check(/If Credits above -1/.test(verbText) && /Pause Solar Panel/.test(verbText) && /If Free processors above -1/.test(verbText) &&/Resume Solar Panel all/.test(verbText), `verb lines read as text: ${verbText}`);
   // One processor: a day runs the pause, a day the resume (each a step).
   const ran = (i) => `/out-(ran|done)/.test(document.querySelector(${q(line(i))})?.className ?? '')`;
   await speed(3);
@@ -394,7 +397,8 @@ async function programLogic(grant) {
     `one processor: the done line takes a day's step, Idle the next (${done.join('; ')})`);
   await click('.prog-procs button[title="Clear this program"]');
   await add('If');
-  await setClause(0, 1, 'Solar Panel count', '<', '1');
+  // Credits never go below 0.
+  await setClause(0, 1, 'Credits', 'below', '-1');
   await add('Build');
   await pick(`${line(1)} select[aria-label="Building"]`, 'Solar Panel');
   await pick(`${line(1)} input[aria-label="Up to"]`, '1');
@@ -782,7 +786,7 @@ try {
   check(/^Replay ok/.test(await noticeText()), `replay check: ${await noticeText()}`);
 
   // ---- 5. readability: capped income, affordable headers, pad readiness, quest pin ----
-  // ---- 6. program instructions (before 5): if, build, buy land, wait until ----
+  // ---- 6. program instructions (before 5): if, build, buy land ----
   await programLogic(grant);
   await debugMenu();
   await setValue('#scenario', 'at_cap');

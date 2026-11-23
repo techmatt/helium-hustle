@@ -137,10 +137,10 @@
     "silent": false,
     "title": "1.b — Full Cluster",
     "summary": "DRAFT. Research every item of one research cluster in one run.",
-    "body": "DRAFT. A whole field mastered. Programs learn to wait: wait until opens.",
+    "body": "DRAFT. A whole field mastered. Your notes outlive the run: every run from now on starts with 50 Science.",
     "trigger": {"type": "quest_complete", "quest": "qlab"},
     "condition": {"type": "research_cluster", "min_items": 2},
-    "unlocks": [{"type": "set_flag", "flag": "logic_wait_until"}]
+    "unlocks": [{"type": "grant", "resource": "science", "amount": "50"}]
   },
   {
     "id": "launch_pad_unlock",
