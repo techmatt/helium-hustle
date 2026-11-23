@@ -6,7 +6,7 @@
 //! # a comment (anywhere after `#`)
 //! seat: 1=all          # processors at a reset: tab=N or tab=all, in order
 //! [1]                  # Program 1's lines follow
-//! if energy below 60% and credits above 20
+//! if energy < 60% and credits > 20
 //!   build solar_panel  # indented: in the body of the `if` above
 //! cloud_compute x10
 //! ```
@@ -14,7 +14,7 @@
 //! Each line is read by the game's text form (`hh_core::program_text`, the
 //! text editor's: display names or ids, aliases, docs/rules/programs.md
 //! *Text form*). Ids are the content's (buildings, commands, resources, research,
-//! projects). A condition is `<reading> above|below <number>[%]`, with one
+//! projects). A condition is `<reading> <op> <number>[%]` (`op`: `>`, `<`, `>=`, `<=`), with one
 //! optional `and`/`or`: `free processors`, `free land` and `idle pads` read
 //! their count, `energy per day` and `days since a purchase` their number
 //! (both researched); any other reading is a resource, its fill percent with
@@ -56,8 +56,8 @@ fn tab(s: &str) -> Result<usize, String> {
 
 #[cfg(test)]
 fn clause(words: &[&str]) -> Result<Clause, String> {
-    let at = words.iter().position(|w| *w == "above" || *w == "below").ok_or_else(|| format!("no above/below in {words:?}"))?;
-    let cmp = if words[at] == "above" { Cmp::Gt } else { Cmp::Lt };
+    let at = words.iter().position(|w| *w == ">" || *w == "<").ok_or_else(|| format!("no > or < in {words:?}"))?;
+    let cmp = if words[at] == ">" { Cmp::Gt } else { Cmp::Lt };
     let raw = *words.get(at + 1).ok_or("no number")?;
     if words.len() > at + 2 {
         return Err(format!("trailing words in {words:?}"));
@@ -166,7 +166,7 @@ mod tests {
     #[test]
     fn it_reads_every_form() {
         let l = parse(
-            "seat: 1=all 2=1 # c\n[2]\nif he3 above 10% or credits below 20\n  load pads all\nlaunch pads he3\n\
+            "seat: 1=all 2=1 # c\n[2]\nif he3 > 10% or credits < 20\n  load pads all\nlaunch pads he3\n\
              set pads he3 up to 1\nbuild smelter up to 2\nbuy land\nassign processors 3 all\nfund foundation_grant 3\ndream x5\nretire\n",
         )
         .unwrap();
@@ -211,7 +211,7 @@ mod tests {
 
     #[test]
     fn it_refuses_what_it_cannot_read() {
-        for bad in ["build x", "[1]\nif energy 50%", "[1]\nbuild a up to many", "[0]", "[1]\n[1]", "seat: 1", "[1]\nif above 5", "[1]\nif energy per day below 0%"] {
+        for bad in ["build x", "[1]\nif energy 50%", "[1]\nbuild a up to many", "[0]", "[1]\n[1]", "seat: 1", "[1]\nif > 5", "[1]\nif energy per day < 0%", "[1]\nif energy above 5"] {
             assert!(parse(bad).is_err(), "{bad:?}");
         }
     }

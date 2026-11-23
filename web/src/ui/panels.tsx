@@ -3,7 +3,7 @@
 
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
-import type { Fx, ProjectView, ResearchView, View } from '../engine';
+import type { CommandView, Fx, ProjectView, ResearchView, View } from '../engine';
 import { capitalize, mult, num, perDay, storyBody } from '../format';
 import { act, seen, store, type Store } from '../store';
 import { Bar, Breakdown, FlowLines, Quest, ResChip, Section, cardButton, freshClass, name, numBelow, useHint } from './common';
@@ -60,16 +60,7 @@ export function Commands({ s, program }: { s: Store; program: number }) {
                     <h3>{c.name}</h3>
                   )}
                 </div>
-                <p class="desc">{c.description}</p>
-                <div class="effects">
-                  <FlowLines v={v} amounts={c.costs} sign={-1} suffix="" />
-                  <FlowLines v={v} amounts={c.produces} sign={1} suffix="" />
-                  {Number(c.boredom) > 0 && (
-                    <div class="flow neg">
-                      <ResChip v={v} id="boredom" /> +{num(c.boredom, 2)} Boredom
-                    </div>
-                  )}
-                </div>
+                <CommandBody v={v} c={c} />
                 <div class="card-actions">
                   <button type="button" data-testid={`add-${c.id}`} disabled={!c.unlocked} onClick={() => add(c.id)}>
                     {c.unlocked ? 'Add to Program' : 'Locked'}
@@ -80,6 +71,24 @@ export function Commands({ s, program }: { s: Store; program: number }) {
           })}
       </div>
     </div>
+  );
+}
+
+/** A command card's description and flows (the Commands panel's, the text editor's hover). */
+export function CommandBody({ v, c }: { v: View; c: CommandView }) {
+  return (
+    <>
+      <p class="desc">{c.description}</p>
+      <div class="effects">
+        <FlowLines v={v} amounts={c.costs} sign={-1} suffix="" />
+        <FlowLines v={v} amounts={c.produces} sign={1} suffix="" />
+        {Number(c.boredom) > 0 && (
+          <div class="flow neg">
+            <ResChip v={v} id="boredom" /> +{num(c.boredom, 2)} Boredom
+          </div>
+        )}
+      </div>
+    </>
   );
 }
 
@@ -277,7 +286,7 @@ export function Research({ s }: { s: Store }) {
 }
 
 /** A research card is its Research button, like a building card (`cardButton`). */
-function ResearchCard({ v, r, fresh }: { v: View; r: ResearchView; fresh: Set<string> }) {
+export function ResearchCard({ v, r, fresh }: { v: View; r: ResearchView; fresh: Set<string> }) {
   const key = `research:${r.id}`;
   const [hint, showHint] = useHint();
   const needs = r.requires && !v.research.find((x) => x.id === r.requires)?.done ? r.requires : null;

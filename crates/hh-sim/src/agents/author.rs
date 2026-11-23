@@ -14,7 +14,7 @@
 //! | 2 dream | `dream` | 1 while boredom is past `dream_at`% of its cap and the run still builds |
 //! | 3 fund | `fund_<axis>`: the first axis (humanist, rationalist, nationalist) whose persistent project isn't done | 1 when 3 or more are left |
 //! | 4 market | `promote_<good>` for each pad good, `disrupt_speculators` | 1 when 3 or more are left |
-//! | 5 construction (`construct`) | `if Free land below its land and Credits above the land price` / `buy land` (only while short of land); `if Credits above its price and <its scarcest other input> above its price` (a capped input as a percent of its cap) / `build <target> up to owned + 1`; then the filler × 1 | 1 when 2 or more are left, once `if` and `build` are unlocked (never under the oracle's `main_last`, which puts the main program in that slot) |
+//! | 5 construction (`construct`) | `if Free land < its land and Credits > the land price` / `buy land` (only while short of land); `if Credits > its price and <its scarcest other input> > its price` (a capped input as a percent of its cap) / `build <target> up to owned + 1`; then the filler × 1 | 1 when 2 or more are left, once `if` and `build` are unlocked (never under the oracle's `main_last`, which puts the main program in that slot) |
 //!
 //! With `cond` (default 1; the oracle runs 0) and program logic open, the
 //! table gives way to condition programs, one text each, saved by name

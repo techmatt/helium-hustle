@@ -60,9 +60,8 @@ fn reading_text(r: &Reading) -> String {
 }
 
 fn clause_text(c: &Clause) -> String {
-    let cmp = if c.cmp == Cmp::Gt { "above" } else { "below" };
     let pct = if matches!(c.reading, Reading::Percent { .. }) { "%" } else { "" };
-    format!("{} {cmp} {}{pct}", reading_text(&c.reading), number(c.value))
+    format!("{} {} {}{pct}", reading_text(&c.reading), c.cmp.symbol(), number(c.value))
 }
 
 /// One line's text, without its indent.
@@ -182,19 +181,22 @@ const COUNTED: [(&str, Reading); 6] = [
     ("days since purchase", Reading::DaysSincePurchase),
 ];
 
-/// One clause: `<reading> <above|below> <number>[%]` (comparison aliases in the docs).
+/// One clause: `<reading> <op> <number>[%]`, `op` one of `>`, `<`, `>=`,
+/// `<=` (`≥` and `≤` read as the last two).
 fn clause(words: &[&str]) -> Result<Clause, String> {
     let cmp_of = |w: &str| match w {
-        "above" | "over" | ">" | ">=" | "≥" => Some(Cmp::Gt),
-        "below" | "under" | "<" | "<=" | "≤" => Some(Cmp::Lt),
+        ">" => Some(Cmp::Gt),
+        "<" => Some(Cmp::Lt),
+        ">=" | "≥" => Some(Cmp::Ge),
+        "<=" | "≤" => Some(Cmp::Le),
         _ => None,
     };
-    let at = words.iter().position(|w| cmp_of(w).is_some()).ok_or("no above or below")?;
+    let at = words.iter().position(|w| cmp_of(w).is_some()).ok_or("no comparison (>, <, >= or <=)")?;
     let cmp = cmp_of(words[at]).unwrap_or(Cmp::Gt);
     let what = words[..at].join(" ");
     let mut raw = words[at + 1..].join("");
     if raw.is_empty() {
-        return Err("no number after above or below".to_string());
+        return Err(format!("no number after {}", words[at]));
     }
     let pct = raw.ends_with('%');
     if pct {
@@ -204,7 +206,7 @@ fn clause(words: &[&str]) -> Result<Clause, String> {
     let reading = match COUNTED.iter().find(|(w, _)| *w == what) {
         Some((w, _)) if pct => return Err(format!("{w} is a count, not a percent")),
         Some((_, r)) => r.clone(),
-        None if what.is_empty() => return Err("no reading before above or below".to_string()),
+        None if what.is_empty() => return Err(format!("no reading before {}", words[at])),
         None if pct => Reading::Percent { resource: resource(&what)? },
         None => Reading::Amount { resource: resource(&what)? },
     };
@@ -278,7 +280,7 @@ pub fn parse_op(line: &str) -> Result<Op, String> {
         return match w.len() {
             1 => Ok(Op::Else {}),
             _ if w[1] == "if" => Err("no else if: an else's body holds no if".to_string()),
-            _ => Err("else stands alone: its lines go indented below it".to_string()),
+            _ => Err("else stands alone: its lines go indented under it".to_string()),
         };
     }
     if w.first() == Some(&"if") {
@@ -454,6 +456,134 @@ pub fn parse(r: &Rules, g: &GameState, text: &str) -> Parsed {
         l.reason = Some(format!("at most {most} lines in a program"));
     }
     Parsed { entries, lines }
+}
+
+/// One entry of the text editor's instruction panel: a line as text, why it
+/// won't run yet this run (amber, `programs::locked`), and the card a hover
+/// shows (`command:<id>`, `building:<id>`, `research:<id>`, `project:<id>`).
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct Instruction {
+    pub text: String,
+    pub locked: Option<String>,
+    pub card: Option<String>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize)]
+pub struct InstructionGroup {
+    pub name: &'static str,
+    pub items: Vec<Instruction>,
+}
+
+/// The instruction panel's groups, only what the game has revealed (the
+/// editor's lists: visible commands, buildings and research, open projects,
+/// the library, the readings on offer). Number slots hold 1; `up to N` the
+/// count owned + 1. `else` is listed only when an `else` line inserted
+/// unindented below text line `cursor` of `text` reads where it stands.
+pub fn instructions(r: &Rules, g: &GameState, text: &str, cursor: usize) -> Vec<InstructionGroup> {
+    let v = r.view(g);
+    let item = |op: Op, card: Option<String>| {
+        let locked = programs::locked(r, g, &Entry::new(op.clone()));
+        Instruction { text: op_text(&op), locked, card }
+    };
+    let act = |verb, target: Option<&str>, tab: Option<u32>, amount: Option<Amount>| Op::Act { verb, target: target.map(str::to_string), tab, amount };
+    let one = Some(Amount::N(1));
+    let targets = |verb: Verb| -> Vec<String> {
+        v.verbs.iter().find(|x| x.verb == verb).and_then(|x| x.targets.as_ref()).map_or(Vec::new(), |t| t.iter().map(|c| c.value.clone()).collect())
+    };
+    let buildings: Vec<_> = v.buildings.iter().filter(|b| b.visible).collect();
+    let mut groups = Vec::new();
+    let mut group = |name: &'static str, items: Vec<Instruction>| {
+        if !items.is_empty() {
+            groups.push(InstructionGroup { name, items });
+        }
+    };
+
+    group(
+        "Commands",
+        v.commands.iter().filter(|c| c.visible).map(|c| item(Op::Command { command: c.id.to_string(), count: 1 }, Some(format!("command:{}", c.id)))).collect(),
+    );
+
+    let mut build = Vec::new();
+    for b in &buildings {
+        let card = Some(format!("building:{}", b.id));
+        build.push(item(Op::Build { building: b.id.to_string(), up_to: None }, card.clone()));
+        build.push(item(Op::Build { building: b.id.to_string(), up_to: Some(b.owned + 1) }, card));
+    }
+    build.push(item(Op::BuyLand {}, None));
+    group("Build", build);
+
+    // The pad verbs once their commands are shown.
+    let pad_card = |verb: Verb| {
+        let id = v.commands.iter().find(|c| c.visible && programs::pad_command(verb).is_some_and(|p| p.id == c.id))?.id;
+        Some(format!("command:{id}"))
+    };
+    let mut pads = Vec::new();
+    for verb in [Verb::LoadPads, Verb::LaunchPads] {
+        if let Some(card) = pad_card(verb) {
+            pads.push(item(act(verb, None, None, None), Some(card)));
+        }
+    }
+    if !pads.is_empty() {
+        // Traded goods the player has seen.
+        let seen = |good: &String| v.resources.iter().any(|x| x.visible && x.id == good.as_str());
+        for good in targets(Verb::SetPads).into_iter().filter(seen) {
+            let have = v.pads.iter().filter(|p| p.good.as_deref() == Some(good.as_str())).count() as u32;
+            pads.push(item(act(Verb::SetPads, Some(&good), None, Some(Amount::N(have + 1))), None));
+        }
+    }
+    group("Pads", pads);
+
+    let mut onoff = Vec::new();
+    for verb in [Verb::Pause, Verb::Resume] {
+        for b in &buildings {
+            onoff.push(item(act(verb, Some(b.id), None, one), Some(format!("building:{}", b.id))));
+        }
+    }
+    group("Buildings on/off", onoff);
+
+    let mut rp: Vec<Instruction> = targets(Verb::Research).iter().map(|t| item(act(Verb::Research, Some(t), None, None), Some(format!("research:{t}")))).collect();
+    if v.verbs.iter().any(|x| x.verb == Verb::Fund) {
+        rp.extend(targets(Verb::Fund).iter().map(|t| item(act(Verb::Fund, Some(t), None, one), Some(format!("project:{t}")))));
+    }
+    group("Research and projects", rp);
+
+    let mut progs: Vec<Instruction> = targets(Verb::LoadProgram).iter().map(|t| item(act(Verb::LoadProgram, Some(t), Some(0), None), None)).collect();
+    progs.push(item(act(Verb::AssignProcessors, None, Some(0), one), None));
+    progs.push(item(act(Verb::Retire, None, None, None), None));
+    group("Programs", progs);
+
+    let zero = Fx::ZERO;
+    let mut flow: Vec<Instruction> = v
+        .readings
+        .iter()
+        .map(|o| item(Op::If { when: Condition { first: Clause { reading: o.reading.clone(), cmp: Cmp::Gt, value: zero }, rest: None } }, None))
+        .collect();
+    if else_fits(r, g, text, cursor) {
+        flow.push(item(Op::Else {}, None));
+    }
+    flow.push(item(Op::Note { text: String::new() }, None));
+    group("Control flow", flow);
+    groups
+}
+
+/// Whether an `else` line inserted (unindented) below text line `cursor`
+/// reads where it stands and leaves every other line as it read: at the end
+/// of an `if`'s body (or below an `if` with none), never taking body lines
+/// below the cursor into its own.
+pub fn else_fits(r: &Rules, g: &GameState, text: &str, cursor: usize) -> bool {
+    let mut lines: Vec<&str> = text.split('\n').collect();
+    if cursor >= lines.len() {
+        return false;
+    }
+    let next = lines[cursor + 1..].iter().find(|l| !l.trim().is_empty());
+    if next.is_some_and(|l| l.starts_with([' ', '\t'])) {
+        return false;
+    }
+    let red = |p: &Parsed| p.lines.iter().filter(|l| l.status == "red").count();
+    let before = red(&parse(r, g, text));
+    lines.insert(cursor + 1, "else");
+    let after = parse(r, g, &lines.join("\n"));
+    after.lines[cursor + 1].status != "red" && red(&after) == before
 }
 
 /// Why an `unparsed` line doesn't read now: `indented` as it is held, `block`

@@ -30,6 +30,10 @@
 //   8. (Run before 5.) else: an if/else typed in the text editor shows the same lines in
 //      the block view and back, and at 1x each pass runs the branch its if picks. Shot
 //      program-else.png.
+//   9. (Run before 5.) The text editor's All instructions panel: on a new game, amber
+//      entries and clicks writing an `if ... > 0` with its body, else only where it fits,
+//      hover cards; in scenario everything the same clicks Apply cleanly, the block view
+//      matches and the `if` runs at 1x. Shot instructions.png.
 // Any uncaught page error fails the run.
 //   HH_URL      the page, required: a `vite preview` of a static build (TESTING.md)
 //   HH_BROWSER  a browser off the usual paths
@@ -249,18 +253,18 @@ async function programLogic(grant) {
   await pick(`${line(0)} select[aria-label="Building"]`, 'Battery');
   await pick(`${line(0)} input[aria-label="Up to"]`, '1');
   await add('If');
-  await setClause(1, 1, 'Energy', 'below', '50');
+  await setClause(1, 1, 'Energy', '<', '50');
   const unit = await evaluate(`document.querySelector(${q(`${clause(1, 1)} [data-unit-toggle]`)})?.textContent ?? ''`);
   check(unit === '%', `a fill reading's number shows its unit, a toggle: "${unit}"`);
   // The unit toggle: the same entry read as an amount, then back to a percent.
   await click(`${clause(1, 1)} [data-unit-toggle]`);
   await sleep(60);
   const asAmount = await evaluate(`[document.querySelector(${q(`${clause(1, 1)} [data-unit-toggle]`)}).textContent, document.querySelector(${q(line(1))}).title.split(':')[0]]`);
-  check(asAmount[0] === 'amt' && asAmount[1] === 'If Energy below 50', `the toggle reads an amount: ${asAmount.join(', ')}`);
+  check(asAmount[0] === 'amt' && asAmount[1] === 'If Energy < 50', `the toggle reads an amount: ${asAmount.join(', ')}`);
   await click(`${clause(1, 1)} [data-unit-toggle]`);
   await sleep(60);
   const asPercent = await evaluate(`document.querySelector(${q(line(1))}).title.split(':')[0]`);
-  check(asPercent === 'If Energy below 50%', `and back to a percent: ${asPercent}`);
+  check(asPercent === 'If Energy < 50%', `and back to a percent: ${asPercent}`);
   // Process Telemetry opens two readings in the reading list.
   const readingOptions = () => evaluate(`[...document.querySelectorAll(${q(`${clause(1, 1)} select[aria-label="Reading"] option`)})].map((o) => o.textContent.trim())`);
   const offeredBefore = await readingOptions();
@@ -276,14 +280,14 @@ async function programLogic(grant) {
   await pick(`${line(2)} select[aria-label="Building"]`, 'Solar Panel');
   await indent(2);
   await add('If');
-  await setClause(3, 1, 'Free land', 'below', '1');
+  await setClause(3, 1, 'Free land', '<', '1');
   await pick(`${line(3)} select[aria-label="Join"]`, 'and');
-  await setClause(3, 2, 'Credits', 'above', '500');
+  await setClause(3, 2, 'Credits', '>', '500');
   check(!(await exists(`${clause(3, 2)} [data-unit]`)) && !(await exists(`${clause(3, 2)} [data-unit-toggle]`)), 'an uncapped reading shows no unit and no toggle');
   await add('Buy Land');
   await indent(4);
   await add('If');
-  await setClause(5, 1, 'Credits', 'above', '800');
+  await setClause(5, 1, 'Credits', '>', '800');
   await add('Build');
   await pick(`${line(6)} select[aria-label="Building"]`, 'Storage Depot');
   await pick(`${line(6)} input[aria-label="Up to"]`, '1');
@@ -312,11 +316,9 @@ async function programLogic(grant) {
   await waitFor(`document.querySelector('.card.building[data-id="storage_depot"]')?.dataset.owned === '1'`, 'the Storage Depot once the if holds', 8000);
   await speed(0);
   const after = await now();
-  const built = (await classes()).split(' ');
-  // The `if` takes its own step, so the day its body builds it may show no outcome.
-  check(/✓$/.test(after[5]) && (built[5] === 'out-true' || built[6] === 'out-ran'),
-    `the if held once Credits above 800: ${after[5]} (${built[5]} ${built[6]})`);
-  check(built[6] === 'out-ran' || built[6] === 'out-done', `the guarded line built, then is done: ${built.join(' ')}`);
+  // The depot is built (waited for above) and the if reads true. Not that day's line
+  // outcomes: the new Battery can drop Energy below 50%, and the top `if` runs instead.
+  check(/✓$/.test(after[5]), `the if held once Credits > 800: ${after[5]} (${await classes()})`);
   // A number being typed survives the game's redraws, and is sent on Enter or leaving.
   await speed(10);
   await evaluate(`(() => { const el = document.querySelector(${q(`${clause(5, 1)} input`)}); el.focus(); el.value = '12'; el.dispatchEvent(new Event('input', { bubbles: true })); })()`);
@@ -326,7 +328,7 @@ async function programLogic(grant) {
   check(typed === '12', `a number being typed survives the day's redraws: ${typed}`);
   await pick(`${clause(5, 1)} input`, '120');
   const sent = await evaluate(`document.querySelector(${q(line(5))}).title`);
-  check(/^If Credits above 120:/.test(sent),`and is sent when the field is left: ${sent.split(':')[0]}`);
+  check(/^If Credits > 120:/.test(sent),`and is sent when the field is left: ${sent.split(':')[0]}`);
   // "Up to" refuses 0 (it would mean no limit) and goes back to what it was.
   await pick(`${line(0)} input[aria-label="Up to"]`, '0');
   const upTo = await evaluate(`[document.querySelector(${q(line(0))}).title.split(':')[0], document.querySelector(${q(`${line(0)} input[aria-label="Up to"]`)}).value]`);
@@ -379,14 +381,14 @@ async function programLogic(grant) {
   await click('.prog-procs button[title="Clear this program"]');
   await add('If');
   const cmps = await evaluate(`[...document.querySelectorAll(${q(`${clause(0, 1)} select[aria-label="Comparison"] option`)})].map((o) => o.textContent.trim()).join(' ')`);
-  check(cmps === 'above below', `two comparators: ${cmps}`);
-  await setClause(0, 1, 'Credits', 'above', '-1');
+  check(cmps === '> < >= <=', `four comparisons: ${cmps}`);
+  await setClause(0, 1, 'Credits', '>', '-1');
   await add('Verb');
   await pick(`${line(1)} select[aria-label="Verb"]`, 'Pause');
   await pick(`${line(1)} select[aria-label="Target"]`, 'Solar Panel');
   await indent(1);
   await add('If');
-  await setClause(2, 1, 'Free processors', 'above', '-1');
+  await setClause(2, 1, 'Free processors', '>', '-1');
   await add('Verb');
   await pick(`${line(3)} select[aria-label="Verb"]`, 'Resume');
   await pick(`${line(3)} select[aria-label="Target"]`, 'Solar Panel');
@@ -395,7 +397,7 @@ async function programLogic(grant) {
   const verbShape = await evaluate(`[...document.querySelectorAll('.lines li')].map((l) => l.dataset.op + (l.classList.contains('indented') ? '>' : '')).join(' ')`);
   check(verbShape === 'if act> if act>', `verb lines as written: ${verbShape}`);
   const verbText = await evaluate(`[...document.querySelectorAll('.lines li')].map((l) => l.title.split(':')[0]).join(' | ')`);
-  check(/If Credits above -1/.test(verbText) && /Pause Solar Panel/.test(verbText) && /If Free processors above -1/.test(verbText) &&/Resume Solar Panel all/.test(verbText), `verb lines read as text: ${verbText}`);
+  check(/If Credits > -1/.test(verbText) && /Pause Solar Panel/.test(verbText) && /If Free processors > -1/.test(verbText) &&/Resume Solar Panel all/.test(verbText), `verb lines read as text: ${verbText}`);
   // One processor: a day runs the pause, a day the resume (each a step).
   const ran = (i) => `/out-(ran|done)/.test(document.querySelector(${q(line(i))})?.className ?? '')`;
   await speed(3);
@@ -433,7 +435,7 @@ async function programLogic(grant) {
   await click('.prog-procs button[title="Clear this program"]');
   await add('If');
   // Credits never go below 0.
-  await setClause(0, 1, 'Credits', 'below', '-1');
+  await setClause(0, 1, 'Credits', '<', '-1');
   await add('Build');
   await pick(`${line(1)} select[aria-label="Building"]`, 'Solar Panel');
   await pick(`${line(1)} input[aria-label="Up to"]`, '1');
@@ -613,7 +615,7 @@ async function programElse() {
   const AREA = '[data-testid="text-editor-area"]';
   const area = () => evaluate(`document.querySelector(${q(AREA)}).value`);
   // Free land is never 100000: the first if is true every pass, the second false.
-  const typed = 'if free land below 100000\n  idle\nelse\n  idle 2\nif free land above 100000\n  idle\nELSE\n  idle 2';
+  const typed = 'if free land < 100000\n  idle\nelse\n  idle 2\nif free land > 100000\n  idle\nELSE\n  idle 2';
   await click('[data-testid="text-editor-open"]');
   await sleep(200);
   await setValue(AREA, typed);
@@ -650,6 +652,105 @@ async function programElse() {
   await speed(0);
   await shot('program-else');
   check(seen.slice(1).every((s) => s === wantOut), `at 1x each pass runs the branch its if picks: ${seen.join(' | ')}`);
+}
+
+/** Section 9 (before 5): the text editor's All instructions panel. On a new game (a fresh
+ * career) its groups show, past Commands amber (locked), and clicking `if ... > 0` then a
+ * command writes an `if` with its body, the caret on it; `else` is offered only below an
+ * `if` or its body; hovering a command or a building shows its card. Then in scenario
+ * everything (`if` open) the same clicks Apply cleanly, the block view shows the same
+ * lines, and at 1x the `if` runs. Shot `instructions.png`. */
+async function instructionPanel() {
+  const AREA = '[data-testid="text-editor-area"]';
+  const area = () => evaluate(`document.querySelector(${q(AREA)}).value`);
+  const entries = (sel) => evaluate(`[...document.querySelectorAll(${q(sel)})].map((b) => ({ text: b.dataset.instruction, locked: !!b.dataset.locked }))`);
+  const hover = async (sel) => {
+    await evaluate(`document.querySelector(${q(sel)}).dispatchEvent(new MouseEvent('mouseenter'))`);
+    await sleep(150);
+    return evaluate(`document.querySelector('[data-testid="instruction-card"]')?.dataset.card ?? null`);
+  };
+  const build = async () => {
+    await click('.prog-tabs button[data-program="0"]');
+    await click('[data-testid="text-editor-open"]');
+    await sleep(300);
+    const help = await evaluate(`document.querySelector('.te-help').textContent`);
+    check(!/Copy and paste/.test(help), `the hint no longer says copy and paste: ${help.trim()}`);
+    const groups = await evaluate(`[...document.querySelectorAll('.ins-group')].map((g) => g.dataset.group)`);
+    check(groups[0] === 'Commands' && groups.at(-1) === 'Control flow', `instruction groups: ${groups.join(', ')}`);
+    const ifs = await entries('[data-group="Control flow"] [data-instruction^="if "]');
+    check(ifs.length > 0 && ifs.every((x) => / > 0%?$/.test(x.text)), `one if per reading, each > 0: ${ifs.map((x) => x.text).join(' | ')}`);
+    check(!(await exists('[data-instruction="else"]')), 'no else in an empty program');
+    await click('[data-group="Control flow"] [data-instruction^="if "]');
+    await sleep(300);
+    const cmd = (await entries('[data-group="Commands"] .ins-item')).find((x) => !x.locked);
+    await click(`[data-group="Commands"] [data-instruction=${q(cmd.text)}]`);
+    await sleep(300);
+    const text = await area();
+    const caret = await evaluate(`(() => { const a = document.querySelector(${q(AREA)}); return a.value.slice(0, a.selectionStart).split('\\n').length - 1; })()`);
+    check(new RegExp(`^${ifs[0].text}\\n  ${cmd.text}$`).test(text) && caret === 1, `the clicks write an if and its body, the caret on it: ${JSON.stringify(text)} (line ${caret})`);
+    check(await exists('[data-instruction="else"]'), 'else offered below an if body');
+    const cmdCard = await hover(`[data-group="Commands"] [data-instruction=${q(cmd.text)}]`);
+    const bldCard = await hover('[data-group="Build"] .ins-item');
+    check(/^command:/.test(cmdCard ?? '') && /^building:/.test(bldCard ?? ''), `hovers show the cards: ${cmdCard}, ${bldCard}`);
+    // With the caret on the `if` line, a line goes into its body; no else there (it would take the body).
+    await evaluate(`(() => { const a = document.querySelector(${q(AREA)}); a.focus(); a.setSelectionRange(0, 0); a.dispatchEvent(new KeyboardEvent('keyup')); })()`);
+    await sleep(300);
+    check(!(await exists('[data-instruction="else"]')), 'no else on an if line with a body');
+    await click(`[data-group="Commands"] [data-instruction=${q(cmd.text)}]`);
+    await sleep(300);
+    const under = await area();
+    check(under === `${ifs[0].text}\n  ${cmd.text}\n  ${cmd.text}`, `below an if line, into its body: ${JSON.stringify(under)}`);
+    return { ifs, cmd, text };
+  };
+
+  await debugMenu();
+  await speed(0);
+  await click('#new-game');
+  await sleep(500);
+  const fresh = await build();
+  const amber = await entries('[data-group="Build"] .ins-item');
+  check(amber.length > 0 && amber.every((x) => x.locked), `on a fresh career, Build entries are amber: ${amber.length}`);
+  await shot('instructions-fresh');
+  // It applies (the locked if kept, amber, no red) and the block view shows the same lines.
+  await click('[data-testid="text-editor-apply"]');
+  await sleep(300);
+  const freshDots = await evaluate(`[...document.querySelectorAll('.te-gutter [data-line-status]')].map((d) => d.dataset.lineStatus)`);
+  const freshSaved = await evaluate(`document.querySelector('[data-testid="text-editor-status"]').textContent`);
+  check(/Saved/.test(freshSaved) && !freshDots.includes('red'), `on a fresh career it applies: ${freshSaved} (${freshDots.join(' ')})`);
+  await click('[data-takeover-close="text_editor"]');
+  await sleep(100);
+  const freshShape = await evaluate(`[...document.querySelectorAll('.lines li')].map((l) => (l.classList.contains('indented') ? '>' : '') + (l.dataset.op ?? 'command')).join(' ')`);
+  check(freshShape === 'if >command >command', `and the block view shows the same lines: ${freshShape}`);
+
+  await debugMenu();
+  await speed(0);
+  await setValue('#scenario', 'everything');
+  await click('#start-scenario');
+  await speed(1);
+  await waitFor(`!!document.querySelector('[data-testid="logic-add"]')`, 'the instructions to unlock', 8000);
+  await speed(0);
+  await click('.prog-tabs button[data-program="0"]');
+  await click('.prog-procs button[title="Clear this program"]');
+  while (await enabled('[data-testid="proc-plus"]')) await click('[data-testid="proc-plus"]');
+  const open = await build();
+  check(!open.ifs[0].locked, `with if open, the if entry is not amber (${fresh.ifs[0].locked} on a fresh career)`);
+  await shot('instructions');
+  await click('[data-testid="text-editor-apply"]');
+  await sleep(300);
+  const status = await evaluate(`[...document.querySelectorAll('.te-gutter [data-line-status]')].map((d) => d.dataset.lineStatus)`);
+  const saved = await evaluate(`document.querySelector('[data-testid="text-editor-status"]').textContent`);
+  check(/Saved/.test(saved) && !status.includes('red') && !status.includes('amber'), `it applies cleanly: ${saved} (${status.join(' ')})`);
+  await click('[data-takeover-close="text_editor"]');
+  await sleep(100);
+  const rows = () => evaluate(`[...document.querySelectorAll('.lines li')].map((l) => ({ op: l.dataset.op ?? 'command', indented: l.classList.contains('indented'), out: [...l.classList].find((c) => c.startsWith('out-')) ?? null }))`);
+  const shape = (await rows()).map((r) => `${r.indented ? '>' : ''}${r.op}`).join(' ');
+  check(shape === 'if >command >command', `the block view shows the same lines: ${shape}`);
+  await speed(1);
+  const d = await day();
+  for (let t = 0; t < 50 && (await day()) <= d + 1; t++) await sleep(100);
+  await speed(0);
+  const ran = (await rows()).map((r) => r.out ?? '-');
+  check(ran[0] === 'out-true' || ran[0] === 'out-false', `at 1x the if runs: ${ran.join(' ')}`);
 }
 
 /** Section 5, from scenario at_cap (paused, cheats on; `grant` from section 2). Shots
@@ -1050,6 +1151,8 @@ try {
   await textEditor();
   // ---- 8. else (before 5): an if/else from the text editor ----
   await programElse();
+  // ---- 9. the All instructions panel (before 5) ----
+  await instructionPanel();
   await debugMenu();
   await setValue('#scenario', 'at_cap');
   await click('#start-scenario');

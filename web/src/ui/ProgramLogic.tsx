@@ -11,8 +11,10 @@ import { Bar, ResChip, ShortNote, name, ranPercent, shortText } from './common';
 import { otherUnit, sameEntry } from './programEdit';
 
 const CMPS: [Cmp, string][] = [
-  ['gt', 'above'],
-  ['lt', 'below'],
+  ['gt', '>'],
+  ['lt', '<'],
+  ['ge', '>='],
+  ['le', '<='],
 ];
 
 /** What a line did, in words (tooltips). */
@@ -79,7 +81,7 @@ function shown(r: Reading, value: string | null): string {
   return r.kind === 'percent' ? `${num(value)}%` : num(value, 2);
 }
 
-/** A condition as text, display names, never ids: "Energy above 50%". */
+/** A condition as text, display names, never ids: "Energy > 50%". */
 export function conditionText(v: View, when: Condition): string {
   const one = (c: Clause) => `${readingLabel(v, c.reading)} ${CMPS.find(([k]) => k === c.cmp)?.[1] ?? c.cmp} ${num(c.value, 2)}${unit(c.reading)}`;
   return when.rest ? `${one(when.first)} ${when.rest.join} ${one(when.rest.clause)}` : one(when.first);
@@ -132,7 +134,7 @@ function NumberField({ value, commit, ...rest }: { value: string; commit: (text:
   );
 }
 
-/** One clause: `<reading> <above|below> <number>[%]`. */
+/** One clause: `<reading> <op> <number>[%]`, `op` one of `>`, `<`, `>=`, `<=`. */
 function ClauseEdit({ v, c, now, set }: { v: View; c: Clause; now?: { value: string | null; holds: boolean }; set: (c: Clause) => void }) {
   const options = v.readings.some((o) => sameEntry(o.reading, c.reading))
     ? v.readings
@@ -326,7 +328,7 @@ export function LogicBody({ v, e, now, set }: { v: View; e: Entry; now: Conditio
       return (
         <span class="line-logic">
           <b>Else</b>
-          <span class="muted">the lines under it run when the if above is false</span>
+          <span class="muted">the lines under it run when the if before it is false</span>
         </span>
       );
     case 'build': {
@@ -506,7 +508,7 @@ export function AddLogic({ v, add, canElse }: { v: View; add: (e: Entry) => void
           !v.if_open
             ? 'Opens with If'
             : canElse
-              ? 'Its indented lines run when the if above is false'
+              ? 'Its indented lines run when the if before it is false'
               : 'Follows an if (or its body) at the end of the program, one per if'
         }
         onClick={() => add({ op: 'else' })}

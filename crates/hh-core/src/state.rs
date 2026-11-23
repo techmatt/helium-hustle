@@ -234,11 +234,7 @@ impl Reading {
 impl Condition {
     pub fn describe(&self) -> String {
         let clause = |c: &Clause| {
-            let cmp = match c.cmp {
-                Cmp::Lt => "below",
-                Cmp::Gt => "above",
-            };
-            format!("{} {cmp} {}", c.reading.describe(), c.value)
+            format!("{} {} {}", c.reading.describe(), c.cmp.symbol(), c.value)
         };
         match &self.rest {
             None => clause(&self.first),
@@ -364,12 +360,26 @@ pub struct Clause {
     pub value: Fx,
 }
 
-/// The two comparators: `lt` (the editor's "below") and `gt` ("above").
+/// The four comparators, written `<`, `>`, `<=` and `>=`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum Cmp {
     Lt,
     Gt,
+    Le,
+    Ge,
+}
+
+impl Cmp {
+    /// The symbol a condition is written with.
+    pub fn symbol(self) -> &'static str {
+        match self {
+            Cmp::Lt => "<",
+            Cmp::Gt => ">",
+            Cmp::Le => "<=",
+            Cmp::Ge => ">=",
+        }
+    }
 }
 
 /// What a condition reads (docs/rules/programs.md, *Conditions*): one

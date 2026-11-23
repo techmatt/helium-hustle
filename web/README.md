@@ -64,7 +64,7 @@ Three columns and a status bar:
   (an `if` takes its body and its `else`; an `else` moves only with it), tinted by today's outcome (a failed line says why: "needs ⚡2,
   had 0"), the next line to run in an accent frame. Once unlocked, Add: If, Else (after an
   `if` or its body, at the end), Build, Buy Land, Verb (`ProgramLogic.tsx`; one editor for all verbs): a condition is
-  a reading (the view's list), above or below, and a number (with `%` for a fill), and
+  a reading (the view's list), `>`, `<`, `>=` or `<=`, and a number (with `%` for a fill), and
   `and`/`or` one more; each clause with its live value and ✓/✗; body lines indented under the `if` or `else` (⇥/⇤), greyed with it when jumped; an `else`
   row has no outcome (free: its `if` decides).
   Above 10x a redraw covers several days: each line shows its outcome over them
@@ -88,7 +88,12 @@ Three columns and a status bar:
   notes column (reasons, "fired k/10" on `if`s, from the store's history of `advance_run`'s
   `if_true` bits). The engine parses (`parse_program_text`) and writes (`program_text`) the
   text (docs/rules/programs.md, *Text form*); a changed draft is applied on Apply, on a tab
-  switch and on closing.
+  switch and on closing. Right of it, **All instructions** (`Instructions.tsx`): the
+  engine's list (`program_instructions`: revealed lines by group, amber with the locked
+  reason, `else` only where it fits at the caret); a click inserts the line below the
+  caret's line with its indent (`if` / `else` at the top level with an empty body line, an
+  empty caret line filled in place) and moves the caret there; a hover shows the live card
+  of its command, building, research or project.
 - **Run summary:** when a run ends a summary covers the screen, the clock stopped until
   Continue.
 

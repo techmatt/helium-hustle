@@ -75,7 +75,7 @@ How it writes the main program depends on the gap to its next look (*When it loo
 | 2 | `dream` | 1 while boredom is past `dream_at`% of its cap and the run still builds |
 | 3 | `fund_<axis>`: the first of humanist, rationalist, nationalist whose persistent project isn't done | 1 when 3 or more are left |
 | 4 | `promote_<good>` per pad good, `disrupt_speculators` | 1 when 3 or more are left |
-| 5 (`construct`) | construction: `if Free land below its land and Credits above the land price` / `buy land` (while short of land); `if Credits above the target's price and <its scarcest other input> above its price` (a capped input as a percent of its cap now) / `build <target> up to owned + 1`; then the filler × 1 | 1 when 2 or more are left, once the game unlocks `if` and `build` (not under the oracle's `main_last`: the main program takes the slot) |
+| 5 (`construct`) | construction: `if Free land < its land and Credits > the land price` / `buy land` (while short of land); `if Credits > the target's price and <its scarcest other input> > its price` (a capped input as a percent of its cap now) / `build <target> up to owned + 1`; then the filler × 1 | 1 when 2 or more are left, once the game unlocks `if` and `build` (not under the oracle's `main_last`: the main program takes the slot) |
 
 **Condition programs** (`cond` 1 once `if` is open; the oracle runs the table's, `cond` 0)
 read the game, not this look's counts, so each is saved once by name; side programs load at
@@ -85,7 +85,7 @@ a bare line would waste (065): `ship` (1, its numbers percents of the caps when 
 no pad, the filler alone; once one stands, fuel while Propellant is under a launch's worth
 and a pad holds cargo, `launch pads all` bare, `load pads all` `ship_loads` times once
 Helium-3 holds that many loads; with two pads or more, `set pads he3 up to 1` bare and the same
-`up to 1` for a good above 99% while two are idle; then the filler × `fill`; a hand plan
+`up to 1` for a good `> 99%` while two are idle; then the filler × `fill`; a hand plan
 replaces it while the target waits on a bought input), `dream watch` (2: dream past
 `dream_at`, else the filler × `dream_fill`), `fund`, `market`, and `build order` (5: the last run's
 purchases as bare `build X up to N`, one line a building in the order first bought (no count
@@ -132,7 +132,7 @@ the file's `seat` line. A tab reading a researched reading can't be written befo
 research: the first time, it goes in without those `if` blocks and is rewritten whole once
 the research is done (once a career). Then nothing by hand but a backstop retirement once the
 run has bought nothing (buildings, research, land) for `stale_days` days; the file's own
-`if days since a purchase above 299` / `retire` usually comes first (062).
+`if days since a purchase > 299` / `retire` usually comes first (062).
 The file holds 060's L5 (three tabs: build and seat, ship, research Dream Protocols and
 dream), picked over L4 on the hands-off measure (061), with Process Telemetry and that
 `retire` in the Dream tab (062's write-up), and for rev 19's step cost its build tab's

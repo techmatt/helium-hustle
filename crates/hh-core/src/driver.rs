@@ -240,9 +240,9 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
 /// against a number, verbs, `build`, the step each line costs):
 ///
 /// ```text
-/// if free processors above 0
+/// if free processors > 0
 ///     assign processors program 1 all
-/// if idle pads above 0 and credits above 225
+/// if idle pads > 0 and credits > 225
 ///     build launch_pad up to 2
 /// ```
 ///

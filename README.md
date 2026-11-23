@@ -104,7 +104,9 @@ keeps them; a rules change moves those whose play it changes): run `cargo test-a
 `python scripts/set_pins.py` copies them from the games those tests wrote. A rename,
 refactor or new config key that plays the same moves no fingerprint; if it does, play changed.
 Content ids are also named outside `content/` (`configs/sim/milestones.json`, the sim agents,
-tests, `web/scripts/e2e.mjs`): `git grep` an id before removing it.
+tests, `web/scripts/e2e.mjs`): `git grep` an id before removing it. The program text form
+is read from write-ups too (`experiments/results/063_program_text_editor/*.txt` by hh-core's
+tests, `060_loadout_exploration/loadouts/` by hh-sim's): a grammar change converts them.
 
 **A new module** touches its `modules/<id>.rs`, `modules/mod.rs` (`mod`, `REGISTRY`, `Params`),
 `configs/baseline.json` and a `docs/rules/<id>.md` page whose `<!-- params:<id> -->` block

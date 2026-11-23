@@ -204,7 +204,7 @@ function Programs({
               type="button"
               class="tiny"
               data-testid={e.indented ? 'line-outdent' : 'line-indent'}
-              title={e.indented ? 'Move out of the block' : 'Move into the block above'}
+              title={e.indented ? 'Move out of the block' : 'Move into the block before it'}
               onClick={() => editProgram(program, (now) => setIndent(now, i, !now[i]?.indented))}
             >
               {e.indented ? '⇤' : '⇥'}

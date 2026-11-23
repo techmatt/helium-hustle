@@ -213,7 +213,7 @@ pub fn check_line(r: &Rules, g: &GameState, e: &Entry, block: Block) -> Result<(
         }
     };
     if e.indented && !in_block {
-        return Err("an indented line needs an if above it".to_string());
+        return Err("an indented line needs an if before it".to_string());
     }
     match &e.op {
         Op::Command { command, count } => {
@@ -249,7 +249,7 @@ pub fn check_line(r: &Rules, g: &GameState, e: &Entry, block: Block) -> Result<(
             match block {
                 Block::If => {}
                 Block::Else => return Err("an if has one else".to_string()),
-                Block::None => return Err("an else needs an if above it".to_string()),
+                Block::None => return Err("an else needs an if before it".to_string()),
             }
         }
         Op::Act { verb, target, tab, amount } => check_act(r, g, *verb, target.as_deref(), *tab, *amount)?,
@@ -629,6 +629,8 @@ pub fn clause_holds(r: &Rules, g: &GameState, c: &Clause) -> bool {
     match c.cmp {
         Cmp::Lt => v < c.value,
         Cmp::Gt => v > c.value,
+        Cmp::Le => v <= c.value,
+        Cmp::Ge => v >= c.value,
     }
 }
 
@@ -699,10 +701,9 @@ fn loadout_named(g: &GameState, name: Option<&str>) -> Option<u32> {
     g.career.library.iter().position(|l| l.name == name).map(|i| i as u32)
 }
 
-/// The content command whose effect `is` (Launch Full Pads, Load Launch Pads):
-/// a pad verb runs it, its costs and boredom included.
-/// The command a pad verb runs: Launch Full Pads or Load Launch Pads.
-fn pad_command(verb: Verb) -> Option<&'static Command> {
+/// The command a pad verb runs, its costs and boredom included: Launch Full
+/// Pads or Load Launch Pads.
+pub fn pad_command(verb: Verb) -> Option<&'static Command> {
     let is: fn(&CommandEffect) -> bool = if verb == Verb::LaunchPads {
         |e| matches!(e, CommandEffect::LaunchFullPads)
     } else {

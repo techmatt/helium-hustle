@@ -1,6 +1,6 @@
 # smallest: solar when energy runs low, compute the rest
 seat: 1=all
 [1]
-if energy below 50% and credits above 20
+if energy < 50% and credits > 20
   build solar_panel
 cloud_compute x10

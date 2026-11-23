@@ -28,7 +28,7 @@ results folder; kept shots are also copied to the shared screenshots folder, CLA
    no card with Cheats off) and Complete all research, and the replay check.
 3. A program's frame at 10x and 50x, each speed's days per second, pause, click-to-buy, a
    reload keeping the save, another revision's save discarded, the scenarios; in `late_unlocks`, an `if` /
-   `build` program written through the editor (above/below, a fill's % / amt toggle, and
+   `build` program written through the editor (`>` / `<` / `>=` / `<=`, a fill's % / amt toggle, and
    Energy per day and Days since a purchase offered once Process Telemetry is researched;
    `programLogic`), whose guarded build waits for its `if`; saved, then loaded after a retirement, it runs in run 2;
    pause/resume verb lines under `if`s run.
@@ -42,7 +42,12 @@ results folder; kept shots are also copied to the shared screenshots folder, CLA
    a retirement with every line.
    Then `programElse`: an if/else typed there shows the same lines in the block view
    (an Else row, both bodies indented) and back, and at 1x each day's pass runs the
-   branch its `if` picks.
+   branch its `if` picks. Then `instructionPanel`: on a new game the All instructions
+   panel's groups (Build amber), clicks writing an `if … > 0` and a body line under it
+   (caret there), `else` offered only below an `if` or its body, command and building
+   hover cards, an Apply (the locked `if` amber) matching the block view; in `everything`
+   the same clicks Apply with no red or amber, the block view
+   shows `if` and its body, and the `if` runs at 1x.
 6. **Readability** (before 4): capped rates, Resources' groups, affordable cards and Land,
    a pad starting with No cargo (status, red nav dot) given Helium-3, short of fuel then
    Ready, Story.

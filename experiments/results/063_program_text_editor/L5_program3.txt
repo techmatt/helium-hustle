@@ -1,9 +1,9 @@
 # 060's L5, Program 3 (the hands-off player's since 062): research, a stale-run retire, Dream
-if science above 49
+if science > 49
   research process telemetry
-if days since a purchase above 299
+if days since a purchase > 299
   retire
-if science above 300
+if science > 300
   research daydreaming
-if boredom above 50%
+if boredom > 50%
   dream 5

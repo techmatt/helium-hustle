@@ -1,23 +1,23 @@
 # one tab: a_engine plus circuits, data centers and the seat line
 seat: 1=all
 [1]
-if free processors above 0
+if free processors > 0
   assign processors 1 all
-if energy below 60% and credits above 20
+if energy < 60% and credits > 20
   build solar_panel
-if energy above 20%
+if energy > 20%
   cloud_compute x10
-if energy below 21%
+if energy < 21%
   idle x5
-if titanium above 99% or regolith above 99%
+if titanium > 99% or regolith > 99%
   build storage_depot
-if free land below 5 and credits above 200
+if free land < 5 and credits > 200
   buy land
-if circuits above 79% and credits above 150
+if circuits > 79% and credits > 150
   build data_center up to 6
-if ice below 30% and credits above 200
+if ice < 30% and credits > 200
   buy_ice x10
-if credits above 150 and energy above 70%
+if credits > 150 and energy > 70%
   build excavator up to 2
   build smelter up to 1
   build refinery up to 1
@@ -26,9 +26,9 @@ if credits above 150 and energy above 70%
   build excavator up to 4
   build smelter up to 2
   build refinery up to 2
-if idle pads above 0
+if idle pads > 0
   set pads he3 up to 1
 load pads he3
 launch pads all
-if propellant below 67% and credits above 300
+if propellant < 67% and credits > 300
   buy_propellant x5

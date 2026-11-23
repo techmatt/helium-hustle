@@ -23,37 +23,37 @@ if free processors > 0
   assign processors program 2 1
   assign processors p3 1
   assign processors 1 all
-if Energy below 60% and credits above 20
+if Energy < 60% and credits > 20
   build solar panel
 if energy >= 20%
   Sell Cloud Compute x10
-if energy below 21%
+if energy < 21%
   idle 5
-if titanium above 99% or regolith above 99%
+if titanium > 99% or regolith > 99%
   build storage_depot
-if free land < 5 and credits above 200
+if free land < 5 and credits > 200
   buy land
-if circuit boards above 79% and credits above 150
+if circuit boards > 79% and credits > 150
   build data center up to 6
   build research lab up to 2
-if ice below 30% and credits above 200
+if ice < 30% and credits > 200
   buy ice (x10)
-if credits above 150 and energy above 70%
+if credits > 150 and energy > 70%
   build regolith excavator up to 2
   build smelter up to 1
   build refinery up to 1
   build launch pad up to 1
   build fabricator up to 1
-if helium-3 above 10%
+if helium-3 > 10%
   load_pads x5
 launch pads all
-if propellant below 67% and energy above 30%
+if propellant < 67% and energy > 30%
   buy propellant 5
-if science above 49
+if science > 49
   research process_telemetry
-if days since a purchase above 299
+if days since a purchase > 299
   retire
-if boredom above 50%
+if boredom > 50%
   dream x5
 ";
 
@@ -75,7 +75,7 @@ fn text_reads_every_form_and_round_trips() {
     assert_eq!(again.entries, p.entries);
     assert_eq!(to_text(&again.entries), text);
     assert!(text.contains("  sell cloud compute 10\n"), "{text}");
-    assert!(text.contains("if energy below 60% and credits above 20\n"), "{text}");
+    assert!(text.contains("if energy < 60% and credits > 20\n"), "{text}");
     // And `set_program` takes it whole.
     let mut g = g;
     r.apply(&mut g, &Action::SetProgram { program: 0, entries: p.entries }).unwrap();
@@ -132,9 +132,10 @@ fn a_locked_line_is_skipped_free_and_says_why() {
 fn aliases_read_as_the_canonical_form() {
     for (a, b) in [
         ("launch", "launch pads all"),
-        ("IF   Credits <= 5", "if credits below 5"),
-        ("if energy≥50%", "if energy above 50%"),
-        ("if propellant under 20", "if propellant below 20"),
+        ("IF   Credits <= 5", "if credits <= 5"),
+        ("if energy≥50%", "if energy >= 50%"),
+        ("if energy≤50%", "if energy <= 50%"),
+        ("if propellant<20", "if propellant < 20"),
         ("buy_ice * 3", "buy ice 3"),
         ("buy ice x 3", "buy ice 3"),
         ("set pads he3 2", "set pads helium-3 up to 2"),
@@ -149,13 +150,13 @@ fn aliases_read_as_the_canonical_form() {
 fn red_lines_say_why_and_stay_as_unparsed_lines() {
     let r = rules();
     let g = open(&r);
-    let p = parse(&r, &g, "if energy\nbuild castle\n  idle\nlaunch pads all # go\nif free land above 5%\nfrobnicate 3\n\n  # a note\n");
+    let p = parse(&r, &g, "if energy\nbuild castle\n  idle\nlaunch pads all # go\nif free land > 5%\nfrobnicate 3\n\n  # a note\n");
     let st: Vec<_> = p.lines.iter().map(|l| l.status).collect();
     assert_eq!(st, ["red", "red", "red", "red", "red", "red", "blank", "note", "blank"]);
     for l in &p.lines[..6] {
         assert!(l.reason.as_deref().is_some_and(|w| !w.is_empty()));
     }
-    assert_eq!(p.lines[2].reason.as_deref(), Some("an indented line needs an if above it"));
+    assert_eq!(p.lines[2].reason.as_deref(), Some("an indented line needs an if before it"));
     assert_eq!(p.entries[1].op, Op::Unparsed { text: "build castle".into() });
     assert!(p.entries.iter().all(|e| !e.indented), "no line above the indented ones is an if");
     // Applied, the program keeps them; they never run and cost no step.
@@ -186,7 +187,7 @@ fn over_long_text_and_too_many_lines_are_red() {
 fn else_reads_writes_and_says_why_where_it_cant_stand() {
     let r = rules();
     let g = open(&r);
-    let text = "if energy below 20%\n  idle\nELSE\n  sell cloud compute 2\n  # a note\nidle\nif credits above 5\nelse\n";
+    let text = "if energy < 20%\n  idle\nELSE\n  sell cloud compute 2\n  # a note\nidle\nif credits > 5\nelse\n";
     let p = parse(&r, &g, text);
     assert!(p.lines.iter().all(|l| l.status != "red"), "{:?}", p.lines);
     assert_eq!(p.entries[2].op, Op::Else {});
@@ -199,27 +200,27 @@ fn else_reads_writes_and_says_why_where_it_cant_stand() {
         let p = parse(&r, &g, t);
         p.lines.iter().find(|l| l.status == "red").and_then(|l| l.reason.clone())
     };
-    assert_eq!(red("else\n").as_deref(), Some("an else needs an if above it"));
-    assert_eq!(red("if free land above 0\nelse\nelse\n").as_deref(), Some("an if has one else"));
-    assert_eq!(red("if free land above 0\n  idle\n  else\n").as_deref(), Some("an else can't sit inside an if"));
-    assert_eq!(red("if free land above 0\nelse if credits above 1\n").as_deref(), Some("no else if: an else's body holds no if"));
-    assert_eq!(red("if free land above 0\nelse\n  if credits above 1\n").as_deref(), Some("an if can't sit inside another if"));
-    assert!(red("if free land above 0\nelse idle\n").is_some());
+    assert_eq!(red("else\n").as_deref(), Some("an else needs an if before it"));
+    assert_eq!(red("if free land > 0\nelse\nelse\n").as_deref(), Some("an if has one else"));
+    assert_eq!(red("if free land > 0\n  idle\n  else\n").as_deref(), Some("an else can't sit inside an if"));
+    assert_eq!(red("if free land > 0\nelse if credits > 1\n").as_deref(), Some("no else if: an else's body holds no if"));
+    assert_eq!(red("if free land > 0\nelse\n  if credits > 1\n").as_deref(), Some("an if can't sit inside another if"));
+    assert!(red("if free land > 0\nelse idle\n").is_some());
     // A red else's body lines are red too: nothing above them opens a block.
     let p = parse(&r, &g, "else\n  idle\n");
-    assert_eq!(p.lines[1].reason.as_deref(), Some("an indented line needs an if above it"));
+    assert_eq!(p.lines[1].reason.as_deref(), Some("an indented line needs an if before it"));
     // Held as unparsed lines, the view says why each one doesn't read.
     let mut g = g;
     r.apply(&mut g, &Action::SetProgram { program: 0, entries: p.entries }).unwrap();
     let v = r.view(&g);
-    assert_eq!(v.programs[0].errors[0].as_deref(), Some("an else needs an if above it"));
+    assert_eq!(v.programs[0].errors[0].as_deref(), Some("an else needs an if before it"));
 }
 
 #[test]
 fn notes_in_a_body_ride_with_it_and_cost_nothing() {
     let r = rules();
     let mut g = open(&r);
-    let p = parse(&r, &g, "if credits above 999999\n  # never\n  idle\nidle\n# end\n");
+    let p = parse(&r, &g, "if credits > 999999\n  # never\n  idle\nidle\n# end\n");
     assert!(p.entries[1].indented, "a note may sit in a body");
     r.apply(&mut g, &Action::SetProgram { program: 0, entries: p.entries }).unwrap();
     use crate::state::LineOutcome as O;
@@ -238,7 +239,7 @@ fn locked_lines_are_amber_accepted_and_kept() {
     let r = rules();
     // A fresh game: no program logic, no `if`.
     let mut g = r.new_game(1);
-    let text = "if energy above 50%\n  build launch pad\nfund foundation_grant all\nresearch dream_protocols\nidle\n";
+    let text = "if energy > 50%\n  build launch pad\nfund foundation_grant all\nresearch dream_protocols\nidle\n";
     let p = parse(&r, &g, text);
     let st: Vec<_> = p.lines.iter().map(|l| l.status).collect();
     assert_eq!(st, ["amber", "amber", "amber", "amber", "ok", "blank"]);
@@ -295,4 +296,38 @@ fn hand_entries_match_the_text_form() {
     assert_eq!(to_text(&[]), "");
     let e = vec![Entry::command("idle", 3), Entry::new(Op::Note { text: String::new() })];
     assert_eq!(to_text(&e), "idle 3\n#\n");
+}
+
+#[test]
+fn the_instruction_panel_lists_what_is_revealed_and_each_line_reads() {
+    use crate::program_text::{else_fits, instructions};
+    let r = rules();
+    let g = open(&r);
+    let groups = instructions(&r, &g, "", 0);
+    let names: Vec<_> = groups.iter().map(|x| x.name).collect();
+    assert_eq!(names.first(), Some(&"Commands"));
+    assert_eq!(names.last(), Some(&"Control flow"));
+    // Every entry reads back as a line, none red at the top level.
+    for item in groups.iter().flat_map(|x| &x.items) {
+        let p = parse(&r, &g, &item.text);
+        assert_ne!(p.lines[0].status, "red", "{}: {:?}", item.text, p.lines[0]);
+    }
+    let flow = &groups.last().unwrap().items;
+    assert!(flow.iter().any(|i| i.text == "if energy > 0%"), "{flow:?}");
+    assert!(flow.iter().any(|i| i.text == "if credits > 0"), "{flow:?}");
+    assert!(flow.iter().all(|i| i.text != "else"), "no else at the top of an empty program");
+    let build = groups.iter().find(|x| x.name == "Build").unwrap();
+    let owned = g.owned("solar_panel");
+    assert!(build.items.iter().any(|i| i.text == format!("build solar panel up to {}", owned + 1)));
+    // `else` fits below an `if` or its body, never below a plain line or a second time.
+    let text = "if credits > 0\n  idle\nidle\nif energy > 0%\nelse\n  idle";
+    // On the `if` line it would take the body: only at the body's end.
+    assert!(!else_fits(&r, &g, text, 0) && else_fits(&r, &g, text, 1));
+    assert!(!else_fits(&r, &g, text, 2) && !else_fits(&r, &g, text, 3) && !else_fits(&r, &g, text, 4));
+    assert!(else_fits(&r, &g, "if credits > 0", 0) && else_fits(&r, &g, "if credits > 0\n  idle\n\nidle", 1));
+    // Before program logic, the lines past commands are amber (locked), not hidden.
+    let fresh = r.new_game(1);
+    let groups = instructions(&r, &fresh, "", 0);
+    let build = groups.iter().find(|x| x.name == "Build").unwrap();
+    assert!(build.items.iter().all(|i| i.locked.is_some()));
 }

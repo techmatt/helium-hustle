@@ -1,22 +1,22 @@
 # 060's L4, Program 1: build, and seat processors as Data Centers add them
-if free processors above 0
+if free processors > 0
   assign processors program 2 1
   assign processors program 1 all
-if energy below 60% and credits above 20
+if energy < 60% and credits > 20
   build solar panel
-if energy above 20%
+if energy > 20%
   sell cloud compute 10
-if energy below 21%
+if energy < 21%
   idle 5
-if titanium above 99% or regolith above 99%
+if titanium > 99% or regolith > 99%
   build storage depot
-if free land below 5 and credits above 200
+if free land < 5 and credits > 200
   buy land
-if circuit boards above 79% and credits above 150
+if circuit boards > 79% and credits > 150
   build data center up to 6
-if ice below 30% and credits above 200
+if ice < 30% and credits > 200
   buy ice 10
-if credits above 150 and energy above 70%
+if credits > 150 and energy > 70%
   build regolith excavator up to 2
   build smelter up to 1
   build refinery up to 1

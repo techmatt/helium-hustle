@@ -492,9 +492,13 @@ fn a_capped_amount_reads_the_stock_up_to_its_cap() {
     let cap = economy::cap(&r, &g, "energy").unwrap();
     set(&mut g, "energy", "100000");
     assert_eq!(read(&g, "energy"), Some(cap), "as the panel shows it, before the day's clamp");
-    // A clause on it: "Energy below 30" against "Energy below 30%".
+    // A clause on it: "Energy < 30" against "Energy < 30%".
     set(&mut g, "energy", "40");
     assert!(programs::clause_holds(&r, &g, &amount("energy", Cmp::Gt, "30")));
+    // The four comparisons, at the edge: `>=` and `<=` hold on equal, `>` and `<` don't.
+    for (cmp, holds) in [(Cmp::Gt, false), (Cmp::Lt, false), (Cmp::Ge, true), (Cmp::Le, true)] {
+        assert_eq!(programs::clause_holds(&r, &g, &amount("energy", cmp, "40")), holds, "{cmp:?}");
+    }
     assert_eq!(programs::reading(&r, &g, &Reading::Percent { resource: "energy".into() }), Some(f("40") / cap * f("100")));
 }
 
@@ -591,11 +595,12 @@ fn a_line_is_json_with_an_op_tag() {
     .unwrap();
     let Action::SetProgram { entries, .. } = a else { panic!() };
     assert_eq!(entries[1], Entry::new(Op::BuyLand {}).indent());
-    // Gone: `wait until`, a reading on the right side, comparators but above and below.
+    // Gone: `wait until`, a reading on the right side, comparators but the four.
     let clause = |rest: &str| format!(r#"{{"op":"if","when":{{"first":{{"reading":{{"kind":"amount","resource":"credits"}},{rest}}},"rest":null}}}}"#);
     assert!(serde_json::from_str::<Entry>(&clause(r#""cmp":"gt","value":"5""#)).is_ok());
     for bad in [
-        clause(r#""cmp":"ge","value":"5""#),
+        clause(r#""cmp":"eq","value":"5""#),
+        clause(r#""cmp":"above","value":"5""#),
         clause(r#""cmp":"gt","value":"5","against":{"kind":"land_price"}"#),
         r#"{"op":"wait_until","when":{"first":{"reading":{"kind":"free_land"},"cmp":"lt","value":"1"},"rest":null}}"#.to_string(),
     ] {

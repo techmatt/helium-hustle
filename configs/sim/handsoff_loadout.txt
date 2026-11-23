@@ -8,7 +8,7 @@
 # 281% of the author against L4's 213%, milestones tied; 060's seeds 3119-3124),
 # rewritten in 065 for rules 19's step cost (every `if` a step): Program 1's
 # compute runs x100 a pass, not x10, so its guards cost a few steps in a hundred,
-# and the `if energy below 21%` / `idle x5` block is gone (065's write-up).
+# and the `if energy < 21%` / `idle x5` block is gone (065's write-up).
 # 069 (rules 22: a new pad has No cargo) added Program 2's `set pads he3 up to 1`: keep its
 # N at least Program 1's `build launch_pad up to` N, or the extra pads idle all run.
 #
@@ -18,24 +18,24 @@
 # backstop), researches Dream Protocols and dreams when bored.
 seat: 1=all
 [1]
-if free processors above 0
+if free processors > 0
   assign processors 2 1
   assign processors 3 1
   assign processors 1 all
-if energy below 60% and credits above 20
+if energy < 60% and credits > 20
   build solar_panel
-if energy above 20%
+if energy > 20%
   cloud_compute x100
-if titanium above 99% or regolith above 99%
+if titanium > 99% or regolith > 99%
   build storage_depot
-if free land below 5 and credits above 200
+if free land < 5 and credits > 200
   buy land
-if circuits above 79% and credits above 150
+if circuits > 79% and credits > 150
   build data_center up to 6
   build research_lab up to 2
-if ice below 30% and credits above 200
+if ice < 30% and credits > 200
   buy_ice x10
-if credits above 150 and energy above 70%
+if credits > 150 and energy > 70%
   build excavator up to 2
   build smelter up to 1
   build refinery up to 1
@@ -43,17 +43,17 @@ if credits above 150 and energy above 70%
   build fabricator up to 1
 [2]
 set pads he3 up to 1
-if he3 above 10%
+if he3 > 10%
   load_pads x5
 launch pads all
-if propellant below 67% and energy above 30%
+if propellant < 67% and energy > 30%
   buy_propellant x5
 [3]
-if science above 49
+if science > 49
   research process_telemetry
-if days since a purchase above 299
+if days since a purchase > 299
   retire
-if science above 300
+if science > 300
   research dream_protocols
-if boredom above 50%
+if boredom > 50%
   dream x5

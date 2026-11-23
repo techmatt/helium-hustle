@@ -140,6 +140,15 @@ pub fn parse_program_text(state_json: &str, text: &str) -> Result<String, JsValu
     Ok(to_json(&hh_core::program_text::parse(&r, &g, text)))
 }
 
+/// The text editor's instruction panel for the state's run, `cursor` the text
+/// line the caret is on: `[{"name", "items": [{"text", "locked", "card"}]}]`
+/// (`hh_core::program_text::instructions`).
+#[wasm_bindgen]
+pub fn program_instructions(state_json: &str, text: &str, cursor: u32) -> Result<String, JsValue> {
+    let (r, g) = load(state_json)?;
+    Ok(to_json(&hh_core::program_text::instructions(&r, &g, text, cursor as usize)))
+}
+
 /// Display data (`hh_core::View`, docs/architecture.md *The view*): everything a
 /// client shows and can do.
 #[wasm_bindgen]

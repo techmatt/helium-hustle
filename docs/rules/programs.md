@@ -59,15 +59,15 @@ A verb with nothing to do is **done** (its step, nothing else); one that can't a
 | `fund <project> [N \| all]` | Sets its daily rate on each cost to N, as the Projects panel does, each at most its most a day (`all` or none: the most); 0 stops it. Done when so; fails when the project isn't open. |
 
 **Conditions.** `<reading> <cmp> <number>`, or two such clauses joined by one `and` or `or`
-(`state::Condition`: `first`, `rest`). `cmp` is `lt` (the editor's *below*) or `gt`
-(*above*), both strict; the right side is always a number (`value`, an `Fx`) in the
+(`state::Condition`: `first`, `rest`). `cmp` is `gt`, `lt`, `ge` or `le`, written `>`, `<`,
+`>=`, `<=` (no words); the right side is always a number (`value`, an `Fx`) in the
 reading's unit. One reading per thing (`state::Reading`, JSON `kind`):
 
 | Reading | Reads | Resources |
 |---|---|---|
 | `percent` (`resource`) | Fill: `amount / cap × 100`, at most 100 (programs run before the day's clamp). | A capped resource (Energy, Regolith, Ice, Helium-3, Titanium, Circuit Boards, Propellant) or boredom (of its cap, boredom.md). |
 | `amount` (`resource`) | The amount held; a capped one at most its cap. | Any resource but land and processors. |
-| `free_processors` | Processors active buildings grant that no program holds (`processors_free`): above 0 exactly when `assign processors <tab> all` would add some. | |
+| `free_processors` | Processors active buildings grant that no program holds (`processors_free`): `> 0` exactly when `assign processors <tab> all` would add some. | |
 | `free_land` | Land not built on. | |
 | `idle_pads` | Pads with no cargo aboard (a cooling pad and a No-cargo pad count). | |
 | `energy_per_day` | Energy's day's rate (`Run.day_net`, below) of the last full day; negative in a loss. | Researched. |
@@ -75,7 +75,7 @@ reading's unit. One reading per thing (`state::Reading`, JSON `kind`):
 
 A `percent` of an uncapped resource, an `amount` of land or processors is refused. A capped
 resource (and boredom) is one entry of the list with a **unit toggle**: the editor's number
-box reads `%` (`percent`) or an amount (`amount`), "Propellant below 20%" or "below 20".
+box reads `%` (`percent`) or an amount (`amount`), "Propellant < 20%" or "< 20".
 **Researched readings** (`energy_per_day`, `days_since_purchase`) open while a research item
 with the `program_readings` effect (Process Telemetry, research.md) is done this run: before
 it, a clause using one is locked (below) and reads nothing. A clause whose reading reads nothing (a cap of 0) is false; an `if` with a
@@ -140,7 +140,7 @@ a program line in the block editor's words (display names, lowercase when writte
 `<name> [count]`:
 
 ```
-if propellant below 20%
+if propellant < 20%
   buy propellant 10
 else
   sell propellant
@@ -152,8 +152,7 @@ Reading is case-insensitive with any spacing. `20%` is a `percent` reading, `20`
 where it is, is **red** and kept as an `unparsed` line (an indent it can't hold stays in its
 text); one that reads but is locked is **amber**; blank lines are dropped. A `#` after a
 statement is red (a comment goes on its own line). **Aliases:** an id for a name
-(`solar_panel`); `>`, `>=`, `≥`, `over` for *above* and `<`, `<=`, `≤`, `under` for *below*
-(both strict); a count as `xN`, `(xN)`, `×N`, `*N` or `x N`; `launch` for `launch pads all`;
+(`solar_panel`); `≥`, `≤` for `>=`, `<=` (comparisons are symbols only); a count as `xN`, `(xN)`, `×N`, `*N` or `x N`; `launch` for `launch pads all`;
 `set pads <good> N` for `up to N`; a program tab as `program N`, `tab N`, `pN` or `N`;
 `days since purchase` for `days since a purchase`. Written: `assign processors program N
 <N | all>`, `load <saved program> into program N` (the name keeps its case).

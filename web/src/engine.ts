@@ -114,8 +114,8 @@ export interface CommandView {
   target: string | null;
 }
 
-/** `lt` is the editor's "below", `gt` its "above". */
-export type Cmp = 'lt' | 'gt';
+/** The four comparisons, written `<`, `>`, `<=`, `>=`. */
+export type Cmp = 'lt' | 'gt' | 'le' | 'ge';
 
 /** What a condition reads (hh-core `state::Reading`): one reading per thing. `amount`
  * for the uncapped resources (credits, science), `percent` for a capped resource's fill
@@ -240,6 +240,20 @@ export type TextLineStatus = 'ok' | 'amber' | 'red' | 'note' | 'blank';
 export interface ParsedText {
   entries: Entry[];
   lines: { entry: number | null; status: TextLineStatus; reason: string | null }[];
+}
+
+/** One entry of the text editor's instruction panel (`program_instructions`): a line as
+ * text, why it won't run yet this run (amber), and the card a hover shows
+ * (`command:<id>`, `building:<id>`, `research:<id>`, `project:<id>`). */
+export interface Instruction {
+  text: string;
+  locked: string | null;
+  card: string | null;
+}
+
+export interface InstructionGroup {
+  name: string;
+  items: Instruction[];
 }
 
 export interface PadView {
@@ -575,6 +589,10 @@ export const engine = {
   /** Parses the text editor's text against the state (for what is unlocked this run).
    * Throws a string when the text can't be taken at all (too many lines). */
   parseProgramText: (state: string, text: string): ParsedText => JSON.parse(wasm.parse_program_text(state, text)),
+  /** The text editor's instruction panel for the state's run; `cursor`: the caret's text
+   * line (`else` is listed only where it fits below it). */
+  programInstructions: (state: string, text: string, cursor: number): InstructionGroup[] =>
+    JSON.parse(wasm.program_instructions(state, text, cursor)),
   /** The debug autopilot (an accelerator): a sim player plays the game on toward
    * `target`; `met`: step ids met earlier in the career. Free it when done. */
   autopilot: (state: string, target: AutopilotTarget, agent: string, boost: string, budget: number, met: string[]): wasm.Autopilot =>

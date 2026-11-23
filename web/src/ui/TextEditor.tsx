@@ -11,6 +11,7 @@ import { daysPerWake } from '../clock';
 import { engine, type Entry, type LineOutcome, type ParsedText, type ProgramView, type View } from '../engine';
 import { act, ifFired, parseProgramText, setNotice, store, type Store } from '../store';
 import { shortText } from './common';
+import { InstructionPanel } from './Instructions';
 import type { Takeover } from './Takeover';
 
 /** Wait this long after the last keystroke before re-parsing. */
@@ -109,6 +110,11 @@ function ProgramDraft({ s, program, setProgram }: { s: Store; program: number; s
   const gutter = useRef<HTMLDivElement>(null);
   const notes = useRef<HTMLDivElement>(null);
   const lastParse = useRef(0);
+  // The caret's text line (the instruction panel inserts below it), and where an insert
+  // puts the caret once the new draft is drawn.
+  // Until the text area is clicked: the last line, so the panel appends.
+  const [cursor, setCursor] = useState(() => draft.split('\n').length - 1);
+  const caretAfter = useRef<number | null>(null);
   // The latest of each, for the unmount and page-close handlers.
   const latest = useRef({ draft, base, parsed });
   latest.current = { draft, base, parsed };
@@ -177,6 +183,44 @@ function ProgramDraft({ s, program, setProgram }: { s: Store; program: number; s
     setBase({ entries: json, text });
     if (text !== draft) setDraft(text);
   };
+
+  const noteCursor = () => {
+    const a = area.current;
+    if (a) setCursor(a.value.slice(0, a.selectionStart).split('\n').length - 1);
+  };
+
+  // An instruction from the panel: a new line below the caret's line with its indent (in
+  // the body under an `if` or `else` line; an `if` or `else` itself at the top level, with
+  // an empty body line under it), or on the caret's line when that is empty; the caret
+  // moves to the new line (the body line for a block).
+  const insert = (line: string) => {
+    const a = area.current;
+    const text = a ? a.value : draft;
+    const lines = text.split('\n');
+    const at = Math.min(cursor, lines.length - 1);
+    const here = lines[at] ?? '';
+    const opens = /^(if\s|else\s*$)/i.test(here);
+    const indent = opens ? '  ' : (/^[ \t]*/.exec(here)?.[0] ?? '');
+    const block = line.startsWith('if ') || line === 'else';
+    const added = block ? [line, '  '] : [indent + line];
+    const blank = here.trim() === '';
+    const first = blank ? at : at + 1;
+    lines.splice(first, blank ? 1 : 0, ...added);
+    const last = first + added.length - 1;
+    caretAfter.current = lines.slice(0, last + 1).join('\n').length;
+    setApplyError(null);
+    setDraft(lines.join('\n'));
+    setCursor(last);
+  };
+  useLayoutEffect(() => {
+    const a = area.current;
+    const c = caretAfter.current;
+    if (!a || c === null) return;
+    caretAfter.current = null;
+    // The caret first: focusing notes the caret's line.
+    a.setSelectionRange(c, c);
+    a.focus();
+  }, [draft]);
 
   // The gutter and notes scroll with the text area.
   const sync = () => {
@@ -248,8 +292,9 @@ function ProgramDraft({ s, program, setProgram }: { s: Store; program: number; s
       </p>
       <p class="te-help muted small">
         One line per statement, the words the block editor shows; the lines of an <code>if</code> indented under it, then optionally <code>else</code> and the lines to run when it is false; <code>#</code> starts a
-        note. Copy and paste the text to share a program.
+        note.
       </p>
+      <div class="te-main">
       <div class="te-editor">
         <div class="te-gutter" ref={gutter} aria-hidden="true">
           <div class="te-col">
@@ -281,7 +326,12 @@ function ProgramDraft({ s, program, setProgram }: { s: Store; program: number; s
           onInput={(ev) => {
             setApplyError(null);
             setDraft(ev.currentTarget.value);
+            noteCursor();
           }}
+          onKeyUp={noteCursor}
+          onMouseUp={noteCursor}
+          onSelect={noteCursor}
+          onFocus={noteCursor}
           onScroll={sync}
           onKeyDown={(ev) => {
             // Tab indents (two spaces) rather than leaving the field; Esc still closes the view.
@@ -313,6 +363,9 @@ function ProgramDraft({ s, program, setProgram }: { s: Store; program: number; s
             })}
           </div>
         </div>
+      </div>
+      {/* The debounced parse's text: the engine isn't asked on every keystroke. */}
+      <InstructionPanel s={s} text={parsed?.text ?? draft} cursor={cursor} insert={insert} />
       </div>
     </div>
   );

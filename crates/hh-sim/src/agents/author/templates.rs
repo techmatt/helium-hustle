@@ -210,13 +210,13 @@ fn stock_value(v: &View, resource: &str, need: Fx) -> Fx {
     }
 }
 
-/// `<resource> above <need less a hair>`: at least `need` (one `Fx` step under
-/// it, as `above` is strict).
+/// `<resource> > <need less a hair>`: at least `need` (one `Fx` step under
+/// it, as `>` is strict).
 pub(super) fn stock_at_least(v: &View, resource: &str, need: Fx) -> Clause {
     Clause { reading: stock_reading(v, resource), cmp: Cmp::Gt, value: stock_value(v, resource, need) - Fx::EPSILON }
 }
 
-/// `<resource> below <need>`.
+/// `<resource> < <need>`.
 pub(super) fn stock_below(v: &View, resource: &str, need: Fx) -> Clause {
     Clause { reading: stock_reading(v, resource), cmp: Cmp::Lt, value: stock_value(v, resource, need) }
 }

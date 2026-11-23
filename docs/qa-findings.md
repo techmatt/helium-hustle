@@ -67,6 +67,7 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | 91 | Overclock commands say "for 5 days"; a negative Rationalist rank gives 4 | `{days}` in the text, filled by the view from the effect's own `overclock_days` | `overclock_cards_say_the_days_a_run_lasts` |
 | 92 | Geopolitical Intelligence's Ideologies panel opens the day after | Its text says "the next day" | content |
 | 93 | A boredom story's `{rate}` floors to 0.19 where Stats rounds to +0.2 | The view sends `rate`; the UI fills `{rate}` with Stats' `perDay(rate, 2)` | `npm run unit`, `the_view_fills_every_text_placeholder` |
+| 94 | e2e's "the if held once Credits > 800" read that day's line outcomes after the program moved on (the new Battery drops Energy, the top `if` runs instead): failed 5 of 7 runs in 068 | Checks the depot built and the `if`'s ✓ only (070) | e2e |
 
 ## Deferred (Matt's decisions)
 
@@ -81,7 +82,6 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | A save holds every action: ~40,000 actions outgrow localStorage | Record in the play log, or compress |
 | At 10x a late wake runs two days per redraw and the frame skips a line (an e2e flake under load) | Frame from the days actually run |
 | "Output at cap" beside its resource at 0: the stall is judged before production | A rules item for the balance work (Matt) |
-| e2e's "the if held once Credits above 800" (067) reads line outcomes after the program moved on: the new Battery drops Energy below 50% and the top `if` runs instead (failed 5 of 7 runs in 068, also with 068's last engine change reverted) | Check the depot was built and the `if`'s ✓, not that day's line outcomes |
 
 
 ## Won't fix

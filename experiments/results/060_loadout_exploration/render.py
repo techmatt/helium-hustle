@@ -19,7 +19,7 @@ for path, key in [("content/buildings.json", "buildings"), ("content/commands.js
     N.update(names(path, key))
 
 def clause(words):
-    at = next(i for i, w in enumerate(words) if w in ("above", "below"))
+    at = next(i for i, w in enumerate(words) if w in ("above", "below", ">", "<"))  # 070: the loadouts are in symbols
     what = " ".join(words[:at])
     label = {"free processors": "Free processors", "free land": "Free land", "idle pads": "Idle pads"}.get(what, N.get(what, what))
     return f"{label} {words[at]} {words[at + 1]}"

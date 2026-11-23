@@ -11,6 +11,7 @@ import {
   type Action,
   type AutopilotStatus,
   type AutopilotTarget,
+  type InstructionGroup,
   type LastRun,
   type LinesRun,
   type ParsedText,
@@ -357,6 +358,11 @@ export function ifFired(program: number, line: number): { fired: number; of: num
  * unlocked this run). Throws the engine's error. */
 export function parseProgramText(text: string): ParsedText {
   return engine.parseProgramText(game.state, text);
+}
+
+/** The text editor's instruction panel against the game in play. */
+export function programInstructions(text: string, cursor: number): InstructionGroup[] {
+  return engine.programInstructions(game.state, text, cursor);
 }
 
 function runTicks(ticks: number): void {

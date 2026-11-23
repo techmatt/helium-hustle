@@ -48,7 +48,7 @@
     "id": "market_timer",
     "name": "Market Timer",
     "category": "trader",
-    "description": "Complete a shipment when demand is above 0.95.",
+    "description": "Complete a shipment when demand is over 0.95.",
     "condition": {"type": "shipment_demand", "more_than": "0.95"},
     "reward": {"type": "modifier", "key": "demand_ceiling", "value": "1.1"},
     "reward_description": "Demand ceiling raised to 1.1"

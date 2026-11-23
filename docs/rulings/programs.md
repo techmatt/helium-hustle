@@ -8,8 +8,10 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   labels or jumps; a new capability is a new verb or reading, never new grammar (`else`,
   below, is Matt's one addition); per-target
   commands (Buy X, Fund X) are one verb with a target. Conditions stay
-  `<reading> <above | below> <number>` with one optional `and` / `or`; the right side is
-  always a number. Pads are addressed only by good. Every line is open wherever program logic
+  `<reading> <op> <number>` with one optional `and` / `or`; the right side is
+  always a number. **Symbols (2026-11-23):** `op` is `>`, `<`, `>=` or `<=`; the words
+  above / below are gone everywhere (text, block view, docs, loadouts); state stores the
+  comparison, so saved programs keep working. Pads are addressed only by good. Every line is open wherever program logic
   is, but `if`, which has its own unlock (*Program logic unlocks*, below). No `wait until`
   (2026-11-22): programs run every day, so `if` covers it. *Defaults (037):* the pad verbs run
   the Launch / Load commands' rows; `retire` retires at the day's end like the button.
@@ -50,6 +52,16 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   the block editor's words, `#` notes kept, aliases fine; live gutter (green ran, grey
   skipped, red unparsed, amber locked, fired k/10 on `if`s); red and amber lines kept; saved
   on Apply or leaving; copy/paste is import/export. *Defaults (063):* blanks dropped.
+- **All instructions panel (2026-11-23).** Right of the Text editor (Text editor only, no
+  search): Commands; Build; Pads; Buildings on/off; Research and projects; Programs;
+  Control flow (one `if <reading> > 0` per reading on offer, `else` only where legal at the
+  cursor, `#`). Only what is revealed; known-but-locked entries amber with the locked
+  reason. Hover: the live card of the Commands / Buildings panel. Click: a new row below
+  the cursor's line with its indent, cursor moved there; an `if` adds an empty indented line
+  with the cursor on it; number slots 1, `up to N` owned + 1. *Defaults (070):* `if` and
+  `else` go in unindented (they can't be indented) and `else` gets a body line too; an
+  empty cursor line is filled in place; before program logic the non-command groups show
+  amber; research and project entries hover their panels' cards.
 - **`fund <project>` (2026-11-20).** A `fund <project> [amount]` verb funding a project the
   way the Projects panel does; it may be switched off later, one config change
   (`fund_verb`). *Defaults (039):* `fund P N` sets N a day on every cost of P (rules in

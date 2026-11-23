@@ -130,7 +130,7 @@ function whyNot(v: View, b: BuildingView): string {
   return `Short of ${b.short.map((r) => name(v, r)).join(', ')}.`;
 }
 
-function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: boolean; fresh: Set<string> }) {
+export function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: boolean; fresh: Set<string> }) {
   const key = `building:${b.id}`;
   const art = buildingArt(b.id);
   const atLimit = b.at_limit;

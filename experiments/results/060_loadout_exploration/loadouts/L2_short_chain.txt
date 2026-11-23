@@ -1,12 +1,12 @@
 # short: solar on low energy, a fixed mining chain, ship He-3, compute the rest
 seat: 1=all
 [1]
-if energy below 60% and credits above 20
+if energy < 60% and credits > 20
   build solar_panel
 cloud_compute x10
-if titanium above 99% or regolith above 99%
+if titanium > 99% or regolith > 99%
   build storage_depot
-if credits above 150 and energy above 70%
+if credits > 150 and energy > 70%
   build excavator up to 2
   build smelter up to 1
   build refinery up to 1
@@ -15,5 +15,5 @@ if credits above 150 and energy above 70%
   build refinery up to 2
 load_pads x5
 launch pads all
-if propellant below 67% and credits above 300
+if propellant < 67% and credits > 300
   buy_propellant x5
