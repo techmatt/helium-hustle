@@ -3,7 +3,9 @@
 //! affordable research, buy land, write a random program (1-4 lines of
 //! unlocked commands, counts 1-3) to a random program, move free processors
 //! to a random program, or start funding a random open project. It retires
-//! voluntarily with chance 1 in `retire_odds` (default 500) per look.
+//! voluntarily with chance 1 in `retire_odds` (default 500) per look, and
+//! points a No-cargo pad at the first good in loading priority
+//! ([`super::pick_cargo`]).
 
 use hh_core::rng::Stream;
 use hh_core::state::Entry;
@@ -95,5 +97,7 @@ impl Agent for Random {
                 let _ = p.apply(&a);
             }
         }
+        // Its one fixed hand besides retiring, after its buys: a new pad gets a cargo.
+        super::pick_cargo(p);
     }
 }

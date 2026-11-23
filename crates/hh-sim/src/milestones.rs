@@ -172,7 +172,7 @@ pub struct Tracker {
     shipped: BTreeSet<String>,
     revenue: BTreeMap<String, Fx>,
     /// Each pad's good and cooldown before the tick.
-    pads: Vec<(String, u32)>,
+    pads: Vec<(Option<String>, u32)>,
     window: usize,
     best_rate: Fx,
 }
@@ -214,7 +214,9 @@ impl Tracker {
             }
         }
         for (i, (good, cooldown)) in self.pads.iter().enumerate() {
-            if *cooldown == 0 && g.run.pads.get(i).is_some_and(|p| p.cooldown > 0) {
+            // A launched pad had cargo, so a good.
+            let launched = *cooldown == 0 && g.run.pads.get(i).is_some_and(|p| p.cooldown > 0);
+            if let Some(good) = good.as_ref().filter(|_| launched) {
                 self.shipped.insert(good.clone());
             }
         }

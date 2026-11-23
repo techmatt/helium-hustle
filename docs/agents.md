@@ -25,7 +25,7 @@ against: [principles.md](principles.md); how they're run: [simulator.md](simulat
 
 | Rung | What it does | Knobs (defaults) |
 |---|---|---|
-| `random` | Each look, `actions` times: one action uniform over what the view offers (an affordable building or research, land, a random 1-4 line program on a random program, free processors to a random program, a random rate on an open project); retires with chance 1 in `retire_odds` a look; looks every `every` ticks. | `actions` 2, `retire_odds` 500, `every` 5 |
+| `random` | Each look, `actions` times: one action uniform over what the view offers (an affordable building or research, land, a random 1-4 line program on a random program, free processors to a random program, a random rate on an open project); points a No-cargo pad at He-3; retires with chance 1 in `retire_odds` a look; looks every `every` ticks. | `actions` 2, `retire_odds` 500, `every` 5 |
 | `greedy` | The **builder**: buys the best-scored building it can afford (land included), up to `buys` a look, never saving; the cheapest affordable research; one command on the first program with every processor, chosen afresh each look. No projects, no voluntary retirement. Looks again when its target comes within reach, at most `max_gap` ticks on. | `buys` 3, `decay`, `starved` 100, `reserve` 3, `min_gap` 1, `max_gap` 10 |
 | `author` | The **program author**: the builder's score, but saves for its target; writes condition programs kept in the library; research, projects, ideology, Dream, market commands; retires a stale run. | the builder's, `min_gap` 1, `max_gap` 10, `compute` 1, `hand_gap` 60, `loads` 20, `pause` 1, `wait_demand` 0, `dream_at` 60, `stale_days` 300, `project_rate` 3, `fund` 1, `market` 1, `construct` 1, `cond` 1, `diversify` 0, `all_research` 0 (1: also research outside its list, today Process Telemetry and the draft Novelty Simulation), `science_share` 50, `ship_loads` 2, `fill` 8, `dream_fill` 1 |
 | `handsoff` | **Automation alone**: the author's until the run `if` opens in (the loadout guards with `if`), then from the next run it loads the best known loadout (`configs/sim/handsoff_loadout.txt`) and seats processors at each reset; its one hand is a stale-run retirement, a backstop to the loadout's own `retire` line. | the author's, `every` 10 |
@@ -47,6 +47,11 @@ The best is then **resolved** to what it needs first, up to four steps: an energ
 would leave less than `reserve` spare energy a day (content rates of active buildings) gives
 way to a Solar Panel; a price past a cap gives way to a Storage Depot (a Battery for energy).
 Land is bought first when short and credits cover it and the price.
+
+Every player (random, greedy, the author and those built on it) has one fixed hand on pads:
+a pad with No cargo carries the first good in the loading priority, He-3 at baseline
+(`agents::pick_cargo`, each look; the golden script does the same). The hands-off loadout's
+Program 2 opens with `set pads he3 up to 1`.
 
 A hand-played command (`hand_command`, greedy's): launch a full fuelled pad; fuel a full pad;
 load when a load of its good waits; buy the target's missing titanium, regolith or ice from

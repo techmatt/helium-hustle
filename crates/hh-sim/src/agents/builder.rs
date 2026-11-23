@@ -221,7 +221,7 @@ pub fn hand_command(v: &View, target: Option<&str>) -> &'static str {
         if full && amount(v, "propellant") < pad.fuel && credits >= fuel {
             return "buy_propellant";
         }
-        if !full && amount(v, &pad.good) >= pad.load && command_unlocked(v, "load_pads") {
+        if !full && pad.good.as_deref().is_some_and(|g| amount(v, g) >= pad.load) && command_unlocked(v, "load_pads") {
             return "load_pads";
         }
     }
@@ -318,6 +318,8 @@ impl Agent for Greedy {
                 _ => break,
             }
         }
+        // After the buys, so a pad bought this look gets its cargo now.
+        super::pick_cargo(p);
         // The cheapest affordable research.
         let v = p.view();
         let cheapest = v.research.iter().filter(|r| r.affordable).min_by_key(|r| r.cost).map(|r| r.id);

@@ -46,6 +46,8 @@ export function Left({
   // still fits a 1280 px window without scrolling.
   const compact = tiles.length > 9;
   const padReady = v.pads.some((p) => p.ready && !p.paused);
+  // A working pad with No cargo loads nothing until the player picks one.
+  const padNoCargo = v.pads.some((p) => p.active && p.good === null);
   // The one resource row expanded to its breakdown, if any.
   const [expanded, setExpanded] = useState<string | null>(null);
   // A resource hidden (a new run) closes its breakdown, so it never reopens by itself.
@@ -73,6 +75,7 @@ export function Left({
             <span>{t.name}</span>
             {navHasNews(t.id) && <span class="dot" title="Something new" />}
             {t.id === 'launch_pads' && padReady && <span class="dot dot-ready" data-testid="pads-ready" title="A pad is ready to launch" />}
+            {t.id === 'launch_pads' && padNoCargo && <span class="dot dot-cargo" data-testid="pads-no-cargo" title="A pad has No cargo: pick one" />}
           </button>
         ))}
       </nav>

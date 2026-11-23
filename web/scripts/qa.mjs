@@ -650,7 +650,8 @@ async function pass(seed, width, theme) {
       const sel = c.querySelector('select');
       const t = c.querySelector('label[title]')?.getAttribute('title') ?? '';
       const m = t.match(/returns ([\\d.,K]+) of the ([\\d.,K]+)/);
-      const other = [...sel.options].map((o) => o.value).find((g) => g !== sel.value);
+      // Another good, not No cargo ('').
+      const other = [...sel.options].map((o) => o.value).find((g) => g !== '' && g !== sel.value);
       return { pad: Number(c.dataset.pad), good: sel.value, other, returns: m ? Number(m[1].replace(/,/g, '')) : null, cargo: Number(c.dataset.cargo) };
     })()`);
     // The scenario starts with its pads loading; a played run may have none loaded now.
@@ -862,6 +863,11 @@ async function pass(seed, width, theme) {
       let cmd = 'cloud_compute';
       if ((bs.launch_pad?.owned ?? 0) > 0) {
         await panel('launch_pads');
+        // A new pad has No cargo: pick Helium-3, as quest 1.2 says.
+        if ((await evaluate(`document.querySelector('[data-pad="0"] select')?.value ?? null`)) === '') {
+          await setValue('[data-pad="0"] select', 'he3');
+          continue;
+        }
         const cargo = Number(await evaluate(`document.querySelector('[data-pad="0"]')?.dataset.cargo ?? 0`));
         if (cargo >= 10 && (await evaluate(`!document.querySelector('[data-testid="launch-0"]')?.disabled`))) {
           await click('[data-testid="launch-0"]', 'launch');
@@ -1159,6 +1165,12 @@ async function pass(seed, width, theme) {
       await setValue('#scenario', sc);
       await click('#start-scenario', `start ${sc}`);
       await moments(await look());
+      // A scenario's pads start with No cargo: point each at Helium-3 so they load.
+      if (await exists('.nav-tile[data-nav="launch_pads"]')) {
+        await panel('launch_pads');
+        const empty = await evaluate(`[...document.querySelectorAll('.card.pad select')].map((x, i) => (x.value === '' ? i : -1)).filter((i) => i >= 0)`);
+        for (const i of empty) await setValue(`.card.pad[data-pad="${i}"] select`, 'he3');
+      }
       await speed(10);
       await sleep(1500);
       await speed(0);

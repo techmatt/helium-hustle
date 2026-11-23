@@ -121,18 +121,21 @@ fn folded_readings_guard_assign_and_set_pads_exactly() {
     r.advance(&mut g, 1);
     assert_eq!(read(&g, Reading::FreeProcessors), n(0));
     assert_eq!(run_one(&r, &mut g, all), O::Done, "none free: nothing to add");
+    // New pads have No cargo: both idle.
+    let idle = |g: &GameState| read(g, Reading::IdlePads);
+    assert!(g.run.pads.iter().all(|p| p.good.is_none()));
+    assert_eq!(idle(&g), n(2));
     // Both pads on He-3 and empty: both idle; cargo on one leaves the other.
     for p in &mut g.run.pads {
-        p.good = "he3".into();
+        p.good = Some("he3".into());
     }
-    let idle = |g: &GameState| read(g, Reading::IdlePads);
     assert_eq!(idle(&g), n(2));
     g.run.pads[0].cargo = f("1");
     assert_eq!(idle(&g), n(1));
     // `set pads titanium` switches the empty He-3 pad, never the loaded one.
     let set_ti = act(Verb::SetPads, Some("titanium"), None, Some(Amount::N(2)));
     assert_eq!(run_one(&r, &mut g, set_ti.clone()), O::Ran);
-    assert_eq!((g.run.pads[0].good.as_str(), g.run.pads[1].good.as_str()), ("he3", "titanium"), "the loaded pad stays");
+    assert_eq!((g.run.pads[0].good.as_deref(), g.run.pads[1].good.as_deref()), (Some("he3"), Some("titanium")), "the loaded pad stays");
     assert_eq!(run_one(&r, &mut g, set_ti), O::Failed, "only the loaded pad could switch");
     let v = r.view(&g);
     assert!(v.readings.iter().any(|x| x.reading == Reading::FreeProcessors));
@@ -148,16 +151,17 @@ fn pad_verbs_and_readings_address_pads_by_good() {
     assert_eq!(g.run.pads.len(), 2);
     let set_ti = act(Verb::SetPads, Some("titanium"), None, Some(Amount::N(1)));
     assert_eq!(run_one(&r, &mut g, set_ti.clone()), O::Ran);
-    assert_eq!(g.run.pads.iter().filter(|p| p.good == "titanium").count(), 1);
+    assert_eq!(g.run.pads.iter().filter(|p| p.good.as_deref() == Some("titanium")).count(), 1);
+    assert_eq!(g.run.pads[0].good.as_deref(), Some("titanium"), "a No-cargo pad switches, in pad order");
     assert_eq!(run_one(&r, &mut g, set_ti), O::Done, "one carries it already");
     set(&mut g, "titanium", "40");
     set(&mut g, "he3", "0");
     assert_eq!(run_one(&r, &mut g, act(Verb::LoadPads, Some("titanium"), None, None)), O::Ran);
     let per = crate::modules::shipments::load_amount(&r, &g);
-    let cargo = |g: &GameState, good: &str| g.run.pads.iter().filter(|p| p.good == good).fold(Fx::ZERO, |s, p| s + p.cargo);
+    let cargo = |g: &GameState, good: &str| g.run.pads.iter().filter(|p| p.good.as_deref() == Some(good)).fold(Fx::ZERO, |s, p| s + p.cargo);
     assert_eq!((cargo(&g, "titanium"), cargo(&g, "he3")), (per, Fx::ZERO));
     // A full titanium pad, fuel aboard: `launch pads titanium` ships it alone.
-    let ti = g.run.pads.iter().position(|p| p.good == "titanium").unwrap();
+    let ti = g.run.pads.iter().position(|p| p.good.as_deref() == Some("titanium")).unwrap();
     g.run.pads[ti].cargo = r.p.shipments.pad_cargo_capacity;
     set(&mut g, "propellant", "100");
     // Paused, it doesn't launch: done.

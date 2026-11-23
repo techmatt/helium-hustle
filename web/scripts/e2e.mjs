@@ -175,6 +175,11 @@ async function playToFirstShipment() {
     let cmd = 'cloud_compute';
     if ((b.launch_pad?.owned ?? 0) > 0) {
       await panel('launch_pads');
+      // A new pad has No cargo: pick Helium-3, as quest 1.2 says.
+      if ((await evaluate(`document.querySelector('[data-pad="0"] select')?.value ?? null`)) === '') {
+        await setValue('[data-pad="0"] select', 'he3');
+        continue;
+      }
       const cargo = Number(await evaluate(`document.querySelector('[data-pad="0"]')?.dataset.cargo ?? 0`));
       if (cargo >= 10 && (await enabled('[data-testid="launch-0"]'))) {
         await click('[data-testid="launch-0"]');
@@ -702,6 +707,21 @@ async function readability(grant) {
   check(!!quest, `the main quest has its pinned slot: ${quest}`);
   // Fold Story: a folded section keeps its count.
   await click('[data-testid="events-story"] .fold-head');
+  // The scenario's pad starts with No cargo: idle, red nav dot; picking He-3 clears both.
+  await panel('launch_pads');
+  const none = await evaluate(`(() => {
+    const p = document.querySelector('[data-pad="0"]');
+    return { value: p.querySelector('select').value, status: p.querySelector('.pad-status').textContent,
+      state: p.dataset.padState, dot: !!document.querySelector('[data-testid="pads-no-cargo"]') };
+  })()`);
+  check(none.value === '' && none.status === 'No cargo: pick one' && none.state === 'nocargo' && none.dot,
+    `a scenario's pad starts with No cargo, nav dot on: ${JSON.stringify(none)}`);
+  await evaluate(`document.querySelector('.col-mid').scrollTop = 1e6`);
+  await shot('pad-no-cargo');
+  await setValue('[data-pad="0"] select', 'he3');
+  await sleep(200);
+  const picked = await evaluate(`({ value: document.querySelector('[data-pad="0"] select').value, dot: !!document.querySelector('[data-testid="pads-no-cargo"]') })`);
+  check(picked.value === 'he3' && !picked.dot, `picking He-3 clears No cargo and its dot: ${JSON.stringify(picked)}`);
   const lines = await evaluate(`[...document.querySelectorAll('.lines li')].map((li) => li.dataset.command)`);
   await runOnly('load_pads', lines);
   // Helium-3 caps at 20 and a load moves 5: top it up and play 4 days, 5 times.

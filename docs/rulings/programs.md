@@ -61,4 +61,4 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   yet. The golden game runs a short condition program, pinning the interpreter, from the
   `golden_start` scenario with `if` open (049_1). *Defaults (040):* `free processors` is
   granted by active buildings less assigned (what `assign processors ... all` would add);
-  `idle pads` is pads with no cargo (a cooling pad counts).
+  `idle pads` is pads with no cargo (a cooling pad counts, and a No-cargo pad, 069).

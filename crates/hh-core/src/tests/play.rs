@@ -218,6 +218,11 @@ fn programs_are_paid_before_upkeep_and_the_breakdown_shows_who_went_short() {
     let v = r.view(&g);
     // Every Act 1 tile open; the later acts' five (draft) open with their quests.
     assert_eq!(v.nav.iter().filter(|t| t.visible).count(), v.nav.len() - 5, "every Act 1 tile open");
+    // A scenario's pads start with No cargo, like a new run's.
+    assert!(g.run.pads.iter().all(|p| p.good.is_none()));
+    for pad in 0..g.run.pads.len() as u32 {
+        r.apply(&mut g, &Action::SetPadGood { pad, good: Some("he3".into()) }).unwrap();
+    }
     r.advance(&mut g, 3);
     let v = r.view(&g);
     // Load Launch Pads ran on the Solar Panels' power; a building with upkeep went short.
@@ -390,6 +395,7 @@ fn shipments_load_launch_pay_and_cool_down() {
     own(&mut g, "solar_panel", 3);
     assert_eq!(g.run.pads.len(), 1);
     set(&mut g, "he3", "20");
+    r.apply(&mut g, &Action::SetPadGood { pad: 0, good: Some("he3".into()) }).unwrap();
     program(&r, &mut g, &[("load_pads", 1)]);
     r.advance(&mut g, 1);
     assert_eq!(g.run.pads[0].cargo, f("5"));
@@ -417,6 +423,7 @@ fn the_view_shows_pad_readiness_and_the_rate_a_cap_throws_away() {
     own(&mut g, "launch_pad", 1);
     own(&mut g, "solar_panel", 3);
     // Full but short of fuel: not fueled, not ready.
+    g.run.pads[0].good = Some("he3".into());
     g.run.pads[0].cargo = r.p.shipments.pad_cargo_capacity;
     set(&mut g, "propellant", "19.4");
     let p = &r.view(&g).pads[0];
@@ -445,24 +452,59 @@ fn switching_a_loaded_pads_cargo_returns_it_up_to_the_cap() {
     let r = rules();
     let mut g = r.new_game(1);
     own(&mut g, "launch_pad", 1);
-    let good = g.run.pads[0].good.clone();
-    let other = if good == "he3" { "titanium" } else { "he3" };
+    let (good, other) = ("he3", "titanium");
+    r.apply(&mut g, &Action::SetPadGood { pad: 0, good: Some(good.into()) }).unwrap();
     let cap = economy::cap(&r, &g, other).unwrap();
     // Room for all of it: back to the stockpile, nothing lost, no line.
-    set(&mut g, &good, "0");
+    set(&mut g, good, "0");
     g.run.pads[0].cargo = f("5");
     let lines = g.run.activity.len();
-    r.apply(&mut g, &Action::SetPadGood { pad: 0, good: other.into() }).unwrap();
-    assert_eq!((g.amount(&good), g.run.pads[0].cargo, g.run.pads[0].good.as_str()), (f("5"), Fx::ZERO, other));
+    r.apply(&mut g, &Action::SetPadGood { pad: 0, good: Some(other.into()) }).unwrap();
+    assert_eq!((g.amount(good), g.run.pads[0].cargo, g.run.pads[0].good.as_deref()), (f("5"), Fx::ZERO, Some(other)));
     assert_eq!(g.run.activity.len(), lines);
     // Two short of the cap: two return, the rest is lost and a line says so.
     g.run.pads[0].cargo = f("12");
     set(&mut g, other, &(cap - f("2")).to_string());
-    r.apply(&mut g, &Action::SetPadGood { pad: 0, good: good.clone() }).unwrap();
+    r.apply(&mut g, &Action::SetPadGood { pad: 0, good: Some(good.into()) }).unwrap();
     assert_eq!(g.amount(other), cap);
     let a = g.run.activity.last().unwrap();
     assert_eq!((a.kind.as_str(), a.id.as_str(), a.amount, a.quantity), ("cargo_lost", other, Some(f("1")), Some(f("10"))));
     assert_eq!(g.run.pads[0].cargo, Fx::ZERO);
+    // Back to No cargo: the cargo returns the same way.
+    g.run.pads[0].cargo = f("3");
+    set(&mut g, good, "0");
+    r.apply(&mut g, &Action::SetPadGood { pad: 0, good: None }).unwrap();
+    assert_eq!((g.amount(good), g.run.pads[0].cargo, g.run.pads[0].good.as_deref()), (f("3"), Fx::ZERO, None));
+}
+
+#[test]
+fn a_new_pad_has_no_cargo_and_loads_nothing_until_one_is_picked() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    own(&mut g, "launch_pad", 1);
+    own(&mut g, "solar_panel", 10);
+    set(&mut g, "he3", "20");
+    assert_eq!(g.run.pads[0].good, None);
+    let v = r.view(&g);
+    assert_eq!(v.pads[0].good, None);
+    crate::modules::shipments::load(&r, &mut g, None);
+    assert_eq!((g.run.pads[0].cargo, g.amount("he3")), (Fx::ZERO, f("20")), "Load skips a No-cargo pad");
+    r.apply(&mut g, &Action::SetPadGood { pad: 0, good: Some("he3".into()) }).unwrap();
+    crate::modules::shipments::load(&r, &mut g, None);
+    assert!(g.run.pads[0].cargo > Fx::ZERO);
+    assert!(r.apply(&mut g, &Action::SetPadGood { pad: 0, good: Some("energy".into()) }).is_err());
+}
+
+#[test]
+fn a_save_from_before_no_cargo_keeps_its_pads_goods() {
+    // An old save's pad: its good a bare string, as before No cargo.
+    let mut old = serde_json::to_value(crate::state::Pad { good: None, paused: false, cargo: f("5"), cooldown: 2 }).unwrap();
+    old["good"] = serde_json::json!("titanium");
+    let pad: crate::state::Pad = serde_json::from_value(old).unwrap();
+    assert_eq!(pad.good.as_deref(), Some("titanium"));
+    let old_action = r#"{"type":"set_pad_good","pad":0,"good":"he3"}"#;
+    let a: Action = serde_json::from_str(old_action).unwrap();
+    assert_eq!(a, Action::SetPadGood { pad: 0, good: Some("he3".into()) });
 }
 
 #[test]

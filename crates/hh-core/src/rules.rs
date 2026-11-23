@@ -133,7 +133,7 @@ impl Rules {
             Action::LoadLoadout { loadout, program } => programs::load_loadout(self, &mut h, *loadout, *program),
             Action::RenameLoadout { loadout, name } => programs::rename_loadout(self, &mut h, *loadout, name),
             Action::DeleteLoadout { loadout } => programs::delete_loadout(&mut h, *loadout),
-            Action::SetPadGood { pad, good } => shipments::set_pad_good(self, &mut h, *pad, good),
+            Action::SetPadGood { pad, good } => shipments::set_pad_good(self, &mut h, *pad, good.as_deref()),
             Action::SetPadPaused { pad, paused } => shipments::set_pad_paused(&mut h, *pad, *paused),
             Action::Launch { pad } => shipments::launch_action(self, &mut h, *pad),
             Action::SetLoadingPriority { goods } => shipments::set_loading_priority(self, &mut h, goods),

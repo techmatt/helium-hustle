@@ -676,12 +676,12 @@ impl Author {
                 .filter(|g| v.markets.iter().any(|m| m.good == **g))
                 .filter(|g| v.buildings.iter().any(|b| b.active > 0 && b.produces.contains_key(**g)))
                 .map(|g| g.to_string())
-                .filter(|g| Some(g) != first.as_ref())
+                .filter(|g| Some(g) != first.as_ref().and_then(|f| f.as_ref()))
                 .collect();
             for (i, pad) in v.pads.iter().enumerate().skip(1) {
-                let Some(good) = others.get(i - 1).or(first.as_ref()) else { continue };
-                if pad.cargo == Fx::ZERO && pad.good != *good {
-                    sets.push(Action::SetPadGood { pad: i as u32, good: good.clone() });
+                let Some(good) = others.get(i - 1).or(first.as_ref().and_then(|f| f.as_ref())) else { continue };
+                if pad.cargo == Fx::ZERO && pad.good.as_ref() != Some(good) {
+                    sets.push(Action::SetPadGood { pad: i as u32, good: Some(good.clone()) });
                 }
             }
             for a in sets {
@@ -700,8 +700,8 @@ impl Author {
                 .filter(|g| g != "he3" && target.is_none_or(|t| price(v, t, g) == Fx::ZERO))
                 .find(|g| cap(v, g).is_some_and(|c| amount(v, g) >= c));
             let good = full.unwrap_or_else(|| "he3".to_string());
-            if pad.good != good {
-                sets.push(Action::SetPadGood { pad: i as u32, good });
+            if pad.good.as_ref() != Some(&good) {
+                sets.push(Action::SetPadGood { pad: i as u32, good: Some(good) });
             }
         }
         for a in sets {
@@ -1004,6 +1004,7 @@ impl Agent for Author {
         let paused = if gap <= self.hand_gap { target.as_deref() } else { None };
         self.pause_for(p, paused);
         self.projects(p, target.as_deref());
+        super::pick_cargo(p);
         self.pads(p, target.as_deref());
         self.programs(p, target.as_deref(), gap);
         self.gap = gap;

@@ -1470,7 +1470,8 @@ tr.is-new td:first-child {
 .card.pad.pad-ready .card-head {
   background: var(--ok-head);
 }
-.card.pad.pad-paused .card-head {
+.card.pad.pad-paused .card-head,
+.card.pad.pad-nocargo .card-head {
   background: var(--warn-head);
 }
 .card.pad.pad-blocked .card-head {
@@ -1496,8 +1497,14 @@ button.go:hover:not(:disabled) {
   right: 17px;
   background: var(--pos);
 }
+/* A pad with No cargo: left of the ready dot. */
+.nav-tile .dot.dot-cargo {
+  right: 29px;
+  background: var(--neg);
+}
 /* A compact tile's name can run to its right edge: its dots sit on the tile's corners as
-   badges, the new dot top right and the ready dot bottom right, clear of the name. */
+   badges, the new dot top right, the ready dot bottom right and the No-cargo dot bottom
+   left, clear of the name. */
 .nav-grid.compact .nav-tile .dot {
   top: -4px;
   right: -4px;
@@ -1506,6 +1513,12 @@ button.go:hover:not(:disabled) {
 .nav-grid.compact .nav-tile .dot.dot-ready {
   top: auto;
   bottom: -4px;
+}
+.nav-grid.compact .nav-tile .dot.dot-cargo {
+  top: auto;
+  right: auto;
+  bottom: -4px;
+  left: -4px;
 }
 /* An affordable building's name row is tinted (every card's head has the same box, so a
    card turning affordable moves nothing). */

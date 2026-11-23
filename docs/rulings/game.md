@@ -39,6 +39,13 @@ Programs have their own part ([programs.md](programs.md)).
 - **Act 1 is mostly a tutorial (2026-11-22).** The phase before programming is fully
   unlocked gets no special design effort, trivial special cases at most. So program players
   get no count or rate readings before research unlocks them (059's default stands).
+- **Pads start with No cargo (2026-11-23).** Players must learn to pick a pad's cargo: a new
+  Launch Pad mid-run and every pad a run starts with has No cargo, idle until a good is picked
+  (Load skips it, `idle_pads` counts it); No cargo stays one of a pad's choices. Old saves keep
+  their pads' goods (a state reads back as saved; the web autosave of another revision is still
+  discarded, by *Saves* in [engine.md](engine.md)). Every sim player and script picks a cargo. *Defaults (069):* quest 1.2
+  teaches it; the sim players' pick is one fixed hand, the first good in the loading priority
+  (`agents::pick_cargo`); the Launch Pads tile shows a red dot while a working pad has No cargo.
 - **Adversaries on minimal Attention (2026-11-21).** Speculators and rivals each have one
   Attention, raised by a driver, present at a threshold (one tier), decaying linearly, with
   a neutralize stub. All placeholders ([rules/attention.md](../rules/attention.md)).

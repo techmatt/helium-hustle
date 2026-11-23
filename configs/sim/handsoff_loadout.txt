@@ -9,11 +9,13 @@
 # rewritten in 065 for rules 19's step cost (every `if` a step): Program 1's
 # compute runs x100 a pass, not x10, so its guards cost a few steps in a hundred,
 # and the `if energy below 21%` / `idle x5` block is gone (065's write-up).
+# 069 (rules 22: a new pad has No cargo) added Program 2's `set pads he3 up to 1`: keep its
+# N at least Program 1's `build launch_pad up to` N, or the extra pads idle all run.
 #
 # Program 1 builds (and seats processors as Data Centers add them), Program 2
-# ships, Program 3 researches Process Telemetry, retires a run that has bought
-# nothing for 300 days (062: before the player's hand backstop), researches
-# Dream Protocols and dreams when bored.
+# picks its pad's cargo and ships, Program 3 researches Process Telemetry, retires
+# a run that has bought nothing for 300 days (062: before the player's hand
+# backstop), researches Dream Protocols and dreams when bored.
 seat: 1=all
 [1]
 if free processors above 0
@@ -40,6 +42,7 @@ if credits above 150 and energy above 70%
   build launch_pad up to 1
   build fabricator up to 1
 [2]
+set pads he3 up to 1
 if he3 above 10%
   load_pads x5
 launch pads all

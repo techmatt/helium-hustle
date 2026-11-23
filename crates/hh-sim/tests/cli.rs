@@ -184,7 +184,7 @@ fn the_ladder_prints_its_tables_and_writes_results() {
 /// handsoff games are the author's), so this one goes to run 3 on seed 1,
 /// where the loadout file plays, and ships and buys. A new loadout file moves
 /// the pin: copy it from the failing assertion.
-const HANDSOFF_PIN: &str = "0c7a604a3bebf838";
+const HANDSOFF_PIN: &str = "0ed8a2673332a4dd";
 
 #[test]
 #[ignore = "slow lane: a 3-run career (~2 s)"]

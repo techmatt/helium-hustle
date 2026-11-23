@@ -141,7 +141,7 @@ export function LaunchPads({ s }: { s: Store }) {
         <div class="cards">
           {v.pads.map((p, i) => {
             // The head's tint: green Ready, yellow paused (a paused full pad reads Paused),
-            // red full but short of fuel, neutral loading or idle.
+            // red full but short of fuel, yellow No cargo (Load skips it), neutral loading or idle.
             const full = Number(p.cargo) >= Number(p.capacity);
             const ready = p.ready && !p.paused;
             // Full and fueled but still cooling down from its last launch: not loading.
@@ -149,14 +149,16 @@ export function LaunchPads({ s }: { s: Store }) {
               ? 'idle'
               : p.paused
                 ? 'paused'
-                : ready
+                : p.good === null
+                  ? 'nocargo'
+                  : ready
                   ? 'ready'
                   : full && !p.fueled
                     ? 'blocked'
                     : full && p.cooldown > 0
                       ? 'cooling'
                       : 'loading';
-            const label = { idle: p.unpaid ? 'idle: upkeep unpaid' : 'inactive', paused: 'Paused', ready: 'Ready', blocked: 'Full: no fuel', cooling: `Full: ready in ${p.cooldown} day${p.cooldown === 1 ? '' : 's'}`, loading: 'loading' }[state];
+            const label = { idle: p.unpaid ? 'idle: upkeep unpaid' : 'inactive', paused: 'Paused', nocargo: 'No cargo: pick one', ready: 'Ready', blocked: 'Full: no fuel', cooling: `Full: ready in ${p.cooldown} day${p.cooldown === 1 ? '' : 's'}`, loading: 'loading' }[state];
             return (
             <div
               class={`card pad pad-${state}${p.active ? '' : ' idle'}${ready ? ' ready' : ''}`}
@@ -168,22 +170,26 @@ export function LaunchPads({ s }: { s: Store }) {
             >
               <div class="card-head">
                 <h3>Pad {i + 1}</h3>
-                <span class={`pad-status${ready ? ' pad-ready' : p.unpaid ? ' neg' : state === 'idle' || state === 'loading' || state === 'cooling' ? ' muted' : ''}`}>{label}</span>
+                <span class={`pad-status${ready ? ' pad-ready' : p.unpaid || state === 'nocargo' ? ' neg' : state === 'idle' || state === 'loading' || state === 'cooling' ? ' muted' : ''}`}>{label}</span>
               </div>
               <label
                 title={
-                  Number(p.cargo) > 0
+                  Number(p.cargo) > 0 && p.good !== null
                     ? `Switching cargo returns ${num(p.switch_returns)} of the ${num(p.cargo)} ${name(v, p.good)} loaded to the stockpile${
                         Number(p.switch_returns) < Number(p.cargo) ? ' (the rest is lost: stockpile full)' : ''
                       }`
                     : undefined
                 }
               >
-                Cargo <ResChip v={v} id={p.good} />{' '}
+                Cargo {p.good !== null && <ResChip v={v} id={p.good} />}{' '}
                 <select
-                  value={p.good}
-                  onChange={(e) => act({ type: 'set_pad_good', pad: i, good: (e.target as HTMLSelectElement).value })}
+                  value={p.good ?? ''}
+                  onChange={(e) => {
+                    const good = (e.target as HTMLSelectElement).value;
+                    act({ type: 'set_pad_good', pad: i, good: good === '' ? null : good });
+                  }}
                 >
+                  <option value="">No cargo</option>
                   {goods.map((g) => (
                     <option key={g} value={g}>
                       {name(v, g)}
@@ -202,7 +208,10 @@ export function LaunchPads({ s }: { s: Store }) {
                 <ResChip v={v} id="propellant" /> Fuel {num(p.fueled ? propellant : Math.floor(Number(propellant) * 10 + 1e-6) / 10)} / {num(p.fuel)} Propellant
               </div>
               <div class="muted small">
-                Each Load Launch Pads run loads up to {num(p.load)} {name(v, p.good)} · a launch burns the fuel from the shared pool
+                {p.good === null
+                  ? 'No cargo: pick a good for Load Launch Pads to load'
+                  : `Each Load Launch Pads run loads up to ${num(p.load)} ${name(v, p.good)}`}{' '}
+                · a launch burns the fuel from the shared pool
                 {p.cooldown > 0 ? ` · cooling down ${p.cooldown} day${p.cooldown === 1 ? '' : 's'}` : ''}
               </div>
               <div>

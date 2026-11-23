@@ -69,15 +69,19 @@ pub fn goods(r: &Rules) -> Vec<String> {
         .collect()
 }
 
-/// One pad per Launch Pad owned: new pads take the first good in loading
-/// priority; selling drops the last pad (and its cargo).
+/// One pad per Launch Pad owned: new pads start with No cargo (the player
+/// picks the good); selling drops the last pad (and its cargo).
 pub fn sync_pads(g: &mut GameState) {
     let n = g.owned(LAUNCH_PAD) as usize;
-    let good = g.run.loading_priority.first().cloned().unwrap_or_default();
     g.run.pads.truncate(n);
     while g.run.pads.len() < n {
-        g.run.pads.push(Pad { good: good.clone(), paused: false, cargo: Fx::ZERO, cooldown: 0 });
+        g.run.pads.push(Pad { good: None, paused: false, cargo: Fx::ZERO, cooldown: 0 });
     }
+}
+
+/// The good pad `i` carries, `None` for No cargo.
+pub fn pad_good(g: &GameState, i: usize) -> Option<&str> {
+    g.run.pads[i].good.as_deref()
 }
 
 /// A pad runs if it is among the first working Launch Pads (active, upkeep paid).
@@ -100,18 +104,18 @@ pub fn load_amount(r: &Rules, g: &GameState) -> Fx {
 /// Load Launch Pads: each active, unpaused pad takes up to the load amount
 /// from its good's stockpile, to its capacity; pads load in loading-priority
 /// order of their goods (pad order within a good), so a short stockpile goes
-/// to the higher-priority good's pads first.
+/// to the higher-priority good's pads first. A No-cargo pad loads nothing.
 /// With `only`, just that good's pads (`load pads <good>`).
 pub fn load(r: &Rules, g: &mut GameState, only: Option<&str>) {
     let per = load_amount(r, g);
     let cap = r.p.shipments.pad_cargo_capacity;
-    let rank = |good: &str| g.run.loading_priority.iter().position(|x| x == good).unwrap_or(usize::MAX);
+    let rank = |good: Option<&str>| g.run.loading_priority.iter().position(|x| Some(x.as_str()) == good).unwrap_or(usize::MAX);
     let mut order: Vec<usize> = (0..g.run.pads.len()).filter(|&i| on(g, i, only)).collect();
-    order.sort_by_key(|&i| (rank(&g.run.pads[i].good), i));
+    order.sort_by_key(|&i| (rank(pad_good(g, i)), i));
     for i in order {
         let take = load_take(g, i, per, cap);
         if take > Fx::ZERO {
-            let good = g.run.pads[i].good.clone();
+            let good = pad_good(g, i).expect("only a pad with a good loads").to_string();
             *g.run.resources.get_mut(&good).expect("content good") -= take;
             g.track("pads", &good, Fx::ZERO, take);
             g.run.pads[i].cargo += take;
@@ -119,14 +123,14 @@ pub fn load(r: &Rules, g: &mut GameState, only: Option<&str>) {
     }
 }
 
-/// What Load puts aboard pad `i` now (0 when paused, inactive, full or out of
-/// the good).
+/// What Load puts aboard pad `i` now (0 when No cargo, paused, inactive, full
+/// or out of the good).
 fn load_take(g: &GameState, i: usize, per: Fx, cap: Fx) -> Fx {
+    let Some(good) = pad_good(g, i) else { return Fx::ZERO };
     if !pad_active(g, i) || g.run.pads[i].paused {
         return Fx::ZERO;
     }
-    let p = &g.run.pads[i];
-    per.min(cap - p.cargo).min(g.amount(&p.good)).max(Fx::ZERO)
+    per.min(cap - g.run.pads[i].cargo).min(g.amount(good)).max(Fx::ZERO)
 }
 
 /// Whether Load would put anything aboard `only`'s pads now (a `load pads`
@@ -148,10 +152,11 @@ pub fn launches(r: &Rules, g: &GameState, i: usize, only: Option<&str>) -> bool 
     on(g, i, only) && !g.run.pads[i].paused && ready(r, g, i)
 }
 
-/// A pad can launch now: active, cooled down, cargo aboard and fuel in stock.
+/// A pad can launch now: active, cooled down, cargo aboard and fuel in stock
+/// (only a pad with a good holds cargo).
 pub fn can_launch(r: &Rules, g: &GameState, i: usize) -> bool {
     let p = &g.run.pads[i];
-    pad_active(g, i) && p.cooldown == 0 && p.cargo > Fx::ZERO && g.amount(PROPELLANT) >= r.p.shipments.fuel_per_pad
+    pad_active(g, i) && p.good.is_some() && p.cooldown == 0 && p.cargo > Fx::ZERO && g.amount(PROPELLANT) >= r.p.shipments.fuel_per_pad
 }
 
 /// A pad is ready: full and able to launch now. The one rule behind Launch Full
@@ -160,9 +165,9 @@ pub fn ready(r: &Rules, g: &GameState, i: usize) -> bool {
     g.run.pads[i].cargo >= r.p.shipments.pad_cargo_capacity && can_launch(r, g, i)
 }
 
-/// Pad `i` carries `only` (`None`: every pad).
+/// Pad `i` carries `only` (`None`: every pad, No cargo included).
 pub fn on(g: &GameState, i: usize, only: Option<&str>) -> bool {
-    only.is_none_or(|good| g.run.pads[i].good == good)
+    only.is_none_or(|good| pad_good(g, i) == Some(good))
 }
 
 /// Launch Full Pads: every active, unpaused, full pad that can launch does, in
@@ -175,14 +180,15 @@ pub fn launch_full(r: &Rules, g: &mut GameState, only: Option<&str>) {
     }
 }
 
-/// Pad `i` is idle: no cargo aboard. `set pads` switches only idle pads (of
-/// another good), and the `idle pads` reading counts them.
+/// Pad `i` is idle: no cargo aboard (a No-cargo pad always is). `set pads`
+/// switches only idle pads (of another good or No cargo), and the `idle pads`
+/// reading counts them.
 pub fn idle(g: &GameState, i: usize) -> bool {
     g.run.pads[i].cargo == Fx::ZERO
 }
 
 /// `set pads <good> up to N`: while fewer than `n` pads carry `good`, an idle
-/// pad carrying another good switches to it, in pad order. Returns
+/// pad carrying another good or No cargo switches to it, in pad order. Returns
 /// how many switched.
 pub fn point_idle(r: &Rules, g: &mut GameState, good: &str, n: u32) -> u32 {
     let mut have = (0..g.run.pads.len()).filter(|&i| on(g, i, Some(good))).count() as u32;
@@ -191,7 +197,7 @@ pub fn point_idle(r: &Rules, g: &mut GameState, good: &str, n: u32) -> u32 {
         if have >= n {
             break;
         }
-        if g.run.pads[i].good != good && idle(g, i) && set_pad_good(r, g, i as u32, good).is_ok() {
+        if !on(g, i, Some(good)) && idle(g, i) && set_pad_good(r, g, i as u32, Some(good)).is_ok() {
             have += 1;
             moved += 1;
         }
@@ -201,10 +207,10 @@ pub fn point_idle(r: &Rules, g: &mut GameState, good: &str, n: u32) -> u32 {
 
 /// The credits a pad's cargo fetches now.
 pub fn payout(r: &Rules, g: &GameState, i: usize) -> Fx {
-    let p = &g.run.pads[i];
-    let base = r.p.shipments.base_values.get(&p.good).copied().unwrap_or(Fx::ZERO);
-    let demand = g.run.markets.get(&p.good).map_or(Fx::ZERO, |m| m.demand);
-    base * demand * p.cargo * modifier(r, g, "shipment_credit_mult")
+    let Some(good) = pad_good(g, i) else { return Fx::ZERO };
+    let base = r.p.shipments.base_values.get(good).copied().unwrap_or(Fx::ZERO);
+    let demand = g.run.markets.get(good).map_or(Fx::ZERO, |m| m.demand);
+    base * demand * g.run.pads[i].cargo * modifier(r, g, "shipment_credit_mult")
 }
 
 /// Launches pad `i` (checked by the caller): burns fuel, pays `base value ×
@@ -214,7 +220,7 @@ pub fn launch(r: &Rules, g: &mut GameState, i: usize) {
     let fuel = r.p.shipments.fuel_per_pad;
     g.consume("launch", PROPELLANT, fuel);
     let pay = payout(r, g, i);
-    let good = g.run.pads[i].good.clone();
+    let good = pad_good(g, i).expect("a pad with cargo has a good").to_string();
     let demand = g.run.markets.get(&good).map_or(Fx::ZERO, |m| m.demand);
     g.produce("launch", CREDITS, pay);
     g.run.stats.shipments += 1;
@@ -242,26 +248,29 @@ pub fn launch_action(r: &Rules, g: &mut GameState, pad: u32) -> Result<(), Strin
     Ok(())
 }
 
-/// Sets the good a pad carries. A loaded pad switching goods returns its cargo
-/// to the stockpile; what exceeds the stockpile's cap is lost, and a
-/// `cargo_lost` activity line says so.
-pub fn set_pad_good(r: &Rules, g: &mut GameState, pad: u32, good: &str) -> Result<(), String> {
-    if !r.p.shipments.base_values.contains_key(good) {
+/// Sets the good a pad carries (`None`: No cargo). A loaded pad switching
+/// goods returns its cargo to the stockpile; what exceeds the stockpile's cap
+/// is lost, and a `cargo_lost` activity line says so.
+pub fn set_pad_good(r: &Rules, g: &mut GameState, pad: u32, good: Option<&str>) -> Result<(), String> {
+    if let Some(good) = good.filter(|x| !r.p.shipments.base_values.contains_key(*x)) {
         return Err(format!("pad {}: {good:?} is not a tradeable good", pad + 1));
     }
     let p = g.run.pads.get_mut(pad as usize).ok_or_else(|| format!("pad {}: no such pad", pad + 1))?;
-    if p.good == good {
+    if p.good.as_deref() == good {
         return Ok(());
     }
     let (old, cargo) = (p.good.clone(), p.cargo);
     let back = switch_returns(r, g, pad as usize);
     let p = &mut g.run.pads[pad as usize];
-    p.good = good.to_string();
+    p.good = good.map(str::to_string);
     p.cargo = Fx::ZERO;
-    g.add(&old, back);
-    g.track("pads", &old, back, Fx::ZERO);
-    if cargo > back {
-        g.activity("cargo_lost", &old, Some(Fx::from_int(i64::from(pad) + 1)), Some(cargo - back));
+    // A No-cargo pad holds no cargo: nothing to return.
+    if let Some(old) = old {
+        g.add(&old, back);
+        g.track("pads", &old, back, Fx::ZERO);
+        if cargo > back {
+            g.activity("cargo_lost", &old, Some(Fx::from_int(i64::from(pad) + 1)), Some(cargo - back));
+        }
     }
     Ok(())
 }
@@ -270,7 +279,8 @@ pub fn set_pad_good(r: &Rules, g: &mut GameState, pad: u32, good: &str) -> Resul
 /// stockpile: all of it, up to the room under the stockpile's cap.
 pub fn switch_returns(r: &Rules, g: &GameState, i: usize) -> Fx {
     let p = &g.run.pads[i];
-    let room = super::economy::cap(r, g, &p.good).map_or(p.cargo, |c| (c - g.amount(&p.good)).max(Fx::ZERO));
+    let Some(good) = p.good.as_deref() else { return Fx::ZERO };
+    let room = super::economy::cap(r, g, good).map_or(p.cargo, |c| (c - g.amount(good)).max(Fx::ZERO));
     p.cargo.min(room)
 }
 

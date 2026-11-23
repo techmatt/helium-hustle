@@ -243,7 +243,8 @@ export interface ParsedText {
 }
 
 export interface PadView {
-  good: string;
+  /** null: No cargo (Load skips the pad until a good is picked). */
+  good: string | null;
   paused: boolean;
   active: boolean;
   /** Switched on, but its Launch Pad's upkeep went unpaid: idle until paid. */

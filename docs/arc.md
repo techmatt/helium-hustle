@@ -18,7 +18,7 @@ it and never hold it up.
 | Beat | Quest (id) | Trigger | Condition | Opens | Status |
 |---|---|---|---|---|---|
 | 1.1 Online | `qpower_boot_sequence` | game start | 2 Solar Panels | the Regolith Excavator (the base view is there from boot) | aligned |
-| 1.2 First shipment | `qshipment_proof_of_concept` | 1.1 | 1 shipment | credits (the launch payout). Launch Pads come from the *Launch Plans* event (50 He-3 made in a run) | aligned |
+| 1.2 First shipment | `qshipment_proof_of_concept` | 1.1 | 1 shipment | credits (the launch payout); its text teaches picking a pad's cargo (a new pad has No cargo). Launch Pads come from the *Launch Plans* event (50 He-3 made in a run) | aligned |
 | 1.3 Processors | `qautomate_automation` | 1.2 | 2 Data Centers | program logic (the `program_logic` flag at 2 working processors); loadouts are open from run 1 and always kept | draft |
 | 1.4 Speculators notice you | `qspeculators_notice` | 1.3 | speculators present (Attention from units sold) | the adversary tab (the `adversaries` panel; speculator bursts land only while they are present) | draft |
 | 1.5 Burnout | `qburnout` | 1.4 | 1 retirement (boredom forces the first) | the Retirement panel (voluntary retirement); bests and firsts carry | draft |

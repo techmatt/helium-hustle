@@ -24,10 +24,12 @@ pub(super) fn hand_plan(
     let keep = target.map_or(Fx::ZERO, |t| price(v, t, "credits"));
     if let Some(pad) = pads.first() {
         let full = pad.cargo >= pad.capacity;
+        // A No-cargo pad reads as a good with no stock and no market.
+        let good = pad.good.as_deref().unwrap_or_default();
         // Launch into good demand: HIGH or better, or MEDIUM once
         // the good piles at its cap (waiting would waste it).
-        let tier = v.markets.iter().find(|m| m.good == pad.good).map_or("", |m| m.tier);
-        let piled = cap(v, &pad.good).is_some_and(|c| amount(v, &pad.good) >= c);
+        let tier = v.markets.iter().find(|m| m.good == good).map_or("", |m| m.tier);
+        let piled = cap(v, good).is_some_and(|c| amount(v, good) >= c);
         let good_demand = match tier {
             "HIGH" | "VERY HIGH" => true,
             "MEDIUM" => piled || !wait_demand,
@@ -48,7 +50,7 @@ pub(super) fn hand_plan(
         }
         // Loads worth running (a partial load still counts).
         let per = pad.load.floor_int().max(1);
-        let stock = (amount(v, &pad.good).floor_int() + per - 1) / per;
+        let stock = (amount(v, good).floor_int() + per - 1) / per;
         let room = ((pad.capacity - pad.cargo).floor_int() + per - 1) / per;
         if !full && stock > 0 && room > 0 {
             lines.push(e("load_pads", stock.min(room).min(i64::from(loads)) as u32));
@@ -128,7 +130,8 @@ pub(super) fn market_program(v: &View, pads: &[&PadView]) -> Vec<Entry> {
     let e = Entry::command;
     let mut lines = Vec::new();
     for pad in pads {
-        let cmd = format!("promote_{}", pad.good);
+        let Some(good) = &pad.good else { continue };
+        let cmd = format!("promote_{good}");
         if command_unlocked(v, &cmd) && !lines.iter().any(|l: &Entry| l.command_id() == Some(cmd.as_str())) {
             lines.push(e(&cmd, 1));
         }

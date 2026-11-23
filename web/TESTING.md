@@ -15,7 +15,7 @@ results folder; kept shots are also copied to the shared screenshots folder, CLA
 100 s. It plays, in order:
 
 1. **A fresh game through the normal UI only** (no debug menu): a build order, Program 1
-   switched between Sell Cloud Compute and the bridging buys, the first pad loaded and
+   switched between Sell Cloud Compute and the bridging buys, the first pad given Helium-3 (it starts with No cargo), loaded and
    launched (1.1 and 1.2, around day 400 at 50x); no Retirement tile (it opens at 1.5
    Burnout), so on at 200x to the forced retirement at the boredom cap (around day 1,650,
    ~10 s); the run summary holding the clock, run 2 (known tiles and resources still shown,
@@ -44,7 +44,8 @@ results folder; kept shots are also copied to the shared screenshots folder, CLA
    (an Else row, both bodies indented) and back, and at 1x each day's pass runs the
    branch its `if` picks.
 6. **Readability** (before 4): capped rates, Resources' groups, affordable cards and Land,
-   a pad short of fuel then Ready, Story.
+   a pad starting with No cargo (status, red nav dot) given Helium-3, short of fuel then
+   Ready, Story.
 
 Any uncaught page error fails the run. Run it against `vite preview` (CLAUDE.md).
 `panel()` closes the debug menu: call `debugMenu()` again before a `grant()` after one.
@@ -71,7 +72,7 @@ quest, a launch, the summary, a reload). Hunts' findings: `docs/qa-findings.md`.
 run 1 at 3x then 50x with every panel, retirement and the summary (keys must not start the
 clock), run 2 at 200x, a reload, the replay check, the play log replayed by `hh-sim
 playlog` (a release build, or `HH_SIM`: a fresh worktree has none, so build it first), a second tab and site data blocked (first pass only). At run 1's end and in every
-debug scenario (each played, its panels audited): every Resources row's breakdown opened
+debug scenario (each played, its pads given Helium-3 first, its panels audited): every Resources row's breakdown opened
 and closed, Stats' breakdowns; program lines dragged; in `late_unlocks`, a loaded
 pad switched to another good (the stockpile gains what its tooltip promised) and Recent
 Activity's unread count (counts while folded, clears once read); in `everything`, the

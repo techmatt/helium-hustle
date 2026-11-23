@@ -210,6 +210,21 @@ pub fn build(player: &str, seed: u64, ms: &Milestones) -> Result<Box<dyn Agent>,
     }
 }
 
+/// Every sim player's fixed hand on a new pad: a No-cargo pad carries the
+/// first good in the loading priority (He-3 at baseline), as `driver.rs`'s
+/// script does. Player strategy, not a rule (docs/agents.md).
+pub fn pick_cargo(p: &mut Player) {
+    let v = p.view();
+    let first = v.loading_priority.first().cloned();
+    let picks: Vec<Action> = (0..v.pads.len())
+        .filter(|&i| v.pads[i].good.is_none())
+        .map(|i| Action::SetPadGood { pad: i as u32, good: first.clone() })
+        .collect();
+    for a in picks {
+        let _ = p.apply(&a);
+    }
+}
+
 // Shared view readers (`amount` and `command_cost` wrap `View`'s own, shared with
 // `driver.rs`).
 

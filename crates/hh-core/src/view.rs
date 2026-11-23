@@ -125,7 +125,8 @@ pub struct CommandView {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct PadView {
-    pub good: String,
+    /// `None`: No cargo (idle until a good is picked).
+    pub good: Option<String>,
     pub paused: bool,
     pub active: bool,
     /// Switched on, but its Launch Pad's upkeep went unpaid: idle until paid.

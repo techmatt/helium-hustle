@@ -1,6 +1,6 @@
 {
   "name": "late_unlocks",
-  "description": "Day 300 with every Act 1 nav panel open and if unlocked (its flag). Program 1 loads the pads (paid first) and tries Buy Titanium on 10 credits (runs at half on day 1, then fails); the Solar Panels can't cover every upkeep, so the last buildings run partial.",
+  "description": "Day 300 with every Act 1 nav panel open and if unlocked (its flag). Program 1 loads the pads once their cargo is picked (they start with No cargo; paid first) and tries Buy Titanium on 10 credits (runs at half on day 1, then fails); the Solar Panels can't cover every upkeep, so the last buildings run partial.",
   "start": {
     "tick": 300,
     "resources": { "credits": "10", "energy": "0", "he3": "40", "regolith": "30", "titanium": "10", "circuits": "3", "propellant": "40", "science": "20" },

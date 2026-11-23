@@ -6,6 +6,7 @@ about 400 bytes; rows older than the last ten revisions are trimmed to a line (M
 
 | Revision | Item | What changed | Why |
 |---|---|---|---|
+| 22 | 069_no_cargo_pads | A new pad (mid-run or at a run's start) has No cargo: idle, Load skips it, `idle_pads` counts it, `set pads` switches it; `set_pad_good` takes null for No cargo. Quest 1.2 teaches it. Sim players and the golden script pick He-3. Bumped from the constant (21 → 22). | Matt (2026-11-23): players must learn to pick a pad's cargo. |
 | 21 | 068_bug_hunt_030_deferrals | Display only, no play change: `Run.events` records each event's day (Story by day); the 20-day average is a true mean over the run's days so far; texts: Q1 names Sell Cloud Compute, overclock `{days}`, Ideologies "the next day". Bumped from the constant (20 → 21). | Matt (030's deferrals): state moved the fingerprint. |
 | 20 | 067_program_else | Programs get `else` (JSON `{"op":"else"}`): a free line after an `if` or its body, its indented lines run when that `if` was false; a locked `if` passes both bodies. Old programs play the same. Bumped from the constant (19 → 20). | Matt (2026-11-23): one decision per `if`, both branches, no complementary guard. |
 | 19 | 064_general_cleanup | An `if` costs a step; a false one jumps its body in it. A locked line passes free (a locked `if` with its body). The fingerprint leaves out the config (`GOLDEN_CONFIG_HASH`). Bumped from the constant (18 → 19). | Matt (2026-11-22): one step per `if`, easy to follow at 1×; locked lines free; a no-play config key moves no pin. |

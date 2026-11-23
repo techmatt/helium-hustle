@@ -199,6 +199,19 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
     if stale {
         v = s.rules.view(&s.state);
     }
+    // A new pad has No cargo: the script points it at the first good in the
+    // loading priority (He-3 at baseline).
+    let first = v.loading_priority.first().cloned();
+    let picks: Vec<Action> = (0..v.pads.len())
+        .filter(|&i| v.pads[i].good.is_none())
+        .map(|i| Action::SetPadGood { pad: i as u32, good: first.clone() })
+        .collect();
+    if !picks.is_empty() {
+        for a in &picks {
+            s.apply(a).expect("a tradeable good");
+        }
+        v = s.rules.view(&s.state);
+    }
     let pick = choose_command(&v, goal.map(|(id, _)| *id), allowed);
     // Before `if` opens (a global project, Act 1 beat 1.7), the guards' bodies
     // run bare: the verbs and `build` still pin the interpreter.
@@ -269,7 +282,7 @@ fn choose_command(v: &View, goal: Option<&str>, allowed: &Allowed) -> &'static s
         if full && v.amount("propellant") < Fx::from_int(20) && credits >= fuel && ok("buy_propellant") {
             return "buy_propellant";
         }
-        if !full && v.amount(&pad.good) >= Fx::from_int(5) && ok("load_pads") {
+        if !full && pad.good.as_deref().is_some_and(|g| v.amount(g) >= Fx::from_int(5)) && ok("load_pads") {
             return "load_pads";
         }
     }

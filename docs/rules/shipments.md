@@ -12,14 +12,16 @@ day ([the day](README.md#the-day)).
 resource, or an empty map, is a config load error.
 
 **Pads.** There is one pad per Launch Pad owned (`launch_pad`), in purchase order. Each pad
-holds a good, a paused flag, its cargo and a cooldown in days. Whenever buildings change, pads
-are matched to the count: a new pad carries the first good in the loading priority, empty and
-ready; selling a Launch Pad drops the last pad, cargo and all. A pad is **active** while its
+holds a good or **No cargo**, a paused flag, its cargo and a cooldown in days. Whenever
+buildings change, pads are matched to the count: a new pad has No cargo, empty and cooled down, so
+the player picks its good (`set_pad_good`); selling a Launch Pad drops the last pad, cargo and
+all. A No-cargo pad is idle: Load skips it, it never holds cargo, and the `idle_pads` reading
+counts it ([programs.md](programs.md)). A state saved before No cargo reads back with its pads' goods (the web's autosave from another rules revision is still discarded: [rulings/engine.md](../rulings/engine.md)). A pad is **active** while its
 index is below the number of working Launch Pads (active, upkeep paid:
 [economy.md](economy.md)): switching Launch Pads off, or leaving their upkeep unpaid, idles
 the last pads, which keep their cargo.
 
-**Loading** (Load Launch Pads). Every active, unpaused pad, in loading-priority order of its
+**Loading** (Load Launch Pads). Every active, unpaused pad with a good, in loading-priority order of its
 good (then pad order), takes from its good's stockpile:
 
 `take = min(load amount, pad_cargo_capacity − cargo, stockpile)` (never below 0)
@@ -60,20 +62,21 @@ cooldown, so a program can launch that pad again only on the `launch_cooldown + 
 **Loading priority** is an ordering of every tradeable good, reset to content order each run.
 Load Launch Pads serves pads in this order of their goods (pad order within a good), so a
 short stockpile goes to the higher-priority good's pads first; each pad still loads only its
-own good. It also decides the good a new pad starts with and the pool Disrupt Speculators
-hits ([demand.md](demand.md)).
+own good. It also decides the pool Disrupt Speculators hits ([demand.md](demand.md)); it
+no longer picks a new pad's good (a new pad has No cargo).
 
-**A new run** starts with fresh pads (one per Launch Pad the run starts with, empty, unpaused,
-cooled down) and the default loading priority.
+**A new run** starts with fresh pads (one per Launch Pad the run starts with, No cargo, empty,
+unpaused, cooled down) and the default loading priority.
 
 ## Actions
 
 - **`launch { pad }`**: launches that pad now. Works on a paused pad and on one that is not
   full. Illegal if there is no such pad, or it can't launch (inactive, cooling down, empty, or
   propellant below `fuel_per_pad`).
-- **`set_pad_good { pad, good }`**: sets the good a pad carries. Illegal if the good is not
-  tradeable or the pad doesn't exist; setting the same good again does nothing. A loaded pad
-  switching goods returns its cargo to that good's stockpile, up to the stockpile's cap; the
+- **`set_pad_good { pad, good }`**: sets the good a pad carries; `good` null returns it to
+  No cargo. Illegal if the good is not tradeable or the pad doesn't exist; setting the same
+  choice again does nothing. A loaded pad
+  switching goods (or to No cargo) returns its cargo to that good's stockpile, up to the stockpile's cap; the
   rest is lost, and a Recent Activity line (`cargo_lost`) says how much.
 - **`set_pad_paused { pad, paused }`**: pauses or resumes a pad. A paused pad keeps its good
   and cargo; Load and Launch Full Pads skip it. Illegal only for a missing pad.
@@ -116,5 +119,7 @@ Modifiers read ([README.md](README.md)): `cargo_capacity_mult` (Bulk Shipper ach
   paused pad.
 - Ruling (revision 4): a loaded pad may switch goods; its cargo returns to the stockpile up
   to the cap and the rest is lost.
+- Ruling (Matt, 2026-11-23; revision 22): players must learn to pick a pad's cargo, so a new
+  pad, and every pad a run starts with, has No cargo; quest 1.2 teaches it.
 - Candidate: `shipment_completed` events and the shipments-this-run achievement count this
   run's shipments.

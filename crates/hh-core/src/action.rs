@@ -27,7 +27,8 @@ pub enum Action {
     LoadLoadout { loadout: u32, program: u32 },
     RenameLoadout { loadout: u32, name: String },
     DeleteLoadout { loadout: u32 },
-    SetPadGood { pad: u32, good: String },
+    /// The good a pad carries; `good` null returns it to No cargo.
+    SetPadGood { pad: u32, good: Option<String> },
     SetPadPaused { pad: u32, paused: bool },
     /// Launch a pad now (works on a paused pad; needs cargo and fuel).
     Launch { pad: u32 },

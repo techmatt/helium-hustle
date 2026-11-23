@@ -389,7 +389,7 @@ pub enum Reading {
     FreeProcessors,
     /// Land not built on.
     FreeLand,
-    /// Pads with no cargo aboard (a cooling pad counts).
+    /// Pads with no cargo aboard (a cooling pad and a No-cargo pad count).
     IdlePads,
     /// Energy's last full day's rate (`Run.day_net`): production less demand,
     /// a brownout's unmet demand counted. Researched (`program_readings`).
@@ -421,7 +421,10 @@ pub struct Program {
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Pad {
-    pub good: String,
+    /// The good it carries; `None` is No cargo (a new pad's choice until
+    /// the player picks one): Load skips it. A save from before No cargo
+    /// holds a bare good, read as `Some`.
+    pub good: Option<String>,
     pub paused: bool,
     pub cargo: Fx,
     /// Days until it can launch again.

@@ -17,8 +17,8 @@
     "beat": "1.2",
     "silent": false,
     "title": "1.2 — First Shipment",
-    "summary": "Fill a canister and launch it to Earth.",
-    "body": "Helium-3 identified as primary export commodity. Fill a launch canister and send it to Earth: the market pays in credits.",
+    "summary": "Pick a Launch Pad's cargo, fill it and launch it to Earth.",
+    "body": "Helium-3 identified as primary export commodity. A new Launch Pad has No cargo: pick Helium-3 on its card, fill the canister and send it to Earth. The market pays in credits.",
     "trigger": {"type": "quest_complete", "quest": "qpower_boot_sequence"},
     "condition": {"type": "shipment_completed", "count": 1},
     "unlocks": []

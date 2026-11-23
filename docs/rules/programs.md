@@ -49,7 +49,7 @@ A verb with nothing to do is **done** (its step, nothing else); one that can't a
 |---|---|
 | `launch pads <good \| all>` (`target` null: all) | Runs Launch Full Pads (its row's costs and boredom) on that good's pads; done with none that would launch. |
 | `load pads <good \| all>` | Runs Load Launch Pads on that good's pads; done when none would take cargo. |
-| `set pads <good> up to N` | While fewer than N pads carry it, an idle pad (empty, another good) switches, in pad order. Done at N; fails when none could. |
+| `set pads <good> up to N` | While fewer than N pads carry it, an idle pad (empty, another good or No cargo) switches, in pad order. Done at N; fails when none could. |
 | `pause <building> [N \| all]` | N fewer running (1 with no amount; at most what runs), as Set Active. |
 | `resume <building> [N \| all]` | N more running, at most all owned. |
 | `research <item>` | Buys it, as Research does; done once researched. |
@@ -69,7 +69,7 @@ reading's unit. One reading per thing (`state::Reading`, JSON `kind`):
 | `amount` (`resource`) | The amount held; a capped one at most its cap. | Any resource but land and processors. |
 | `free_processors` | Processors active buildings grant that no program holds (`processors_free`): above 0 exactly when `assign processors <tab> all` would add some. | |
 | `free_land` | Land not built on. | |
-| `idle_pads` | Pads with no cargo aboard (a cooling pad counts). | |
+| `idle_pads` | Pads with no cargo aboard (a cooling pad and a No-cargo pad count). | |
 | `energy_per_day` | Energy's day's rate (`Run.day_net`, below) of the last full day; negative in a loss. | Researched. |
 | `days_since_purchase` | Days since this run last bought a building, land or research, by hand or by a program line (`Run.last_purchase`; none yet: the run's day). | Researched. |
 
