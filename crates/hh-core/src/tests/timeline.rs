@@ -88,6 +88,88 @@ fn a_timeline_end_clears_timeline_projects_and_their_buildings_but_keeps_forever
     assert_eq!(g.career.forever_projects.progress["some_forever"]["credits"], f("5"), "forever progress survives");
 }
 
+/// Completes a project honestly: its progress one short on each cost, the
+/// stock and a rate of 1 to cover it, then a day.
+fn finish(r: &crate::Rules, g: &mut GameState, id: &str) {
+    let p = crate::content::content().project(id).unwrap();
+    for (res, cost) in &p.costs {
+        g.career.projects.progress.entry(id.into()).or_default().insert(res.clone(), *cost - f("1"));
+        set(g, res, "10");
+        r.apply(g, &Action::SetProjectRate { project: id.into(), resource: res.clone(), rate: f("1") }).unwrap();
+    }
+    r.advance(g, 1);
+    assert!(crate::modules::projects::completed(g, id), "{id} completes");
+}
+
+#[test]
+fn global_projects_effects_last_as_long_as_their_completion() {
+    use crate::modules::{career, programs};
+    let r = rules();
+    let mut g = revealed(&r);
+    g.career.flags.insert(programs::LOGIC_FLAG.into());
+    for q in ["qthree_voices", "qdeep_space_telescope", "qblueprints_for_everyone"] {
+        g.career.completed_quests.insert(q.into());
+        g.career.seen_events.insert(q.into());
+    }
+    for id in ["conditional_logic", "blueprint_archive", "deep_space_telescope"] {
+        finish(&r, &mut g, id);
+    }
+    assert!(programs::if_unlocked(&g));
+    assert!(g.run.research.contains("basic_blueprints") && g.run.research.contains("advanced_blueprints"));
+    assert!(!g.career.flags.contains(programs::IF_FLAG), "no career flag");
+    let science = crate::modifiers::modifier(&r, &g, "science_output_mult");
+    assert_eq!(science, f("1.1"));
+
+    // The timeline ends: every effect goes with its completion.
+    let arrival = g.saga.timeline.as_ref().unwrap().arrival;
+    let day = g.saga.timeline.as_ref().unwrap().day;
+    r.advance(&mut g, arrival - day);
+    assert_eq!(g.saga.ended, 1);
+    let v = r.view(&g);
+    assert!(!v.if_open && !programs::if_unlocked(&g), "if is locked");
+    assert!(!g.run.research.contains("basic_blueprints") && !g.run.research.contains("advanced_blueprints"));
+    assert!(g.career.completed_quests.contains("qblueprints_for_everyone"), "1.c stays completed");
+    assert_eq!(crate::modifiers::modifier(&r, &g, "science_output_mult"), f("1"));
+    for id in ["conditional_logic", "blueprint_archive", "deep_space_telescope"] {
+        let p = v.projects.iter().find(|p| p.id == id).unwrap();
+        assert!(p.unlocked && !p.completed, "{id} is offered again");
+    }
+    assert!(career::flag_set(&g, timeline::REVEAL_FLAG), "what the Telescope revealed stays known");
+    assert!(g.saga.timeline.is_some() && g.run.enabled_panels.contains("timeline"), "the calendar stays");
+
+    // Re-funded, each gives its effect back; the Telescope replays no story.
+    let quest_notes = |g: &GameState| g.career.log.iter().filter(|e| e.kind == "quest").count();
+    let before = (quest_notes(&g), g.career.completed_quests.clone());
+    finish(&r, &mut g, "conditional_logic");
+    assert!(programs::if_unlocked(&g));
+    finish(&r, &mut g, "blueprint_archive");
+    assert!(g.run.research.contains("basic_blueprints") && g.run.research.contains("advanced_blueprints"));
+    finish(&r, &mut g, "deep_space_telescope");
+    assert_eq!((quest_notes(&g), g.career.completed_quests.clone()), before, "no quest completes again");
+    let v = r.view(&g);
+    for text in ["Science output ×1.1", "Nationalist growth ×1.1"] {
+        assert!(v.live_rewards.iter().any(|x| x.contains(text)), "Stats shows {text}: {:?}", v.live_rewards);
+    }
+    // The Archive's Blueprints come with every later run of the timeline.
+    g.run.enabled_panels.insert("retirement".into());
+    r.apply(&mut g, &Action::Retire).unwrap();
+    assert!(g.run.research.contains("basic_blueprints") && g.run.research.contains("advanced_blueprints"));
+    assert!(programs::if_unlocked(&g));
+}
+
+#[test]
+fn a_telescope_fund_grows_nationalist_ideology_a_tenth_faster() {
+    let r = rules();
+    let mut g = revealed(&r);
+    let before = crate::modules::ideology::score(&g, "nationalist");
+    crate::modules::ideology::fund(&r, &mut g, "nationalist");
+    let plain = crate::modules::ideology::score(&g, "nationalist") - before;
+    g.career.projects.completions.insert("deep_space_telescope".into(), 1);
+    let before = crate::modules::ideology::score(&g, "nationalist");
+    crate::modules::ideology::fund(&r, &mut g, "nationalist");
+    assert_eq!(crate::modules::ideology::score(&g, "nationalist") - before, plain * f("1.1"));
+}
+
 #[test]
 fn a_later_swarm_can_be_repelled_once_and_returns_entangled() {
     let r = rules();

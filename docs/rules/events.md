@@ -34,7 +34,7 @@ of every run.
 | `project_completed_any` | any project of `scope` (`run`, `timeline`, `forever`) is completed |
 | `project_enabled` | an event's `enable_project` enabled the project this run |
 | `quest_active` | the quest is active now or completed in any run |
-| `flag_set` | the career flag is set |
+| `flag_set` | the flag holds: a career flag, or a live project `flag` reward's ([projects.md](projects.md)) |
 | `days_survived` | the run's days, today included, reach `days` |
 | `credits_earned` | credits produced this run reach `amount` |
 | `retirements` | the career's retirements, forced or chosen, reach `count` |
@@ -88,7 +88,6 @@ completed earlier in the same check can fire that same day.
 | `enable_project` | a project whose unlock is `project_enabled` may be funded this run ([projects.md](projects.md)) |
 | `set_flag` | sets a career flag |
 | `grant` (`resource`, `amount`) | adds the amount to this run's stock; re-applied at each run start (below), a starting bonus from then on |
-| `grant_research` (`research`) | the item counts as bought this run (and known to the career); re-applied at each run start, so it is bought from day 0 |
 
 **Run start.** Every event the career has seen (quests and one-offs alike) re-applies its
 unlocks at the start of each run, so an unlocked building, panel or project stays unlocked
@@ -154,8 +153,8 @@ Triggers, conditions and unlocks are content (`content/events.json`).
 Space Telescope (the swarm's reveal; [../arc.md](../arc.md)), then the draft Q8 to Q18 and the
 Epilogue. Three `side`: 1.a Big Launch (opens Disrupt Speculators), 1.b Full Cluster (a placeholder
 reward: a `grant` of 50 Science, so every later run starts with it; a cluster of 2 or more
-items, `min_items`, the Blueprints excluded) and 1.c Blueprints for Everyone (`grant_research` of
-both Blueprints once the Blueprint Archive is done). Seven `ongoing`: the Recreation Dome unlock
+items, `min_items`, the Blueprints excluded) and 1.c Blueprints for Everyone (completes with
+the Blueprint Archive; no unlock: the Blueprints are the project's reward, [projects.md](projects.md)). Seven `ongoing`: the Recreation Dome unlock
 (once 1.8 is done), Political Currents, propellant discovery, boredom phases 2 to 5.
 
 ## Port notes

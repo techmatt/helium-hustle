@@ -107,8 +107,8 @@ Three columns and a status bar:
   live card of its command, building, research or project.
 - **Modals**, each holding the clock: the run summary when a run ends; the story modal
   (`store.ts` `tell`) at each main-quest change, a page per paragraph of the view's
-  `story`/`payoff`, the new task last (a new game: the first quest's; a load, the autopilot:
-  none; after a summary, once it closes).
+  `story`/`payoff`, the new task last (a new game: the first quest's; the autopilot: none; a
+  load: a saved chain's unread pages; after a summary, once closed).
 
 Rates are per day; numbers past 10,000 use K/M/B/T. **"New" markers** are the UI's own, not
 state: what is visible when a run starts (or the page loads) is the baseline; anything
@@ -117,10 +117,10 @@ hovered or opened.
 
 ## Theme
 
-Earthrise, light (the default) or dark, picked in Options and in the debug menu and
+Earthrise, light (the default) or dark, picked in Options or the debug menu,
 remembered in `localStorage` `hh.theme` (`index.html` applies it before the first paint).
 The two share markup, layout and art; only the color tokens atop `src/style.css` differ,
-so switching moves nothing (the e2e checks it). Chips (resources, ideology axes, rivals) keep their true
+so switching moves nothing (e2e-checked). Chips (resources, axes, rivals) keep their true
 colors in both; an ideology axis drawn as text uses its `axis-<id>` class, which has a
 readable variant per theme. Fonts are bundled (`@fontsource`, named in `src/style.css`).
 Building pictures: `src/assets/buildings/<id>.webp` (`src/ui/buildingArt.ts`,

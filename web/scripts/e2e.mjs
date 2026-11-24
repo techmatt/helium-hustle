@@ -241,6 +241,20 @@ async function playOpening() {
       await sleep(300);
       const held = (await day()) === d0;
       modals++;
+      if (modals === 2) {
+        // The first transition's chain, one page read: a reload shows the next unread page
+        // again, held (readStory checks paused below; the 50x check, the speed it resumes).
+        const first = await evaluate(`(() => { const m = document.querySelector('[data-testid="story-modal"]'); return { quest: m.dataset.quest, kind: m.dataset.kind, task: !!m.querySelector('.story-task') }; })()`);
+        if (first.kind === 'payoff') paid.add(first.quest);
+        if (first.task) told.add(first.quest);
+        await click('[data-testid="story-next"]', 'story next');
+        const pageText = () => evaluate(`document.querySelector('[data-testid="story-modal"] .story-text')?.textContent ?? null`);
+        const next = await pageText();
+        if (next !== null) {
+          await load(url);
+          check((await pageText()) === next, `a reload mid-chain shows its next unread page again ("${next.slice(0, 40)}...")`);
+        }
+      }
       // A shot of each transition's last page (its task).
       const pages = await readStory(async (p) => {
         if (p.task) await shot(`story-modal-${modals}-${p.quest}`);

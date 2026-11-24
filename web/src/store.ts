@@ -493,12 +493,15 @@ function save(): void {
     seed: game.seed,
     scenario: game.scenario,
     actions: game.actions,
-    // A story modal open is not saved (a load tells nothing): the speed it resumes is.
-    speed: store.storyPages.length > 0 && !store.summary ? speedBeforeStory : clock.speed,
+    // An open story modal is saved with the speed its last page resumes (the clock is
+    // held meanwhile), so a reload mid-chain shows its unread pages again.
+    speed: clock.speed,
     summary: store.summary,
     speedBeforeSummary,
     resumeSpeed,
     stories: store.stories,
+    storyPages: store.storyPages,
+    speedBeforeStory,
     page: playlog.pageId,
   });
   // Said until a save lands again (an action's success clears the notice line, so a save
@@ -896,6 +899,14 @@ export function start(): void {
       store.speed = speed;
       if (s.resumeSpeed && normal(s.resumeSpeed)) resumeSpeed = s.resumeSpeed;
       if (s.speedBeforeSummary !== undefined && normal(s.speedBeforeSummary)) speedBeforeSummary = s.speedBeforeSummary;
+      // A story chain left mid-read shows its unread pages again, the clock held; its
+      // last page resumes the speed saved with it.
+      if (Array.isArray(s.storyPages) && s.storyPages.length > 0) {
+        store.storyPages = s.storyPages;
+        speedBeforeStory = s.speedBeforeStory !== undefined && normal(s.speedBeforeStory) ? s.speedBeforeStory : 1;
+        clock.speed = 0;
+        store.speed = 0;
+      }
       refresh(true);
       // A run summary left open is still open, and unread story texts still wait.
       store.summary = s.summary ?? null;

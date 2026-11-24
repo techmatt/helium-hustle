@@ -824,7 +824,8 @@ fn the_everything_scenario_opens_every_act_1_view() {
         assert!(shown.contains(&id), "{id} hidden: {shown:?}");
     }
     assert!(!shown.contains(&"timeline"), "Act 2 stays shut");
-    assert!(g.career.flags.contains("logic_if"));
+    assert!(crate::modules::career::flag_set(&g, "logic_if"));
+    assert!(g.run.research.contains("advanced_blueprints"), "the Blueprint Archive's");
     assert_eq!(crate::modules::events::active_quest(&g).map(|e| e.id.as_str()), Some("qdeep_space_telescope"));
     assert!(g.amount("processors") >= f("6"));
     assert!(!g.cheated, "a scenario is no cheat");

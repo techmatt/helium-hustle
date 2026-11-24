@@ -467,5 +467,12 @@ mod tests {
         assert!(st.reached, "{st:?}");
         assert!(st.left.is_empty(), "steps left: {:?}", st.left);
         assert!(ap.state().saga.victory, "the ending");
+        // A timeline's end takes the global projects' effects; the drivers fund
+        // them again (084): the last timeline has them done. (Only these two:
+        // the Telescope's 3,000 days need not fit a later timeline.)
+        assert!(ap.state().saga.ended >= 1);
+        for id in ["blueprint_archive", "conditional_logic"] {
+            assert!(hh_core::modules::projects::completed(ap.state(), id), "{id} re-funded");
+        }
     }
 }

@@ -3,6 +3,7 @@
 
 import type { LastRun, Scenario, Stamped, StoryView } from './engine';
 import type { Speed } from './clock';
+import type { StoryPage } from './store';
 
 export const SAVE_KEY = 'hh.save';
 
@@ -24,6 +25,10 @@ export interface Save {
   resumeSpeed?: Speed;
   /** Story texts not yet read. */
   stories?: StoryView[];
+  /** A story modal chain's unread pages (the open one first) and the speed its last
+   * page resumes: a reload mid-chain shows them again, the clock held. */
+  storyPages?: StoryPage[];
+  speedBeforeStory?: Speed;
   /** The page that wrote it: a claim by another tab always changes the save, so the
    * tab playing before hears of it (`storage` fires only on a change). */
   page?: string;

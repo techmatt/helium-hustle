@@ -43,10 +43,14 @@ pub struct Start {
     pub panels: Vec<String>,
     /// Program queues from the first program on (the rest stay empty).
     pub programs: Vec<Vec<Entry>>,
-    /// Career flags set at the start (`logic_if`: `if` open; the golden
-    /// game's start, README *Rules changes*).
+    /// Career flags set at the start.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub flags: Vec<String>,
+    /// Projects counted as completed once in their scope, their rewards
+    /// live (`conditional_logic`: `if` open; the golden game's start, README
+    /// *Rules changes*).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub projects: Vec<String>,
     /// Events taken as already fired, in order: each one's unlocks apply,
     /// it counts as seen, and a quest or side quest among them as completed
     /// (the story beats done).
@@ -93,6 +97,11 @@ impl Scenario {
                 errors.push(format!("start.events: {e:?} is no event"));
             }
         }
+        for p in &self.start.projects {
+            if c.project(p).is_none() {
+                errors.push(format!("start.projects: {p:?} is no project"));
+            }
+        }
         for (i, entries) in self.start.programs.iter().enumerate() {
             for e in entries {
                 // A scenario's programs skip `set_program`: command lines only.
@@ -129,6 +138,10 @@ impl Scenario {
                 g.career.owned_buildings.insert(b.clone());
             }
         }
+        for id in &self.start.projects {
+            crate::modules::projects::mark_completed(g, id);
+        }
+        crate::modules::projects::grant_starting_research(g);
         crate::modules::economy::refresh(g);
         let free = crate::modules::programs::capacity(g) - crate::modules::programs::assigned(g);
         if let Some(p) = g.run.programs.first_mut() {

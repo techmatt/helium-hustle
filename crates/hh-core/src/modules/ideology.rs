@@ -127,15 +127,25 @@ pub fn overclock_duration(r: &Rules, g: &GameState) -> Fx {
     per_rank(r, g, "rationalist", r.p.ideology.overclock_duration_factor)
 }
 
-/// A Fund command: `fund_push` to its axis, `fund_push × fund_cross_penalty` from each other.
+/// The modifier key multiplying an axis's own growth (`None`: none yet).
+fn growth_key(axis: &str) -> Option<&'static str> {
+    match axis {
+        "nationalist" => Some("nationalist_growth_mult"),
+        _ => None,
+    }
+}
+
+/// A Fund command: `fund_push` (times the axis's growth modifier) to its
+/// axis, `fund_push × fund_cross_penalty` from each other.
 pub fn fund(r: &Rules, g: &mut GameState, axis: &str) {
     let p = &r.p.ideology;
     // The Consensus Engine (draft Earth tech) sets this to 0.
     let cross = p.fund_push * p.fund_cross_penalty * crate::modifiers::modifier(r, g, "ideology_cross_mult");
+    let push = growth_key(axis).map_or(p.fund_push, |k| p.fund_push * crate::modifiers::modifier(r, g, k));
     for &a in AXES {
         let v = g.run.ideology.entry(a.to_string()).or_insert(Fx::ZERO);
         if a == axis {
-            *v += p.fund_push;
+            *v += push;
         } else {
             *v -= cross;
         }

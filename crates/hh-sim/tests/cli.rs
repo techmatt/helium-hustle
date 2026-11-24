@@ -340,7 +340,7 @@ fn the_oracle_plays_on_copies_and_its_game_replays() {
     let half = fingerprints.len() / 2;
     assert_eq!(fingerprints[..half], fingerprints[half..]);
     // Seeds 1 and 2 of the oracle, then of the pinned one.
-    assert_eq!(fingerprints[..half], ["ea94b92b65379242", "1bf9dfca25888d24", "7d65ccbd84b3d6f5", "e77991dfce8a98ff"]);
+    assert_eq!(fingerprints[..half], ["ea94b92b65379242", "1bf9dfca25888d24", "7d65ccbd84b3d6f5", "f2fd6b45cee278bb"]);
 }
 
 /// `--agents` splits players, not knobs: a knob's value may hold a `:` (a

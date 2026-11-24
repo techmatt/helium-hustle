@@ -47,7 +47,7 @@ active. Starting buildings and run-start bonus buildings take no land.
 A `requires` (on a building or command, [commands.md](commands.md)) is one of: `none`;
 `building` (at least `count` owned); `quest` (the quest active now or completed in any run);
 `quest_completed` (the quest completed in any run); `research` (bought this run); `flag`
-(a career flag); `project` (completed, [projects.md](projects.md)).
+(a career flag or a live project `flag` reward's); `project` (completed, [projects.md](projects.md)).
 
 **Visible:** unlocked, or (for a building-count requirement only, and not event-gated) owned
 in any run of the career.

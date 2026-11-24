@@ -147,8 +147,15 @@ impl Agent for HandsOff {
         let run = v.run;
         // The loadout guards with `if`: the author plays every run until
         // `if` opens (a global project offered from 1.8), and that run.
+        // A timeline's end closes `if` with Conditional Logic's completion: the
+        // author plays again (and re-funds it) until it reopens, and that run.
         if v.if_open {
             self.first_run.get_or_insert(run);
+        } else {
+            // Run numbers start over in the new timeline: forget the last load too.
+            self.first_run = None;
+            self.loaded_run = 0;
+            self.pending.clear();
         }
         if !self.hands_off(run) {
             self.author.act(p);

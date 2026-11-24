@@ -197,7 +197,8 @@ pub fn drain(r: &Rules, g: &mut GameState) {
 }
 
 /// One more completion: the count rises, progress starts over, a project done
-/// for good drops its rates (a repeatable one keeps them), flags are set.
+/// for good drops its rates (a repeatable one keeps them), and its starting
+/// research counts as bought at once.
 fn complete(g: &mut GameState, p: &Project) {
     let book = book_mut(g, p.scope);
     *book.completions.entry(p.id.clone()).or_insert(0) += 1;
@@ -205,12 +206,35 @@ fn complete(g: &mut GameState, p: &Project) {
     if p.repeat.is_none() {
         g.run.project_rates.remove(&p.id);
     }
-    for reward in &p.rewards {
-        if let ProjectReward::SetFlag { flag, .. } = reward {
-            g.career.flags.insert(flag.clone());
-        }
-    }
+    grant_starting_research(g);
     g.note("project", &p.id);
+}
+
+/// A scenario's start: the project counts as completed (once) in its scope,
+/// with no note and no grants (the caller grants starting research).
+pub(crate) fn mark_completed(g: &mut GameState, id: &str) {
+    let p = content().project(id).expect("a scenario's projects are checked");
+    let n = book_mut(g, p.scope).completions.entry(p.id.clone()).or_insert(0);
+    *n = (*n).max(1);
+}
+
+/// A live project reward holds the flag (a `flag` reward lives only while
+/// its project counts as completed).
+pub fn flag_live(g: &GameState, flag: &str) -> bool {
+    live_rewards(g).any(|r| matches!(r, ProjectReward::Flag { flag: f, .. } if f == flag))
+}
+
+/// Every live `starting_research` reward's items count as bought this run
+/// (and known to the career): at completion and at each run's start.
+pub fn grant_starting_research(g: &mut GameState) {
+    let items: Vec<&'static String> = live_rewards(g)
+        .filter_map(|r| if let ProjectReward::StartingResearch { research } = r { Some(research) } else { None })
+        .flatten()
+        .collect();
+    for id in items {
+        g.run.research.insert(id.clone());
+        g.career.researched.insert(id.clone());
+    }
 }
 
 /// Free buildings at the start of every run from completed projects.

@@ -38,9 +38,9 @@ run; visible; its `requires` item
 bought this run (if it names one); science at least the price. Then science falls by the
 price, the item is added to the run's research and the career's `researched`, the run's
 research count rises by one (folded into the career's lifetime total at retirement), and
-the career log records it. A new run starts with no research, but for items a completed
-quest's `grant_research` unlock names (1.c Blueprints for Everyone: both Blueprints), which
-count as bought from day 0 of every run ([events.md](events.md)).
+the career log records it. A new run starts with no research, but for items a live
+`starting_research` project reward names (the Blueprint Archive: both Blueprints), which
+count as bought from day 0 of every run while the project counts as completed ([projects.md](projects.md)).
 
 **Effects** (`effect` on the row), each live while the item is bought this run:
 

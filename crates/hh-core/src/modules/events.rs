@@ -90,7 +90,7 @@ pub fn holds(r: &Rules, g: &GameState, quest: &str, c: &Condition) -> bool {
             .any(|p| p.scope == *scope && super::projects::completions(g, p) > 0),
         Condition::ProjectEnabled { project } => g.run.enabled_projects.contains(project),
         Condition::QuestActive { quest } => quest_open_or_done(g, quest),
-        Condition::FlagSet { flag } => g.career.flags.contains(flag),
+        Condition::FlagSet { flag } => super::career::flag_set(g, flag),
         // Checked before the day count rises: today counts as survived.
         Condition::DaysSurvived { days } => g.run.day + 1 >= *days,
         Condition::CreditsEarned { amount } => g.run.stats.credits_earned >= *amount,
@@ -240,10 +240,6 @@ pub fn apply_unlocks(g: &mut GameState, e: &Event) {
             Unlock::Grant { resource, amount } => {
                 g.add(resource, *amount);
                 g.track("event", resource, *amount, Fx::ZERO);
-            }
-            Unlock::GrantResearch { research } => {
-                g.run.research.insert(research.clone());
-                g.career.researched.insert(research.clone());
             }
         }
     }

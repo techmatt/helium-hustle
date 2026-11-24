@@ -1,12 +1,12 @@
 {
   "name": "golden_start",
-  "description": "A fresh game with if already open (its flag set): the golden game's start, so the golden keeps pinning the interpreter and conditions (README, Rules changes).",
+  "description": "A fresh game with if already open (Conditional Logic completed): the golden game's start, so the golden keeps pinning the interpreter and conditions (README, Rules changes).",
   "start": {
     "tick": 0,
     "resources": {},
     "buildings": {},
     "panels": [],
     "programs": [],
-    "flags": ["logic_if"]
+    "projects": ["conditional_logic"]
   }
 }

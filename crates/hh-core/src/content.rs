@@ -45,6 +45,8 @@ pub const MODIFIER_KEYS: &[&str] = &[
     "buy_power_mult",
     "boredom_growth_mult",
     "ideology_cross_mult",
+    "science_output_mult",
+    "nationalist_growth_mult",
 ];
 
 /// The ideology axes buildings, commands and projects may name.
@@ -338,9 +340,6 @@ pub enum Unlock {
     /// Adds `amount` of `resource` to this run's stock (re-applied at each
     /// later run's start, like every unlock: docs/rules/events.md).
     Grant { resource: String, amount: Fx },
-    /// The research item counts as bought this run (re-applied at each later
-    /// run's start, so it is bought from day 0).
-    GrantResearch { research: String },
 }
 
 impl Unlock {
@@ -352,7 +351,6 @@ impl Unlock {
             Unlock::EnableBuilding { building } => c.building(building).is_some(),
             Unlock::EnableProject { project } => c.project(project).is_some(),
             Unlock::Grant { resource, amount } => c.resource(resource).is_some() && *amount > Fx::ZERO,
-            Unlock::GrantResearch { research: x } => c.research_item(x).is_some(),
         }
     }
 }
@@ -442,8 +440,13 @@ pub enum ProjectReward {
     /// Free (bonus) buildings at the start of every run.
     StartingBuildings { buildings: BTreeMap<String, u32> },
     Modifier { key: String, value: Fx },
-    /// A career flag; `text` is what the card says it gives (never the flag's id).
-    SetFlag { flag: String, text: String },
+    /// A flag held while the project counts as completed (never a career
+    /// flag: a timeline's end takes it with the completion); `text` is what
+    /// the card says it gives (never the flag's id).
+    Flag { flag: String, text: String },
+    /// Research items counted as bought at completion and at the start of
+    /// every run while the project counts as completed.
+    StartingResearch { research: Vec<String> },
     /// Multiplies the boredom growth rate; replaces commands' flat boredom.
     BoredomModifiers { base_rate_mult: Fx, command_boredom: Amounts },
     /// Research bought in an earlier run costs this much of its price.
@@ -771,6 +774,10 @@ impl Content {
                         command_boredom.keys().all(|c| self.command(c).is_some()),
                         format!("{w}: unknown command"),
                     ),
+                    ProjectReward::StartingResearch { research } => need(
+                        !research.is_empty() && research.iter().all(|x| self.research_item(x).is_some()),
+                        format!("{w}: unknown research"),
+                    ),
                     _ => {}
                 }
             }
@@ -794,7 +801,7 @@ impl Content {
         let mut set: BTreeSet<&str> = self.commands.iter().filter_map(|c| c.sets_flag.as_deref()).collect();
         for p in &self.projects {
             for reward in &p.rewards {
-                if let ProjectReward::SetFlag { flag, .. } = reward {
+                if let ProjectReward::Flag { flag, .. } = reward {
                     set.insert(flag);
                 }
             }

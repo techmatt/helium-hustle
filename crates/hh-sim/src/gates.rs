@@ -20,7 +20,6 @@ fn unlock(u: &Unlock) -> String {
             let a = amount.to_string();
             format!("grant {} {resource}", if a.contains('.') { a.trim_end_matches('0').trim_end_matches('.') } else { &a })
         }
-        Unlock::GrantResearch { research } => format!("research {research} (granted)"),
     }
 }
 

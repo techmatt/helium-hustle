@@ -580,12 +580,13 @@ pub fn logic_unlocked(g: &GameState) -> bool {
     g.career.flags.contains(LOGIC_FLAG)
 }
 
-/// The career flag that opens `if` (a global project's reward).
+/// The flag that opens `if`: Conditional Logic's reward, held while that
+/// global project counts as completed (lost at a timeline's end).
 pub const IF_FLAG: &str = "logic_if";
 
 /// `if` lines are open: program logic and the `if` flag.
 pub fn if_unlocked(g: &GameState) -> bool {
-    logic_unlocked(g) && g.career.flags.contains(IF_FLAG)
+    logic_unlocked(g) && super::career::flag_set(g, IF_FLAG)
 }
 
 /// What a reading reads now (`None`: nothing to read, the clause is false).

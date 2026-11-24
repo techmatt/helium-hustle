@@ -33,8 +33,9 @@
     },
     "panels": [],
     "programs": [],
-    "flags": [
-      "logic_if"
+    "projects": [
+      "blueprint_archive",
+      "conditional_logic"
     ],
     "events": [
       "qpower_boot_sequence",

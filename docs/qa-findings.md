@@ -55,7 +55,7 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | 79 | Projects: Max then − sends a float like `0.6666669999999999`; the engine refuses it and the rate stays at max (Deep Space Telescope's science, Conditional Logic, Foundation Grant, Dyson Sphere) | The step sends six places | qa project probe |
 | 80 | A verb line switched to Load (empty library) or Fund (no open project) is refused with an error | Such a verb is listed but not pickable, "(nothing to name yet)" | `npm run check` |
 | 81 | Quest 1.9's "Rank 5 …" rows never showed how far along they are | `events::progress` counts `ideology_rank` | `a_rank_on_one_axis_shows_its_progress` |
-| 82 | Conditional Logic's card says "Reward: Sets logic_if" (a flag id; Dyson Sphere too) | `set_flag` rewards carry their `text` (required) | content load |
+| 82 | Conditional Logic's card says "Reward: Sets logic_if" (a flag id; Dyson Sphere too) | `flag` rewards (then `set_flag`) carry their `text` (required) | content load |
 | 83 | Stats breakdown and Project rewards headings (h4), the DRAFT tag and Cortex plaque names drawn at weights the bundled fonts lack (browser-faked bold) | h4 at 600, Plex Mono 600 bundled | qa *assets* |
 | 84 | With Cheats on, eight speed buttons: "200x" wider than its button at 1280 | Smaller text and gap at eight | qa *overflow* |
 | 85 | A late career's left column (16 tiles, the calendar) scrolls at 1280×800, and its scrollbar clipped the Resources rates ("fre", "−8/da", the CAP chips) | The column keeps its scrollbar's room (17 px wider) | qa's autopilot-to-the-end audit |

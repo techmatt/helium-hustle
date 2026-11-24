@@ -23,7 +23,8 @@ up directly). It plays, in order:
    bridging buys: Basic Blueprints (1.2), the first pad offering Titanium only (1.3), 20+
    titanium loaded and launched by the card's Launch, Advanced Blueprints and Refineries,
    a full pad of Helium-3 (1.4). Each quest change must open a story modal chain that holds
-   the clock and ends on the next task; Launch Full Pads never shows. No Retirement tile
+   the clock and ends on the next task (the first, one page read, shows its next page again
+   after a reload); Launch Full Pads never shows. No Retirement tile
    (it opens at 1.7 Burnout), so on at 200x (story modals now clicked through as they
    open, `autoStory`) to the forced retirement at the boredom cap; the run summary
    holding the clock, run 2 (known tiles and resources still shown, not cheated). Its double-click-on-Continue check failed once (058: a buy hint under

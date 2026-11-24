@@ -156,7 +156,7 @@
     "produces": {"science": "1"},
     "upkeep": {"energy": "3", "circuits": "0.2"},
     "effects": [],
-    "output_modifiers": [],
+    "output_modifiers": ["science_output_mult"],
     "description": "Produces science. Needs two Data Centers; circuit boards are the bottleneck."
   },
   {

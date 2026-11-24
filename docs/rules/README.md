@@ -1,6 +1,6 @@
 # Rules
 
-The rules as implemented, rules revision **25** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **26** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
 The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
@@ -88,7 +88,8 @@ Buildings resolve in file order; quests chain in file order.
 A few content ids are fixed in code, each listed in its page's *Content*: resources
 ([economy.md](economy.md), [shipments.md](shipments.md)), `launch_pad`, the `retirement`
 panel ([career.md](career.md)), the `research` panel ([research.md](research.md)), the
-`logic_if` flag ([programs.md](programs.md)), the adversaries
+`logic_if` flag ([programs.md](programs.md)), the `nationalist_growth_mult` key's axis
+([ideology.md](ideology.md)), the adversaries
 ([attention.md](attention.md)), the ideology axes ([ideology.md](ideology.md)) and the
 modifier keys (`content::MODIFIER_KEYS`, [Modifiers](#modifiers)).
 
@@ -136,6 +137,8 @@ A modifier key's value is the product of every live source naming it, 1 with non
 | `buy_power_mult` | career peak power ([career.md](career.md)) | Buy Power's cost and output |
 | `boredom_growth_mult` | Boredom Dampers (Earth tech, draft) | boredom growth |
 | `ideology_cross_mult` | Consensus Engine (Earth tech, draft) | Fund's cross-penalty on the other axes |
+| `science_output_mult` | Deep Space Telescope (global) | Research Lab output |
+| `nationalist_growth_mult` | Deep Space Telescope (global) | a Fund Nationalist's push to its own axis |
 
 A building lists the keys that multiply its output (`output_modifiers`); a command its
 `scale_modifier`. Achievement and `forever` project rewards apply from the moment they are

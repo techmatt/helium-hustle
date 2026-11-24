@@ -8,8 +8,10 @@ doesn't see it.
 ## Rules
 
 **The reveal and the calendar.** Act 1's last beat, quest 1.11 Deep Space Telescope, completes
-when the Deep Space Telescope global project does ([events.md](events.md)). It sets the career
-flag `swarm_revealed`, opens the Timeline panel and the Experiment Lab, and Act 2 begins.
+when the Deep Space Telescope global project first does ([events.md](events.md)). It sets the career
+flag `swarm_revealed`, opens the Timeline panel and the Experiment Lab, and Act 2 begins;
+all of that stays for the career. The Telescope itself is a `timeline` project: a timeline's
+end takes it, and re-funding it brings back only its passive ([projects.md](projects.md)).
 From that same day a **timeline** runs: a calendar day count and the day the swarm arrives.
 Before the reveal there is no calendar. The draft `quiet_days` condition (days this run since
 the player's last order, `Run.last_order`: the run's day of the last applied action other than
@@ -43,7 +45,7 @@ Spendable Earth science becomes `science_made × science_carry`. The career hard
 1: the mind keeps flags, researched/owned/used ids, seen events, quests and sub-objectives,
 achievements, the log, the program library and `forever` projects (progress and
 completions); everything else resets (retirements, lifetime totals, bests, ideology bests and
-carried scores, Attention, gap days, peak power, `timeline` projects, and with them the buildings they gate; a super timeline
+carried scores, Attention, gap days, peak power, `timeline` projects, and with them every reward and building they give, `if` and the Archive's Blueprints included; a super timeline
 keeps `timeline` projects). The next timeline starts and a new run begins.
 
 **Earth techs** (`content/earth_tech.json`) are bought with Earth science

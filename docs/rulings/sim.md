@@ -12,7 +12,8 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   is read by the `handsoff` player: it loads the best known loadout at every reset; its only
   hand move is a stale-run retirement (`stale_days` with nothing bought), a backstop since 062's `retire` line.
   Its programs are data, a loadout file in the repo, updated when the rules or the best
-  loadout change; runs until `if` opens (and that one) are the author's. Its
+  loadout change; runs until `if` opens (and that one) are the author's, again after a
+  timeline's end closes `if` (084) until the author re-funds Conditional Logic. Its
   measure is its credits a run and milestones from run 2 on as a share of the author's on the
   same seeds (the ladder's *Hands-off* table, [experiments.md](../experiments.md#measures)).
 - **View (009, default).** `per_day` and `next_run` keep playing a day or a retirement on a

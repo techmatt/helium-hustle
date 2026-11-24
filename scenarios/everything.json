@@ -1,6 +1,6 @@
 {
   "name": "everything",
-  "description": "Test everything in Act 1: beats 1.1-1.10, 1.a, 1.b and 1.c done (1.11's telescope is the open quest; 1.c's Blueprints are bought), so Research, Projects, Ideologies, Adversaries, Launch Pads and Retirement are open, if unlocked; 100,000 credits, 10,000 science (and 1.b's 50), 200 boredom (so relief shows), full stores, 200 free land and a working base with 6 processors.",
+  "description": "Test everything in Act 1: beats 1.1-1.10, 1.a, 1.b and 1.c done (1.11's telescope is the open quest; 1.c's Blueprints are bought), so Research, Projects, Ideologies, Adversaries, Launch Pads and Retirement are open, if unlocked (Conditional Logic completed); 100,000 credits, 10,000 science (and 1.b's 50), 200 boredom (so relief shows), full stores, 200 free land and a working base with 6 processors.",
   "start": {
     "tick": 0,
     "resources": {
@@ -33,7 +33,7 @@
     },
     "panels": [],
     "programs": [],
-    "flags": ["logic_if"],
+    "projects": ["blueprint_archive", "conditional_logic"],
     "events": [
       "qpower_boot_sequence",
       "qblueprints",

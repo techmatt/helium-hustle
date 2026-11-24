@@ -102,9 +102,10 @@ verb's switch, and the line's command, building (`build`, `pause`, `resume`), re
 
 **Unlock.** Every line but a command needs the career flag `program_logic`: set (and logged)
 the first day `logic_unlock_processors` processors work, as programs start to run. `if` also
-needs its own career flag (draft, 049): `logic_if`, the Conditional Logic global project's
-reward ([projects.md](projects.md)); content must set it. A loaded `if` the career hasn't
-opened is locked: passed over free with its body and its `else`'s. The view's `if_open` says whether it is open.
+needs its own flag (draft, 049): `logic_if`, the Conditional Logic global project's `flag`
+reward, held only while that project counts as completed ([projects.md](projects.md)), so a
+timeline's end locks `if` again until it is re-funded; content must set it. A loaded `if`
+not open is locked: passed over free with its body and its `else`'s. The view's `if_open` says whether it is open.
 
 **Running** (each day): programs in order; each running processor of a program takes one
 step from the shared pointer. A step passes over free lines (notes, unparsed and locked lines; a locked `if` with its

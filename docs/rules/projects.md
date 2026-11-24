@@ -28,7 +28,7 @@ is refused), so one set of conditions serves quests and projects. Today's rows u
 | `ideology_rank` | the career's best rank on `axis` is at least `rank` (bests are recorded at step 14, so it opens the day after; [ideology.md](ideology.md)) |
 | `quest_active` | the quest is active now or completed in any run |
 | `research_completed` | the item is bought this run ([research.md](research.md)) |
-| `flag_set` | the career flag is set |
+| `flag_set` | the flag holds: a career flag, or a live `flag` reward's (below) |
 
 **Cost and the most a day.** The first completion costs `costs`. A repeatable row
 (`repeat: {cost_growth}`) multiplies every cost by `cost_growth` once per completion so
@@ -46,22 +46,26 @@ reads) and added to progress. A short resource is taken partially; a met cost ta
 nothing. A project that is locked keeps its rates but takes nothing.
 
 **Completion.** After its drain, a project whose progress meets every cost completes: its
-completion count in its scope rises by one, its progress starts over at zero, a `set_flag`
-reward sets its flag, and the career log records it. A project done for good (no `repeat`)
+completion count in its scope rises by one, its progress starts over at zero, its
+`starting_research` items count as bought at once, and the career log records it. A project done for good (no `repeat`)
 drops its rates and is no longer unlocked; a repeatable one keeps its rates and goes on at
 the grown cost.
 
 **Rewards** (`rewards` on the row, a list), live while the project has completed at
 least once in its scope (`timeline`: every later run of the timeline; `run`: the rest of
-the run). A repeatable row's numeric rewards stack per completion, adding (the
+the run), and only then: a project's effects never outlive its completion, so after a
+timeline's end a global project is offered again and re-funding it brings them back. A repeatable row's numeric rewards stack per completion, adding (the
 bonus-stacking ruling): `n` completions of a ×`v` multiplier give `1 + (v − 1) × n` (floored
 at 0), and `n` times each starting building; the others live once (no row repeats yet):
 
 - `starting_buildings`: free bonus buildings at the start of every run (owned and
   running, not counted in their price curve; [career.md](career.md), [economy.md](economy.md)).
 - `modifier`: a modifier `key` multiplied by `value` ([Modifiers](README.md#modifiers)).
-- `set_flag`: a career flag, set at completion, and `text`, what the card says it gives.
-  Flags outlive a timeline's end.
+- `flag`: a flag held while live (not a career flag: a timeline's end takes it), read
+  wherever a flag is (`flag_set` conditions, flag requirements, `logic_if`), and `text`,
+  what the card says it gives.
+- `starting_research`: research items counted as bought at completion and from day 0 of
+  every run while live ([research.md](research.md)).
 - `boredom_modifiers`: `base_rate_mult` multiplies boredom growth (stacking as a
   multiplier, [boredom.md](boredom.md)); `command_boredom` replaces the named commands' flat
   boredom per execution ([commands.md](commands.md)).
@@ -103,11 +107,13 @@ The `drain` variant has no params (`"params": {}`).
 `min_days` and `rewards` (none repeats yet); names and descriptions are the Godot
 placeholders but for the draft rows (049): Conditional Logic (offered once quest 1.8 is
 done, its reward the `logic_if` flag that opens `if`, [programs.md](programs.md)) and the
-Deep Space Telescope (offered once 1.10 is done; completing it completes quest 1.11, so it
-spans several runs: `min_days` 3,000). Chemical Energy Initiative is offered once 1.8 is
+Deep Space Telescope (offered once 1.10 is done; its first completion completes quest 1.11,
+so it spans several runs: `min_days` 3,000; rebuilt each timeline for its placeholder
+passive, `science_output_mult` and `nationalist_growth_mult` ×1.1, while what 1.11 opened
+stays: [timeline.md](timeline.md)). Chemical Energy Initiative is offered once 1.8 is
 done. Blueprint Archive (draft, offered once 1.8 is done: 500 credits and 200 science,
-`min_days` 17, no reward of its own) completes side quest 1.c Blueprints for Everyone, whose
-`grant_research` unlock has both Blueprints bought from the start of every run
+`min_days` 17) completes side quest 1.c Blueprints for Everyone; its `starting_research`
+reward has both Blueprints bought from the start of every run of the timeline
 ([research.md](research.md)). Every other row's `min_days` is its largest cost over 30, rounded up: the days the old
 flat cap of 30 a day took.
 

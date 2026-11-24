@@ -73,9 +73,16 @@ pub fn starting_credits(r: &Rules, g: &GameState) -> Fx {
     Fx::from_int(v.floor_int())
 }
 
+/// A flag holds: a career flag (an event's or a command's, kept for the
+/// career), or a live project reward's (held while its project counts as
+/// completed: docs/rules/projects.md).
+pub fn flag_set(g: &GameState, flag: &str) -> bool {
+    g.career.flags.contains(flag) || super::projects::flag_live(g, flag)
+}
+
 /// Starts a run on the current career (a new game, or after a retirement):
 /// the config's starting state, career bonuses, bonus buildings, the seen
-/// events' unlocks, empty programs and fresh markets.
+/// events' unlocks, live starting research, empty programs and fresh markets.
 pub fn new_run(r: &Rules, g: &mut GameState) {
     g.run = Run {
         resources: content().resources.iter().map(|res| (res.id.clone(), Fx::ZERO)).collect(),
@@ -97,6 +104,7 @@ pub fn new_run(r: &Rules, g: &mut GameState) {
     let owned: Vec<String> = g.run.buildings.keys().cloned().collect();
     g.career.owned_buildings.extend(owned);
     super::events::reapply(g);
+    super::projects::grant_starting_research(g);
     super::economy::refresh(g);
     let procs = super::programs::capacity(g);
     g.run.programs = super::programs::new_programs(r, procs);

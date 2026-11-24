@@ -256,11 +256,11 @@
     "silent": false,
     "title": "1.c — Blueprints for Everyone",
     "summary": "DRAFT. Complete the Blueprint Archive, a global project.",
-    "body": "DRAFT. Archive the company's blueprints where a reset can't reach them: from now on every run starts with Basic and Advanced Blueprints researched.",
+    "body": "DRAFT. Archive the company's blueprints where a retirement can't reach them: from now on every run of this timeline starts with Basic and Advanced Blueprints researched.",
     "picture": "q1_c_wireframes",
     "trigger": {"type": "quest_complete", "quest": "qlab"},
     "condition": {"type": "project_completed", "project": "blueprint_archive"},
-    "unlocks": [{"type": "grant_research", "research": "basic_blueprints"}, {"type": "grant_research", "research": "advanced_blueprints"}]
+    "unlocks": []
   },
   {
     "id": "recreation_dome_unlock",

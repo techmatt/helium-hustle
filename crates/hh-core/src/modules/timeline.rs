@@ -150,7 +150,7 @@ pub fn tick(r: &Rules, g: &mut GameState) {
         return;
     }
     if g.saga.timeline.is_none() {
-        if !g.career.flags.contains(REVEAL_FLAG) {
+        if !super::career::flag_set(g, REVEAL_FLAG) {
             return;
         }
         start_timeline(r, g, 1, false);

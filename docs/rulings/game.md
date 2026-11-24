@@ -25,7 +25,13 @@ Programs have their own part ([programs.md](programs.md)).
   completions. A building gated on a project's reward follows that project's scope: it
   requires the project's completion, not a career flag that outlives it. Every repeatable
   project carries `max_completions` (typically 5), and its rewards stack per completion
-  (2026-11-21, by *Bonus stacking*; replaces 046's apply-once default). *Defaults (046):* a
+  (2026-11-21, by *Bonus stacking*; replaces 046's apply-once default). A global project's
+  effects live on its completion, never on a career flag or quest reward (2026-11-24): a
+  timeline's end takes them, the project is offered again and re-funding brings them back.
+  The Deep Space Telescope is rebuilt each timeline for a passive while completed
+  (placeholder +10% science, +10% nationalist ideology growth); what it revealed (the swarm,
+  the calendar, what 1.11 opened) stays for the career, and completing it again replays no
+  story. *Default (084):* the science bonus multiplies Research Lab output, not Buy Science. *Defaults (046):* a
   repeatable row keeps its rates across completions; every row's `min_days` is its largest
   cost over 30 rounded up (the old flat cap's fastest finish).
 - **Bonus stacking (2026-11-21).** Bonuses from one source add (+5% ×10 is +50%); separate
@@ -50,12 +56,14 @@ Programs have their own part ([programs.md](programs.md)).
   1 with its meter shown; 1.7's modals explain it, and a retirement forced earlier completes 1.7
   as it is reached. Side quest 1.c Blueprints for Everyone (from 1.8): the Blueprint Archive
   global project (placeholder 500 credits + 200 science, offered first) makes both Blueprints
-  bought at every run's start. Refinery upkeep is 5 regolith + 2 energy. *Default (074):* 1.b's
+  bought at every run's start while it counts as completed (2026-11-24: lost at a timeline's
+  end, back when re-funded; 1.c stays completed). Refinery upkeep is 5 regolith + 2 energy. *Default (074):* 1.b's
   cluster leaves out the Blueprints category (else 1.c would complete 1.b for free).
 - **Story modals (2026-11-23).** Each chain quest's transition is a modal that pauses the
   game: the finished quest's payoff, then the next quest's story, then its task in one line;
   one paragraph a modal, chained or merged as the story reads best, one button, play resumes
-  after the last. No modal at game start but the first quest's; side quests unchanged; sims
+  after the last; a chain's unread pages and the speed it resumes are in the save, so a
+  reload mid-chain shows them again (082's deferral). No modal at game start but the first quest's; side quests unchanged; sims
   never see them (UI only). Placeholder story for every Act 1 beat lives only in content
   (`story` and `payoff` on the quest rows); docs point at it, never copy it. Matt's story
   pass comes much later.
