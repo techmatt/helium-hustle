@@ -41,6 +41,11 @@
 //      number fields only, Text shows the same lines (the count first), and at 1x the 4x
 //      line's run dots fill day by day. Shots programs-blocks.png, programs-text.png,
 //      programs-dots.png.
+//  11. (Run before 5.) Story and Achievements: a new game played through 1.6 by the debug
+//      autopilot (its step stops at 1.7); Story shows the Act 1 band, every finished beat
+//      lit, the active one glowing with its task, one "???" below and no achievements; a lit beat's click replays its modal; the
+//      Achievements tile shows every badge grouped by category. Shots story-1.6.png,
+//      achievements.png.
 // Any uncaught page error fails the run.
 //   HH_URL      the page, required: a `vite preview` of a static build (TESTING.md)
 //   HH_BROWSER  a browser off the usual paths
@@ -58,7 +63,7 @@ const b = await launch({ width: 1600, height: 900, profileRoot: process.env.HH_P
 const { send, evaluate } = b;
 const pageErrors = b.errors;
 // settle: a dev server just after an edit may reload the page once more.
-const { waitFor, exists, click, setValue, load: loadPage, day, run, speed, panel, debugMenu, grant, runOnly, readStory, autoStory } = driver(b, { url, settle: 700 });
+const { waitFor, exists, click, setValue, load: loadPage, day, run, speed, panel, debugMenu, cheats, grant, runOnly, readStory, autoStory } = driver(b, { url, settle: 700 });
 /** Past section 1's opening, story modals are clicked through as they open, after every load too. */
 let storyAuto = false;
 const load = async (u = url) => {
@@ -920,6 +925,94 @@ async function numberBox(rows) {
   check(end === before && (await evaluate(`${box}.value`)) === '4', `the rows and count are as before: ${end}`);
 }
 
+/** Section 11: Story and Achievements. A new game played on by the debug autopilot's
+ * "Next quest step" through 1.6; Story then shows the Act 1 band, every finished beat
+ * lit, the active beat glowing with its task, one "???" below it and no achievements or event
+ * texts; a finished beat's click replays its story modal. The Achievements tile shows
+ * badges grouped by category. Shots story-1.6.png, achievements.png. */
+async function storyView() {
+  await debugMenu();
+  await speed(0);
+  await click('#new-game');
+  await sleep(500);
+  await autoStory();
+  const content = (f) => JSON.parse(readFileSync(resolve(here, `../../content/${f}`), 'utf8'));
+  const beat = () => evaluate(`document.querySelector('[data-testid="quest"]')?.textContent.match(/^1\\.(\\d+)/)?.[1] ?? '0'`).then(Number);
+  // Step until 1.6 is done or active. The step from 1.5 passes 1.6 in the same stretch
+  // (the speculators are already there), so it stops at 1.7 Burnout.
+  for (let step = 0; step < 8 && (await beat()) < 6; step++) {
+    await cheats();
+    await click('#accel-quest', 'autopilot: next quest step');
+    await waitFor(`document.getElementById('accel-status')?.dataset.running === '0'`, 'the autopilot step', 90000);
+    if (await exists('[data-testid="continue"]')) await click('[data-testid="continue"]', 'continue');
+  }
+  const at = await beat();
+  check(at >= 6 && at <= 7, `the autopilot reaches 1.6 (stops at 1.${at})`);
+  await panel('story');
+  await sleep(300);
+  const st = await evaluate(`(() => {
+    const p = document.querySelector('[data-panel="story"]');
+    const ids = (sel) => [...p.querySelectorAll(sel)].map((e) => e.dataset.beat ?? e.dataset.act ?? '');
+    const mid = document.querySelector('.col-mid').getBoundingClientRect();
+    const a = p.querySelector('[data-testid="story-beat-active"]');
+    const r = a?.getBoundingClientRect();
+    return {
+      bands: [...p.querySelectorAll('[data-testid="act-band"]')].map((b) => b.textContent),
+      done: ids('[data-testid="story-beat-done"]'),
+      active: a ? a.dataset.beat : null,
+      glow: a ? getComputedStyle(a.querySelector('.beat-dot')).boxShadow !== 'none' : false,
+      task: a ? a.textContent : '',
+      bar: !!a?.querySelector('.bar, [role="progressbar"]'),
+      unknown: [...p.querySelectorAll('[data-testid="story-unknown"]')].map((e) => e.textContent),
+      unknownAfter: !!a && !!p.querySelector('[data-testid="story-unknown"]') && (a.compareDocumentPosition(p.querySelector('[data-testid="story-unknown"]')) & Node.DOCUMENT_POSITION_FOLLOWING) > 0,
+      inView: !!r && r.top < mid.bottom && r.bottom > mid.top,
+      badges: p.querySelectorAll('[data-testid="badge"], [data-achievement]').length,
+      text: p.textContent,
+    };
+  })()`);
+  check(st.bands.length === 1 && /Act 1/.test(st.bands[0]) && /The Lunar Operation/.test(st.bands[0]), `Story opens with the Act 1 band alone: ${JSON.stringify(st.bands)}`);
+  const chain = content('events.json').filter((e) => e.category === 'story').map((e) => e.id);
+  check(st.done.join() === chain.slice(0, at - 1).join(), `the ${at - 1} finished beats lit, in order: ${st.done.join(', ')}`);
+  check(st.active === chain[at - 1] && st.glow, `1.${at} is the glowing active beat: ${st.active} glow ${st.glow}`);
+  check(st.task.trim().startsWith(`1.${at}`) && st.task.length > 20 && st.bar, `the active beat shows its task and progress bar (${st.bar}): ${st.task.slice(0, 80)}`);
+  check(st.unknown.length === 1 && st.unknown[0].trim() === '???' && st.unknownAfter, `one "???" node below it: ${JSON.stringify(st.unknown)}`);
+  check(st.inView, 'the active beat is in view on opening');
+  check(st.badges === 0 && !/Achievements|Events this run/.test(st.text), 'Story shows no achievements and no Events this run');
+  await shot('story-1.6');
+  // A finished beat's click replays its story modal (pages read by hand, not auto-clicked).
+  await evaluate(`window.__autoStory?.disconnect(); window.__autoStory = undefined`);
+  await click('[data-testid="story-beat-done"][data-beat="qblueprints"]', 'replay 1.2');
+  const pages = await readStory();
+  check(pages.length > 0 && pages.every((p) => p.quest === 'qblueprints'), `a finished beat's click replays its modal chain: ${pages.map((p) => `${p.quest}/${p.kind}`).join(' ')}`);
+  await autoStory();
+  // Achievements: its own tile, badges grouped by category.
+  check(await navVisible('achievements'), 'an Achievements nav tile');
+  await panel('achievements');
+  const ach = await evaluate(`(() => {
+    const p = document.querySelector('[data-panel="achievements"]');
+    return {
+      groups: [...p.querySelectorAll('.badge-group')].map((g) => g.dataset.category + ':' + g.querySelectorAll('[data-testid="badge"]').length),
+      states: [...p.querySelectorAll('[data-testid="badge"]')].map((b) => (b.classList.contains('is-earned') ? 'e' : 'u')).join(''),
+      rewards: [...p.querySelectorAll('.badge-reward')].length,
+      medals: [...p.querySelectorAll('[data-testid="badge"] .badge-medal')].map((m) => (m.textContent === '★' ? 'e' : 'u')).join(''),
+      head: p.querySelector('h2').textContent,
+    };
+  })()`);
+  // Each badge earned or unearned, its medal and the panel's count agreeing with its state.
+  const earnedN = [...ach.states].filter((x) => x === 'e').length;
+  check(
+    ach.states === ach.medals && ach.head.includes(`${earnedN}/${ach.states.length}`),
+    `badges show earned and unearned states (${ach.states}; head "${ach.head}")`,
+  );
+  const all = content('achievements.json');
+  const cats = [...new Set(all.map((a) => a.category))];
+  check(
+    ach.groups.join(' ') === cats.map((c) => `${c}:${all.filter((a) => a.category === c).length}`).join(' ') && ach.rewards === all.length,
+    `Achievements shows every badge grouped by category, each with its reward: ${ach.groups.join(' ')} (${ach.states.length} badges)`,
+  );
+  await shot('achievements');
+}
+
 async function programsBlocks() {
   const rows = () =>
     evaluate(`[...document.querySelectorAll('[data-testid="block-lines"] > li')].map((l) => (l.classList.contains('indented') ? '>' : '') + (l.dataset.op ?? 'command'))`);
@@ -1432,6 +1525,8 @@ try {
   await instructionPanel();
   // ---- 10. the Programs view's Blocks mode (before 5) ----
   await programsBlocks();
+  // ---- 11. Story's quest timeline at 1.6 and the Achievements tile (before 5) ----
+  await storyView();
   await debugMenu();
   await setValue('#scenario', 'at_cap');
   await click('#start-scenario');

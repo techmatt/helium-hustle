@@ -57,6 +57,11 @@ results folder; kept shots are also copied to the shared screenshots folder, CLA
    (`numberBox`), Text shows the same lines, and at 1x the
    `4x` line's four dots fill 1/4 to 4/4; set to 12, it shows a bar titled `k/12`. Sections open Text through the nav tile
    (`openText`); the mode is remembered.
+   Then `storyView`: a new game played through 1.6 by the autopilot's *Next quest step*
+   (the step from 1.5 passes 1.6 too, stopping at 1.7); Story shows the Act 1 band alone,
+   the finished beats lit, the active one glowing (in view) with its task, one
+   "???" after it and no achievements; a lit beat's click replays its modal; the
+   Achievements tile shows every badge by category, each with its reward.
 6. **Readability** (before 4): capped rates, Resources' groups, affordable cards and Land,
    a pad starting with No cargo (status, red nav dot) given Helium-3, short of fuel then
    Ready, Story.

@@ -1,12 +1,13 @@
 // The middle column's other panels: Commands, Launch Pads, Research, Projects,
-// Ideologies, Adversaries, Stats, Story and Retirement. Each shows what the view has.
+// Ideologies, Adversaries, Stats and Retirement (Story and Achievements: Story.tsx). Each
+// shows what the view has.
 
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import type { CommandView, Fx, ProjectView, ResearchView, View } from '../engine';
-import { capitalize, mult, num, perDay, storyBody } from '../format';
+import { capitalize, mult, num, perDay } from '../format';
 import { act, seen, store, type Store } from '../store';
-import { Bar, Breakdown, FlowLines, Quest, ResChip, Section, cardButton, freshClass, name, numBelow, useHint } from './common';
+import { Bar, Breakdown, FlowLines, ResChip, Section, cardButton, freshClass, name, numBelow, useHint } from './common';
 import { Chip } from './icons';
 import { editProgram } from './programStore';
 
@@ -624,70 +625,6 @@ export function Stats({ s }: { s: Store }) {
             ))}
           </ul>
         )}
-      </Section>
-    </div>
-  );
-}
-
-// ---- Story -------------------------------------------------------------------------
-
-export function Story({ s }: { s: Store }) {
-  const v = s.view;
-  const [openId, setOpen] = useState<string | null>(null);
-  const cats = [...new Set(v.achievement_list.map((a) => a.category))];
-  const earned = v.achievement_list.filter((a) => a.earned).length;
-  return (
-    <div class="panel" data-panel="story">
-      <h2>Story</h2>
-      <Section title="Primary objectives">
-        <ul class="plain story-list">
-          {v.story.map((e) => (
-            <li key={e.id}>
-              <button type="button" class="link" onClick={() => setOpen(openId === e.id ? null : e.id)}>
-                ✓ {e.title}
-              </button>{' '}
-              <span class="muted">{e.summary}</span>
-              {openId === e.id && <blockquote>{storyBody(e)}</blockquote>}
-            </li>
-          ))}
-        </ul>
-        {v.quest && (
-          <div class="active-quest">
-            <h3>Active</h3>
-            <Quest v={v} />
-            <blockquote>{v.quest.body}</blockquote>
-          </div>
-        )}
-      </Section>
-      <Section title={`Achievements (${earned}/${v.achievement_list.length})`}>
-        {cats.map((cat) => {
-          const list = v.achievement_list.filter((a) => a.category === cat);
-          return (
-            <div key={cat}>
-              <h3>
-                {capitalize(cat)} ({list.filter((a) => a.earned).length}/{list.length})
-              </h3>
-              <ul class="plain">
-                {list.map((a) => (
-                  <li key={a.id} class={a.earned ? 'ok' : ''}>
-                    {a.earned ? '✓' : '○'} <strong>{a.name}</strong>: {a.description}{' '}
-                    <span class="muted">Reward: {a.reward}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          );
-        })}
-      </Section>
-      <Section title={`Events this run (${v.event_texts.length})`}>
-        {v.event_texts.length === 0 && <p class="muted">None yet.</p>}
-        {/* Newest first, as the right column's Story. */}
-        {[...v.event_texts].reverse().map((e) => (
-          <div key={e.id} class="event-text">
-            <strong>{e.title}</strong> <span class="muted">{e.summary}</span>
-            <blockquote>{storyBody(e)}</blockquote>
-          </div>
-        ))}
       </Section>
     </div>
   );

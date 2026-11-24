@@ -238,6 +238,21 @@ function openStory(pages: StoryPage[]): void {
   }
 }
 
+/** Story's finished-beat click: that quest's modal chain again (its opening, then its
+ * payoff), the clock stopped as for a transition. Nothing while another modal or the
+ * autopilot holds the screen. */
+export function replayStory(q: StoryView): void {
+  if (stoodDown || store.summary || store.storyPages.length > 0 || pilotBusy()) return;
+  movedAt = performance.now();
+  const pages: StoryPage[] = [
+    ...openingOf(q).map((text) => ({ quest: q.id, title: q.title, kind: 'story' as const, text })),
+    ...(q.payoff ?? []).map((text) => ({ quest: q.id, title: q.title, kind: 'payoff' as const, text })),
+  ];
+  if (pages.length === 0) return;
+  openStory(pages);
+  emit();
+}
+
 /** The story modal's button: the next page, or after the last, play on at the speed
  * before it. */
 export function nextStoryPage(): void {

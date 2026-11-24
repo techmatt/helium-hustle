@@ -9,6 +9,7 @@
   {"id": "adversaries", "name": "Adversaries", "visible": {"type": "panel", "panel": "adversaries"}},
   {"id": "stats", "name": "Stats", "visible": {"type": "always"}},
   {"id": "story", "name": "Story", "visible": {"type": "always"}},
+  {"id": "achievements", "name": "Achievements", "visible": {"type": "always"}},
   {"id": "timeline", "name": "Timeline", "visible": {"type": "panel", "panel": "timeline"}},
   {"id": "earth_lab", "name": "Earth Lab", "visible": {"type": "panel", "panel": "earth_lab"}},
   {"id": "meta", "name": "Meta-Controller", "visible": {"type": "panel", "panel": "meta"}},

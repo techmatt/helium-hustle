@@ -1162,8 +1162,245 @@ tr.is-new td:first-child {
 .axis-rationalist {
   color: var(--axis-rationalist);
 }
-.active-quest {
-  margin-top: 8px;
+/* ---- Story: the quest timeline (Story.tsx) ---- */
+.story-timeline {
+  position: relative;
+  padding: 4px 0 24px;
+}
+/* The spine, under the beat dots. */
+.story-timeline::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 0;
+  bottom: 12px;
+  width: 4px;
+  border-radius: 2px;
+  background: linear-gradient(var(--accent), color-mix(in srgb, var(--accent) 25%, transparent));
+}
+/* An act's chapter header: a plain styled band until the act art ships (076's pick).
+   The same night-sky ground in both themes, as the art will be, so the title is light. */
+.act-band {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  min-height: 96px;
+  margin: 14px 0 12px;
+  padding: 12px 18px;
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, #f5a524 45%, #000);
+  background:
+    radial-gradient(ellipse at 85% 30%, rgb(120 150 220 / 35%), transparent 55%),
+    radial-gradient(ellipse at 15% 120%, rgb(245 165 36 / 28%), transparent 60%),
+    linear-gradient(160deg, #1d2030, #0d0d12);
+  color: #f3eee6;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 80%);
+}
+.act-number {
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #f7b955;
+}
+.act-name {
+  font-size: 22px;
+  font-weight: 600;
+}
+.beat-row {
+  position: relative;
+  margin: 8px 0;
+}
+.beat-node {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+button.beat-node {
+  cursor: pointer;
+}
+.beat-dot {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  margin: 8px 0 0 6px;
+  border-radius: 50%;
+  border: 3px solid var(--accent);
+  background: var(--panel);
+  position: relative;
+  z-index: 1;
+}
+.beat-card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+  background: var(--card);
+}
+.beat-title {
+  font-weight: 600;
+}
+.beat-text {
+  line-height: 1.45;
+}
+.beat-node.is-done .beat-dot {
+  background: var(--accent);
+}
+.beat-node.is-done .beat-card {
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+}
+button.beat-node.is-done:hover .beat-card,
+button.beat-node.is-done:focus-visible .beat-card {
+  background: var(--hover);
+  border-color: var(--accent);
+}
+.beat-node.is-active .beat-dot {
+  width: 26px;
+  height: 26px;
+  margin: 6px 0 0 4px;
+  background: #ffd27a;
+  border-color: var(--accent);
+  box-shadow: 0 0 10px 3px color-mix(in srgb, var(--accent) 70%, transparent);
+  animation: beat-glow 1.8s ease-in-out infinite;
+}
+.beat-node.is-active .beat-card {
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 14px color-mix(in srgb, var(--accent) 45%, transparent);
+}
+@keyframes beat-glow {
+  50% {
+    box-shadow: 0 0 18px 7px color-mix(in srgb, var(--accent) 80%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .beat-node.is-active .beat-dot {
+    animation: none;
+  }
+}
+.beat-node.is-unknown {
+  opacity: 0.45;
+}
+.beat-node.is-unknown .beat-dot {
+  border-style: dashed;
+  border-color: var(--muted);
+}
+.beat-node.is-unknown .beat-card {
+  border-style: dashed;
+  background: none;
+  color: var(--muted);
+  font-weight: 600;
+  letter-spacing: 0.2em;
+}
+/* Side quests: smaller nodes off the beat, joined by a short line. */
+.side-branches {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 6px 0 4px 44px;
+}
+.side-node {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding-left: 18px;
+}
+.side-node::before {
+  content: '';
+  position: absolute;
+  left: -27px;
+  top: 12px;
+  width: 45px;
+  height: 2px;
+  background: color-mix(in srgb, var(--accent) 60%, var(--line));
+}
+.side-dot {
+  flex: none;
+  width: 12px;
+  height: 12px;
+  margin-top: 6px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  background: var(--panel);
+  position: relative;
+  z-index: 1;
+}
+.side-node.is-done .side-dot {
+  background: var(--accent);
+}
+.side-card {
+  flex: 1;
+  max-width: 420px;
+  padding: 4px 10px;
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  background: var(--card);
+  font-size: 13px;
+}
+.side-title {
+  font-weight: 600;
+}
+/* ---- Achievements: badges by category ---- */
+.badges {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+.badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--card);
+  text-align: center;
+}
+.badge-medal {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  font-size: 22px;
+  border: 2px solid var(--muted);
+  color: var(--muted);
+}
+.badge.is-earned {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
+}
+.badge.is-earned .badge-medal {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: var(--panel);
+}
+.badge.is-unearned {
+  opacity: 0.6;
+}
+.badge-name {
+  font-weight: 600;
+}
+.badge-desc {
+  font-size: 13px;
+}
+.badge-reward {
+  font-size: 12px;
+  color: var(--muted);
 }
 .confirm {
   display: flex;

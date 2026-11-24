@@ -26,6 +26,7 @@ const FILES: &[(&str, &str)] = &[
     ("rivals.json", include_str!("../../../content/rivals.json")),
     ("nav.json", include_str!("../../../content/nav.json")),
     ("earth_tech.json", include_str!("../../../content/earth_tech.json")),
+    ("acts.json", include_str!("../../../content/acts.json")),
 ];
 
 /// The modifier keys rewards may name (docs/rules/README.md, *Modifiers*).
@@ -486,6 +487,17 @@ pub struct NavTile {
     pub visible: NavCondition,
 }
 
+/// An act of the story, in order (display only: no rule reads it). It opens
+/// with the chain quest `opens_with`; each chain quest belongs to the last act
+/// opened at or before it in file order.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Act {
+    pub act: u32,
+    pub name: String,
+    pub opens_with: String,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Content {
     pub resources: Vec<Resource>,
@@ -498,6 +510,7 @@ pub struct Content {
     pub rivals: Vec<Rival>,
     pub nav: Vec<NavTile>,
     pub earth_tech: Vec<EarthTech>,
+    pub acts: Vec<Act>,
 }
 
 fn parse<T: for<'de> Deserialize<'de>>(name: &str) -> Result<Vec<T>, String> {
@@ -518,9 +531,25 @@ impl Content {
             rivals: parse("rivals.json")?,
             nav: parse("nav.json")?,
             earth_tech: parse("earth_tech.json")?,
+            acts: parse("acts.json")?,
         };
         c.check()?;
         Ok(c)
+    }
+
+    /// The act a chain quest belongs to: the last act opened at or before it in
+    /// file order (display only). `None` for a quest not in the chain.
+    pub fn act_of(&self, quest: &str) -> Option<u32> {
+        let mut act = None;
+        for e in self.events.iter().filter(|e| e.is_quest()) {
+            if let Some(a) = self.acts.iter().find(|a| a.opens_with == e.id) {
+                act = Some(a.act);
+            }
+            if e.id == quest {
+                return act;
+            }
+        }
+        None
     }
 
     /// Whether every id an event condition names (sub-objectives included) is real.
@@ -791,6 +820,29 @@ impl Content {
                         .any(|t| matches!(&t.visible, NavCondition::Panel { panel: p } if p == panel));
                     need(shown, format!("event {:?}: no nav tile shows panel {panel:?}", e.id));
                 }
+            }
+        }
+        // Acts: numbered 1, 2, ... in order, the first opening with the first
+        // chain quest, each opening with a chain quest later than the one before.
+        {
+            let chain: Vec<&str> = self.events.iter().filter(|e| e.is_quest()).map(|e| e.id.as_str()).collect();
+            let mut last: Option<usize> = None;
+            for (i, a) in self.acts.iter().enumerate() {
+                let w = format!("act {}", a.act);
+                need(a.act as usize == i + 1, format!("{w}: acts number 1, 2, ... in order"));
+                let at = chain.iter().position(|q| *q == a.opens_with);
+                need(at.is_some(), format!("{w}: opens_with is not a chain quest"));
+                if let Some(at) = at {
+                    need(i > 0 || at == 0, format!("{w}: the first act opens with the first chain quest"));
+                    need(last.is_none_or(|l| at > l), format!("{w}: opens before the act before it"));
+                    last = Some(at);
+                }
+            }
+            need(!self.acts.is_empty(), "acts.json: no acts".to_string());
+            // Story draws each side quest off the chain quest that starts it.
+            for e in self.events.iter().filter(|e| e.is_side()) {
+                let off_chain = matches!(&e.trigger, Trigger::QuestComplete { quest } if chain.contains(&quest.as_str()));
+                need(off_chain, format!("side quest {:?}: its trigger must be a chain quest's completion", e.id));
             }
         }
         // The ids hh-core names in code (docs/rules/README.md, *Content*).

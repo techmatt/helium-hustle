@@ -44,8 +44,8 @@ Three columns and a status bar:
   this run or whose panel holds something new; past nine tiles they go compact, icon beside
   name; a green dot on Launch Pads while a pad is ready), the speed buttons, Resources
   (Energy, Credits, Land, Boredom, Processors, then a second group of the rest; amount /
-  cap, the engine's rate per day; at its cap the surplus thrown away, muted, or green for
-  Energy's spare power: "+9 CAP"; short of demand, red: "−7 SHORT"; a click on a row opens
+  cap, the engine's rate per day; at its cap the surplus thrown away, muted (Energy's
+  green): "+9 CAP"; short of demand, red: "−7 SHORT"; a click on a row opens
   its breakdown in place: last day's sources and sinks, who went short), each ideology
   axis's rank once Ideologies is unlocked (folded at first in a window under 800 px high),
   and the lunar horizon with the habitat at the foot.
@@ -56,14 +56,16 @@ Three columns and a status bar:
   text closes); any other card says why it can't. Research cards work the same way.
   Commands: a card per verb (Buy, Promote, ...), a target dropdown. Pad
   cards tint their head: green Ready, yellow Paused, red full but short of fuel. Stats ends
-  on every resource's breakdown. Acts 2 and 3 (`Saga.tsx`, DRAFT; `docs/arc.md`): Timeline,
+  on every breakdown. Story (`Story.tsx`): a spine of main-story beats under act
+  bands, finished ones lit (a click replays their modals), the active one glowing, one
+  "???", side quests off it; Achievements: badges by category. Acts 2 and 3 (`Saga.tsx`, DRAFT; `docs/arc.md`): Timeline,
   Earth Lab, Meta-Controller, Vault, Dyson; the ending covers the screen once.
 - **Right:** the main quest in its own slot at the top, which nothing else takes; program
   tabs 1 to 5 with processors −/+, Reset, Save / Load (`Library.tsx`: the loadout library;
   save new or over a slot, load, rename, delete); a line per instruction, dragged to reorder
-  (an `if` takes its body and its `else`; an `else` moves only with it), tinted by today's outcome (a failed line says why: "needs ⚡2,
-  had 0"), the next line to run in an accent frame. Once unlocked, Add: If, Else (after an
-  `if` or its body, at the end), Build, Buy Land, Verb (`ProgramLogic.tsx`; one editor for all verbs): a condition is
+  (an `if` takes its body and `else`), tinted by today's outcome (a failed line says why),
+  the next line in an accent frame. Once unlocked, Add: If, Else, Build, Buy Land,
+  Verb (`ProgramLogic.tsx`): a condition is
   a reading (the view's list), `>`, `<`, `>=` or `<=`, and a number (with `%` for a fill), and
   `and`/`or` one more; each clause with its live value and ✓/✗; body lines indented under the `if` or `else` (⇥/⇤), greyed with it when jumped; an `else`
   row has no outcome (free: its `if` decides).

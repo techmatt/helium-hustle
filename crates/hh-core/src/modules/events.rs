@@ -55,6 +55,11 @@ pub fn active_quest(g: &GameState) -> Option<&'static Event> {
         .find(|e| !g.career.completed_quests.contains(&e.id) && triggered(g, e))
 }
 
+/// A side quest has started: its trigger has happened (it may be completed too).
+pub fn side_started(g: &GameState, e: &Event) -> bool {
+    e.is_side() && triggered(g, e)
+}
+
 /// The quest is active now or completed (in any run).
 pub fn quest_open_or_done(g: &GameState, quest: &str) -> bool {
     g.career.completed_quests.contains(quest) || active_quest(g).is_some_and(|e| e.id == quest)

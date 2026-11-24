@@ -213,6 +213,35 @@ pub struct QuestView {
     pub story: &'static [String],
     pub progress: Option<ProgressView>,
     pub sub_objectives: Vec<SubObjectiveView>,
+    /// The design doc's beat id (`1.6`), if it carries one.
+    pub beat: Option<Text>,
+    /// The act it belongs to (`content/acts.json`).
+    pub act: Option<u32>,
+    /// A later chain quest exists (false on the last, which never completes).
+    pub more: bool,
+}
+
+/// A side quest started (its trigger happened) or completed, for Story's timeline.
+#[derive(Debug, Clone, Serialize)]
+pub struct SideQuestView {
+    pub id: Text,
+    pub beat: Option<Text>,
+    pub title: Text,
+    /// The one-line task.
+    pub summary: Text,
+    pub body: Text,
+    /// The chain quest whose completion started it (it branches off that beat).
+    pub parent: Option<Text>,
+    pub done: bool,
+    /// Its condition's progress, while not done.
+    pub progress: Option<ProgressView>,
+}
+
+/// An act the story has reached (its first quest is active or completed).
+#[derive(Debug, Clone, Serialize)]
+pub struct ActView {
+    pub act: u32,
+    pub name: Text,
 }
 
 /// An event's text (a completed quest or a fired one-off event).
@@ -232,6 +261,10 @@ pub struct StoryView {
     /// it completed), one paragraph per modal.
     pub story: &'static [String],
     pub payoff: &'static [String],
+    /// The design doc's beat id, on quests that carry one.
+    pub beat: Option<Text>,
+    /// A chain quest's act (`content/acts.json`); `None` for the rest.
+    pub act: Option<u32>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -405,6 +438,10 @@ pub struct View {
     pub completed_quests: Vec<Text>,
     /// The completed quests' texts, in chain order.
     pub story: Vec<StoryView>,
+    /// The side quests started or completed, in content order.
+    pub side_quests: Vec<SideQuestView>,
+    /// The acts reached, in order.
+    pub acts: Vec<ActView>,
     /// The texts of the one-off events fired this run, in content order, but of the
     /// boredom-phase events only the latest phase's: each phase supersedes the last
     /// (the earlier ones stay in `activity`).
@@ -497,6 +534,8 @@ fn story(e: &'static crate::content::Event) -> StoryView {
         chain: e.is_quest(),
         story: &e.story,
         payoff: &e.payoff,
+        beat: e.beat.as_deref(),
+        act: content().act_of(&e.id),
     }
 }
 
@@ -689,7 +728,37 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 .collect(),
             _ => Vec::new(),
         },
+        beat: q.beat.as_deref(),
+        act: c.act_of(&q.id),
+        more: c.events.iter().filter(|e| e.is_quest()).skip_while(|e| e.id != q.id).nth(1).is_some(),
     });
+    let side_quests = c
+        .events
+        .iter()
+        .filter(|e| events::side_started(g, e))
+        .map(|e| {
+            let done = g.career.completed_quests.contains(&e.id);
+            SideQuestView {
+                id: &e.id,
+                beat: e.beat.as_deref(),
+                title: &e.title,
+                summary: &e.summary,
+                body: &e.body,
+                parent: match &e.trigger {
+                    crate::content::Trigger::QuestComplete { quest } => Some(quest.as_str()),
+                    _ => None,
+                },
+                done,
+                progress: if done { None } else { progress(events::progress(r, g, &e.condition)) },
+            }
+        })
+        .collect();
+    let acts = c
+        .acts
+        .iter()
+        .filter(|a| events::quest_open_or_done(g, &a.opens_with))
+        .map(|a| ActView { act: a.act, name: &a.name })
+        .collect();
     // The next run if this one retired now.
     let mut after = g.clone();
     career::retire(r, &mut after, false);
@@ -790,6 +859,8 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             .map(|e| e.id.as_str())
             .collect(),
         story: c.events.iter().filter(|e| g.career.completed_quests.contains(&e.id)).map(story).collect(),
+        side_quests,
+        acts,
         event_texts: event_texts(r, g, latest_phase),
         achievement_list: c
             .achievements

@@ -9,6 +9,10 @@ scaffolding, not yet aligned with the design doc). The rules are in [rules/](rul
 adversaries, [career.md](rules/career.md) for retirement, [timeline.md](rules/timeline.md) for
 Acts 2-4.
 
+The acts' placeholder names and first quests (`content/acts.json`, display only: Story's
+chapter bands): Act 1 The Lunar Operation (1.1), Act 2 The Swarm (Q8 Experiments as a
+Service), Act 3 The Vault (Q14 The Vault), Act 4 The Dyson Sphere (Q17 Dyson Sphere).
+
 ## Act 1: the lunar operation (draft-playable)
 
 About 25% of play (a readout, not a target). Skill: from clicking commands to programs that run

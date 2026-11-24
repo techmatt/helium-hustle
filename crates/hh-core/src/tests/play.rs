@@ -854,6 +854,40 @@ fn the_view_shows_nav_tiles_from_content_and_the_next_run() {
 }
 
 #[test]
+fn story_timeline_view_has_acts_beats_and_started_side_quests() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    let v = r.view(&g);
+    // A new game: Act 1 alone, 1.1 active in it with more to come, no side quest started.
+    assert_eq!(v.acts.iter().map(|a| (a.act, a.name)).collect::<Vec<_>>(), vec![(1, "The Lunar Operation")]);
+    let q = v.quest.as_ref().unwrap();
+    assert_eq!((q.id, q.beat, q.act, q.more), ("qpower_boot_sequence", Some("1.1"), Some(1), true));
+    assert!(v.side_quests.is_empty());
+    // Through 1.6: Big Launch (1.a) has started off it, not done, with its progress.
+    let chain: Vec<_> = crate::content::content().events.iter().filter(|e| e.is_quest()).collect();
+    let at = chain.iter().position(|e| e.id == "qspeculators_notice").unwrap();
+    for e in &chain[..=at] {
+        g.career.completed_quests.insert(e.id.clone());
+    }
+    let v = r.view(&g);
+    let side: Vec<_> = v.side_quests.iter().map(|s| (s.id, s.parent, s.done)).collect();
+    assert_eq!(side, vec![("qbig_launch", Some("qspeculators_notice"), false)]);
+    assert!(v.side_quests[0].progress.is_some());
+    assert!(v.story.iter().filter(|s| s.chain).all(|s| s.act == Some(1) && s.beat.is_some()));
+    // The whole chain: every act reached, the last quest has none after it.
+    for e in &chain {
+        g.career.completed_quests.insert(e.id.clone());
+    }
+    g.career.completed_quests.remove(&chain[chain.len() - 1].id);
+    let v = r.view(&g);
+    assert_eq!(v.acts.len(), crate::content::content().acts.len());
+    let q = v.quest.as_ref().unwrap();
+    assert_eq!((q.act, q.more), (Some(4), false));
+    assert_eq!(crate::content::content().act_of("qthe_vault"), Some(3));
+    assert_eq!(crate::content::content().act_of("qfilling_vault"), Some(3));
+}
+
+#[test]
 fn the_view_fills_every_text_placeholder() {
     // Every event fired: no `{name}` left in any text the view hands out.
     let r = rules();

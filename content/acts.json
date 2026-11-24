@@ -1,0 +1,6 @@
+[
+  {"act": 1, "name": "The Lunar Operation", "opens_with": "qpower_boot_sequence"},
+  {"act": 2, "name": "The Swarm", "opens_with": "qexperiments_service"},
+  {"act": 3, "name": "The Vault", "opens_with": "qthe_vault"},
+  {"act": 4, "name": "The Dyson Sphere", "opens_with": "qdyson_sphere"}
+]

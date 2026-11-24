@@ -1045,7 +1045,7 @@ async function pass(seed, width, theme) {
       await sleep(200);
     }
     await cardProbe('run2');
-    for (const id of ['buildings', 'stats', 'story', 'retirement']) {
+    for (const id of ['buildings', 'stats', 'story', 'achievements', 'retirement']) {
       if (!(await exists(`.nav-tile[data-nav="${id}"]`))) continue;
       await panel(id);
       await capture(`run2-${id}`);

@@ -79,8 +79,9 @@ the page of the module that takes them (`crates/hh-core/src/action.rs` has them 
 
 `content/*.json`, embedded in `hh-core`: resources (16), buildings (20), commands (23),
 research (15), events (33: twenty-three the quest chain, three side quests), projects (15),
-achievements (6), rivals (4), Earth techs (6, `earth_tech.json`), and the UI's nav tiles
-(`nav.json`, 16: when each panel's tile shows; display only). Act 1's beats are draft from
+achievements (6), rivals (4), Earth techs (6, `earth_tech.json`), and two display-only
+files: the UI's nav tiles (`nav.json`, 18: when each panel's tile shows) and the acts
+(`acts.json`, 4: each act's name and the chain quest it opens with, [events.md](events.md)). Act 1's beats are draft from
 1.5 on (1.1 to 1.4 open one mechanic at a time from a base of Solar Panels and Data Centers), Acts 2 to 4 unaligned scaffolding ([../arc.md](../arc.md)). Ids are unique across all files but `nav.json`, whose ids are panel names.
 Buildings resolve in file order; quests chain in file order.
 

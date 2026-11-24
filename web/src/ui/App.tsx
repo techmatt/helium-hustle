@@ -30,9 +30,9 @@ import {
   Research,
   Retirement,
   Stats,
-  Story,
 } from './panels';
 import { Right } from './Right';
+import { Achievements, Story } from './Story';
 import { Dyson, EarthLab, Ending, MetaController, Timeline, Vault } from './Saga';
 import { TakeoverView, useTakeoversChanged, type Takeover } from './Takeover';
 import { cortexMockTakeover } from './CortexMock';
@@ -157,6 +157,8 @@ function Panel({ id, s, program }: { id: string; s: Store; program: number }) {
       return <Stats s={s} />;
     case 'story':
       return <Story s={s} />;
+    case 'achievements':
+      return <Achievements s={s} />;
     case 'timeline':
       return <Timeline s={s} />;
     case 'earth_lab':

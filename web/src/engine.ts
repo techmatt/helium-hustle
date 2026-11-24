@@ -357,6 +357,12 @@ export interface QuestView {
   story: string[];
   progress: ProgressView | null;
   sub_objectives: { id: string; label: string; done: boolean; progress: ProgressView | null }[];
+  /** The design doc's beat id (`1.6`), if it carries one. */
+  beat: string | null;
+  /** The act it belongs to. */
+  act: number | null;
+  /** A later chain quest exists (false on the last). */
+  more: boolean;
 }
 
 export interface StoryView {
@@ -374,6 +380,30 @@ export interface StoryView {
   payoff?: string[];
   /** A main-story quest (false for a side quest; absent on event texts). */
   chain?: boolean;
+  /** The design doc's beat id (`1.6`), on quests that carry one. */
+  beat?: string | null;
+  /** A chain quest's act (`content/acts.json`); null for the rest. */
+  act?: number | null;
+}
+
+/** A side quest started (its trigger happened) or completed. */
+export interface SideQuestView {
+  id: string;
+  beat: string | null;
+  title: string;
+  /** The one-line task. */
+  summary: string;
+  body: string;
+  /** The chain quest it branches off (its completion started it). */
+  parent: string | null;
+  done: boolean;
+  progress: ProgressView | null;
+}
+
+/** An act the story has reached. */
+export interface ActView {
+  act: number;
+  name: string;
 }
 
 export interface AchievementView {
@@ -556,6 +586,10 @@ export interface View {
   quest: QuestView | null;
   completed_quests: string[];
   story: StoryView[];
+  /** Side quests started or completed, in content order. */
+  side_quests: SideQuestView[];
+  /** The acts reached, in order. */
+  acts: ActView[];
   event_texts: StoryView[];
   achievement_list: AchievementView[];
   rivals: { id: string; name: string; good: string; dumps_seen: number }[];

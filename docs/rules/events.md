@@ -100,7 +100,7 @@ feed and the view's event list (display only). `title`, `summary` and `body` are
 rule reads (the view hands a boredom phase's body its `rate`, the phase's boredom per day,
 and the UI fills `{rate}` with it as Stats shows boredom growth). The run records the day
 each one-off fired (`Run.events`, display only); the view lists them by that day, content
-order within a day, and Story shows them newest first.
+order within a day, and the right column's Events Story section shows them newest first.
 
 **Story modals** (UI only: no rule reads them, sims never see them). A chain quest's `story`
 (shown as it becomes active) and `payoff` (shown as it completes) are paragraphs, one modal
@@ -109,6 +109,16 @@ quest moves on, the web UI pauses and shows the finished quests' payoffs (and th
 quest passed through the same day), then the new quest's story with its task, resuming after
 the last; a new game shows only 1.1's. A quest with no `story` shows its `body`. The view
 carries them (`quest.story`; each completed quest's `chain`, `story` and `payoff`).
+
+**Story's timeline** (display only). Each chain quest belongs to an act: `content/acts.json`
+names the acts (placeholder names) and the chain quest each opens with; a quest is in the
+last act opened at or before it. The view carries each quest's `beat` and `act`, the acts
+reached (`acts`: an act whose first quest is active or completed), whether a later chain
+quest exists (`quest.more`), and `side_quests`: each side quest started (its trigger
+happened) or completed, with the chain quest it branches off (`parent`, its trigger's quest)
+and its progress (a side quest's trigger must be a chain quest's completion: a load error
+otherwise). The Story panel draws the finished beats, the active one and a "???" from
+these; a finished beat's click replays its modals.
 
 **Activity feed** (display: no rule reads it). The run keeps a feed of what happened, by
 day: each completed quest, earned achievement, completed project and bought research (the
