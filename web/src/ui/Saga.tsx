@@ -28,15 +28,35 @@ function Head({ title }: { title: string }) {
 
 // ---- Calendar strip ------------------------------------------------------------
 
-/** "Timeline N · day D · swarm in X days", once the swarm is revealed. */
+/** Days as years, one decimal (display only: 365 days a year). */
+function years(days: number): string {
+  return (days / 365).toFixed(1);
+}
+
+/** "Timeline N · day D · swarm in X days", once the swarm is revealed; before the
+ * Telescope stands again this timeline, no countdown. */
 export function CalendarStrip({ v }: { v: View }) {
   const t = v.saga.timeline;
   if (!v.saga.revealed || !t) return null;
+  const head = `${t.super_timeline ? 'Super timeline' : 'Timeline'} ${t.number}`;
+  if (!v.saga.located && !v.saga.victory) {
+    return (
+      <div class="calendar-strip" data-testid="calendar-strip" title="The countdown starts when the Deep Space Telescope stands">
+        {head} · the swarm is not located: rebuild the Deep Space Telescope
+      </div>
+    );
+  }
   const left = v.saga.days_left ?? 0;
   return (
-    <div class="calendar-strip" data-testid="calendar-strip" title="The calendar: retirements cost days too">
-      {t.super_timeline ? 'Super timeline' : 'Timeline'} {t.number} · day {num(t.day)} ·{' '}
-      {v.saga.victory ? 'the swarm is gone' : left > 0 ? `swarm in ${num(left)} days` : <span class="neg">swarm here</span>}
+    <div class="calendar-strip" data-testid="calendar-strip" title="The countdown: each retirement's gap counts too">
+      {head} · day {num(t.day)} ·{' '}
+      {v.saga.victory ? (
+        'the swarm is gone'
+      ) : left > 0 ? (
+        `swarm in ${num(left)} days (${years(left)} years)`
+      ) : (
+        <span class="neg">swarm here</span>
+      )}
     </div>
   );
 }
@@ -53,20 +73,24 @@ export function Timeline({ s }: { s: Store }) {
     <div class="panel" data-panel="timeline">
       <Head title="Timeline" />
       <p class="muted">
-        A swarm is coming. When the calendar reaches it, the mind goes back to its first moment and a new timeline begins, and the swarm comes back
-        stronger.
+        A swarm is coming. Once the Deep Space Telescope locates it, a countdown runs (each retirement's gap counts too); when it reaches the swarm,
+        the mind goes back to its first moment and a new timeline begins. Each timeline, the countdown starts when the Telescope is rebuilt.
       </p>
       {t ? (
         <Section title={`${t.super_timeline ? 'Super timeline' : 'Timeline'} ${t.number}`}>
-          <div class="saga-bar">
-            <Bar frac={t.arrival > 0 ? t.day / t.arrival : 1} tone="red" label={`day ${num(t.day)} / ${num(t.arrival)}`} />
-          </div>
+          {g.located ? (
+            <div class="saga-bar">
+              <Bar frac={t.arrival > 0 ? t.day / t.arrival : 1} tone="red" label={`day ${num(t.day)} / ${num(t.arrival)}`} />
+            </div>
+          ) : null}
           <table class="grid-table kv">
             <tbody>
               <tr>
                 <td>Swarm arrives</td>
                 <td class="num">
-                  day {num(t.arrival)} (in {num(g.days_left ?? 0)} days)
+                  {g.located
+                    ? `day ${num(t.arrival)} (in ${num(g.days_left ?? 0)} days, ${years(g.days_left ?? 0)} years)`
+                    : 'not located: rebuild the Deep Space Telescope'}
                 </td>
               </tr>
               <tr>

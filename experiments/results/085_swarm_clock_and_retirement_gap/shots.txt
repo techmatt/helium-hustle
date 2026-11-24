@@ -1,0 +1,7 @@
+fresh game: calendar strip null
+shot 085_act1_no_calendar
+after 1.11: Timeline 1 · day 2 · swarm in 36.5K days (100.0 years)
+shot 085_countdown_after_telescope
+after a retirement: Timeline 1 · day 1,827 · swarm in 34.7K days (95.0 years)
+the retirement moved the countdown 1825 days
+shot 085_after_retirement

@@ -86,6 +86,18 @@ Programs have their own part ([programs.md](programs.md)).
   Attention linearly. Retirement wipes buildings, resources, research, talent points (not
   built) and active programs; it keeps loadouts (which exist from the start and are always kept), bests
   and firsts, achievements, storyline progress, global projects, ideology and adversaries.
+  Every retirement, in any act, simulates this same gap (2026-11-24): one parameter
+  (`career.gap_days`), which in Acts 2 and up also moves the swarm's countdown; no year
+  counter or calendar in Act 1.
+- **The swarm's clock (2026-11-24).** The countdown starts when 1.11's Deep Space Telescope
+  completes; before that nothing counts toward the swarm, so a player who hasn't finished it
+  never reaches a timeline's end. Each timeline it starts when the Telescope is rebuilt (same
+  cost, no cheaper rebuild). Arrival: placeholder 100 years (36,500 days) after discovery,
+  the same every timeline; carried Earth science and research only push it later. No
+  per-timeline shortening or arrival floor (escalation is an Act 4 idea); the false victory's
+  entanglement still shortens later timelines (Matt, question 085_1: the draft's intended
+  escalation), and the other draft swarm mechanics stand. *Default (085):* a super
+  timeline's `super_arrival_days` is also 100 years (was 6,000 days).
 - **Major ranks (2026-11-21).** Ideology rank 5 is a major rank (probably 10, 15 and 20 too)
   bringing a discrete major change; the ranks between scale.
 - **The day's rate is production less demand (2026-11-20).** What buildings and programs

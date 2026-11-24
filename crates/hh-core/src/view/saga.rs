@@ -15,7 +15,10 @@ pub struct SagaView {
     /// The swarm is revealed: the calendar shows.
     pub revealed: bool,
     pub timeline: Option<Timeline>,
-    /// Calendar days left to the swarm.
+    /// The swarm is located this timeline (the Deep Space Telescope stands):
+    /// the countdown runs. Revealed but not located: rebuild the Telescope.
+    pub located: bool,
+    /// Calendar days left to the swarm (`None` until located).
     pub days_left: Option<u64>,
     /// Earth science to spend.
     pub science: Fx,
@@ -77,7 +80,8 @@ pub fn build(r: &Rules, g: &GameState) -> SagaView {
     SagaView {
         revealed: s.timeline.is_some(),
         timeline: s.timeline.clone(),
-        days_left: s.timeline.as_ref().map(|t| t.arrival.saturating_sub(t.day)),
+        located: s.timeline.is_some() && timeline::located(g),
+        days_left: s.timeline.as_ref().filter(|_| timeline::located(g)).map(|t| t.arrival.saturating_sub(t.day)),
         science: s.science,
         ended: s.ended,
         repelled: s.repelled,

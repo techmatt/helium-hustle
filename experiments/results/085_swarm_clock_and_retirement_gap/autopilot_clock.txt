@@ -1,0 +1,14 @@
+clock: tick 14061 timeline 1 located: swarm in Some(36498) days
+clock: tick 18081 timeline 1 retirement: swarm in 30653 days (84.0 years)
+clock: tick 26091 timeline 1 retirement: swarm in 20818 days (57.0 years)
+clock: tick 32134 timeline 1 retirement: swarm in 12950 days (35.5 years)
+clock: tick 36410 timeline 1 retirement: swarm in 6849 days (18.8 years)
+clock: tick 45446 timeline 2 located: swarm in Some(50605) days
+clock: tick 46644 timeline 2 retirement: swarm in 47582 days (130.4 years)
+clock: tick 54095 timeline 2 retirement: swarm in 38306 days (104.9 years)
+clock: tick 62095 timeline 2 retirement: swarm in 28481 days (78.0 years)
+clock: tick 68096 timeline 2 retirement: swarm in 20655 days (56.6 years)
+clock: tick 72372 timeline 2 retirement: swarm in 14554 days (39.9 years)
+clock: tick 78095 timeline 2 retirement: swarm in 7006 days (19.2 years)
+clock: tick 88928 timeline 4 located: swarm in Some(5999) days
+clock: tick 90454 timeline 4 retirement: swarm in 2648 days (7.3 years)

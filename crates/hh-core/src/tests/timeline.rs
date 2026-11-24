@@ -14,6 +14,18 @@ fn revealed(r: &crate::Rules) -> GameState {
     g
 }
 
+/// The Telescope stands this timeline: the swarm is located, the countdown runs.
+fn locate(g: &mut GameState) {
+    g.career.projects.completions.insert(timeline::TELESCOPE.into(), 1);
+}
+
+/// Jumps the countdown to the day before the swarm, then plays that day.
+fn reach_arrival(r: &crate::Rules, g: &mut GameState) {
+    let t = g.saga.timeline.as_mut().unwrap();
+    t.day = t.arrival - 1;
+    r.advance(g, 1);
+}
+
 #[test]
 fn nothing_runs_before_the_reveal() {
     let r = rules();
@@ -24,12 +36,14 @@ fn nothing_runs_before_the_reveal() {
 }
 
 #[test]
-fn the_calendar_sends_earth_science_and_retirements_cost_days() {
+fn the_calendar_sends_earth_science_and_retirements_cost_the_gap() {
     let r = rules();
     let mut g = revealed(&r);
+    locate(&mut g);
+    r.advance(&mut g, 1);
     let t = g.saga.timeline.clone().unwrap();
     assert_eq!((t.number, t.day), (1, 1));
-    assert_eq!(t.arrival, 3000, "arrival_days at strength 1");
+    assert_eq!(t.arrival, 36_500, "arrival_days at strength 1");
     set(&mut g, "earth_science", "50");
     r.advance(&mut g, 1);
     assert_eq!(g.saga.science, f("50"));
@@ -37,22 +51,44 @@ fn the_calendar_sends_earth_science_and_retirements_cost_days() {
     let day = g.saga.timeline.as_ref().unwrap().day;
     g.run.enabled_panels.insert("retirement".into());
     r.apply(&mut g, &Action::Retire).unwrap();
-    assert_eq!(g.saga.timeline.as_ref().unwrap().day, day + 30, "retire_days");
+    assert_eq!(g.saga.timeline.as_ref().unwrap().day, day + r.p.career.gap_days, "one gap, every act");
+    assert_eq!(r.p.career.gap_days, 1825);
+}
+
+#[test]
+fn nothing_counts_toward_the_swarm_until_the_telescope_stands() {
+    let r = rules();
+    let mut g = revealed(&r);
+    let v = r.view(&g);
+    assert!(v.saga.revealed && !v.saga.located && v.saga.days_left.is_none(), "no countdown");
+    r.advance(&mut g, 10);
+    g.run.enabled_panels.insert("retirement".into());
+    r.apply(&mut g, &Action::Retire).unwrap();
+    assert_eq!(g.saga.timeline.as_ref().unwrap().day, 0, "neither days nor retirements count");
+    // Even past its arrival day, an unlocated swarm never ends the timeline.
+    g.saga.timeline.as_mut().unwrap().day = 36_500;
+    r.advance(&mut g, 5);
+    assert_eq!(g.saga.ended, 0);
+    g.saga.timeline.as_mut().unwrap().day = 0;
+    locate(&mut g);
+    r.advance(&mut g, 1);
+    let v = r.view(&g);
+    assert!(v.saga.located);
+    assert_eq!(v.saga.days_left, Some(36_499));
 }
 
 #[test]
 fn the_swarm_ends_a_timeline_and_the_mind_keeps_what_it_learned() {
     let r = rules();
     let mut g = revealed(&r);
+    locate(&mut g);
     g.career.retirements = 4;
     g.career.best_run_days = 900;
     g.saga.science = f("1000");
     r.apply(&mut g, &Action::BuyEarthTech { tech: "boredom_dampers".into() }).unwrap();
     g.saga.science = f("0");
     g.saga.timeline.as_mut().unwrap().science_made = f("4000");
-    let arrival = g.saga.timeline.as_ref().unwrap().arrival;
-    let day = g.saga.timeline.as_ref().unwrap().day;
-    r.advance(&mut g, arrival - day);
+    reach_arrival(&r, &mut g);
     assert_eq!(g.saga.ended, 1, "the first swarm always wins");
     assert_eq!(g.saga.repelled, 0);
     let t = g.saga.timeline.as_ref().unwrap();
@@ -71,6 +107,7 @@ fn the_swarm_ends_a_timeline_and_the_mind_keeps_what_it_learned() {
 fn a_timeline_end_clears_timeline_projects_and_their_buildings_but_keeps_forever_ones() {
     let r = rules();
     let mut g = revealed(&r);
+    locate(&mut g);
     let receiver = crate::content::content().building("microwave_receiver").unwrap();
     assert!(!crate::modules::economy::requirement_met(&g, &receiver.requires));
     g.career.projects.completions.insert("microwave_power".into(), 1);
@@ -78,9 +115,7 @@ fn a_timeline_end_clears_timeline_projects_and_their_buildings_but_keeps_forever
     // A forever book's progress and completions (no forever row yet: the book itself).
     g.career.forever_projects.completions.insert("some_forever".into(), 3);
     g.career.forever_projects.progress.insert("some_forever".into(), [("credits".to_string(), f("5"))].into());
-    let arrival = g.saga.timeline.as_ref().unwrap().arrival;
-    let day = g.saga.timeline.as_ref().unwrap().day;
-    r.advance(&mut g, arrival - day);
+    reach_arrival(&r, &mut g);
     assert_eq!(g.saga.ended, 1);
     assert!(g.career.projects.completions.is_empty(), "timeline projects reset");
     assert!(!crate::modules::economy::requirement_met(&g, &receiver.requires), "the building follows its project");
@@ -121,9 +156,7 @@ fn global_projects_effects_last_as_long_as_their_completion() {
     assert_eq!(science, f("1.1"));
 
     // The timeline ends: every effect goes with its completion.
-    let arrival = g.saga.timeline.as_ref().unwrap().arrival;
-    let day = g.saga.timeline.as_ref().unwrap().day;
-    r.advance(&mut g, arrival - day);
+    reach_arrival(&r, &mut g);
     assert_eq!(g.saga.ended, 1);
     let v = r.view(&g);
     assert!(!v.if_open && !programs::if_unlocked(&g), "if is locked");
@@ -136,6 +169,9 @@ fn global_projects_effects_last_as_long_as_their_completion() {
     }
     assert!(career::flag_set(&g, timeline::REVEAL_FLAG), "what the Telescope revealed stays known");
     assert!(g.saga.timeline.is_some() && g.run.enabled_panels.contains("timeline"), "the calendar stays");
+    assert!(!v.saga.located && v.saga.days_left.is_none(), "no countdown until the Telescope is rebuilt");
+    r.advance(&mut g, 3);
+    assert_eq!(g.saga.timeline.as_ref().unwrap().day, 0);
 
     // Re-funded, each gives its effect back; the Telescope replays no story.
     let quest_notes = |g: &GameState| g.career.log.iter().filter(|e| e.kind == "quest").count();
@@ -146,6 +182,7 @@ fn global_projects_effects_last_as_long_as_their_completion() {
     assert!(g.run.research.contains("basic_blueprints") && g.run.research.contains("advanced_blueprints"));
     finish(&r, &mut g, "deep_space_telescope");
     assert_eq!((quest_notes(&g), g.career.completed_quests.clone()), before, "no quest completes again");
+    assert_eq!(g.saga.timeline.as_ref().unwrap().day, 1, "the rebuilt Telescope starts the countdown");
     let v = r.view(&g);
     for text in ["Science output ×1.1", "Nationalist growth ×1.1"] {
         assert!(v.live_rewards.iter().any(|x| x.contains(text)), "Stats shows {text}: {:?}", v.live_rewards);
@@ -174,16 +211,23 @@ fn a_telescope_fund_grows_nationalist_ideology_a_tenth_faster() {
 fn a_later_swarm_can_be_repelled_once_and_returns_entangled() {
     let r = rules();
     let mut g = revealed(&r);
+    locate(&mut g);
     g.saga.ended = 1;
     g.saga.timeline.as_mut().unwrap().science_made = f("3000");
     let t = g.saga.timeline.clone().unwrap();
-    r.advance(&mut g, t.arrival - t.day);
+    reach_arrival(&r, &mut g);
     assert_eq!(g.saga.repelled, 1);
     assert!(g.saga.entangled);
     let t2 = g.saga.timeline.clone().unwrap();
     assert_eq!(t2.number, 1, "the timeline goes on");
     assert_eq!(t2.arrival, t.arrival + 600);
     assert_eq!(t2.strength, f("1.5"));
+    // The entangled swarm comes sooner in every later timeline.
+    reach_arrival(&r, &mut g);
+    let t3 = g.saga.timeline.clone().unwrap();
+    assert_eq!(t3.number, 2);
+    // 3,000 made × 0.25 carried × 0.05 days each: 37 days later, then / 1.5.
+    assert_eq!(t3.arrival, (36_500 + 37) * 2 / 3, "(arrival_days + carried) / entangle_mult");
 }
 
 #[test]
@@ -195,14 +239,14 @@ fn techs_need_science_and_their_quest_and_scopes_expire() {
     g.career.completed_quests.insert("qearth_science".into());
     r.apply(&mut g, &Action::BuyEarthTech { tech: "compressed_blocks".into() }).unwrap();
     assert_eq!(g.saga.science, f("4400"));
-    let t = g.saga.timeline.clone().unwrap();
-    r.advance(&mut g, t.arrival - t.day);
+    locate(&mut g);
+    reach_arrival(&r, &mut g);
     assert_eq!(g.saga.timeline.as_ref().unwrap().number, 2);
     // Run 1 of the new timeline got the blocks (on top of its usual start).
     assert!(g.amount("titanium") >= f("20"));
     assert_eq!(g.saga.techs.get("compressed_blocks"), Some(&0), "next_timeline: one more timeline");
-    let t = g.saga.timeline.clone().unwrap();
-    r.advance(&mut g, t.arrival - t.day);
+    locate(&mut g);
+    reach_arrival(&r, &mut g);
     assert!(!g.saga.techs.contains_key("compressed_blocks"));
     assert!(g.saga.pending_start.is_empty() && g.amount("titanium") < f("20"), "the blocks paid once");
 }
@@ -220,6 +264,7 @@ fn the_consensus_engine_ends_zero_sum_funding() {
 fn the_vault_buys_a_super_timeline_and_a_finished_sphere_wins() {
     let r = rules();
     let mut g = revealed(&r);
+    locate(&mut g);
     assert!(r.apply(&mut g, &Action::Deposit { resource: "tachyon".into() }).is_err(), "needs the vault");
     g.saga.techs.insert("temporal_vault".into(), u32::MAX);
     set(&mut g, "tachyon", "3000");
@@ -230,8 +275,9 @@ fn the_vault_buys_a_super_timeline_and_a_finished_sphere_wins() {
     r.apply(&mut g, &Action::BeginSuperTimeline).unwrap();
     let t = g.saga.timeline.clone().unwrap();
     assert!(t.super_timeline);
-    assert_eq!(t.arrival, 6000);
+    assert_eq!(t.arrival, 36_500);
     assert!(g.career.projects.completions.contains_key("foundation_grant"), "projects survive into it");
+    assert!(timeline::located(&g), "a standing Telescope too: its countdown runs at once");
     // A retirement inside it keeps resources.
     set(&mut g, "neodymium", "40");
     g.run.enabled_panels.insert("retirement".into());
@@ -244,8 +290,7 @@ fn the_vault_buys_a_super_timeline_and_a_finished_sphere_wins() {
     r.apply(&mut g, &Action::Retire).unwrap();
     assert_eq!(g.saga.timeline.as_ref().unwrap().science_made, made + f("7"));
     g.career.projects.completions.insert(timeline::DYSON.into(), 1);
-    let t = g.saga.timeline.clone().unwrap();
-    r.advance(&mut g, t.arrival - t.day);
+    reach_arrival(&r, &mut g);
     assert!(g.saga.victory);
     assert_eq!(g.saga.history.last().unwrap().outcome, "victory");
     let day = g.saga.timeline.as_ref().unwrap().day;

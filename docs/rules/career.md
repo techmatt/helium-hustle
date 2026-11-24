@@ -33,16 +33,17 @@ asked for that day (programs.md); the Retire action retires between days.
 folds the run into the
 career (adds the run's stats and day count to the lifetime totals, raises each personal best
 it beats, counts a retirement, raises the run number), keeps the run's ideology scores in
-the career, runs the retirement gap (below), charges the calendar its `retire_days` once the
-swarm is revealed (draft, [timeline.md](timeline.md)), then starts a new run. The run's day
+the career, runs the retirement gap (below), moves the swarm's countdown by the same gap once
+the swarm is located (draft, [timeline.md](timeline.md)), then starts a new run. The run's day
 count at retirement is its length (a forced retirement counts the tick it happened on).
 
 **The retirement gap** (draft, 049). Between runs `gap_days` days pass, simulated one by
 one, in which only the slow systems run: each carried ideology score is multiplied by
 `0.5^(1 / half_life_days)` each day ([ideology.md](ideology.md); with the baseline's 1,825
 days and 365-day half-life, about 3% of each score is left), and each adversary's Attention
-loses its daily decay ([attention.md](attention.md)). The career counts the gap's days. The
-gap is unseen in Act 1 (no calendar); it is not the calendar's `retire_days`.
+loses its daily decay ([attention.md](attention.md)). The career counts the gap's days. It is
+the one gap of every act: unseen in Act 1 (no calendar), and in Acts 2 and up the same days
+move the swarm's countdown.
 
 **A new run** (a new game is run 1 of a fresh career), in this order:
 

@@ -12,30 +12,39 @@ when the Deep Space Telescope global project first does ([events.md](events.md))
 flag `swarm_revealed`, opens the Timeline panel and the Experiment Lab, and Act 2 begins;
 all of that stays for the career. The Telescope itself is a `timeline` project: a timeline's
 end takes it, and re-funding it brings back only its passive ([projects.md](projects.md)).
-From that same day a **timeline** runs: a calendar day count and the day the swarm arrives.
-Before the reveal there is no calendar. The draft `quiet_days` condition (days this run since
+From that same day a **timeline** runs: its number, its Earth science and the swarm's
+**countdown** (a day count and the day the swarm arrives). Before the reveal there is no
+calendar. The draft `quiet_days` condition (days this run since
 the player's last order, `Run.last_order`: the run's day of the last applied action other than
 a cheat; programs don't count) stays in the engine; no row uses it.
 
+**The countdown runs only while the swarm is located:** while the Telescope stands completed
+this timeline (`timeline::located`). In timeline 1 that is from 1.11 on; a timeline's end
+takes the Telescope (same cost to rebuild), so each later timeline's countdown starts when it
+is rebuilt (a super timeline keeps it if it stood when the vault was spent). Until then no day and no retirement counts, the view
+shows no countdown, and the swarm can't arrive: a player who never finishes the Telescope
+never reaches a timeline's end.
+
 **The day's last step** (after retirement, before the activity trim): the run's whole stock of
 `earth_science` (made by the Experiment Lab from science) goes to Earth, adding to the
-spendable Earth science and to this timeline's `science_made`; the calendar day rises; on the
-arrival day the swarm arrives. **Each retirement costs `retire_days` calendar days** (and
-sends that day's Earth science first).
+spendable Earth science and to this timeline's `science_made`; while located, the countdown
+day rises and on the arrival day the swarm arrives. **Each retirement moves the countdown by
+the retirement gap**, `career.gap_days` (1,825 days, 5 years; [career.md](career.md)), the one
+gap of every act, while located (and sends that day's Earth science first).
 
 **Arrival day.** At a timeline's start: `(arrival_days + carried × arrival_days_per_science +
-Σ swarm delays) / strength`, whole days, at least `min_arrival_days`, where `carried` is the
-spendable Earth science carried in and `strength = swarm_growth^(timeline − 1)`, times
-`entangle_mult` once the swarm has learned entanglement, at most `max_strength`. A super
-timeline's is `super_arrival_days`.
+Σ swarm delays) / strength`, whole days, where `carried` is the spendable Earth science carried
+in. `strength` is 1, or `entangle_mult` once the swarm has learned entanglement (the false
+victory's later escalation), so the base (100 years) is the same every timeline until then and
+carried science and delay techs only push it later. A super timeline's is `super_arrival_days`.
 
 **The swarm arrives.**
 
 1. In a super timeline with the Dyson Sphere project completed: **victory**. The calendar stops
    for good.
 2. Otherwise, once per game, from the second timeline on, if `science_made ≥ repel_science`:
-   the swarm is **repelled** (the false victory). It learns entanglement: its
-   strength × `entangle_mult`, and it returns `return_days` later.
+   the swarm is **repelled** (the false victory). It learns entanglement: its strength
+   becomes `entangle_mult` for the rest of the game, and it returns `return_days` later.
 3. Otherwise the **timeline ends**: the mind is sent back.
 
 **A timeline ends** (or a super timeline begins). The timeline goes to the history. Techs with
@@ -79,18 +88,14 @@ credits; like an effect command it needs its full cost.
 <!-- params:timeline -->
 | Param | Baseline | Range | Meaning |
 |---|---|---|---|
-| `arrival_days` | 3000 | 1 to 10000000 | Calendar days to the swarm in timeline 1, before delays and strength. |
+| `arrival_days` | 36500 | 1 to 10000000 | Countdown days from the swarm's discovery (the Telescope) to its arrival, in every timeline, before delays. |
 | `arrival_days_per_science` | 0.05 | 0 to 1000 | Days of delay per unit of Earth science carried into a timeline. |
-| `swarm_growth` | 1.25 | 1 to 100 | The swarm's strength factor per timeline (arrival days divide by strength). |
-| `entangle_mult` | 1.5 | 1 to 100 | Strength factor once the swarm learns entanglement (after the first false victory). |
-| `repel_science` | 3000 | 0 to 100000000 | Earth science made this timeline, per unit of strength, that repels the swarm once. |
-| `min_arrival_days` | 1500 | 1 to 10000000 | The swarm never arrives sooner than this many calendar days into a timeline. |
-| `max_strength` | 100 | 1 to 1000000 | The swarm's strength never passes this. |
+| `entangle_mult` | 1.5 | 1 to 100 | The swarm's strength once it learns entanglement (after the first false victory). |
+| `repel_science` | 3000 | 0 to 100000000 | Earth science made this timeline that repels the swarm once. |
 | `return_days` | 600 | 1 to 10000000 | Calendar days until a repelled swarm returns. |
-| `retire_days` | 30 | 0 to 100000 | Calendar days each retirement costs. |
 | `science_carry` | 0.25 | 0 to 1 | Fraction of a timeline's Earth science made that carries into the next. |
 | `super_tachyon` | 3000 | 0 to 100000000 | Tachyon in the vault a super timeline spends. |
-| `super_arrival_days` | 6000 | 1 to 10000000 | Calendar days to the swarm in a super timeline. |
+| `super_arrival_days` | 36500 | 1 to 10000000 | Calendar days to the swarm in a super timeline. |
 | `super_carry` | credits 0.25, dyson_material 1, neodymium 1 | 0 to 1 | Fraction of each resource a super timeline's retirement keeps for the next run. |
 <!-- /params -->
 

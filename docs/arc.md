@@ -36,7 +36,7 @@ research and projects gated on it).
 | 1.8 Lab | `qlab` | 1.7 | a Research Lab | the full research catalog, Projects and Foundation Grant, the Recreation Dome; Geopolitical Intelligence shows; the first global projects (Blueprint Archive, then Conditional Logic, opens `if`) are offered | draft |
 | 1.9 Three voices | `qthree_voices` | 1.8 | career-best rank 5 on each axis (three sub-objectives) | each axis's major rank-5 effect (ideology.md); its rank-5 global project | draft |
 | 1.10 Land rush | `qland_rush` | 1.9 | rivals present (Attention from land claimed) | the Contest Claims command (neutralizes the rivals) | draft |
-| 1.11 Deep Space Telescope | `qdeep_space_telescope` | 1.10 | the Deep Space Telescope global project (30,000 credits and 5,000 science at no faster than 3,000 days, so several runs) | Act 2: the `swarm_revealed` flag, the calendar, the Timeline view, the Experiment Lab | draft |
+| 1.11 Deep Space Telescope | `qdeep_space_telescope` | 1.10 | the Deep Space Telescope global project (30,000 credits and 5,000 science at no faster than 3,000 days, so several runs) | Act 2: the `swarm_revealed` flag, the swarm's 100-year countdown, the Timeline view, the Experiment Lab | draft |
 | 1.a Big launch | `qbig_launch` (side) | 1.6 | one launch pays 1,000+ credits | Disrupt Speculators (also takes speculator Attention off) | draft |
 | 1.b Full cluster | `qfull_cluster` (side) | 1.8 | every item of one research category of 2+ items (not the Blueprints) bought in one run | placeholder: every run starts with 50 Science | draft |
 | 1.c Blueprints for everyone | `qblueprints_for_everyone` (side) | 1.8 | the Blueprint Archive global project (placeholder: 500 credits, 200 science) | Basic and Advanced Blueprints count as bought at the start of every run | draft |
@@ -50,10 +50,10 @@ Placeholder choices (049), all for Matt to keep or replace:
   rivals' Attention to zero (the neutralize stub). Speculator disruption (1.a): the existing
   *Disrupt Speculators*, now gated on 1.a instead of Market Awareness, also takes 20
   speculator Attention off per execution.
-- **Retirement.** A 5-year gap (1,825 days), simulated day by day, unseen (no calendar in Act
-  1): ideology scores halve every 365 days (so a run starts with about 3% of the last one's
-  scores), Attention decays linearly. Retirement keeps loadouts, bests and firsts,
-  achievements, quests, global projects, ideology and adversaries.
+- **Retirement.** A 5-year gap (1,825 days), simulated day by day, the same in every act and
+  unseen in Act 1 (no calendar): ideology scores halve every 365 days (so a run starts with
+  about 3% of the last one's scores), Attention decays linearly. Retirement keeps loadouts,
+  bests and firsts, achievements, quests, global projects, ideology and adversaries.
 - **Mapped onto what existed.** Self-Maintenance (the lesser boredom measure) is Stress
   Tolerance, in the research category of that name; Daydreaming is the renamed Dream
   Protocols. Research categories are 1.b's clusters (Overclock Algorithms and Market Analysis
@@ -76,9 +76,18 @@ The 042 scaffolding: rough mechanics, placeholder numbers, art and text, kept ru
 autopilot reaches the ending. **Unaligned with the design doc.** Act 2 starts when the
 Telescope (1.11) is finished.
 
+**The swarm's clock.** Finishing the Telescope discovers the swarm and starts its countdown:
+placeholder 100 years (36,500 days), the same every timeline, pushed later only by carried
+Earth science and research; each retirement's 5-year gap moves it 5 years. Nothing counts
+before the Telescope, so a player who never finishes it never reaches a timeline's end. A
+timeline's end takes the Telescope, and each new timeline's countdown starts when it is
+rebuilt (same cost). The false victory's entangled swarm comes sooner in later timelines
+(×1/1.5); a super timeline's is its own `super_arrival_days` (also 100 years), counted only
+while the Telescope stands (kept if it stood when the vault was spent, else rebuilt).
+
 | Story step | Quest | Opens | Status |
 |---|---|---|---|
-| Experiments as a Service | Q8 `qexperiments_service`: an Experiment Lab | the Earth Lab view; each retirement costs calendar days | unaligned |
+| Experiments as a Service | Q8 `qexperiments_service`: an Experiment Lab | the Earth Lab view | unaligned |
 | Earth Science | Q9 `qearth_science`: 1,000 Earth science this timeline | | unaligned |
 | The Swarm Arrives | Q10 `qswarm_arrives`: a timeline ends (the mind is sent back to run 1) | the Timeline history | unaligned |
 | Catastrophic Success | Q11 `qcatastrophic_success`: the Consensus Engine tech | zero-cost Fund | unaligned |

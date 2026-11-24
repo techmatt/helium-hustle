@@ -1,6 +1,6 @@
 # Rules
 
-The rules as implemented, rules revision **26** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **27** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
 The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
@@ -67,8 +67,8 @@ One tick is one in-game day. Each tick, in this order (`Rules::tick`, `rules.rs`
 15. The run's **day** count rises.
 16. Boredom at its cap **forces retirement**; otherwise a program's `retire` line that ran today
     retires the run voluntarily. The next run starts at once (career).
-17. **Timeline** (draft, after the reveal): Earth science goes to Earth, the calendar
-    rises, and the swarm arrives on its day (timeline).
+17. **Timeline** (draft, after the reveal): Earth science goes to Earth and, while the
+    Telescope stands, the countdown rises and the swarm arrives on its day (timeline).
 18. The **activity feed** is cut to its newest `activity_kept` lines (events; display only).
     The same trim ends every applied action.
 

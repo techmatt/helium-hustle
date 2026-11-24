@@ -15,6 +15,8 @@ use std::collections::BTreeMap;
 
 /// The flag 1.11 (the Deep Space Telescope) sets: the swarm is revealed and the calendar starts.
 pub const REVEAL_FLAG: &str = "swarm_revealed";
+/// The project whose completion locates the swarm: the countdown runs while it stands.
+pub const TELESCOPE: &str = "deep_space_telescope";
 /// The resource the Experiment Lab makes; each day's stock goes to Earth.
 pub const EARTH_SCIENCE: &str = "earth_science";
 /// The vault's resource.
@@ -29,15 +31,11 @@ pub static DEF: ModuleDef = ModuleDef {
     variants: &[VariantDef {
         name: "draft",
         params: &[
-            param("arrival_days", K::Int, Some(("1", "10000000")), "calendar days to the swarm in timeline 1, before delays and strength"),
+            param("arrival_days", K::Int, Some(("1", "10000000")), "countdown days from the swarm's discovery (the Telescope) to its arrival, in every timeline, before delays"),
             param("arrival_days_per_science", K::Fx, Some(("0", "1000")), "days of delay per unit of Earth science carried into a timeline"),
-            param("swarm_growth", K::Fx, Some(("1", "100")), "the swarm's strength factor per timeline (arrival days divide by strength)"),
-            param("entangle_mult", K::Fx, Some(("1", "100")), "strength factor once the swarm learns entanglement (after the first false victory)"),
-            param("repel_science", K::Fx, Some(("0", "100000000")), "Earth science made this timeline, per unit of strength, that repels the swarm once"),
-            param("min_arrival_days", K::Int, Some(("1", "10000000")), "the swarm never arrives sooner than this many calendar days into a timeline"),
-            param("max_strength", K::Fx, Some(("1", "1000000")), "the swarm's strength never passes this"),
+            param("entangle_mult", K::Fx, Some(("1", "100")), "the swarm's strength once it learns entanglement (after the first false victory)"),
+            param("repel_science", K::Fx, Some(("0", "100000000")), "Earth science made this timeline that repels the swarm once"),
             param("return_days", K::Int, Some(("1", "10000000")), "calendar days until a repelled swarm returns"),
-            param("retire_days", K::Int, Some(("0", "100000")), "calendar days each retirement costs"),
             param("science_carry", K::Fx, Some(("0", "1")), "fraction of a timeline's Earth science made that carries into the next"),
             param("super_tachyon", K::Fx, Some(("0", "100000000")), "tachyon in the vault a super timeline spends"),
             param("super_arrival_days", K::Int, Some(("1", "10000000")), "calendar days to the swarm in a super timeline"),
@@ -51,13 +49,9 @@ pub static DEF: ModuleDef = ModuleDef {
 pub struct Params {
     pub arrival_days: u64,
     pub arrival_days_per_science: Fx,
-    pub swarm_growth: Fx,
     pub entangle_mult: Fx,
     pub repel_science: Fx,
-    pub min_arrival_days: u64,
-    pub max_strength: Fx,
     pub return_days: u64,
-    pub retire_days: u64,
     pub science_carry: Fx,
     pub super_tachyon: Fx,
     pub super_arrival_days: u64,
@@ -73,13 +67,9 @@ impl Params {
         Ok(Params {
             arrival_days: mc.int("arrival_days") as u64,
             arrival_days_per_science: mc.fx("arrival_days_per_science"),
-            swarm_growth: mc.fx("swarm_growth"),
             entangle_mult: mc.fx("entangle_mult"),
             repel_science: mc.fx("repel_science"),
-            min_arrival_days: mc.int("min_arrival_days") as u64,
-            max_strength: mc.fx("max_strength"),
             return_days: mc.int("return_days") as u64,
-            retire_days: mc.int("retire_days") as u64,
             science_carry: mc.fx("science_carry"),
             super_tachyon: mc.fx("super_tachyon"),
             super_arrival_days: mc.int("super_arrival_days") as u64,
@@ -114,21 +104,27 @@ pub fn has_feature(g: &GameState, feature: &str) -> bool {
     live_effects(g).any(|e| matches!(e, TechEffect::Unlock { feature: f } if f == feature))
 }
 
-/// The swarm's strength in timeline `number`: `growth^(number−1)`, times
-/// `entangle_mult` once it learned entanglement.
-fn strength(r: &Rules, g: &GameState, number: u32) -> Fx {
-    let p = &r.p.timeline;
-    // Capped at `max_strength`, so a long string of lost timelines can't overflow.
-    let s = p.swarm_growth.pow_int(i64::from(number) - 1).unwrap_or(p.max_strength).min(p.max_strength);
-    let s = if g.saga.entangled { s.checked_mul(p.entangle_mult).unwrap_or(p.max_strength) } else { s };
-    s.min(p.max_strength)
+/// The swarm's strength: 1, or `entangle_mult` once it learned entanglement
+/// (the false victory's later escalation). A countdown divides by it.
+fn strength(r: &Rules, g: &GameState) -> Fx {
+    if g.saga.entangled { r.p.timeline.entangle_mult } else { Fx::ONE }
 }
 
-/// Starts timeline `number`: the swarm's arrival from the base, the Earth
-/// science carried in and the delay techs, divided by its strength.
+/// The swarm is located this timeline: the Deep Space Telescope stands
+/// completed. Only then does the countdown run (days and retirements count);
+/// a timeline's end takes the Telescope, so each timeline's countdown starts
+/// when it is rebuilt (a super timeline keeps it).
+pub fn located(g: &GameState) -> bool {
+    super::projects::completed(g, TELESCOPE)
+}
+
+/// Starts timeline `number`: the swarm's countdown from the base, plus the
+/// Earth science carried in and the delay techs, divided by its strength. The
+/// same base in every timeline; only entanglement (after the false victory)
+/// shortens it.
 fn start_timeline(r: &Rules, g: &mut GameState, number: u32, super_timeline: bool) {
     let p = &r.p.timeline;
-    let s = strength(r, g, number);
+    let strength = strength(r, g);
     let arrival = if super_timeline {
         p.super_arrival_days
     } else {
@@ -137,14 +133,15 @@ fn start_timeline(r: &Rules, g: &mut GameState, number: u32, super_timeline: boo
             .sum();
         let carried = (g.saga.science * p.arrival_days_per_science).floor_int().max(0) as u64;
         let base = Fx::from_int((p.arrival_days + carried + delay) as i64);
-        ((base / s).floor_int().max(0) as u64).max(p.min_arrival_days)
+        (base / strength).floor_int().max(0) as u64
     };
-    g.saga.timeline = Some(Timeline { number, day: 0, arrival, strength: s, science_made: Fx::ZERO, super_timeline });
+    g.saga.timeline = Some(Timeline { number, day: 0, arrival, strength, science_made: Fx::ZERO, super_timeline });
     g.note("timeline", &format!("timeline_{number}"));
 }
 
 /// The last step of the day: the calendar starts at the reveal, moves the
-/// day's Earth science to Earth, advances, and meets the swarm on its day.
+/// day's Earth science to Earth and, while the swarm is located, advances
+/// and meets the swarm on its day.
 pub fn tick(r: &Rules, g: &mut GameState) {
     if g.saga.victory {
         return;
@@ -156,6 +153,9 @@ pub fn tick(r: &Rules, g: &mut GameState) {
         start_timeline(r, g, 1, false);
     }
     send_science(g);
+    if !located(g) {
+        return;
+    }
     let t = g.saga.timeline.as_mut().expect("started above");
     t.day += 1;
     if t.day < t.arrival {
@@ -199,7 +199,7 @@ fn arrive(r: &Rules, g: &mut GameState) {
         g.saga.entangled = true;
         let tl = g.saga.timeline.as_mut().expect("a timeline");
         tl.arrival = tl.day + p.return_days;
-        tl.strength = tl.strength.checked_mul(p.entangle_mult).unwrap_or(p.max_strength).min(p.max_strength);
+        tl.strength = p.entangle_mult;
         g.note("swarm_repelled", "false_victory");
         return;
     }
@@ -265,15 +265,19 @@ fn end_timeline(r: &Rules, g: &mut GameState, outcome: &str) {
     super::career::new_run(r, g);
 }
 
-/// A retirement costs calendar days; in a super timeline the run's resources
-/// in `super_carry` are kept (by fraction) for the next run.
+/// A retirement's gap (`career.gap_days`, the one gap of every act) moves the
+/// countdown while the swarm is located; in a super timeline the run's
+/// resources in `super_carry` are kept (by fraction) for the next run.
 pub fn on_retire(r: &Rules, g: &mut GameState) {
     let p = &r.p.timeline;
-    if g.saga.victory {
+    if g.saga.victory || g.saga.timeline.is_none() {
         return;
     }
-    let Some(t) = g.saga.timeline.as_mut() else { return };
-    t.day += p.retire_days;
+    let located = located(g);
+    let t = g.saga.timeline.as_mut().expect("checked above");
+    if located {
+        t.day += r.p.career.gap_days;
+    }
     send_science(g);
     let t = g.saga.timeline.as_ref().expect("checked above");
     let super_timeline = t.super_timeline;

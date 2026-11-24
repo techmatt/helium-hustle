@@ -108,9 +108,10 @@ The `drain` variant has no params (`"params": {}`).
 placeholders but for the draft rows (049): Conditional Logic (offered once quest 1.8 is
 done, its reward the `logic_if` flag that opens `if`, [programs.md](programs.md)) and the
 Deep Space Telescope (offered once 1.10 is done; its first completion completes quest 1.11,
-so it spans several runs: `min_days` 3,000; rebuilt each timeline for its placeholder
-passive, `science_output_mult` and `nationalist_growth_mult` ×1.1, while what 1.11 opened
-stays: [timeline.md](timeline.md)). Chemical Energy Initiative is offered once 1.8 is
+so it spans several runs: `min_days` 3,000; rebuilt each timeline, at the same cost, for
+its placeholder passive, `science_output_mult` and `nationalist_growth_mult` ×1.1, and
+because the swarm's countdown runs only while it stands, while what 1.11 opened stays:
+[timeline.md](timeline.md)). Chemical Energy Initiative is offered once 1.8 is
 done. Blueprint Archive (draft, offered once 1.8 is done: 500 credits and 200 science,
 `min_days` 17) completes side quest 1.c Blueprints for Everyone; its `starting_research`
 reward has both Blueprints bought from the start of every run of the timeline

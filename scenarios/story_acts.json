@@ -35,7 +35,8 @@
     "programs": [],
     "projects": [
       "blueprint_archive",
-      "conditional_logic"
+      "conditional_logic",
+      "deep_space_telescope"
     ],
     "events": [
       "qpower_boot_sequence",
