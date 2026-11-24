@@ -8,5 +8,9 @@ import { act, store } from '../store';
  * two quick clicks must both land). */
 export function editProgram(program: number, edit: (entries: Entry[]) => Entry[]): void {
   const now = store.view.programs[program]?.entries ?? [];
-  act({ type: 'set_program', program, entries: edit(now) });
+  const next = edit(now);
+  // set_program restarts the program's pointer and its lines' runs: an edit that changes
+  // nothing (a count retyped as "06") must not.
+  if (JSON.stringify(next) === JSON.stringify(now)) return;
+  act({ type: 'set_program', program, entries: next });
 }

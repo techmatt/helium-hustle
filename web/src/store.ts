@@ -230,6 +230,9 @@ function tell(v: View, mode: 'load' | 'intro' | 'play'): void {
 /** Queues modal pages, pausing the clock (the run summary, if open, already holds it). */
 function openStory(pages: StoryPage[]): void {
   const first = store.storyPages.length === 0 && !store.summary;
+  // The modal comes up under a pointer that was aiming at something else: a click just
+  // after (a card's double-click, a quick next click) must not read its first page away.
+  if (first) movedAt = performance.now();
   // Queued before the clock stops: setSpeed's settling wake then finds the gate shut
   // (runTicks plays nothing while pages wait), so no day passes the transition unseen.
   store.storyPages.push(...pages);
@@ -323,8 +326,9 @@ export function markRead(keys: string[]): void {
 }
 
 /** When the screen last moved under the pointer by the player's own click (a story text
- * dismissed, the run summary closed): what slides under the cursor is not what they
- * clicked, so a building card ignores clicks for a moment after (`justMoved`). */
+ * dismissed, a story page turned, the run summary closed) or a story modal opened: what
+ * slides under the cursor is not what they clicked, so a building card and the story
+ * modal's button ignore clicks for a moment after (`justMoved`). */
 let movedAt = -Infinity;
 const MOVED_MS = 500;
 export function justMoved(): boolean {
@@ -453,7 +457,10 @@ export function programInstructions(text: string, cursor: number): InstructionGr
   return engine.programInstructions(game.state, text, cursor);
 }
 
-function runTicks(ticks: number): void {
+/** Plays `ticks` days, stopping after a forced retirement, and (the clock's wakes, not a
+ * jump: `toQuest`) after a quest change, so its story modal holds the clock on the day it
+ * came; the wake's other days are not played. */
+function runTicks(ticks: number, toQuest = true): void {
   if (store.summary || store.storyPages.length > 0) return;
   const run = store.view.run;
   let lines: LinesRun | null = null;
@@ -462,9 +469,8 @@ function runTicks(ticks: number): void {
     const r = engine.advanceRun(game.state, n);
     game.state = r.state;
     lines = r.lines; // one chunk in practice (MAX_CHUNK); a later one supersedes
-    ticks -= n;
-    // advance_run stops after a forced retirement: show it before playing on.
-    if (head().career.run_number !== run) break;
+    ticks -= r.ran;
+    if (r.stopped && (toQuest || head().career.run_number !== run)) break;
   }
   if (performance.now() - lastSave > SAVE_EVERY_MS) save();
   ranLines = lines;
@@ -669,11 +675,11 @@ export function setCheatsEnabled(on: boolean): void {
 }
 
 /** Jumps ahead: a marked cheat action, then the days played as usual (stopping at a
- * retirement), so replay stays exact. */
+ * retirement, not at a quest change: its modal shows after), so replay stays exact. */
 export function jumpAhead(days: number): void {
   if (!act({ type: 'cheat', cheat: { kind: 'jump_ahead', days } })) return;
   clock.wake();
-  runTicks(days);
+  runTicks(days, false);
   // The wall time the jump took to compute is no play time.
   clock.forgetTimeAway();
   // Pins the jump in the play log: its days took no real time.

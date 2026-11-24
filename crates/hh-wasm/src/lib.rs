@@ -86,20 +86,27 @@ pub fn advance(state_json: &str, ticks: u32) -> Result<String, JsValue> {
 }
 
 /// Runs up to `ticks` ticks, stopping after a tick that retired the run
-/// (forced), so the client can show the retirement before the next run plays
-/// on. Returns `{"state": <the new state's JSON, as a string>, "lines": <the
-/// program lines run over the ticks, hh_core::view::LinesRun>}`: a client
+/// (forced) or changed the active quest, so the client can show the retirement
+/// or the story modal before playing on. Returns `{"state": <the new state's
+/// JSON, as a string>, "lines": <the program lines run over the ticks,
+/// hh_core::view::LinesRun>, "stopped": <it stopped early>, "ran": <the ticks
+/// run>}`: a client
 /// drawing once per several days colors each line by the whole span, not by
 /// its last day. The ticks run are the state's `tick` minus the old one.
 #[wasm_bindgen]
 pub fn advance_run(state_json: &str, ticks: u32) -> Result<String, JsValue> {
     let (r, mut g) = load(state_json)?;
     let run = g.career.run_number;
+    let quest = active_quest_id(&g);
     let mut lines = hh_core::view::LinesRun::default();
+    let mut stopped = false;
+    let mut ran = 0u32;
     for _ in 0..ticks {
         r.advance(&mut g, 1);
+        ran += 1;
         lines.note(&g);
-        if g.career.run_number != run {
+        if g.career.run_number != run || active_quest_id(&g) != quest {
+            stopped = true;
             break;
         }
     }
@@ -107,8 +114,16 @@ pub fn advance_run(state_json: &str, ticks: u32) -> Result<String, JsValue> {
     struct Advanced {
         state: String,
         lines: hh_core::view::LinesRun,
+        stopped: bool,
+        ran: u32,
     }
-    Ok(to_json(&Advanced { state: g.to_json(), lines }))
+    Ok(to_json(&Advanced { state: g.to_json(), lines, stopped, ran }))
+}
+
+/// The active quest's id: a change is a main-story transition, whose modal pauses the
+/// game on the day it happened (a fast speed's wake would otherwise play on past it).
+fn active_quest_id(g: &GameState) -> Option<&'static str> {
+    hh_core::modules::events::active_quest(g).map(|e| e.id.as_str())
 }
 
 /// Applies an action (`{"type": "buy", "building": "solar_panel"}`) between

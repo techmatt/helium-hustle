@@ -1,12 +1,13 @@
 // The page: left column, the active panel, the right column, the status bar, and the
 // retirement summary over everything when a run ends.
 
-import { useCallback, useEffect, useState } from 'preact/hooks';
+import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { SPEEDS, type Speed } from '../clock';
 import { capitalize, mult, num, perDay, storyBody } from '../format';
 import {
   continueAfterRetirement,
   dismissStory,
+  justMoved,
   nextStoryPage,
   noteOpened,
   setNotice,
@@ -219,6 +220,21 @@ function StatusBar({ s }: { s: Store }) {
 function StoryModal({ s }: { s: Store }) {
   const p = s.storyPages[0];
   const last = s.storyPages.length === 1;
+  // Each page takes the keyboard (Enter reads on): `autoFocus` only works on a page
+  // load, so the first modal of a visit had it and later ones didn't.
+  const button = useRef<HTMLButtonElement>(null);
+  useEffect(() => button.current?.focus(), [p]);
+  // Enter reads on wherever the focus went since (a click behind the backdrop, a remount
+  // taking it): the modal holds the game, so the key is its.
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || e.ctrlKey || e.altKey || e.metaKey || document.activeElement === button.current) return;
+      e.preventDefault();
+      if (!e.repeat && !justMoved()) nextStoryPage();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, []);
   return (
     <div class="modal-back">
       <div
@@ -240,7 +256,20 @@ function StoryModal({ s }: { s: Store }) {
             <strong>Next: {p.task}</strong>
           </p>
         )}
-        <button type="button" class="big" data-testid="story-next" autoFocus onClick={nextStoryPage}>
+        <button
+          type="button"
+          class="big"
+          data-testid="story-next"
+          ref={button}
+          // A page is read before it goes: the second click of a double-click, a click
+          // just as the modal came up, a held Enter's repeats or an Enter in the moment
+          // after a page turned would each turn one unread (pointer clicks only; a click
+          // with no pointer behind it, detail 0, was aimed).
+          onClick={(e) => (e.detail > 0 && justMoved() ? undefined : nextStoryPage())}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && (e.repeat || justMoved())) e.preventDefault();
+          }}
+        >
           {last ? 'Begin' : 'Continue'}
         </button>
       </div>

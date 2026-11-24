@@ -22,7 +22,9 @@
 //              `hh-sim playlog` doesn't reproduce
 //   input      a click that took longer than INPUT_MS to show on screen, a probe's wrong
 //              count (click-to-buy, the program frame), a double-click on Continue reaching
-//              a card
+//              a card; a story modal turning two pages on a double-click or a held Enter,
+//              not holding the clock against space and 3, its button without the keyboard,
+//              Esc closing a view behind it, or coming over a day after its quest completed
 //   frame      a frame gap over FRAME_MS while the page is visible
 //   memory     JS heap growth over a pass past HEAP_GROWTH_MB (before the autopilot's
 //              Everything; past HEAP_ENDED_MB with its finished career), a save over 2 MB
@@ -130,6 +132,8 @@ const AUDIT = `(() => {
     return cs.visibility !== 'hidden' && cs.display !== 'none';
   };
   if (document.documentElement.scrollWidth > W + 1) out.push({ kind: 'overflow', what: 'page wider than the window: ' + document.documentElement.scrollWidth + ' > ' + W });
+  // The page itself never scrolls: something under the app (the boot line, 082) shows below it.
+  if (scrollY > 0 || document.getElementById('boot')) out.push({ kind: 'overflow', what: 'the page itself scrolled (' + Math.round(scrollY) + ' px) or kept its boot line' });
   for (const el of document.querySelectorAll('body *')) {
     if (!shown(el) || el.closest('svg')) continue;
     const cs = getComputedStyle(el);
@@ -166,6 +170,10 @@ const AUDIT = `(() => {
       if (r.right > inner + 1 || r.left < pr.left - 1) out.push({ kind: 'overflow', what: 'text cut off by ' + label(p).slice(0, 30) + ': ' + label(el) + ' right ' + Math.round(r.right) + ' > ' + Math.round(inner) });
       break;
     }
+    // A bar's figures wrapped onto a second line its bar hides ("285 /" for "285 / 1,000"; 082).
+    const lines = (e) => { const g = document.createRange(); g.selectNodeContents(e); return new Set([...g.getClientRects()].map((x) => Math.round(x.top))).size; };
+    if (el.classList.contains('bar-label') && lines(el) > 1)
+      out.push({ kind: 'overflow', what: 'bar figures wrapped, the bar showing one line: ' + label(el) });
   }
   // Table cells whose texts touch ("43.6 / 50−0.2/day"): under 3 px between them.
   const extent = (el) => {
@@ -355,7 +363,8 @@ const AUDIT = `(() => {
   // The main quest has its own slot, and it shows whenever there is a quest.
   if (document.querySelector('[data-testid="quest"]') && !document.querySelector('[data-testid="quest-pin"] [data-testid="quest"]')) out.push({ kind: 'text', what: 'the main quest drawn outside its slot' });
   // The program panel: at most one line framed as the current one.
-  if (document.querySelectorAll('.lines li.current').length > 1) out.push({ kind: 'text', what: 'more than one program line framed as current' });
+  // (Shown ones: the right column's stay mounted, hidden, under the Programs view.)
+  if ([...document.querySelectorAll('.lines li.current')].filter(shown).length > 1) out.push({ kind: 'text', what: 'more than one program line framed as current' });
   if (/^\\D*0 assigned/.test(document.querySelector('.prog-procs span')?.textContent ?? '') && document.querySelector('.lines li.current')) out.push({ kind: 'text', what: 'a program with no processor frames a line as the one it runs next' });
   // The story banner and the notice sit over the sky: their text is not covered by the art.
   for (const el of document.querySelectorAll('.story-banner, #notice')) {
@@ -413,15 +422,26 @@ async function pass(seed, width, theme) {
       }
       const t0 = performance.now();
       const mo = new MutationObserver(() => { mo.disconnect(); done(performance.now() - t0); });
-      mo.observe(document.body, { subtree: true, childList: true, characterData: true, attributes: true });
+      // From the root: a theme pick changes only <html>'s data-theme.
+      mo.observe(document.documentElement, { subtree: true, childList: true, characterData: true, attributes: true });
       b.click();
+      // A story modal that came up since the last read refuses the click (a script's
+      // click reaches under it): nothing to time.
+      if (document.querySelector('[data-testid="story-modal"]') && !b.closest('[data-testid="story-modal"]')) { mo.disconnect(); return done(0); }
       setTimeout(() => { mo.disconnect(); done(0); }, 1000);
     })`);
     if (ms < 0) throw new Error(`nothing to click at ${sel}`);
     if (ms > INPUT_MS) note('input', `${what} took ${Math.round(ms)} ms to show`);
   };
   const page = driver(b, { url, poll: 80, readyMs: 30000, click: timedClick });
-  const { waitFor, exists, day, run, click, setValue, speed, panel } = page;
+  const { waitFor, exists, day, run, click, setValue, speed } = page;
+  /** A nav tile's screen: a panel, or the Programs view (a takeover since 071, which has
+   * no `data-panel`: every pass stopped at its tile until 082). */
+  const panel = async (id) => {
+    if (id !== 'programs') return page.panel(id);
+    if (!(await exists('[data-takeover="programs"]'))) await click('.nav-tile[data-nav="programs"]', 'open Programs');
+    await waitFor(`!!document.querySelector('[data-takeover="programs"]')`, 'the Programs view', 3000);
+  };
   const load = async () => {
     await page.load();
     await evaluate(FRAMES);
@@ -489,7 +509,9 @@ async function pass(seed, width, theme) {
     // retirement after the late phase from ever coming.
     const card = (sel) => evaluate(`[...document.querySelectorAll(${q(sel)})].find((c) => c.dataset.id !== 'cheat_building')?.dataset.id ?? null`);
     let id = await card('.card.building.can-buy');
-    if (!id) return note('input', `card probe (${when}): no affordable card`);
+    // Run 2 (research wiped) offers the Solar Panel and Data Center only, both short of
+    // titanium or circuits a run doesn't start with (074): nothing to probe there.
+    if (!id) return when === 'run2' ? undefined : note('input', `card probe (${when}): no affordable card`);
     const desc = `.card.building[data-id="${id}"] .desc`;
     let n0 = await ownedOf(id);
     let p = await at(desc);
@@ -786,6 +808,81 @@ async function pass(seed, width, theme) {
     else if ((await boxes()) !== unreadBoxes) note('overflow', `unread (${when}): Recent Activity's lines moved as they were read`);
   };
 
+  // ---- the story modal under real input (082) ----
+  /** The open story modal's page: quest/kind, its button's label, and whether that button
+   * has the keyboard. */
+  const storyPage = () =>
+    evaluate(`(() => { const m = document.querySelector('[data-testid="story-modal"]'); if (!m) return null;
+      const b = m.querySelector('[data-testid="story-next"]');
+      return { id: m.dataset.quest + '/' + m.dataset.kind + '/' + m.querySelector('.story-text').textContent.slice(0, 30), button: b.textContent, focused: document.activeElement === b }; })()`);
+  const rawKey = async (k, code, vk, autoRepeat = false) => {
+    await send('Input.dispatchKeyEvent', { type: 'keyDown', key: k, code, windowsVirtualKeyCode: vk, autoRepeat, text: k === 'Enter' ? '\r' : k.length === 1 ? k : undefined });
+    if (!autoRepeat) await send('Input.dispatchKeyEvent', { type: 'keyUp', key: k, code, windowsVirtualKeyCode: vk });
+    await sleep(120);
+  };
+  let introRead = false;
+  /** The new game's first modal (two pages): the clock held, space and a speed key do
+   * nothing, its button has the keyboard, Esc leaves a view open behind it alone, and a
+   * real double-click on Continue turns one page, never two. */
+  const introProbe = async () => {
+    const p0 = await storyPage();
+    const d0 = await day();
+    await rawKey(' ', 'Space', 32);
+    await rawKey('3', 'Digit3', 51);
+    await sleep(400);
+    const p1 = await storyPage();
+    if (p1?.id !== p0.id || (await day()) !== d0 || (await evaluate(`document.querySelector('#speeds button[aria-pressed="true"]')?.dataset.speed`)) !== '0')
+      note('input', `story modal: space and 3 changed the page or the clock (${p0.id} -> ${p1?.id}, day ${d0} -> ${await day()})`);
+    if (!p0.focused) note('input', `story modal: its button doesn't have the keyboard (Enter does nothing) on ${p0.id}`);
+    // A view open behind it (the Programs view, opened before the modal in play): Esc
+    // must not close it, as behind the run summary (qa-findings #87, 95).
+    await evaluate(`document.querySelector('.nav-tile[data-nav="programs"]')?.click()`);
+    if (await exists('[data-takeover="programs"]')) {
+      await rawKey('Escape', 'Escape', 27);
+      if (!(await exists('[data-takeover="programs"]'))) note('input', 'story modal: Esc closed the Programs view behind it');
+      await evaluate(`document.querySelector('[data-takeover-close="programs"]')?.click()`);
+    }
+    // Past the moment in which the modal ignores pointer clicks after it came up.
+    await sleep(600);
+    const at = await evaluate(`(() => { const r = document.querySelector('[data-testid="story-next"]').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+    if (p0.button === 'Continue') {
+      await mouse(at.x, at.y, { clicks: 2 });
+      const p2 = await storyPage();
+      if (!p2) note('input', `story modal: a double-click on Continue (${p0.id}) read past the last page unseen`);
+      else if (p2.id === p0.id) note('input', `story modal: a double-click on Continue (${p0.id}) turned no page`);
+      await capture('story-intro-page2');
+    }
+    introRead = true;
+  };
+  /** A chain's page with more after it: a held Enter (a press, then the key's repeats)
+   * turns one page. Once a pass. */
+  let heldEnterDone = false;
+  const heldEnterProbe = async () => {
+    const p0 = await storyPage();
+    if (heldEnterDone || !p0 || p0.button !== 'Continue') return;
+    heldEnterDone = true;
+    await sleep(600);
+    // Wherever the focus is (the modal's button, or something a click behind it took):
+    // Enter reads on.
+    await rawKey('Enter', 'Enter', 13, false);
+    for (let i = 0; i < 4; i++) await rawKey('Enter', 'Enter', 13, true);
+    await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 });
+    const p1 = await storyPage();
+    if (!p1) note('input', `story modal: a held Enter on ${p0.id} read the chain to its end unseen`);
+    else if (p1.id === p0.id) note('input', `story modal: Enter on ${p0.id} turned no page`);
+  };
+  /** A transition's modal holds the clock on the day it came: the run's day is at most
+   * one past its quest's "Quest complete" line in Recent Activity (a fast speed's wake
+   * played on past it before 082). */
+  const transitionDayProbe = async () => {
+    const r = await evaluate(`(() => {
+      const ds = [...document.querySelectorAll('[data-testid="events-activity"] li')].map((li) => li.textContent.match(/^Day ([\\d,]+): Quest complete/)).filter(Boolean).map((m) => Number(m[1].replace(/,/g, '')));
+      return ds.length ? Math.max(...ds) : null;
+    })()`);
+    const now = await day();
+    if (r !== null && now - r > 1) note('input', `story modal: it came ${now - r} days after its quest completed (day ${r} -> ${now})`);
+  };
+
   try {
     // A fresh browser: first visit, then a new game on the pass's seed from the debug menu.
     await load();
@@ -799,7 +896,8 @@ async function pass(seed, width, theme) {
     await setValue('#seed', seed);
     await click('#new-game', 'new game');
     await capture('new-game');
-    if ((await page.readStory()).length === 0) note('text', 'a new game opened no story modal for its first quest');
+    if (await exists('[data-testid="story-modal"]')) await introProbe();
+    if ((await page.readStory()).length === 0 && !introRead) note('text', 'a new game opened no story modal for its first quest');
 
     // Run 1, played from the screen: buildings in a fixed order, a program that sells
     // compute or buys what the next building lacks, loads and launches.
@@ -838,7 +936,12 @@ async function pass(seed, width, theme) {
         const id = await evaluate(`document.querySelector('[data-testid="story-modal"]').dataset.quest`);
         if (id !== story) {
           story = id;
+          if (i === 0) await transitionDayProbe();
           await capture(`story-${story}`);
+          if (i === 0 && !heldEnterDone) {
+            await heldEnterProbe();
+            continue;
+          }
         }
         await click('[data-testid="story-next"]', 'story next');
       }
@@ -910,7 +1013,9 @@ async function pass(seed, width, theme) {
           await capture('launched');
           continue;
         }
-        const good = await evaluate(`document.querySelector('[data-pad="0"] select').value`);
+        // (A forced retirement since the read takes the pad with it.)
+        const good = await evaluate(`document.querySelector('[data-pad="0"] select')?.value ?? null`);
+        if (good === null) continue;
         if ((s.res.propellant ?? 0) < 20 && credits >= 12) cmd = 'buy_propellant';
         else if ((s.res[good] ?? 0) >= 5 && cargo < 10) cmd = 'load_pads';
       } else if (goal) {
@@ -1194,7 +1299,12 @@ async function pass(seed, width, theme) {
     // the Debug fold, closed again once Options remounts: open it before reading.
     await panel('options');
     if (!(await exists('#scenario'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
-    const scenarios = await evaluate(`[...document.querySelectorAll('#scenario option')].map((o) => o.value)`);
+    // story_acts first: the autopilot's Everything below plays on from the last one, and
+    // story_acts' chain quests are marked done with no game behind them (no ending in
+    // three minutes; 082).
+    const scenarios = (await evaluate(`[...document.querySelectorAll('#scenario option')].map((o) => o.value)`)).sort(
+      (a, b) => (b === 'story_acts') - (a === 'story_acts'),
+    );
     if (!scenarios.length) note('input', 'the debug menu listed no scenarios: none audited');
     for (const sc of scenarios) {
       await panel('options');

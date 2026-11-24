@@ -32,6 +32,8 @@ const PAIRS = [
   ['neg', ['page', 'panel', 'card', 'bad-tint', 'hover', 'ok-tint', 'disabled']],
   ['info', ['panel', 'card', 'banner']],
   ['sel-text', ['sel-bg', 'sel-hover']],
+  // An earned achievement's star on its medal.
+  ['panel', ['accent-text']],
   ['on-neg', ['neg']],
   ['axis-nationalist', ['panel', 'card']],
   ['axis-humanist', ['panel', 'card']],

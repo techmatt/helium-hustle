@@ -55,8 +55,8 @@ results folder; kept shots are also copied to the shared screenshots folder, CLA
    no red or amber, the block view shows `if` and its body, and the `if` runs at 1x. Then
    `programsBlocks`: in `everything` the Programs tile opens Programs in Blocks, an if/else and a `4x` line are built by
    panel clicks, ⇤ and the count field only, no help or hint line shows, a real click in the
-   count box selects its text (typing replaces it) and a drag inside it starts no row drag
-   (`numberBox`), Text shows the same lines, and at 1x the
+   count box selects its text (typing replaces it), a drag inside it starts no row drag
+   and Esc while typing in it keeps the number (`numberBox`), Text shows the same lines, and at 1x the
    `4x` line's four dots fill 1/4 to 4/4; set to 12, it shows a bar titled `k/12`. Sections open Text through the nav tile
    (`openText`); the mode is remembered.
    Then `storyView`: a new game played through 1.6 by the autopilot's *Next quest step*
@@ -93,8 +93,12 @@ the text-on-background pairs in its hand-kept `PAIRS` list, in both themes, at
 `npm run qa` (`scripts/qa.mjs`) plays the game as a player would, over seeds, widths and
 both themes, and audits the screen at each meaningful moment (a panel, a story text, a new
 quest, a launch, the summary, a reload). Hunts' findings: `docs/qa-findings.md`. Per pass
-(a seed at a width), in a fresh headless browser: a first visit, a new game on the seed,
-run 1 at 3x then 50x with every panel, retirement and the summary (keys must not start the
+(a seed at a width), in a fresh headless browser: a first visit, a new game on the seed (its
+story modal under real keys and mouse: the clock held, space and 3 ignored, its button
+focused, Esc leaving the Programs view behind it open, a double-click on Continue turning
+one page), run 1 at 3x then 50x with every panel and the Programs view (each chain's
+modal at most a day past its "Quest complete" line; on the first, a held Enter turns
+one page), retirement and the summary (keys must not start the
 clock), run 2 at 200x, a reload, the replay check, the play log replayed by `hh-sim
 playlog` (a release build, or `HH_SIM`: a fresh worktree has none, so build it first), a second tab and site data blocked (first pass only). At run 1's end and in every
 debug scenario (each played, its pads given Helium-3 first, or Titanium while 1.3 allows only that, its panels audited): every Resources row's breakdown opened

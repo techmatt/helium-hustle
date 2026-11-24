@@ -68,6 +68,22 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | 92 | Geopolitical Intelligence's Ideologies panel opens the day after | Its text says "the next day" | content |
 | 93 | A boredom story's `{rate}` floors to 0.19 where Stats rounds to +0.2 | The view sends `rate`; the UI fills `{rate}` with Stats' `perDay(rate, 2)` | `npm run unit`, `the_view_fills_every_text_placeholder` |
 | 94 | e2e's "the if held once Credits > 800" read that day's line outcomes after the program moved on (the new Battery drops Energy, the top `if` runs instead): failed 5 of 7 runs in 068 | Checks the depot built and the `if`'s ✓ only (070) | e2e |
+| 95 | Esc with a story modal up closed a view behind it (the Programs view), its unapplied draft refused | Esc does nothing to a takeover while a story modal is up, as behind the summary (#87) | qa story modal probe |
+| 96 | A double-click on a story page's Continue, or a held Enter, turned two or more pages: a chain could end, and play resume, before its task was read | The button ignores pointer clicks for 0.5 s after the modal opens or a page turns, and Enter's key repeats | qa story modal probes |
+| 97 | The story modal's button had the keyboard only on a page load's first modal (`autoFocus`): later chains needed the mouse | Each page focuses it, and Enter reads on wherever the focus went | qa story modal probes |
+| 98 | A double-click on a modal's last button could land on a Story beat under it and replay that beat's chain | A beat ignores pointer clicks for 0.5 s after a modal closes | manual |
+| 99 | Above 10x a transition's modal came after the rest of the wake's days had played (up to 19 at 200x; a background tab's whole catch-up) | `advance_run` stops after a tick that changes the active quest (a debug jump plays on) | qa *input* (a modal's day against its "Quest complete" line) |
+| 100 | Esc while typing in a Programs number box closed the view and dropped the typed number | The field is blurred (its change fires) before the view closes | e2e section 10 |
+| 101 | A count or clause number retyped as the same number ("06") restarted the program's pointer and runs | An edit that changes no line is not sent | manual |
+| 102 | The Programs view's Text / Blocks toggle: its selected button read 1.66:1 in the dark theme (4.13:1 light) | Selected as the program tabs are (`--sel-bg`, the accent's border) | qa *contrast* |
+| 103 | qa: every pass stopped at the Programs tile since 071 (a takeover, no panel) | qa opens it as the view | qa |
+| 104 | Faked bold: the painted act bands' titles, a Ready pad's status and the Blocks repeat count at Plex Sans 700; a story modal's "complete" at Rajdhani 400 (neither bundled) | 600, and the body font for "complete" | qa *assets* |
+| 105 | An earned achievement's star read 3.82:1 on its medal (light theme) | The medal on `--accent-text` (a `contrast.mjs` pair) | qa *contrast*, `npm run unit` |
+| 106 | At 1920 a late career's compact nav, three tiles a row: "Achievements" ran past its tile | Compact tiles at least 124 px (two a row, as at 1280) | qa *overflow* |
+| 107 | A right-column program line cut short ("Sell Cloud Compute (x…") had no tooltip | The line's name in its title | qa *overflow* |
+| 108 | qa false findings since 074/078: a click a just-opened story modal refused timed as slow input; run 2's card probe with no card a run's start can afford (074); two frames counted with the right column hidden under the Programs view; the Everything autopilot run from story_acts (no game behind its quests) | Not timed; run 2's probe skipped then; shown frames only; story_acts audited first | qa |
+| 109 | The boot line "Loading…" stayed in the page under the app: a page scrolled into view (seen in qa's story_acts Story shot) showed it below the status bar and cut the title | Removed once the app mounts | qa *overflow* (the page scrolled or kept its boot line) |
+| 110 | The Programs view's status strip at 1280 in a late career squeezed its boredom bar to ~50 px: "285 /" | The bar keeps room for its figures (the strip's gaps 10 px; wider figures wrap the strip to a second line) | screenshots (qa `late-programs`) |
 
 ## Deferred (Matt's decisions)
 
@@ -82,6 +98,9 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | A save holds every action: ~40,000 actions outgrow localStorage | Record in the play log, or compress |
 | At 10x a late wake runs two days per redraw and the frame skips a line (an e2e flake under load) | Frame from the days actually run |
 | "Output at cap" beside its resource at 0: the stall is judged before production | A rules item for the balance work (Matt) |
+| A reload mid-chain drops the story pages still unread, the new quest's "Next:" line too (the quest pin keeps it) | Save the pending pages with the speed they resume |
+| After a timeline ends, Blueprint Archive (and Conditional Logic, the Telescope) is offered again; funding it gives nothing new | Hide a project whose effects are all spent, or say so on its card |
+| A Blocks number box being typed in keeps its draft on its row index: an instruction inserted above it (keyboard focus only) moves the draft to another line | Key the rows by a stable id |
 
 
 ## Won't fix
@@ -91,6 +110,9 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | Sell All's native `confirm()` lets game time run while it is open, then plays it before the sells | The clock catches up on wall time by design (as for a background tab); the sells land between the right ticks and a run that ended is refused with a notice |
 | Opening the Cortex mock takes one 300-400 ms frame (the whole wheel drawn at once) | A UI-only mock: the real Cortex's build decides how it draws |
 | Starting a debug scenario takes a 0.3-1.3 s frame | Debug menu only: a new game built and its first view drawn |
+| Jump ahead plays no days when the wake settling it opens a story modal | Debug only: the modal is shown, the jump marked in the play log |
+| The autopilot's Everything from scenario story_acts never reaches the ending | Debug only: a display scenario whose quests are marked done with no game behind them |
+| The first panel opened after Story takes a 100-160 ms frame (qa: "before panel-achievements"; later switches 20-30 ms): likely the act bands, CSS backgrounds, decoding on the main thread | Once a visit, under the 250 ms bar on a quiet box (300-520 ms under qa's load); `<img decoding="async">` bands if it grows |
 | The debug autopilot's *Everything* ends on a 1.3-1.4 s frame (~28,000 days in ~12 s) | Debug only: its last chunk and the ending drawn at once |
 | Silicon Valley wants 1,000 circuits on hand; the cap is 10 + 20 per Storage Depot (about 50 depots) | Placeholder content, Matt's call in 068 |
 | Boredom phases 3 to 5 say "Dream effectiveness reduced to 20%/15%/10%"; Dream is flat | Placeholder content, Matt's call in 068 |

@@ -227,7 +227,9 @@ function ClauseEdit({ v, c, now, set }: { v: View; c: Clause; now?: { value: str
         // The engine's "500.000000" as 500.
         value={String(Number(c.value))}
         commit={(text) => {
-          if (/^-?\d{1,12}(\.\d{1,6})?$/.test(text)) set({ ...c, value: text });
+          // The same number written another way ("06", "500.0") is no edit: a rewrite
+          // restarts the program.
+          if (/^-?\d{1,12}(\.\d{1,6})?$/.test(text) && Number(text) !== Number(c.value)) set({ ...c, value: text });
         }}
       />
       {toggles(v, c.reading) ? (
@@ -351,7 +353,8 @@ export function ProgramLine(props: {
       )}
       {/* The current line is marked by its frame (style.css `.line.current`), never by
           text in the name, so no line's text moves as the pointer walks. */}
-      <span class="line-name">
+      {/* Cut short in a narrow right column ("Sell Cloud Compute (x…"): the tooltip has it. */}
+      <span class="line-name" title={setCount ? name(v, e.command) : `${name(v, e.command)} (x${e.count})`}>
         {Object.keys(command?.produces ?? {}).map((res) => (
           <ResChip key={res} v={v} id={res} />
         ))}{' '}

@@ -87,10 +87,13 @@ export function TakeoverView({ s, t, close, banners }: { s: Store; t: Takeover; 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key !== 'Escape' || e.ctrlKey || e.altKey || e.metaKey) return;
-      // Nothing behind the run summary acts: closing would try to save a draft to a run
-      // that has ended.
-      if (store.summary) return;
+      // Nothing behind the run summary or a story modal acts: closing would try to save a
+      // draft to a run that has ended, or that the modal holds (refused).
+      if (store.summary || store.storyPages.length > 0) return;
       e.preventDefault();
+      // A field being typed in commits as it would on a click away (its change fires on
+      // blur): removed while focused, it would drop what was typed.
+      (document.activeElement as HTMLElement | null)?.blur?.();
       close();
     };
     window.addEventListener('keydown', onKey);

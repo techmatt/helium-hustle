@@ -923,6 +923,22 @@ async function numberBox(rows) {
   check(control === 1, `a drag from the row's name starts a row drag: ${control} dragstart`);
   const end = (await rows()).join(' ');
   check(end === before && (await evaluate(`${box}.value`)) === '4', `the rows and count are as before: ${end}`);
+  // Esc while typing in the box closes the view and keeps the number, as a click away does
+  // (082: the box was removed while focused and its typed count dropped).
+  await clickBox();
+  await send('Input.insertText', { text: '6' });
+  await send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+  await send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Escape', code: 'Escape', windowsVirtualKeyCode: 27 });
+  await sleep(150);
+  const closed = !(await exists('[data-takeover="programs"]'));
+  await click('.nav-tile[data-nav="programs"]');
+  await waitFor(`!!document.querySelector('[data-testid="block-editor"]')`, 'the Blocks mode', 3000);
+  const kept = await evaluate(`${box}.value`);
+  check(closed && kept === '6', `Esc in the box closes the view and keeps the typed count: closed ${closed}, count "${kept}"`);
+  await clickBox();
+  await send('Input.insertText', { text: '4' });
+  await evaluate(`${box}.blur()`);
+  await sleep(250);
 }
 
 /** Section 11: Story and Achievements. A new game played on by the debug autopilot's

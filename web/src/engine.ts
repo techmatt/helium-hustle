@@ -638,7 +638,9 @@ export const engine = {
   newGame: (config: string, seed: string, scenario = ''): string => wasm.new_game(config, seed, scenario),
   /** Plays up to `ticks` days, stopping after a tick that retired the run; also returns
    * the program lines run over those ticks. */
-  advanceRun: (state: string, ticks: number): { state: string; lines: LinesRun } =>
+  /** `stopped`: it stopped early, after a tick that retired the run or changed the active
+   * quest; `ran`: the ticks it ran. */
+  advanceRun: (state: string, ticks: number): { state: string; lines: LinesRun; stopped: boolean; ran: number } =>
     JSON.parse(wasm.advance_run(state, ticks)),
   apply: (state: string, action: Action): string => wasm.apply(state, JSON.stringify(action)),
   view: (state: string): View => JSON.parse(wasm.view(state)),

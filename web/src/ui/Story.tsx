@@ -9,7 +9,7 @@
 import { useEffect, useRef } from 'preact/hooks';
 import type { SideQuestView, StoryView, View } from '../engine';
 import { capitalize, num } from '../format';
-import { replayStory, type Store } from '../store';
+import { justMoved, replayStory, type Store } from '../store';
 import { QuestPicture, actBand } from './art';
 import { Bar, Quest } from './common';
 
@@ -95,7 +95,9 @@ export function Story({ s }: { s: Store }) {
                     data-beat={q.id}
                     data-testid="story-beat-done"
                     title="Replay its story"
-                    onClick={() => replayStory(q)}
+                    // The second click of a double-click on a modal's last button lands
+                    // here once the modal is gone: not a replay (pointer clicks only).
+                    onClick={(e) => (e.detail > 0 && justMoved() ? undefined : replayStory(q))}
                   >
                     <span class="beat-dot" aria-hidden="true" />
                     <span class="beat-card">

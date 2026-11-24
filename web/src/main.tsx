@@ -15,10 +15,13 @@ import { App } from './ui/App';
 async function main(): Promise<void> {
   await loadEngine();
   start();
+  // The boot line goes: left under the app, a page scrolled into view (a focused control
+  // near the bottom) showed "Loading…" below the status bar and cut the title.
+  document.getElementById('boot')?.remove();
   render(<App />, document.getElementById('app')!);
 }
 
 main().catch((e) => {
-  const p = document.getElementById('boot')!;
+  const p = document.getElementById('boot') ?? document.body.appendChild(document.createElement('p'));
   p.textContent = `Engine failed to load: ${e}`;
 });
