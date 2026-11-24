@@ -16,6 +16,9 @@
 //      pause, click-to-buy (a green card's text buys, its −/+ and Sell 1 don't, space after
 //      a click pauses and buys nothing, a grey card says why), a reload keeping the save,
 //      a save from another revision discarded, the scenarios and the replay check.
+//   6. (Run before 5.) The program instructions, from scenario late_unlocks: an `if` / `build` / `buy land`
+//      / `if` program written through the editor, live values, unattended builds, verb
+//      lines, a false `if` taking its step and jumping its body. Shot program-logic.png.
 //   5. (Run before 4.) Readability: a capped resource's positive rate (Resources and the
 //      status bar; Energy's green), Resources' two groups, an affordable card's tinted
 //      header and the Land row's green, scenario pad_loading's full pad short on fuel
@@ -51,19 +54,28 @@
 //   HH_BROWSER  a browser off the usual paths
 //   HH_PROFILE  browser profile dir (default ../out/e2e-profile, wiped first)
 //   HH_SHOTS    <dir>: save a PNG of the page at each step worth seeing
+//   HH_ONLY     <n>[,<n>...]: run only these sections, in the usual order; a skipped one's
+//               leftovers that later ones need (a loaded game with story modals clicked
+//               through, the cheats open, 5's notice) are set up directly
 // The DevTools harness (launch, waitFor, load, panel...) is scripts/cdp.mjs.
 import { existsSync, mkdirSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { capture, driver, launch, pageUrl, q, sleep } from './cdp.mjs';
+import { capture, driver, launch, pageUrl, q, shortCommand, sleep } from './cdp.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const url = pageUrl('e2e');
+/** HH_ONLY's sections, or null for all of them. */
+const ONLY = process.env.HH_ONLY ? new Set(process.env.HH_ONLY.split(',').map((s) => Number(s.trim()))) : null;
+if (ONLY && [...ONLY].some((n) => !Number.isInteger(n) || n < 1 || n > 11)) {
+  console.error(`e2e: HH_ONLY takes section numbers 1 to 11, comma-separated: ${process.env.HH_ONLY}`);
+  process.exit(2);
+}
 const b = await launch({ width: 1600, height: 900, profileRoot: process.env.HH_PROFILE ?? resolve(here, '../../out/e2e-profile') });
 const { send, evaluate } = b;
 const pageErrors = b.errors;
 // settle: a dev server just after an edit may reload the page once more.
-const { waitFor, exists, click, setValue, load: loadPage, day, run, speed, panel, debugMenu, cheats, grant, runOnly, readStory, autoStory } = driver(b, { url, settle: 700 });
+const { waitFor, exists, click, setValue, load: loadPage, day, run, speed, panel, debugMenu, cheats, grant, runOnly, readStory, autoStory, buildings } = driver(b, { url, settle: 700 });
 /** Past section 1's opening, story modals are clicked through as they open, after every load too. */
 let storyAuto = false;
 const load = async (u = url) => {
@@ -93,6 +105,33 @@ const check = (ok, what) => {
   console.log(`${ok ? 'ok  ' : 'FAIL'} ${what}`);
   if (!ok) failures.push(what);
 };
+/** check() for a check that directly follows an act: on a failure, also prints #notice
+ * (the engine's refusal, if it gave one). */
+const checkAct = async (ok, what) => {
+  check(ok, what);
+  if (ok) return;
+  const n = await noticeText().catch(() => '');
+  if (n) console.log(`     #notice: ${n}`);
+};
+
+/** The Programs view's Text mode text area, and its text. */
+const AREA = '[data-testid="text-editor-area"]';
+const area = () => evaluate(`document.querySelector(${q(AREA)}).value`);
+/** A scenario (cheats on) played at 1x until program logic opens (the first day two
+ * processors work), then paused. */
+async function freshLogicGame(scenario = 'everything') {
+  await debugMenu();
+  await speed(0);
+  await setValue('#scenario', scenario);
+  await click('#start-scenario');
+  await speed(1);
+  await waitFor(`!!document.querySelector('[data-testid="logic-add"]')`, 'the instructions to unlock', 8000);
+  await speed(0);
+}
+/** Every processor onto the program shown. */
+const maxProcs = async () => {
+  while (await enabled('[data-testid="proc-plus"]')) await click('[data-testid="proc-plus"]');
+};
 
 /** What the player reads off the screen each look: resources, buildings, pads. */
 const look = () =>
@@ -102,14 +141,6 @@ const look = () =>
     const quest = document.querySelector('[data-testid="quest"]')?.dataset.quest ?? null;
     const lines = [...document.querySelectorAll('.lines li')].map((li) => li.dataset.command);
     return { res, quest, lines, day: Number(document.getElementById('day').textContent.replace(/\\D/g, '')) };
-  })()`);
-const buildings = () =>
-  evaluate(`(() => {
-    const out = {};
-    for (const c of document.querySelectorAll('.card.building')) {
-      out[c.dataset.id] = { owned: Number(c.dataset.owned), short: c.dataset.short.split(' ').filter(Boolean), buyable: c.classList.contains('can-buy') };
-    }
-    return out;
   })()`);
 
 /** Program 1, one processor, lines of counts 2, 1, 3: at 10x (a day a redraw) the
@@ -186,7 +217,9 @@ const OPENING_END = 'qautomate_automation';
 /** Plays the opening from the screen, reading each story modal as it opens. Returns the
  * quests reached and the transitions seen; checks as it goes that every quest change came
  * with a modal that held the clock, that the first pad offered Titanium only, and that
- * Launch Full Pads never showed. */
+ * Launch Full Pads never showed. qa.mjs's run 1 is the other copy of this loop, kept apart
+ * on purpose: it plays on past 1.4 to look at screens (a longer ORDER, a launch at 10
+ * cargo), where this one stops at 1.4 checking the story (a full 20 / 100 before a launch). */
 async function playOpening() {
   await speed(50);
   const started = Date.now();
@@ -295,11 +328,7 @@ async function playOpening() {
         if ((s.res[good] ?? 0) >= 5) cmd = 'load_pads';
         else if (good === 'titanium' && credits >= 25) cmd = 'buy_titanium';
       } else if (pad.good === good && (s.res.propellant ?? 0) < 20 && credits >= 12) cmd = 'buy_propellant';
-    } else if (goal) {
-      const short = b[goal[0]].short;
-      if (short.includes('titanium') && credits >= 25) cmd = 'buy_titanium';
-      else if (short.includes('regolith') && credits >= 12) cmd = 'buy_regolith';
-    }
+    } else if (goal) cmd = shortCommand(b[goal[0]].short, credits) ?? cmd;
     await runOnly(cmd, s.lines);
     if (await exists('[data-panel="commands"] [data-id="launch_pads"], [data-testid="add-launch_pads"], [data-panel="commands"] option[value="launch_pads"]')) fullPads = true;
     await sleep(60);
@@ -561,18 +590,9 @@ async function programLogic(grant) {
  * those lines loads after a retirement with all of them, the locked one shown locked.
  * Shot `text-editor.png`. */
 async function textEditor() {
-  await debugMenu();
-  await speed(0);
-  await setValue('#scenario', 'everything');
-  await click('#start-scenario');
-  // Program logic opens the first day two processors work.
-  await speed(1);
-  await waitFor(`!!document.querySelector('[data-testid="logic-add"]')`, 'the instructions to unlock', 8000);
-  await speed(0);
+  await freshLogicGame();
   await click('.prog-tabs button[data-program="0"]');
-  while (await enabled('[data-testid="proc-plus"]')) await click('[data-testid="proc-plus"]');
-  const AREA = '[data-testid="text-editor-area"]';
-  const area = () => evaluate(`document.querySelector(${q(AREA)}).value`);
+  await maxProcs();
   const paste = async (text) => {
     await setValue(AREA, text);
     await sleep(300); // the debounced parse
@@ -605,7 +625,7 @@ async function textEditor() {
   check(await enabled('[data-testid="text-editor-apply"]'), 'Apply is on for a changed draft');
   await click('[data-testid="text-editor-apply"]');
   await sleep(200);
-  check(!(await enabled('[data-testid="text-editor-apply"]')), 'and off once applied');
+  await checkAct(!(await enabled('[data-testid="text-editor-apply"]')), 'and off once applied');
   const applied = await area();
   // Days run: the gutter lights by each line's outcome, and an if counts its days true.
   await speed(10);
@@ -696,7 +716,7 @@ async function textEditor() {
   await click(`[data-testid="loadout-load-${slot}"]`);
   await sleep(100);
   const b2 = await block();
-  check(b2.length === entries(p1) && b2.some((l) => l.op === 'unparsed') && b2.some((l) => l.locked && /locked this run/.test(l.why)),
+  await checkAct(b2.length === entries(p1) && b2.some((l) => l.op === 'unparsed') && b2.some((l) => l.locked && /locked this run/.test(l.why)),
     `the loadout loads every line in the new run, unparsed and locked ones kept: ${b2.length} lines, ${b2.filter((l) => l.locked).length} locked`);
   await click('[data-testid="loadout-load"]');
   await click(`[data-testid="loadout-delete-${slot}"]`);
@@ -710,17 +730,9 @@ async function textEditor() {
  * if's body jumped and its else body run), the else line free (a note's dot). Shot
  * `program-else.png`. */
 async function programElse() {
-  await debugMenu();
-  await speed(0);
-  await setValue('#scenario', 'everything');
-  await click('#start-scenario');
-  await speed(1);
-  await waitFor(`!!document.querySelector('[data-testid="logic-add"]')`, 'the instructions to unlock', 8000);
-  await speed(0);
+  await freshLogicGame();
   await click('.prog-tabs button[data-program="0"]');
-  while (await enabled('[data-testid="proc-plus"]')) await click('[data-testid="proc-plus"]');
-  const AREA = '[data-testid="text-editor-area"]';
-  const area = () => evaluate(`document.querySelector(${q(AREA)}).value`);
+  await maxProcs();
   // Free land is never 100000: the first if is true every pass, the second false.
   const typed = 'if free land < 100000\n  idle\nelse\n  2x idle\nif free land > 100000\n  idle\nELSE\n  2x idle';
   await openText();
@@ -768,8 +780,6 @@ async function programElse() {
  * command or a building shows its card; it Applies cleanly, the block view shows the same
  * lines, and at 1x the `if` runs. Shots `instructions-fresh.png`, `instructions.png`. */
 async function instructionPanel() {
-  const AREA = '[data-testid="text-editor-area"]';
-  const area = () => evaluate(`document.querySelector(${q(AREA)}).value`);
   const entries = (sel) => evaluate(`[...document.querySelectorAll(${q(sel)})].map((b) => ({ text: b.dataset.instruction }))`);
   const hover = async (sel) => {
     await evaluate(`document.querySelector(${q(sel)}).dispatchEvent(new MouseEvent('mouseenter'))`);
@@ -828,16 +838,10 @@ async function instructionPanel() {
   await click('[data-takeover-close="programs"]');
   await sleep(100);
 
-  await debugMenu();
-  await speed(0);
-  await setValue('#scenario', 'everything');
-  await click('#start-scenario');
-  await speed(1);
-  await waitFor(`!!document.querySelector('[data-testid="logic-add"]')`, 'the instructions to unlock', 8000);
-  await speed(0);
+  await freshLogicGame();
   await click('.prog-tabs button[data-program="0"]');
   await click('.prog-procs button[title="Clear this program"]');
-  while (await enabled('[data-testid="proc-plus"]')) await click('[data-testid="proc-plus"]');
+  await maxProcs();
   const open = await build();
   await shot('instructions');
   await click('[data-testid="text-editor-apply"]');
@@ -1064,13 +1068,7 @@ async function storyView() {
 async function programsBlocks() {
   const rows = () =>
     evaluate(`[...document.querySelectorAll('[data-testid="block-lines"] > li')].map((l) => (l.classList.contains('indented') ? '>' : '') + (l.dataset.op ?? 'command'))`);
-  await debugMenu();
-  await speed(0);
-  await setValue('#scenario', 'everything');
-  await click('#start-scenario');
-  await speed(1);
-  await waitFor(`!!document.querySelector('[data-testid="logic-add"]')`, 'the instructions to unlock', 8000);
-  await speed(0);
+  await freshLogicGame();
   // A new player's mode: Blocks.
   await evaluate(`localStorage.removeItem('hh-programs-mode')`);
   await click('.prog-tabs button[data-program="0"]');
@@ -1223,7 +1221,7 @@ async function readability(grant) {
   await setValue('[data-pad="0"] select', 'he3');
   await sleep(200);
   const picked = await evaluate(`({ value: document.querySelector('[data-pad="0"] select').value, dot: !!document.querySelector('[data-testid="pads-no-cargo"]') })`);
-  check(picked.value === 'he3' && !picked.dot, `picking He-3 clears No cargo and its dot: ${JSON.stringify(picked)}`);
+  await checkAct(picked.value === 'he3' && !picked.dot,`picking He-3 clears No cargo and its dot: ${JSON.stringify(picked)}`);
   const lines = await evaluate(`[...document.querySelectorAll('.lines li')].map((li) => li.dataset.command)`);
   await runOnly('load_pads', lines);
   // Helium-3 caps at 20 and a load moves 5: top it up and play 4 days, 5 times.
@@ -1310,7 +1308,9 @@ async function readability(grant) {
   check(/^Replay ok/.test(await noticeText()), `replay check after the readability steps: ${await noticeText()}`);
 }
 
-try {
+/** Section 1, from a fresh load: the new game's first checks, then the opening, the forced
+ * retirement and run 2. From its end on, story modals are clicked through (storyAuto). */
+async function freshGame() {
   await load(url);
   check((await day()) < 5 && (await run()) === 1, `a fresh game loads: day ${await day()}, run ${await run()}`);
   check(!(await exists('[data-testid="cheats"]')), 'cheats are off by default');
@@ -1425,8 +1425,11 @@ try {
     logLines[0]?.kind === 'header' && logLines[0].commit && ['action', 'speed', 'panel', 'retirement', 'checkpoint', 'session_start'].every((k) => kinds.has(k)),
     `the play log is on disk: ${logFile} (${logLines.length} lines, ${logLines.filter((l) => l.kind === 'action').length} actions)`,
   );
+}
 
-  // ---- 2. every panel, reaching the gated ones from scenario late_unlocks ----
+// ---- 2. every panel, reaching the gated ones from scenario late_unlocks ----
+/** Section 2. Opens the cheats (toggled off and on again) and leaves the debug menu open. */
+async function everyPanel() {
   // Projects open at 1.8 Lab, after 1.7 Burnout (a second run): the scenario
   // opens them (and Ideologies and Retirement) instead of playing that far.
   await speed(0);
@@ -1478,7 +1481,7 @@ try {
   await setValue('#cheat-days', '30');
   const d0 = await day();
   await click('#cheat-jump');
-  check((await day()) === d0 + 30, `jump ahead 30 days (${d0} -> ${await day()})`);
+  await checkAct((await day()) === d0 + 30, `jump ahead 30 days (${d0} -> ${await day()})`);
   // The cheat building (a Buildings card only while Cheats are on) and Complete all research.
   await panel('buildings');
   const cheatOwned = () => evaluate(`Number(document.querySelector('[data-testid="buy-cheat_building"]')?.dataset.owned ?? -1)`);
@@ -1487,7 +1490,7 @@ try {
   const cheatText = await evaluate(`document.querySelector('[data-testid="buy-cheat_building"] .effects').textContent`);
   check(cheatText.includes('+1,000 / day credits') || cheatText.includes('+1000 / day credits'), `the Cheat Fountain reads +1000 credits a day: ${cheatText}`);
   await click('[data-testid="buy-cheat_building"]');
-  check((await cheatOwned()) === 1 && c0 - (await credits()) === 1, `the cheat building buys for 1 credit (${c0} -> ${await credits()})`);
+  await checkAct((await cheatOwned()) === 1 && c0 - (await credits()) === 1, `the cheat building buys for 1 credit (${c0} -> ${await credits()})`);
   await debugMenu();
   await click('#cheat-complete-research');
   await panel('research');
@@ -1501,8 +1504,11 @@ try {
   await click('#cheats-toggle');
   await click('#check-replay');
   check(/^Replay ok/.test(await noticeText()), `replay check of the scenario's game: ${await noticeText()}`);
+}
 
-  // ---- 3. speeds, saves and scenarios ----
+// ---- 3. speeds, saves and scenarios ----
+/** Section 3, from the debug menu open with cheats on. */
+async function speedsAndSaves() {
   await setValue('#scenario', 'rich');
   await click('#start-scenario');
   check((await day()) === 0 && /Started scenario rich/.test(await noticeText()), 'debug menu starts scenario rich');
@@ -1525,13 +1531,13 @@ try {
   // The card is the Buy button: a click anywhere on its text buys one.
   await click('.card.building[data-id="solar_panel"].can-buy .desc');
   const after = await owned();
-  check(Number(after) === Number(before) + 1, `a click on a green card buys a Solar Panel: ${before} -> ${after}`);
+  await checkAct(Number(after) === Number(before) + 1,`a click on a green card buys a Solar Panel: ${before} -> ${after}`);
   // Its own controls keep their jobs and buy nothing.
   await click('.card.building[data-id="solar_panel"] button[title="Run one more"]');
   await click('.card.building[data-id="solar_panel"] button[title="Run one fewer"]');
   check((await owned()) === after, `the card's −/+ buttons buy nothing (${await owned()})`);
   await click('.card.building[data-id="solar_panel"] button.sell[title^="Sell one"]');
-  check(Number(await owned()) === Number(after) - 1, `the card's Sell 1 sells one and buys none (${after} -> ${await owned()})`);
+  await checkAct(Number(await owned()) === Number(after) - 1,`the card's Sell 1 sells one and buys none (${after} -> ${await owned()})`);
   // A real mouse press on the card, then space: the pause key, not a second buy (a press
   // must not leave the card focused).
   {
@@ -1583,26 +1589,19 @@ try {
   await debugMenu();
   await click('#check-replay');
   check(/^Replay ok/.test(await noticeText()), `replay check: ${await noticeText()}`);
+}
 
-  // ---- 5. readability: capped income, affordable headers, pad readiness, quest pin ----
-  // ---- 6. program instructions (before 5): if, build, buy land ----
-  await programLogic(grant);
-  // ---- 7. the program text editor (before 5) ----
-  await textEditor();
-  // ---- 8. else (before 5): an if/else from the text editor ----
-  await programElse();
-  // ---- 9. the All instructions panel (before 5) ----
-  await instructionPanel();
-  // ---- 10. the Programs view's Blocks mode (before 5) ----
-  await programsBlocks();
-  // ---- 11. Story's quest timeline at 1.6 and the Achievements tile (before 5) ----
-  await storyView();
+// ---- 5. readability: capped income, affordable headers, pad readiness, quest pin ----
+async function readabilitySection() {
   await debugMenu();
   await setValue('#scenario', 'at_cap');
   await click('#start-scenario');
   await readability(grant);
+}
 
-  // ---- 4. the theme: light by default; the Options toggle switches it, moving nothing ----
+// ---- 4. the theme: light by default; the Options toggle switches it, moving nothing ----
+/** Section 4. Dismisses a notice first (section 5 leaves the replay check's up). */
+async function themeSection() {
   const theme = () => evaluate('document.documentElement.dataset.theme');
   // Every element's box, to the hundredth of a pixel.
   const layout = () =>
@@ -1656,11 +1655,57 @@ try {
   await pick('light', '#debug-theme');
   await pick('dark');
   await pick('light');
+}
+
+/** The sections in the order they run: 6 to 11 before 5, which leaves a notice for 4. */
+const SECTIONS = [
+  [1, freshGame],
+  [2, everyPanel],
+  [3, speedsAndSaves],
+  // ---- 6. program instructions (before 5): if, build, buy land ----
+  [6, () => programLogic(grant)],
+  // ---- 7. the program text editor (before 5) ----
+  [7, textEditor],
+  // ---- 8. else (before 5): an if/else from the text editor ----
+  [8, programElse],
+  // ---- 9. the All instructions panel (before 5) ----
+  [9, instructionPanel],
+  // ---- 10. the Programs view's Blocks mode (before 5) ----
+  [10, programsBlocks],
+  // ---- 11. Story's quest timeline at 1.6 and the Achievements tile (before 5) ----
+  [11, storyView],
+  [5, readabilitySection],
+  [4, themeSection],
+];
+
+/** With HH_ONLY, a skipped section's leftovers that later ones need, set up directly. */
+async function skipped(n) {
+  // 1: a loaded game, story modals clicked through from then on.
+  if (n === 1) {
+    storyAuto = true;
+    await load(url);
+  }
+  // 2: the debug menu open with its cheats on (3 starts a scenario from it; 5 to 11 cheat).
+  if (n === 2) await cheats();
+  // 5: a notice up (the replay check's), which 4 dismisses.
+  if (n === 5) {
+    await debugMenu();
+    await click('#check-replay');
+  }
+}
+
+try {
+  if (ONLY) console.log(`HH_ONLY: sections ${[...ONLY].join(', ')}`);
+  for (const [i, [n, section]] of SECTIONS.entries()) {
+    if (!ONLY || ONLY.has(n)) await section();
+    else if (SECTIONS.slice(i + 1).some(([m]) => ONLY.has(m))) await skipped(n);
+  }
   check(pageErrors.length === 0, `no page errors${pageErrors.length ? `: ${pageErrors.join(' | ')}` : ''}`);
 } catch (e) {
   failures.push(String(e));
   console.error(e);
   if (pageErrors.length) console.error(`page errors: ${pageErrors.join(' | ')}`);
+  console.error(`#notice: ${await noticeText().catch(() => '')}`);
   await shot('failure');
 } finally {
   b.close();

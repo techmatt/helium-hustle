@@ -69,19 +69,31 @@ function repeatOf(p: ProgramView, j: number, of: number): RepeatState {
   return { of, done: Math.min(rep.done, of), failed: rep.failed, bits: rep.first_fails };
 }
 
+/** A line that never runs: a note, or an `else` (with ELSE_TITLE). */
+export function noteStatus(title: string = DOT_TITLE.note): LineStatus {
+  return { dot: 'note', note: null, title, fired: null, repeat: null };
+}
+
+/** A red (unparsed) or amber (locked) line, and why: the notes column says the reason
+ * (amber's as `locked: …`), the title adds it to the dot's; no reason, a bare title. */
+export function flaggedStatus(dot: 'red' | 'amber', reason: string | null): LineStatus {
+  const note = reason !== null ? (dot === 'amber' ? `locked: ${reason}` : reason) : null;
+  return { dot, note, title: `${DOT_TITLE[dot]}${reason !== null ? `: ${reason}` : ''}`, fired: null, repeat: null };
+}
+
 /** Program line `j`'s status in the gutter: locked or unparsed as the view says, else
  * what it did on the last day (or over the redraw's days above 10x). */
 export function entryStatus(v: View, s: Store, program: number, j: number): LineStatus {
   const p = v.programs[program];
   const e = p.entries[j];
-  if (e.op === 'note') return { dot: 'note', note: null, title: DOT_TITLE.note, fired: null, repeat: null };
+  if (e.op === 'note') return noteStatus();
   const error = e.op === 'unparsed' ? (p.errors?.[j] ?? "doesn't parse") : null;
-  if (error !== null) return { dot: 'red', note: error, title: `${DOT_TITLE.red}: ${error}`, fired: null, repeat: null };
+  if (error !== null) return flaggedStatus('red', error);
   // Amber as the Text mode's parse says it (an `else` under a locked `if` too).
   const locked = p.locked?.[j] ?? null;
-  if (locked !== null) return { dot: 'amber', note: `locked: ${locked}`, title: `${DOT_TITLE.amber}: ${locked}`, fired: null, repeat: null };
+  if (locked !== null) return flaggedStatus('amber', locked);
   // An `else` line never runs (its `if` decides): free, like a note.
-  if (e.op === 'else') return { dot: 'note', note: null, title: ELSE_TITLE, fired: null, repeat: null };
+  if (e.op === 'else') return noteStatus(ELSE_TITLE);
   const span = daysPerWake(s.speed) > 1;
   const outcomes = span ? (s.lines?.lines[program] ?? []) : p.outcomes;
   const outcome = outcomes[j] ?? null;

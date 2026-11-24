@@ -17,14 +17,17 @@ pub mod milestones;
 pub mod objectives;
 pub mod params;
 pub mod playlog;
+pub mod gates;
 pub mod summary;
 pub mod vs;
 
 pub const USAGE: &str = "usage:
+  hh-sim --help                                    this usage (also printed, as an error, with no command)
   hh-sim run [--config F] [--seed S] [--ticks N] [--policy P] [--scenario NAME | --scenario-file F] [--save F] [--json]
   hh-sim replay [--summary] RECORD.json...   --summary: each end state as `run` prints it
   hh-sim show [--config F]
   hh-sim scenarios
+  hh-sim gates                                     what each quest opens (unlocks, requires, research shown, projects, Earth techs)
   hh-sim golden
   hh-sim params [--config F] [--write]             each module's param table from the registry (--write: into docs/rules/)
   hh-sim objectives SCENARIO.json [--config F] [--seed S] [--ticks N]
@@ -157,6 +160,9 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     let Some((cmd, rest)) = args.split_first() else {
         return usage("no command");
     };
+    if matches!(cmd.as_str(), "--help" | "-h" | "help") {
+        return Ok(USAGE.to_string());
+    }
     if lab::COMMANDS.contains(&cmd.as_str()) {
         return lab::run(cmd, rest);
     }
@@ -191,6 +197,7 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
                 content_hash()
             ))
         }
+        "gates" => Ok(gates::run()),
         "scenarios" => Ok(scenarios()
             .iter()
             .map(|s| format!("{}: {}\n", s.name, s.description))

@@ -86,8 +86,9 @@ player looks (random and the author every 5-10 ticks, the casual author every ~1
 
 **Tuning a sim player:** one ladder with named knob variants, `--agents
 "a=author:fill=4,b=author:fill=8" --seeds 6` (9 author variants × 6 seeds about 1-2 minutes),
-needs no rebuild. The hands-off loadout is built in (`include_str!`): a variant is an edit of
-`configs/sim/handsoff_loadout.txt` and a rebuild, one variant a build (065).
+needs no rebuild. Hands-off loadout variants the same way, natively: `--agents
+"a=handsoff:loadout=out/x/a.txt,b=handsoff:loadout=out/x/b.txt"` plays each file in place of
+the built-in `configs/sim/handsoff_loadout.txt` (a path without commas).
 
 ## Reads against another revision
 

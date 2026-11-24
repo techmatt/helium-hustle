@@ -211,7 +211,11 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
     }
     // A new pad has No cargo: the script points it at the first good a pad
     // may carry (Titanium during 1.3, then He-3 at baseline), and an empty
-    // pad on another good is pointed again.
+    // pad on another good is pointed again. hh-sim's players have their own
+    // hand (`agents::pick_cargo`, `hand_launch`, `builder::hand_command`):
+    // alike in spirit, deliberately not the same (it reads the view's quest
+    // amounts and pad numbers). hh-core can't call hh-sim, and making either
+    // match the other moves the golden game or the sim pins.
     let first = v.pad_goods.first().cloned();
     let picks: Vec<Action> = (0..v.pads.len())
         .filter(|&i| v.pads[i].good != first && (v.pads[i].good.is_none() || v.pads[i].cargo == Fx::ZERO))

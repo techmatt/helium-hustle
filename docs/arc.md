@@ -20,7 +20,9 @@ whole runs. The chain is 1.1 to 1.11 in order, each opening one mechanic at a ti
 1.b and 1.c are side quests that complete beside it and never hold it up. A new game can build
 only Solar Panels and Data Centers. Each chain quest's transition is a story modal in the UI
 (its `story` and `payoff` paragraphs in `content/events.json`, placeholder text; no doc copies
-them; [rules/events.md](rules/events.md), *Story modals*).
+them; [rules/events.md](rules/events.md), *Story modals*). The Opens columns are the design's,
+by hand; `hh-sim gates` lists what each quest opens as built (its unlocks, the `requires`,
+research and projects gated on it).
 
 | Beat | Quest (id) | Trigger | Condition | Opens | Status |
 |---|---|---|---|---|---|

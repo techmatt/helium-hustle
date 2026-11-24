@@ -72,7 +72,9 @@ Locked by Matt: changing any of these is his decision, not an implementation det
 
 - **Commit to the branch you are on.** Leave nothing uncommitted. Never commit to or push `main`.
 - **Test lanes** are in the README, *Build and test*. Run the fast lane after every change and
-  the full run before every commit; a commit touching only Markdown skips the full run. Leave
+  the full run before every commit; a commit touching only Markdown skips the full run, and one
+  touching only `web/` runs the web checks instead (`npm run check`, `npm run unit`, e2e for a
+  UI change: web/TESTING.md). Leave
   `cargo clippy --workspace --all-targets` clean.
 - **Background any step over ~30 seconds** (builds, tests, sims, servers) and wait on the real
   process (the `cargo`, `node` or test binary), never on a launcher that returns before the work

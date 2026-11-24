@@ -71,8 +71,9 @@ pub enum Requirement {
     None,
     /// At least `count` of `building` owned.
     Building { building: String, count: u32 },
-    /// The quest is active or completed.
-    Quest { quest: String },
+    /// The quest is active or completed (`"type": "quest"` in content).
+    #[serde(rename = "quest")]
+    QuestReached { quest: String },
     /// The quest is completed (in any run).
     QuestCompleted { quest: String },
     /// Researched this run.
@@ -81,6 +82,19 @@ pub enum Requirement {
     Flag { flag: String },
     /// The project is completed (in its scope: a building it gates follows it).
     Project { project: String },
+}
+
+impl Requirement {
+    /// Every id it names is in the content (`Content::check`).
+    fn ids_ok(&self, c: &Content) -> bool {
+        match self {
+            Requirement::None | Requirement::Flag { .. } => true,
+            Requirement::Project { project } => c.project(project).is_some(),
+            Requirement::Building { building, .. } => c.building(building).is_some(),
+            Requirement::QuestReached { quest: q } | Requirement::QuestCompleted { quest: q } => c.event(q).is_some_and(|e| e.is_quest()),
+            Requirement::Research { research: x } => c.research_item(x).is_some(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -181,6 +195,21 @@ pub enum Visibility {
     QuestCompleted { quest: String },
     /// Every one holds.
     AllOf { all: Vec<Visibility> },
+}
+
+impl Visibility {
+    /// Every id it names is in the content, and an `all_of` isn't empty
+    /// (`Content::check`).
+    fn ids_ok(&self, c: &Content) -> bool {
+        match self {
+            Visibility::Always | Visibility::BoredomAbove { .. } | Visibility::ShipmentsCompleted { .. } => true,
+            Visibility::EventCompleted { event } => c.event(event).is_some(),
+            Visibility::ResearchPurchased { research: x } => c.research_item(x).is_some(),
+            Visibility::BuildingCount { building, .. } => c.building(building).is_some(),
+            Visibility::QuestCompleted { quest: q } => c.event(q).is_some_and(|e| e.is_quest()),
+            Visibility::AllOf { all } => !all.is_empty() && all.iter().all(|x| x.ids_ok(c)),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -312,6 +341,20 @@ pub enum Unlock {
     /// The research item counts as bought this run (re-applied at each later
     /// run's start, so it is bought from day 0).
     GrantResearch { research: String },
+}
+
+impl Unlock {
+    /// Every id it names is in the content, and a grant is positive
+    /// (`Content::check`).
+    fn ids_ok(&self, c: &Content) -> bool {
+        match self {
+            Unlock::EnableNavPanel { .. } | Unlock::SetFlag { .. } => true,
+            Unlock::EnableBuilding { building } => c.building(building).is_some(),
+            Unlock::EnableProject { project } => c.project(project).is_some(),
+            Unlock::Grant { resource, amount } => c.resource(resource).is_some() && *amount > Fx::ZERO,
+            Unlock::GrantResearch { research: x } => c.research_item(x).is_some(),
+        }
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -629,13 +672,7 @@ impl Content {
         let research = |r: &str| self.research_item(r).is_some();
         let modifier = |k: &str| MODIFIER_KEYS.contains(&k);
         let axis = |a: &str| AXES.contains(&a);
-        let req = |r: &Requirement| match r {
-            Requirement::None | Requirement::Flag { .. } => true,
-            Requirement::Project { project } => self.project(project).is_some(),
-            Requirement::Building { building, .. } => bld(building),
-            Requirement::Quest { quest: q } | Requirement::QuestCompleted { quest: q } => quest(q),
-            Requirement::Research { research: x } => research(x),
-        };
+        let req = |r: &Requirement| r.ids_ok(self);
         for b in &self.buildings {
             let w = format!("building {:?}", b.id);
             for r in b.cost.keys().chain(b.produces.keys()).chain(b.upkeep.keys()) {
@@ -678,17 +715,7 @@ impl Content {
         for r in &self.research {
             let w = format!("research {:?}", r.id);
             need(r.requires.as_deref().is_none_or(research), format!("{w}: bad requires"));
-            fn vis_ok(c: &Content, v: &Visibility) -> bool {
-                match v {
-                    Visibility::EventCompleted { event } => c.event(event).is_some(),
-                    Visibility::ResearchPurchased { research: x } => c.research_item(x).is_some(),
-                    Visibility::BuildingCount { building, .. } => c.building(building).is_some(),
-                    Visibility::QuestCompleted { quest: q } => c.event(q).is_some_and(|e| e.is_quest()),
-                    Visibility::AllOf { all } => !all.is_empty() && all.iter().all(|x| vis_ok(c, x)),
-                    _ => true,
-                }
-            }
-            need(vis_ok(self, &r.visible_when), format!("{w}: bad visible_when"));
+            need(r.visible_when.ids_ok(self), format!("{w}: bad visible_when"));
             if let Some(ResearchEffect::CommandCostOverride { command, resource, .. }) = &r.effect {
                 need(self.command(command).is_some() && res(resource), format!("{w}: bad override"));
             }
@@ -706,14 +733,7 @@ impl Content {
             need(!(e.is_side() && matches!(e.condition, Condition::AllOf { .. })), format!("{w}: a side quest can't be all_of"));
             need(self.condition_ok(&e.condition), format!("{w}: condition names something unknown"));
             for u in &e.unlocks {
-                let ok = match u {
-                    Unlock::EnableBuilding { building } => bld(building),
-                    Unlock::EnableProject { project } => self.project(project).is_some(),
-                    Unlock::Grant { resource, amount } => res(resource) && *amount > Fx::ZERO,
-                    Unlock::GrantResearch { research: x } => research(x),
-                    _ => true,
-                };
-                need(ok, format!("{w}: bad unlock"));
+                need(u.ids_ok(self), format!("{w}: bad unlock"));
             }
             let story_ok = e.is_quest() || (e.story.is_empty() && e.payoff.is_empty());
             need(story_ok, format!("{w}: story and payoff are for chain quests"));

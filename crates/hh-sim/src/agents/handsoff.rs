@@ -61,6 +61,8 @@ fn without_researched(entries: &[Entry]) -> Vec<Entry> {
 pub struct HandsOff {
     author: Author,
     loadout: Loadout,
+    /// The loadout's file, for a refused tab's message.
+    path: String,
     first_run: Option<u32>,
     loaded_run: u32,
     stale_days: u64,
@@ -75,13 +77,17 @@ pub struct HandsOff {
 }
 
 impl HandsOff {
-    pub fn new(k: &Knobs) -> Result<Self, String> {
-        let loadout = loadout::parse(LOADOUT).map_err(|e| format!("configs/sim/handsoff_loadout.txt: {e}"))?;
+    /// `file` is another loadout to play, as `(path, text)` (the native-only
+    /// `loadout=<path>` knob, [`super::build`]); `None` plays [`LOADOUT`].
+    pub fn new(k: &Knobs, file: Option<(&str, &str)>) -> Result<Self, String> {
+        let (path, text) = file.unwrap_or(("configs/sim/handsoff_loadout.txt", LOADOUT));
+        let loadout = loadout::parse(text).map_err(|e| format!("{path}: {e}"))?;
         let mut author = Author::new(k);
         author.stop_at_retire = true;
         Ok(HandsOff {
             author,
             loadout,
+            path: path.to_string(),
             first_run: None,
             loaded_run: 0,
             stale_days: k.get("stale_days", 300).max(1) as u64,
@@ -109,7 +115,7 @@ impl HandsOff {
             let _ = p.put_program(*tab as u32, part.clone(), None);
             // A tab the game refused would sit empty every run and the read
             // mean nothing: never silently.
-            assert!(held(p, &part), "configs/sim/handsoff_loadout.txt: Program {} refused at run {}", tab + 1, p.view().run);
+            assert!(held(p, &part), "{}: Program {} refused at run {}", self.path, tab + 1, p.view().run);
             self.pending.push(*tab);
         }
         let v = p.view();
@@ -155,7 +161,7 @@ impl Agent for HandsOff {
                     let entries = self.loadout.programs.iter().find(|(t, _)| *t == tab).map(|(_, e)| e.clone()).unwrap_or_default();
                     let _ = p.put_program(tab as u32, entries.clone(), Some(&slot_name(tab)));
                     let held = p.view().programs.get(tab).is_some_and(|x| x.entries == entries);
-                    assert!(held, "configs/sim/handsoff_loadout.txt: Program {} refused once researched", tab + 1);
+                    assert!(held, "{}: Program {} refused once researched", self.path, tab + 1);
                 }
                 return;
             }
@@ -208,5 +214,17 @@ mod tests {
             assert!(*t < v.programs.len(), "tab {}", t + 1);
             assert!(e.len() <= v.max_program_lines, "tab {}: {} lines", t + 1, e.len());
         }
+    }
+
+    /// `loadout=<path>` plays a file; a missing or bad one is a build error.
+    #[test]
+    fn the_loadout_knob_reads_a_file() {
+        let ms = crate::milestones::Milestones::from_json(include_str!("../../../../configs/sim/milestones.json")).unwrap();
+        let root = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");
+        let good = format!("handsoff:loadout={root}/experiments/results/060_loadout_exploration/loadouts/L3_one_tab.txt,every=5");
+        assert!(super::super::build(&good, 1, &ms).is_ok());
+        let missing = format!("handsoff:loadout={root}/no_such_loadout.txt");
+        assert!(super::super::build(&missing, 1, &ms).err().unwrap().contains("no_such_loadout.txt"));
+        assert!(super::super::build("author:loadout=x.txt", 1, &ms).is_err());
     }
 }

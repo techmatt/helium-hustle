@@ -159,3 +159,27 @@ fn content_check_refuses_unknown_ids_in_conditions() {
     sub_objectives[0].condition = Condition::BuildingOwned { building: "no_such".into(), count: 1 };
     assert!(c.check().is_err_and(|e| e.contains("condition names something unknown")));
 }
+
+/// docs/rules/README.md *Content* counts each file's rows: the counts stay
+/// right (they had gone stale before).
+#[test]
+fn the_rules_readme_counts_the_content() {
+    let c = crate::content::content();
+    let doc = include_str!("../../../../docs/rules/README.md").replace('\n', " ");
+    let want = [
+        format!("resources ({})", c.resources.len()),
+        format!("buildings ({})", c.buildings.len()),
+        format!("commands ({})", c.commands.len()),
+        format!("research ({})", c.research.len()),
+        format!("events ({}:", c.events.len()),
+        format!("projects ({})", c.projects.len()),
+        format!("achievements ({})", c.achievements.len()),
+        format!("rivals ({})", c.rivals.len()),
+        format!("Earth techs ({},", c.earth_tech.len()),
+        format!("(`nav.json`, {}:", c.nav.len()),
+        format!("(`acts.json`, {}:", c.acts.len()),
+    ];
+    for w in want {
+        assert!(doc.contains(&w), "docs/rules/README.md *Content* should say {w:?}");
+    }
+}

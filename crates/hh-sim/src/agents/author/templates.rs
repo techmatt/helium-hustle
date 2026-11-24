@@ -352,8 +352,13 @@ pub(super) fn build_order_program(v: &View, order: &[(String, u32, Vec<Bridge>)]
         }
         // Its inputs first: one bought a loop while the stock is under what
         // the price asked and the credits cover the price and the buy.
+        // A price over the cap asks a percent over 100, which a fill reading
+        // never reaches: that clause always holds, so it is left out.
         for (r, need, rich) in bridged {
-            lines.push(when(stock_below(v, &r, need), Some(stock_at_least(v, "credits", rich))));
+            let low = stock_below(v, &r, need);
+            let credits = stock_at_least(v, "credits", rich);
+            let always = matches!(low.reading, Reading::Percent { .. }) && low.value > Fx::from_int(100);
+            lines.push(if always { when(credits, None) } else { when(low, Some(credits)) });
             lines.push(Entry::command(&format!("buy_{r}"), 1).indent());
         }
         // Bare (rev 19): short, it fails in one step, as a false credits

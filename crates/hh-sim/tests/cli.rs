@@ -343,11 +343,38 @@ fn the_oracle_plays_on_copies_and_its_game_replays() {
     assert_eq!(fingerprints[..half], ["ea94b92b65379242", "1bf9dfca25888d24", "7d65ccbd84b3d6f5", "e77991dfce8a98ff"]);
 }
 
+/// `--agents` splits players, not knobs: a knob's value may hold a `:` (a
+/// drive path for `handsoff`'s `loadout`).
+#[test]
+fn the_agent_list_keeps_knobs_with_their_player() {
+    let l = |s: &str| hh_sim::lab::agent_list(s);
+    assert_eq!(l("author:a=1,b=2,greedy"), ["author:a=1,b=2", "greedy"]);
+    assert_eq!(l("greedy,casual=author:min_gap=120"), ["greedy", "casual=author:min_gap=120"]);
+    assert_eq!(l("h=handsoff:every=5,loadout=C:/x/a.txt,author"), ["h=handsoff:every=5,loadout=C:/x/a.txt", "author"]);
+    assert_eq!(l("a=author:fill=4,b=author:fill=8"), ["a=author:fill=4", "b=author:fill=8"]);
+}
+
+/// `gates` lists each quest with what it opens.
+#[test]
+fn gates_lists_what_each_quest_opens() {
+    let out = run(&["gates".to_string()]).unwrap();
+    assert!(out.contains("on completion: "), "{out}");
+    assert!(out.contains("research shown once done: "), "{out}");
+    assert!(matches!(run(&["gates".to_string(), "x".to_string()]), Err(Fail::Usage(_))));
+}
+
+#[test]
+fn help_prints_the_usage() {
+    for h in ["--help", "-h", "help"] {
+        assert!(run(&[h.to_string()]).unwrap().starts_with("usage:"));
+    }
+}
+
 /// `trace --at T` prints the state at career tick T: what walls a run in.
 #[test]
 fn trace_at_prints_the_state_at_a_tick() {
     let out = run(&grid("trace", "author", &["--at", "300"])).unwrap();
-    for want in ["tick 300 run 1 day ","solar_panel", "  program 1 procs ", "      1. ", "  # target ", "career: retirements 0"] {
+    for want in ["tick 300 run 1 day ","solar_panel", "  program 1 procs ", "      1. ", "  pad 1 good ", "  # target ", "career: retirements 0"] {
         assert!(out.contains(want), "{want}: {out}");
     }
     assert!(matches!(run(&grid("experiment", "author", &["--at", "300"])), Err(Fail::Usage(_))));

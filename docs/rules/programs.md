@@ -17,7 +17,8 @@ Centers grant (1 each, paid or not). When that drops (a Data Center sold or set 
 assignments are cut from the last program first. A processor gained mid-run (a new Data
 Center) starts unassigned. Each day at most the processors resource (economy.md: 1 per
 *working*, upkeep-paid Data Center) runs: when fewer work than are assigned, the shortfall
-comes off the last programs first for that day, and their assignments stay.
+comes off the last programs first for that day, and their assignments stay. So a program
+takes one step a day per running processor, and a false `if` costs a step as a bare line does.
 
 **Instructions** (`state::Op`; flat, `<verb> <target> [amount]`: docs/rulings/programs.md). Every line
 but the two text lines, `else` and locked ones (*Locked lines*) costs a processor step, with something

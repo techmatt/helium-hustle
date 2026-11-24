@@ -13,6 +13,7 @@ $S replay out/r.json                                    # rebuild and check reco
 $S objectives reference/scenarios/run1_fresh.json      # a Godot optimizer scenario, scored
 $S show                                                 # resolved config, hashes, revision
 $S scenarios                                            # the embedded scenarios
+$S gates                                                # what each quest opens, from the content
 $S golden                                               # the golden game's fingerprint and hashes
 ```
 
@@ -112,7 +113,7 @@ Next free: 3147
 
 ## `run` and `replay`
 
-Options and defaults: the usage (`hh-sim` with no command). `--save F` writes the game's
+Options and defaults: the usage (`hh-sim --help`; with no command it prints as an error). `--save F` writes the game's
 record (`hh-record/1`); `--json` prints one line: hashes, fingerprint, `replay_ok`, the state.
 
 `run` prints the tick, run and day, each resource (amount, cap, next day's change), the

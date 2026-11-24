@@ -143,6 +143,22 @@ impl Knobs {
 /// The rungs, weakest first. `planner` is a hook for a later item: a player
 /// that plans across retirements without peeking (through
 /// [`Agent::new_run`]); `oracle` is the ceiling, a full-information planner.
+///
+/// Where each one acts, for a rule that needs every player to make a new move:
+/// - `random`: `random.rs` `Random::act`, then [`pick_cargo`] and [`hand_launch`].
+/// - `greedy`: `builder.rs` `Greedy::act`: [`pick_cargo`], [`hand_launch`], then
+///   one command from `builder::hand_command` (loads, fuels, launches, bridges).
+/// - `author`: `author.rs` `Author::act`: [`pick_cargo`], [`hand_launch`];
+///   `Author::pads` points extra pads; `Author::programs` writes the program
+///   lines from `author/templates.rs` (`hand_plan`, `standing_cycle`,
+///   `ship_cycle`, `build_order_program`, `market_program`).
+/// - `handsoff`: `handsoff.rs` `HandsOff::act`: the author's until `if` opens,
+///   then `HandsOff::load` at each reset puts in the loadout file's lines
+///   (`configs/sim/handsoff_loadout.txt`, or its `loadout=<path>`): its pads
+///   move only by those lines.
+/// - `oracle`: `oracle/mod.rs` `Oracle::act`: the author's hands, steered by
+///   rollouts.
+/// - Not a sim player: hh-core's golden script (`driver.rs`) has its own hand.
 pub const RUNGS: &[(&str, &str)] = &[
     ("random", "uniform over the actions the view offers"),
     ("greedy", "scored build order, one hand-picked command at a time"),
@@ -171,12 +187,22 @@ pub fn kind(player: &str) -> &str {
 /// Builds an agent from its spec (`[name=]kind[:key=value,...]`) for a game
 /// seed. `ms` are the milestones the career is measured against (the oracle
 /// scores them in its rollouts).
+///
+/// Knob values are integers, but one: `handsoff`'s `loadout=<path>` plays
+/// another loadout file instead of the built-in one (native only: a loadout
+/// sweep is one ladder of named variants, no rebuild; the path can't hold a
+/// `,`, the knob separator).
 pub fn build(player: &str, seed: u64, ms: &Milestones) -> Result<Box<dyn Agent>, String> {
     let spec = named(player).1;
     let (kind, rest) = spec.split_once(':').unwrap_or((spec, ""));
     let mut knobs = BTreeMap::new();
+    let mut loadout_path = None;
     for kv in rest.split(',').filter(|s| !s.is_empty()) {
         let (k, v) = kv.split_once('=').ok_or_else(|| format!("agent {spec:?}: expected key=value, got {kv:?}"))?;
+        if kind == "handsoff" && k == "loadout" {
+            loadout_path = Some(v);
+            continue;
+        }
         let v: i64 = v.parse().map_err(|_| format!("agent {spec:?}: {k}={v} is not an integer"))?;
         knobs.insert(k.to_string(), v);
     }
@@ -196,7 +222,9 @@ pub fn build(player: &str, seed: u64, ms: &Milestones) -> Result<Box<dyn Agent>,
         }
         "handsoff" => {
             knobs.check(&handsoff::knobs(), kind)?;
-            Ok(Box::new(handsoff::HandsOff::new(&knobs)?))
+            let text = loadout_path.map(read_loadout).transpose()?;
+            let file = loadout_path.zip(text.as_deref());
+            Ok(Box::new(handsoff::HandsOff::new(&knobs, file)?))
         }
         "oracle" => {
             knobs.check(oracle::KNOBS, kind)?;
@@ -210,7 +238,19 @@ pub fn build(player: &str, seed: u64, ms: &Milestones) -> Result<Box<dyn Agent>,
     }
 }
 
-/// Every sim player's fixed hand on pads: a No-cargo pad carries the first
+/// A `loadout=<path>` knob's file (native only).
+#[cfg(not(target_arch = "wasm32"))]
+fn read_loadout(path: &str) -> Result<String, String> {
+    std::fs::read_to_string(path).map_err(|e| format!("loadout={path}: {e}"))
+}
+
+#[cfg(target_arch = "wasm32")]
+fn read_loadout(path: &str) -> Result<String, String> {
+    Err(format!("loadout={path}: native only"))
+}
+
+/// Every sim player's fixed hand on pads (the golden script, `hh_core::driver`,
+/// keeps its own, deliberately unlike this one; see its comment there): a No-cargo pad carries the first
 /// good a pad may carry now (`pad_goods`: Titanium during 1.3, then the
 /// loading priority's first, He-3 at baseline), and so does an empty first pad
 /// on another good (1.3's Titanium pad turns to He-3 after it), as

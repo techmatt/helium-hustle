@@ -236,11 +236,16 @@ function openStory(pages: StoryPage[]): void {
   // Queued before the clock stops: setSpeed's settling wake then finds the gate shut
   // (runTicks plays nothing while pages wait), so no day passes the transition unseen.
   store.storyPages.push(...pages);
-  if (first) {
-    speedBeforeStory = clock.speed;
-    clock.setSpeed(0);
-    store.speed = 0;
-  }
+  if (first) speedBeforeStory = holdClock();
+}
+
+/** Stops the clock for a modal (a story chain, the run summary) and returns the speed it
+ * had. Call it once the modal's gate is set: setSpeed's settling wake then plays nothing. */
+function holdClock(): Speed {
+  const was = clock.speed;
+  clock.setSpeed(0);
+  store.speed = 0;
+  return was;
 }
 
 /** Story's finished-beat click: that quest's modal chain again (its opening, then its
@@ -386,9 +391,8 @@ function refresh(reset = false, story: 'load' | 'intro' | 'play' = reset ? 'load
     // speed it had (paused included).
     store.summary = v.last_run;
     // An open story modal already stopped the clock: Continue resumes what it held.
-    speedBeforeSummary = store.storyPages.length > 0 ? speedBeforeStory : clock.speed;
-    clock.setSpeed(0);
-    store.speed = 0;
+    const was = holdClock();
+    speedBeforeSummary = store.storyPages.length > 0 ? speedBeforeStory : was;
     playlog.log('retirement', { ended: v.last_run.run, forced: v.last_run.forced, days: v.last_run.days });
     checkpoint();
     save();

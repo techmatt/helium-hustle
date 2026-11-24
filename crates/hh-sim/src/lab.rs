@@ -34,14 +34,19 @@ struct Grid {
     at: Option<u64>,
 }
 
-/// Players, comma-separated; a piece with `=` but no `:` after a spec with
-/// knobs is another knob of it (`author:a=1,b=2,greedy` is two players;
-/// `casual=author:min_gap=120` one, named).
+/// Players, comma-separated; a piece with `=` after a spec with knobs is
+/// another knob of it unless it names a player (`name=kind[:...]`, a rung's
+/// kind): `author:a=1,b=2,greedy` is two players, `casual=author:min_gap=120`
+/// one, named, and `handsoff:every=5,loadout=C:/x.txt` one.
 pub fn agent_list(s: &str) -> Vec<String> {
+    let names_a_player = |piece: &str| {
+        let spec = crate::agents::named(piece).1;
+        piece.contains(':') && crate::agents::RUNGS.iter().any(|r| r.0 == crate::agents::kind(spec))
+    };
     let mut out: Vec<String> = Vec::new();
     for piece in s.split(',').filter(|x| !x.is_empty()) {
         match out.last_mut() {
-            Some(prev) if piece.contains('=') && !piece.contains(':') && prev.contains(':') => {
+            Some(prev) if piece.contains('=') && !names_a_player(piece) && prev.contains(':') => {
                 prev.push(',');
                 prev.push_str(piece);
             }
@@ -297,7 +302,7 @@ pub fn run(cmd: &str, args: &[String]) -> Result<String, Fail> {
 }
 
 /// `trace --at T`: the state's economy (resources against caps, buildings
-/// with their next price, programs, markets), the agent's last note, and the
+/// with their next price, programs, pads, markets), the agent's last note, and the
 /// career's long goals: what walls a run in.
 fn state_at(s: &Session, note: &str) -> String {
     let mut t = String::new();
@@ -327,6 +332,21 @@ fn state_at(s: &Session, note: &str) -> String {
         for (i, e) in p.entries.iter().enumerate() {
             let _ = writeln!(t, "    {:>3}. {}", i + 1, e.describe());
         }
+    }
+    for (i, p) in v.pads.iter().enumerate() {
+        let _ = writeln!(
+            t,
+            "  pad {} good {} cargo {}/{} cooldown {} active {} paused {} ready {} can_launch {}",
+            i + 1,
+            p.good.as_deref().unwrap_or("-"),
+            p.cargo,
+            p.capacity,
+            p.cooldown,
+            p.active,
+            p.paused,
+            p.ready,
+            p.can_launch
+        );
     }
     for m in &v.markets {
         let _ = writeln!(t, "  market {:10} demand {:?} tier {}", m.good, m.demand.map(|d| d.to_string()), m.tier);

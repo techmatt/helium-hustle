@@ -12,7 +12,7 @@
 //   text       placeholder or broken text on screen (undefined, NaN, [object ...], {x}),
 //              more than one program line framed, a frame on a program with no processor
 //   contrast   text against its solid background under 4.5:1 (3:1 large)
-//   text       (also) a program-grammar form the text editor reads red, a block view not
+//   text       (also) a program-grammar form the Programs view's Text mode reads red, a block view not
 //              holding every applied line, text not reading back as written
 //   input      (also) a project rate step the engine refused, an autopilot quest step that
 //              never finished or left the quest where it was
@@ -50,7 +50,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { READY, driver, launch as launchBrowser, pageUrl, q, sleep } from './cdp.mjs';
+import { READY, driver, launch as launchBrowser, pageUrl, q, shortCommand, sleep } from './cdp.mjs';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const url = pageUrl('qa');
@@ -698,18 +698,17 @@ async function pass(seed, width, theme) {
     await setValue(`.card.pad[data-pad="${p.pad}"] select`, p.good);
   };
 
-  /** Events' unread counts: Recent Activity folded counts what arrives while it is shut;
-   * opened and on screen for over a second, the count clears. */
-  /** The takeover views (scenario everything): the text editor given a program in every
-   * form the grammar writes (each line must read, or say why in its gutter note), applied,
-   * the block view holding every line, the text reading back as written; then the Cortex
-   * mock opened by its debug toggle and closed with Esc. Each audited and captured. */
   /** Opens the Programs view from its nav tile in Text mode (the view remembers the mode). */
   const openText = async () => {
     await click('.nav-tile[data-nav="programs"]', 'open Programs');
     await waitFor(`!!document.querySelector('[data-testid="mode-text"]')`, 'the Programs view', 3000);
     if (!(await exists('[data-testid="text-editor"]'))) await click('[data-testid="mode-text"]', 'Text mode');
   };
+  /** The takeover views (scenario everything): the Programs view's Text mode given a
+   * program in every form the grammar writes (each line must read, or say why in its gutter
+   * note), applied, the block view holding every line, the text reading back as written;
+   * then the Cortex mock opened by its debug toggle and closed with Esc. Each audited and
+   * captured. */
   const takeoverProbe = async (when) => {
     const AREA = '[data-testid="text-editor-area"]';
     await speed(0);
@@ -733,7 +732,7 @@ async function pass(seed, width, theme) {
     await capture(`${when}-text-editor`);
     if (await evaluate(`!document.querySelector('[data-testid="text-editor-apply"]')?.disabled`)) await click('[data-testid="text-editor-apply"]', 'apply');
     await sleep(200);
-    await click('[data-takeover-close="programs"]', 'close the text editor');
+    await click('[data-takeover-close="programs"]', 'close the Programs view');
     await sleep(200);
     const rows = await evaluate(`document.querySelectorAll('.lines li').length`);
     const written = GRAMMAR.split('\n').filter((l) => l.trim() !== '').length;
@@ -745,7 +744,7 @@ async function pass(seed, width, theme) {
     const want = GRAMMAR.trimEnd().split('\n');
     const differ = want.map((l, i) => [l, back[i] ?? '(none)']).filter(([a, b2]) => a !== b2);
     if (differ.length) note('text', `${when}: text doesn't read back as written: ${differ.slice(0, 3).map(([a, b2]) => `"${a}" -> "${b2}"`).join('; ')}`);
-    await click('[data-takeover-close="programs"]', 'close the text editor');
+    await click('[data-takeover-close="programs"]', 'close the Programs view');
     // The Cortex mock, by its debug toggle.
     await panel('options');
     if (!(await exists('#cortex-mock-toggle'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
@@ -786,6 +785,8 @@ async function pass(seed, width, theme) {
       while (await press(i, '−')) await sleep(60);
     }
   };
+  /** Events' unread counts: Recent Activity folded counts what arrives while it is shut;
+   * opened and on screen for over a second, the count clears. */
   const unreadProbe = async (when) => {
     const sec = '[data-testid="events-activity"]';
     const count = () => evaluate(`Number(document.querySelector('${sec}')?.dataset.unread ?? -1)`);
@@ -900,7 +901,10 @@ async function pass(seed, width, theme) {
     if ((await page.readStory()).length === 0 && !introRead) note('text', 'a new game opened no story modal for its first quest');
 
     // Run 1, played from the screen: buildings in a fixed order, a program that sells
-    // compute or buys what the next building lacks, loads and launches.
+    // compute or buys what the next building lacks, loads and launches. e2e.mjs's
+    // playOpening is the other copy, kept apart on purpose: it stops at 1.4 and checks the
+    // story on the way (its own ORDER, a full 20 / 100 cargo before a launch), where this
+    // one plays on to look at screens (a longer ORDER, a launch at 10 cargo).
     const ORDER = [
       ['solar_panel', 2], ['excavator', 1], ['smelter', 1], ['solar_panel', 3], ['excavator', 2],
       ['storage_depot', 1], ['solar_panel', 4], ['launch_pad', 1], ['solar_panel', 5], ['refinery', 1],
@@ -915,14 +919,6 @@ async function pass(seed, width, theme) {
           stories: document.querySelector('[data-testid="story-banner"]')?.dataset.story ?? null,
           summary: !!document.querySelector('[data-testid="summary"]'),
           nav: [...document.querySelectorAll('.nav-tile')].map((t) => t.dataset.nav) };
-      })()`);
-    const buildingsNow = () =>
-      evaluate(`(() => {
-        const out = {};
-        for (const c of document.querySelectorAll('.card.building')) {
-          out[c.dataset.id] = { owned: Number(c.dataset.owned), short: (c.dataset.short ?? '').split(' ').filter(Boolean), buyable: c.classList.contains('can-buy') };
-        }
-        return out;
       })()`);
     const seenNav = new Set();
     /** Blueprints research already done (or never offered) this pass. */
@@ -976,7 +972,7 @@ async function pass(seed, width, theme) {
       await moments(s);
       if (s.nav.includes('retirement') && (await evaluate(`!document.querySelector('[data-testid="retire"]')?.disabled`).catch(() => false))) break;
       await panel('buildings');
-      const bs = await buildingsNow();
+      const bs = await page.buildings();
       const goal = ORDER.find(([id, n]) => bs[id] && bs[id].owned < n);
       if (goal && bs[goal[0]].buyable) {
         // The run may end (a forced retirement's summary) between the read and the click.
@@ -1018,11 +1014,7 @@ async function pass(seed, width, theme) {
         if (good === null) continue;
         if ((s.res.propellant ?? 0) < 20 && credits >= 12) cmd = 'buy_propellant';
         else if ((s.res[good] ?? 0) >= 5 && cargo < 10) cmd = 'load_pads';
-      } else if (goal) {
-        const short = bs[goal[0]].short;
-        if (short.includes('titanium') && credits >= 25) cmd = 'buy_titanium';
-        else if (short.includes('regolith') && credits >= 12) cmd = 'buy_regolith';
-      }
+      } else if (goal) cmd = shortCommand(bs[goal[0]].short, credits) ?? cmd;
       await page.runOnly(cmd, s.lines, { skipDisabled: true });
       await sleep(60);
     }

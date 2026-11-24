@@ -12,7 +12,8 @@ protocol (no packages; the harness, shared with qa, is `scripts/cdp.mjs`) agains
 served page: `HH_URL`, required (it exits naming `vite preview` when unset),
 `HH_BROWSER` for a browser off the usual paths, `HH_SHOTS=<dir>` to save PNGs (an item's
 results folder; kept shots are also copied to the shared screenshots folder, CLAUDE.md). About
-100 s. It plays, in order:
+100 s. `HH_ONLY=<n>[,<n>...]` runs only those sections (what a skipped one leaves behind is set
+up directly). It plays, in order:
 
 1. **A fresh game through the normal UI only** (no debug menu): only Solar Panel and Data
    Center offered, only 1.1's story modal (paused, its task on the last page; 1.1's picture
@@ -76,8 +77,9 @@ A story modal refuses every action and speed until read: `readStory()` reads one
 (the driver's), `autoStory()` clicks every later one away until the page is left.
 
 - **Under load it flakes:** section 3's 10x pointer walk fails beside a cargo build, and
-  so do its "if held" and "guarded line built" outcome checks (066: beside `cargo test-all`; 067: once with nothing beside it, then
-  passed on a rerun).
+  so does its "guarded line built" outcome check (066: beside `cargo test-all`; 067: once with
+  nothing beside it, then passed on a rerun). Its "if held" check reads only the if's check
+  mark since 070 (qa-findings #94).
 - **The late UI for screenshots:** `experiments/results/027_art_in_game/shots.mjs`
   (`pad_loading`, cheats, ~20 s); grants don't count toward `resource_cumulative`.
 - Edge needs an **absolute** `--user-data-dir` (the script resolves it).
@@ -105,8 +107,8 @@ debug scenario (each played, its pads given Helium-3 first, or Titanium while 1.
 and closed, Stats' breakdowns; program lines dragged; in `late_unlocks`, a loaded
 pad switched to another good (the stockpile gains what its tooltip promised) and Recent
 Activity's unread count (counts while folded, clears once read); in `everything`, the
-takeovers (a program in every form the text grammar writes, pasted into the text editor:
-each line reads, the block view holds every line, the text reads back unchanged; the
+takeovers (a program in every form the text grammar writes, pasted in Programs' Text mode:
+each line reads, Blocks holds every line, the text reads back unchanged; the
 Cortex mock by its toggle, closed with Esc) and every open project's Max then − steps,
 each taken. A career short of 1.8 (Projects) is played on by the debug autopilot's
 *Next quest step*, each step timed and checked to move the quest; after the scenarios its

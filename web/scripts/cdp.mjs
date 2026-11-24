@@ -3,6 +3,7 @@
 //   pageUrl(script)  HH_URL, required (a `vite preview` of a static build; exits if unset)
 //   launch(opts)     a browser with one page: { send, evaluate, errors, close }
 //   driver(b, opts)  page helpers on it: waitFor, load, click, panel, debugMenu, grant...
+//   shortCommand     the buy for a building's short resource (both first-shipment loops)
 //   HH_BROWSER       a browser off the usual paths
 import { spawn, spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
@@ -127,6 +128,15 @@ export async function launch({ width, height, emulate = false, profileRoot, port
   return { send, evaluate, errors, close };
 }
 
+/** The buy command a first-shipment loop runs for a building it can't afford yet: its
+ * `short` resources (a card's `data-short`) and the credits in hand pick Buy Titanium,
+ * then Buy Regolith; null when neither applies. Pure: e2e's and qa's loops share it. */
+export function shortCommand(short, credits) {
+  if (short.includes('titanium') && credits >= 25) return 'buy_titanium';
+  if (short.includes('regolith') && credits >= 12) return 'buy_regolith';
+  return null;
+}
+
 /** Saves a viewport PNG (or `clip`'s box) to `file`. */
 export async function capture(b, file, params = {}) {
   const r = await b.send('Page.captureScreenshot', { format: 'png', ...params });
@@ -170,6 +180,15 @@ export function driver(b, { url, poll = 100, settle = 500, readyMs = 10000, clic
     await sleep(settle);
     await waitFor(READY, 'the page (settled)', readyMs);
   };
+  /** The Buildings panel's cards as the player reads them: owned, short of what, buyable. */
+  const buildings = () =>
+    evaluate(`(() => {
+      const out = {};
+      for (const c of document.querySelectorAll('.card.building')) {
+        out[c.dataset.id] = { owned: Number(c.dataset.owned), short: (c.dataset.short ?? '').split(' ').filter(Boolean), buyable: c.classList.contains('can-buy') };
+      }
+      return out;
+    })()`);
   const number = async (id) => Number((await evaluate(`document.getElementById('${id}').textContent`)).replace(/\D/g, ''));
   const panel = async (id) => {
     await click(`.nav-tile[data-nav="${id}"]`, `panel ${id}`);
@@ -252,7 +271,8 @@ export function driver(b, { url, poll = 100, settle = 500, readyMs = 10000, clic
     runOnly,
     readStory,
     autoStory,
-    day: () => number('day'),
+    buildings,
+    day:() => number('day'),
     run: () => number('run'),
     speed: (s) => click(`#speeds button[data-speed="${s}"]`, `speed ${s}`),
     panel,

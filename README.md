@@ -97,11 +97,12 @@ change bumps `RULES_REVISION`
 plays the golden game through `play_golden`, which runs `hh_core::driver` itself in wasm, with
 the same seed and length). The content hash moves with any `content/` byte and the config hash
 with any `configs/baseline.json` value, play or not; the fingerprint (`GameState::fingerprint`,
-the state less its config) only with play. **Step:** `python scripts/set_golden.py` sets all
+the state less its config) only with play. **Step:** `python scripts/set_golden.py` (a release build first: background it) sets all
 eight from `hh-sim golden`; never type them. The sim players' pinned games are separate:
 `PINNED`, `HANDSOFF_PIN` and the oracle's in `crates/hh-sim/tests/cli.rs` (an agent refactor
-keeps them; a rules change moves those whose play it changes): run `cargo test-all`, then
-`python scripts/set_pins.py` copies them from the games those tests wrote. A rename,
+keeps them; a rules change moves those whose play it changes): run `cargo test-all -p hh-sim`
+(the oracle's pin is a slow-lane test; failing pins still write their games to
+`out/hh-sim-tests/`), then `python scripts/set_pins.py` copies them into `cli.rs`. A rename,
 refactor or new config key that plays the same moves no fingerprint; if it does, play changed.
 Content ids are also named outside `content/` (`configs/sim/milestones.json`, the sim agents,
 tests, `web/scripts/e2e.mjs`): `git grep` an id before removing it. The program text form
@@ -129,6 +130,16 @@ the Programs view's Blocks mode), `programEdit.ts` (the block shape, with its
 checks in `scripts/unit.mjs`), the run gutter (`Gutter.tsx` `entryStatus`), and
 `docs/rules/programs.md`.
 
+**A new comparison** touches `state::Cmp` (`symbol`), `program_text.rs` (`clause`'s
+`cmp_of`), `modules/programs.rs` (`clause_holds`), the comparison loop in `tests/logic.rs`,
+the web `Cmp` (`engine.ts`) and `CMPS` (`ui/ProgramLogic.tsx`), the form line in
+`agents/loadout.rs`'s doc, and `docs/rules/programs.md` *Conditions*.
+
+**Scenarios are asserted on**: hh-core's `tests/play.rs` (`late_unlocks`' one-energy
+shortage and programs, `everything`'s views and active quest, `rich`), hh-sim's `tests/cli.rs`
+(`rich`) and e2e sections (docs/architecture.md, *Scenarios*). A content change (an upkeep, a
+quest's unlocks) re-checks them.
+
 ## This machine
 
 - Windows 10, Git Bash and PowerShell. 6 cores, 12 threads.
@@ -136,6 +147,9 @@ checks in `scripts/unit.mjs`), the run gutter (`Gutter.tsx` `entryStatus`), and
   `git ls-files --eol`.
 - Python writes cp1252 and CRLF by default: scripts open files with `encoding='utf-8',
   newline='\n'`.
+- Write a multi-line edit script with the Write tool and run the file: a Git Bash heredoc
+  loses a level of backslash escaping (`'\\n'` arrives as `'\n'`), and conductor's hooks refuse
+  heredocs and `sed -i` that write files.
 - Windows can't replace a running exe: copy a binary to `out/` to run it while rebuilding.
   `warning_checks.py` rebuilds `target/release/hh-sim.exe`, so its parity and balance checks
   fail ("Access is denied") while that binary runs.

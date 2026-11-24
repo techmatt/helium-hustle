@@ -24,11 +24,7 @@
 //! `fund P [N|all]`, `retire`; anything else is a command `[Nx] id` (its repeat count first).
 //! A line it can't read is an error, never a silent skip.
 
-#[cfg(test)]
-use hh_core::state::{Clause, Cmp, Condition, Join, Joined, Op, Reading, Verb};
 use hh_core::state::{Amount, Entry};
-#[cfg(test)]
-use hh_core::Fx;
 
 /// A parsed loadout: the reset's processor seats and each tab's lines
 /// (tabs 0-based, in file order).
@@ -54,81 +50,11 @@ fn tab(s: &str) -> Result<usize, String> {
     }
 }
 
-#[cfg(test)]
-fn clause(words: &[&str]) -> Result<Clause, String> {
-    let at = words.iter().position(|w| *w == ">" || *w == "<").ok_or_else(|| format!("no > or < in {words:?}"))?;
-    let cmp = if words[at] == ">" { Cmp::Gt } else { Cmp::Lt };
-    let raw = *words.get(at + 1).ok_or("no number")?;
-    if words.len() > at + 2 {
-        return Err(format!("trailing words in {words:?}"));
-    }
-    let value = Fx::parse(raw.trim_end_matches('%'))?;
-    let what = words[..at].join(" ");
-    let pct = raw.ends_with('%');
-    let counted = ["free processors", "free land", "idle pads", "energy per day", "days since a purchase"];
-    if pct && counted.contains(&what.as_str()) {
-        return Err(format!("{what} has no percent: {words:?}"));
-    }
-    let reading = match what.as_str() {
-        "" => return Err(format!("no reading in {words:?}")),
-        "free processors" => Reading::FreeProcessors,
-        "free land" => Reading::FreeLand,
-        "idle pads" => Reading::IdlePads,
-        "energy per day" => Reading::EnergyPerDay,
-        "days since a purchase" => Reading::DaysSincePurchase,
-        r if pct => Reading::Percent { resource: r.to_string() },
-        r => Reading::Amount { resource: r.to_string() },
-    };
-    Ok(Clause { reading, cmp, value })
-}
-
 /// One line, read by the game's text form (`hh_core::program_text`, the text
 /// editor's), so a loadout file reads as the editor would.
 fn line(text: &str) -> Result<Entry, String> {
     let op = hh_core::program_text::parse_op(text.trim())?;
     Ok(Entry { op, indented: text.starts_with([' ', '\t']) })
-}
-
-/// 060's own line reader, kept to check the text form reads its files alike.
-#[cfg(test)]
-fn line_060(text: &str) -> Result<Entry, String> {
-    let indented = text.starts_with(' ');
-    let w: Vec<&str> = text.split_whitespace().collect();
-    let act = |verb, target: Option<&str>, tab: Option<u32>, amount: Option<Amount>| Op::Act { verb, target: target.map(str::to_string), tab, amount };
-    let goods = |g: &str| if g == "all" { None } else { Some(g.to_string()) };
-    let op = match w.as_slice() {
-        ["if", rest @ ..] => {
-            let (a, b) = match rest.iter().position(|x| *x == "and" || *x == "or") {
-                Some(j) => (&rest[..j], Some((rest[j], &rest[j + 1..]))),
-                None => (rest, None),
-            };
-            let first = clause(a)?;
-            let rest = match b {
-                Some((j, b)) => Some(Joined { join: if j == "and" { Join::And } else { Join::Or }, clause: clause(b)? }),
-                None => None,
-            };
-            Op::If { when: Condition { first, rest } }
-        }
-        ["build", b] => Op::Build { building: b.to_string(), up_to: None },
-        ["build", b, "up", "to", n] => Op::Build { building: b.to_string(), up_to: Some(n.parse().map_err(|_| format!("bad count {n:?}"))?) },
-        ["buy", "land"] => Op::BuyLand {},
-        ["launch", "pads", g] => Op::Act { verb: Verb::LaunchPads, target: goods(g), tab: None, amount: None },
-        ["load", "pads", g] => Op::Act { verb: Verb::LoadPads, target: goods(g), tab: None, amount: None },
-        ["set", "pads", g, "up", "to", n] => act(Verb::SetPads, Some(g), None, Some(amount(n)?)),
-        ["pause", b] => act(Verb::Pause, Some(b), None, None),
-        ["pause", b, n] => act(Verb::Pause, Some(b), None, Some(amount(n)?)),
-        ["resume", b] => act(Verb::Resume, Some(b), None, None),
-        ["resume", b, n] => act(Verb::Resume, Some(b), None, Some(amount(n)?)),
-        ["research", r] => act(Verb::Research, Some(r), None, None),
-        ["assign", "processors", t, n] => act(Verb::AssignProcessors, None, Some(tab(t)? as u32), Some(amount(n)?)),
-        ["fund", p] => act(Verb::Fund, Some(p), None, None),
-        ["fund", p, n] => act(Verb::Fund, Some(p), None, Some(amount(n)?)),
-        ["retire"] => act(Verb::Retire, None, None, None),
-        [c] => Op::Command { command: c.to_string(), count: 1 },
-        [x, c] if x.ends_with('x') => Op::Command { command: c.to_string(), count: x[..x.len() - 1].parse().map_err(|_| format!("bad count {x:?}"))? },
-        _ => return Err(format!("can't read {text:?}")),
-    };
-    Ok(Entry { op, indented })
 }
 
 /// Reads a loadout file; an error names the line.
@@ -162,6 +88,7 @@ pub fn parse(text: &str) -> Result<Loadout, String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use hh_core::state::{Cmp, Join, Op, Reading};
 
     #[test]
     fn it_reads_every_form() {
@@ -188,7 +115,9 @@ mod tests {
     }
 
     #[test]
-    fn the_text_form_reads_the_loadout_files_as_060_did() {
+    fn the_loadout_files_parse() {
+        // The hands-off loadout and 060's write-up loadouts (README, *Rules
+        // changes*: a grammar change converts them).
         let root = concat!(env!("CARGO_MANIFEST_DIR"), "/../..");
         let mut files = vec![format!("{root}/configs/sim/handsoff_loadout.txt")];
         for f in ["L1_compute_floor", "L2_short_chain", "L3_one_tab", "L4_two_tabs", "L5_dream_tab"] {
@@ -197,14 +126,8 @@ mod tests {
         let mut n = 0;
         for f in files {
             let text = std::fs::read_to_string(&f).unwrap();
-            for raw in text.lines() {
-                let t = raw.split('#').next().unwrap_or("").trim_end();
-                if t.trim().is_empty() || t.starts_with("seat:") || t.starts_with('[') {
-                    continue;
-                }
-                assert_eq!(line(t), line_060(t), "{f}: {t}");
-                n += 1;
-            }
+            let l = parse(&text).unwrap_or_else(|e| panic!("{f}: {e}"));
+            n += l.programs.iter().map(|(_, e)| e.len()).sum::<usize>();
         }
         assert!(n > 100);
     }

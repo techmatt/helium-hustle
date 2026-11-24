@@ -1,4 +1,4 @@
-// The program text editor: a takeover view on one program as plain text (one statement a
+// The Programs view's Text mode (Programs.tsx): one program as plain text (one statement a
 // line, `if` bodies indented, `#` notes), which is also its copy and paste import and
 // export. The engine parses the text (`parse_program_text`) and writes it
 // (`program_text`); this file never parses. The draft re-parses as it is typed, with each
@@ -10,7 +10,7 @@ import type { ComponentChildren } from 'preact';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { engine, type Entry, type ParsedText, type ProgramView, type View } from '../engine';
 import { act, parseProgramText, setNotice, store, type Store } from '../store';
-import { DOT_TITLE, ELSE_TITLE, GutterMark, entryStatus, type Dot, type LineStatus } from './Gutter';
+import { DOT_TITLE, ELSE_TITLE, GutterMark, entryStatus, flaggedStatus, noteStatus, type LineStatus } from './Gutter';
 import { InstructionPanel } from './Instructions';
 import { insertLine } from './programEdit';
 
@@ -353,14 +353,12 @@ function lineStatuses(v: View, s: Store, program: number, p: ProgramView, r: Par
     }
     // An `else` line never runs (its `if` decides): free, like a note.
     if (l.status === 'note' || (l.status === 'ok' && l.entry !== null && r.entries[l.entry]?.op === 'else')) {
-      const title = l.status === 'note' ? DOT_TITLE.note : ELSE_TITLE;
-      out.push({ dot: 'note', note: null, title, fired: null, repeat: null });
+      out.push(noteStatus(l.status === 'note' ? DOT_TITLE.note : ELSE_TITLE));
       continue;
     }
     if (l.status === 'red' || l.status === 'amber') {
-      const dot: Dot = l.status;
-      const note = l.reason ? (dot === 'amber' ? `locked: ${l.reason}` : l.reason) : null;
-      out.push({ dot, note, title: `${DOT_TITLE[dot]}${l.reason ? `: ${l.reason}` : ''}`, fired: null, repeat: null });
+      // An empty reason counts as none.
+      out.push(flaggedStatus(l.status, l.reason || null));
       continue;
     }
     // The program line it is (the Blocks mode's status for it), or a new line not run yet.
