@@ -49,7 +49,7 @@ Three columns and a status bar:
   its breakdown in place: last day's sources and sinks, who went short), each ideology
   axis's rank once Ideologies is unlocked (folded at first in a window under 800 px high),
   and at the foot the active main quest's picture, else the lunar horizon.
-- **Middle:** a starry sky, a completed side quest's text (the story banner),
+- **Middle:** a starry sky, a completed side quest's text and picture (the story banner),
   then the active panel. Buildings: the Land bar (green and click-to-buy like a card
   when affordable), a collapsible section per category, cards (`Buildings.tsx`). A click on an affordable card (outlined in green, its name row tinted), off its
   controls, builds one (Shift: up to ten; ignored for 0.5 s after the summary or a story
@@ -128,7 +128,7 @@ Building pictures: `src/assets/buildings/<id>.webp` (`src/ui/buildingArt.ts`,
 Chips, nav icons, horizon: `src/ui/icons.tsx` over `src/assets/{chips,nav,horizon}/`
 (`experiments/results/027_art_in_game/`); a nav `<id>.svg` stands in for an unpainted
 `<id>.webp`. `src/ui/art.tsx`: act bands and quest pictures (`src/assets/{story,quests}/`,
-by `experiments/results/078_*/process.py`), and the sky (`.sky`), home for a later live
+by `experiments/results/{078,080}_*/process.py`), and the sky (`.sky`), home for a later live
 base view: replace what it draws, keep its box.
 
 ## Using it

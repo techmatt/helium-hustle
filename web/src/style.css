@@ -880,6 +880,25 @@ ul.plain {
   gap: 10px;
   align-items: baseline;
 }
+/* A side quest's picture (art.tsx `QuestPicture`, `banner`) left of its text. */
+.story-banner-body {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.story-banner-body > blockquote {
+  flex: 1;
+  min-width: 0;
+}
+.quest-pic-banner {
+  flex: none;
+  width: 120px;
+  height: 80px;
+  object-fit: cover;
+  margin-top: 8px;
+  border-radius: 4px;
+  border: 1px solid var(--line);
+}
 .land-bar {
   display: flex;
   align-items: center;
@@ -2134,8 +2153,9 @@ button.go:hover:not(:disabled) {
 }
 .quest-pic-thumb {
   flex: none;
-  width: 48px;
-  height: 32px;
+  /* 080: between 078's 48x32 (too small to read) and 079's 72x48 (rows grow tall). */
+  width: 60px;
+  height: 40px;
   object-fit: cover;
   border-radius: 3px;
   border: 1px solid var(--line);
@@ -2143,8 +2163,8 @@ button.go:hover:not(:disabled) {
 .side-title .quest-pic-thumb {
   display: inline-block;
   vertical-align: middle;
-  width: 36px;
-  height: 24px;
+  width: 45px;
+  height: 30px;
   margin-right: 6px;
 }
 .story-task {

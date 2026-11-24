@@ -61,10 +61,11 @@ results folder; kept shots are also copied to the shared screenshots folder, CLA
    (`openText`); the mode is remembered.
    Then `storyView`: a new game played through 1.6 by the autopilot's *Next quest step*
    (the step from 1.5 passes 1.6 too, stopping at 1.7); Story shows the Act 1 band alone,
-   painted, the finished beats lit (1.1's alone with a thumbnail; the left column back on
-   the horizon), the active one glowing (in view) with its task, one
+   painted, the finished beats lit (each with its picture's thumbnail; the active
+   beat's thumbnail and the left column's foot on the active quest's picture), the active one glowing (in view) with its task, one
    "???" after it and no achievements; a lit beat's click replays its modal; the
-   Achievements tile shows every badge by category, each with its reward.
+   Achievements tile shows every badge by category, each with its reward; then scenario
+   `late_unlocks` with *Complete all research*: 1.b's completion banner shows its picture.
 6. **Readability** (before 4): capped rates, Resources' groups, affordable cards and Land,
    a pad starting with No cargo (status, red nav dot) given Helium-3, short of fuel then
    Ready, Story.

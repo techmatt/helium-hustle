@@ -927,9 +927,11 @@ async function numberBox(rows) {
 
 /** Section 11: Story and Achievements. A new game played on by the debug autopilot's
  * "Next quest step" through 1.6; Story then shows the Act 1 band, every finished beat
- * lit, the active beat glowing with its task, one "???" below it and no achievements or event
- * texts; a finished beat's click replays its story modal. The Achievements tile shows
- * badges grouped by category. Shots story-1.6.png, achievements.png. */
+ * lit with its picture's thumbnail, the active beat glowing with its task, one "???" below
+ * it and no achievements or event texts; a finished beat's click replays its story modal.
+ * The Achievements tile shows badges grouped by category. Then scenario late_unlocks: 1.b's
+ * completion banner shows its picture. Shots story-1.6.png, achievements.png,
+ * side-quest-banner.png. */
 async function storyView() {
   await debugMenu();
   await speed(0);
@@ -960,7 +962,9 @@ async function storyView() {
       bands: [...p.querySelectorAll('[data-testid="act-band"]')].map((b) => b.textContent),
       bandArt: [...p.querySelectorAll('[data-testid="act-band"]')].map((b) => /url\\(/.test(getComputedStyle(b).backgroundImage)),
       thumbs: [...p.querySelectorAll('[data-testid="story-beat-done"]')].map((b) => b.querySelector('[data-testid="quest-pic-thumb"]')?.dataset.picture ?? ''),
-      leftHorizon: !!document.querySelector('.col-left > .horizon:not(.quest-scene)'),
+      leftPic: document.querySelector('.col-left > .quest-scene [data-testid="quest-pic-left"]')?.dataset.picture ?? null,
+      activeThumb: a?.querySelector('[data-testid="quest-pic-thumb"]')?.dataset.picture ?? null,
+      thumbsLoaded: [...p.querySelectorAll('[data-testid="quest-pic-thumb"]')].every((i) => i.complete && i.naturalWidth > 0),
       done: ids('[data-testid="story-beat-done"]'),
       active: a ? a.dataset.beat : null,
       glow: a ? getComputedStyle(a.querySelector('.beat-dot')).boxShadow !== 'none' : false,
@@ -975,10 +979,13 @@ async function storyView() {
   })()`);
   check(st.bands.length === 1 && /Act 1/.test(st.bands[0]) && /The Lunar Operation/.test(st.bands[0]), `Story opens with the Act 1 band alone: ${JSON.stringify(st.bands)}`);
   check(st.bandArt.every(Boolean), `the act band is painted: ${JSON.stringify(st.bandArt)}`);
-  // Only 1.1 has a picture: its thumbnail alone; a quest without one keeps the horizon.
-  check(st.thumbs[0] === 'lunar_base' && st.thumbs.slice(1).every((x) => x === ''), `1.1's finished beat alone has a thumbnail: ${JSON.stringify(st.thumbs)}`);
-  check(st.leftHorizon, 'a quest without a picture leaves the lunar horizon at the left column foot');
   const chain = content('events.json').filter((e) => e.category === 'story').map((e) => e.id);
+  // Every Act 1 quest has its picture: each finished beat's thumbnail, the active beat's,
+  // and the active quest's at the left column's foot (the horizon only for one without).
+  const pictureOf = Object.fromEntries(content('events.json').map((e) => [e.id, e.picture ?? '']));
+  const want = chain.slice(0, at - 1).map((id) => pictureOf[id]);
+  check(want.every(Boolean) && st.thumbs.join() === want.join() && st.thumbsLoaded, `each finished beat shows its picture's thumbnail (loaded ${st.thumbsLoaded}): ${JSON.stringify(st.thumbs)}`);
+  check(!!pictureOf[chain[at - 1]] && st.activeThumb === pictureOf[chain[at - 1]] && st.leftPic === st.activeThumb, `the active beat's thumbnail and the left column's foot show 1.${at}'s picture: ${st.activeThumb} / ${st.leftPic}`);
   check(st.done.join() === chain.slice(0, at - 1).join(), `the ${at - 1} finished beats lit, in order: ${st.done.join(', ')}`);
   check(st.active === chain[at - 1] && st.glow, `1.${at} is the glowing active beat: ${st.active} glow ${st.glow}`);
   check(st.task.trim().startsWith(`1.${at}`) && st.task.length > 20 && st.bar, `the active beat shows its task and progress bar (${st.bar}): ${st.task.slice(0, 80)}`);
@@ -1018,6 +1025,24 @@ async function storyView() {
     `Achievements shows every badge grouped by category, each with its reward: ${ach.groups.join(' ')} (${ach.states.length} badges)`,
   );
   await shot('achievements');
+  // A side quest has no modal: its completion banner carries its picture (scenario
+  // late_unlocks, 1.8 done and 1.b open; Complete all research finishes 1.b).
+  await debugMenu();
+  await speed(0);
+  await setValue('#scenario', 'late_unlocks');
+  await click('#start-scenario');
+  await speed(1);
+  await sleep(1000);
+  await speed(0);
+  await debugMenu();
+  await click('#cheat-complete-research');
+  await speed(1);
+  await waitFor(`document.querySelector('[data-testid="story-banner"]')?.dataset.story === 'qfull_cluster'`, "1.b's completion banner", 20000);
+  await speed(0);
+  const banner = await evaluate(`(() => { const i = document.querySelector('[data-testid="story-banner"] [data-testid="quest-pic-banner"]'); return { pic: i?.dataset.picture ?? null, loaded: !!i && i.complete && i.naturalWidth > 0 }; })()`);
+  const sidePic = content('events.json').find((e) => e.id === 'qfull_cluster').picture;
+  check(!!sidePic && banner.pic === sidePic && banner.loaded, `a side quest's completion banner shows its picture: ${JSON.stringify(banner)}`);
+  await shot('side-quest-banner');
 }
 
 async function programsBlocks() {
@@ -1284,7 +1309,7 @@ try {
     await sleep(400);
     const held = (await day()) === d0;
     await shot('story-modal-intro');
-    // 1.1's picture (the lunar-base scene) above the modal's paragraph and at the left
+    // 1.1's picture (earthrise) above the modal's paragraph and at the left
     // column's foot; the split-glow title; no Earth globe over the middle column.
     const pic = await evaluate(`(() => {
       const m = document.querySelector('[data-testid="story-modal"] [data-testid="quest-pic-modal"]');
@@ -1299,8 +1324,8 @@ try {
         earth: !!document.querySelector('.col-mid .earth, .col-mid svg[viewBox="0 0 200 200"]'),
       };
     })()`);
-    check(pic.modal === 'lunar_base' && pic.above && pic.loaded, `1.1's modal shows the lunar-base picture above its paragraph: ${JSON.stringify(pic)}`);
-    check(pic.left === 'lunar_base', `the left column's foot shows 1.1's picture: ${pic.left}`);
+    check(pic.modal === 'q1_1_earthrise' && pic.above && pic.loaded, `1.1's modal shows its picture above its paragraph: ${JSON.stringify(pic)}`);
+    check(pic.left === 'q1_1_earthrise', `the left column's foot shows 1.1's picture: ${pic.left}`);
     check(/\bsplit-glow\b/.test(pic.title) && !pic.earth, `the split-glow title and no Earth globe: ${pic.title} earth ${pic.earth}`);
     const pages = await readStory();
     check(
@@ -1310,7 +1335,7 @@ try {
     // On 1.1, Story's active beat carries 1.1's thumbnail.
     await panel('story');
     const thumb = await evaluate(`document.querySelector('[data-testid="story-beat-active"] [data-testid="quest-pic-thumb"]')?.dataset.picture ?? null`);
-    check(thumb === 'lunar_base', `on 1.1 the active beat shows its thumbnail: ${thumb}`);
+    check(thumb === 'q1_1_earthrise', `on 1.1 the active beat shows its thumbnail: ${thumb}`);
   }
   // Two quick clicks (no render between them) both land.
   await panel('commands');

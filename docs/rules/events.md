@@ -110,9 +110,10 @@ quest passed through the same day), then the new quest's story with its task, re
 the last; a new game shows only 1.1's. A quest with no `story` shows its `body`. The view
 carries them (`quest.story`; each completed quest's `chain`, `story` and `payoff`). A quest
 (chain or side) may name a `picture`, the stem of a web asset (`[a-z0-9_]`; the view carries
-it on `quest`, `story` and `side_quests`): shown above the modal's paragraph, at the left
+it on `quest`, `story` and `side_quests`): shown above the modal's paragraph (a side
+quest's beside its completion banner's text), at the left
 column's foot while it is the active main quest (the lunar horizon otherwise), and as a
-thumbnail beside its beat's title on Story. Only 1.1 has one (`lunar_base`, the horizon scene).
+thumbnail beside its beat's title on Story. Every Act 1 quest has one (1.1-1.11 and 1.a-1.c); later quests have none yet.
 
 **Story's timeline** (display only). Each chain quest belongs to an act: `content/acts.json`
 names the acts (placeholder names) and the chain quest each opens with; a quest is in the

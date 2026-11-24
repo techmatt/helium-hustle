@@ -29,8 +29,10 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   only once the act is reached.
 - **Quest pictures (2026-11-23).** Every quest may carry a picture (content, display only):
   medium above its story modal's paragraph, at the left column's foot while it is the active
-  main quest (replacing the lunar-base scene, which stays as 1.1's picture and the fallback),
-  and as a thumbnail beside a beat's title in Story. Layouts must look right without one.
+  main quest (replacing the lunar-base scene, which stays the fallback for a quest without
+  one), and as a thumbnail beside a beat's title in Story. Layouts must look right without
+  one. Act 1's are Matt's picks from `quest_pictures_act1_r1` (080), 1.1's `earthrise`. A
+  side quest, which has no modal, shows its picture in its completion banner (Matt, 2026-11-23).
 - **Cortex mock (2026-11-22).** Contrast first: inside the wheel's rim a plain solid ground per
   theme; decoration (bezel, corona, neurons) only outside the rim. It follows the app's
   theme. The Grand Theorems sit left of the wheel in a framed brass case, clear of the nav,

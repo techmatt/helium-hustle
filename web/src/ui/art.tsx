@@ -7,7 +7,8 @@
 //
 // Files: src/assets/story/act<N>.webp (the act bands) and src/assets/quests/<stem>.webp
 // (a quest's `picture` in content/events.json), written by
-// experiments/results/078_ship_story_headers_title_and_picture_slots/process.py.
+// experiments/results/078_ship_story_headers_title_and_picture_slots/process.py (the bands)
+// and experiments/results/080_ship_act1_quest_pictures/process.py (Act 1's pictures).
 
 const STARS: [number, number, number][] = [
   [4, 18, 1], [11, 62, 0.8], [17, 30, 1.2], [26, 80, 0.8], [33, 12, 0.9], [41, 50, 1.1],
@@ -44,8 +45,9 @@ export function questPicture(stem: string | null | undefined): string | undefine
 }
 
 /** A quest's picture where it shows: the story modal (`modal`), the left column's foot
- * (`left`) or a finished beat's thumbnail (`thumb`); nothing when it has none. */
-export function QuestPicture({ stem, at }: { stem: string | null | undefined; at: 'modal' | 'left' | 'thumb' }) {
+ * (`left`), a finished beat's thumbnail (`thumb`) or a side quest's completion banner
+ * (`banner`, its modal's stand-in); nothing when it has none. */
+export function QuestPicture({ stem, at }: { stem: string | null | undefined; at: 'modal' | 'left' | 'thumb' | 'banner' }) {
   const src = questPicture(stem);
   if (!src) return null;
   return <img class={`quest-pic quest-pic-${at}`} data-testid={`quest-pic-${at}`} data-picture={stem} src={src} alt="" draggable={false} />;

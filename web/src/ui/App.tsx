@@ -94,7 +94,10 @@ export function App() {
             <strong>{s.stories[0].title}</strong>
             <span class="muted">{s.stories[0].summary}</span>
           </div>
-          <blockquote>{storyBody(s.stories[0])}</blockquote>
+          <div class="story-banner-body">
+            <QuestPicture stem={s.stories[0].picture} at="banner" />
+            <blockquote>{storyBody(s.stories[0])}</blockquote>
+          </div>
           <button type="button" onClick={dismissStory}>
             {s.stories.length > 1 ? `Next (${s.stories.length - 1} more)` : 'OK'}
           </button>

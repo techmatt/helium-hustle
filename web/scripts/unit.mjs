@@ -131,6 +131,9 @@ edits += 8;
 const pictures = JSON.parse(readFileSync(new URL('../../content/events.json', import.meta.url), 'utf8')).filter((e) => e.picture);
 const pictureFiles = new Set(readdirSync(new URL('../src/assets/quests/', import.meta.url)).filter((f) => f.endsWith('.webp')).map((f) => f.slice(0, -5)));
 for (const e of pictures) assert.ok(pictureFiles.has(e.picture), `${e.id}: picture ${e.picture} has no src/assets/quests/${e.picture}.webp`);
-assert.ok(pictures.some((e) => e.id === 'qpower_boot_sequence'), "1.1 carries a picture");
+// Every Act 1 quest (1.1-1.11, 1.a-1.c) carries one.
+const act1 = JSON.parse(readFileSync(new URL('../../content/events.json', import.meta.url), 'utf8')).filter((e) => /^1\./.test(e.beat ?? ''));
+assert.equal(act1.length, 14, 'Act 1 has 14 quests');
+for (const e of act1) assert.ok(e.picture, `${e.beat} ${e.id} carries a picture`);
 
-console.log(`unit ok (${cases.length + 4 + edits + pictures.length} checks)`);
+console.log(`unit ok (${cases.length + 4 + edits + pictures.length + act1.length} checks)`);

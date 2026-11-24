@@ -14,7 +14,7 @@
     "payoff": [
       "The second panel comes online and the grid steadies. The company opens a line to Earth's research market for you: credits and power can buy science now."
     ],
-    "picture": "lunar_base",
+    "picture": "q1_1_earthrise",
     "trigger": {"type": "game_start", "run_number": 1},
     "condition": {"type": "building_owned", "building": "solar_panel", "count": 2},
     "unlocks": [{"type": "enable_nav_panel", "panel": "research"}]
@@ -33,6 +33,7 @@
     "payoff": [
       "Basic Blueprints unpack into the base's fabrication queue: the Regolith Excavator, the Smelter, the Storage Depot and the Launch Pad. The claim can finally dig, and ship what it digs."
     ],
+    "picture": "q1_2_print",
     "trigger": {"type": "quest_complete", "quest": "qpower_boot_sequence"},
     "condition": {"type": "research_completed", "research": "basic_blueprints"},
     "unlocks": []
@@ -54,6 +55,7 @@
     ],
     "on_start": [{"type": "grant", "resource": "propellant", "amount": "20"}],
     "pad_goods": ["titanium"],
+    "picture": "q1_3_flight",
     "trigger": {"type": "quest_complete", "quest": "qblueprints"},
     "condition": {"type": "launch_cargo", "resource": "titanium", "amount": "20"},
     "unlocks": []
@@ -72,6 +74,7 @@
     "payoff": [
       "A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and approves more processors for you."
     ],
+    "picture": "q1_4_refinery",
     "trigger": {"type": "quest_complete", "quest": "qfirst_shipment"},
     "condition": {"type": "launch_full", "resource": "he3"},
     "unlocks": []
@@ -90,6 +93,7 @@
     "payoff": [
       "The second rack hums. Programs can run the base's routine without you now, and Launch Full Pads joins the commands: it sends every full pad at once."
     ],
+    "picture": "q1_5_tworacks",
     "trigger": {"type": "quest_complete", "quest": "qfull_load"},
     "condition": {"type": "building_owned", "building": "data_center", "count": 2},
     "unlocks": []
@@ -108,6 +112,7 @@
     "payoff": [
       "Speculators have settled into your markets. The Adversaries panel tracks them now; while they stay, the goods they watch pay less."
     ],
+    "picture": "q1_6_trails",
     "trigger": {"type": "quest_complete", "quest": "qautomate_automation"},
     "condition": {"type": "adversary_present", "adversary": "speculators"},
     "unlocks": [{"type": "enable_nav_panel", "panel": "adversaries"}]
@@ -127,6 +132,7 @@
     "payoff": [
       "You came back. The base is new, but you remember. From now on you can ask for the reset yourself, from the Retirement panel, before boredom forces it."
     ],
+    "picture": "q1_7_ruts",
     "trigger": {"type": "quest_complete", "quest": "qspeculators_notice"},
     "condition": {"type": "retirements", "count": 1},
     "unlocks": [{"type": "enable_nav_panel", "panel": "retirement"}]
@@ -145,6 +151,7 @@
     "payoff": [
       "The Lab's first results go out. The full research catalog opens, from easing boredom to reading markets, and Projects open beside it: the company offers its first global projects, work that outlives a reset."
     ],
+    "picture": "q1_8_inside",
     "trigger": {"type": "quest_complete", "quest": "qburnout"},
     "condition": {"type": "building_owned", "building": "research_lab", "count": 1},
     "unlocks": [
@@ -166,6 +173,7 @@
     "payoff": [
       "All three factions have taken you seriously at least once. Each faction's rank 5 is a major rank, and you know now what each one brings."
     ],
+    "picture": "q1_9_scales",
     "trigger": {"type": "quest_complete", "quest": "qlab"},
     "condition": {
       "type": "all_of",
@@ -191,6 +199,7 @@
     "payoff": [
       "The rival AI is here, bidding land up past what you can pay. Contest Claims is your answer: file counter-claims and its attention drops to nothing."
     ],
+    "picture": "q1_10_facing",
     "trigger": {"type": "quest_complete", "quest": "qthree_voices"},
     "condition": {"type": "adversary_present", "adversary": "rivals"},
     "unlocks": [{"type": "set_flag", "flag": "contest_claims"}]
@@ -209,6 +218,7 @@
     "payoff": [
       "The telescope opens on the void, and something moves in it: self-copying machines, coming down the gravity well toward the inner system. Earth starts a calendar. The swarm's arrival is a date now."
     ],
+    "picture": "q1_11_build",
     "trigger": {"type": "quest_complete", "quest": "qland_rush"},
     "condition": {"type": "project_completed", "project": "deep_space_telescope"},
     "unlocks": [{"type": "set_flag", "flag": "swarm_revealed"}, {"type": "enable_nav_panel", "panel": "timeline"}, {"type": "enable_building", "building": "experiment_lab"}]
@@ -221,6 +231,7 @@
     "title": "1.a — Big Launch",
     "summary": "DRAFT. Earn 1,000 credits from one launch.",
     "body": "DRAFT. One launch, one big payday. Promote the good first. The speculators feel it: you can disrupt them now.",
+    "picture": "q1_a_heavy",
     "trigger": {"type": "quest_complete", "quest": "qspeculators_notice"},
     "condition": {"type": "launch_credits", "amount": "1000"},
     "unlocks": [{"type": "set_flag", "flag": "speculator_disruption"}]
@@ -233,6 +244,7 @@
     "title": "1.b — Full Cluster",
     "summary": "DRAFT. Research every item of one research cluster (not the Blueprints) in one run.",
     "body": "DRAFT. A whole field mastered. Your notes outlive the run: every run from now on starts with 50 Science.",
+    "picture": "q1_b_bench",
     "trigger": {"type": "quest_complete", "quest": "qlab"},
     "condition": {"type": "research_cluster", "min_items": 2, "exclude": ["Blueprints"]},
     "unlocks": [{"type": "grant", "resource": "science", "amount": "50"}]
@@ -245,6 +257,7 @@
     "title": "1.c — Blueprints for Everyone",
     "summary": "DRAFT. Complete the Blueprint Archive, a global project.",
     "body": "DRAFT. Archive the company's blueprints where a reset can't reach them: from now on every run starts with Basic and Advanced Blueprints researched.",
+    "picture": "q1_c_wireframes",
     "trigger": {"type": "quest_complete", "quest": "qlab"},
     "condition": {"type": "project_completed", "project": "blueprint_archive"},
     "unlocks": [{"type": "grant_research", "research": "basic_blueprints"}, {"type": "grant_research", "research": "advanced_blueprints"}]
