@@ -48,7 +48,7 @@ fn objectives_play_the_reference_scenario_to_a_forced_retirement() {
     for want in [
         "first_ship",
         "quest qpower_boot_sequence",
-        "quest qshipment_proof_of_concept",
+        "quest qfirst_shipment",
         "forced_retirement",
     ] {
         assert!(out.contains(want), "{want}: {out}");
@@ -112,16 +112,16 @@ fn grid(cmd: &str, agents: &str, extra: &[&str]) -> Vec<String> {
 /// all. Copy them from the failing assertion (or the test's `games.jsonl`).
 /// (The handsoff rows play only the author's runs: [`HANDSOFF_PIN`] pins its loadout.)
 const PINNED: &[(&str, u64, &str)] = &[
-    ("random", 1, "07dd09f104137619"),
-    ("random", 2, "b40e34bd0e9c6bb0"),
-    ("greedy", 1, "b24542b35f155006"),
-    ("greedy", 2, "7e2bb72c66434913"),
-    ("author", 1, "72470f669fe2f04d"),
-    ("author", 2, "342b6f376b8dc715"),
-    ("casual", 1, "afaa083b295e3b8b"),
-    ("casual", 2, "bc1ba40038e82b39"),
-    ("handsoff", 1, "72470f669fe2f04d"),
-    ("handsoff", 2, "3663056b4dba9df6"),
+    ("random", 1, "fe9f18527b220f86"),
+    ("random", 2, "17f97194dc92f003"),
+    ("greedy", 1, "2608c8fb4566ce2e"),
+    ("greedy", 2, "8d909f6aa358f8c7"),
+    ("author", 1, "e4028366288b614b"),
+    ("author", 2, "2ccb21fc890e6c3f"),
+    ("casual", 1, "1a0ba7348e727b00"),
+    ("casual", 2, "062f1eb3342bbbcb"),
+    ("handsoff", 1, "e4028366288b614b"),
+    ("handsoff", 2, "2ccb21fc890e6c3f"),
 ];
 
 #[test]
@@ -184,7 +184,7 @@ fn the_ladder_prints_its_tables_and_writes_results() {
 /// handsoff games are the author's), so this one goes to run 3 on seed 1,
 /// where the loadout file plays, and ships and buys. A new loadout file moves
 /// the pin: copy it from the failing assertion.
-const HANDSOFF_PIN: &str = "0ed8a2673332a4dd";
+const HANDSOFF_PIN: &str = "42cc959a12579978";
 
 #[test]
 #[ignore = "slow lane: a 3-run career (~2 s)"]
@@ -340,7 +340,7 @@ fn the_oracle_plays_on_copies_and_its_game_replays() {
     let half = fingerprints.len() / 2;
     assert_eq!(fingerprints[..half], fingerprints[half..]);
     // Seeds 1 and 2 of the oracle, then of the pinned one.
-    assert_eq!(fingerprints[..half], ["a357edb30662a960", "d7fe422f18000b1f", "646012a57aa34674", "ec5afb8922bc49e0"]);
+    assert_eq!(fingerprints[..half], ["ea94b92b65379242", "1bf9dfca25888d24", "7d65ccbd84b3d6f5", "e77991dfce8a98ff"]);
 }
 
 /// `trace --at T` prints the state at career tick T: what walls a run in.

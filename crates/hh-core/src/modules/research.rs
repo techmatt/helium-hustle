@@ -12,8 +12,8 @@ use crate::state::GameState;
 
 use super::economy::{BOREDOM, SCIENCE};
 
-/// The panel an event opens before any research can be bought (the Lab
-/// quest, 1.6).
+/// The panel an event opens before any research can be bought (1.1 Online's
+/// completion).
 pub const RESEARCH_PANEL: &str = "research";
 
 pub static DEF: ModuleDef = ModuleDef {
@@ -32,10 +32,11 @@ impl Params {
 
 /// Shown (and so buyable): bought in any run, or its `visible_when` holds.
 pub fn visible(g: &GameState, item: &Research) -> bool {
-    if g.career.researched.contains(&item.id) {
-        return true;
-    }
-    match &item.visible_when {
+    g.career.researched.contains(&item.id) || shows(g, &item.visible_when)
+}
+
+fn shows(g: &GameState, v: &Visibility) -> bool {
+    match v {
         Visibility::Always => true,
         Visibility::EventCompleted { event } => g.run.events.contains_key(event),
         Visibility::BoredomAbove { threshold } => g.amount(BOREDOM) > *threshold,
@@ -45,6 +46,7 @@ pub fn visible(g: &GameState, item: &Research) -> bool {
             g.career.lifetime.shipments + g.run.stats.shipments >= *count
         }
         Visibility::QuestCompleted { quest } => g.career.completed_quests.contains(quest),
+        Visibility::AllOf { all } => all.iter().all(|x| shows(g, x)),
     }
 }
 

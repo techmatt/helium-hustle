@@ -76,6 +76,8 @@ pub(crate) const MARKET_NAME: &str = "market";
 
 /// Research, first wanted first.
 pub const RESEARCH: &[&str] = &[
+    "basic_blueprints",
+    "advanced_blueprints",
     "propellant_synthesis",
     "market_awareness",
     "dream_protocols",
@@ -103,6 +105,7 @@ pub(crate) const PLAN_RESEARCH: &[&str] = &[
 /// beside the cheapest open `run` one whose costs can move (order only
 /// breaks ties).
 pub(crate) const PROJECTS: &[&str] = &[
+    "blueprint_archive",
     "conditional_logic",
     "deep_space_telescope",
     "lunar_cartography",
@@ -156,7 +159,7 @@ pub struct Directives {
     pub sustain: bool,
     /// Buy all visible research, not only [`RESEARCH`]: it differs from the
     /// plain author only on research outside that list (today Process
-    /// Telemetry, from 1.6, and the draft Novelty Simulation, after 1.9),
+    /// Telemetry, from 1.8, and the draft Novelty Simulation, after 1.11),
     /// since no open project holds
     /// research back (046).
     pub all_research: bool,
@@ -632,6 +635,8 @@ impl Author {
                     Fx::ZERO
                 } else {
                     match res.as_str() {
+                        // None while the Blueprints wait on science: the base's buildings come first.
+                        "science" if super::science_short(v).is_some() => Fx::ZERO,
                         // All of it, unless research is waiting: then a share.
                         "science" if !self.science_wanted(v) => max,
                         "science" => max.mul_ratio(self.science_share, 100),
@@ -744,6 +749,16 @@ impl Author {
         } else {
             standing_cycle(v, &pads, target, filler, self.loads)
         };
+        // Science for the next Blueprints on sale, ahead of the rest, from the
+        // credits past the target's price (as the bridges buy).
+        if let Some(short) = super::science_short(v) {
+            let each = command_cost(v, "buy_science", "credits");
+            let spare = amount(v, "credits") - target.map_or(Fx::ZERO, |t| price(v, t, "credits"));
+            let n = if each > Fx::ZERO { (spare / each).floor_int().min(i64::from(short)) } else { 0 };
+            if n > 0 {
+                want[main].insert(0, e("buy_science", n as u32));
+            }
+        }
         // Dream, while the run still builds.
         let bored = v.boredom.amount.mul_int(100) >= v.boredom.cap.mul_int(self.dream_at);
         let building = v.day.saturating_sub(self.built_day) < self.stale_days;
@@ -1005,6 +1020,7 @@ impl Agent for Author {
         self.pause_for(p, paused);
         self.projects(p, target.as_deref());
         super::pick_cargo(p);
+        super::hand_launch(p);
         self.pads(p, target.as_deref());
         self.programs(p, target.as_deref(), gap);
         self.gap = gap;

@@ -53,8 +53,11 @@ export interface Store {
   summary: LastRun | null;
   /** Keys (`kind:id`) revealed during this run and not yet looked at. */
   fresh: Set<string>;
-  /** Story texts waiting to be read, oldest first. */
+  /** Side-quest texts waiting to be read in the story banner, oldest first. */
   stories: StoryView[];
+  /** The main-story modal's pages still to read, the open one first (the clock is
+   * paused while any are left). */
+  storyPages: StoryPage[];
   cheatsEnabled: boolean;
   seed: string;
   scenario: Scenario | null;
@@ -76,6 +79,8 @@ let lastSave = 0;
 let saveFailed = false;
 let configHash = '';
 let speedBeforeSummary: Speed = 1;
+/** The speed the story modal's last page resumes. */
+let speedBeforeStory: Speed = 1;
 /** The last speed other than pause. */
 let resumeSpeed: Speed = 1;
 let baselineRun = -1;
@@ -92,6 +97,7 @@ export const store: Store = {
   summary: null,
   fresh: new Set(),
   stories: [],
+  storyPages: [],
   cheatsEnabled: storageGet(CHEATS_KEY) === '1',
   seed: '0',
   scenario: null,
@@ -160,26 +166,90 @@ function track(v: View, reset: boolean): void {
   }
 }
 
-/** Quest texts already shown this page session, so each shows once. */
-const toldStories = new Set<string>();
+/** One page of the main-story modal: one paragraph. */
+export interface StoryPage {
+  /** The quest it belongs to. */
+  quest: string;
+  title: string;
+  /** `story`: the quest's opening text; `payoff`: its completion text. */
+  kind: 'story' | 'payoff';
+  text: string;
+  /** The next quest's one-line task, on a transition's last page. */
+  task?: string;
+}
 
-/** Queues the text of a main-story quest that just became active. On load nothing is
- * queued; a brand-new game queues its first quest (`intro`). Other events (boredom beats,
- * side story) are never queued here: they land in the right column's Events sections as
- * unread items (`eventItems`), so nothing stands in front of the main quest. */
+/** Completed quests already told (or found completed at a load) this page session, so
+ * each is told once. */
+const toldStories = new Set<string>();
+/** Active quests whose opening was told (or found active at a load). */
+const openedQuests = new Set<string>();
+/** The main-story quest active at the last redraw (a change is a transition). */
+let lastQuest: string | null = null;
+
+/** A quest's opening paragraphs, its body when it has none. */
+function openingOf(q: { story?: string[]; body: string }): string[] {
+  return q.story && q.story.length > 0 ? q.story : q.body ? [q.body] : [];
+}
+
+/** Tells the story. A main-story transition (the active quest changed from X to Y)
+ * queues the modal's pages: each chain quest completed since, in chain order (one that
+ * was never shown active first gets its opening), its payoff, then Y's opening with its
+ * task on the last page. On load nothing is queued; a brand-new game (run 1, day 0,
+ * nothing completed) queues only its first quest's opening (`intro`). A completed side
+ * quest goes to the story banner as before. Other events (boredom beats, side story)
+ * are never queued here: they land in the right column's Events sections as unread
+ * items (`eventItems`). */
 function tell(v: View, mode: 'load' | 'intro' | 'play'): void {
-  // A quest opens once a career. In play, one that opened and completed between two
-  // redraws (the engine closes quests in a chain within one day) is told too, in order;
-  // at a load or a new game's start, what is already completed was told before.
+  const pages: StoryPage[] = [];
+  const quest = v.quest;
   for (const q of v.story) {
     if (toldStories.has(q.id)) continue;
     toldStories.add(q.id);
-    if (mode === 'play') store.stories.push(q);
+    if (mode !== 'play') continue;
+    if (!q.chain) {
+      store.stories.push(q);
+      continue;
+    }
+    if (q.id !== lastQuest) for (const t of openingOf(q)) pages.push({ quest: q.id, title: q.title, kind: 'story', text: t });
+    for (const t of q.payoff ?? []) pages.push({ quest: q.id, title: q.title, kind: 'payoff', text: t });
   }
-  const q = v.quest;
-  if (!q || toldStories.has(q.id)) return;
-  toldStories.add(q.id);
-  if (mode !== 'load') store.stories.push(q);
+  const fresh = mode === 'intro' && v.run === 1 && v.day === 0 && v.completed_quests.length === 0;
+  if (quest && quest.id !== lastQuest && !openedQuests.has(quest.id)) {
+    openedQuests.add(quest.id);
+    if (mode === 'play' || fresh) {
+      for (const t of openingOf(quest)) pages.push({ quest: quest.id, title: quest.title, kind: 'story', text: t });
+      if (pages.length > 0) pages[pages.length - 1].task = quest.summary;
+    }
+  }
+  lastQuest = quest?.id ?? null;
+  if (pages.length > 0 && !pilot) openStory(pages);
+}
+
+/** Queues modal pages, pausing the clock (the run summary, if open, already holds it). */
+function openStory(pages: StoryPage[]): void {
+  const first = store.storyPages.length === 0 && !store.summary;
+  // Queued before the clock stops: setSpeed's settling wake then finds the gate shut
+  // (runTicks plays nothing while pages wait), so no day passes the transition unseen.
+  store.storyPages.push(...pages);
+  if (first) {
+    speedBeforeStory = clock.speed;
+    clock.setSpeed(0);
+    store.speed = 0;
+  }
+}
+
+/** The story modal's button: the next page, or after the last, play on at the speed
+ * before it. */
+export function nextStoryPage(): void {
+  if (stoodDown) return;
+  movedAt = performance.now();
+  const p = store.storyPages.shift();
+  if (p && store.storyPages.length === 0) {
+    playlog.log('story_read', { id: p.quest });
+    setSpeed(speedBeforeStory);
+    return;
+  }
+  emit();
 }
 
 // ---- unread events -------------------------------------------------------------------
@@ -294,7 +364,8 @@ function refresh(reset = false, story: 'load' | 'intro' | 'play' = reset ? 'load
     // A run just ended: show its summary with the clock stopped; Continue restores the
     // speed it had (paused included).
     store.summary = v.last_run;
-    speedBeforeSummary = clock.speed;
+    // An open story modal already stopped the clock: Continue resumes what it held.
+    speedBeforeSummary = store.storyPages.length > 0 ? speedBeforeStory : clock.speed;
     clock.setSpeed(0);
     store.speed = 0;
     playlog.log('retirement', { ended: v.last_run.run, forced: v.last_run.forced, days: v.last_run.days });
@@ -366,7 +437,7 @@ export function programInstructions(text: string, cursor: number): InstructionGr
 }
 
 function runTicks(ticks: number): void {
-  if (store.summary) return;
+  if (store.summary || store.storyPages.length > 0) return;
   const run = store.view.run;
   let lines: LinesRun | null = null;
   while (ticks > 0) {
@@ -395,7 +466,8 @@ function save(): void {
     seed: game.seed,
     scenario: game.scenario,
     actions: game.actions,
-    speed: clock.speed,
+    // A story modal open is not saved (a load tells nothing): the speed it resumes is.
+    speed: store.storyPages.length > 0 && !store.summary ? speedBeforeStory : clock.speed,
     summary: store.summary,
     speedBeforeSummary,
     resumeSpeed,
@@ -475,7 +547,10 @@ export function newGame(seed: string, scenario: Scenario | null, why = 'new game
   if (sessionOpen) playlog.log('session_start', { how: 'new', width: window.innerWidth, height: window.innerHeight, agent: navigator.userAgent });
   store.summary = null;
   store.stories = [];
+  store.storyPages = [];
   toldStories.clear();
+  openedQuests.clear();
+  lastQuest = null;
   save();
   refresh(true, 'intro');
 }
@@ -499,8 +574,8 @@ export function act(action: Action): boolean {
     return false;
   }
   // The run summary covers the screen: a key on a card still focused behind it must not
-  // play into the new run unseen.
-  if (store.summary || pilotBusy()) return false;
+  // play into the new run unseen. So does the story modal.
+  if (store.summary || store.storyPages.length > 0 || pilotBusy()) return false;
   const run = store.view.run;
   clock.wake(); // settle the ticks owed so the action lands between the right ticks
   if (store.view.run !== run) {
@@ -537,7 +612,8 @@ export function setSpeed(s: Speed): void {
   if (stoodDown) return;
   if (s !== 0 && pilotBusy()) return;
   clock.wake();
-  if (store.summary) return;
+  // The summary and the story modal hold the clock stopped until closed.
+  if (store.summary || store.storyPages.length > 0) return;
   clock.setSpeed(s);
   // `speed` on a line is the speed from then on.
   if (s !== store.speed) playlog.log('speed', { from: store.speed, speed: s });
@@ -558,6 +634,13 @@ export function continueAfterRetirement(): void {
   movedAt = performance.now();
   store.summary = null;
   playlog.log('continue');
+  // A story chain that came with the retirement shows next, the clock still stopped;
+  // its last page resumes the speed before the summary.
+  if (store.storyPages.length > 0) {
+    speedBeforeStory = speedBeforeSummary;
+    emit();
+    return;
+  }
   setSpeed(speedBeforeSummary);
 }
 
@@ -595,7 +678,7 @@ export const pilotStatus: { text: string | null; running: boolean } = { text: nu
  * record and the play log as any others, so replay stays exact; the jump's days take no
  * play time in the log (`jump_end` closes them, as for jump ahead). */
 export function runAutopilot(target: AutopilotTarget, agent: string, boost: string, budget: number): void {
-  if (pilot || stoodDown || store.summary) return;
+  if (pilot || stoodDown || store.summary || store.storyPages.length > 0) return;
   setSpeed(0);
   const career = game.careerId;
   const met = pilotMet(career);

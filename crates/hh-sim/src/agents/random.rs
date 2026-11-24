@@ -97,7 +97,9 @@ impl Agent for Random {
                 let _ = p.apply(&a);
             }
         }
-        // Its one fixed hand besides retiring, after its buys: a new pad gets a cargo.
+        // Its fixed hands besides retiring, after its buys: a new pad gets a
+        // cargo, and before Launch Full Pads opens a full pad launches by hand.
         super::pick_cargo(p);
+        super::hand_launch(p);
     }
 }

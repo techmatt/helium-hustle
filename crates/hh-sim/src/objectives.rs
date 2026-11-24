@@ -23,6 +23,11 @@ const RENAMED: &[(&str, &str)] = &[
     ("sci", "science"),
 ];
 
+/// Commands the port added that the opening can't do without, allowed beside
+/// a scenario's own list: Buy Science is the only science before a Research
+/// Lab, and the Blueprints that unlock the base's buildings cost science (074).
+const ADDED: &[&str] = &["buy_science"];
+
 fn port_id(id: &str) -> String {
     RENAMED.iter().find(|(old, _)| *old == id).map_or(id, |(_, new)| new).to_string()
 }
@@ -95,7 +100,9 @@ pub fn run(path: &str, text: &str, config: &Config, seed: u64, max_ticks: u64) -
     }
     let allowed = Allowed {
         buildings: Some(sc.available_actions.buildings.iter().map(|b| port_id(b)).collect()),
-        commands: Some(sc.available_actions.commands.iter().map(|c| port_id(c)).collect()),
+        commands: Some(
+            sc.available_actions.commands.iter().map(|c| port_id(c)).chain(ADDED.iter().map(|c| c.to_string())).collect(),
+        ),
     };
     let mut s = Session::new(config, seed, None)?;
     let end_at = fx(sc.end_condition.threshold)?;

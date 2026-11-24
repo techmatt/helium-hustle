@@ -41,6 +41,11 @@ view fills a description's `{days}` with those days at the current rank ("4 days
 
 **Visible:** a command is shown when unlocked or used in any run.
 
+**Act 1 gates** (`requires`, kinds in [economy.md](economy.md)): Buy Science (10 credits and
+1 energy for 1 science, the only science before a Research Lab) opens with quest 1.1
+Online's completion, and Launch Full Pads with 1.5 Processors' (`quest_completed`); before
+then pads launch by hand ([shipments.md](shipments.md)).
+
 ## Content
 
 `content/commands.json`: `requires`, `costs`, `produces`, `boredom`, `effect` (with an

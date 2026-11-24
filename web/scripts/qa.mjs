@@ -66,6 +66,10 @@ const NO_ART = [
 ];
 /** Run 1's speed: 50 by default; 3 plays it as a person would (about 3 minutes to a shipment). */
 const RUN1_SPEED = Number(process.env.HH_SPEED ?? 50);
+/** Pad `i`'s cargo pick: Helium-3 when its picker offers it, else the first good offered
+ * (Titanium while 1.3 First Shipment allows only that). An expression to evaluate. */
+const padGood = (i) =>
+  `(() => { const o = [...document.querySelectorAll('.card.pad[data-pad="${i}"] select option')].map((x) => x.value).filter(Boolean); return o.includes('he3') ? 'he3' : o[0] ?? ''; })()`;
 const INPUT_MS = 300;
 const FRAME_MS = 250;
 const HEAP_GROWTH_MB = 40;
@@ -786,7 +790,7 @@ async function pass(seed, width, theme) {
     // A fresh browser: first visit, then a new game on the pass's seed from the debug menu.
     await load();
     await capture('first-visit');
-    if (await exists('[data-testid="story-banner"]')) await click('[data-testid="story-banner"] button', 'story OK');
+    await page.readStory();
     await panel('options');
     // The pass's theme, picked from Options as a player would.
     if (theme !== 'light') await click(`#theme [data-theme-pick="${theme}"]`, `theme ${theme}`);
@@ -795,14 +799,14 @@ async function pass(seed, width, theme) {
     await setValue('#seed', seed);
     await click('#new-game', 'new game');
     await capture('new-game');
-    await click('[data-testid="story-banner"] button', 'story OK');
+    if ((await page.readStory()).length === 0) note('text', 'a new game opened no story modal for its first quest');
 
     // Run 1, played from the screen: buildings in a fixed order, a program that sells
     // compute or buys what the next building lacks, loads and launches.
     const ORDER = [
-      ['solar_panel', 2], ['excavator', 1], ['smelter', 1], ['refinery', 1], ['solar_panel', 3],
-      ['excavator', 2], ['storage_depot', 1], ['solar_panel', 4], ['launch_pad', 1], ['solar_panel', 5],
-      ['excavator', 3], ['refinery', 2], ['solar_panel', 7], ['data_center', 1], ['research_lab', 1],
+      ['solar_panel', 2], ['excavator', 1], ['smelter', 1], ['solar_panel', 3], ['excavator', 2],
+      ['storage_depot', 1], ['solar_panel', 4], ['launch_pad', 1], ['solar_panel', 5], ['refinery', 1],
+      ['excavator', 3], ['refinery', 2], ['solar_panel', 7], ['data_center', 2], ['research_lab', 1],
     ];
     const look = () =>
       evaluate(`(() => {
@@ -823,11 +827,22 @@ async function pass(seed, width, theme) {
         return out;
       })()`);
     const seenNav = new Set();
+    /** Blueprints research already done (or never offered) this pass. */
+    const doneResearch = new Set();
     let quest = null;
     let story = null;
     /** Screens worth a look as they come: a new tile, a story text, a new quest. */
     const moments = async (s) => {
-      // Read every story text waiting, capturing each new one.
+      // The main-story modal: each page read, the first of each quest's captured.
+      for (let i = 0; i < 40 && (await exists('[data-testid="story-modal"]')); i++) {
+        const id = await evaluate(`document.querySelector('[data-testid="story-modal"]').dataset.quest`);
+        if (id !== story) {
+          story = id;
+          await capture(`story-${story}`);
+        }
+        await click('[data-testid="story-next"]', 'story next');
+      }
+      // Side-quest texts in the banner, likewise.
       for (let i = 0; i < 10; i++) {
         const id = await evaluate(`document.querySelector('[data-testid="story-banner"]')?.dataset.story ?? null`);
         if (!id) break;
@@ -867,11 +882,26 @@ async function pass(seed, width, theme) {
       }
       const credits = s.res.credits ?? 0;
       let cmd = 'cloud_compute';
+      // Blueprints research (1.2, then the Refinery's), bought with Buy Science.
+      const want = ['basic_blueprints', 'advanced_blueprints'].find((r) => s.nav.includes('research') && !doneResearch.has(r));
+      if (want) {
+        await panel('research');
+        const r = await evaluate(`(() => { const c = document.querySelector('[data-testid="research-${want}"]'); return c ? { done: c.classList.contains('done'), can: c.classList.contains('can-buy') } : null; })()`);
+        if (!r || r.done) doneResearch.add(want);
+        else if (r.can) {
+          await click(`[data-testid="research-${want}"]`, `research ${want}`);
+          continue;
+        } else if (credits >= 10 && !(goal && bs[goal[0]].buyable)) {
+          await page.runOnly('buy_science', s.lines, { skipDisabled: true });
+          await sleep(60);
+          continue;
+        }
+      }
       if ((bs.launch_pad?.owned ?? 0) > 0) {
         await panel('launch_pads');
-        // A new pad has No cargo: pick Helium-3, as quest 1.2 says.
+        // A new pad has No cargo: pick Helium-3, or Titanium while 1.3 allows only that.
         if ((await evaluate(`document.querySelector('[data-pad="0"] select')?.value ?? null`)) === '') {
-          await setValue('[data-pad="0"] select', 'he3');
+          await setValue('[data-pad="0"] select', await evaluate(padGood(0)));
           continue;
         }
         const cargo = Number(await evaluate(`document.querySelector('[data-pad="0"]')?.dataset.cargo ?? 0`));
@@ -880,8 +910,9 @@ async function pass(seed, width, theme) {
           await capture('launched');
           continue;
         }
+        const good = await evaluate(`document.querySelector('[data-pad="0"] select').value`);
         if ((s.res.propellant ?? 0) < 20 && credits >= 12) cmd = 'buy_propellant';
-        else if ((s.res.he3 ?? 0) >= 5 && cargo < 10) cmd = 'load_pads';
+        else if ((s.res[good] ?? 0) >= 5 && cargo < 10) cmd = 'load_pads';
       } else if (goal) {
         const short = bs[goal[0]].short;
         if (short.includes('titanium') && credits >= 25) cmd = 'buy_titanium';
@@ -1058,9 +1089,9 @@ async function pass(seed, width, theme) {
       if (await exists(`[data-testid="buy-${id}"].can-buy`)) await click(`[data-testid="buy-${id}"]`, `buy ${id}`);
       await grant();
     }
-    // A career not yet at 1.6 (Research opens there): the debug autopilot's "Next quest
+    // A career not yet at 1.8 (Projects opens there): the debug autopilot's "Next quest
     // step" plays it on, a step at a time; each step must finish and move the quest.
-    for (let step = 0; step < 6 && !(await exists('.nav-tile[data-nav="research"]')); step++) {
+    for (let step = 0; step < 10 && !(await exists('.nav-tile[data-nav="projects"]')); step++) {
       await panel('options');
       if (!(await exists('#accel-quest'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
       const quest = await evaluate(`document.querySelector('.col-right')?.textContent.match(/\\d\\.\\d+ —[^\\n]{0,40}/)?.[0] ?? ''`);
@@ -1175,7 +1206,7 @@ async function pass(seed, width, theme) {
       if (await exists('.nav-tile[data-nav="launch_pads"]')) {
         await panel('launch_pads');
         const empty = await evaluate(`[...document.querySelectorAll('.card.pad select')].map((x, i) => (x.value === '' ? i : -1)).filter((i) => i >= 0)`);
-        for (const i of empty) await setValue(`.card.pad[data-pad="${i}"] select`, 'he3');
+        for (const i of empty) await setValue(`.card.pad[data-pad="${i}"] select`, await evaluate(padGood(i)));
       }
       await speed(10);
       await sleep(1500);
@@ -1362,7 +1393,7 @@ async function longRun(minutes) {
     await evaluate(FRAMES);
   };
   await open();
-  await js(`document.querySelector('[data-testid="story-banner"] button')?.click()`);
+  await js(`for (let i = 0; i < 40; i++) document.querySelector('[data-testid="story-next"]')?.click(); document.querySelector('[data-testid="story-banner"] button')?.click()`);
   await js(`document.querySelector('.nav-tile[data-nav="commands"]').click()`);
   await sleep(200);
   await js(`document.querySelector('[data-testid="add-cloud_compute"]')?.click()`);
@@ -1374,7 +1405,8 @@ async function longRun(minutes) {
   while (Date.now() - t0 < minutes * 60_000) {
     await sleep(2000);
     // Story texts, summaries and an empty program after a new run: as a player would.
-    await js(`for (let i = 0; i < 10; i++) document.querySelector('[data-testid="story-banner"] button')?.click();
+    await js(`for (let i = 0; i < 40; i++) document.querySelector('[data-testid="story-next"]')?.click();
+      for (let i = 0; i < 10; i++) document.querySelector('[data-testid="story-banner"] button')?.click();
       document.querySelector('[data-testid="continue"]')?.click();
       if (!document.querySelector('.lines li') && document.querySelector('[data-panel="commands"]')) document.querySelector('[data-testid="add-cloud_compute"]')?.click();
       if (!document.querySelector('[data-panel="commands"]')) document.querySelector('.nav-tile[data-nav="commands"]')?.click();

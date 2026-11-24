@@ -52,9 +52,9 @@ pub(crate) fn outcomes(g: &crate::GameState) -> Vec<Option<crate::state::LineOut
 // The golden constants: update all four together on a `RULES_REVISION` bump
 // with `python scripts/set_golden.py` (it also sets `GOLDEN_*` in
 // scripts/wasm-smoke.mjs); never type them (README, *Rules changes*).
-const GOLDEN_REVISION: u32 = 24;
-const GOLDEN_FINGERPRINT: &str = "f7ea372ea04a5d60";
-const GOLDEN_CONTENT_HASH: &str = "1e5ccd550f10e26d";
+const GOLDEN_REVISION: u32 = 25;
+const GOLDEN_FINGERPRINT: &str = "ed42f770642dba38";
+const GOLDEN_CONTENT_HASH: &str = "72a46522cdd6b9b6";
 const GOLDEN_CONFIG_HASH: &str = "c6f158e1d0485a48";
 
 pub(crate) fn golden_session() -> Session {
@@ -66,7 +66,7 @@ fn golden_game() {
     let s = golden_session();
     assert_eq!(s.state.tick, GOLDEN_TICKS);
     let c = &s.state.career;
-    assert!(c.completed_quests.contains("qshipment_proof_of_concept"), "the golden game ships");
+    assert!(c.completed_quests.contains("qfirst_shipment"), "the golden game ships");
     assert!(c.retirements >= 1, "the golden game retires");
     assert_eq!(
         (RULES_REVISION, s.state.fingerprint().as_str()),

@@ -131,30 +131,58 @@ fn a_late_scenario_schedules_from_its_own_day() {
 }
 
 #[test]
-fn the_first_quest_unlocks_the_excavator() {
+fn the_opening_unlocks_one_mechanic_at_a_time() {
     let r = rules();
     let mut g = r.new_game(1);
+    // Only Solar Panels and Data Centers at the start; no Buy Science, no research.
+    let v = r.view(&g);
+    let open: Vec<&str> = v.buildings.iter().filter(|b| b.unlocked).map(|b| b.id).collect();
+    assert_eq!(open, ["data_center", "solar_panel"]);
+    assert!(!v.commands.iter().any(|c| c.id == "buy_science" && c.unlocked));
     own(&mut g, "solar_panel", 2);
     r.advance(&mut g, 1);
     assert!(g.career.completed_quests.contains("qpower_boot_sequence"));
-    assert_eq!(r.view(&g).quest.unwrap().id, "qshipment_proof_of_concept");
+    let v = r.view(&g);
+    assert_eq!(v.quest.unwrap().id, "qblueprints");
+    assert!(v.commands.iter().any(|c| c.id == "buy_science" && c.unlocked));
+    // The research view shows only the Blueprints before 1.8 Lab.
+    let shown: Vec<&str> = v.research.iter().filter(|x| x.visible).map(|x| x.id).collect();
+    assert_eq!(shown, ["basic_blueprints"]);
     set(&mut g, "credits", "100");
+    assert!(r.apply(&mut g, &buy("excavator")).is_err(), "the excavator waits for Basic Blueprints");
+    set(&mut g, "science", "20");
+    r.apply(&mut g, &Action::Research { research: "basic_blueprints".into() }).unwrap();
     r.apply(&mut g, &buy("excavator")).unwrap();
+    r.advance(&mut g, 1);
+    // 1.3: 20 propellant once, pads carry Titanium only.
+    assert_eq!(r.view(&g).quest.unwrap().id, "qfirst_shipment");
+    assert_eq!(g.amount("propellant"), f("20"));
+    assert_eq!(r.view(&g).pad_goods, ["titanium"]);
+    own(&mut g, "launch_pad", 1);
+    assert!(r.apply(&mut g, &Action::SetPadGood { pad: 0, good: Some("he3".into()) }).is_err());
+    r.apply(&mut g, &Action::SetPadGood { pad: 0, good: Some("titanium".into()) }).unwrap();
+    assert!(!r.view(&g).commands.iter().any(|c| c.id == "launch_pads" && c.unlocked), "Launch Full Pads waits for 1.5");
+    g.run.pads[0].cargo = f("20");
+    r.apply(&mut g, &Action::Launch { pad: 0 }).unwrap();
+    r.advance(&mut g, 1);
+    assert_eq!(r.view(&g).quest.unwrap().id, "qfull_load");
+    assert!(r.view(&g).pad_goods.len() > 1, "every good after 1.3");
+    assert!(r.view(&g).research.iter().any(|x| x.id == "advanced_blueprints" && x.visible));
 }
 
 #[test]
 fn buildings_resolve_in_passes_with_partial_production() {
     let r = rules();
     let mut g = r.new_game(1);
-    // 3 regolith a day for a smelter and a refinery that each want 2: the
-    // smelter (earlier in content order) runs fully, the refinery at half.
+    // 3 regolith a day for a smelter that wants 2 and a refinery that wants 5:
+    // the smelter (earlier in content order) runs fully, the refinery on the 1 left.
     own(&mut g, "excavator", 1);
     own(&mut g, "smelter", 1);
     own(&mut g, "refinery", 1);
     own(&mut g, "solar_panel", 3);
     r.advance(&mut g, 1);
     assert_eq!(g.amount("titanium"), f("0.5"));
-    assert_eq!(g.amount("he3"), f("0.5"));
+    assert_eq!(g.amount("he3"), f("0.2"));
     assert_eq!(g.amount("regolith"), Fx::ZERO);
     assert_eq!(g.run.today.stalls.get("refinery"), Some(&Stall::InputStarved));
     assert_eq!(g.run.today.stalls.get("smelter"), None);
@@ -542,9 +570,13 @@ fn research_needs_visibility_and_science() {
     let r = rules();
     let mut g = r.new_game(1);
     let res = |id: &str| Action::Research { research: id.into() };
-    // No research before the Lab quest (1.6) opens the research panel.
-    assert!(r.apply(&mut g, &res("market_awareness")).unwrap_err().contains("not open"));
+    // No research before 1.1 Online opens the research panel.
+    assert!(r.apply(&mut g, &res("basic_blueprints")).unwrap_err().contains("not open"));
     g.run.enabled_panels.insert(crate::modules::research::RESEARCH_PANEL.into());
+    assert!(r.apply(&mut g, &res("basic_blueprints")).unwrap_err().contains("science"));
+    // Before 1.8 Lab only the Blueprints show.
+    assert!(r.apply(&mut g, &res("market_awareness")).unwrap_err().contains("not available"));
+    g.career.completed_quests.insert("qlab".into());
     assert!(r.apply(&mut g, &res("market_awareness")).unwrap_err().contains("science"));
     assert!(r.apply(&mut g, &res("dream_protocols")).unwrap_err().contains("not available"));
     set(&mut g, "science", "250");
@@ -646,7 +678,7 @@ fn the_script_reaches_the_first_shipment_and_retires() {
     let mut s = Session::new(&baseline(), 1, None).unwrap();
     play(&mut s, 2000, Policy::Script);
     let c = &s.state.career;
-    for q in ["qpower_boot_sequence", "qshipment_proof_of_concept"] {
+    for q in ["qpower_boot_sequence", "qblueprints", "qfirst_shipment"] {
         assert!(c.completed_quests.contains(q), "{q}");
     }
     assert_eq!(c.retirements, 1);

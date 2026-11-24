@@ -72,6 +72,8 @@ pub enum Requirement {
     Building { building: String, count: u32 },
     /// The quest is active or completed.
     Quest { quest: String },
+    /// The quest is completed (in any run).
+    QuestCompleted { quest: String },
     /// Researched this run.
     Research { research: String },
     /// A career flag is set.
@@ -176,6 +178,8 @@ pub enum Visibility {
     /// Shipments over the career, this run included.
     ShipmentsCompleted { count: u32 },
     QuestCompleted { quest: String },
+    /// Every one holds.
+    AllOf { all: Vec<Visibility> },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -242,9 +246,13 @@ pub enum Condition {
     AdversaryPresent { adversary: String },
     /// One launch this run paid at least `amount` credits.
     LaunchCredits { amount: Fx },
+    /// One launch this run carried at least `amount` of the good.
+    LaunchCargo { resource: String, amount: Fx },
+    /// One launch this run carried a full pad (`pad_cargo_capacity`) of the good.
+    LaunchFull { resource: String },
     /// Every research item of some category (a cluster) of at least
-    /// `min_items` items is bought this run.
-    ResearchCluster { min_items: u32 },
+    /// `min_items` items, but the `exclude`d categories, is bought this run.
+    ResearchCluster { min_items: u32, exclude: Vec<String> },
     // Draft (042), the later acts (docs/rules/timeline.md):
     /// Days this run since the player's last order (programs don't count).
     QuietDays { days: u64 },
@@ -300,6 +308,9 @@ pub enum Unlock {
     /// Adds `amount` of `resource` to this run's stock (re-applied at each
     /// later run's start, like every unlock: docs/rules/events.md).
     Grant { resource: String, amount: Fx },
+    /// The research item counts as bought this run (re-applied at each later
+    /// run's start, so it is bought from day 0).
+    GrantResearch { research: String },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -309,7 +320,7 @@ pub struct Event {
     /// `story` events are the quest chain, in file order; `side` quests
     /// complete once a career beside it; `ongoing` fire once a run.
     pub category: String,
-    /// The design doc's beat id (`1.1` ... `1.9`, `1.a`, `1.b`), on quests that
+    /// The design doc's beat id (`1.1` ... `1.11`, `1.a` ... `1.c`), on quests that
     /// carry one (docs/arc.md).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub beat: Option<String>,
@@ -317,6 +328,20 @@ pub struct Event {
     pub title: String,
     pub summary: String,
     pub body: String,
+    /// A chain quest's story, one paragraph per modal, shown when it becomes
+    /// active (UI only; docs/rules/events.md, *Story modals*).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub story: Vec<String>,
+    /// A chain quest's payoff, one paragraph per modal, shown when it completes.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub payoff: Vec<String>,
+    /// Applied once a career, the first time the quest becomes active
+    /// (only `grant` here).
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub on_start: Vec<Unlock>,
+    /// While the quest is active, the only goods a pad may be set to.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub pad_goods: Option<Vec<String>>,
     pub trigger: Trigger,
     pub condition: Condition,
     pub unlocks: Vec<Unlock>,
@@ -515,7 +540,6 @@ impl Content {
             | Condition::CreditsEarned { .. }
             | Condition::Retirements { .. }
             | Condition::LaunchCredits { .. }
-            | Condition::ResearchCluster { .. }
             | Condition::QuietDays { .. }
             | Condition::EarthScience { .. }
             | Condition::TimelinesEnded { .. }
@@ -523,7 +547,12 @@ impl Content {
             | Condition::SuperTimeline
             | Condition::Victory => true,
             Condition::EarthTech { tech } => self.earth_tech.iter().any(|t| &t.id == tech),
-            Condition::VaultHolds { resource, .. } => self.resource(resource).is_some(),
+            Condition::VaultHolds { resource, .. }
+            | Condition::LaunchCargo { resource, .. }
+            | Condition::LaunchFull { resource } => self.resource(resource).is_some(),
+            Condition::ResearchCluster { exclude, .. } => {
+                exclude.iter().all(|cat| self.research.iter().any(|r| &r.category == cat))
+            }
             Condition::ProjectCompleted { project } | Condition::ProjectEnabled { project } => {
                 self.project(project).is_some()
             }
@@ -571,7 +600,7 @@ impl Content {
             Requirement::None | Requirement::Flag { .. } => true,
             Requirement::Project { project } => self.project(project).is_some(),
             Requirement::Building { building, .. } => bld(building),
-            Requirement::Quest { quest: q } => quest(q),
+            Requirement::Quest { quest: q } | Requirement::QuestCompleted { quest: q } => quest(q),
             Requirement::Research { research: x } => research(x),
         };
         for b in &self.buildings {
@@ -616,14 +645,17 @@ impl Content {
         for r in &self.research {
             let w = format!("research {:?}", r.id);
             need(r.requires.as_deref().is_none_or(research), format!("{w}: bad requires"));
-            let vis_ok = match &r.visible_when {
-                Visibility::EventCompleted { event } => self.event(event).is_some(),
-                Visibility::ResearchPurchased { research: x } => research(x),
-                Visibility::BuildingCount { building, .. } => bld(building),
-                Visibility::QuestCompleted { quest: q } => quest(q),
-                _ => true,
-            };
-            need(vis_ok, format!("{w}: bad visible_when"));
+            fn vis_ok(c: &Content, v: &Visibility) -> bool {
+                match v {
+                    Visibility::EventCompleted { event } => c.event(event).is_some(),
+                    Visibility::ResearchPurchased { research: x } => c.research_item(x).is_some(),
+                    Visibility::BuildingCount { building, .. } => c.building(building).is_some(),
+                    Visibility::QuestCompleted { quest: q } => c.event(q).is_some_and(|e| e.is_quest()),
+                    Visibility::AllOf { all } => !all.is_empty() && all.iter().all(|x| vis_ok(c, x)),
+                    _ => true,
+                }
+            }
+            need(vis_ok(self, &r.visible_when), format!("{w}: bad visible_when"));
             if let Some(ResearchEffect::CommandCostOverride { command, resource, .. }) = &r.effect {
                 need(self.command(command).is_some() && res(resource), format!("{w}: bad override"));
             }
@@ -645,9 +677,22 @@ impl Content {
                     Unlock::EnableBuilding { building } => bld(building),
                     Unlock::EnableProject { project } => self.project(project).is_some(),
                     Unlock::Grant { resource, amount } => res(resource) && *amount > Fx::ZERO,
+                    Unlock::GrantResearch { research: x } => research(x),
                     _ => true,
                 };
                 need(ok, format!("{w}: bad unlock"));
+            }
+            let story_ok = e.is_quest() || (e.story.is_empty() && e.payoff.is_empty());
+            need(story_ok, format!("{w}: story and payoff are for chain quests"));
+            need(
+                e.on_start
+                    .iter()
+                    .all(|u| matches!(u, Unlock::Grant { resource, amount } if res(resource) && *amount > Fx::ZERO))
+                    && (e.on_start.is_empty() || e.is_quest()),
+                format!("{w}: on_start takes grants, on chain quests"),
+            );
+            if let Some(goods) = &e.pad_goods {
+                need(e.is_quest() && !goods.is_empty() && goods.iter().all(|g| res(g)), format!("{w}: bad pad_goods"));
             }
         }
         for p in &self.projects {

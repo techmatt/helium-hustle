@@ -13,8 +13,12 @@
 # 069 (rules 22: a new pad has No cargo) added Program 2's `set pads he3 up to 1`: keep its
 # N at least Program 1's `build launch_pad up to` N, or the extra pads idle all run.
 #
+# 074 (rules 25: buildings past Solar Panels and Data Centers come from the Blueprints
+# research) added Program 3's Buy Science line (science up to 50 while credits allow) and
+# its two Blueprints lines (done at once once 1.c gives them every run).
+#
 # Program 1 builds (and seats processors as Data Centers add them), Program 2
-# picks its pad's cargo and ships, Program 3 researches Process Telemetry, retires
+# picks its pad's cargo and ships, Program 3 researches the Blueprints and Process Telemetry, retires
 # a run that has bought nothing for 300 days (062: before the player's hand
 # backstop), researches Dream Protocols and dreams when bored.
 seat: 1=all
@@ -50,7 +54,12 @@ launch pads all
 if propellant < 67% and energy > 30%
   5x buy_propellant
 [3]
+if science < 50 and credits > 60
+  buy_science
+if science > 19
+  research basic_blueprints
 if science > 49
+  research advanced_blueprints
   research process_telemetry
 if days since a purchase > 299
   retire

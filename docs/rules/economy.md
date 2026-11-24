@@ -44,6 +44,11 @@ event enabled it this run), under `max_count`, enough land (its `land`), and eve
 resource on hand. It then pays the price and the land, and the new building is owned and
 active. Starting buildings and run-start bonus buildings take no land.
 
+A `requires` (on a building or command, [commands.md](commands.md)) is one of: `none`;
+`building` (at least `count` owned); `quest` (the quest active now or completed in any run);
+`quest_completed` (the quest completed in any run); `research` (bought this run); `flag`
+(a career flag); `project` (completed, [projects.md](projects.md)).
+
 **Visible:** unlocked, or (for a building-count requirement only, and not event-gated) owned
 in any run of the career.
 
@@ -136,9 +141,12 @@ A refused action changes nothing.
 `content/resources.json`: each resource's `cap` (null for none). `content/buildings.json`:
 `category`, `ideology`, `requires`, `land`, `cost`, `cost_scaling`, `max_count`, `produces`,
 `upkeep`, `effects` (`grant`, `store`, `speculator_decay` for demand.md) and
-`output_modifiers`. The Launch Pad and Recreation Dome require nothing but their event: the
-Launch Plans event (50 He-3 made in a run) enables the Launch Pad, and quest 1.6 Lab's
-completion the Recreation Dome ([events.md](events.md)).
+`output_modifiers`. A run opens with only the Solar Panel and Data Center buildable: the
+Regolith Excavator, Smelter, Launch Pad and Storage Depot require research Basic Blueprints,
+and the Battery, Refinery and Fabricator Advanced Blueprints ([research.md](research.md);
+quests 1.2 and 1.3 lead to them). The Research Lab requires 2 Data Centers. The Recreation
+Dome requires nothing but its event: quest 1.8 Lab's completion enables it
+([events.md](events.md)). The Refinery's upkeep is 5 regolith and 2 energy a day.
 
 Six resource ids are fixed in code (`economy.rs` constants), named by content rows:
 `energy` (its cap skips `storage_cap_mult`; its output counts toward peak power),

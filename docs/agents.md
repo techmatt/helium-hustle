@@ -49,12 +49,16 @@ way to a Solar Panel; a price past a cap gives way to a Storage Depot (a Battery
 Land is bought first when short and credits cover it and the price.
 
 Every player (random, greedy, the author and those built on it) has one fixed hand on pads:
-a pad with No cargo carries the first good in the loading priority, He-3 at baseline
-(`agents::pick_cargo`, each look; the golden script does the same). The hands-off loadout's
+a pad with No cargo, or an empty first pad on another good, carries the first good a pad may
+carry now (the view's `pad_goods`: Titanium during 1.3, then He-3 at baseline;
+`agents::pick_cargo`, each look; the golden script re-points every empty pad likewise). Until
+Launch Full Pads opens (1.5), every player hand-launches a full pad or one holding a
+`launch_cargo` quest's amount (`agents::hand_launch`). The hands-off loadout's
 Program 2 opens with `set pads he3 up to 1`.
 
 A hand-played command (`hand_command`, greedy's): launch a full fuelled pad; fuel a full pad;
-load when a load of its good waits; buy the target's missing titanium, regolith or ice from
+load when a load of its good waits; Buy Science while short of the next Blueprints on sale
+(`agents::science_short`); buy the target's missing titanium, regolith or ice from
 credits past its price; else Cloud Compute (Idle without the energy).
 
 ## The program author (`author.rs`)
@@ -100,7 +104,9 @@ than He-3 at its cap. Looking often (gap ≤ `hand_gap`), it pauses buildings th
 material its target is short of, and runs them again once it isn't.
 
 **Science.** Research resets each run; a `timeline` project's progress doesn't. Research comes
-in a fixed order (`author.rs`). **Projects:** the cheapest open `run` project, beside the
+in a fixed order (`author.rs`), the Blueprints first; while short of the next one on sale,
+its main program opens with Buy Science × as many as the credits past the target's price
+cover. **Projects:** the cheapest open `run` project, beside the
 first open other one in a fixed order; each only when every cost can move (on hand or
 made); science at the project's most a day when no research waits, else `science_share`
 percent of it; credits a tenth
@@ -136,7 +142,8 @@ run has bought nothing (buildings, research, land) for `stale_days` days; the fi
 The file holds 060's L5 (three tabs: build and seat, ship, research Dream Protocols and
 dream), picked over L4 on the hands-off measure (061), with Process Telemetry and that
 `retire` in the Dream tab (062's write-up), and for rev 19's step cost its build tab's
-compute at × 100 a pass, its idle block gone (065's write-up).
+compute at × 100 a pass, its idle block gone (065's write-up); 074 put the
+Blueprints, each under `if science >` its price less 1, at its research tab's head.
 
 ## The oracle (`oracle/`)
 

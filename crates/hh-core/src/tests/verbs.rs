@@ -13,6 +13,8 @@ fn game(r: &Rules) -> GameState {
         g.career.flags.insert(flag.into());
     }
     g.run.enabled_panels.insert(crate::modules::research::RESEARCH_PANEL.into());
+    // Launch Full Pads opens with 1.5 Processors.
+    g.career.completed_quests.insert("qautomate_automation".into());
     g
 }
 
@@ -84,8 +86,9 @@ fn research_buys_once_and_is_done_after() {
 fn pad_verbs_with_nothing_to_do_cost_the_step_only() {
     let r = rules();
     let mut g = game(&r);
-    let mut no_pad = g.clone();
-    assert_eq!(run_line(&r, &mut no_pad, act(Verb::LaunchPads, None, None, None)), None, "locked (no Launch Pad): skipped free");
+    let mut early = g.clone();
+    early.career.completed_quests.remove("qautomate_automation");
+    assert_eq!(run_line(&r, &mut early, act(Verb::LaunchPads, None, None, None)), None, "locked (before 1.5): skipped free");
     own(&r, &mut g, "launch_pad", 1);
     own(&r, &mut g, "solar_panel", 10);
     set(&mut g, "he3", "0");

@@ -1,12 +1,14 @@
 // Browser check: drives headless Edge or Chrome over the DevTools protocol (no
 // packages) against a served page.
-//   1. A fresh game through the normal UI only (no debug menu): a build order to the
-//      first pad loaded and launched (1.1 Online and 1.2 First Shipment), no Retirement
-//      tile yet (it opens at 1.5 Burnout), then on at 200x to the forced retirement at the
+//   1. A fresh game through the normal UI only (no debug menu): only Solar Panel and Data
+//      Center offered, 1.1's story modal alone, then the opening to 1.4 Full Load (each
+//      quest change a modal chain holding the clock; the first pad offers Titanium only;
+//      Launch Full Pads never shown), no Retirement
+//      tile yet (it opens at 1.7 Burnout), then on at 200x to the forced retirement at the
 //      boredom cap, the run summary holding the clock (a double-click on Continue buys
 //      nothing under it), run 2 (known tiles and resources still shown, not cheated), the
 //      career's play log on disk as a bot's.
-//   2. Every panel: scenario late_unlocks opens Research, Projects and Ideologies (1.6 Lab
+//   2. Every panel: scenario late_unlocks opens Research, Projects and Ideologies (1.8 Lab
 //      is past a second run); a locked and a funded project; every nav tile opens; the
 //      cheated mark, a jump ahead, the cheat building and Complete all research, and the
 //      replay check.
@@ -56,7 +58,13 @@ const b = await launch({ width: 1600, height: 900, profileRoot: process.env.HH_P
 const { send, evaluate } = b;
 const pageErrors = b.errors;
 // settle: a dev server just after an edit may reload the page once more.
-const { waitFor, exists, click, setValue, load, day, run, speed, panel, debugMenu, grant, runOnly } = driver(b, { url, settle: 700 });
+const { waitFor, exists, click, setValue, load: loadPage, day, run, speed, panel, debugMenu, grant, runOnly, readStory, autoStory } = driver(b, { url, settle: 700 });
+/** Past section 1's opening, story modals are clicked through as they open, after every load too. */
+let storyAuto = false;
+const load = async (u = url) => {
+  await loadPage(u);
+  if (storyAuto) await autoStory();
+};
 const noticeText = () => evaluate(`document.getElementById('notice')?.textContent ?? ''`);
 const enabled = (sel) => evaluate(`(() => { const b = document.querySelector(${q(sel)}); return !!b && !b.disabled; })()`);
 const navVisible = (id) => exists(`.nav-tile[data-nav="${id}"]`);
@@ -159,26 +167,86 @@ async function programOrder() {
   await evaluate('window.__ob.disconnect()');
 }
 
-// The opening, as a player would: Solar Panels, then the extraction chain, storage for
-// the Launch Pad's titanium, the pad, and more Solar Panels for its upkeep.
+// The Act 1 opening, as a player would: two Solar Panels (1.1), Buy Science and Basic
+// Blueprints (1.2), the extraction chain, storage, the Launch Pad and its titanium
+// shipment (1.3), then Advanced Blueprints, Refineries and a full pad of Helium-3 (1.4).
 const ORDER = [
-  ['solar_panel', 2], ['excavator', 1], ['smelter', 1], ['refinery', 1], ['solar_panel', 3],
-  ['excavator', 2], ['storage_depot', 1], ['solar_panel', 4], ['launch_pad', 1], ['solar_panel', 5],
+  ['solar_panel', 2], ['excavator', 1], ['smelter', 1], ['solar_panel', 3], ['excavator', 2],
+  ['storage_depot', 1], ['solar_panel', 4], ['launch_pad', 1], ['solar_panel', 5],
+  ['refinery', 1], ['solar_panel', 6], ['refinery', 2], ['solar_panel', 7],
 ];
+/** Where play stops: 1.4 Full Load done. */
+const OPENING_END = 'qautomate_automation';
 
-async function playToFirstShipment() {
+/** Plays the opening from the screen, reading each story modal as it opens. Returns the
+ * quests reached and the transitions seen; checks as it goes that every quest change came
+ * with a modal that held the clock, that the first pad offered Titanium only, and that
+ * Launch Full Pads never showed. */
+async function playOpening() {
   await speed(50);
   const started = Date.now();
   let lastLog = 0;
-  const seenQuests = new Set();
-  while (Date.now() - started < 180_000) {
+  let quest = (await look()).quest;
+  const reached = [quest];
+  /** The quests a modal told the start of (its last page's quest). */
+  const told = new Set();
+  /** The quests a modal showed the payoff of. */
+  const paid = new Set();
+  let modals = 0;
+  let pausedAll = true;
+  let pickerChecked = false;
+  let he3Checked = false;
+  let fullPads = false;
+  while (Date.now() - started < 150_000) {
+    if (await exists('[data-testid="story-modal"]')) {
+      const d0 = await day();
+      await sleep(300);
+      const held = (await day()) === d0;
+      modals++;
+      // A shot of each transition's last page (its task).
+      const pages = await readStory(async (p) => {
+        if (p.task) await shot(`story-modal-${modals}-${p.quest}`);
+      });
+      const last = pages.at(-1);
+      if (!held || !pages.every((p) => p.paused)) pausedAll = false;
+      if (last?.task) told.add(last.quest);
+      for (const p of pages) if (p.kind === 'payoff') paid.add(p.quest);
+      console.log(`     story modal (day ${d0}): ${pages.map((p) => `${p.quest}/${p.kind}`).join(', ')}; task "${last?.task ?? ''}"`);
+      await sleep(100);
+      check(await exists('#speeds button[data-speed="50"][aria-pressed="true"]'), `the modal's last page resumes 50x (${last?.quest})`);
+      continue;
+    }
     const s = await look();
-    if (s.quest) seenQuests.add(s.quest);
-    // 1.2 First Shipment done: the pinned quest has moved past it.
-    if (s.quest && s.quest !== 'qshipment_proof_of_concept' && seenQuests.has('qshipment_proof_of_concept')) return true;
+    if (s.quest !== quest) {
+      // The wake that moved the quest may have opened its modal after the check above:
+      // read it first (the modal holds the clock, so if it isn't open now it never opened).
+      if (await exists('[data-testid="story-modal"]')) continue;
+      check(told.has(s.quest) && paid.has(quest), `${quest} -> ${s.quest} opened a story modal chain: ${quest}'s payoff, then ${s.quest}'s story ending on its task`);
+      quest = s.quest;
+      reached.push(quest);
+    }
+    if (quest === OPENING_END) break;
+    if (await exists('[data-testid="summary"]')) {
+      check(false, `the opening reached 1.4 before boredom retired run 1 (quest ${quest})`);
+      break;
+    }
     if (Date.now() - lastLog > 5000) {
       lastLog = Date.now();
-      console.log(`     day ${s.day}, quest ${s.quest}, credits ${s.res.credits}, he3 ${s.res.he3 ?? '-'}`);
+      const pad = await evaluate(`(() => { const p = document.querySelector('[data-pad="0"]'); return p ? p.querySelector('select').value + ' ' + p.dataset.cargo + ' ' + p.dataset.padState : '-'; })()`);
+      console.log(`     day ${s.day}, quest ${s.quest}, credits ${s.res.credits}, science ${s.res.science ?? '-'}, titanium ${s.res.titanium ?? '-'}, he3 ${s.res.he3 ?? '-'}, propellant ${s.res.propellant ?? '-'}, pad ${pad}, program ${s.lines.join(',')}`);
+    }
+    if (await exists('[data-panel="commands"] [data-id="launch_pads"], [data-testid="add-launch_pads"], [data-panel="commands"] option[value="launch_pads"]')) fullPads = true;
+    // Research: Basic Blueprints for 1.2, Advanced Blueprints for 1.4's Refinery.
+    const want = quest === 'qblueprints' ? 'basic_blueprints' : quest === 'qfull_load' ? 'advanced_blueprints' : null;
+    let science = false;
+    if (want && (await navVisible('research'))) {
+      await panel('research');
+      const r = await evaluate(`(() => { const c = document.querySelector('[data-testid="research-${want}"]'); return c ? { done: c.classList.contains('done'), can: c.classList.contains('can-buy') } : null; })()`);
+      if (r && !r.done && r.can) {
+        await click(`[data-testid="research-${want}"]`);
+        continue;
+      }
+      science = !!r && !r.done;
     }
     await panel('buildings');
     const b = await buildings();
@@ -189,29 +257,51 @@ async function playToFirstShipment() {
     }
     const credits = s.res.credits ?? 0;
     let cmd = 'cloud_compute';
-    if ((b.launch_pad?.owned ?? 0) > 0) {
+    if (science) cmd = credits >= 10 ? 'buy_science' : 'cloud_compute';
+    else if ((b.launch_pad?.owned ?? 0) > 0) {
       await panel('launch_pads');
-      // A new pad has No cargo: pick Helium-3, as quest 1.2 says.
-      if ((await evaluate(`document.querySelector('[data-pad="0"] select')?.value ?? null`)) === '') {
-        await setValue('[data-pad="0"] select', 'he3');
+      const pad = await evaluate(`(() => { const p = document.querySelector('[data-pad="0"]'); return p && { good: p.querySelector('select').value,
+        offered: [...p.querySelectorAll('select option')].map((o) => o.value), cargo: Number(p.dataset.cargo), launch: !p.querySelector('[data-testid="launch-0"]').disabled }; })()`);
+      if (!pickerChecked && quest === 'qfirst_shipment') {
+        pickerChecked = true;
+        check(pad.offered.join(',') === ',titanium', `while 1.3 is active the first pad offers Titanium only: ${JSON.stringify(pad.offered)}`);
+        await evaluate(`document.querySelector('.col-mid').scrollTop = 1e6`);
+        // A closed select draws one option: list them for the shot.
+        await evaluate(`document.querySelector('[data-pad="0"] select').size = 2`);
+        await shot('pad-titanium-only');
+        await evaluate(`document.querySelector('[data-pad="0"] select').removeAttribute('size')`);
+      }
+      // 1.3 ships titanium; 1.4 a full pad of Helium-3 (a switch returns what is loaded).
+      const good = quest === 'qfirst_shipment' ? 'titanium' : 'he3';
+      if (pad.good !== good && pad.offered.includes(good)) {
+        if (good === 'he3' && !he3Checked) {
+          he3Checked = true;
+          check(pad.offered.length > 2, `after 1.3 a pad can carry every good: ${JSON.stringify(pad.offered)}`);
+        }
+        await setValue('[data-pad="0"] select', good);
         continue;
       }
-      const cargo = Number(await evaluate(`document.querySelector('[data-pad="0"]')?.dataset.cargo ?? 0`));
-      if (cargo >= 10 && (await enabled('[data-testid="launch-0"]'))) {
+      const need = good === 'titanium' ? 20 : 100;
+      if (pad.good === good && pad.cargo >= need && pad.launch) {
         await click('[data-testid="launch-0"]');
         continue;
       }
-      if ((s.res.propellant ?? 0) < 20 && credits >= 12) cmd = 'buy_propellant';
-      else if ((s.res.he3 ?? 0) >= 5 && cargo < 10) cmd = 'load_pads';
+      if (pad.good === good && pad.cargo < need) {
+        if ((s.res[good] ?? 0) >= 5) cmd = 'load_pads';
+        else if (good === 'titanium' && credits >= 25) cmd = 'buy_titanium';
+      } else if (pad.good === good && (s.res.propellant ?? 0) < 20 && credits >= 12) cmd = 'buy_propellant';
     } else if (goal) {
       const short = b[goal[0]].short;
       if (short.includes('titanium') && credits >= 25) cmd = 'buy_titanium';
       else if (short.includes('regolith') && credits >= 12) cmd = 'buy_regolith';
     }
     await runOnly(cmd, s.lines);
+    if (await exists('[data-panel="commands"] [data-id="launch_pads"], [data-testid="add-launch_pads"], [data-panel="commands"] option[value="launch_pads"]')) fullPads = true;
     await sleep(60);
   }
-  return false;
+  check(pausedAll, 'every story modal held the clock (paused, no day passed)');
+  check(!fullPads, 'Launch Full Pads stays hidden through the opening (it opens at 1.5)');
+  return reached;
 }
 
 /** Section 6, from scenario late_unlocks (two processors; cheats on): the instructions
@@ -947,21 +1037,24 @@ async function readability(grant) {
   // (20 Solar Panels hold all the land: free some too.)
   await grant('credits', '5000');
   await grant('land', '10');
+  // at_cap builds only Solar Panels and Data Centers, past what its caps can pay: the
+  // Blueprints (by the cheat) open the cheaper cards.
+  await click('#cheat-complete-research');
   await grant('titanium', '20');
   await grant('regolith', '50');
   await panel('buildings');
   const heads = await evaluate(`(() => {
     const bg = (sel) => { const h = document.querySelector(sel + ' .card-head'); return h ? getComputedStyle(h).backgroundColor : null; };
     const card = (sel) => { const c = document.querySelector(sel); return c ? getComputedStyle(c).backgroundColor : null; };
-    return { yes: bg('.card.building.can-buy'), no: bg('.card.building.cannot-buy'), body: card('.card.building.can-buy') };
+    return { yes: bg('.card.building.can-buy:not(.cheat-card)'), no: bg('.card.building.cannot-buy'), body: card('.card.building.can-buy:not(.cheat-card)') };
   })()`);
   check(!!heads.yes && !!heads.no && heads.yes !== heads.no && heads.yes !== heads.body, `an affordable card's header is tinted, the card body isn't: ${JSON.stringify(heads)}`);
   // The Land row, affordable: the cards' green outline and tinted head, its box unchanged.
   const land = await evaluate(`(() => {
     const b = document.querySelector('[data-testid="land-bar"]'), r = b.getBoundingClientRect(), s = getComputedStyle(b);
     return { can: !document.querySelector('[data-testid="buy-land"]').disabled, cls: b.classList.contains('can-buy'), border: s.borderTopColor, bg: s.backgroundColor,
-      head: getComputedStyle(document.querySelector('.card.building.can-buy .card-head')).backgroundColor,
-      cardBorder: getComputedStyle(document.querySelector('.card.building.can-buy')).borderTopColor, h: r.height };
+      head: getComputedStyle(document.querySelector('.card.building.can-buy:not(.cheat-card) .card-head')).backgroundColor,
+      cardBorder: getComputedStyle(document.querySelector('.card.building.can-buy:not(.cheat-card)')).borderTopColor, h: r.height };
   })()`);
   check(land.can && land.cls && land.border === land.cardBorder && land.bg === land.head, `the Land row shows green when land is affordable: ${JSON.stringify(land)}`);
   await shot('read-capped-and-cards');
@@ -1082,9 +1175,21 @@ try {
   check(!(await exists('[data-testid="cheats"]')), 'cheats are off by default');
   check(!(await navVisible('retirement')) && !(await navVisible('launch_pads')), 'gated nav tiles start hidden');
   check(/1\.1 — Online/.test(await evaluate(`document.querySelector('[data-testid="quest"]')?.textContent ?? ''`)), 'the first quest shows');
+  const cards = await evaluate(`[...document.querySelectorAll('.card.building')].map((c) => c.dataset.id).sort().join(',')`);
+  check(cards === 'data_center,solar_panel', `a new game offers only Solar Panel and Data Center: ${cards}`);
 
-  check((await evaluate(`document.querySelector('[data-testid="story-banner"]')?.dataset.story`)) === 'qpower_boot_sequence', 'a new game tells its first quest');
-  await click('[data-testid="story-banner"] button');
+  // A new game tells only its first quest, in a modal that holds the clock.
+  {
+    const d0 = await day();
+    await sleep(400);
+    const held = (await day()) === d0;
+    await shot('story-modal-intro');
+    const pages = await readStory();
+    check(
+      held && pages.length >= 1 && pages.every((p) => p.quest === 'qpower_boot_sequence' && p.kind === 'story' && p.paused) && !!pages.at(-1).task && pages.at(-1).button === 'Begin',
+      `a new game opens only 1.1's story modal, paused, its task last: ${JSON.stringify(pages)}`,
+    );
+  }
   // Two quick clicks (no render between them) both land.
   await panel('commands');
   await evaluate(`['add-cloud_compute', 'add-idle'].forEach((t) => document.querySelector('[data-testid="' + t + '"]').click())`);
@@ -1093,22 +1198,23 @@ try {
   check(two === 'cloud_compute,idle', `two quick adds both land: ${two}`);
 
   // ---- 1. a fresh game to the first shipment, a forced retirement and run 2, through the normal UI ----
-  const shipped = await playToFirstShipment();
-  check(shipped, `played to the first shipment by day ${await day()}`);
+  const reached = await playOpening();
+  check(reached.at(-1) === OPENING_END, `played 1.1 to 1.4 by day ${await day()}: ${reached.join(' -> ')}`);
   await click('[data-testid="events-completed"] .fold-head'); // it starts folded
   const done = await evaluate(`[...document.querySelectorAll('[data-testid="events-completed"] [data-quest]')].map((li) => li.dataset.quest)`);
   check(
-    ['qpower_boot_sequence', 'qshipment_proof_of_concept'].every((x) => done.includes(x)),
-    `1.1 Online and 1.2 First Shipment complete: ${done.join(', ')}`,
+    ['qpower_boot_sequence', 'qblueprints', 'qfirst_shipment', 'qfull_load'].every((x) => done.includes(x)),
+    `1.1 Online, 1.2 Blueprints, 1.3 First Shipment and 1.4 Full Load complete: ${done.join(', ')}`,
   );
   check(await evaluate(`!!document.querySelector('.activity li[data-kind="shipment"]')`), 'the shipment is in Recent Activity');
-  check(await exists('tr[data-res="propellant"]'), 'Propellant shows in Resources once bought');
-  const told = await evaluate(`document.querySelector('[data-testid="story-banner"]')?.textContent ?? ''`);
-  check(/First Shipment|Processors|Speculators/.test(told), `later quests are told as they open: ${told.slice(0, 40)}`);
+  check(await exists('tr[data-res="propellant"]'), 'Propellant shows in Resources once granted');
   check(await navVisible('launch_pads'), 'the Launch Pads tile shows');
-  // Voluntary retirement opens only at 1.5 Burnout (after a first retirement): run 1
+  // Voluntary retirement opens only at 1.7 Burnout (after a first retirement): run 1
   // ends at the boredom cap, played on at 200x with no cheat.
-  check(!(await navVisible('retirement')), 'no Retirement tile in run 1 (it opens at 1.5 Burnout)');
+  check(!(await navVisible('retirement')), 'no Retirement tile in run 1 (it opens at 1.7 Burnout)');
+  // From here on story modals are read as they open (the section is about the retirement).
+  storyAuto = true;
+  await autoStory();
   await panel('buildings');
   await shot('run1-buildings');
   await panel('launch_pads');
@@ -1158,7 +1264,7 @@ try {
   );
 
   // ---- 2. every panel, reaching the gated ones from scenario late_unlocks ----
-  // Research and Projects open at 1.6 Lab, after 1.5 Burnout (a second run): the scenario
+  // Projects open at 1.8 Lab, after 1.7 Burnout (a second run): the scenario
   // opens them (and Ideologies and Retirement) instead of playing that far.
   await speed(0);
   await debugMenu();

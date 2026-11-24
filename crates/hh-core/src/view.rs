@@ -208,6 +208,9 @@ pub struct QuestView {
     pub title: Text,
     pub summary: Text,
     pub body: Text,
+    /// Its story, one paragraph per modal, shown as it becomes active (empty:
+    /// the UI shows `body`). `summary` is the task line.
+    pub story: &'static [String],
     pub progress: Option<ProgressView>,
     pub sub_objectives: Vec<SubObjectiveView>,
 }
@@ -222,6 +225,13 @@ pub struct StoryView {
     /// A boredom-phase event's boredom per day, for the UI to fill `{rate}` in
     /// `body` with (the Stats panel's formatting); `None` for the rest.
     pub rate: Option<Fx>,
+    /// A chain quest (not a side quest or one-off event): its transition is
+    /// a story modal in the UI.
+    pub chain: bool,
+    /// A chain quest's story (shown as it became active) and payoff (shown as
+    /// it completed), one paragraph per modal.
+    pub story: &'static [String],
+    pub payoff: &'static [String],
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -384,6 +394,9 @@ pub struct View {
     pub processors_running: u32,
     pub pads: Vec<PadView>,
     pub loading_priority: Vec<String>,
+    /// The goods a pad's cargo picker offers now, in loading-priority order
+    /// (No cargo is always offered): the active quest may hold pads to a few.
+    pub pad_goods: Vec<String>,
     pub markets: Vec<MarketView>,
     pub research: Vec<ResearchView>,
     pub ideology: Vec<AxisView>,
@@ -475,7 +488,16 @@ fn axes(r: &Rules, g: &GameState) -> Vec<AxisView> {
 }
 
 fn story(e: &'static crate::content::Event) -> StoryView {
-    StoryView { id: &e.id, title: &e.title, summary: &e.summary, body: &e.body, rate: None }
+    StoryView {
+        id: &e.id,
+        title: &e.title,
+        summary: &e.summary,
+        body: &e.body,
+        rate: None,
+        chain: e.is_quest(),
+        story: &e.story,
+        payoff: &e.payoff,
+    }
 }
 
 /// An event's text with the number its `{rate}` takes: for a boredom-phase event, that
@@ -653,6 +675,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         title: &q.title,
         summary: &q.summary,
         body: &q.body,
+        story: &q.story,
         progress: progress(events::progress(r, g, &q.condition)),
         sub_objectives: match &q.condition {
             Condition::AllOf { sub_objectives } => sub_objectives
@@ -736,6 +759,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             })
             .collect(),
         loading_priority: g.run.loading_priority.clone(),
+        pad_goods: g.run.loading_priority.iter().filter(|x| shipments::allowed(g, x)).cloned().collect(),
         markets,
         research: c
             .research

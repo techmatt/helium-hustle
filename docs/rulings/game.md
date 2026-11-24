@@ -34,8 +34,31 @@ Programs have their own part ([programs.md](programs.md)).
 - **Act 1 follows the design doc's beats (2026-11-21).** Quests carry the design doc's beat
   ids; [arc.md](../arc.md) is the beat → quest → status map, current state only. Q6 Open
   Horizons and Q7 Signal Detected left the quest line: performance tests belong in
-  achievements (not built yet; candidates in arc.md). Placeholder techniques stand for 1.8
+  achievements (not built yet; candidates in arc.md). Placeholder techniques stand for 1.10
   (Contest Claims) and 1.a (Disrupt Speculators).
+- **Act 1 opening: one mechanic at a time (2026-11-23).** The chain is 1.1 Online, 1.2
+  Blueprints, 1.3 First Shipment, 1.4 Full Load, 1.5 Processors, then Speculators, Burnout, Lab,
+  Three Voices, Land Rush and the Telescope (1.6-1.11, conditions and unlocks as before). A
+  new game builds only Solar Panels and Data Centers; 1.1 opens Buy Science (placeholder 10
+  credits + 1 energy → 1 science) and the research view, which shows only the Blueprints until
+  1.8. Basic Blueprints (20 science) unlocks the Excavator, Smelter, Launch Pad and Storage
+  Depot; Advanced Blueprints (50, on sale once 1.3 is done) the Battery, Refinery and
+  Fabricator. 1.3: one launch of 20+ titanium; its start grants 20 propellant once; pads
+  carry Titanium only while it is active; a partial pad launches by hand from its card. 1.4: a
+  full pad of He-3 (it teaches He-3). Launch Full Pads stays hidden until 1.5 completes; Load
+  Launch Pads opens with the first pad. The Launch Plans event is gone. Boredom runs from day
+  1 with its meter shown; 1.7's modals explain it, and a retirement forced earlier completes 1.7
+  as it is reached. Side quest 1.c Blueprints for Everyone (from 1.8): the Blueprint Archive
+  global project (placeholder 500 credits + 200 science, offered first) makes both Blueprints
+  bought at every run's start. Refinery upkeep is 5 regolith + 2 energy. *Default (074):* 1.b's
+  cluster leaves out the Blueprints category (else 1.c would complete 1.b for free).
+- **Story modals (2026-11-23).** Each chain quest's transition is a modal that pauses the
+  game: the finished quest's payoff, then the next quest's story, then its task in one line;
+  one paragraph a modal, chained or merged as the story reads best, one button, play resumes
+  after the last. No modal at game start but the first quest's; side quests unchanged; sims
+  never see them (UI only). Placeholder story for every Act 1 beat lives only in content
+  (`story` and `payoff` on the quest rows); docs point at it, never copy it. Matt's story
+  pass comes much later.
 - **Act 1 is mostly a tutorial (2026-11-22).** The phase before programming is fully
   unlocked gets no special design effort, trivial special cases at most. So program players
   get no count or rate readings before research unlocks them (059's default stands).
@@ -43,9 +66,9 @@ Programs have their own part ([programs.md](programs.md)).
   Launch Pad mid-run and every pad a run starts with has No cargo, idle until a good is picked
   (Load skips it, `idle_pads` counts it); No cargo stays one of a pad's choices. Old saves keep
   their pads' goods (a state reads back as saved; the web autosave of another revision is still
-  discarded, by *Saves* in [engine.md](engine.md)). Every sim player and script picks a cargo. *Defaults (069):* quest 1.2
-  teaches it; the sim players' pick is one fixed hand, the first good in the loading priority
-  (`agents::pick_cargo`); the Launch Pads tile shows a red dot while a working pad has No cargo.
+  discarded, by *Saves* in [engine.md](engine.md)). Every sim player and script picks a cargo. *Defaults (069, 074):* quest 1.3
+  teaches it; the sim players' pick is one fixed hand, the first good a pad may carry now
+  (`agents::pick_cargo`: Titanium during 1.3, else the loading priority's first); the Launch Pads tile shows a red dot while a working pad has No cargo.
 - **Adversaries on minimal Attention (2026-11-21).** Speculators and rivals each have one
   Attention, raised by a driver, present at a threshold (one tier), decaying linearly, with
   a neutralize stub. All placeholders ([rules/attention.md](../rules/attention.md)).

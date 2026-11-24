@@ -140,7 +140,7 @@ impl Agent for HandsOff {
         let v = p.view();
         let run = v.run;
         // The loadout guards with `if`: the author plays every run until
-        // `if` opens (a global project, Act 1 beat 1.7), and that run.
+        // `if` opens (a global project offered from 1.8), and that run.
         if v.if_open {
             self.first_run.get_or_insert(run);
         }

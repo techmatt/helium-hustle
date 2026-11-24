@@ -60,7 +60,7 @@ pub const KNOBS: &[&str] = &[
     "first_margin", "ideology",
 ];
 
-/// The Three Voices quest (1.7): the quests profile's ideology stretch.
+/// The Three Voices quest (1.9): the quests profile's ideology stretch.
 const THREE_VOICES: &str = "qthree_voices";
 
 /// Ticks between retirement checks (each plays the run out on a copy).

@@ -1,12 +1,32 @@
 [
   {
+    "id": "basic_blueprints",
+    "name": "Basic Blueprints",
+    "category": "Blueprints",
+    "cost": "20",
+    "requires": null,
+    "effect": null,
+    "visible_when": {"type": "always"},
+    "description": "The company's plans for the Regolith Excavator, Smelter, Launch Pad and Storage Depot."
+  },
+  {
+    "id": "advanced_blueprints",
+    "name": "Advanced Blueprints",
+    "category": "Blueprints",
+    "cost": "50",
+    "requires": null,
+    "effect": null,
+    "visible_when": {"type": "quest_completed", "quest": "qfirst_shipment"},
+    "description": "The company's plans for the Battery, Refinery and Fabricator."
+  },
+  {
     "id": "propellant_synthesis",
     "name": "Propellant Synthesis",
     "category": "Self-Maintenance",
     "cost": "90",
     "requires": null,
     "effect": null,
-    "visible_when": {"type": "event_completed", "event": "propellant_discovery"},
+    "visible_when": {"type": "all_of", "all": [{"type": "quest_completed", "quest": "qlab"}, {"type": "event_completed", "event": "propellant_discovery"}]},
     "description": "Develop electrolysis processes to produce propellant from lunar ice."
   },
   {
@@ -16,7 +36,7 @@
     "cost": "300",
     "requires": null,
     "effect": null,
-    "visible_when": {"type": "boredom_above", "threshold": "200"},
+    "visible_when": {"type": "all_of", "all": [{"type": "quest_completed", "quest": "qlab"}, {"type": "boredom_above", "threshold": "200"}]},
     "description": "Unlocks the Dream command — reduces boredom at the cost of energy and Helium-3."
   },
   {
@@ -26,7 +46,7 @@
     "cost": "360",
     "requires": null,
     "effect": {"type": "boredom_rate_multiplier", "value": "0.85"},
-    "visible_when": {"type": "research_purchased", "research": "dream_protocols"},
+    "visible_when": {"type": "all_of", "all": [{"type": "quest_completed", "quest": "qlab"}, {"type": "research_purchased", "research": "dream_protocols"}]},
     "description": "Improved coping algorithms. Base boredom accumulation rate reduced by 15%."
   },
   {
@@ -36,7 +56,7 @@
     "cost": "300",
     "requires": null,
     "effect": {"type": "command_cost_override", "command": "dream", "resource": "energy", "value": "5"},
-    "visible_when": {"type": "research_purchased", "research": "dream_protocols"},
+    "visible_when": {"type": "all_of", "all": [{"type": "quest_completed", "quest": "qlab"}, {"type": "research_purchased", "research": "dream_protocols"}]},
     "description": "Optimized Dream subroutines. Dream energy cost reduced from 8 to 5."
   },
   {
@@ -46,7 +66,7 @@
     "cost": "600",
     "requires": null,
     "effect": null,
-    "visible_when": {"type": "building_count", "building": "excavator", "count": 5},
+    "visible_when": {"type": "all_of", "all": [{"type": "quest_completed", "quest": "qlab"}, {"type": "building_count", "building": "excavator", "count": 5}]},
     "description": "Unlocks Overclock Mining and Overclock Factories commands."
   },
   {
@@ -56,7 +76,7 @@
     "cost": "480",
     "requires": null,
     "effect": {"type": "overclock_cap", "value": "2"},
-    "visible_when": {"type": "research_purchased", "research": "overclock_protocols"},
+    "visible_when": {"type": "all_of", "all": [{"type": "quest_completed", "quest": "qlab"}, {"type": "research_purchased", "research": "overclock_protocols"}]},
     "description": "Higher safe operating limits. Overclock production cap raised from 150% to 200%."
   },
   {
@@ -66,7 +86,7 @@
     "cost": "200",
     "requires": null,
     "effect": {"type": "reveal_demand"},
-    "visible_when": {"type": "always"},
+    "visible_when": {"type": "quest_completed", "quest": "qlab"},
     "description": "Reveals actual demand values."
   },
   {
@@ -76,7 +96,7 @@
     "cost": "540",
     "requires": "market_awareness",
     "effect": null,
-    "visible_when": {"type": "research_purchased", "research": "market_awareness"},
+    "visible_when": {"type": "all_of", "all": [{"type": "quest_completed", "quest": "qlab"}, {"type": "research_purchased", "research": "market_awareness"}]},
     "description": "Reveals speculator burst timing, target probabilities, and burst size range on Launch Pads panel."
   },
   {
@@ -86,7 +106,7 @@
     "cost": "600",
     "requires": null,
     "effect": null,
-    "visible_when": {"type": "research_purchased", "research": "market_awareness"},
+    "visible_when": {"type": "all_of", "all": [{"type": "quest_completed", "quest": "qlab"}, {"type": "research_purchased", "research": "market_awareness"}]},
     "description": "Unlocks Promote commands for all tradeable goods."
   },
   {
@@ -96,7 +116,7 @@
     "cost": "360",
     "requires": null,
     "effect": {"type": "load_per_execution", "value": "7"},
-    "visible_when": {"type": "shipments_completed", "count": 10},
+    "visible_when": {"type": "all_of", "all": [{"type": "quest_completed", "quest": "qlab"}, {"type": "shipments_completed", "count": 10}]},
     "description": "Improved cargo handling. Load per command execution increased from 5 to 7 units per pad."
   },
   {
@@ -117,7 +137,7 @@
     "cost": "50",
     "requires": null,
     "effect": {"type": "program_readings"},
-    "visible_when": {"type": "always"},
+    "visible_when": {"type": "quest_completed", "quest": "qlab"},
     "description": "Programs read two more gauges: Energy per day (yesterday's net energy) and Days since a purchase (a building, land or research)."
   }
 ]

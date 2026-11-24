@@ -72,6 +72,18 @@
     "description": "Purchase propellant. Tactical gap-bridging only — Electrolysis chain is far cheaper at scale."
   },
   {
+    "id": "buy_science",
+    "name": "Buy Science",
+    "requires": {"type": "quest_completed", "quest": "qpower_boot_sequence"},
+    "costs": {"credits": "10", "energy": "1"},
+    "produces": {"science": "1"},
+    "boredom": "0",
+    "effect": null,
+    "scale_modifier": null,
+    "sets_flag": null,
+    "description": "Buy research time on Earth. The only science before a Research Lab."
+  },
+  {
     "id": "load_pads",
     "name": "Load Launch Pads",
     "requires": {"type": "building", "building": "launch_pad", "count": 1},
@@ -86,7 +98,7 @@
   {
     "id": "launch_pads",
     "name": "Launch Full Pads",
-    "requires": {"type": "building", "building": "launch_pad", "count": 1},
+    "requires": {"type": "quest_completed", "quest": "qautomate_automation"},
     "costs": {},
     "produces": {},
     "boredom": "0",

@@ -14,14 +14,18 @@ served page: `HH_URL`, required (it exits naming `vite preview` when unset),
 results folder; kept shots are also copied to the shared screenshots folder, CLAUDE.md). About
 100 s. It plays, in order:
 
-1. **A fresh game through the normal UI only** (no debug menu): a build order, Program 1
-   switched between Sell Cloud Compute and the bridging buys, the first pad given Helium-3 (it starts with No cargo), loaded and
-   launched (1.1 and 1.2, around day 400 at 50x); no Retirement tile (it opens at 1.5
-   Burnout), so on at 200x to the forced retirement at the boredom cap (around day 1,650,
-   ~10 s); the run summary holding the clock, run 2 (known tiles and resources still shown,
-   not cheated). Its double-click-on-Continue check failed once (058: a buy hint under
+1. **A fresh game through the normal UI only** (no debug menu): only Solar Panel and Data
+   Center offered, only 1.1's story modal (paused, its task on the last page); then the
+   opening at 50x, Program 1 switched between Sell Cloud Compute, Buy Science and the
+   bridging buys: Basic Blueprints (1.2), the first pad offering Titanium only (1.3), 20+
+   titanium loaded and launched by the card's Launch, Advanced Blueprints and Refineries,
+   a full pad of Helium-3 (1.4). Each quest change must open a story modal chain that holds
+   the clock and ends on the next task; Launch Full Pads never shows. No Retirement tile
+   (it opens at 1.7 Burnout), so on at 200x (story modals now clicked through as they
+   open, `autoStory`) to the forced retirement at the boredom cap; the run summary
+   holding the clock, run 2 (known tiles and resources still shown, not cheated). Its double-click-on-Continue check failed once (058: a buy hint under
    it, nothing bought) and passed on a rerun: a timing flake, not yet fixed.
-2. **Every panel**: scenario `late_unlocks` opens Research, Projects and Ideologies (1.6 Lab
+2. **Every panel**: scenario `late_unlocks` opens Research, Projects and Ideologies (1.8 Lab
    is past a second run); a locked project's condition, a funded one's days to done; every
    nav tile shown opens, and every Act 1 tile is shown (all of `content/nav.json` but panels
    only a DRAFT quest opens); no CHEATED tag in the bottom bar (the mark in the debug info), a jump ahead, the cheat building (+1000 credits a day, 1 credit,
@@ -59,6 +63,8 @@ results folder; kept shots are also copied to the shared screenshots folder, CLA
 
 Any uncaught page error fails the run. Run it against `vite preview` (CLAUDE.md).
 `panel()` closes the debug menu: call `debugMenu()` again before a `grant()` after one.
+A story modal refuses every action and speed until read: `readStory()` reads one through
+(the driver's), `autoStory()` clicks every later one away until the page is left.
 
 - **Under load it flakes:** section 3's 10x pointer walk fails beside a cargo build, and
   so do its "if held" and "guarded line built" outcome checks (066: beside `cargo test-all`; 067: once with nothing beside it, then
@@ -82,14 +88,14 @@ quest, a launch, the summary, a reload). Hunts' findings: `docs/qa-findings.md`.
 run 1 at 3x then 50x with every panel, retirement and the summary (keys must not start the
 clock), run 2 at 200x, a reload, the replay check, the play log replayed by `hh-sim
 playlog` (a release build, or `HH_SIM`: a fresh worktree has none, so build it first), a second tab and site data blocked (first pass only). At run 1's end and in every
-debug scenario (each played, its pads given Helium-3 first, its panels audited): every Resources row's breakdown opened
+debug scenario (each played, its pads given Helium-3 first, or Titanium while 1.3 allows only that, its panels audited): every Resources row's breakdown opened
 and closed, Stats' breakdowns; program lines dragged; in `late_unlocks`, a loaded
 pad switched to another good (the stockpile gains what its tooltip promised) and Recent
 Activity's unread count (counts while folded, clears once read); in `everything`, the
 takeovers (a program in every form the text grammar writes, pasted into the text editor:
 each line reads, the block view holds every line, the text reads back unchanged; the
 Cortex mock by its toggle, closed with Esc) and every open project's Max then − steps,
-each taken. A career short of 1.6 (Research) is played on by the debug autopilot's
+each taken. A career short of 1.8 (Projects) is played on by the debug autopilot's
 *Next quest step*, each step timed and checked to move the quest; after the scenarios its
 *Everything* plays to the ending (~15 s) and every later-act panel is audited. Building cards with no
 picture drawn yet (placeholder art) are not findings. The late panels again in

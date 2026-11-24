@@ -1,5 +1,15 @@
 [
   {
+    "id": "blueprint_archive",
+    "name": "Blueprint Archive",
+    "description": "DRAFT. Archive the company's blueprints beyond a reset's reach (completes 1.c Blueprints for Everyone).",
+    "scope": "timeline",
+    "unlock": {"type": "quest_active", "quest": "qthree_voices"},
+    "costs": {"credits": "500", "science": "200"},
+    "min_days": 17,
+    "rewards": []
+  },
+  {
     "id": "foundation_grant",
     "name": "Foundation Grant",
     "description": "Endow future AI instances with basic infrastructure.",

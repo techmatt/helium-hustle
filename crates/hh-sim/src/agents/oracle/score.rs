@@ -35,7 +35,7 @@ pub struct Weights {
 
 /// The profiles, by their `profile` knob: 0 milestones (the default), 1
 /// credits, 2 ideology, 3 builder, 4 quests (the milestones' weights, and
-/// while Three Voices (1.7) is open, its campaign as the only strategy:
+/// while Three Voices (1.9) is open, its campaign as the only strategy:
 /// [`super::strategy::campaign`]).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Profile {

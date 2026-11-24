@@ -12,29 +12,35 @@ Acts 2-4.
 ## Act 1: the lunar operation (draft-playable)
 
 About 25% of play (a readout, not a target). Skill: from clicking commands to programs that run
-whole runs. The chain is 1.1 to 1.9 in order; 1.a and 1.b are side quests that complete beside
-it and never hold it up.
+whole runs. The chain is 1.1 to 1.11 in order, each opening one mechanic at a time (074); 1.a,
+1.b and 1.c are side quests that complete beside it and never hold it up. A new game can build
+only Solar Panels and Data Centers. Each chain quest's transition is a story modal in the UI
+(its `story` and `payoff` paragraphs in `content/events.json`, placeholder text; no doc copies
+them; [rules/events.md](rules/events.md), *Story modals*).
 
 | Beat | Quest (id) | Trigger | Condition | Opens | Status |
 |---|---|---|---|---|---|
-| 1.1 Online | `qpower_boot_sequence` | game start | 2 Solar Panels | the Regolith Excavator (the base view is there from boot) | aligned |
-| 1.2 First shipment | `qshipment_proof_of_concept` | 1.1 | 1 shipment | credits (the launch payout); its text teaches picking a pad's cargo (a new pad has No cargo). Launch Pads come from the *Launch Plans* event (50 He-3 made in a run) | aligned |
-| 1.3 Processors | `qautomate_automation` | 1.2 | 2 Data Centers | program logic (the `program_logic` flag at 2 working processors); loadouts are open from run 1 and always kept | draft |
-| 1.4 Speculators notice you | `qspeculators_notice` | 1.3 | speculators present (Attention from units sold) | the adversary tab (the `adversaries` panel; speculator bursts land only while they are present) | draft |
-| 1.5 Burnout | `qburnout` | 1.4 | 1 retirement (boredom forces the first) | the Retirement panel (voluntary retirement); bests and firsts carry | draft |
-| 1.6 Lab | `qlab` | 1.5 | a Research Lab | the research view (no research before it), Projects and Foundation Grant, the Recreation Dome; Geopolitical Intelligence shows; the first global project (Conditional Logic, opens `if`) is offered | draft |
-| 1.7 Three voices | `qthree_voices` | 1.6 | career-best rank 5 on each axis (three sub-objectives) | each axis's major rank-5 effect (ideology.md); its rank-5 global project | draft |
-| 1.8 Land rush | `qland_rush` | 1.7 | rivals present (Attention from land claimed) | the Contest Claims command (neutralizes the rivals) | draft |
-| 1.9 Deep Space Telescope | `qdeep_space_telescope` | 1.8 | the Deep Space Telescope global project (30,000 credits and 5,000 science at no faster than 3,000 days, so several runs) | Act 2: the `swarm_revealed` flag, the calendar, the Timeline view, the Experiment Lab | draft |
-| 1.a Big launch | `qbig_launch` (side) | 1.4 | one launch pays 1,000+ credits | Disrupt Speculators (also takes speculator Attention off) | draft |
-| 1.b Full cluster | `qfull_cluster` (side) | 1.6 | every item of one research category of 2+ items bought in one run | placeholder: every run starts with 50 Science | draft |
+| 1.1 Online | `qpower_boot_sequence` | game start | 2 Solar Panels | the Buy Science command and the research view (only the Blueprints show in it until 1.8) | aligned |
+| 1.2 Blueprints | `qblueprints` | 1.1 | the Basic Blueprints research (20 science) | (the research itself unlocks the Regolith Excavator, Smelter, Launch Pad and Storage Depot) | aligned |
+| 1.3 First shipment | `qfirst_shipment` | 1.2 | one launch carrying 20+ titanium | its start grants 20 Propellant once a career; while it is active pads carry Titanium only, and a partial pad launches by hand from its card; done, Advanced Blueprints (50 science: Battery, Refinery, Fabricator) goes on sale | aligned |
+| 1.4 Full load | `qfull_load` | 1.3 | one launch carrying a full pad of He-3 | (teaches He-3, the claim's real export) | aligned |
+| 1.5 Processors | `qautomate_automation` | 1.4 | 2 Data Centers | the Launch Full Pads command; program logic (the `program_logic` flag at 2 working processors); loadouts are open from run 1 and always kept | draft |
+| 1.6 Speculators notice you | `qspeculators_notice` | 1.5 | speculators present (Attention from units sold) | the adversary tab (the `adversaries` panel; speculator bursts land only while they are present) | draft |
+| 1.7 Burnout | `qburnout` | 1.6 | 1 retirement (boredom forces the first; one forced before 1.7 counts, so 1.7 completes as it is reached) | the Retirement panel (voluntary retirement); bests and firsts carry. Boredom runs from day 1 with its meter shown; 1.7's modals explain it | draft |
+| 1.8 Lab | `qlab` | 1.7 | a Research Lab | the full research catalog, Projects and Foundation Grant, the Recreation Dome; Geopolitical Intelligence shows; the first global projects (Blueprint Archive, then Conditional Logic, opens `if`) are offered | draft |
+| 1.9 Three voices | `qthree_voices` | 1.8 | career-best rank 5 on each axis (three sub-objectives) | each axis's major rank-5 effect (ideology.md); its rank-5 global project | draft |
+| 1.10 Land rush | `qland_rush` | 1.9 | rivals present (Attention from land claimed) | the Contest Claims command (neutralizes the rivals) | draft |
+| 1.11 Deep Space Telescope | `qdeep_space_telescope` | 1.10 | the Deep Space Telescope global project (30,000 credits and 5,000 science at no faster than 3,000 days, so several runs) | Act 2: the `swarm_revealed` flag, the calendar, the Timeline view, the Experiment Lab | draft |
+| 1.a Big launch | `qbig_launch` (side) | 1.6 | one launch pays 1,000+ credits | Disrupt Speculators (also takes speculator Attention off) | draft |
+| 1.b Full cluster | `qfull_cluster` (side) | 1.8 | every item of one research category of 2+ items (not the Blueprints) bought in one run | placeholder: every run starts with 50 Science | draft |
+| 1.c Blueprints for everyone | `qblueprints_for_everyone` (side) | 1.8 | the Blueprint Archive global project (placeholder: 500 credits, 200 science) | Basic and Advanced Blueprints count as bought at the start of every run | draft |
 
 Placeholder choices (049), all for Matt to keep or replace:
 
 - **Major ranks (rank 5).** Nationalist: speculator bursts stop landing. Humanist: Dream costs
   only its energy (no He-3). Rationalist: research bought in an earlier run is free. The ranks
   between scale as before.
-- **Techniques.** Anti-rival (1.8): *Contest Claims*, 500 credits and 10 energy, sets the
+- **Techniques.** Anti-rival (1.10): *Contest Claims*, 500 credits and 10 energy, sets the
   rivals' Attention to zero (the neutralize stub). Speculator disruption (1.a): the existing
   *Disrupt Speculators*, now gated on 1.a instead of Market Awareness, also takes 20
   speculator Attention off per execution.
@@ -46,8 +52,8 @@ Placeholder choices (049), all for Matt to keep or replace:
   Tolerance, in the research category of that name; Daydreaming is the renamed Dream
   Protocols. Research categories are 1.b's clusters (Overclock Algorithms and Market Analysis
   can be finished in Act 1; Self-Maintenance holds the draft Novelty Simulation, shown after
-  1.9). Q2 First Extraction
-  became the *Launch Plans* event, Q5 Market Awareness left the line (Market Awareness stays a
+  1.11; the Blueprints category is no cluster). Q2 First Extraction became an event, since
+  removed for 1.2 Blueprints (074); Q5 Market Awareness left the line (Market Awareness stays a
   research item).
 
 **Achievement candidates** (performance tests, out of the quest line; achievements for them
@@ -62,7 +68,7 @@ aren't built yet):
 
 The 042 scaffolding: rough mechanics, placeholder numbers, art and text, kept running so the
 autopilot reaches the ending. **Unaligned with the design doc.** Act 2 starts when the
-Telescope (1.9) is finished.
+Telescope (1.11) is finished.
 
 | Story step | Quest | Opens | Status |
 |---|---|---|---|

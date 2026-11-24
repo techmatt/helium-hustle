@@ -98,26 +98,29 @@ The `drain` variant has no params (`"params": {}`).
 
 ## Content
 
-`content/projects.json`: 14 rows, nine `timeline` (the Dyson Sphere among them: draft,
+`content/projects.json`: 15 rows, ten `timeline` (the Dyson Sphere among them: draft,
 [timeline.md](timeline.md)) and five `run`, each with `scope`, `unlock`, `costs`,
 `min_days` and `rewards` (none repeats yet); names and descriptions are the Godot
-placeholders but for the draft rows (049): Conditional Logic (offered once quest 1.6 is
+placeholders but for the draft rows (049): Conditional Logic (offered once quest 1.8 is
 done, its reward the `logic_if` flag that opens `if`, [programs.md](programs.md)) and the
-Deep Space Telescope (offered once 1.8 is done; completing it completes quest 1.9, so it
-spans several runs: `min_days` 3,000). Chemical Energy Initiative is offered once 1.6 is
-done. Every other row's `min_days` is its largest cost over 30, rounded up: the days the old
+Deep Space Telescope (offered once 1.10 is done; completing it completes quest 1.11, so it
+spans several runs: `min_days` 3,000). Chemical Energy Initiative is offered once 1.8 is
+done. Blueprint Archive (draft, offered once 1.8 is done: 500 credits and 200 science,
+`min_days` 17, no reward of its own) completes side quest 1.c Blueprints for Everyone, whose
+`grant_research` unlock has both Blueprints bought from the start of every run
+([research.md](research.md)). Every other row's `min_days` is its largest cost over 30, rounded up: the days the old
 flat cap of 30 a day took.
 
 ## Port notes
 
 - Conflict: Microwave Receiver gate: see [economy.md](economy.md#port-notes).
-- Changed (049): quest 1.6 Lab enables Foundation Grant and the Projects panel (the Godot
+- Changed (049): quest 1.8 Lab enables Foundation Grant and the Projects panel (the Godot
   data had Market Awareness, a quest no longer in the line).
 - Conflict: Lunar Cartography and Deep Core Survey unlock by `project_enabled`, but no
   event enables them. Kept as data, so both are unreachable (candidate: give each an
   enabling event or another unlock).
 - Candidate: a `quest_active` gate holds while the quest is active or after it is
-  completed (Chemical Energy Initiative and Conditional Logic stay fundable after 1.7
+  completed (Chemical Energy Initiative and Conditional Logic stay fundable after 1.9
   Three Voices completes).
 - Candidate: AI Consciousness Act's `command_boredom` values replace the commands' own
   boredom per execution rather than adding to it.

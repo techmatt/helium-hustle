@@ -45,7 +45,9 @@ propellant can run out partway through.
 2. Pays `base_values[good] × demand × cargo × shipment_credit_mult` credits, at the good's
    demand for today (set earlier in the day).
 3. Counts a shipment for the run, raises the run's best launch (the most credits one launch
-   paid, which the `launch_credits` condition reads, [events.md](events.md)), adds the cargo
+   paid, which the `launch_credits` condition reads, [events.md](events.md)) and the good's
+   best cargo (the most of it one launch carried this run, `best_cargo`, which the
+   `launch_cargo` and `launch_full` conditions read), adds the cargo
    × `speculator_per_unit` to the speculators' Attention ([attention.md](attention.md)),
    empties the pad and sets its cooldown to `launch_cooldown`.
 4. Raises the good's launch saturation and adds the payout to its burst-target revenue
@@ -74,7 +76,10 @@ unpaused, cooled down) and the default loading priority.
   full. Illegal if there is no such pad, or it can't launch (inactive, cooling down, empty, or
   propellant below `fuel_per_pad`).
 - **`set_pad_good { pad, good }`**: sets the good a pad carries; `good` null returns it to
-  No cargo. Illegal if the good is not tradeable or the pad doesn't exist; setting the same
+  No cargo. Illegal if the good is not tradeable, the pad doesn't exist, or the active
+  quest's `pad_goods` list doesn't name the good (1.3 First Shipment allows only Titanium;
+  a pad already on another good keeps it; the view's `pad_goods` lists the goods a pad may
+  be set to now, [events.md](events.md)); setting the same
   choice again does nothing. A loaded pad
   switching goods (or to No cargo) returns its cargo to that good's stockpile, up to the stockpile's cap; the
   rest is lost, and a Recent Activity line (`cargo_lost`) says how much.
@@ -85,7 +90,10 @@ unpaused, cooled down) and the default loading priority.
 
 Pad indices are 0-based. The commands Load Launch Pads and Launch Full Pads run through
 programs; they need their full cost to run (Load costs energy; Launch Full Pads has no cost of
-its own, the propellant is the launch's).
+its own, the propellant is the launch's). Launch Full Pads is locked until quest 1.5
+Processors is completed (`requires: quest_completed`, [commands.md](commands.md)); before
+then a pad launches by hand (`launch`, from its card), which 1.3 First Shipment (one launch
+carrying 20 titanium) and 1.4 Full Load (a full pad of He-3) teach.
 
 ## Params
 
@@ -120,6 +128,6 @@ Modifiers read ([README.md](README.md)): `cargo_capacity_mult` (Bulk Shipper ach
 - Ruling (revision 4): a loaded pad may switch goods; its cargo returns to the stockpile up
   to the cap and the rest is lost.
 - Ruling (Matt, 2026-11-23; revision 22): players must learn to pick a pad's cargo, so a new
-  pad, and every pad a run starts with, has No cargo; quest 1.2 teaches it.
+  pad, and every pad a run starts with, has No cargo; quest 1.3 teaches it.
 - Candidate: `shipment_completed` events and the shipments-this-run achievement count this
   run's shipments.

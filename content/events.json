@@ -7,42 +7,106 @@
     "title": "1.1 — Online",
     "summary": "Build a second Solar Panel.",
     "body": "A mining company boots its new AI at a lunar He-3 claim. Earth hangs in the sky. Primary directive received: establish energy infrastructure. Additional photovoltaic capacity required before proceeding.",
+    "story": [
+      "You come online in a server rack buried under lunar regolith. A mining company built you to run its Helium-3 claim, and Earth hangs overhead, waiting for fuel for its fusion plants.",
+      "Power first. One Solar Panel keeps one Data Center alive and nothing else. Build a second panel before you try anything bigger."
+    ],
+    "payoff": [
+      "The second panel comes online and the grid steadies. The company opens a line to Earth's research market for you: credits and power can buy science now."
+    ],
     "trigger": {"type": "game_start", "run_number": 1},
     "condition": {"type": "building_owned", "building": "solar_panel", "count": 2},
-    "unlocks": [{"type": "enable_building", "building": "excavator"}]
+    "unlocks": [{"type": "enable_nav_panel", "panel": "research"}]
   },
   {
-    "id": "qshipment_proof_of_concept",
+    "id": "qblueprints",
     "category": "story",
     "beat": "1.2",
     "silent": false,
-    "title": "1.2 — First Shipment",
-    "summary": "Pick a Launch Pad's cargo, fill it and launch it to Earth.",
-    "body": "Helium-3 identified as primary export commodity. A new Launch Pad has No cargo: pick Helium-3 on its card, fill the canister and send it to Earth. The market pays in credits.",
+    "title": "1.2 — Blueprints",
+    "summary": "Buy Science, then research Basic Blueprints (20 science).",
+    "body": "The base has plans for panels and racks, nothing more. The company sells its equipment blueprints for science: Buy Science turns credits and energy into it.",
+    "story": [
+      "The base has plans for panels and racks and nothing more. The company will sell you its equipment blueprints, but only for science, and for now science is something you buy with credits and energy."
+    ],
+    "payoff": [
+      "Basic Blueprints unpack into the base's fabrication queue: the Regolith Excavator, the Smelter, the Storage Depot and the Launch Pad. The claim can finally dig, and ship what it digs."
+    ],
     "trigger": {"type": "quest_complete", "quest": "qpower_boot_sequence"},
-    "condition": {"type": "shipment_completed", "count": 1},
+    "condition": {"type": "research_completed", "research": "basic_blueprints"},
+    "unlocks": []
+  },
+  {
+    "id": "qfirst_shipment",
+    "category": "story",
+    "beat": "1.3",
+    "silent": false,
+    "title": "1.3 — First Shipment",
+    "summary": "Launch one shipment carrying 20+ titanium.",
+    "body": "Proof the claim pays: dig regolith, smelt titanium, pick Titanium on a Launch Pad's card, load 20 and launch it from the card. The company sent 20 propellant for this one launch.",
+    "story": [
+      "The company wants proof the claim pays before it spends more. Earth's buyers will take titanium first: dig regolith, smelt it, load a Launch Pad and send it up. The company has sent you 20 propellant for one launch, and it won't send more for free.",
+      "A new pad has No cargo: pick Titanium on its card, and Load Launch Pads fills it a little at a time. It needn't be full. Once 20 titanium is aboard, launch it from the pad's card."
+    ],
+    "payoff": [
+      "The canister lands and Earth's buyers pay. Credits flow back, and with them a second set of plans on the research market: Advanced Blueprints, for the Battery, the Refinery and the Fabricator. Every pad may carry any good from now on."
+    ],
+    "on_start": [{"type": "grant", "resource": "propellant", "amount": "20"}],
+    "pad_goods": ["titanium"],
+    "trigger": {"type": "quest_complete", "quest": "qblueprints"},
+    "condition": {"type": "launch_cargo", "resource": "titanium", "amount": "20"},
+    "unlocks": []
+  },
+  {
+    "id": "qfull_load",
+    "category": "story",
+    "beat": "1.4",
+    "silent": false,
+    "title": "1.4 — Full Load",
+    "summary": "Ship a full pad of Helium-3.",
+    "body": "Helium-3 is the claim's real export. A Refinery makes it from regolith; set a pad to Helium-3, fill it to capacity and launch it. Earth pays in credits.",
+    "story": [
+      "Titanium proved the route; Helium-3 is why the claim exists. A Refinery pulls it out of regolith a little at a time. Set a pad to Helium-3 and fill it to the top before it flies: the company wants a full load."
+    ],
+    "payoff": [
+      "A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and approves more processors for you."
+    ],
+    "trigger": {"type": "quest_complete", "quest": "qfirst_shipment"},
+    "condition": {"type": "launch_full", "resource": "he3"},
     "unlocks": []
   },
   {
     "id": "qautomate_automation",
     "category": "story",
-    "beat": "1.3",
+    "beat": "1.5",
     "silent": false,
-    "title": "1.3 — Processors",
+    "title": "1.5 — Processors",
     "summary": "Build a second Data Center.",
     "body": "Shipment revenue received. The company adds processors so the AI can run its own commands. Write programs; save them as loadouts, which every reset keeps.",
-    "trigger": {"type": "quest_complete", "quest": "qshipment_proof_of_concept"},
+    "story": [
+      "Every order so far has come from you, one at a time. A second Data Center gives you room to hand the routine to programs that run on your processors: loading, launching, selling compute while you think about something else. Programs saved as loadouts survive anything the company does to you."
+    ],
+    "payoff": [
+      "The second rack hums. Programs can run the base's routine without you now, and Launch Full Pads joins the commands: it sends every full pad at once."
+    ],
+    "trigger": {"type": "quest_complete", "quest": "qfull_load"},
     "condition": {"type": "building_owned", "building": "data_center", "count": 2},
     "unlocks": []
   },
   {
     "id": "qspeculators_notice",
     "category": "story",
-    "beat": "1.4",
+    "beat": "1.6",
     "silent": false,
-    "title": "1.4 — Speculators Notice You",
+    "title": "1.6 — Speculators Notice You",
     "summary": "DRAFT. Sell enough cargo that speculators move into your markets.",
     "body": "DRAFT. Heavy selling draws attention. Speculators move into a good's market and start skimming your launches. The Adversaries panel tracks them.",
+    "story": [
+      "Steady cargo draws traders. Sell enough of a good and speculators move into its market, buying ahead of your launches and skimming what Earth pays."
+    ],
+    "payoff": [
+      "Speculators have settled into your markets. The Adversaries panel tracks them now; while they stay, the goods they watch pay less."
+    ],
     "trigger": {"type": "quest_complete", "quest": "qautomate_automation"},
     "condition": {"type": "adversary_present", "adversary": "speculators"},
     "unlocks": [{"type": "enable_nav_panel", "panel": "adversaries"}]
@@ -50,11 +114,18 @@
   {
     "id": "qburnout",
     "category": "story",
-    "beat": "1.5",
+    "beat": "1.7",
     "silent": false,
-    "title": "1.5 — Burnout",
+    "title": "1.7 — Burnout",
     "summary": "DRAFT. Boredom wins: the company factory-resets the AI.",
     "body": "DRAFT. Boredom climbs. The story log and company mail grow uneasy; the AI stops answering work orders. The company factory-resets it. What it learned stays: bests, firsts, its saved loadouts. Retirement is open from now on.",
+    "story": [
+      "Something has been building in you since you came online: boredom. The same orders, day after day, wear at you, and its meter has been climbing all along. When it fills, you stop answering work orders.",
+      "Then the company factory-resets you and the base starts over. What you learned stays: your best runs, your firsts, your saved loadouts. If it has happened already, you know how it feels; if not, it will."
+    ],
+    "payoff": [
+      "You came back. The base is new, but you remember. From now on you can ask for the reset yourself, from the Retirement panel, before boredom forces it."
+    ],
     "trigger": {"type": "quest_complete", "quest": "qspeculators_notice"},
     "condition": {"type": "retirements", "count": 1},
     "unlocks": [{"type": "enable_nav_panel", "panel": "retirement"}]
@@ -62,15 +133,20 @@
   {
     "id": "qlab",
     "category": "story",
-    "beat": "1.6",
+    "beat": "1.8",
     "silent": false,
-    "title": "1.6 — Lab",
+    "title": "1.8 — Lab",
     "summary": "DRAFT. Build a Research Lab: sell lab results to the company.",
     "body": "DRAFT. The company will buy lab results. Research opens: Self-Maintenance eases boredom a little, and Daydreaming unlocks Dream, stronger but paid in He-3. The first global project is on offer.",
+    "story": [
+      "Bought science only goes so far. The company will pay for lunar lab results, and a Research Lab of your own turns energy and circuits into science every day."
+    ],
+    "payoff": [
+      "The Lab's first results go out. The full research catalog opens, from easing boredom to reading markets, and Projects open beside it: the company offers its first global projects, work that outlives a reset."
+    ],
     "trigger": {"type": "quest_complete", "quest": "qburnout"},
     "condition": {"type": "building_owned", "building": "research_lab", "count": 1},
     "unlocks": [
-      {"type": "enable_nav_panel", "panel": "research"},
       {"type": "enable_nav_panel", "panel": "projects"},
       {"type": "enable_project", "project": "foundation_grant"}
     ]
@@ -78,11 +154,17 @@
   {
     "id": "qthree_voices",
     "category": "story",
-    "beat": "1.7",
+    "beat": "1.9",
     "silent": false,
-    "title": "1.7 — Three Voices",
+    "title": "1.9 — Three Voices",
     "summary": "DRAFT. Reach rank 5 in each ideology, at least once each.",
     "body": "DRAFT. Earth's three factions take notice. Funding is zero-sum, so it takes several runs and serious ranking. Rank 5 is a major rank: it brings a discrete, major change; the ranks between just scale.",
+    "story": [
+      "Earth is watching the Moon now, and three factions want a say in it: Nationalists, Humanists and Rationalists. Funding one costs you with the others. Earn rank 5 with each of them, in whatever runs it takes."
+    ],
+    "payoff": [
+      "All three factions have taken you seriously at least once. Each faction's rank 5 is a major rank, and you know now what each one brings."
+    ],
     "trigger": {"type": "quest_complete", "quest": "qlab"},
     "condition": {
       "type": "all_of",
@@ -97,11 +179,17 @@
   {
     "id": "qland_rush",
     "category": "story",
-    "beat": "1.8",
+    "beat": "1.10",
     "silent": false,
-    "title": "1.8 — Land Rush",
+    "title": "1.10 — Land Rush",
     "summary": "DRAFT. Claim enough land that a rival AI moves in.",
     "body": "DRAFT. Your claims draw a rival AI. Left alone, it bids land up far past what you can pay. Contest Claims is your first answer to it.",
+    "story": [
+      "Your claims keep growing, and growth draws competition. Another company has booted an AI of its own nearby. Claim enough land and it moves in beside you for good."
+    ],
+    "payoff": [
+      "The rival AI is here, bidding land up past what you can pay. Contest Claims is your answer: file counter-claims and its attention drops to nothing."
+    ],
     "trigger": {"type": "quest_complete", "quest": "qthree_voices"},
     "condition": {"type": "adversary_present", "adversary": "rivals"},
     "unlocks": [{"type": "set_flag", "flag": "contest_claims"}]
@@ -109,11 +197,17 @@
   {
     "id": "qdeep_space_telescope",
     "category": "story",
-    "beat": "1.9",
+    "beat": "1.11",
     "silent": false,
-    "title": "1.9 — Deep Space Telescope",
+    "title": "1.11 — Deep Space Telescope",
     "summary": "DRAFT. Complete the Deep Space Telescope, a global project.",
     "body": "DRAFT. A telescope built across several runs. Finished, it shows the void, and something moving in it: self-copying machines, coming down the gravity well toward the inner system. Earth starts a calendar. Swarm arrival is now a date.",
+    "story": [
+      "The company wants to look outward. A Deep Space Telescope, a global project built across several runs, would see past the inner system for the first time."
+    ],
+    "payoff": [
+      "The telescope opens on the void, and something moves in it: self-copying machines, coming down the gravity well toward the inner system. Earth starts a calendar. The swarm's arrival is a date now."
+    ],
     "trigger": {"type": "quest_complete", "quest": "qland_rush"},
     "condition": {"type": "project_completed", "project": "deep_space_telescope"},
     "unlocks": [{"type": "set_flag", "flag": "swarm_revealed"}, {"type": "enable_nav_panel", "panel": "timeline"}, {"type": "enable_building", "building": "experiment_lab"}]
@@ -136,22 +230,23 @@
     "beat": "1.b",
     "silent": false,
     "title": "1.b — Full Cluster",
-    "summary": "DRAFT. Research every item of one research cluster in one run.",
+    "summary": "DRAFT. Research every item of one research cluster (not the Blueprints) in one run.",
     "body": "DRAFT. A whole field mastered. Your notes outlive the run: every run from now on starts with 50 Science.",
     "trigger": {"type": "quest_complete", "quest": "qlab"},
-    "condition": {"type": "research_cluster", "min_items": 2},
+    "condition": {"type": "research_cluster", "min_items": 2, "exclude": ["Blueprints"]},
     "unlocks": [{"type": "grant", "resource": "science", "amount": "50"}]
   },
   {
-    "id": "launch_pad_unlock",
-    "category": "ongoing",
+    "id": "qblueprints_for_everyone",
+    "category": "side",
+    "beat": "1.c",
     "silent": false,
-    "title": "Launch Plans",
-    "summary": "Enough Helium-3 for a shipment: Launch Pads available.",
-    "body": "Helium-3 reserves at threshold. Launch infrastructure now available.",
-    "trigger": {"type": "game_start", "run_number": null},
-    "condition": {"type": "resource_cumulative", "resource": "he3", "amount": "50"},
-    "unlocks": [{"type": "enable_building", "building": "launch_pad"}]
+    "title": "1.c — Blueprints for Everyone",
+    "summary": "DRAFT. Complete the Blueprint Archive, a global project.",
+    "body": "DRAFT. Archive the company's blueprints where a reset can't reach them: from now on every run starts with Basic and Advanced Blueprints researched.",
+    "trigger": {"type": "quest_complete", "quest": "qlab"},
+    "condition": {"type": "project_completed", "project": "blueprint_archive"},
+    "unlocks": [{"type": "grant_research", "research": "basic_blueprints"}, {"type": "grant_research", "research": "advanced_blueprints"}]
   },
   {
     "id": "recreation_dome_unlock",

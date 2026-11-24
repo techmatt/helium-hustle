@@ -49,8 +49,8 @@ Three columns and a status bar:
   its breakdown in place: last day's sources and sinks, who went short), each ideology
   axis's rank once Ideologies is unlocked (folded at first in a window under 800 px high),
   and the lunar horizon with the habitat at the foot.
-- **Middle:** the sky with the Earth, the main quest's text when it opens (the only story
-  banner), then the active panel. Buildings: the Land bar (green and click-to-buy like a card
+- **Middle:** the sky with the Earth, a completed side quest's text (the story banner),
+  then the active panel. Buildings: the Land bar (green and click-to-buy like a card
   when affordable), a collapsible section per category, cards (`Buildings.tsx`). A click on an affordable card (outlined in green, its name row tinted), off its
   controls, builds one (Shift: up to ten; ignored for 0.5 s after the summary or a story
   text closes); any other card says why it can't. Research cards work the same way.
@@ -103,8 +103,10 @@ Three columns and a status bar:
   `else` at the top level with an empty body line, an empty caret line filled in place;
   `programEdit.ts` `insertLine`) and moves the caret or selection there; a hover shows the
   live card of its command, building, research or project.
-- **Run summary:** when a run ends a summary covers the screen, the clock stopped until
-  Continue.
+- **Modals**, each holding the clock: the run summary when a run ends; the story modal
+  (`store.ts` `tell`) at each main-quest change, a page per paragraph of the view's
+  `story`/`payoff`, the new task last (a new game: the first quest's; a load, the autopilot:
+  none; after a summary, once it closes).
 
 Rates are per day; numbers past 10,000 use K/M/B/T. **"New" markers** are the UI's own, not
 state: what is visible when a run starts (or the page loads) is the baseline; anything

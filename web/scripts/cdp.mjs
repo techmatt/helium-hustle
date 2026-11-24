@@ -213,6 +213,35 @@ export function driver(b, { url, poll = 100, settle = 500, readyMs = 10000, clic
     if (skipDisabled && !(await exists(`[data-testid="add-${cmd}"]:not([disabled])`))) return;
     await click(`[data-testid="add-${cmd}"]`, `add ${cmd}`);
   };
+  /** Reads the main-story modal through, page by page (it pauses the game; actions and
+   * speeds are refused while it is open). Returns the pages read: quest, kind, text, task,
+   * whether the clock was paused on it. `onPage(page)` runs on each before its button. */
+  const readStory = async (onPage = async () => {}) => {
+    const pages = [];
+    for (let i = 0; i < 40 && (await exists('[data-testid="story-modal"]')); i++) {
+      pages.push(
+        await evaluate(`(() => {
+          const m = document.querySelector('[data-testid="story-modal"]');
+          return { quest: m.dataset.quest, kind: m.dataset.kind, text: m.querySelector('.story-text').textContent,
+            task: m.querySelector('.story-task')?.textContent ?? null, button: m.querySelector('[data-testid="story-next"]').textContent,
+            paused: document.querySelector('#speeds button[data-speed="0"]')?.getAttribute('aria-pressed') === 'true' };
+        })()`),
+      );
+      await onPage(pages.at(-1));
+      await click('[data-testid="story-next"]', 'story next');
+    }
+    return pages;
+  };
+  /** Clicks through every story modal as it opens, from now until the page is left (a
+   * section that isn't about the story; load() turns it off). */
+  const autoStory = () =>
+    evaluate(`(() => {
+      if (window.__autoStory) return;
+      const go = () => { for (let i = 0; i < 40; i++) { const b = document.querySelector('[data-testid="story-next"]'); if (!b) break; b.click(); } };
+      window.__autoStory = new MutationObserver(go);
+      window.__autoStory.observe(document.body, { childList: true, subtree: true });
+      go();
+    })()`);
   return {
     waitFor,
     exists,
@@ -221,6 +250,8 @@ export function driver(b, { url, poll = 100, settle = 500, readyMs = 10000, clic
     load,
     pickCommand,
     runOnly,
+    readStory,
+    autoStory,
     day: () => number('day'),
     run: () => number('run'),
     speed: (s) => click(`#speeds button[data-speed="${s}"]`, `speed ${s}`),

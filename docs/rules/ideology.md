@@ -55,7 +55,7 @@ Only the first major rank is built; the ranks between scale as above.
 **Career bests.** At the end of each tick, each axis's best rank and best score in the career
 are raised to the current ones (they start at 0, so a negative axis leaves them at 0).
 Three `timeline` (global) projects unlock on the best rank (rank 5 on an axis opens its
-project, [projects.md](projects.md)), and quest 1.7 Three Voices needs a best rank of 5 on
+project, [projects.md](projects.md)), and quest 1.9 Three Voices needs a best rank of 5 on
 each axis ([events.md](events.md)).
 
 **Carried scores and the gap.** A retirement keeps the run's scores in the career. Through
@@ -93,7 +93,7 @@ Geopolitical Intelligence research.
 The three axes are fixed ids in code (`content::AXES`), named by content rows:
 `content/commands.json` `fund` effects; `content/buildings.json` `ideology` (aligned
 buildings); `content/projects.json` `ideology_rank` unlocks; `content/events.json`
-`ideology_rank` sub-objectives (1.7) and the `ideologies` panel (Political Currents event).
+`ideology_rank` sub-objectives (1.9) and the `ideologies` panel (Political Currents event).
 The major effects are code, each at its rule's one home.
 
 ## Port notes

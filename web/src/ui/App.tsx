@@ -7,6 +7,7 @@ import { capitalize, mult, num, perDay, storyBody } from '../format';
 import {
   continueAfterRetirement,
   dismissStory,
+  nextStoryPage,
   noteOpened,
   setNotice,
   setSpeed,
@@ -130,6 +131,9 @@ export function App() {
       {takeover && <TakeoverView s={s} t={takeover} close={closeTakeover} banners={banners} />}
       <StatusBar s={s} />
       {s.summary && <Summary s={s} />}
+      {/* Never two modals at once: a story chain that came with a retirement waits for
+          the summary's Continue (the clock stays stopped throughout). */}
+      {!s.summary && s.storyPages.length > 0 && <StoryModal s={s} />}
       <Ending v={s.view} />
     </div>
   );
@@ -201,6 +205,39 @@ function StatusBar({ s }: { s: Store }) {
         {v.retires_next ? '—' : energy !== undefined ? <RateCell r={energy} /> : perDay('0')}
       </span>
     </footer>
+  );
+}
+
+/** A main-story transition: one paragraph a page, the next quest's task on the last;
+ * the clock is stopped until its last button. */
+function StoryModal({ s }: { s: Store }) {
+  const p = s.storyPages[0];
+  const last = s.storyPages.length === 1;
+  return (
+    <div class="modal-back">
+      <div
+        class="modal story-modal"
+        role="dialog"
+        aria-label={p.title}
+        data-testid="story-modal"
+        data-quest={p.quest}
+        data-kind={p.kind}
+      >
+        <h2>
+          {p.title}
+          {p.kind === 'payoff' && <span class="muted story-done"> complete</span>}
+        </h2>
+        <p class="story-text">{p.text}</p>
+        {p.task && (
+          <p class="story-task">
+            <strong>Next: {p.task}</strong>
+          </p>
+        )}
+        <button type="button" class="big" data-testid="story-next" autoFocus onClick={nextStoryPage}>
+          {last ? 'Begin' : 'Continue'}
+        </button>
+      </div>
+    </div>
   );
 }
 

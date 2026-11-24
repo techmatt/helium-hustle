@@ -1,0 +1,28 @@
+seed 3143
+      61  run 1 day    60  quest qpower_boot_sequence
+     121  run 1 day   120  quest qblueprints
+     286  run 1 day   285  quest qfirst_shipment
+    1029  run 1 day  1028  quest qfull_load
+    1029  run 1 day  1028  quest qautomate_automation
+    1426  run 1 day  1426  forced_retirement
+seed 3144
+      61  run 1 day    60  quest qpower_boot_sequence
+     121  run 1 day   120  quest qblueprints
+     286  run 1 day   285  quest qfirst_shipment
+    1032  run 1 day  1031  quest qfull_load
+    1032  run 1 day  1031  quest qautomate_automation
+    1422  run 1 day  1422  forced_retirement
+seed 3145
+      61  run 1 day    60  quest qpower_boot_sequence
+     121  run 1 day   120  quest qblueprints
+     286  run 1 day   285  quest qfirst_shipment
+    1011  run 1 day  1010  quest qfull_load
+    1011  run 1 day  1010  quest qautomate_automation
+    1427  run 1 day  1427  forced_retirement
+seed 3146
+      61  run 1 day    60  quest qpower_boot_sequence
+     121  run 1 day   120  quest qblueprints
+     286  run 1 day   285  quest qfirst_shipment
+    1030  run 1 day  1029  quest qfull_load
+    1030  run 1 day  1029  quest qautomate_automation
+    1434  run 1 day  1434  forced_retirement

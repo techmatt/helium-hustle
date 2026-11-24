@@ -208,8 +208,9 @@ fn unlocked(v: &View, id: &str) -> bool {
 }
 
 /// The one command a hand-player runs, chosen from the view: launch a full
-/// fuelled pad; fuel a full pad; load when goods wait; bridge the target's
-/// missing titanium, regolith or ice; else Cloud Compute (Idle without energy).
+/// fuelled pad; fuel a full pad; load when goods wait; buy science for the
+/// next Blueprints on sale; bridge the target's missing titanium, regolith or
+/// ice; else Cloud Compute (Idle without energy).
 pub fn hand_command(v: &View, target: Option<&str>) -> &'static str {
     let credits = amount(v, "credits");
     if let Some(pad) = v.pads.iter().find(|p| p.active) {
@@ -224,6 +225,12 @@ pub fn hand_command(v: &View, target: Option<&str>) -> &'static str {
         if !full && pad.good.as_deref().is_some_and(|g| amount(v, g) >= pad.load) && command_unlocked(v, "load_pads") {
             return "load_pads";
         }
+    }
+    if super::science_short(v).is_some()
+        && credits >= command_cost(v, "buy_science", "credits")
+        && amount(v, "energy") >= command_cost(v, "buy_science", "energy")
+    {
+        return "buy_science";
     }
     if let Some(id) = target {
         if let Some(b) = v.buildings.iter().find(|b| b.id == id) {
@@ -320,6 +327,7 @@ impl Agent for Greedy {
         }
         // After the buys, so a pad bought this look gets its cargo now.
         super::pick_cargo(p);
+        super::hand_launch(p);
         // The cheapest affordable research.
         let v = p.view();
         let cheapest = v.research.iter().filter(|r| r.affordable).min_by_key(|r| r.cost).map(|r| r.id);

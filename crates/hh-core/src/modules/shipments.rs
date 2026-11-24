@@ -59,6 +59,14 @@ impl Params {
     }
 }
 
+/// A pad may be set to `good` now: the active quest's `pad_goods`, if it
+/// names any, hold every pad to them (docs/rules/shipments.md).
+pub fn allowed(g: &GameState, good: &str) -> bool {
+    super::events::active_quest(g)
+        .and_then(|q| q.pad_goods.as_ref())
+        .is_none_or(|goods| goods.iter().any(|x| x == good))
+}
+
 /// The tradeable goods, in content resource order.
 pub fn goods(r: &Rules) -> Vec<String> {
     content()
@@ -226,6 +234,8 @@ pub fn launch(r: &Rules, g: &mut GameState, i: usize) {
     g.run.stats.shipments += 1;
     let cargo = g.run.pads[i].cargo;
     g.run.stats.best_launch = g.run.stats.best_launch.max(pay);
+    let best = g.run.stats.best_cargo.entry(good.clone()).or_insert(Fx::ZERO);
+    *best = (*best).max(cargo);
     super::attention::on_sale(r, g, cargo);
     g.activity("shipment", &good, Some(pay), Some(cargo));
     let p = &mut g.run.pads[i];
@@ -254,6 +264,9 @@ pub fn launch_action(r: &Rules, g: &mut GameState, pad: u32) -> Result<(), Strin
 pub fn set_pad_good(r: &Rules, g: &mut GameState, pad: u32, good: Option<&str>) -> Result<(), String> {
     if let Some(good) = good.filter(|x| !r.p.shipments.base_values.contains_key(*x)) {
         return Err(format!("pad {}: {good:?} is not a tradeable good", pad + 1));
+    }
+    if let Some(good) = good.filter(|x| !allowed(g, x)) {
+        return Err(format!("pad {}: {good:?} can't be picked during this quest", pad + 1));
     }
     let p = g.run.pads.get_mut(pad as usize).ok_or_else(|| format!("pad {}: no such pad", pad + 1))?;
     if p.good.as_deref() == good {

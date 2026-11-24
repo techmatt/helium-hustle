@@ -1826,6 +1826,22 @@ button.go:hover:not(:disabled) {
 .rep-stale {
   opacity: 0.4;
 }
+.modal.story-modal {
+  border-top: 4px solid var(--accent);
+}
+.story-modal h2 {
+  margin: 0 0 10px;
+}
+.story-done {
+  font-size: 0.7em;
+  font-weight: normal;
+}
+.story-text {
+  line-height: 1.5;
+}
+.story-task {
+  margin: 12px 0 16px;
+}
 .modal.ending {
   border-top: 4px solid var(--accent);
   text-align: center;

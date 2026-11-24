@@ -15,7 +15,7 @@ asked for that day (programs.md); the Retire action retires between days.
   programs, launch pads, loading priority, markets and speculators, bursts and rival
   schedules, overclocks, research bought, every project's funding rates (every
   scope's), `run` project progress and completions, events fired and the buildings, panels and projects they enabled, the
-  boredom phase, run stats. The run's ideology scores are replaced by the carried ones.
+  boredom phase, run stats (best launch and best cargo per good among them). The run's ideology scores are replaced by the carried ones.
 - *Career (persists):* run number, retirements, lifetime totals (credits earned, shipments,
   days, buildings built, research completed), personal bests (longest run in days, most
   credits earned in a run, most shipments in a run), each axis's best ideology rank and best
@@ -23,7 +23,8 @@ asked for that day (programs.md); the Retire action retires between days.
   ([attention.md](attention.md)), the days spent in retirement gaps, peak power, career
   flags (the program instructions' unlocks among them), the program loadout library
   ([programs.md](programs.md)), ids ever researched, owned and used, events seen, quests
-  (side quests too) and sub-objectives completed, `timeline` (global) and `forever` project
+  (side quests too) and sub-objectives completed, chain quests started (`started_quests`:
+  an `on_start` grant, 1.3's 20 propellant, comes once a career), `timeline` (global) and `forever` project
   progress and completions, achievements, the log, and the last finished run's summary
   (display: its number, length, whether forced, stats and final ranks, for the UI's run
   summary).
@@ -83,7 +84,7 @@ A timeline's end (draft) hard-resets the career itself to run 1: [timeline.md](t
 ## Actions
 
 - **Retire** (`{"type": "retire"}`): voluntary retirement, exactly as a forced one but logged
-  `retired`. Illegal until the `retirement` panel is enabled this run, which quest 1.5
+  `retired`. Illegal until the `retirement` panel is enabled this run, which quest 1.7
   Burnout (the first retirement, forced by boredom) does; seen events reapply it at every
   later run start.
 
@@ -104,7 +105,7 @@ The starting resources and buildings are economy params (`configs/baseline.json`
 
 ## Content
 
-`content/events.json` `enable_nav_panel: retirement` (1.5 Burnout);
+`content/events.json` `enable_nav_panel: retirement` (1.7 Burnout);
 `content/projects.json` `starting_buildings` rewards; `content/achievements.json`
 `bonus_buildings` rewards; `content/commands.json` `scale_modifier: buy_power_mult` (Buy Power).
 The panel id `retirement` is fixed in code (`career::RETIREMENT_PANEL`: retiring needs it

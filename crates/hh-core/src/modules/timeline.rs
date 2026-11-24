@@ -3,7 +3,7 @@
 //! Earth techs, the hard reset when a timeline ends (the mind sent back), the
 //! meta-controller's reset plan, the vault, the super timeline and the
 //! Dyson-sphere ending. Everything here waits on the swarm's reveal (the
-//! flag 1.9 Deep Space Telescope sets), so Act 1 never meets it.
+//! flag 1.11 Deep Space Telescope sets), so Act 1 never meets it.
 
 use super::{param, ModuleDef, ParamKind as K, VariantDef};
 use crate::config::ModuleConfig;
@@ -13,7 +13,7 @@ use crate::rules::Rules;
 use crate::state::{Career, GameState, Timeline, TimelineEnd};
 use std::collections::BTreeMap;
 
-/// The flag 1.9 (the Deep Space Telescope) sets: the swarm is revealed and the calendar starts.
+/// The flag 1.11 (the Deep Space Telescope) sets: the swarm is revealed and the calendar starts.
 pub const REVEAL_FLAG: &str = "swarm_revealed";
 /// The resource the Experiment Lab makes; each day's stock goes to Earth.
 pub const EARTH_SCIENCE: &str = "earth_science";
@@ -250,6 +250,7 @@ fn end_timeline(r: &Rules, g: &mut GameState, outcome: &str) {
         used_commands: c.used_commands,
         seen_events: c.seen_events,
         completed_quests: c.completed_quests,
+        started_quests: c.started_quests,
         completed_sub_objectives: c.completed_sub_objectives,
         achievements: c.achievements,
         log: c.log,

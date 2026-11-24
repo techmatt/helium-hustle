@@ -2,12 +2,12 @@
 
 **Draft (042).** Acts 2 and 3 as a rough, playable sketch: placeholder mechanics, numbers and
 text, for Matt to keep, cut or rewrite, unaligned with the design doc. The story they serve
-is [../arc.md](../arc.md). Nothing here runs before the swarm's reveal (quest 1.9), so Act 1
+is [../arc.md](../arc.md). Nothing here runs before the swarm's reveal (quest 1.11), so Act 1
 doesn't see it.
 
 ## Rules
 
-**The reveal and the calendar.** Act 1's last beat, quest 1.9 Deep Space Telescope, completes
+**The reveal and the calendar.** Act 1's last beat, quest 1.11 Deep Space Telescope, completes
 when the Deep Space Telescope global project does ([events.md](events.md)). It sets the career
 flag `swarm_revealed`, opens the Timeline panel and the Experiment Lab, and Act 2 begins.
 From that same day a **timeline** runs: a calendar day count and the day the swarm arrives.
@@ -63,7 +63,7 @@ super timeline. Inside one, each retirement keeps `super_carry` fractions of tho
 for the next run.
 
 **Distract** (content, plus one rule in programs): the Novelty Simulation research (shown
-once quest 1.9 is done) opens a
+once quest 1.11 is done) opens a
 command whose flat boredom is −10, so each run takes 10 boredom off (never below zero) for 200
 credits; like an effect command it needs its full cost.
 

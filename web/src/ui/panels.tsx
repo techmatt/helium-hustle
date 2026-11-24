@@ -199,7 +199,8 @@ export function LaunchPads({ s }: { s: Store }) {
                   }}
                 >
                   <option value="">No cargo</option>
-                  {goods.map((g) => (
+                  {/* The goods the engine allows now; a pad's current good outside them stays shown. */}
+                  {(p.good !== null && !v.pad_goods.includes(p.good) ? [...v.pad_goods, p.good] : v.pad_goods).map((g) => (
                     <option key={g} value={g}>
                       {name(v, g)}
                     </option>

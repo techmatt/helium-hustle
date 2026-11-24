@@ -118,7 +118,7 @@ as much (they start from that day, not day 0), and processors gained go to the f
 errors naming them. `hh-sim run --scenario NAME` (or `--scenario-file F`) and the web
 debug menu use them. A record carries its scenario in full, so a later edit to the file
 can't change an old record. `everything` (first, the menu's default) is Matt's test-all
-start: Act 1's beats 1.1-1.8, 1.a and 1.b done, every Act 1 view open, a rich working base;
+start: Act 1's beats 1.1-1.10 and 1.a-1.c done, every Act 1 view open, a rich working base;
 the rest serve tests and e2e (`golden_start` the golden).
 
 ## Records and saves
@@ -143,10 +143,11 @@ loadout library, buildings (price, what's short, buyable, unlocked,
 visible, stall, description, ideology tag, content rates per copy, the action that buys
 one), land (price, per purchase, buyable), commands, programs (with each line's outcome
 today and each condition's live value; the readings a condition may use), pads (fuel, whether the shared Propellant covers it, cargo per load, payout, can launch,
-ready: full and can launch), the run's totals, markets (demand
+ready: full and can launch) and the goods a pad may be set to now (`pad_goods`), the run's totals, markets (demand
 once Market Awareness is researched, else a tier), research, ideology (with the scores of
-this rank and the next), projects, the active quest (with countable progress), quest and
-event texts (of the boredom phases, only the latest), achievements, rivals, adversaries (Attention, threshold, present), whether `if` is open, live overclocks and modifiers, boredom (cap, rate,
+this rank and the next), projects, the active quest (with countable progress and its story), quest and
+event texts (of the boredom phases, only the latest; a chain quest's with its story and payoff
+for the UI's story modals), achievements, rivals, adversaries (Attention, threshold, present), whether `if` is open, live overclocks and modifiers, boredom (cap, rate,
 phase), the nav tiles (`content/nav.json`), the career's bests, the next run's bonuses if
 the run retired now (`career::retire` on a copy), the last finished run's summary, the
 run's activity feed, each resource's flow breakdown, display names by id and the cheat

@@ -210,19 +210,58 @@ pub fn build(player: &str, seed: u64, ms: &Milestones) -> Result<Box<dyn Agent>,
     }
 }
 
-/// Every sim player's fixed hand on a new pad: a No-cargo pad carries the
-/// first good in the loading priority (He-3 at baseline), as `driver.rs`'s
-/// script does. Player strategy, not a rule (docs/agents.md).
+/// Every sim player's fixed hand on pads: a No-cargo pad carries the first
+/// good a pad may carry now (`pad_goods`: Titanium during 1.3, then the
+/// loading priority's first, He-3 at baseline), and so does an empty first pad
+/// on another good (1.3's Titanium pad turns to He-3 after it), as
+/// `driver.rs`'s script does. Player strategy, not a rule (docs/agents.md).
 pub fn pick_cargo(p: &mut Player) {
     let v = p.view();
-    let first = v.loading_priority.first().cloned();
+    let first = v.pad_goods.first().cloned();
     let picks: Vec<Action> = (0..v.pads.len())
-        .filter(|&i| v.pads[i].good.is_none())
+        .filter(|&i| {
+            let pad = &v.pads[i];
+            pad.good.is_none() || (i == 0 && pad.cargo == Fx::ZERO && pad.good != first)
+        })
         .map(|i| Action::SetPadGood { pad: i as u32, good: first.clone() })
         .collect();
     for a in picks {
         let _ = p.apply(&a);
     }
+}
+
+/// Before Launch Full Pads opens (1.5 Processors), a player launches pads by
+/// hand from their cards: a full one, or one carrying what the active
+/// `launch_cargo` quest asks for (1.3's 20 titanium). Player strategy.
+pub fn hand_launch(p: &mut Player) {
+    let v = p.view();
+    if command_unlocked(v, "launch_pads") {
+        return;
+    }
+    let ask = v.quest.as_ref().filter(|q| q.kind == "launch_cargo").and_then(|q| q.progress.as_ref()).map(|x| x.target);
+    let pads: Vec<u32> = (0..v.pads.len())
+        .filter(|&i| {
+            let pad = &v.pads[i];
+            pad.can_launch && (pad.cargo >= pad.capacity || ask.is_some_and(|t| pad.cargo >= t))
+        })
+        .map(|i| i as u32)
+        .collect();
+    for pad in pads {
+        let _ = p.apply(&Action::Launch { pad });
+    }
+}
+
+/// The Blueprints (Act 1's research of buildings), bought first.
+pub const BLUEPRINTS: &[&str] = &["basic_blueprints", "advanced_blueprints"];
+
+/// Science still short of the next Blueprints on sale (whole units, rounded
+/// up), if one is: what a player buys with Buy Science.
+pub fn science_short(v: &View) -> Option<u32> {
+    let science = amount(v, "science");
+    let r = v.research.iter().find(|r| BLUEPRINTS.contains(&r.id) && r.visible && !r.done)?;
+    let d = r.cost - science;
+    let short = d.floor_int() + i64::from(d > Fx::from_int(d.floor_int()));
+    (short > 0 && command_unlocked(v, "buy_science")).then_some(short as u32)
 }
 
 // Shared view readers (`amount` and `command_cost` wrap `View`'s own, shared with

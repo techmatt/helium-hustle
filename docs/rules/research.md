@@ -20,6 +20,7 @@ elsewhere. Buying is a player action; research has no step of its own in
 | `building_count` | at least `count` of the building owned this run (bonus buildings included) |
 | `shipments_completed` | career shipments in finished runs plus this run's reach `count` |
 | `quest_completed` | the quest is completed (in any run) |
+| `all_of` | every condition in `all` holds |
 
 Visibility is checked only at purchase: an item that was shown and stops being so (boredom
 falls back) can't be bought until it holds again.
@@ -31,13 +32,15 @@ in an earlier run and Rationalist is at its major rank, the price is 0 (the majo
 Research Archive, [projects.md](projects.md)), the price is further multiplied by its
 `mult` (0.75). Each product is floored once (the [rounding rule](README.md#numbers)).
 
-**Buying** checks, in order: the `research` panel is enabled this run (quest 1.6 Lab opens
+**Buying** checks, in order: the `research` panel is enabled this run (quest 1.1 Online's completion opens
 it, [events.md](events.md); the nav's Research tile shows with it); not already bought this
 run; visible; its `requires` item
 bought this run (if it names one); science at least the price. Then science falls by the
 price, the item is added to the run's research and the career's `researched`, the run's
 research count rises by one (folded into the career's lifetime total at retirement), and
-the career log records it. A new run starts with no research.
+the career log records it. A new run starts with no research, but for items a completed
+quest's `grant_research` unlock names (1.c Blueprints for Everyone: both Blueprints), which
+count as bought from day 0 of every run ([events.md](events.md)).
 
 **Effects** (`effect` on the row), each live while the item is bought this run:
 
@@ -50,7 +53,7 @@ the career log records it. A new run starts with no research.
   `cargo_capacity_mult` ([shipments.md](shipments.md)).
 - `reveal_demand` (Market Awareness): the view shows each good's exact demand instead of
   a tier (display only, [demand.md](demand.md)).
-- `program_readings` (Process Telemetry, 50 science, always visible, its own category
+- `program_readings` (Process Telemetry, 50 science, visible once quest 1.8 is done, its own category
   *Program Analysis*): programs' `energy per day` and `days since a purchase` readings
   open ([programs.md](programs.md)).
 
@@ -81,14 +84,21 @@ Every number is on the content rows: costs, visibility thresholds and effect val
 
 ## Content
 
-`content/research.json`: 12 rows, each with `cost`, optional `requires`, optional `effect`,
-`visible_when`, a `category` and a placeholder `description`. A category is a cluster:
+`content/research.json`: 15 rows, each with `cost`, optional `requires`, optional `effect`,
+`visible_when`, a `category` and a placeholder `description`. The *Blueprints* category comes
+first: Basic Blueprints (20 science, always visible; quest 1.2 buys it) unlocks the Regolith
+Excavator, Smelter, Launch Pad and Storage Depot, and Advanced Blueprints (50, visible once
+quest 1.3 First Shipment is completed) the Battery, Refinery and Fabricator, through those
+buildings' `requires` ([economy.md](economy.md)). Every other item's `visible_when` includes
+`quest_completed` 1.8 Lab (alone, or inside an `all_of` with its old condition), so before
+1.8 the panel shows only the Blueprints. A category is a cluster:
 buying every item of one of 2 or more items in a run (so not the one-item Political
-Influence) meets side quest 1.b's `research_cluster`
+Influence), outside the categories its `exclude` names (1.b excludes Blueprints), meets side
+quest 1.b's `research_cluster`
 ([events.md](events.md)). Dream Protocols is named Daydreaming; Novelty Simulation (draft,
 [timeline.md](timeline.md)) stays in Self-Maintenance, so that cluster can't be finished
-before quest 1.9 shows it;
-Geopolitical Intelligence shows once 1.6 is done; Market Awareness only reveals demand
+before quest 1.11 shows it;
+Geopolitical Intelligence shows once 1.8 is done; Market Awareness only reveals demand
 (Disrupt Speculators opens on side quest 1.a, [demand.md](demand.md)). The `research` panel
 id is fixed in code (`research::RESEARCH_PANEL`). Unlocks live on the unlocked rows'
 `requires` (`content/commands.json`, `content/buildings.json`), not here.
@@ -100,7 +110,7 @@ id is fixed in code (`research::RESEARCH_PANEL`). Unlocks live on the unlocked r
 - Conflict: Overclock cap. The Godot command text said "+200%" (rewritten to the engine's caps); Overclock Boost's data says the
   cap goes from 150% to 200%. The engine has a base cap of 1.5 in config
   (`programs.overclock_base_cap`) and Overclock Boost's `overclock_cap` 2.
-- Changed (049): Geopolitical Intelligence shows after quest 1.6 Lab (the handoffs had
+- Changed (049): Geopolitical Intelligence shows after quest 1.8 Lab (the handoffs had
   QAutomate, the data QMarket, a quest no longer in the line).
 - Conflict: the data's research `unlocks_commands` lists duplicate each command's own
   `requires`. Dropped: the command's `requires` is the one home.

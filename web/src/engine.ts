@@ -350,8 +350,11 @@ export interface QuestView {
   /** The condition's type (`building_owned`, `quiet_days`, ...). */
   kind: string;
   title: string;
+  /** The one-line task. */
   summary: string;
   body: string;
+  /** Paragraphs shown when this quest begins (may be empty: show `[body]`). */
+  story: string[];
   progress: ProgressView | null;
   sub_objectives: { id: string; label: string; done: boolean; progress: ProgressView | null }[];
 }
@@ -365,6 +368,12 @@ export interface StoryView {
   /** A boredom-phase event's boredom per day, for `{rate}`; null for the rest (absent on
    * a quest told through the story banner). */
   rate?: Fx | null;
+  /** A completed quest's paragraphs shown when it began (absent on event texts). */
+  story?: string[];
+  /** A completed quest's paragraphs shown when it completed (may be empty). */
+  payoff?: string[];
+  /** A main-story quest (false for a side quest; absent on event texts). */
+  chain?: boolean;
 }
 
 export interface AchievementView {
@@ -536,6 +545,9 @@ export interface View {
   /** Assigned processors running today (fewer while Data Centers go unpaid). */
   processors_running: number;
   pads: PadView[];
+  /** The goods a pad's cargo picker may offer now, in loading-priority order ("No cargo"
+   * is always allowed besides). */
+  pad_goods: string[];
   loading_priority: string[];
   markets: MarketView[];
   research: ResearchView[];

@@ -38,7 +38,7 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   building, research item or project) is kept (loaded, pasted or set) and skipped for free,
   like a note; a locked `if` skips its body free too. The amber status stays (both modes).
 - **Program logic unlocks (2026-11-21).** `if` is not available from the start: a cheap
-  global project offered after 1.6 unlocks it. Side quest 1.b's reward is a placeholder
+  global project offered after 1.8 Lab unlocks it. Side quest 1.b's reward is a placeholder
   (059, default): every run starts with 50 Science (a `grant` unlock).
 - **Program loadouts (2026-11-20).** Each program has save / load buttons. A saved program
   goes into a library that persists across retirements (career state), so a player keeps

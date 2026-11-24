@@ -1,6 +1,6 @@
 # Rules
 
-The rules as implemented, rules revision **24** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **25** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
 The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
@@ -77,11 +77,11 @@ the page of the module that takes them (`crates/hh-core/src/action.rs` has them 
 
 ## Content
 
-`content/*.json`, embedded in `hh-core`: resources (16), buildings (20), commands (22),
-research (12), events (31: twenty-one the quest chain, two side quests), projects (14),
+`content/*.json`, embedded in `hh-core`: resources (16), buildings (20), commands (23),
+research (15), events (33: twenty-three the quest chain, three side quests), projects (15),
 achievements (6), rivals (4), Earth techs (6, `earth_tech.json`), and the UI's nav tiles
 (`nav.json`, 16: when each panel's tile shows; display only). Act 1's beats are draft from
-1.3 on, Acts 2 to 4 unaligned scaffolding ([../arc.md](../arc.md)). Ids are unique across all files but `nav.json`, whose ids are panel names.
+1.5 on (1.1 to 1.4 open one mechanic at a time from a base of Solar Panels and Data Centers), Acts 2 to 4 unaligned scaffolding ([../arc.md](../arc.md)). Ids are unique across all files but `nav.json`, whose ids are panel names.
 Buildings resolve in file order; quests chain in file order.
 
 A few content ids are fixed in code, each listed in its page's *Content*: resources

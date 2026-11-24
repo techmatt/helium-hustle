@@ -92,7 +92,9 @@ pub fn holds(r: &Rules, g: &GameState, quest: &str, c: &Condition) -> bool {
         Condition::Retirements { count } => g.career.retirements >= *count,
         Condition::AdversaryPresent { adversary } => super::attention::present(r, g, adversary),
         Condition::LaunchCredits { amount } => g.run.stats.best_launch >= *amount,
-        Condition::ResearchCluster { min_items } => cluster_done(g, *min_items).is_some(),
+        Condition::LaunchCargo { resource, amount } => best_cargo(g, resource) >= *amount,
+        Condition::LaunchFull { resource } => best_cargo(g, resource) >= r.p.shipments.pad_cargo_capacity,
+        Condition::ResearchCluster { min_items, exclude } => cluster_done(g, *min_items, exclude).is_some(),
         Condition::QuietDays { days } => g.run.day + 1 >=g.run.last_order.unwrap_or(0) + *days,
         Condition::EarthScience { amount } => {
             g.saga.timeline.as_ref().is_some_and(|t| t.science_made >= *amount)
@@ -134,6 +136,8 @@ pub fn progress(r: &Rules, g: &GameState, c: &Condition) -> Option<(Fx, Fx)> {
             Some((super::attention::attention(g, adversary), super::attention::threshold_of(r, adversary)))
         }
         Condition::LaunchCredits { amount } => Some((g.run.stats.best_launch, *amount)),
+        Condition::LaunchCargo { resource, amount } => Some((best_cargo(g, resource), *amount)),
+        Condition::LaunchFull { resource } => Some((best_cargo(g, resource), r.p.shipments.pad_cargo_capacity)),
         Condition::QuietDays { days } => Some((n((g.run.day + 1).saturating_sub(g.run.last_order.unwrap_or(0))), n(*days))),
         Condition::EarthScience { amount } => {
             Some((g.saga.timeline.as_ref().map_or(Fx::ZERO, |t| t.science_made), *amount))
@@ -167,6 +171,8 @@ pub fn kind(c: &Condition) -> &'static str {
         Condition::Retirements { .. } => "retirements",
         Condition::AdversaryPresent { .. } => "adversary_present",
         Condition::LaunchCredits { .. } => "launch_credits",
+        Condition::LaunchCargo { .. } => "launch_cargo",
+        Condition::LaunchFull { .. } => "launch_full",
         Condition::ResearchCluster { .. } => "research_cluster",
         Condition::QuietDays { .. } => "quiet_days",
         Condition::EarthScience { .. } => "earth_science",
@@ -180,11 +186,16 @@ pub fn kind(c: &Condition) -> &'static str {
     }
 }
 
-/// The first research category (in content order) of at least `min_items`
-/// items whose every item is bought this run: a whole cluster.
-pub fn cluster_done(g: &GameState, min_items: u32) -> Option<&'static str> {
+/// The most of `good` one launch carried this run.
+fn best_cargo(g: &GameState, good: &str) -> Fx {
+    g.run.stats.best_cargo.get(good).copied().unwrap_or(Fx::ZERO)
+}
+
+/// The first research category (in content order), not in `exclude`, of at
+/// least `min_items` items whose every item is bought this run: a whole cluster.
+pub fn cluster_done(g: &GameState, min_items: u32, exclude: &[String]) -> Option<&'static str> {
     let c = content();
-    c.research.iter().map(|item| item.category.as_str()).find(|&cat| {
+    c.research.iter().map(|item| item.category.as_str()).filter(|cat| !exclude.iter().any(|x| x == cat)).find(|&cat| {
         let n = c.research.iter().filter(|i| i.category == cat).count();
         n >= min_items as usize && c.research.iter().filter(|i| i.category == cat).all(|i| g.run.research.contains(&i.id))
     })
@@ -225,6 +236,23 @@ pub fn apply_unlocks(g: &mut GameState, e: &Event) {
                 g.add(resource, *amount);
                 g.track("event", resource, *amount, Fx::ZERO);
             }
+            Unlock::GrantResearch { research } => {
+                g.run.research.insert(research.clone());
+                g.career.researched.insert(research.clone());
+            }
+        }
+    }
+}
+
+/// A chain quest becoming active for the first time in the career applies
+/// its `on_start` grants (once: a retirement doesn't repeat them).
+fn start(g: &mut GameState, q: &Event) {
+    if g.career.started_quests.insert(q.id.clone()) {
+        for u in &q.on_start {
+            if let Unlock::Grant { resource, amount } = u {
+                g.add(resource, *amount);
+                g.track("event", resource, *amount, Fx::ZERO);
+            }
         }
     }
 }
@@ -240,6 +268,7 @@ fn fire(g: &mut GameState, e: &Event) {
 /// run fires if triggered and its condition holds.
 pub fn check(r: &Rules, g: &mut GameState) {
     while let Some(q) = active_quest(g) {
+        start(g, q);
         latch(r, g, q);
         if !holds(r, g, &q.id, &q.condition) {
             break;

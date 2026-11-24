@@ -18,7 +18,7 @@ pub struct Strategy {
     pub label: String,
     pub dir: Directives,
     /// It funds an ideology axis, which needs Geopolitical Intelligence,
-    /// visible once the Lab quest (1.6) is done: until then it is skipped.
+    /// visible once the Lab quest (1.8) is done: until then it is skipped.
     pub funds: bool,
 }
 
@@ -56,7 +56,7 @@ pub fn strategy_index(label: &str) -> Option<usize> {
     strategies().iter().position(|s| s.label == label)
 }
 
-/// The Three Voices campaign (the quests profile, 1.7): one run held long by
+/// The Three Voices campaign (the quests profile, 1.9): one run held long by
 /// Dream, funding Humanist toward rank 5 (cheaper boredom,
 /// stronger Dream) and then its AI Consciousness project, trading meanwhile.
 pub fn campaign() -> (String, Directives) {
@@ -81,7 +81,7 @@ fn trade() -> Directives {
     }
 }
 
-/// Whether the Three Voices quest (1.7, ranks) is the one under way.
+/// Whether the Three Voices quest (1.9, ranks) is the one under way.
 pub(super) fn three_voices_open(g: &GameState) -> bool {
     g.career.completed_quests.contains("qlab") && !g.career.completed_quests.contains(THREE_VOICES)
 }
@@ -89,7 +89,7 @@ pub(super) fn three_voices_open(g: &GameState) -> bool {
 impl Oracle {
     /// Plays each strategy for `long` ticks and keeps the best: the pinned
     /// one only, while it is available (else every available one); the
-    /// quests profile's campaign alone while Three Voices (1.7) is open.
+    /// quests profile's campaign alone while Three Voices (1.9) is open.
     pub(super) fn choose_strategy(&mut self, p: &mut Player) {
         let mut best: Option<(i64, String, Directives)> = None;
         let all: Vec<(String, Directives)> = if self.profile == Profile::Quests && three_voices_open(p.state()) {

@@ -117,6 +117,10 @@ const BUILD_ORDER: &[(&str, u32)] = &[
     ("solar_panel", 8),
 ];
 
+/// The research the script buys, in order, as soon as it can: Act 1's
+/// Blueprints, which unlock the buildings past Solar Panels and Data Centers.
+const RESEARCH: &[&str] = &["basic_blueprints", "advanced_blueprints"];
+
 /// (resource, the command that buys it): bridges for a building's missing input; the
 /// price comes from the view.
 const BRIDGES: &[(&str, &str)] = &[
@@ -186,6 +190,12 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
             stale |= s.apply(&Action::BuyLand).is_ok();
         }
     }
+    // The Blueprints, as soon as the science is there.
+    for id in RESEARCH {
+        if v.research.iter().any(|x| x.id == *id && x.affordable) {
+            stale |= s.apply(&Action::Research { research: id.to_string() }).is_ok();
+        }
+    }
     if std::mem::take(&mut stale) {
         v = s.rules.view(&s.state);
     }
@@ -199,21 +209,41 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
     if stale {
         v = s.rules.view(&s.state);
     }
-    // A new pad has No cargo: the script points it at the first good in the
-    // loading priority (He-3 at baseline).
-    let first = v.loading_priority.first().cloned();
+    // A new pad has No cargo: the script points it at the first good a pad
+    // may carry (Titanium during 1.3, then He-3 at baseline), and an empty
+    // pad on another good is pointed again.
+    let first = v.pad_goods.first().cloned();
     let picks: Vec<Action> = (0..v.pads.len())
-        .filter(|&i| v.pads[i].good.is_none())
+        .filter(|&i| v.pads[i].good != first && (v.pads[i].good.is_none() || v.pads[i].cargo == Fx::ZERO))
         .map(|i| Action::SetPadGood { pad: i as u32, good: first.clone() })
         .collect();
     if !picks.is_empty() {
         for a in &picks {
-            s.apply(a).expect("a tradeable good");
+            s.apply(a).expect("a good the pads may carry");
         }
         v = s.rules.view(&s.state);
     }
+    // Before Launch Full Pads opens (1.5), a pad launches by hand: when full,
+    // or with 20 titanium aboard (1.3's shipment; the script's own threshold).
+    if !v.commands.iter().any(|c| c.id == "launch_pads" && c.unlocked) {
+        let hand: Vec<u32> = (0..v.pads.len())
+            .filter(|&i| {
+                let p = &v.pads[i];
+                p.can_launch
+                    && (p.cargo >= p.capacity || (p.good.as_deref() == Some("titanium") && p.cargo >= Fx::from_int(20)))
+            })
+            .map(|i| i as u32)
+            .collect();
+        if !hand.is_empty() {
+            // One view for all: a later pad may find the fuel spent, and its launch fails.
+            for pad in hand {
+                let _ = s.apply(&Action::Launch { pad });
+            }
+            v = s.rules.view(&s.state);
+        }
+    }
     let pick = choose_command(&v, goal.map(|(id, _)| *id), allowed);
-    // Before `if` opens (a global project, Act 1 beat 1.7), the guards' bodies
+    // Before `if` opens (a global project offered from 1.8), the guards' bodies
     // run bare: the verbs and `build` still pin the interpreter.
     let mut want = if v.if_open {
         guard_lines(allowed)
@@ -285,6 +315,15 @@ fn choose_command(v: &View, goal: Option<&str>, allowed: &Allowed) -> &'static s
         if !full && pad.good.as_deref().is_some_and(|g| v.amount(g) >= Fx::from_int(5)) && ok("load_pads") {
             return "load_pads";
         }
+    }
+    // Science for the next Blueprints while one is on sale and short of it.
+    let short = |id: &str| v.research.iter().any(|x| x.id == id && x.visible && !x.done && v.amount("science") < x.cost);
+    if RESEARCH.iter().any(|id| short(id))
+        && v.amount("energy") >= v.command_cost("buy_science", "energy")
+        && credits >= v.command_cost("buy_science", "credits")
+        && ok("buy_science")
+    {
+        return "buy_science";
     }
     if let Some(id) = goal {
         let b = v.buildings.iter().find(|b| b.id == id).expect("a content building");

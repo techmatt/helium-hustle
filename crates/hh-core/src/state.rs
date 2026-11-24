@@ -506,6 +506,9 @@ pub struct RunStats {
     pub peak_energy: Fx,
     /// The most credits one launch paid this run.
     pub best_launch: Fx,
+    /// The most cargo one launch carried this run, by good.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub best_cargo: BTreeMap<String, Fx>,
     /// Everything produced this run, by resource (before caps).
     pub produced: BTreeMap<String, Fx>,
 }
@@ -731,6 +734,9 @@ pub struct Career {
     pub used_commands: BTreeSet<String>,
     pub seen_events: BTreeSet<String>,
     pub completed_quests: BTreeSet<String>,
+    /// Chain quests that have become active (their `on_start` applied once).
+    #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
+    pub started_quests: BTreeSet<String>,
     /// `quest:sub_objective`, latched.
     pub completed_sub_objectives: BTreeSet<String>,
     /// `timeline`-scoped projects' progress and completions (a timeline's end
