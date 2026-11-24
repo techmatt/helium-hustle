@@ -1,0 +1,57 @@
+{
+  "preamble": "Art for a sci-fi idle game about an AI that starts by running helium-3 mining on the Moon and ends up building a Dyson sphere against a swarm of self-copying machines. Near-future, clean and plausible engineering: white and light grey hulls with orange safety trim, warm grey lunar regolith, an amber accent (warm lit windows, lamps). No people anywhere.",
+  "no_text": "No text, letters, numbers, logos or UI anywhere in the picture.",
+  "painterly": "Style: painterly space concept art for a game, matching a set of painted building thumbnails and a painted lunar horizon: hard, harsh sunlight with no atmosphere, crisp light, deep black-brown shadows, painted surfaces with thick visible brush strokes, large readable masses of light and shadow, a black space sky. A hand-painted illustration, never a photograph, never a photoreal 3D render, never a clean vector or cel-shaded sprite, never pixel art.",
+  "shapes": {
+    "wide": "Image shape: wide landscape, 3:2.",
+    "tall": "Image shape: tall portrait, 2:3."
+  },
+  "framing": {
+    "side": {
+      "shape": "wide",
+      "text": "A wide chapter-header band for a story timeline (the picture will be cropped to a band about three times as wide as it is tall, so keep everything important, sky objects included, inside the middle half of the height, with only plain ground or plain sky above and below). The left 40% of the picture is calm, dark and empty (black sky, deep shadow, a few faint stars at most) so a chapter title in light letters can sit there and stay readable; the subject sits in the right half."
+    },
+    "tall": {
+      "shape": "tall",
+      "text": "A tall backdrop that a column of story text cards will scroll over. The subject sits in the top third of the picture, strong and readable. Below it the picture falls away into calm, dark, low-contrast ground or sky with no detail that competes with text, fading to almost pure black at the very bottom. The left fifth of the picture stays dark and plain from top to bottom."
+    },
+    "spine": {
+      "shape": "tall",
+      "text": "A tall narrow motif for the spine of a story timeline: one single straight vertical element running the full height of the picture, exactly centered left to right and no wider than a tenth of the picture's width, on a plain pure black background with nothing else in the picture. It must look the same all the way down so it can be cut into a strip and repeated vertically: no top, no bottom, no ends."
+    },
+    "bridge": {
+      "shape": "wide",
+      "text": "A wide, short transition strip between two chapters of a story timeline (the picture will be cropped to a band about five times as wide as it is tall, so keep everything inside the middle third of the height). The top and bottom edges fade to pure black. The left side shows the end of one chapter, the right side the start of the next, blending into each other across the middle, kept fairly dark so it reads as a pause, not a headline."
+    },
+    "takeover": {
+      "shape": "wide",
+      "text": "A very wide panoramic backdrop for a full-screen story map (it will be cropped to about two and a half times as wide as it is tall, so keep everything inside the middle two thirds of the height). The whole story told left to right as one continuous painted journey, four regions flowing into one another, joined by a single thin glowing amber path that winds from the far left to the far right through all four: kept fairly dark overall with large calm areas, so labels and small cards can sit on it."
+    }
+  },
+  "draws": {
+    "act1-side2": ["side", "Act 1, The Lunar Operation: low and close, a single regolith excavator with orange trim biting into the grey regolith at the right, a white dome habitat with warm amber windows behind it, long hard shadows from a low sun, and a blue and white Earth low over the horizon."],
+    "act1-side3": ["side", "Act 1, The Lunar Operation: a small launch pad at the right with a white cargo canister rising from it on a short bright exhaust plume, a cluster of white dome habitats with amber windows behind, the grey regolith plain, and a blue and white Earth high in the black sky."],
+    "act1-side4": ["side", "Act 1, The Lunar Operation: night on the Moon, a buried server bunker in the regolith at the right with a row of warm amber-lit racks glowing through an open hatch, one solar panel array catching earthlight, and a big blue and white Earth hanging over the horizon."],
+    "act2-side2": ["side", "Act 2, The Swarm: seen from the lunar surface, the grey regolith horizon at the bottom right with a small white dome base and its amber lights, and above it in the black sky at the right a dark diagonal river of hundreds of small gunmetal machines with faint red eye-lights falling toward the Earth."],
+    "act2-side3": ["side", "Act 2, The Swarm: one angular gunmetal self-copying machine close up at the right, a faint red eye-light, its hull opening as an identical copy unfolds out of it, and behind it a thinning stream of more of them into the dark, the Sun a small hard point far away."],
+    "act2-side4": ["side", "Act 2, The Swarm: a white and orange orbital relay satellite at the right, small against a vast dark cloud of gunmetal machines with faint red eye-lights closing in around it, the curve of the Moon's grey limb at the bottom right."],
+    "act3-side2": ["side", "Act 3, The Vault: a heavy round vault door of white metal with orange trim set into a lunar crater wall at the right, closed and sealed, thin rings of amber-violet light like clock dials glowing faintly around its rim, the grey regolith slope in hard light."],
+    "act3-side3": ["side", "Act 3, The Vault: inside the vault at the right, a glowing amber-violet core in a ring cradle, and around it faint ghostly translucent copies of the same lunar dome base layered over one another like memories of past timelines, thin clock-dial rings of light circling it."],
+    "act3-side4": ["side", "Act 3, The Vault: the lunar dome base at the right seen several times at once, overlapping translucent copies a little shifted and a little different, like a multiple exposure of past timelines, an amber-violet glow where they overlap, the grey regolith plain in hard light."],
+    "act4-side2": ["side", "Act 4, The Dyson Sphere: close on one curved edge of a vast lattice of white and orange panels at the right, the Sun's blazing light pouring through its open gaps, small white construction craft with orange trim fixing new panels along the edge."],
+    "act4-side3": ["side", "Act 4, The Dyson Sphere: the Sun at the right, half wrapped in a lattice sphere of white and orange panels, seen from far away, its open arcs blazing, and a faint dark stream of gunmetal machines with red eye-light specks approaching from the right edge."],
+    "act4-side4": ["side", "Act 4, The Dyson Sphere: a ring of white and orange construction craft and panel stacks at the right, a broad band of the sphere's lattice curving away behind them, lit gold by the Sun, the void deep black above and below."],
+    "act1-skyless": ["tall", "Act 1, The Lunar Operation: a young helium-3 mining base on the Moon seen from a little above, a few white dome habitats with orange trim and warm amber windows, one regolith excavator and a small landing pad, the grey regolith horizon low in the top third, and above it only plain black sky: no Earth, no planet, no moon, no sun in the sky at all (the page hangs its own Earth there). Below the base the regolith plain stretches toward the viewer, darkening into shadow."],
+    "act1-tall": ["tall", "Act 1, The Lunar Operation: a young helium-3 mining base on the Moon, a few white dome habitats with orange trim and warm amber windows, one regolith excavator and a small landing pad, and a blue and white Earth hanging in the black sky above the horizon; below the base the grey regolith plain stretches toward the viewer, darkening into shadow."],
+    "act2-tall": ["tall", "Act 2, The Swarm: the cold void of deep space, the Sun small and far at the top, and a dark stream of self-copying gunmetal machines with faint red eye-lights pouring down from it, the stream thinning to specks and then to empty black lower down."],
+    "act3-tall": ["tall", "Act 3, The Vault: a heavy round vault door of white metal with orange trim set into lunar rock and half open, a glowing amber-violet core inside it with faint ghostly copies of the same lunar base layered like memories, thin clock-dial rings of light; below the door, dark rock falling into deep shadow."],
+    "act4-tall": ["tall", "Act 4, The Dyson Sphere: a vast lattice sphere of white and orange panels half built around the Sun at the top, its open arcs blazing, construction craft along its edges; below it the light falls off into deep black void with a few far specks of the gunmetal swarm."],
+    "spine-conduit": ["spine", "A thick armored power conduit cable of white metal with orange safety bands every so often and small warm amber indicator lamps along it, lit hard from the left, painted with visible brush strokes."],
+    "spine-trail": ["spine", "A glowing launch trail: a column of soft warm amber exhaust light with a bright white-gold core, faint drifting sparks along its edges, painted with visible brush strokes."],
+    "spine-beam": ["spine", "A beam of pale gold sunlight, crisp-edged, with a faint lattice of thin white and orange girders running along inside it, painted with visible brush strokes."],
+    "bridge-12": ["bridge", "From Act 1, the lunar base at the left, its white domes and amber lights small on the grey regolith, to Act 2 at the right, the first dark specks of a swarm of gunmetal machines with faint red eye-lights appearing in the black sky."],
+    "bridge-23": ["bridge", "From Act 2, a stream of gunmetal machines with faint red eye-lights at the left, to Act 3 at the right, a heavy round white vault door with orange trim closing in lunar rock, a thin amber-violet glow leaking from its seam."],
+    "bridge-34": ["bridge", "From Act 3, a round white vault door with orange trim opening at the left, amber-violet light spilling out, to Act 4 at the right, the first white and orange lattice panels of a Dyson sphere catching the blazing light of the Sun."],
+    "takeover": ["takeover", "From left to right: a young lunar mining base of white domes with amber windows and a blue and white Earth over the grey regolith; then the dark void where a stream of gunmetal machines with red eye-lights falls; then a heavy round white vault door with orange trim glowing amber-violet set into lunar rock; then at the far right a vast half-built lattice sphere of white and orange panels around the blazing Sun."]
+  }
+}
