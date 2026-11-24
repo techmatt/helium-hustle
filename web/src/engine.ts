@@ -363,6 +363,8 @@ export interface QuestView {
   act: number | null;
   /** A later chain quest exists (false on the last). */
   more: boolean;
+  /** Its picture's file stem in `src/assets/quests/` (`questPicture`), null when it has none. */
+  picture: string | null;
 }
 
 export interface StoryView {
@@ -384,6 +386,8 @@ export interface StoryView {
   beat?: string | null;
   /** A chain quest's act (`content/acts.json`); null for the rest. */
   act?: number | null;
+  /** A quest's picture's file stem (`questPicture`), null when it has none. */
+  picture?: string | null;
 }
 
 /** A side quest started (its trigger happened) or completed. */
@@ -398,6 +402,8 @@ export interface SideQuestView {
   parent: string | null;
   done: boolean;
   progress: ProgressView | null;
+  /** Its picture's file stem (`questPicture`), null when it has none. */
+  picture: string | null;
 }
 
 /** An act the story has reached. */

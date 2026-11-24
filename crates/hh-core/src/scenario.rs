@@ -29,6 +29,7 @@ const FILES: &[(&str, &str)] = &[
     ("late_unlocks.json", include_str!("../../../scenarios/late_unlocks.json")),
     ("pad_loading.json", include_str!("../../../scenarios/pad_loading.json")),
     ("golden_start.json", include_str!("../../../scenarios/golden_start.json")),
+    ("story_acts.json", include_str!("../../../scenarios/story_acts.json")),
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

@@ -15,7 +15,9 @@ results folder; kept shots are also copied to the shared screenshots folder, CLA
 100 s. It plays, in order:
 
 1. **A fresh game through the normal UI only** (no debug menu): only Solar Panel and Data
-   Center offered, only 1.1's story modal (paused, its task on the last page); then the
+   Center offered, only 1.1's story modal (paused, its task on the last page; 1.1's picture
+   above its paragraph, at the left column's foot and as Story's active-beat thumbnail, the
+   split-glow title, no globe); then the
    opening at 50x, Program 1 switched between Sell Cloud Compute, Buy Science and the
    bridging buys: Basic Blueprints (1.2), the first pad offering Titanium only (1.3), 20+
    titanium loaded and launched by the card's Launch, Advanced Blueprints and Refineries,
@@ -59,7 +61,8 @@ results folder; kept shots are also copied to the shared screenshots folder, CLA
    (`openText`); the mode is remembered.
    Then `storyView`: a new game played through 1.6 by the autopilot's *Next quest step*
    (the step from 1.5 passes 1.6 too, stopping at 1.7); Story shows the Act 1 band alone,
-   the finished beats lit, the active one glowing (in view) with its task, one
+   painted, the finished beats lit (1.1's alone with a thumbnail; the left column back on
+   the horizon), the active one glowing (in view) with its task, one
    "???" after it and no achievements; a lit beat's click replays its modal; the
    Achievements tile shows every badge by category, each with its reward.
 6. **Readability** (before 4): capped rates, Resources' groups, affordable cards and Land,

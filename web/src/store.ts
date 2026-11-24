@@ -176,6 +176,8 @@ export interface StoryPage {
   text: string;
   /** The next quest's one-line task, on a transition's last page. */
   task?: string;
+  /** Its quest's picture's file stem (above the paragraph), null when it has none. */
+  picture: string | null;
 }
 
 /** Completed quests already told (or found completed at a load) this page session, so
@@ -210,14 +212,14 @@ function tell(v: View, mode: 'load' | 'intro' | 'play'): void {
       store.stories.push(q);
       continue;
     }
-    if (q.id !== lastQuest) for (const t of openingOf(q)) pages.push({ quest: q.id, title: q.title, kind: 'story', text: t });
-    for (const t of q.payoff ?? []) pages.push({ quest: q.id, title: q.title, kind: 'payoff', text: t });
+    if (q.id !== lastQuest) for (const t of openingOf(q)) pages.push({ quest: q.id, title: q.title, kind: 'story', text: t, picture: q.picture ?? null });
+    for (const t of q.payoff ?? []) pages.push({ quest: q.id, title: q.title, kind: 'payoff', text: t, picture: q.picture ?? null });
   }
   const fresh = mode === 'intro' && v.run === 1 && v.day === 0 && v.completed_quests.length === 0;
   if (quest && quest.id !== lastQuest && !openedQuests.has(quest.id)) {
     openedQuests.add(quest.id);
     if (mode === 'play' || fresh) {
-      for (const t of openingOf(quest)) pages.push({ quest: quest.id, title: quest.title, kind: 'story', text: t });
+      for (const t of openingOf(quest)) pages.push({ quest: quest.id, title: quest.title, kind: 'story', text: t, picture: quest.picture });
       if (pages.length > 0) pages[pages.length - 1].task = quest.summary;
     }
   }
@@ -245,8 +247,8 @@ export function replayStory(q: StoryView): void {
   if (stoodDown || store.summary || store.storyPages.length > 0 || pilotBusy()) return;
   movedAt = performance.now();
   const pages: StoryPage[] = [
-    ...openingOf(q).map((text) => ({ quest: q.id, title: q.title, kind: 'story' as const, text })),
-    ...(q.payoff ?? []).map((text) => ({ quest: q.id, title: q.title, kind: 'payoff' as const, text })),
+    ...openingOf(q).map((text) => ({ quest: q.id, title: q.title, kind: 'story' as const, text, picture: q.picture ?? null })),
+    ...(q.payoff ?? []).map((text) => ({ quest: q.id, title: q.title, kind: 'payoff' as const, text, picture: q.picture ?? null })),
   ];
   if (pages.length === 0) return;
   openStory(pages);

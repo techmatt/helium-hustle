@@ -219,6 +219,8 @@ pub struct QuestView {
     pub act: Option<u32>,
     /// A later chain quest exists (false on the last, which never completes).
     pub more: bool,
+    /// Its picture's file stem (display only; the UI's `src/assets/quests/`), if it has one.
+    pub picture: Option<Text>,
 }
 
 /// A side quest started (its trigger happened) or completed, for Story's timeline.
@@ -235,6 +237,8 @@ pub struct SideQuestView {
     pub done: bool,
     /// Its condition's progress, while not done.
     pub progress: Option<ProgressView>,
+    /// Its picture's file stem (display only; the UI's `src/assets/quests/`), if it has one.
+    pub picture: Option<Text>,
 }
 
 /// An act the story has reached (its first quest is active or completed).
@@ -265,6 +269,8 @@ pub struct StoryView {
     pub beat: Option<Text>,
     /// A chain quest's act (`content/acts.json`); `None` for the rest.
     pub act: Option<u32>,
+    /// Its picture's file stem (display only; the UI's `src/assets/quests/`), if it has one.
+    pub picture: Option<Text>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -536,6 +542,7 @@ fn story(e: &'static crate::content::Event) -> StoryView {
         payoff: &e.payoff,
         beat: e.beat.as_deref(),
         act: content().act_of(&e.id),
+        picture: e.picture.as_deref(),
     }
 }
 
@@ -731,6 +738,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         beat: q.beat.as_deref(),
         act: c.act_of(&q.id),
         more: c.events.iter().filter(|e| e.is_quest()).skip_while(|e| e.id != q.id).nth(1).is_some(),
+        picture: q.picture.as_deref(),
     });
     let side_quests = c
         .events
@@ -750,6 +758,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 },
                 done,
                 progress: if done { None } else { progress(events::progress(r, g, &e.condition)) },
+                picture: e.picture.as_deref(),
             }
         })
         .collect();

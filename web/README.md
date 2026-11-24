@@ -48,16 +48,16 @@ Three columns and a status bar:
   green): "+9 CAP"; short of demand, red: "−7 SHORT"; a click on a row opens
   its breakdown in place: last day's sources and sinks, who went short), each ideology
   axis's rank once Ideologies is unlocked (folded at first in a window under 800 px high),
-  and the lunar horizon with the habitat at the foot.
-- **Middle:** the sky with the Earth, a completed side quest's text (the story banner),
+  and at the foot the active main quest's picture, else the lunar horizon.
+- **Middle:** a starry sky, a completed side quest's text (the story banner),
   then the active panel. Buildings: the Land bar (green and click-to-buy like a card
   when affordable), a collapsible section per category, cards (`Buildings.tsx`). A click on an affordable card (outlined in green, its name row tinted), off its
   controls, builds one (Shift: up to ten; ignored for 0.5 s after the summary or a story
   text closes); any other card says why it can't. Research cards work the same way.
   Commands: a card per verb (Buy, Promote, ...), a target dropdown. Pad
   cards tint their head: green Ready, yellow Paused, red full but short of fuel. Stats ends
-  on every breakdown. Story (`Story.tsx`): a spine of main-story beats under act
-  bands, finished ones lit (a click replays their modals), the active one glowing, one
+  on every breakdown. Story (`Story.tsx`): a spine of main-story beats under painted act
+  bands, each with its quest picture's thumbnail, finished ones lit (a click replays), the active one glowing, one
   "???", side quests off it; Achievements: badges by category. Acts 2 and 3 (`Saga.tsx`, DRAFT; `docs/arc.md`): Timeline,
   Earth Lab, Meta-Controller, Vault, Dyson; the ending covers the screen once.
 - **Right:** the main quest in its own slot at the top, which nothing else takes; program
@@ -123,12 +123,13 @@ The two share markup, layout and art; only the color tokens atop `src/style.css`
 so switching moves nothing (the e2e checks it). Chips (resources, ideology axes, rivals) keep their true
 colors in both; an ideology axis drawn as text uses its `axis-<id>` class, which has a
 readable variant per theme. Fonts are bundled (`@fontsource`, named in `src/style.css`).
-Building pictures: `src/assets/buildings/<id>.webp` (one per building, both themes; 192 px
-shown at 96 px; `src/ui/buildingArt.ts`; made by `experiments/results/020_building_card_art/`).
+Building pictures: `src/assets/buildings/<id>.webp` (`src/ui/buildingArt.ts`,
+`experiments/results/020_building_card_art/`).
 Chips, nav icons, horizon: `src/ui/icons.tsx` over `src/assets/{chips,nav,horizon}/`
 (`experiments/results/027_art_in_game/`); a nav `<id>.svg` stands in for an unpainted
-`<id>.webp`. The sky (`src/ui/art.tsx`, `.sky`) is the home
-for a later live base view: replace what it draws, keep its box.
+`<id>.webp`. `src/ui/art.tsx`: act bands and quest pictures (`src/assets/{story,quests}/`,
+by `experiments/results/078_*/process.py`), and the sky (`.sky`), home for a later live
+base view: replace what it draws, keep its box.
 
 ## Using it
 
@@ -149,11 +150,9 @@ for a later live base view: replace what it draws, keep its box.
   a seed; *Check replay* replays the record in wasm and compares fingerprints; a line with
   engine, revision, config hash, seed, action count and fingerprint; *Cortex mock in the left
   column*, which shows the button of a UI-only radial mock of the talent tree, a takeover
-  view (`src/ui/CortexMock.tsx`, placeholders, no effect, in memory; follows the theme
-  on a plain ground inside a brass bezel, decoration only outside it; every line inside is a
-  prerequisite, and hovering a locked node outlines its prerequisites; Theorems in a case on
-  the left; left-click adds a point or switches a socket's part, right-click takes
-  one back). **Cheats** (off by
+  view (`src/ui/CortexMock.tsx`, placeholders, no effect, in memory; hovering a locked node
+  outlines its prerequisites; left-click adds a point or switches a socket's part,
+  right-click takes one back). **Cheats** (off by
   default, remembered in `hh.cheats`): grant a resource, set boredom, complete all
   research, jump ahead N days, the **cheat building** (a hazard-striped *Cheat Fountain*
   card at the foot of the Buildings panel, only while Cheats are on: 1 credit, +1000 credits

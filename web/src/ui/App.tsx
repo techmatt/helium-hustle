@@ -15,7 +15,7 @@ import {
   useStore,
   type Store,
 } from '../store';
-import { Sky } from './art';
+import { QuestPicture, Sky } from './art';
 import { Buildings } from './Buildings';
 import { Bar, RateCell, Section, navShown } from './common';
 import { Chip } from './icons';
@@ -210,7 +210,8 @@ function StatusBar({ s }: { s: Store }) {
   );
 }
 
-/** A main-story transition: one paragraph a page, the next quest's task on the last;
+/** A main-story transition: one paragraph a page, under the quest's picture when it has
+ * one, the next quest's task on the last;
  * the clock is stopped until its last button. */
 function StoryModal({ s }: { s: Store }) {
   const p = s.storyPages[0];
@@ -229,6 +230,7 @@ function StoryModal({ s }: { s: Store }) {
           {p.title}
           {p.kind === 'payoff' && <span class="muted story-done"> complete</span>}
         </h2>
+        <QuestPicture stem={p.picture} at="modal" />
         <p class="story-text">{p.text}</p>
         {p.task && (
           <p class="story-task">

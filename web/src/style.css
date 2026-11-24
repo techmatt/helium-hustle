@@ -44,7 +44,7 @@
   --axis-rationalist: #1f5fa8;
   --backdrop: rgb(33 31 27 / 45%);
   --shadow: rgb(0 0 0 / 22%);
-  /* The art: the sky the Earth hangs in. */
+  /* The art: the starry sky over the middle column. */
   --star: transparent;
   --sky: #e9e6df;
 }
@@ -265,8 +265,8 @@ ul.plain {
 }
 .col-mid {
   position: relative;
-  /* Room on top for the sky the Earth hangs in. */
-  padding: 100px 14px 10px;
+  /* A little room on top for the starry sky (Earth lives in the paintings now). */
+  padding: 36px 14px 10px;
 }
 .col-mid > :not(.sky) {
   position: relative;
@@ -619,9 +619,9 @@ ul.plain {
   border-radius: 3px;
 }
 
-/* ---- the sky and the Earth ----
-   The Earth is the home for a later live view of the base (Flash/3D): swap what
-   .sky holds, keep its box. Nothing interactive sits over it. */
+/* ---- the sky ----
+   The home for a later live view of the base (Flash/3D): swap what .sky holds, keep
+   its box. Nothing interactive sits over it. */
 .sky {
   position: absolute;
   inset: 0 0 auto 0;
@@ -633,13 +633,6 @@ ul.plain {
 .sky .stars circle {
   fill: var(--star);
 }
-.earth {
-  position: absolute;
-  top: -56px;
-  right: 28px;
-  width: 190px;
-  height: 190px;
-}
 
 /* ---- left ---- */
 .title {
@@ -650,6 +643,21 @@ ul.plain {
   padding: 6px 0 10px;
   border-bottom: 1px solid var(--line);
   margin-bottom: 8px;
+}
+/* split-glow (077's pick, on the theme tokens): HUSTLE in amber with a soft glow, and a
+   glowing rule under the words. */
+.title.split-glow .lt-b {
+  color: var(--accent);
+  text-shadow: 0 0 10px color-mix(in srgb, var(--accent) 60%, transparent);
+}
+.title.split-glow::after {
+  content: '';
+  display: block;
+  height: 2px;
+  width: 70%;
+  margin: 4px auto 0;
+  background: linear-gradient(90deg, transparent, var(--accent) 30% 70%, transparent);
+  box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 70%, transparent);
 }
 .nav-grid {
   display: grid;
@@ -1178,8 +1186,8 @@ tr.is-new td:first-child {
   border-radius: 2px;
   background: linear-gradient(var(--accent), color-mix(in srgb, var(--accent) 25%, transparent));
 }
-/* An act's chapter header: a plain styled band until the act art ships (076's pick).
-   The same night-sky ground in both themes, as the art will be, so the title is light. */
+/* An act's chapter header: its painting (.has-art below), or this plain styled band for an
+   act without one. The same night-sky ground in both themes, so the title is light. */
 .act-band {
   position: relative;
   display: flex;
@@ -1206,6 +1214,42 @@ tr.is-new td:first-child {
 .act-name {
   font-size: 22px;
   font-weight: 600;
+}
+/* A painted band (077's side framing; art.tsx `actBand`): the painting cropped 3:1, the
+   title at the left over its night sky, light in both themes. */
+.act-band.has-art {
+  aspect-ratio: 3 / 1;
+  min-height: 0;
+  justify-content: center;
+  padding-left: 28px;
+  background-position: 50% 50%;
+  background-size: cover;
+  background-repeat: no-repeat;
+  border-color: color-mix(in srgb, #f5a524 35%, #000);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 90%), 0 0 12px rgb(0 0 0 / 70%);
+}
+.act-band.has-art .act-number {
+  font-size: 13px;
+  letter-spacing: 0.3em;
+}
+.act-band.has-art .act-name {
+  font-size: 30px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+/* A finished beat's title, after its quest picture's thumbnail when it has one. */
+.beat-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+/* The active beat's: its thumbnail at the top beside the task, bar and sub-objectives. */
+.beat-head:has(> .quest) {
+  align-items: flex-start;
+}
+.beat-head > .quest {
+  flex: 1;
+  min-width: 0;
 }
 .beat-row {
   position: relative;
@@ -2075,6 +2119,33 @@ button.go:hover:not(:disabled) {
 }
 .story-text {
   line-height: 1.5;
+}
+/* Quest pictures (art.tsx `QuestPicture`): medium above a story modal's paragraph,
+   the left column's foot (in .horizon's box), a small thumbnail in Story's timeline. */
+.quest-pic {
+  display: block;
+}
+.quest-pic-modal {
+  width: min(100%, 360px);
+  max-height: 240px;
+  object-fit: cover;
+  margin: 0 auto 12px;
+  border-radius: 6px;
+}
+.quest-pic-thumb {
+  flex: none;
+  width: 48px;
+  height: 32px;
+  object-fit: cover;
+  border-radius: 3px;
+  border: 1px solid var(--line);
+}
+.side-title .quest-pic-thumb {
+  display: inline-block;
+  vertical-align: middle;
+  width: 36px;
+  height: 24px;
+  margin-right: 6px;
 }
 .story-task {
   margin: 12px 0 16px;

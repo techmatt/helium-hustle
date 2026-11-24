@@ -1,6 +1,7 @@
 // Story and Achievements. Story is a vertical quest timeline: one node per main-story
-// beat on a spine, oldest at the top, each act opening with its chapter band; finished
-// beats lit (a click replays their story modals), the active beat glowing with its task
+// beat on a spine, oldest at the top, each act opening with its painted chapter band;
+// finished beats lit (a click replays their story modals), the active beat glowing with
+// its task, each beat with its quest picture's thumbnail when it has one,
 // and progress, one dim "???" below it, and side quests branching off the beat that
 // started them. Achievements are badges grouped by category. Every text, act and
 // progress comes from the engine's view (the same quest rows the story modals read).
@@ -9,6 +10,7 @@ import { useEffect, useRef } from 'preact/hooks';
 import type { SideQuestView, StoryView, View } from '../engine';
 import { capitalize, num } from '../format';
 import { replayStory, type Store } from '../store';
+import { QuestPicture, actBand } from './art';
 import { Bar, Quest } from './common';
 
 /** A finished quest's paragraphs: its opening (its body when it has none), then its payoff. */
@@ -36,6 +38,7 @@ function Side({ x }: { x: SideQuestView }) {
       <span class="side-dot" aria-hidden="true" />
       <div class="side-card">
         <div class="side-title">
+          {x.done && <QuestPicture stem={x.picture} at="thumb" />}
           {x.title}
           {x.done && <span class="ok"> ✓</span>}
         </div>
@@ -73,7 +76,12 @@ export function Story({ s }: { s: Store }) {
       <div class="story-timeline" data-testid="story-timeline">
         {v.acts.map((a) => (
           <section key={a.act} class="story-act" data-act={a.act}>
-            <div class="act-band" data-testid="act-band" data-act={a.act}>
+            <div
+              class={`act-band${actBand(a.act) ? ' has-art' : ''}`}
+              data-testid="act-band"
+              data-act={a.act}
+              style={actBand(a.act) ? { backgroundImage: `url(${actBand(a.act)})` } : undefined}
+            >
               <span class="act-number">Act {a.act}</span>
               <span class="act-name">{a.name}</span>
             </div>
@@ -91,7 +99,10 @@ export function Story({ s }: { s: Store }) {
                   >
                     <span class="beat-dot" aria-hidden="true" />
                     <span class="beat-card">
-                      <span class="beat-title">{q.title}</span>
+                      <span class="beat-head">
+                        <QuestPicture stem={q.picture} at="thumb" />
+                        <span class="beat-title">{q.title}</span>
+                      </span>
                       {paragraphs(q).map((t, i) => (
                         <span key={i} class="beat-text">
                           {t}
@@ -107,7 +118,10 @@ export function Story({ s }: { s: Store }) {
                 <div class="beat-node is-active" data-beat={active.id} data-testid="story-beat-active" ref={activeRef}>
                   <span class="beat-dot" aria-hidden="true" />
                   <div class="beat-card">
-                    <Quest v={v} />
+                    <div class="beat-head">
+                      <QuestPicture stem={active.picture} at="thumb" />
+                      <Quest v={v} />
+                    </div>
                   </div>
                 </div>
                 <Sides v={v} parent={active.id} />

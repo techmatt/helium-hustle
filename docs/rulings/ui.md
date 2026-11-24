@@ -3,9 +3,9 @@
 Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **default** mean).
 
 - **Art direction (2026-11-15): B "Earthrise".** Warm grey regolith surfaces, an amber accent,
-  Earth in the sky over the work area, a lunar horizon with the habitat at the foot of the left
-  column. The layout is kept. Resource colors are never hidden. A **light theme** for debugging
-  stays, 1:1 with dark: same layout, markup and art, only color tokens swap. "Flash"/3D (a live
+  a lunar horizon with the habitat at the foot of the left column. The layout is kept.
+  Earth lives in the paintings, with no globe over the middle column. Resource colors are
+  never hidden. A **light theme** for debugging stays, 1:1 with dark: same layout, markup and art, only color tokens swap. "Flash"/3D (a live
   view of the base growing) comes later; plan a home for it, build later.
 - **Building art (2026-11-16).** Cards use painterly cut-outs at each building's natural 3/4
   view (019's `cut34`: no fixed camera, a small irregular regolith patch, transparent
@@ -21,6 +21,16 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
 - **Chip colors (028, default).** Resource, axis and rival chip colors stay TS maps in
   `icons.tsx` (the chip needs the hex for its ink-contrast choice, and they are the same in
   both themes); only the axis text colors are CSS tokens.
+- **Story art and title (2026-11-23, story_title_art_r2).** Each act opens with a painted
+  side band (3:1, title at the left): Act 1 round 2's `side3` (launch pad and domes), Acts
+  2-4 round 1's `side`. No sky, bleed, tall backdrop, painted spine or full-width takeover:
+  Story stays in the middle column on the amber spine. Title: `split-glow` (HELIUM in ink,
+  HUSTLE in glowing amber, a glowing rule), CSS on the theme tokens. Later acts' art shows
+  only once the act is reached.
+- **Quest pictures (2026-11-23).** Every quest may carry a picture (content, display only):
+  medium above its story modal's paragraph, at the left column's foot while it is the active
+  main quest (replacing the lunar-base scene, which stays as 1.1's picture and the fallback),
+  and as a thumbnail beside a beat's title in Story. Layouts must look right without one.
 - **Cortex mock (2026-11-22).** Contrast first: inside the wheel's rim a plain solid ground per
   theme; decoration (bezel, corona, neurons) only outside the rim. It follows the app's
   theme. The Grand Theorems sit left of the wheel in a framed brass case, clear of the nav,

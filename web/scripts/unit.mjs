@@ -1,6 +1,7 @@
 // Unit checks for the client's pure helpers (Node runs the TypeScript directly).
 //   node scripts/unit.mjs   (npm run unit)
 import assert from 'node:assert/strict';
+import { readdirSync, readFileSync } from 'node:fs';
 import { num, perDay, storyBody } from '../src/format.ts';
 import { blockEnd, blockLen, canAddElse, canIndent, insertLine, moveLines, otherUnit, removeLine, sameEntry, setIndent, tidy } from '../src/ui/programEdit.ts';
 
@@ -125,4 +126,11 @@ edits += 6;
 }
 edits += 8;
 
-console.log(`unit ok (${cases.length + 3 + edits} checks)`);
+// Every quest `picture` in content names a file the client has (a dangling stem would show
+// nothing, silently: art.tsx `questPicture`).
+const pictures = JSON.parse(readFileSync(new URL('../../content/events.json', import.meta.url), 'utf8')).filter((e) => e.picture);
+const pictureFiles = new Set(readdirSync(new URL('../src/assets/quests/', import.meta.url)).filter((f) => f.endsWith('.webp')).map((f) => f.slice(0, -5)));
+for (const e of pictures) assert.ok(pictureFiles.has(e.picture), `${e.id}: picture ${e.picture} has no src/assets/quests/${e.picture}.webp`);
+assert.ok(pictures.some((e) => e.id === 'qpower_boot_sequence'), "1.1 carries a picture");
+
+console.log(`unit ok (${cases.length + 4 + edits + pictures.length} checks)`);

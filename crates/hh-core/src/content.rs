@@ -336,6 +336,10 @@ pub struct Event {
     /// A chain quest's payoff, one paragraph per modal, shown when it completes.
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub payoff: Vec<String>,
+    /// A quest's picture (display only, never read by a rule): the stem of a file in
+    /// the web client's `src/assets/quests/` (docs/rules/events.md, *Story modals*).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub picture: Option<String>,
     /// Applied once a career, the first time the quest becomes active
     /// (only `grant` here).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
@@ -713,6 +717,10 @@ impl Content {
             }
             let story_ok = e.is_quest() || (e.story.is_empty() && e.payoff.is_empty());
             need(story_ok, format!("{w}: story and payoff are for chain quests"));
+            if let Some(p) = &e.picture {
+                let slug = !p.is_empty() && p.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_');
+                need((e.is_quest() || e.is_side()) && slug, format!("{w}: picture is a file stem, on quests"));
+            }
             need(
                 e.on_start
                     .iter()

@@ -1,4 +1,5 @@
-// Left column: title, nav grid, speed controls, Resources and Ideology, the horizon.
+// Left column: title, nav grid, speed controls, Resources and Ideology, and at the foot
+// the active main quest's picture (the lunar-base horizon when it has none).
 
 import { Fragment, type ComponentChildren } from 'preact';
 import { DEBUG_SPEEDS, SPEEDS } from '../clock';
@@ -6,6 +7,7 @@ import { capitalize, num, perDay } from '../format';
 import { navHasNews, seen, setSpeed, type Store } from '../store';
 import { useEffect, useState } from 'preact/hooks';
 import { Breakdown, RateCell, Section, isCapped, navShown, risingIsBad } from './common';
+import { QuestPicture, questPicture } from './art';
 import { Chip, Horizon, NavIcon } from './icons';
 import { CalendarStrip } from './Saga';
 import { TakeoverButtons, type Takeover } from './Takeover';
@@ -57,7 +59,10 @@ export function Left({
   }, [expanded, expandedShown]);
   return (
     <aside class="col-left">
-      <h1 class="title">Helium Hustle</h1>
+      {/* split-glow (077's pick): HELIUM in ink, HUSTLE in glowing amber, a glowing rule. */}
+      <h1 class="title split-glow">
+        <span class="lt-a">Helium</span> <span class="lt-b">Hustle</span>
+      </h1>
       <CalendarStrip v={v} />
       <nav class={`nav-grid${compact ? ' compact' : ''}`} aria-label="Panels">
         {tiles.map((t) => (
@@ -196,7 +201,14 @@ export function Left({
           </table>
         </Section>
       )}
-      <Horizon v={v} />
+      {/* The active main quest's picture; the lunar-base horizon when it has none. */}
+      {questPicture(v.quest?.picture) ? (
+        <div class="horizon quest-scene" data-quest={v.quest?.id} aria-hidden="true">
+          <QuestPicture stem={v.quest?.picture} at="left" />
+        </div>
+      ) : (
+        <Horizon v={v} />
+      )}
     </aside>
   );
 }

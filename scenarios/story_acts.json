@@ -1,0 +1,68 @@
+{
+  "name": "story_acts",
+  "description": "Story's later acts (display checks): everything's base with every chain quest before Act 4's first done (Acts 1-3 and the side quests), so Story shows all four act bands and Act 4's first quest is active.",
+  "start": {
+    "tick": 0,
+    "resources": {
+      "credits": "100000",
+      "science": "10000",
+      "boredom": "200",
+      "energy": "500",
+      "regolith": "500",
+      "ice": "300",
+      "he3": "200",
+      "titanium": "200",
+      "circuits": "150",
+      "propellant": "300",
+      "land": "200"
+    },
+    "buildings": {
+      "solar_panel": 30,
+      "battery": 10,
+      "storage_depot": 10,
+      "data_center": 6,
+      "excavator": 6,
+      "smelter": 3,
+      "refinery": 4,
+      "fabricator": 2,
+      "ice_extractor": 2,
+      "electrolysis": 2,
+      "launch_pad": 3,
+      "research_lab": 3,
+      "recreation_dome": 2
+    },
+    "panels": [],
+    "programs": [],
+    "flags": [
+      "logic_if"
+    ],
+    "events": [
+      "qpower_boot_sequence",
+      "qblueprints",
+      "qfirst_shipment",
+      "qfull_load",
+      "qautomate_automation",
+      "qspeculators_notice",
+      "qburnout",
+      "qlab",
+      "qthree_voices",
+      "qland_rush",
+      "qdeep_space_telescope",
+      "qexperiments_service",
+      "qearth_science",
+      "qswarm_arrives",
+      "qcatastrophic_success",
+      "qrules_for_building",
+      "qfalse_victory",
+      "qthe_vault",
+      "qfilling_vault",
+      "qsuper_timeline",
+      "qbig_launch",
+      "qfull_cluster",
+      "qblueprints_for_everyone",
+      "recreation_dome_unlock",
+      "ideology_unlock",
+      "propellant_discovery"
+    ]
+  }
+}

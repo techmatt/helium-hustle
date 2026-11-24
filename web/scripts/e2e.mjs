@@ -958,6 +958,9 @@ async function storyView() {
     const r = a?.getBoundingClientRect();
     return {
       bands: [...p.querySelectorAll('[data-testid="act-band"]')].map((b) => b.textContent),
+      bandArt: [...p.querySelectorAll('[data-testid="act-band"]')].map((b) => /url\\(/.test(getComputedStyle(b).backgroundImage)),
+      thumbs: [...p.querySelectorAll('[data-testid="story-beat-done"]')].map((b) => b.querySelector('[data-testid="quest-pic-thumb"]')?.dataset.picture ?? ''),
+      leftHorizon: !!document.querySelector('.col-left > .horizon:not(.quest-scene)'),
       done: ids('[data-testid="story-beat-done"]'),
       active: a ? a.dataset.beat : null,
       glow: a ? getComputedStyle(a.querySelector('.beat-dot')).boxShadow !== 'none' : false,
@@ -971,6 +974,10 @@ async function storyView() {
     };
   })()`);
   check(st.bands.length === 1 && /Act 1/.test(st.bands[0]) && /The Lunar Operation/.test(st.bands[0]), `Story opens with the Act 1 band alone: ${JSON.stringify(st.bands)}`);
+  check(st.bandArt.every(Boolean), `the act band is painted: ${JSON.stringify(st.bandArt)}`);
+  // Only 1.1 has a picture: its thumbnail alone; a quest without one keeps the horizon.
+  check(st.thumbs[0] === 'lunar_base' && st.thumbs.slice(1).every((x) => x === ''), `1.1's finished beat alone has a thumbnail: ${JSON.stringify(st.thumbs)}`);
+  check(st.leftHorizon, 'a quest without a picture leaves the lunar horizon at the left column foot');
   const chain = content('events.json').filter((e) => e.category === 'story').map((e) => e.id);
   check(st.done.join() === chain.slice(0, at - 1).join(), `the ${at - 1} finished beats lit, in order: ${st.done.join(', ')}`);
   check(st.active === chain[at - 1] && st.glow, `1.${at} is the glowing active beat: ${st.active} glow ${st.glow}`);
@@ -1277,11 +1284,33 @@ try {
     await sleep(400);
     const held = (await day()) === d0;
     await shot('story-modal-intro');
+    // 1.1's picture (the lunar-base scene) above the modal's paragraph and at the left
+    // column's foot; the split-glow title; no Earth globe over the middle column.
+    const pic = await evaluate(`(() => {
+      const m = document.querySelector('[data-testid="story-modal"] [data-testid="quest-pic-modal"]');
+      const t = document.querySelector('[data-testid="story-modal"] .story-text');
+      const l = document.querySelector('.col-left > .quest-scene [data-testid="quest-pic-left"]');
+      return {
+        modal: m?.dataset.picture ?? null,
+        above: !!m && !!t && (m.compareDocumentPosition(t) & Node.DOCUMENT_POSITION_FOLLOWING) > 0,
+        loaded: !!m && m.complete && m.naturalWidth > 0,
+        left: l?.dataset.picture ?? null,
+        title: document.querySelector('h1.title')?.className ?? '',
+        earth: !!document.querySelector('.col-mid .earth, .col-mid svg[viewBox="0 0 200 200"]'),
+      };
+    })()`);
+    check(pic.modal === 'lunar_base' && pic.above && pic.loaded, `1.1's modal shows the lunar-base picture above its paragraph: ${JSON.stringify(pic)}`);
+    check(pic.left === 'lunar_base', `the left column's foot shows 1.1's picture: ${pic.left}`);
+    check(/\bsplit-glow\b/.test(pic.title) && !pic.earth, `the split-glow title and no Earth globe: ${pic.title} earth ${pic.earth}`);
     const pages = await readStory();
     check(
       held && pages.length >= 1 && pages.every((p) => p.quest === 'qpower_boot_sequence' && p.kind === 'story' && p.paused) && !!pages.at(-1).task && pages.at(-1).button === 'Begin',
       `a new game opens only 1.1's story modal, paused, its task last: ${JSON.stringify(pages)}`,
     );
+    // On 1.1, Story's active beat carries 1.1's thumbnail.
+    await panel('story');
+    const thumb = await evaluate(`document.querySelector('[data-testid="story-beat-active"] [data-testid="quest-pic-thumb"]')?.dataset.picture ?? null`);
+    check(thumb === 'lunar_base', `on 1.1 the active beat shows its thumbnail: ${thumb}`);
   }
   // Two quick clicks (no render between them) both land.
   await panel('commands');

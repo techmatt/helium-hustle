@@ -14,6 +14,7 @@
     "payoff": [
       "The second panel comes online and the grid steadies. The company opens a line to Earth's research market for you: credits and power can buy science now."
     ],
+    "picture": "lunar_base",
     "trigger": {"type": "game_start", "run_number": 1},
     "condition": {"type": "building_owned", "building": "solar_panel", "count": 2},
     "unlocks": [{"type": "enable_nav_panel", "panel": "research"}]
