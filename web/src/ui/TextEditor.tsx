@@ -10,7 +10,7 @@ import type { ComponentChildren } from 'preact';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { engine, type Entry, type ParsedText, type ProgramView, type View } from '../engine';
 import { act, parseProgramText, setNotice, store, type Store } from '../store';
-import { DOT_TITLE, GutterMark, entryStatus, type Dot, type LineStatus } from './Gutter';
+import { DOT_TITLE, ELSE_TITLE, GutterMark, entryStatus, type Dot, type LineStatus } from './Gutter';
 import { InstructionPanel } from './Instructions';
 import { insertLine } from './programEdit';
 
@@ -353,7 +353,7 @@ function lineStatuses(v: View, s: Store, program: number, p: ProgramView, r: Par
     }
     // An `else` line never runs (its `if` decides): free, like a note.
     if (l.status === 'note' || (l.status === 'ok' && l.entry !== null && r.entries[l.entry]?.op === 'else')) {
-      const title = l.status === 'note' ? DOT_TITLE.note : 'Else: free; its if decides which body runs';
+      const title = l.status === 'note' ? DOT_TITLE.note : ELSE_TITLE;
       out.push({ dot: 'note', note: null, title, fired: null, repeat: null });
       continue;
     }

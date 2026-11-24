@@ -1,9 +1,11 @@
 # Test lanes (README, "Build and test"): `cargo test --workspace` is the fast lane;
-# `cargo test-all` also runs the slow lane's #[ignore]d tests. Arguments after an alias go
-# to the test binary: no second `--` (it would turn a flag into a test-name filter).
+# `cargo test-all` also runs the slow lane's #[ignore]d tests, `cargo test-slow` only them.
+# Both run crates/xtask, which puts cargo's flags (`-j 3`, `-p hh-sim`, a test-name filter)
+# before the `--` and the test binary's (`--test-threads=3`) after it: a plain alias only
+# appends, so its own `-- --include-ignored` sent every later flag to the test binary.
 #
 # No `build.target-dir` here: the default is already the workspace root's target/, and a
 # CARGO_TARGET_DIR outranks this file, so give that one absolute (README, *Build and test*).
 [alias]
-test-all = "test --workspace -- --include-ignored"
-test-slow = "test --workspace -- --ignored"
+test-all = "run -q -p xtask -- test-all"
+test-slow = "run -q -p xtask -- test-slow"

@@ -45,6 +45,9 @@ const DOT_OF: Record<LineOutcome, Dot> = {
   failed: 'failed',
 };
 
+/** An `else` line's gutter title: it never runs, like a note. */
+export const ELSE_TITLE = 'Else: free; its if decides which body runs';
+
 export const DOT_TITLE: Record<Dot, string> = {
   green: 'Ran on the last day',
   grey: 'Skipped by its if on the last day',
@@ -78,7 +81,7 @@ export function entryStatus(v: View, s: Store, program: number, j: number): Line
   const locked = p.locked?.[j] ?? null;
   if (locked !== null) return { dot: 'amber', note: `locked: ${locked}`, title: `${DOT_TITLE.amber}: ${locked}`, fired: null, repeat: null };
   // An `else` line never runs (its `if` decides): free, like a note.
-  if (e.op === 'else') return { dot: 'note', note: null, title: 'Else: free; its if decides which body runs', fired: null, repeat: null };
+  if (e.op === 'else') return { dot: 'note', note: null, title: ELSE_TITLE, fired: null, repeat: null };
   const span = daysPerWake(s.speed) > 1;
   const outcomes = span ? (s.lines?.lines[program] ?? []) : p.outcomes;
   const outcome = outcomes[j] ?? null;

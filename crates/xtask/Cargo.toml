@@ -1,0 +1,9 @@
+[package]
+name = "xtask"
+description = "Repo tasks behind the cargo aliases in .cargo/config.toml (test-all, test-slow)"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]

@@ -68,12 +68,12 @@ cd web && npm run wasm && npm run check      # type-check alone: a fresh worktre
 ```
 
 **Test lanes.** `cargo test --workspace` is the fast lane and the default: run it after
-every change. `cargo test-all` (a `.cargo/config.toml` alias for `cargo test --workspace --
---include-ignored`) is the full run, before every commit: a test slower than about a second
-is marked `#[ignore = "slow lane: ..."]`, and `cargo test-slow` runs only those. Anything after an alias goes to the test binary,
-with no second `--`, so `cargo test-all -j 6` fails (`Unrecognized option: 'j'`): limit
-jobs with `CARGO_BUILD_JOBS=6 cargo test-all`; past a failing crate,
-`cargo test --workspace --no-fail-fast -- --include-ignored`. Tests play whole games, so the test profile
+every change. `cargo test-all` is the full run, before every commit: a test slower than
+about a second is marked `#[ignore = "slow lane: ..."]`, and `cargo test-slow` runs only
+those. Both aliases (`.cargo/config.toml`) run `crates/xtask`, which takes cargo's flags
+before a `--` and the test binary's after it, as `cargo test` does, and adds `--workspace`
+unless a package is named: `cargo test-all -j 3 -p hh-sim --no-fail-fast golden --
+--test-threads=3` works. Tests play whole games, so the test profile
 is optimized (`opt-level = 1`) and keeps overflow checks.
 
 **A second target dir** (a parallel helper, a copy under `out/`) is set absolute:
