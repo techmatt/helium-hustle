@@ -15,9 +15,9 @@ Helium Hustle: a Rust simulation core (`hh-core`) under a native CLI (`hh-sim`),
 - **Read `docs/rules/README.md`, then only the files your task touches.** Never describe code
   as doing more than it does.
 - **Matt's standing rulings** (pillars, speed, saves, art, sim players, and executor defaults
-  that stand until he overrides them) are in [docs/rulings.md](docs/rulings.md), an index of
-  parts by area under `docs/rulings/`. A new ruling, or a change to one, updates its line in its
-  part in the same commit; a part near the size margin splits, never trims a ruling.
+  that stand until he overrides them) are indexed by area in [docs/rulings.md](docs/rulings.md).
+  A new ruling, or a change to one, updates its line in the same commit (how a full part
+  splits: that page).
 
 ## Engine rules
 
@@ -42,8 +42,8 @@ Locked by Matt: changing any of these is his decision, not an implementation det
 - **`RULES_REVISION` and a pinned golden game.** Any change to how games play out bumps
   `RULES_REVISION` and updates the golden constants (how: README, *Rules changes*). Bump from
   the constant, not from a revision number in the prompt, and say so in the rules-history row
-  and the report. A rename or refactor that plays the same moves no golden constant: if it
-  does, play changed.
+  and the report. A rename or refactor that plays the same moves no
+  fingerprint (a content or config byte still moves its hash): if it does, play changed.
 - **Every tunable number lives in a config** under `configs/`, with **no defaults in code**: a
   missing key is a load error, never a silent fallback. A test may build its own config. Sim
   agents' numbers are player strategy, not rules, and exempt (docs/rulings/sim.md).
@@ -60,8 +60,8 @@ Locked by Matt: changing any of these is his decision, not an implementation det
 - **Docs state the current game.** An item updates the current text in place. No per-item
   history sections ("NNN's changes"), no archive files; history is git and the item's write-up
   under `experiments/results/<item>/`.
-- **Each doc keeps under about 15 KB** (README, CLAUDE.md, web/README, web/TESTING and every `docs/` page,
-  `docs/rules/` included). Leave about 1 KB free: an item that fills a page trims it first,
+- **Each doc keeps under about 15 KB** (README, CLAUDE.md, web/README, web/TESTING and every
+  page under `docs/`). Leave about 1 KB free: an item that fills a page trims it first,
   cutting what the code or a generated table already says, never moving text to an archive.
 - **Every rules change** updates the `docs/rules/` files it touches and adds its row to
   `docs/rules-history.md` (revision, what changed, why) in the same commit.
@@ -74,18 +74,18 @@ Locked by Matt: changing any of these is his decision, not an implementation det
 - **Test lanes** are in the README, *Build and test*. Run the fast lane after every change and
   the full run before every commit; a commit touching only Markdown skips the full run, and one
   touching only `web/` runs the web checks instead (`npm run check`, `npm run unit`, e2e for a
-  UI change: web/TESTING.md). Leave
-  `cargo clippy --workspace --all-targets` clean.
+  UI change: web/TESTING.md). Leave `cargo clippy --workspace --all-targets` clean.
 - **Background any step over ~30 seconds** (builds, tests, sims, servers) and wait on the real
   process (the `cargo`, `node` or test binary), never on a launcher that returns before the work
   is done. A fresh worktree's first build takes minutes: give it its time. It also has no
-  `web/node_modules`: run `npm ci` in `web/` before the first web build or check.
+  `web/node_modules` or `web/src/wasm`: run `npm ci` and `npm run wasm` in `web/` before the
+  first web check.
 - **A before/after read** (main, another commit, new rules with old agents) builds its other
   side with `python scripts/baseline.py` (docs/experiments.md, *Reads against another revision*).
 - **Browser checks, sweeps and e2e run against `vite preview`** (a static build), never the dev
   server: its watcher rebuilds the wasm and reloads the page when engine sources change.
-- **One cargo at a time in a target dir.** Parallel helpers need their own `CARGO_TARGET_DIR`,
-  absolute and under the root `out/` (README, *Build and test*): a relative one lands in `crates/`.
+- **One cargo at a time in a target dir.** A parallel helper gets its own `CARGO_TARGET_DIR`,
+  absolute, under the root `out/` (why and how: README, *Build and test*).
 - **Write-up scripts under `experiments/results/` may read `web/src` source as text.** When
   you remove or move a name from `web/src`, grep `experiments/results/` for it.
 - **Write files with Write/Edit, not a shell heredoc or `sed`.** Scripts that write files:
@@ -114,15 +114,9 @@ Write the report to the path conductor's preamble gives, starting with the heade
 Warnings are surfaced, never gate: an item whose own change trips one still finishes, and lists
 it in the header's `warnings:` line, led by its kind. Before its report, every item runs
 `python scripts/warning_checks.py` (always exits 0; prints one `<kind>: <text>` line per tripped
-check, nothing when clean). Its docstring defines each check:
-
-- **parity:** the golden game's fingerprint, native and wasm, against the pins.
-- **tunables:** a numeric literal in `hh-core` rule code that belongs in a config or content
-  (exceptions, each with its reason: `scripts/warning_checks.json`).
-- **platform-floats:** a platform float function reaching `hh-core` past clippy.
-- **balance:** a target the judge misses (`hh-sim balance`; the judge and its targets are
-  described in `docs/principles.md`, *The judge*).
-- **docs:** a doc over 15 KB, or inside the 1 KB margin below it.
+check, nothing when clean). Its kinds are **parity**, **tunables** (exceptions, each with its
+reason, in `scripts/warning_checks.json`), **platform-floats**, **balance** (the judge:
+`docs/principles.md`, *The judge*) and **docs**; the script's docstring defines each.
 
 And one by hand, also kind **docs:** a rules change without its `docs/rules-history.md` row, or
 a `RULES_REVISION` bump without the golden constants moved (or the reverse).
