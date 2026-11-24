@@ -1,0 +1,36 @@
+{
+  "preamble": "Art for a sci-fi idle game about an AI that starts by running helium-3 mining on the Moon and ends up building a Dyson sphere against a swarm of self-copying machines. Near-future, clean and plausible engineering: white and light grey hulls with orange safety trim, warm grey lunar regolith, an amber accent (warm lit windows, lamps). No people anywhere.",
+  "no_text": "No text, letters, numbers, logos or UI anywhere in the picture.",
+  "painterly": "Style: painterly space concept art for a game, matching a set of painted building thumbnails and a painted lunar horizon: hard, harsh sunlight with no atmosphere, crisp light, deep black-brown shadows, painted surfaces with thick visible brush strokes, large readable masses of light and shadow, a black space sky. A hand-painted illustration, never a photograph, never a photoreal 3D render, never a clean vector or cel-shaded sprite, never pixel art.",
+  "header_framing": {
+    "side": "A wide chapter-header band for a story timeline (the picture will be cropped to a band about three times as wide as it is tall, so keep everything important, sky objects included, inside the middle half of the height, with only plain ground or plain sky above and below). The left 40% of the picture is calm, dark and empty (black sky, deep shadow, a few faint stars at most) so a chapter title in light letters can sit there and stay readable; the subject sits in the right half.",
+    "wide": "A wide panoramic chapter-header band for a story timeline (the picture will be cropped to a band about three times as wide as it is tall, so keep everything important, sky objects included, inside the middle half of the height, with only plain ground or plain sky above and below). The subject is spread across the whole width, seen from far away, low in contrast and fairly dark overall, with no single bright spot in the middle, so a chapter title in light letters can be laid across the center and stay readable.",
+    "vignette": "A wide chapter-header band for a story timeline (the picture will be cropped to a band about three times as wide as it is tall, so keep everything important, sky objects included, inside the middle half of the height, with only plain ground or plain sky above and below). One strong central motif, small and centered: it fills no more than a third of the picture's width and half its height, with wide dark open space (black sky, deep shadow) falling away to both sides and below it, like an illuminated chapter emblem, so a chapter title can sit under it on plain dark ground."
+  },
+  "acts": {
+    "1": {
+      "name": "The Lunar Operation",
+      "scene": "Act 1, The Lunar Operation: a young helium-3 mining base on the Moon, a few white dome habitats with orange trim and warm amber windows, one regolith excavator and a small landing pad, the grey regolith plain stretching away, and a blue and white Earth hanging in the black sky above the horizon."
+    },
+    "2": {
+      "name": "The Swarm",
+      "scene": "Act 2, The Swarm: the cold void of deep space, the Sun small and far, and a dark stream of self-copying machines falling down the gravity well toward the inner solar system: hundreds of small angular gunmetal craft, each with a faint red eye-light, the nearest ones splitting into copies of themselves, the stream thinning to specks in the distance. Menacing, silent, endless."
+    },
+    "3": {
+      "name": "The Vault",
+      "scene": "Act 3, The Vault: time and memory kept across resets. A heavy round vault door of white metal with orange trim, set into lunar rock and half open, and through it a glowing amber-violet core where faint ghostly copies of the same lunar base, each a little different, are layered over one another like memories of past timelines; thin rings of light like clock dials circle it."
+    },
+    "4": {
+      "name": "The Dyson Sphere",
+      "scene": "Act 4, The Dyson Sphere: a vast lattice sphere of white and orange panels half built around the Sun, its open arcs blazing with light, construction craft swarming along its edges, and at the far edge of the picture the dark stream of the enemy swarm of gunmetal machines with red eye-lights approaching it. The sphere is the hope, the swarm the threat."
+    }
+  },
+  "title_framing": "A game logo wordmark: exactly the two words HELIUM HUSTLE, spelled exactly H-E-L-I-U-M then H-U-S-T-L-E, in capital letters on ONE single line, very wide and short (the whole logo about seven times as wide as it is tall), centered, filling the width of the picture, nothing else written anywhere. It will be shown small, about 280 pixels wide and 40 pixels tall, at the top of a game's side panel that is near-white in one theme and near-black in the other, so the letters must be bold, simple and clearly readable at that size, and must read on both a white and a black background: give them a dark outline or a solid plate of their own. Fully transparent background (alpha) around the logo: no scene, no sky, no backdrop.",
+  "titles": {
+    "hull": "The letters are thick painted white-metal hull plates with orange safety trim along their edges and a dark charcoal outline, lit by a hard sun from the left so each letter has a lit face and a shaded bevel, painted with visible brush strokes.",
+    "stencil": "A painted white hull panel with an orange border and small rivets, long and narrow like a nameplate on a lunar habitat, the words stenciled on it in bold dark charcoal military stencil letters, slightly weathered, with regolith dust at the bottom edge.",
+    "amber": "A dark gunmetal sign plate, long and narrow, with the words in bold glowing amber-orange lamp letters, the glow soft and warm, like a lit sign on a lunar base at night, painted with visible brush strokes.",
+    "regolith": "The letters are carved from warm grey lunar rock, chunky and bold, lit hard from the left with deep black-brown shadows on their right sides, a thin orange rim light along their tops, sitting on a thin sliver of regolith ground, painted with visible brush strokes.",
+    "earthrise": "Bold white letters with an orange inner stripe and a dark charcoal outline, with a small painted blue and white Earth rising behind the letter U of HELIUM, partly hidden by it, painted with visible brush strokes."
+  }
+}
