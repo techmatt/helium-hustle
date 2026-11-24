@@ -30,6 +30,20 @@ pub(crate) fn rules() -> crate::Rules {
     crate::Rules::new(&baseline()).unwrap()
 }
 
+/// A new game with program logic open and `if` too: Conditional Logic counted
+/// completed, as the `golden_start` scenario opens it (never a career flag).
+pub(crate) fn logic_open(r: &crate::Rules) -> crate::GameState {
+    let mut g = r.new_game(1);
+    g.career.flags.insert(crate::modules::programs::LOGIC_FLAG.into());
+    open_if(&mut g);
+    g
+}
+
+/// Opens `if` the way play does: Conditional Logic counted completed.
+pub(crate) fn open_if(g: &mut crate::GameState) {
+    crate::modules::projects::mark_completed(g, "conditional_logic");
+}
+
 pub(crate) fn f(s: &str) -> crate::Fx {
     crate::Fx::parse(s).unwrap()
 }

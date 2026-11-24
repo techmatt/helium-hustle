@@ -1,17 +1,14 @@
 //! `act` lines (`<verb> <target> [amount]`) and the readings that guard them
 //! (docs/rules/programs.md, *Verbs*, *Conditions*).
 
-use super::{f, outcomes, rules, set};
+use super::{f, logic_open, outcomes, rules, set};
 use crate::modules::{career, economy, programs};
 use crate::state::{Amount, Entry, GameState, Holding, LineOutcome as O, Op, Reading, Verb};
 use crate::{Action, Fx, Rules};
 
 /// A new game with every line open and research too (the Lab quest's panel).
 fn game(r: &Rules) -> GameState {
-    let mut g = r.new_game(1);
-    for flag in [programs::LOGIC_FLAG, programs::IF_FLAG] {
-        g.career.flags.insert(flag.into());
-    }
+    let mut g = logic_open(r);
     g.run.enabled_panels.insert(crate::modules::research::RESEARCH_PANEL.into());
     // Launch Full Pads opens with 1.5 Processors.
     g.career.completed_quests.insert("qautomate_automation".into());

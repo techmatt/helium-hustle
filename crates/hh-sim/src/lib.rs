@@ -11,13 +11,13 @@ pub mod agents;
 pub mod autopilot;
 pub mod career;
 pub mod experiment;
+pub mod gates;
 pub mod human;
 pub mod lab;
 pub mod milestones;
 pub mod objectives;
 pub mod params;
 pub mod playlog;
-pub mod gates;
 pub mod summary;
 pub mod vs;
 

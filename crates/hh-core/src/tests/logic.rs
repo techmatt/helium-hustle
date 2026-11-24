@@ -1,18 +1,14 @@
 //! Program instructions beyond commands: `if` blocks, `build` and `buy land`
 //! (docs/rules/programs.md).
 
-use super::{f, outcomes, rules, set};
+use super::{f, logic_open, open_if, outcomes, rules, set};
 use crate::modules::{economy, programs};
 use crate::state::{Clause, Cmp, Condition, Entry, GameState, Holding, Join, Joined, LineOutcome as O, Op, Reading};
 use crate::{Action, Fx, Rules};
 
 /// A new game with the instructions unlocked (`if` too).
 fn game(r: &Rules) -> GameState {
-    let mut g = r.new_game(1);
-    for flag in [programs::LOGIC_FLAG, programs::IF_FLAG] {
-        g.career.flags.insert(flag.into());
-    }
-    g
+    logic_open(r)
 }
 
 fn clause(reading: Reading, cmp: Cmp, v: &str) -> Clause {
@@ -590,7 +586,7 @@ fn if_opens_on_its_own_flag() {
     put(&r, &mut g, iff.clone()).unwrap();
     assert!(r.view(&g).programs[0].locked[0].is_some(), "if needs the Conditional Logic flag");
     assert!(put(&r, &mut g, vec![build("solar_panel", Some(9))]).is_ok(), "build needs only program logic");
-    g.career.flags.insert(programs::IF_FLAG.into());
+    open_if(&mut g);
     assert!(put(&r, &mut g, iff).is_ok());
 }
 

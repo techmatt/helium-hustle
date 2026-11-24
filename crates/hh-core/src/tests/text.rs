@@ -1,7 +1,7 @@
 //! The text editor's form (`program_text`): reading, writing, the round trip,
 //! line status, and the note, unparsed and locked lines it keeps.
 
-use super::{outcomes, rules};
+use super::{logic_open, outcomes, rules};
 use crate::modules::programs;
 use crate::program_text::{parse, parse_op, to_text};
 use crate::state::{Amount, Entry, GameState, Loadout, Op, Verb};
@@ -9,11 +9,7 @@ use crate::{Action, Rules};
 
 /// A game with program logic and `if` open.
 fn open(r: &Rules) -> GameState {
-    let mut g = r.new_game(1);
-    for flag in [programs::LOGIC_FLAG, programs::IF_FLAG] {
-        g.career.flags.insert(flag.into());
-    }
-    g
+    logic_open(r)
 }
 
 /// 060's L5 written in the text form (display names, aliases mixed in).

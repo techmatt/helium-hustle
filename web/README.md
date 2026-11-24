@@ -81,9 +81,8 @@ Three columns and a status bar:
   columns while the left stays, opened and closed by its button under the nav grid, or
   closed with Esc or a nav tile. A slim strip on top shows the day, Boredom, Energy,
   Credits, He-3 and Science, and pause. The game runs on behind it: the covered columns
-  stay mounted, only hidden. A view is a `Takeover` (`ui/App.tsx`: `TAKEOVERS`, plus
-  Programs'); `bleed` drops the body's padding and scrolling for a view that fits itself to it,
-  `noButton` keeps it out of the left column. Users: the Cortex mock (below) and
+  stay mounted, only hidden. A view is a `Takeover` (its options in `Takeover.tsx`; the
+  list `TAKEOVERS` in `ui/App.tsx`, plus Programs'). Users: the Cortex mock (below) and
   **Programs** (`Programs.tsx`, `noButton`), opened by its nav tile, with a
   **Text | Blocks** toggle on the same program; the last mode is kept in localStorage
   (`hh-programs-mode`), Blocks for a new player. **Blocks** (the block editor,
@@ -108,7 +107,8 @@ Three columns and a status bar:
 - **Modals**, each holding the clock: the run summary when a run ends; the story modal
   (`store.ts` `tell`) at each main-quest change, a page per paragraph of the view's
   `story`/`payoff`, the new task last (a new game: the first quest's; the autopilot: none; a
-  load: a saved chain's unread pages; after a summary, once closed).
+  load: a saved chain's unread pages, `stories`/`storyPages` in `store.ts` `save()`; after a
+  summary, once closed).
 
 Rates are per day; numbers past 10,000 use K/M/B/T. **"New" markers** are the UI's own, not
 state: what is visible when a run starts (or the page loads) is the baseline; anything
@@ -150,9 +150,8 @@ base view: replace what it draws, keep its box.
   a seed; *Check replay* replays the record in wasm and compares fingerprints; a line with
   engine, revision, config hash, seed, action count and fingerprint; *Cortex mock in the left
   column*, which shows the button of a UI-only radial mock of the talent tree, a takeover
-  view (`src/ui/CortexMock.tsx`, placeholders, no effect, in memory; hovering a locked node
-  outlines its prerequisites; left-click adds a point or switches a socket's part,
-  right-click takes one back). **Cheats** (off by
+  view (`src/ui/CortexMock.tsx`: placeholders, no effect, in memory; its tooltips give
+  the controls). **Cheats** (off by
   default, remembered in `hh.cheats`): grant a resource, set boredom, complete all
   research, jump ahead N days, the **cheat building** (a hazard-striped *Cheat Fountain*
   card at the foot of the Buildings panel, only while Cheats are on: 1 credit, +1000 credits

@@ -53,7 +53,7 @@ Times are on this machine, otherwise idle.
 
 ```sh
 cargo build --workspace                      # ~30 s cold on 3 jobs; target/debug ~680 MB, safe to delete
-cargo test --workspace                       # the test lane: ~1 s once built
+cargo test --workspace                       # the fast lane: ~10 s once built (hh-sim's ladder pin ~8 s of it)
 cargo test-all                               # also the slow lane's #[ignore]d tests (the oracle's: ~25 s)
 cargo clippy --workspace --all-targets       # must stay clean; ~7 s
 cargo run -q -p hh-sim -- run --seed 1 --ticks 365 --policy script
@@ -74,7 +74,9 @@ those. Both aliases (`.cargo/config.toml`) run `crates/xtask`, which takes cargo
 before a `--` and the test binary's after it, as `cargo test` does, and adds `--workspace`
 unless a package is named: `cargo test-all -j 3 -p hh-sim --no-fail-fast golden --
 --test-threads=3` works. Tests play whole games, so the test profile
-is optimized (`opt-level = 1`) and keeps overflow checks.
+is optimized (`opt-level = 1`) and keeps overflow checks. To time tests one by one, run
+the test binary itself (`<exe> --list`, `<exe> --exact <name>`): Rust 1.100 puts them under
+`target/debug/build/<crate>/<hash>/out/`, not `target/debug/deps/`.
 
 **A second target dir** (a parallel helper, a copy under `out/`) is set absolute:
 `CARGO_TARGET_DIR="$(git rev-parse --show-toplevel)/out/target-<name>"`. Cargo reads a
@@ -102,7 +104,9 @@ eight from `hh-sim golden`; never type them. The sim players' pinned games are s
 `PINNED`, `HANDSOFF_PIN` and the oracle's in `crates/hh-sim/tests/cli.rs` (an agent refactor
 keeps them; a rules change moves those whose play it changes): run `cargo test-all -p hh-sim`
 (the oracle's pin is a slow-lane test; failing pins still write their games to
-`out/hh-sim-tests/`), then `python scripts/set_pins.py` copies them into `cli.rs`. A rename,
+`out/hh-sim-tests/`), then `python scripts/set_pins.py` copies them into `cli.rs`. A param
+added, removed or re-ranged regenerates the `docs/rules/` param tables:
+`cargo run -q --release -p hh-sim -- params --write` (a test fails while they are stale). A rename,
 refactor or new config key that plays the same moves no fingerprint; if it does, play changed.
 Content ids are also named outside `content/` (`configs/sim/milestones.json`, the sim agents,
 tests, `web/scripts/e2e.mjs`): `git grep` an id before removing it. The program text form
@@ -150,6 +154,8 @@ quest's unlocks) re-checks them.
 - Write a multi-line edit script with the Write tool and run the file: a Git Bash heredoc
   loses a level of backslash escaping (`'\\n'` arrives as `'\n'`), and conductor's hooks refuse
   heredocs and `sed -i` that write files.
+- An agent's Bash `cd` (into `web/` for `npm ci`, say) persists into its later calls and
+  into conductor's `start`: use absolute paths or `cd` inside one `&&` chain.
 - Windows can't replace a running exe: copy a binary to `out/` to run it while rebuilding.
   `warning_checks.py` rebuilds `target/release/hh-sim.exe`, so its parity and balance checks
   fail ("Access is denied") while that binary runs.

@@ -109,7 +109,8 @@ The modules are Arc 1's ([rules/README.md](rules/README.md)).
 
 Named starting states (`scenarios/*.json`, listed in `scenario.rs` `FILES`), laid over a
 new game: `{"name", "description", "start": {"tick", "resources", "buildings", "panels",
-"programs"}}`, every key required, and optional `flags` (career flags set) and `events`
+"programs"}}`, every key required, and optional `flags` (career flags set), `projects`
+(counted completed once in their scope, rewards live: `conditional_logic` opens `if`) and `events`
 (taken as fired: unlocks applied, seen, a quest among them completed); a listed resource or
 building (owned and active) replaces
 the new game's value, panels add to the run's enabled panels, programs replace queues from the

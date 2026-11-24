@@ -205,6 +205,7 @@ fn the_handsoff_loadout_ships_and_buys_in_run_3() {
 }
 
 #[test]
+#[ignore = "slow lane: the grid under two human models (~7 s)"]
 fn real_time_is_a_projection_that_changes_no_game() {
     let fp = |humans: &str| {
         let dir = root(&format!("out/hh-sim-tests/humans-{}", humans.replace(',', "-")));
@@ -230,6 +231,7 @@ fn real_time_is_a_projection_that_changes_no_game() {
 }
 
 #[test]
+#[ignore = "slow lane: the grid at two thread counts (~12 s)"]
 fn a_game_is_the_same_whatever_the_thread_count() {
     let fp = |threads: &str| {
         let dir = root(&format!("out/hh-sim-tests/threads{threads}"));
@@ -302,6 +304,7 @@ fn bad_grids_are_usage_errors() {
 }
 
 #[test]
+#[ignore = "slow lane: the grid with knobs and one program (~4 s)"]
 fn agents_keep_their_knobs_and_cope_with_one_program() {
     let dir = root("out/hh-sim-tests/knobs");
     let out = run(&grid(

@@ -535,13 +535,6 @@ export interface SagaView {
   super_blocker: string | null;
 }
 
-/** The later acts' actions (draft, crates/hh-core/src/action.rs). */
-export type SagaAction =
-  | { type: 'buy_earth_tech'; tech: string }
-  | { type: 'set_reset_plan'; program: number; loadout: number | null }
-  | { type: 'deposit'; resource: string }
-  | { type: 'begin_super_timeline' };
-
 /** hh-core's `View` (crates/hh-core/src/view.rs). */
 export interface View {
   tick: number;
