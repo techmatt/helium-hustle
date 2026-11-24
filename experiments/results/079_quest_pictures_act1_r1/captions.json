@@ -1,0 +1,64 @@
+{
+  "q1_1-rack": "One server rack in a dark rock bunker, its amber lights coming on",
+  "q1_1-panels": "Two solar panels on the plain, a cable to a hatch, Earth low on the horizon",
+  "q1_1-cutaway": "Cutaway: one solar panel above ground, the glowing rack in a chamber below",
+  "q1_1-earthrise": "A huge Earth over a tiny outpost: one panel and a hatch",
+
+  "q1_2-print": "A robot arm welding the first excavator together in a dome, sparks flying",
+  "q1_2-holo": "A glowing amber wireframe of an excavator over a fabricator pad",
+  "q1_2-rollout": "A new excavator rolling out of a fabrication bay, a launch pad behind",
+  "q1_2-crates": "Opened supply crates, one glowing with a data core, a small loader robot beside",
+
+  "q1_3-liftoff": "A cargo canister lifting off its pad in a cloud of dust, domes behind",
+  "q1_3-loading": "A loader robot driving titanium ingots up a ramp into a canister",
+  "q1_3-ingots": "A row of fresh titanium ingots in front of a glowing smelter",
+  "q1_3-flight": "A canister in flight over the Moon's craters, heading for Earth",
+
+  "q1_4-hose": "A canister on its pad filled through frosted hoses from helium-3 tanks",
+  "q1_4-refinery": "A tall refinery tower: regolith hoppers in, a row of tanks out",
+  "q1_4-tanks": "Close on a row of frosted, full helium-3 tanks",
+  "q1_4-earthbound": "A heavy, loaded canister climbing away from the Moon toward Earth",
+
+  "q1_5-tworacks": "Two server racks side by side in the bunker, both lit amber",
+  "q1_5-routine": "The base working on its own: excavator digging, hauler driving, rocket on its pad",
+  "q1_5-salvo": "Four pads launching four canisters at once",
+
+  "q1_6-watchers": "A canister launching while a ring of red-lit satellites hangs above it",
+  "q1_6-skim": "A canister on its way to Earth, mobbed by dark red-lit drones",
+  "q1_6-trails": "A cargo trail to Earth with thin red trails curving in beside it",
+
+  "q1_7-dark": "The bunker gone dark, one rack with a single red warning light",
+  "q1_7-ruts": "From above: an excavator worn into the same circular track again and again",
+  "q1_7-reset": "Starting over: one panel and a hatch among the outlines of a cleared base",
+  "q1_7-reboot": "A dark rack outdoors with one amber light flickering back on",
+
+  "q1_8-lab": "A domed research lab by day, sample racks and instrument masts outside",
+  "q1_8-inside": "Inside the lab: a robot arm handling sealed regolith vials",
+  "q1_8-beam": "The lab dome at night, a dish beside it beaming data into the sky",
+  "q1_8-project": "Cranes and scaffolding of a big new project rising beside a small lab",
+
+  "q1_9-beams": "Red, green and blue beams joining the base's one dish to Earth",
+  "q1_9-dishes": "Three dishes aimed at Earth, lit red, green and blue",
+  "q1_9-sats": "Three satellites shining red, green and blue light down on the base",
+  "q1_9-scales": "One mast over the domes at night, throwing red, green and blue light",
+
+  "q1_10-beacons": "A line of amber claim beacons roped across the plain, a second base with cyan lights beyond",
+  "q1_10-facing": "Our domes and a cyan-lit rival base facing each other across a crater",
+  "q1_10-plots": "From above: our claim ringed in amber beacons, rival plots in cyan beyond",
+
+  "q1_11-build": "A giant telescope dish half-built in cranes and scaffolding on a crater rim",
+  "q1_11-silhouette": "The finished telescope, a faint stream of glinting points falling from the sky",
+  "q1_11-void": "Deep space: a loose cloud of countless tiny metal glints drifting closer",
+
+  "q1_a-heavy": "An oversized canister lifting off in a huge wall of dust",
+  "q1_a-scatter": "A big canister launching, red-lit drones scattering from its blast",
+  "q1_a-floodlit": "A huge loaded canister on its pad at night under floodlights, gantries pulling back",
+
+  "q1_b-alllit": "The whole lab complex at night, every window lit",
+  "q1_b-notes": "A rack of glowing amber data cores in a quiet bunker, like a shelf of notebooks",
+  "q1_b-bench": "A lab bench of instruments all running, rows of filled sample vials",
+
+  "q1_c-vault": "A heavy vault door in a hillside, glowing data racks inside",
+  "q1_c-pillar": "A stone archive pillar engraved with an excavator, smelter, launch pad and panel",
+  "q1_c-wireframes": "Amber wireframes of an excavator, smelter, pad and panel ringing a bright archive core"
+}

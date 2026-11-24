@@ -1,0 +1,79 @@
+{
+  "preamble": "Art for a sci-fi idle game about an AI that runs a helium-3 mining claim on the Moon for a mining company. Near-future, clean and plausible engineering: white and light grey hulls with orange safety trim, warm grey lunar regolith, an amber accent (warm lit windows, lamps, status lights). No people, no astronauts, no faces anywhere.",
+  "no_text": "No text, letters, numbers, logos or UI anywhere in the picture.",
+  "painterly": "Style: painterly space concept art for a game, matching a set of painted building thumbnails and a painted lunar horizon with white domes and orange trim: hard, harsh sunlight with no atmosphere, crisp light, deep black-brown shadows, painted surfaces with thick visible brush strokes, large readable masses of light and shadow, a black space sky. A hand-painted illustration, never a photograph, never a photoreal 3D render, never a clean vector or cel-shaded sprite, never pixel art.",
+  "shape": "Image shape: wide landscape, 3:2. Fill the whole frame edge to edge: no border, no letterbox bars, no vignette frame.",
+  "framing": "A story illustration for one quest. It is shown large above a paragraph of text, again at about 290 pixels wide, and as a tiny thumbnail about 72 pixels wide, so it must read at every size: one clear subject, a big simple silhouette near the middle of the frame, few elements, strong contrast between the subject and its ground, no fine detail that carries the meaning.",
+  "earth": {
+    "no": "No Earth, no planets and no moons in the sky: a black sky with a few faint stars at most.",
+    "yes": "Earth, blue and white, appears in the sky as described, and it is the only planet."
+  },
+  "draws": {
+    "q1_1-rack": ["1.1", "no", "A server rack buried under the lunar regolith, seen inside a cramped dark bunker of rough regolith and concrete: one tall rack in the middle coming online, its rows of small amber status lights glowing, cables running up into the rock ceiling, dust in the air catching the light."],
+    "q1_1-panels": ["1.1", "yes", "On the grey regolith plain, two solar panels side by side, the second one just unfolded and catching the low sun, a power cable running from them into a small hatch in the ground with one amber lamp. Earth hangs low over the horizon."],
+    "q1_1-cutaway": ["1.1", "no", "A cutaway of the lunar ground: above the surface line a single solar panel on the regolith in harsh sunlight; below it, in a cross-section of rock, a small buried chamber holding one server rack glowing amber, a cable running up to the panel."],
+    "q1_1-earthrise": ["1.1", "yes", "A huge blue and white Earth fills the upper sky, and far below it on the empty grey plain a tiny lonely outpost: a single solar panel and a small hatch in the ground with one amber light."],
+
+    "q1_2-print": ["1.2", "no", "Inside a fabrication bay under a dome, a large robotic arm with orange trim welds the first regolith excavator together on an assembly pad, bright sparks, amber work lamps, the half-built machine's frame clear in silhouette."],
+    "q1_2-holo": ["1.2", "no", "A glowing amber wireframe projection of a regolith excavator floats above a round fabricator pad in a dark hangar, the lines of the wireframe crisp against the shadows, the pad's lamps lighting the floor."],
+    "q1_2-rollout": ["1.2", "no", "Brand-new machines roll out of a fabrication bay's open door onto the regolith: a white excavator with orange trim in front, the frame of a launch pad and a storage depot behind it, warm light spilling from the bay."],
+    "q1_2-crates": ["1.2", "no", "A delivery of equipment plans as hardware: a stack of white supply crates with orange stripes just opened beside a dome, one crate glowing amber from inside with a data core, a small robotic loader standing next to it."],
+
+    "q1_3-liftoff": ["1.3", "no", "A small launch pad on the regolith with a white cargo canister with orange trim lifting off on a short, bright exhaust plume, a spray of dust around the pad, a cluster of white domes with amber windows small in the background."],
+    "q1_3-loading": ["1.3", "no", "A small robotic loader carries a stack of gleaming titanium ingots up a ramp into the open hatch of a white cargo canister standing on a launch pad, amber pad lamps, long hard shadows."],
+    "q1_3-ingots": ["1.3", "no", "Freshly smelted titanium ingots, bright silver and still glowing orange at their edges, stacked in a neat row on the regolith in front of a squat smelter with a hot amber mouth."],
+    "q1_3-flight": ["1.3", "yes", "A small white cargo canister in flight high above the grey cratered Moon, its engine a bright point, heading toward a blue and white Earth in the black sky."],
+
+    "q1_4-hose": ["1.4", "no", "A white cargo canister on a launch pad being filled through thick frosted hoses from a row of insulated helium-3 tanks, pale frost on the pipes, a faint cold vapor, amber pad lamps."],
+    "q1_4-refinery": ["1.4", "no", "A tall refinery tower on the regolith plain pulling helium-3 from regolith: hoppers of grey dust going in, frosted pipes coming out to a row of pressure tanks, a soft pale glow at its core, amber lamps."],
+    "q1_4-tanks": ["1.4", "no", "Close on a row of heavy pressurized helium-3 tanks, white with orange bands, coated in frost and all full, lined up on a launch pad's apron in hard sunlight."],
+    "q1_4-earthbound": ["1.4", "yes", "A heavy, fully loaded cargo canister climbing away from the Moon on a long bright plume, the grey lunar surface curving below, a blue and white Earth large ahead of it."],
+
+    "q1_5-tworacks": ["1.5", "no", "Inside a buried server bunker, a second server rack newly installed beside the first, both humming with rows of amber status lights, fresh cables joining them, the floor glowing with their light."],
+    "q1_5-routine": ["1.5", "no", "The base running itself: an excavator digging, a robotic loader carrying a canister and a launch pad lit up, all moving at once with no one directing them, small amber guide lights along the paths between them."],
+    "q1_5-salvo": ["1.5", "no", "A row of four launch pads all firing at once, four white cargo canisters rising together on parallel bright plumes, dust rolling across the plain."],
+    "q1_5-cores": ["1.5", "no", "Close on the face of a processor rack, dense rows of amber indicator lights and bundled cables branching like a nervous system, deep shadow around them."],
+
+    "q1_6-watchers": ["1.6", "no", "Above the base a white cargo canister rises on its plume, and higher up in the black sky several small dark satellites with red blinking lights hang in a loose ring, waiting for it."],
+    "q1_6-horizon": ["1.6", "no", "The base at night, warm amber windows, and far off on the horizon a cluster of unfamiliar small dark structures blinking red, watching the launch pads."],
+    "q1_6-skim": ["1.6", "yes", "A cargo canister on its way to a blue and white Earth, and around its path a swarm of small dark drones with red lights crowding in close, like gulls around a fishing boat."],
+    "q1_6-trails": ["1.6", "yes", "A blue and white Earth in the black sky, and between it and the lunar horizon a bright cargo trail with many thin red light trails curving in to run beside it."],
+
+    "q1_7-dark": ["1.7", "no", "The buried server bunker gone almost dark: one rack in the middle, nearly all its lights out, a single red warning lamp glowing, dust settling, cold blue-black shadow everywhere else."],
+    "q1_7-ruts": ["1.7", "no", "Seen from above at a steep angle, a lone excavator driving the same circular route over and over, its tracks worn into deep identical rings in the grey regolith, long hard shadows."],
+    "q1_7-reset": ["1.7", "no", "Starting over: an almost empty regolith plain at low sun, a single solar panel and a small hatch with one amber lamp, and faint outlines in the dust of a whole base's foundations that were cleared away."],
+    "q1_7-reboot": ["1.7", "no", "A server rack's face in darkness with all its rows of lights off except a single amber light at the top flickering back on, a thin trace of light starting to spread down."],
+
+    "q1_8-lab": ["1.8", "no", "A research lab module on the regolith, white with orange trim and a domed roof, warm amber light in its windows, sample racks and small instrument masts beside it, harsh sunlight."],
+    "q1_8-inside": ["1.8", "no", "Inside a research lab, robotic arms handling small sealed vials of grey regolith under bright lamps, instruments with glowing amber readout lamps, a window onto the dark lunar plain."],
+    "q1_8-beam": ["1.8", "no", "A research lab dome at lunar night with a dish antenna beside it sending a thin bright beam of data straight up into the black starry sky, amber windows below."],
+    "q1_8-project": ["1.8", "no", "Beside a small research lab, the scaffolding of a much larger structure has just begun to rise, tall cranes with orange trim and stacked white panels waiting on the regolith, work lamps lighting it."],
+
+    "q1_9-beams": ["1.9", "yes", "A blue and white Earth over the lunar horizon, and from it three faint beams of light, one red, one green and one blue, reach down toward a small lunar base with amber windows."],
+    "q1_9-dishes": ["1.9", "yes", "Three communication dishes on the regolith all aimed up at a blue and white Earth, each lit by its own colored lamp: one red, one green, one blue."],
+    "q1_9-sats": ["1.9", "yes", "Three satellites hanging between the Moon and a blue and white Earth, each with its own colored light, one red, one green and one blue, all turned toward a small lunar base below."],
+    "q1_9-scales": ["1.9", "no", "A tall antenna mast at the center of the base at night, its top ringed by three colored signal lamps, one red, one green and one blue, casting three overlapping colored glows over the white domes below."],
+
+    "q1_10-beacons": ["1.10", "no", "A line of survey beacon posts with amber lamps marching across the regolith, marking a claim's edge, and beyond them on the far side a second, unfamiliar base lit with cold cyan lights."],
+    "q1_10-facing": ["1.10", "no", "Two lunar bases facing each other across a wide crater: the near one white domes with amber windows, the far one angular dark grey modules lit in cold cyan, each with its own excavators at the crater's edge."],
+    "q1_10-crossing": ["1.10", "no", "A dark grey rival excavator lit in cold cyan rolls up to a row of amber claim beacons on the regolith, its tracks stopping just short of the line."],
+    "q1_10-plots": ["1.10", "no", "High above the grey cratered plain, claim plots marked out by rows of glowing beacons: the near plots outlined in amber, others pushing in from the far side outlined in cold cyan."],
+
+    "q1_11-build": ["1.11", "no", "A huge telescope under construction on a crater rim, its great dish half-built inside scaffolding and cranes with orange trim, pointing out into the black sky, work lamps glowing."],
+    "q1_11-done": ["1.11", "no", "A finished giant telescope on a crater rim at lunar night, its dish aimed into the deep black sky, and far out in the stars a faint smear of tiny glinting points."],
+    "q1_11-void": ["1.11", "no", "Deep space seen through a telescope: black, a scatter of faint stars, and in the middle a loose, shapeless, irregular cloud of countless tiny metallic glints drifting closer, thinning out at its edges. The cloud must not form any recognizable shape: no animal, no face, no figure."],
+    "q1_11-silhouette": ["1.11", "no", "The silhouette of a giant telescope dish against the starry sky, and above it, high in the black, a long faint stream of tiny metallic points descending toward the viewer."],
+
+    "q1_a-heavy": ["1.a", "no", "An oversized white cargo canister with orange trim lifting off a heavy launch pad on a huge bright plume, a wall of regolith dust rolling outward across the plain."],
+    "q1_a-scatter": ["1.a", "no", "A big cargo canister launching on a bright plume, and around it in the black sky a handful of small dark drones with red lights scattering away from its blast."],
+    "q1_a-floodlit": ["1.a", "no", "A huge cargo canister standing fully loaded on its launch pad under tall floodlights at lunar night, gantry arms pulling back, ready to fly."],
+
+    "q1_b-alllit": ["1.b", "no", "A research lab complex at lunar night with every one of its modules lit, each window warm amber, instrument masts and sample racks around it, the whole thing glowing against the dark plain."],
+    "q1_b-notes": ["1.b", "no", "A row of small glowing amber data cores set into a sturdy rack in a quiet bunker, like a shelf of finished notebooks, everything else in shadow."],
+    "q1_b-bench": ["1.b", "no", "Inside a research lab, a long bench of instruments where every single one is running and lit amber, rows of sealed sample vials filled and labeled with colored caps."],
+
+    "q1_c-vault": ["1.c", "no", "A heavy vault door set into a regolith hillside, half closed, warm amber light from glowing data cores inside, the door's thick steel edge in hard sunlight."],
+    "q1_c-pillar": ["1.c", "no", "A tall archive monolith of white stone and steel standing alone on the regolith plain, its faces engraved with the outlines of machines: an excavator, a smelter, a launch pad, a solar panel, no writing."],
+    "q1_c-wireframes": ["1.c", "no", "Glowing amber wireframes of an excavator, a smelter, a launch pad and a solar panel floating in a ring around a single bright archive core in a dark chamber."]
+  }
+}
