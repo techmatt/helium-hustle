@@ -1,0 +1,18 @@
+clock: tick 14060 discovery: swarm in Some(36499) days
+clock: tick 18081 timeline 1 retirement: swarm in 30653 days (84.0 years)
+clock: tick 26091 timeline 1 retirement: swarm in 20818 days (57.0 years)
+clock: tick 32134 timeline 1 retirement: swarm in 12950 days (35.5 years)
+clock: tick 36410 timeline 1 retirement: swarm in 6849 days (18.8 years)
+clock: tick 42091 timeline 2 begins (day 0): swarm in 50606 days
+clock: tick 46644 timeline 2 retirement: swarm in 44228 days (121.2 years)
+clock: tick 54095 timeline 2 retirement: swarm in 34952 days (95.8 years)
+clock: tick 62095 timeline 2 retirement: swarm in 25127 days (68.8 years)
+clock: tick 68096 timeline 2 retirement: swarm in 17301 days (47.4 years)
+clock: tick 72372 timeline 2 retirement: swarm in 11200 days (30.7 years)
+clock: tick 78095 timeline 2 retirement: swarm in 3652 days (10.0 years)
+clock: tick 82347 timeline 3 begins (day 0): swarm in 37606 days
+clock: tick 82917 timeline 4 begins (day 1): swarm in 36500 days
+clock: tick 95838 timeline 4 retirement: swarm in 21753 days (59.6 years)
+clock: tick 103838 timeline 4 retirement: swarm in 11928 days (32.7 years)
+clock: tick 111838 timeline 4 retirement: swarm in 2103 days (5.8 years)
+clock: 7574 later-timeline ticks counted with no Telescope standing

@@ -461,28 +461,35 @@ mod tests {
         let (c, ms, g) = fresh(2);
         let boost = Some(parse_boost(DEFAULT_BOOST).unwrap());
         let mut ap = Autopilot::new(g, ms, DEFAULT_AGENT, Target::End, boost, 200_000, &[]).unwrap();
-        // The swarm's clock, tick by tick (085): nothing before 1.11; then a
-        // 100-year countdown that each retirement moves by the 5-year gap, and
-        // that runs in a later timeline only once the Telescope is rebuilt.
-        use hh_core::modules::timeline::located;
+        // The swarm's clock, tick by tick (085, 086): nothing before 1.11; then
+        // a 100-year countdown that each retirement moves by the 5-year gap;
+        // every later timeline's runs from its first day, Telescope or not.
+        use hh_core::modules::projects::completed;
         let r = hh_core::Rules::new(&c).unwrap();
-        let (mut retire_moves, mut first) = (0, None);
+        let (mut retire_moves, mut first, mut unbuilt_days) = (0, None, 0u64);
         let st = loop {
             let g = ap.state();
-            let (was, retirements, was_located) = (g.saga.timeline.clone(), g.career.retirements, located(g));
+            let (was, retirements) = (g.saga.timeline.clone(), g.career.retirements);
             let st = ap.step(1);
             let g = ap.state();
             if !g.career.completed_quests.contains("qdeep_space_telescope") && g.saga.ended == 0 {
                 assert!(g.saga.timeline.is_none(), "no calendar before 1.11");
             }
+            if let Some(b) = &g.saga.timeline {
+                if was.is_none() {
+                    first = r.view(g).saga.days_left;
+                    println!("clock: tick {} discovery: swarm in {first:?} days", g.tick);
+                }
+                if was.as_ref().is_some_and(|a| a.number != b.number) {
+                    // 0 when the swarm ended the last at the day's end; 1 when
+                    // the vault was spent during the day (that day counts).
+                    assert!(b.day <= 1, "a new timeline's countdown starts on its first day: {}", b.day);
+                    println!("clock: tick {} timeline {} begins (day {}): swarm in {} days", g.tick, b.number, b.day, b.arrival);
+                }
+            }
             if let (Some(a), Some(b)) = (&was, &g.saga.timeline) {
                 let same = a.number == b.number && b.arrival == a.arrival && !g.saga.victory;
-                if same && (!was_located || first.is_none()) && located(g) {
-                    let v = r.view(g).saga;
-                    first = first.or(v.days_left);
-                    println!("clock: tick {} timeline {} located: swarm in {:?} days", g.tick, b.number, v.days_left);
-                }
-                if same && was_located {
+                if same {
                     let retired = u64::from(g.career.retirements - retirements);
                     assert_eq!(b.day - a.day, 1 + retired * 1825, "a day, and 5 years a retirement");
                     if retired > 0 {
@@ -490,10 +497,8 @@ mod tests {
                         println!("clock: tick {} timeline {} retirement: swarm in {left} days ({:.1} years)", g.tick, b.number, left as f64 / 365.0);
                     }
                     retire_moves += retired;
-                } else if same && !located(g) {
-                    assert_eq!(b.day, a.day, "no countdown before the Telescope stands");
-                    if b.number > 1 && g.tick.is_multiple_of(1000) {
-                        assert!(r.view(g).saga.days_left.is_none(), "no countdown shown");
+                    if b.number > 1 && !completed(g, "deep_space_telescope") {
+                        unbuilt_days += 1;
                     }
                 }
             }
@@ -503,16 +508,18 @@ mod tests {
         };
         assert!(first.is_some_and(|d| (36_000..=36_500).contains(&d)), "about 100 years at discovery: {first:?}");
         assert!(retire_moves > 0, "retirements moved the countdown");
+        println!("clock: {unbuilt_days} later-timeline ticks counted with no Telescope standing");
+        assert!(unbuilt_days > 0, "a later timeline counts before its Telescope is rebuilt");
         // Every milestone and every main-quest step through the ending (Q18)
         // is met (Matt's ruling on question 042_1).
         assert!(st.reached, "{st:?}");
         assert!(st.left.is_empty(), "steps left: {:?}", st.left);
         assert!(ap.state().saga.victory, "the ending");
         // A timeline's end takes the global projects' effects; the drivers fund
-        // them again (084): the last timeline has them done, the Telescope too
-        // (without it no countdown runs, so no swarm meets the sphere: 085).
+        // them again (084): the last timeline has the two the drivers need done
+        // (the Telescope's rebuild is optional, only its passive: 086).
         assert!(ap.state().saga.ended >= 1);
-        for id in ["blueprint_archive", "conditional_logic", "deep_space_telescope"] {
+        for id in ["blueprint_archive", "conditional_logic"] {
             assert!(hh_core::modules::projects::completed(ap.state(), id), "{id} re-funded");
         }
     }

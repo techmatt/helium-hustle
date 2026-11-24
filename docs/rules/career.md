@@ -34,7 +34,7 @@ folds the run into the
 career (adds the run's stats and day count to the lifetime totals, raises each personal best
 it beats, counts a retirement, raises the run number), keeps the run's ideology scores in
 the career, runs the retirement gap (below), moves the swarm's countdown by the same gap once
-the swarm is located (draft, [timeline.md](timeline.md)), then starts a new run. The run's day
+the swarm is discovered (draft, [timeline.md](timeline.md)), then starts a new run. The run's day
 count at retirement is its length (a forced retirement counts the tick it happened on).
 
 **The retirement gap** (draft, 049). Between runs `gap_days` days pass, simulated one by

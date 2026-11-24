@@ -473,7 +473,7 @@ export interface NextRunView {
 /** A timeline (hh-core `state::Timeline`): the calendar and the swarm (draft, 042). */
 export interface TimelineView {
   number: number;
-  /** Countdown days since the swarm was located this timeline (each retirement's gap counts too). */
+  /** Countdown days this timeline: from the discovery (1.11) in timeline 1, from the first day after (each retirement's gap counts too). */
   day: number;
   /** The countdown day the swarm arrives. */
   arrival: number;
@@ -512,9 +512,7 @@ export interface TechView {
 export interface SagaView {
   revealed: boolean;
   timeline: TimelineView | null;
-  /** The swarm is located this timeline (the Deep Space Telescope stands): the countdown runs. */
-  located: boolean;
-  /** Days left to the swarm (null until located). */
+  /** Days left to the swarm (null before the discovery, 1.11). */
   days_left: number | null;
   /** Earth science to spend. */
   science: Fx;

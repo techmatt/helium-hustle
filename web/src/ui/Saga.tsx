@@ -33,19 +33,11 @@ function years(days: number): string {
   return (days / 365).toFixed(1);
 }
 
-/** "Timeline N · day D · swarm in X days", once the swarm is revealed; before the
- * Telescope stands again this timeline, no countdown. */
+/** "Timeline N · day D · swarm in X days", once the swarm is discovered (1.11). */
 export function CalendarStrip({ v }: { v: View }) {
   const t = v.saga.timeline;
   if (!v.saga.revealed || !t) return null;
   const head = `${t.super_timeline ? 'Super timeline' : 'Timeline'} ${t.number}`;
-  if (!v.saga.located && !v.saga.victory) {
-    return (
-      <div class="calendar-strip" data-testid="calendar-strip" title="The countdown starts when the Deep Space Telescope stands">
-        {head} · the swarm is not located: rebuild the Deep Space Telescope
-      </div>
-    );
-  }
   const left = v.saga.days_left ?? 0;
   return (
     <div class="calendar-strip" data-testid="calendar-strip" title="The countdown: each retirement's gap counts too">
@@ -73,25 +65,20 @@ export function Timeline({ s }: { s: Store }) {
     <div class="panel" data-panel="timeline">
       <Head title="Timeline" />
       <p class="muted">
-        A swarm is coming. Once the Deep Space Telescope locates it, a countdown runs (each retirement's gap counts too); when it reaches the swarm,
-        the mind goes back to its first moment and a new timeline begins. Each timeline, the countdown starts when the Telescope is rebuilt.
+        A swarm is coming. Since the Deep Space Telescope found it, a countdown runs (each retirement's gap counts too); when it reaches the swarm,
+        the mind goes back to its first moment and a new timeline begins, its countdown running from the first day. Rebuilding the Telescope
+        only brings back its bonus.
       </p>
       {t ? (
         <Section title={`${t.super_timeline ? 'Super timeline' : 'Timeline'} ${t.number}`}>
-          {g.located ? (
-            <div class="saga-bar">
-              <Bar frac={t.arrival > 0 ? t.day / t.arrival : 1} tone="red" label={`day ${num(t.day)} / ${num(t.arrival)}`} />
-            </div>
-          ) : null}
+          <div class="saga-bar">
+            <Bar frac={t.arrival > 0 ? t.day / t.arrival : 1} tone="red" label={`day ${num(t.day)} / ${num(t.arrival)}`} />
+          </div>
           <table class="grid-table kv">
             <tbody>
               <tr>
                 <td>Swarm arrives</td>
-                <td class="num">
-                  {g.located
-                    ? `day ${num(t.arrival)} (in ${num(g.days_left ?? 0)} days, ${years(g.days_left ?? 0)} years)`
-                    : 'not located: rebuild the Deep Space Telescope'}
-                </td>
+                <td class="num">{`day ${num(t.arrival)} (in ${num(g.days_left ?? 0)} days, ${years(g.days_left ?? 0)} years)`}</td>
               </tr>
               <tr>
                 <td>Swarm strength</td>

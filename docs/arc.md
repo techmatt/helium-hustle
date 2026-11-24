@@ -79,11 +79,11 @@ Telescope (1.11) is finished.
 **The swarm's clock.** Finishing the Telescope discovers the swarm and starts its countdown:
 placeholder 100 years (36,500 days), the same every timeline, pushed later only by carried
 Earth science and research; each retirement's 5-year gap moves it 5 years. Nothing counts
-before the Telescope, so a player who never finishes it never reaches a timeline's end. A
-timeline's end takes the Telescope, and each new timeline's countdown starts when it is
-rebuilt (same cost). The false victory's entangled swarm comes sooner in later timelines
-(×1/1.5); a super timeline's is its own `super_arrival_days` (also 100 years), counted only
-while the Telescope stands (kept if it stood when the vault was spent, else rebuilt).
+before the Telescope, so a player who never finishes it never reaches a timeline's end. The
+discovery is career-long: every later timeline's countdown runs from its first day, whether
+or not the Telescope (which a timeline's end takes) is rebuilt; the rebuild gives only its
+passive. The false victory's entangled swarm comes sooner in later timelines (×1/1.5); a
+super timeline's is its own `super_arrival_days` (also 100 years).
 
 | Story step | Quest | Opens | Status |
 |---|---|---|---|

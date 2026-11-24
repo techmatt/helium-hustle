@@ -1,0 +1,10 @@
+fresh game: calendar strip null
+after 1.11: Timeline 1 · day 2 · swarm in 36.5K days (100.0 years)
+countdown run out: Timeline 1 · day 36.5K · swarm here
+timeline 1 ended: Timeline 2 · day 0 · swarm in 36.5K days (100.0 years)
+timeline 2, a moment later: Timeline 2 · day 3 · swarm in 36.5K days (100.0 years)
+Projects panel offers the Deep Space Telescope again: true
+shot 086_timeline2_countdown_without_telescope
+countdown run out: Timeline 2 · day 36.5K · swarm here
+timeline 2 ended: Timeline 3 · day 0 · swarm in 36.5K days (100.0 years)
+shot 086_timeline3_countdown

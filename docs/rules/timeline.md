@@ -18,19 +18,18 @@ calendar. The draft `quiet_days` condition (days this run since
 the player's last order, `Run.last_order`: the run's day of the last applied action other than
 a cheat; programs don't count) stays in the engine; no row uses it.
 
-**The countdown runs only while the swarm is located:** while the Telescope stands completed
-this timeline (`timeline::located`). In timeline 1 that is from 1.11 on; a timeline's end
-takes the Telescope (same cost to rebuild), so each later timeline's countdown starts when it
-is rebuilt (a super timeline keeps it if it stood when the vault was spent). Until then no day and no retirement counts, the view
-shows no countdown, and the swarm can't arrive: a player who never finishes the Telescope
-never reaches a timeline's end.
+**The discovery is career-long.** The countdown starts the day 1.11 first completes; before
+that no day and no retirement counts and no calendar shows, so a player who never finishes
+the Telescope never reaches a timeline's end. From then on every timeline's countdown (a super
+timeline's too) runs from that timeline's first day and the swarm arrives on schedule,
+whether or not the Telescope has been rebuilt: the rebuild gives only its passive.
 
 **The day's last step** (after retirement, before the activity trim): the run's whole stock of
 `earth_science` (made by the Experiment Lab from science) goes to Earth, adding to the
-spendable Earth science and to this timeline's `science_made`; while located, the countdown
-day rises and on the arrival day the swarm arrives. **Each retirement moves the countdown by
-the retirement gap**, `career.gap_days` (1,825 days, 5 years; [career.md](career.md)), the one
-gap of every act, while located (and sends that day's Earth science first).
+spendable Earth science and to this timeline's `science_made`; the countdown day rises and on
+the arrival day the swarm arrives. **Each retirement moves the countdown by the retirement
+gap**, `career.gap_days` (1,825 days, 5 years; [career.md](career.md)), the one gap of every
+act (and sends that day's Earth science first).
 
 **Arrival day.** At a timeline's start: `(arrival_days + carried × arrival_days_per_science +
 Σ swarm delays) / strength`, whole days, where `carried` is the spendable Earth science carried
@@ -88,7 +87,7 @@ credits; like an effect command it needs its full cost.
 <!-- params:timeline -->
 | Param | Baseline | Range | Meaning |
 |---|---|---|---|
-| `arrival_days` | 36500 | 1 to 10000000 | Countdown days from the swarm's discovery (the Telescope) to its arrival, in every timeline, before delays. |
+| `arrival_days` | 36500 | 1 to 10000000 | Countdown days to the swarm's arrival, from its discovery (1.11) in timeline 1 and from the first day in each later one, before delays. |
 | `arrival_days_per_science` | 0.05 | 0 to 1000 | Days of delay per unit of Earth science carried into a timeline. |
 | `entangle_mult` | 1.5 | 1 to 100 | The swarm's strength once it learns entanglement (after the first false victory). |
 | `repel_science` | 3000 | 0 to 100000000 | Earth science made this timeline that repels the swarm once. |

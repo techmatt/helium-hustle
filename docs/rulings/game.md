@@ -91,8 +91,10 @@ Programs have their own part ([programs.md](programs.md)).
   counter or calendar in Act 1.
 - **The swarm's clock (2026-11-24).** The countdown starts when 1.11's Deep Space Telescope
   completes; before that nothing counts toward the swarm, so a player who hasn't finished it
-  never reaches a timeline's end. Each timeline it starts when the Telescope is rebuilt (same
-  cost, no cheaper rebuild). Arrival: placeholder 100 years (36,500 days) after discovery,
+  never reaches a timeline's end. The discovery is career-long (2026-11-24, 086): from then on
+  every timeline's countdown, super timelines too, runs from that timeline's first day and
+  arrives on schedule whether or not the Telescope has been rebuilt (same cost, no cheaper
+  rebuild); the rebuild gives only its passive. Arrival: placeholder 100 years (36,500 days) after discovery,
   the same every timeline; carried Earth science and research only push it later. No
   per-timeline shortening or arrival floor (escalation is an Act 4 idea); the false victory's
   entanglement still shortens later timelines (Matt, question 085_1: the draft's intended

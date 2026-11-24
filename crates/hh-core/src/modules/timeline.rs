@@ -13,10 +13,10 @@ use crate::rules::Rules;
 use crate::state::{Career, GameState, Timeline, TimelineEnd};
 use std::collections::BTreeMap;
 
-/// The flag 1.11 (the Deep Space Telescope) sets: the swarm is revealed and the calendar starts.
+/// The flag 1.11 (the Deep Space Telescope) sets: the swarm is discovered and
+/// the countdown starts. A career flag: every later timeline's countdown runs
+/// from its first day, Telescope rebuilt or not (the rebuild gives only its passive).
 pub const REVEAL_FLAG: &str = "swarm_revealed";
-/// The project whose completion locates the swarm: the countdown runs while it stands.
-pub const TELESCOPE: &str = "deep_space_telescope";
 /// The resource the Experiment Lab makes; each day's stock goes to Earth.
 pub const EARTH_SCIENCE: &str = "earth_science";
 /// The vault's resource.
@@ -31,7 +31,7 @@ pub static DEF: ModuleDef = ModuleDef {
     variants: &[VariantDef {
         name: "draft",
         params: &[
-            param("arrival_days", K::Int, Some(("1", "10000000")), "countdown days from the swarm's discovery (the Telescope) to its arrival, in every timeline, before delays"),
+            param("arrival_days", K::Int, Some(("1", "10000000")), "countdown days to the swarm's arrival, from its discovery (1.11) in timeline 1 and from the first day in each later one, before delays"),
             param("arrival_days_per_science", K::Fx, Some(("0", "1000")), "days of delay per unit of Earth science carried into a timeline"),
             param("entangle_mult", K::Fx, Some(("1", "100")), "the swarm's strength once it learns entanglement (after the first false victory)"),
             param("repel_science", K::Fx, Some(("0", "100000000")), "Earth science made this timeline that repels the swarm once"),
@@ -110,14 +110,6 @@ fn strength(r: &Rules, g: &GameState) -> Fx {
     if g.saga.entangled { r.p.timeline.entangle_mult } else { Fx::ONE }
 }
 
-/// The swarm is located this timeline: the Deep Space Telescope stands
-/// completed. Only then does the countdown run (days and retirements count);
-/// a timeline's end takes the Telescope, so each timeline's countdown starts
-/// when it is rebuilt (a super timeline keeps it).
-pub fn located(g: &GameState) -> bool {
-    super::projects::completed(g, TELESCOPE)
-}
-
 /// Starts timeline `number`: the swarm's countdown from the base, plus the
 /// Earth science carried in and the delay techs, divided by its strength. The
 /// same base in every timeline; only entanglement (after the false victory)
@@ -139,9 +131,9 @@ fn start_timeline(r: &Rules, g: &mut GameState, number: u32, super_timeline: boo
     g.note("timeline", &format!("timeline_{number}"));
 }
 
-/// The last step of the day: the calendar starts at the reveal, moves the
-/// day's Earth science to Earth and, while the swarm is located, advances
-/// and meets the swarm on its day.
+/// The last step of the day: the calendar starts at the discovery (1.11),
+/// moves the day's Earth science to Earth, advances and meets the swarm on
+/// its day.
 pub fn tick(r: &Rules, g: &mut GameState) {
     if g.saga.victory {
         return;
@@ -153,9 +145,6 @@ pub fn tick(r: &Rules, g: &mut GameState) {
         start_timeline(r, g, 1, false);
     }
     send_science(g);
-    if !located(g) {
-        return;
-    }
     let t = g.saga.timeline.as_mut().expect("started above");
     t.day += 1;
     if t.day < t.arrival {
@@ -266,18 +255,15 @@ fn end_timeline(r: &Rules, g: &mut GameState, outcome: &str) {
 }
 
 /// A retirement's gap (`career.gap_days`, the one gap of every act) moves the
-/// countdown while the swarm is located; in a super timeline the run's
-/// resources in `super_carry` are kept (by fraction) for the next run.
+/// countdown; in a super timeline the run's resources in `super_carry` are
+/// kept (by fraction) for the next run.
 pub fn on_retire(r: &Rules, g: &mut GameState) {
     let p = &r.p.timeline;
     if g.saga.victory || g.saga.timeline.is_none() {
         return;
     }
-    let located = located(g);
     let t = g.saga.timeline.as_mut().expect("checked above");
-    if located {
-        t.day += r.p.career.gap_days;
-    }
+    t.day += r.p.career.gap_days;
     send_science(g);
     let t = g.saga.timeline.as_ref().expect("checked above");
     let super_timeline = t.super_timeline;

@@ -92,8 +92,9 @@ impl Saga {
 pub struct Timeline {
     /// 1-based.
     pub number: u32,
-    /// Countdown days since the swarm was located this timeline (the Deep
-    /// Space Telescope completed); each retirement's gap counts too.
+    /// Countdown days this timeline: from the swarm's discovery (1.11) in
+    /// timeline 1, from the first day in each later one; each retirement's
+    /// gap counts too.
     pub day: u64,
     /// The countdown day the swarm arrives.
     pub arrival: u64,
