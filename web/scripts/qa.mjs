@@ -240,7 +240,9 @@ const AUDIT = `(() => {
       const o = getComputedStyle(p).overflowY;
       if (o !== 'auto' && o !== 'scroll' && o !== 'hidden') continue;
       const pr = p.getBoundingClientRect();
-      clipped = y < pr.top || y > pr.bottom || x < pr.left || x > pr.right;
+      // A center on the column's edge (within a pixel) is clipped too: the point
+      // there belongs to what lies past the edge (091: the status bar under Options).
+      clipped = y < pr.top || y >= pr.bottom - 1 || x < pr.left || x >= pr.right - 1;
     }
     if (clipped) continue;
     const top = document.elementFromPoint(x, y);
@@ -619,6 +621,7 @@ async function pass(seed, width, theme) {
         return { running: !/^\\D*0 assigned/.test(p),
           n: lines.length, cur: lines.map((l, i) => l.classList.contains('current') ? i : -1).filter((i) => i >= 0),
           out: lines.filter((l) => /out-/.test(l.className)).length,
+          span: !!document.querySelector('[data-testid="lines-span"]'),
           // Note rows shown (a line keeps its row once a note has shown): a first note
           // may grow its line once; any other move is a finding.
           notes: document.querySelectorAll('.lines .line-why').length,
@@ -630,6 +633,7 @@ async function pass(seed, width, theme) {
       tinted = Math.max(tinted, r.out);
       if (s > 10) {
         if (r.cur.length) note('text', `program frame (${when}) at ${s}x: a line framed as current`);
+        if (!r.span) note('text', `program lines (${when}) at ${s}x: no "days per redraw" note`);
       } else if (r.running && r.cur.length !== 1) note('text', `program frame (${when}) at ${s}x: ${r.cur.length} lines framed`);
     }
     // Which boxes (line top, height, name left, name top per line) it went through.
@@ -847,7 +851,7 @@ async function pass(seed, width, theme) {
     await sleep(120);
   };
   let introRead = false;
-  /** The new game's first modal (two pages): the clock held, space and a speed key do
+  /** The new game's first modal (three pages): the clock held, space and a speed key do
    * nothing, its button has the keyboard, Esc leaves a view open behind it alone, and a
    * real double-click on Continue turns one page, never two. */
   const introProbe = async () => {
@@ -930,8 +934,7 @@ async function pass(seed, width, theme) {
     // playOpening is the other copy, kept apart on purpose: it stops at 1.4 and checks the
     // story on the way (its own ORDER, a full 20 / 100 cargo before a launch), where this
     // one plays on to look at screens (a longer ORDER, a launch at 10 cargo, but a full
-    // pad during 1.4 so Programming goes on sale). Its commands run by hand (Run) until
-    // Programming is bought (runOnly).
+    // pad during 1.4 so Programming goes on sale, bought then to open the Programs view).
     const ORDER = [
       ['solar_panel', 2], ['excavator', 1], ['smelter', 1], ['solar_panel', 3], ['excavator', 2],
       ['storage_depot', 1], ['solar_panel', 4], ['launch_pad', 1], ['solar_panel', 5], ['refinery', 1],
@@ -1009,7 +1012,7 @@ async function pass(seed, width, theme) {
       const credits = s.res.credits ?? 0;
       let cmd = 'cloud_compute';
       // Blueprints research (1.2, then the Refinery's) and Programming (on sale after 1.4),
-      // bought with Buy Science; until Programming, commands run by hand (runOnly).
+      // bought with Buy Science (Programming opens the Programs view the pass looks at).
       const want = ['basic_blueprints', 'advanced_blueprints', 'programming'].find(
         (r) => s.nav.includes('research') && !doneResearch.has(r) && (r !== 'programming' || (!s.nav.includes('programs') && !!s.quest && !BEFORE_PROGRAMMING.includes(s.quest))),
       );
@@ -1111,8 +1114,8 @@ async function pass(seed, width, theme) {
     await send('Emulation.setDeviceMetricsOverride', { width, height: HEIGHT, deviceScaleFactor: 1, mobile: false });
     await sleep(300);
     await capture('after-mashing');
-    // Programming (on sale since 1.4): its 200 science would take the hand-run opening most
-    // of a run, so the debug menu grants it, then it is bought from the Research panel.
+    // Programming (on sale since 1.4) opens the Programs view, which the scenarios' probes
+    // use: if run 1 did not buy it, the debug menu grants science and it is bought here.
     if (!(await exists('.nav-tile[data-nav="programs"]'))) {
       await panel('options');
       if (!(await exists('#cheats-toggle'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
@@ -1125,10 +1128,8 @@ async function pass(seed, width, theme) {
       if (!(await exists('.nav-tile[data-nav="programs"]'))) note('input', 'run 2: Programming could not be bought (1.4 not reached in run 1?)');
       await capture('programming-bought');
     }
-    // Programs: move the processor to Program 2, build it a two-line program, bump,
-    // lower and remove lines; each step must show as the engine has it. (Without
-    // Programming, noted above, the pass goes on to the scenarios and the ending.)
-    if (await exists('.nav-tile[data-nav="programs"]')) {
+    // Programs (the right column, from day 1): move the processor to Program 2, build it a
+    // two-line program, bump, lower and remove lines; each step must show as the engine has it.
     await click('.prog-tabs button[data-program="0"]', 'program 1 tab');
     await click('[data-testid="proc-minus"]', 'processor off program 1');
     if (!(await exists('.lines li'))) {
@@ -1187,7 +1188,6 @@ async function pass(seed, width, theme) {
     await capture('program-2');
     await frameProbe(3, 'program2');
     await frameProbe(200, 'program2');
-    } // the Programs probe
     // Run 2 at 200x, then a reload: the save must come back.
     await speed(200);
     const d2 = await day();

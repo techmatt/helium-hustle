@@ -20,11 +20,13 @@ export function Commands({ s, program }: { s: Store; program: number }) {
   const [picked, setPicked] = useState<Record<string, string>>({});
   const shown = v.commands.filter((c) => c.visible);
   const cards = shown.filter((c, i) => !c.verb || shown.findIndex((x) => x.verb === c.verb) === i);
-  // Add to Program shows once Programming is bought (the Programs nav tile shows).
-  const programming = navShown(v, 'programs');
   return (
     <div class="panel" data-panel="commands">
       <h2>Commands</h2>
+      <p class="muted">
+        Commands run only from programs (right): each assigned processor runs one step a day. Adding goes to
+        Program {program + 1}.
+      </p>
       <div class="cards">
         {cards
           .map((first) => {
@@ -61,25 +63,16 @@ export function Commands({ s, program }: { s: Store; program: number }) {
                 </div>
                 <CommandBody v={v} c={c} />
                 <div class="card-actions">
-                  {/* No Run for a command nothing paces (Idle): it runs only in a program. */}
-                  {(!c.unlocked || c.by_hand) && (
-                    <button
-                      type="button"
-                      data-testid={`run-${c.id}`}
-                      title="Run it once, now"
-                      disabled={!c.unlocked}
-                      // A double-click's second click on a modal's last button that lands
-                      // here is not a run (as a card's buy, #31).
-                      onClick={(e) => (e.detail > 0 && justMoved() ? undefined : act({ type: 'run_command', command: c.id }))}
-                    >
-                      {c.unlocked ? 'Run' : 'Locked'}
-                    </button>
-                  )}
-                  {programming && c.unlocked && (
-                    <button type="button" data-testid={`add-${c.id}`} onClick={() => add(c.id)}>
-                      Add to Program
-                    </button>
-                  )}
+                  <button
+                    type="button"
+                    data-testid={`add-${c.id}`}
+                    disabled={!c.unlocked}
+                    // A double-click's second click on a modal's last button that lands
+                    // here is not an add (as a card's buy, #31).
+                    onClick={(e) => (e.detail > 0 && justMoved() ? undefined : add(c.id))}
+                  >
+                    {c.unlocked ? 'Add to Program' : 'Locked'}
+                  </button>
                 </div>
               </div>
             );
@@ -681,7 +674,7 @@ export function Retirement({ s }: { s: Store }) {
       <h2>Retirement</h2>
       <p class="muted">
         Retiring ends this run: buildings, resources, research, Strategic projects and every project's funding rates reset. The career keeps its
-        bests, achievements, global projects, quests, {navShown(v, 'programs') ? 'Programming, saved programs, ' : ''}ideology (fading through the years away), adversaries and what you have
+        bests, achievements, global projects, quests, saved programs, {navShown(v, 'programs') ? 'Programming, ' : ''}ideology (fading through the years away), adversaries and what you have
         seen. Boredom at its cap retires you anyway.
       </p>
       <Section title={`This run (day ${num(v.day)})`}>

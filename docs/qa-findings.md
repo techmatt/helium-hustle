@@ -75,11 +75,11 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | 109 | The boot line "Loading…" stayed in the page under the app: a page scrolled into view (seen in qa's story_acts Story shot) showed it below the status bar and cut the title | Removed once the app mounts | qa *overflow* (the page scrolled or kept its boot line) |
 | 110 | The Programs view's status strip at 1280 in a late career squeezed its boredom bar to ~50 px: "285 /" | The bar keeps room for its figures (the strip's gaps 10 px; wider figures wrap the strip to a second line) | screenshots (qa `late-programs`) |
 | 111 | qa's run 1 never finished 1.4: Advanced Blueprints marked done before on sale, the pad left on Titanium, launches at 10 cargo | Research waits for its card; during 1.4 the pad carries He-3 and launches full | qa (089) |
-| 112 | Idle's Run (089) was a free credit a click with no limit, paused on day 0 too (a held Enter on the focused button repeats it): nothing paces it | A command with no cost, boredom or effect has no Run and is refused by hand (rules 30; question 090_1, default) | `a_command_nothing_paces_never_runs_by_hand` |
-| 113 | A Run button took the second click of a double-click on a story modal's last button or the summary's Continue (cards already ignored it, #31) | Ignores pointer clicks for 0.5 s after a modal moves, as cards | manual (090 probe) |
-| 114 | A refused Run said "run Sell Cloud Compute: short of an input", naming nothing | "Sell Cloud Compute: short of Energy" (the scarcest input) | `a_command_runs_by_hand_once_now` |
-| 115 | 1.5's text says "Write programs" while Programming (research) may be unbought, with nothing pointing to it | "Research Programming to write programs" | content |
-| 116 | The run summary and Retirement panel list "saved programs (Load, in each program tab)" as kept before Programming opens any | Named (with Programming) only once it is bought | manual |
+| 112 | Idle's Run (089) was a free credit a click with no limit, paused on day 0 too (a held Enter on the focused button repeats it): nothing paces it | Moot since 091 (rules 31): Run by hand is gone, commands run only as program lines | none |
+| 113 | A Run button took the second click of a double-click on a story modal's last button or the summary's Continue (cards already ignored it, #31) | 091: Run gone; Add to Program ignores pointer clicks for 0.5 s after a modal moves, as cards | manual (090 probe) |
+| 114 | A refused Run said "run Sell Cloud Compute: short of an input", naming nothing | Moot since 091: Run gone | none |
+| 115 | 1.5's text says "Write programs" while Programming (research) may be unbought, with nothing pointing to it | Moot since 091: programs are open from day 1; "Write programs" is true again | content |
+| 116 | The run summary and Retirement panel list "saved programs (Load, in each program tab)" as kept before Programming opens any | 091: loadouts open from day 1, so saved programs always listed; Programming named once bought | manual |
 
 ## Deferred (Matt's decisions)
 
@@ -97,10 +97,8 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | A reload mid-chain drops the story pages still unread, the new quest's "Next:" line too (the quest pin keeps it) | Save the pending pages with the speed they resume |
 | After a timeline ends, Blueprint Archive (and Conditional Logic, the Telescope) is offered again; funding it gives nothing new | Hide a project whose effects are all spent, or say so on its card |
 | A Blocks number box being typed in keeps its draft on its row index: an instruction inserted above it (keyboard focus only) moves the draft to another line | Key the rows by a stable id |
-| A new player left untouched at 1x after the opening story sits at 0 credits (Day 99 seen, HH_PACE): nothing names Commands or Run, the only way to credits before Programming (#88's quest-pin hint went in 073's no-hint pass) | 1.1's second story page names Sell Cloud Compute's Run on the Commands panel (story prose, not a hint line) |
 | qa once (090, seed 45 at 1280): the debug autopilot's Everything reached super timeline 4 and the page answered nothing for 30 s, so the pass never reached the ending; the same seed passed on a rerun | Debug only; if it recurs, have the autopilot yield between chunks in late timelines |
-| Before Programming the Resources panel shows Processors "1 / 1, 0 free", which nothing the player can reach uses | Hide the row until Programming, as the Programs tile (the 089 ruling's list) |
-| A refusal notice stays up until the next accepted action or its ×, across days and a retirement (089's Run makes refusals common: seen 160 days on) | Clear it at a run's end, or fade it after ~5 s |
+| A refusal notice stays up until the next accepted action or its ×, across days and a retirement (seen 160 days on, under 089's since-removed Run) | Clear it at a run's end, or fade it after ~5 s |
 
 
 ## Won't fix

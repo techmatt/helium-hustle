@@ -61,8 +61,9 @@ count as bought from day 0 of every run while the project counts as completed ([
 - `career_flag` (Programming, 200 science, visible once quest 1.4 Full Load is done, category
   *Programs*): buying it sets the career flag `flag` for good (`programming`); retirements
   and a timeline's end keep it, and the item never shows again. The `programming` flag shows
-  the Programs nav tile (`nav.json`, a `flag` condition) and with it the UI's programs and
-  loadout buttons; no rule reads it ([commands.md](commands.md), *Running by hand*). A state
+  the Programs nav tile (`nav.json`, a `flag` condition) and with it the Programs view (the
+  text and block editors, the all-instructions panel); no rule reads it, and the right
+  column's program, Add to Program and loadouts are open without it. A state
   saved before revision 29 that loads past 1.4 gets the flag (`Career.flag_research`).
 
 A purchase of research (as of a building or land) sets the run's `last_purchase`.

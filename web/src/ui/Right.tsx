@@ -6,7 +6,8 @@ import { useState } from 'preact/hooks';
 import type { Activity, View } from '../engine';
 import { num, storyBody } from '../format';
 import { act, eventItems, markRead, store, unreadIn, type EventSection, type Store } from '../store';
-import { Quest, ResChip, Section, name, navShown } from './common';
+import { daysPerWake } from '../clock';
+import { Quest, ResChip, Section, name } from './common';
 import { Chip } from './icons';
 import { AddLogic } from './ProgramLogic';
 import { Library, type LibraryMode } from './Library';
@@ -32,8 +33,8 @@ export function Right({
           <Quest v={s.view} />
         </div>
       )}
-      {/* The at-a-glance program, once Programming is bought (the Programs nav tile shows). */}
-      {navShown(s.view, 'programs') && <Programs s={s} program={program} setProgram={setProgram} />}
+      {/* The program, from day 1: Programming opens only the full editor (the Programs view). */}
+      <Programs s={s} program={program} setProgram={setProgram} />
       <Events v={s.view} />
     </aside>
   );
@@ -53,6 +54,8 @@ function Programs({
   const [library, setLibrary] = useState<LibraryMode | null>(null);
   if (!p) return null;
   const entries = p.entries;
+  const perRedraw = daysPerWake(s.speed);
+  const span = perRedraw > 1;
   const procs = (by: number) => {
     const now = store.view.programs[program]?.processors ?? 0;
     act({ type: 'set_processors', program, processors: Math.max(0, now + by) });
@@ -125,6 +128,14 @@ function Programs({
         </button>
       </div>
       {library && <Library v={v} program={program} mode={library} close={() => setLibrary(null)} />}
+      {entries.length === 0 && (
+        <p class="muted hint">Empty. Add commands from the Commands panel; each processor runs one step a day.</p>
+      )}
+      {span && entries.length > 0 && (
+        <p class="muted hint" data-testid="lines-span">
+          {perRedraw} days per redraw: lines show what ran over them.
+        </p>
+      )}
       <ProgramLines s={s} program={program} />
       <AddLogic v={v} canElse={canAddElse(entries)} add={(e) => editProgram(program, (now) => [...now, e])} />
     </div>

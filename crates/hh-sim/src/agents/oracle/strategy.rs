@@ -145,7 +145,7 @@ impl Oracle {
         // The strategy's research first; once it is done, any.
         let fixed = self.strategy.research.as_deref().filter(|r| v.research.iter().any(|x| x.id == *r && !x.done));
         if fixed.is_none() {
-            for r in v.research.iter().filter(|r| r.visible && !r.done) {
+            for r in v.research.iter().filter(|r| r.visible && !r.done && crate::agents::buys_research(r.id)) {
                 push(format!("research {}", r.id), Directives { research: Some(r.id.to_string()), ..c() });
             }
         }

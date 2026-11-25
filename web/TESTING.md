@@ -100,11 +100,12 @@ quest, a launch, the summary, a reload). Hunts' findings: `docs/qa-findings.md`.
 story modal under real keys and mouse: the clock held, space and 3 ignored, its button
 focused, Esc leaving the Programs view behind it open (only where its tile shows: a new
 game has none until Programming, so this probe is skipped there), a double-click on Continue turning
-one page), run 1 at 3x then 50x, its commands run by hand (Run) until Programming, with every panel (each chain's
+one page), run 1 at 3x then 50x, its commands from the right column's program, with every panel (each chain's
 modal at most a day past its "Quest complete" line; on the first, a held Enter turns
 one page), retirement and the summary (keys must not start the
-clock), Programming (bought in run 1 after 1.4, with science bought by hand; if run 1 fell
-short, in run 2 with the debug grant's science) and the Programs view, run 2 at 200x, a reload, the replay check, the play log replayed by `hh-sim
+clock), Programming (bought in run 1 after 1.4 with Buy Science; if run 1 fell
+short, in run 2 with the debug grant's science) and the Programs view, the right column's
+program edited (processors moved, lines added, −/+, removed, dragged), run 2 at 200x, a reload, the replay check, the play log replayed by `hh-sim
 playlog` (a release build, or `HH_SIM`: a fresh worktree has none, so build it first), a second tab and site data blocked (first pass only). At run 1's end and in every
 debug scenario (each played, its pads given Helium-3 first, or Titanium while 1.3 allows only that, its panels audited): every Resources row's breakdown opened
 and closed, Stats' breakdowns; program lines dragged; in `late_unlocks`, a loaded
@@ -127,7 +128,7 @@ finding, its line says NEVER REACHED THE ENDING, `report.json` keeps `ended` per
 
 ```sh
 npm run build && npx vite preview --port 0          # a static build: dev-server reloads break a pass
-HH_URL=http://localhost:<port>/ npm run qa           # required, as for e2e; ~1.3 min a pass, ~8 min in all
+HH_URL=http://localhost:<port>/ npm run qa           # required, as for e2e; ~3 min a pass, ~19 min in all (091)
 ```
 
 Output (`HH_QA_OUT`, default `out/qa`, wiped): a PNG per moment in

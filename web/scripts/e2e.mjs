@@ -1,9 +1,9 @@
 // Browser check: drives headless Edge or Chrome over the DevTools protocol (no
 // packages) against a served page.
 //   1. A fresh game through the normal UI only (no debug menu): only Solar Panel and Data
-//      Center offered, Commands only (no Programs tile, right-column program, Add to
-//      Program or loadout buttons; two quick Runs both land), 1.1's story modal alone,
-//      then the opening to 1.4 Full Load, commands run by hand (each
+//      Center offered, the right-column program, Add to Program and loadout buttons but no
+//      Run and no Programs tile (two quick adds both land), 1.1's story modal alone,
+//      then the opening to 1.4 Full Load (each
 //      quest change a modal chain holding the clock; the first pad offers Titanium only;
 //      Launch Full Pads never shown), no Retirement
 //      tile yet (it opens at 1.7 Burnout), then on at 200x to the forced retirement at the
@@ -48,7 +48,7 @@
 //      line's run dots fill day by day. Shots programs-blocks.png, programs-text.png,
 //      programs-dots.png.
 //  11. (Run before 5.) Story and Achievements: a new game played through 1.6 by the debug
-//      autopilot (its step stops at 1.7; it bought Programming, so programs show); Story shows the Act 1 band, every finished beat
+//      autopilot (its step stops at 1.7; it never buys Programming: the program shows, the Programs tile doesn't); Story shows the Act 1 band, every finished beat
 //      lit, the active one glowing with its task, one "???" below and no achievements; a lit beat's click replays its modal; the
 //      Achievements tile shows every badge grouped by category. Shots story-1.6.png,
 //      achievements.png.
@@ -195,10 +195,11 @@ async function programOrder() {
   // Read before pausing: paused, the frame is back.
   const fast = await evaluate('window.__ptr');
   const lit = await evaluate(`document.querySelectorAll('.lines .line[class*="out-"]').length`);
+  const note = await exists('[data-testid="lines-span"]');
   const fastOrder = await order();
   await speed(0);
   check(
-    fast.length > 0 && fast.every((p) => p === -1) && lit >= 2,
+    fast.length > 0 && fast.every((p) => p === -1) && note && lit >= 2,
     `50x: no hopping pointer, lines lit by the span (pointer ${fast.join(',')}, ${lit} lit)`,
   );
   check(fastOrder === queued, `50x: lines keep their order: ${fastOrder}`);
@@ -988,10 +989,10 @@ async function storyView() {
   }
   const at = await beat();
   check(at >= 6 && at <= 7, `the autopilot reaches 1.6 (stops at 1.${at})`);
-  // The autopilot buys Programming after 1.4, as every sim player does: programs show.
+  // The autopilot never buys Programming (091): the program shows, the Programs tile doesn't.
   check(
-    (await exists('.nav-tile[data-nav="programs"]')) && (await exists('[data-testid="programs"]')),
-    'after the autopilot bought Programming the Programs tile and right-column program show',
+    !(await exists('.nav-tile[data-nav="programs"]')) && (await exists('[data-testid="programs"]')),
+    'after the autopilot the right-column program shows and the Programs tile does not',
   );
   await panel('story');
   await sleep(300);
@@ -1376,24 +1377,23 @@ async function freshGame() {
     const thumb = await evaluate(`document.querySelector('[data-testid="story-beat-active"] [data-testid="quest-pic-thumb"]')?.dataset.picture ?? null`);
     check(thumb === 'q1_1_earthrise', `on 1.1 the active beat shows its thumbnail: ${thumb}`);
   }
-  // Commands only until Programming: no Programs tile, right-column program, Add to
-  // Program or loadout buttons; each card runs by hand.
+  // Programs from day 1 (091): the right column's program, Add to Program and the loadout
+  // buttons; no Run anywhere; the Programs tile (the full editor) only once Programming.
   await panel('commands');
-  const hidden = await evaluate(`({
+  const day1 = await evaluate(`({
     tile: !!document.querySelector('.nav-tile[data-nav="programs"]'),
     program: !!document.querySelector('[data-testid="programs"]'),
-    add: document.querySelectorAll('[data-testid^="add-"]').length,
-    loadout: !!document.querySelector('[data-testid="loadout-save"], [data-testid="loadout-load"]'),
-    run: !!document.querySelector('[data-testid="run-cloud_compute"]'),
+    add: !!document.querySelector('[data-testid="add-cloud_compute"]'),
+    loadout: !!document.querySelector('[data-testid="loadout-save"]') && !!document.querySelector('[data-testid="loadout-load"]'),
+    run: [...document.querySelectorAll('button')].some((b) => /^run-/.test(b.dataset.testid ?? '') || b.textContent.trim() === 'Run'),
   })`);
-  check(!hidden.tile && !hidden.program && hidden.add === 0 && !hidden.loadout && hidden.run, `a new game has Commands only (Run, no programs): ${JSON.stringify(hidden)}`);
-  await shot('commands-only');
-  // Two quick Runs (no render between them) both land.
-  const credits0 = await evaluate(`Number(document.querySelector('tr[data-res="credits"]').dataset.amount)`);
-  await evaluate(`[0, 1].forEach(() => document.querySelector('[data-testid="run-cloud_compute"]').click())`);
+  check(!day1.tile && day1.program && day1.add && day1.loadout && !day1.run, `a new game: program, Add and loadouts, no Run, no Programs tile: ${JSON.stringify(day1)}`);
+  await shot('day1-program');
+  // Two quick clicks (no render between them) both land.
+  await evaluate(`['add-cloud_compute', 'add-idle'].forEach((t) => document.querySelector('[data-testid="' + t + '"]').click())`);
   await sleep(100);
-  const credits1 = await evaluate(`Number(document.querySelector('tr[data-res="credits"]').dataset.amount)`);
-  check(credits1 - credits0 === 10, `two quick Runs of Cloud Compute both land: ${credits0} -> ${credits1}`);
+  const two = await evaluate(`[...document.querySelectorAll('.lines li')].map((li) => li.dataset.command).join(',')`);
+  check(two === 'cloud_compute,idle', `two quick adds both land: ${two}`);
 
   // ---- 1. a fresh game to the first shipment, a forced retirement and run 2, through the normal UI ----
   const reached = await playOpening();

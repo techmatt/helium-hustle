@@ -148,6 +148,6 @@
     "requires": null,
     "effect": {"type": "career_flag", "flag": "programming"},
     "visible_when": {"type": "quest_completed", "quest": "qfull_load"},
-    "description": "Write programs: the Programs view, Add to Program and saved loadouts. Bought once for the whole career."
+    "description": "The Programs view: a full editor for your programs (text and blocks) with every instruction listed. Bought once for the whole career."
   }
 ]

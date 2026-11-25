@@ -1,8 +1,8 @@
 # Commands and overclocks (module `programs`, variant `arc1`)
 
-What one execution of a command does, and overclocks. Commands run as program lines
+What one execution of a command does, and overclocks. Commands run only as program lines
 ([programs.md](programs.md): a step each, in the programs step of [the
-day](README.md#the-day)), or by hand (*Running by hand*, below); expired overclocks drop
+day](README.md#the-day)); expired overclocks drop
 earlier that day, before the building pass.
 The module's params, `overclock_base_cap` among them, are in [programs.md](programs.md#params).
 
@@ -31,14 +31,10 @@ The module's params, `overclock_base_cap` among them, are in [programs.md](progr
    Disrupt (demand.md), Fund (ideology.md), Neutralize (Contest Claims: the named
    adversary's Attention to 0, [attention.md](attention.md)), Overclock (below).
 
-**Running by hand** (`run_command` `{"type": "run_command", "command": <id>}`, a Commands
-card's Run): one execution, now, between ticks, by the steps above, with no processor and
-no program; its flows show in the breakdown as "Commands by hand". There is no limit per day.
-Refused (nothing changes) for an unknown or locked command, one that would fail (an input
-short; the refusal names the scarcest) or be skipped (every output capped), and one nothing
-paces: no cost, no boredom and no effect (Idle; the view's `by_hand` is false and its card
-has no Run), which runs only as a program line. Open from the start; the Programs view and Add
-to Program open with the Programming research ([research.md](research.md)).
+**Only as program lines.** No action runs a command directly: a Commands card's Add to
+Program appends it to the active program, open from the start, as are the loadout buttons.
+The Programming research opens only the Programs view, the full editor
+([research.md](research.md)).
 
 **Overclock.** Each execution adds its own stack on its `target` building category for
 `floor(duration × overclock_duration_factor ^ rationalist rank)` days, live from the same

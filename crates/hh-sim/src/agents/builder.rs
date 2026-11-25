@@ -330,7 +330,7 @@ impl Agent for Greedy {
         super::hand_launch(p);
         // The cheapest affordable research.
         let v = p.view();
-        let cheapest = v.research.iter().filter(|r| r.affordable).min_by_key(|r| r.cost).map(|r| r.id);
+        let cheapest = v.research.iter().filter(|r| r.affordable && super::buys_research(r.id)).min_by_key(|r| r.cost).map(|r| r.id);
         if let Some(id) = cheapest {
             let _ = p.apply(&Action::Research { research: id.to_string() });
         }

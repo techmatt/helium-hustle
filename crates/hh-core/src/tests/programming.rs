@@ -1,10 +1,11 @@
-//! Programming (089): a research-view item on sale once 1.4 Full Load is done,
-//! bought once for the career (a career flag), opening the Programs nav tile;
-//! and commands run by hand before it.
+//! Programming (089, 091): a research-view item on sale once 1.4 Full Load is
+//! done, bought once for the career (a career flag), opening the Programs nav
+//! tile (the editors) and nothing else: programs run from day 1.
 
 use super::{f, rules, set};
 use crate::action::Action;
 use crate::modules::{career, research, timeline};
+use crate::state::Entry;
 use crate::GameState;
 
 const FLAG: &str = "programming";
@@ -85,38 +86,21 @@ fn a_state_from_before_programming_gets_it_on_load_when_past_full_load() {
     assert_eq!(now, old);
 }
 
+/// 091: programs work from day 1 without Programming (it gates only the Programs
+/// view): a new game's program earns credits, and its loadout saves and loads.
 #[test]
-fn a_command_runs_by_hand_once_now() {
+fn a_new_game_earns_through_its_program_without_programming() {
     let r = rules();
     let mut g = r.new_game(7);
+    assert!(!career::flag_set(&g, FLAG));
+    let entries = vec![Entry::command("cloud_compute", 1)];
+    r.apply(&mut g, &Action::SetProgram { program: 0, entries }).unwrap();
+    r.apply(&mut g, &Action::SetProcessors { program: 0, processors: 1 }).unwrap();
     let credits = g.amount("credits");
-    let boredom = g.amount("boredom");
-    r.apply(&mut g, &Action::RunCommand { command: "cloud_compute".into() }).unwrap();
-    assert!(g.amount("credits") > credits, "Cloud Compute paid out at once");
-    assert!(g.amount("boredom") >= boredom);
-    assert!(g.career.used_commands.contains("cloud_compute"));
-    assert!(g.run.programs.iter().all(|p| p.entries.is_empty()), "no program involved");
-    // Refused: unknown, locked (Buy Science opens at 1.1), short of an input.
-    assert!(r.apply(&mut g, &Action::RunCommand { command: "nope".into() }).is_err());
-    assert!(r.apply(&mut g, &Action::RunCommand { command: "buy_science".into() }).is_err());
-    set(&mut g, "energy", "0");
-    let drained = g.clone();
-    let err = r.apply(&mut g, &Action::RunCommand { command: "cloud_compute".into() }).unwrap_err();
-    assert_eq!(g, drained, "a refusal changes nothing");
-    assert!(err.contains("short of Energy"), "the refusal names what it lacks: {err}");
-}
-
-/// 090: Idle costs nothing and adds no boredom, so by hand it was a free credit a
-/// click (paused on day 0 too): nothing paced it. It runs only in a program now.
-#[test]
-fn a_command_nothing_paces_never_runs_by_hand() {
-    let r = rules();
-    let mut g = r.new_game(7);
-    let view = r.view(&g);
-    let by_hand = |id: &str| view.commands.iter().find(|c| c.id == id).unwrap().by_hand;
-    assert!(!by_hand("idle"), "Idle: no cost, no boredom, no effect");
-    assert!(by_hand("cloud_compute") && by_hand("launch_pads"), "a cost or an effect paces these");
-    let before = g.clone();
-    assert!(r.apply(&mut g, &Action::RunCommand { command: "idle".into() }).is_err());
-    assert_eq!(g, before);
+    r.advance(&mut g, 50);
+    assert!(g.amount("credits") > credits, "the program sold compute");
+    r.apply(&mut g, &Action::SaveLoadout { program: 0, slot: None, name: "sell".into() }).unwrap();
+    r.apply(&mut g, &Action::LoadLoadout { loadout: 0, program: 1 }).unwrap();
+    assert_eq!(g.run.programs[1].entries, g.run.programs[0].entries);
+    assert!(!career::flag_set(&g, FLAG), "nothing here bought Programming");
 }

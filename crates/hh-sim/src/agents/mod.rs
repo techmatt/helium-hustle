@@ -145,8 +145,7 @@ impl Knobs {
 /// [`Agent::new_run`]); `oracle` is the ceiling, a full-information planner.
 ///
 /// Where each one acts, for a rule that needs every player to make a new move:
-/// - `random`: `random.rs` `Random::act`, then [`pick_cargo`], [`hand_launch`] and
-///   [`buy_programming`] (the others buy Programming through [`SCIENCE_FIRST`]).
+/// - `random`: `random.rs` `Random::act`, then [`pick_cargo`] and [`hand_launch`].
 /// - `greedy`: `builder.rs` `Greedy::act`: [`pick_cargo`], [`hand_launch`], then
 ///   one command from `builder::hand_command` (loads, fuels, launches, bridges).
 /// - `author`: `author.rs` `Author::act`: [`pick_cargo`], [`hand_launch`];
@@ -292,24 +291,23 @@ pub fn hand_launch(p: &mut Player) {
     }
 }
 
-/// Buys Programming when it is on sale and affordable (every sim player does,
-/// as soon as it can: docs/rulings/programs.md). Player strategy.
-pub fn buy_programming(p: &mut Player) {
-    if p.view().research.iter().any(|r| r.id == "programming" && r.affordable) {
-        let _ = p.apply(&Action::Research { research: "programming".to_string() });
-    }
+/// Research no sim player buys: Programming opens only the UI's Programs view
+/// (the editors), which no sim player uses (docs/rulings/programs.md).
+pub const NEVER_BUY: &[&str] = &["programming"];
+
+/// Research a sim player may buy (not in [`NEVER_BUY`]).
+pub fn buys_research(id: &str) -> bool {
+    !NEVER_BUY.contains(&id)
 }
 
-/// The research a player saves science for first: the Blueprints (Act 1's
-/// research of buildings) and Programming (the Programs view, once for the
-/// career; every sim player buys it as soon as it can, docs/rulings/programs.md).
-pub const SCIENCE_FIRST: &[&str] = &["basic_blueprints", "advanced_blueprints", "programming"];
+/// The Blueprints (Act 1's research of buildings), bought first.
+pub const BLUEPRINTS: &[&str] = &["basic_blueprints", "advanced_blueprints"];
 
-/// Science still short of the next of [`SCIENCE_FIRST`] on sale (whole units,
-/// rounded up), if one is: what a player buys with Buy Science.
+/// Science still short of the next Blueprints on sale (whole units, rounded
+/// up), if one is: what a player buys with Buy Science.
 pub fn science_short(v: &View) -> Option<u32> {
     let science = amount(v, "science");
-    let r = v.research.iter().find(|r| SCIENCE_FIRST.contains(&r.id) && r.visible && !r.done)?;
+    let r = v.research.iter().find(|r| BLUEPRINTS.contains(&r.id) && r.visible && !r.done)?;
     let d = r.cost - science;
     let short = d.floor_int() + i64::from(d > Fx::from_int(d.floor_int()));
     (short > 0 && command_unlocked(v, "buy_science")).then_some(short as u32)

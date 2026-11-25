@@ -58,7 +58,7 @@ impl Agent for Random {
             options.extend(
                 v.research
                     .iter()
-                    .filter(|r| r.affordable)
+                    .filter(|r| r.affordable && super::buys_research(r.id))
                     .map(|r| Action::Research { research: r.id.to_string() }),
             );
             if amount(v, "credits") >= v.land_price {
@@ -98,10 +98,8 @@ impl Agent for Random {
             }
         }
         // Its fixed hands besides retiring, after its buys: a new pad gets a
-        // cargo, before Launch Full Pads opens a full pad launches by hand, and
-        // Programming is bought once affordable.
+        // cargo, and before Launch Full Pads opens a full pad launches by hand.
         super::pick_cargo(p);
         super::hand_launch(p);
-        super::buy_programming(p);
     }
 }

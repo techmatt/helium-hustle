@@ -58,8 +58,8 @@ Launch Full Pads opens (1.5), every player hand-launches a full pad or one holdi
 Program 2 opens with `set pads he3 up to 1`.
 
 A hand-played command (`hand_command`, greedy's): launch a full fuelled pad; fuel a full pad;
-load when a load of its good waits; Buy Science while short of the next of
-`agents::SCIENCE_FIRST` on sale (Blueprints, Programming); buy the target's missing titanium, regolith or ice from
+load when a load of its good waits; Buy Science while short of the next Blueprints on
+sale; buy the target's missing titanium, regolith or ice from
 credits past its price; else Cloud Compute (Idle without the energy).
 
 ## The program author (`author.rs`)

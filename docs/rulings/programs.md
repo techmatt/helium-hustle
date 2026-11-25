@@ -43,28 +43,26 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   re-funded, and saved loadouts' `if` lines stay locked (passed free) meanwhile; no upgrade
   that keeps it is planned. Side quest 1.b's reward is a placeholder
   (059, default): every run starts with 50 Science (a `grant` unlock).
-- **Programming (2026-11-24).** A new player starts with Commands only. **Programming** is a
-  research-view item (placeholder 200 science), on sale once quest 1.4 Full Load completes;
-  not a quest task. Buying it is permanent: a career flag (`programming`) that survives
-  retirement and a timeline's end, like `swarm_revealed`; once bought it never shows again.
-  It only hides UI; the program rules are unchanged. Until it is bought, the Programs nav tile
-  and view, the right column's at-a-glance program, every "Add to Program" button and the
-  loadout save/load buttons are hidden (the library itself exists from the start and is
-  always kept). Saves already past 1.4 get the flag on load. Every sim player and script buys
-  it once it can. *Defaults (089):* each Commands card has a **Run** button
-  (`run_command`): the command runs once, now, as a program line would, with no processor
-  and no limit per day (its costs and boredom pace it); refused if locked, short or capped.
-  *Default (090, question 090_1):* a command nothing paces (no cost, boredom or effect:
-  Idle) has no Run and runs only in a program, so a click is never free credits.
-  The engine doesn't refuse program actions before Programming, so sims program from day 1.
-  The price takes the Rationalist and Archive discounts like any research. "On load" means a
-  state saved before revision 29 (the web autosave of another revision is still discarded).
+- **Commands run only as program lines (2026-11-25).** No command is runnable by clicking:
+  there is no Run button and no by-hand action. From day 1 the right column's program, every
+  "Add to Program" button and the loadout Save/Load buttons are there, as are processors
+  (the Processors row). 1.1's story page names Add to Program on Sell Cloud Compute as the
+  way to earn credits (story prose, no hint line). A player can play 1.1-1.8 with the right
+  column's program alone (add, drag to reorder, remove, −/+ counts; logic lines from its
+  own add row once they open).
+- **Programming (2026-11-25, replacing 2026-11-24's).** **Programming** is a research-view
+  item (placeholder 200 science), on sale once quest 1.4 Full Load completes; not a quest
+  task. Buying it is permanent: a career flag (`programming`) that survives retirement and
+  a timeline's end, like `swarm_revealed`; once bought it never shows again. It hides only
+  the Programs nav tile and its view (Text | Blocks, the all-instructions panel); the
+  program rules are unchanged. Saves already past 1.4 get the flag on load (a state saved
+  before revision 29). Sim players and the golden script never buy it (nothing they use is
+  gated). The price takes the Rationalist and Archive discounts like any research.
 - **Program loadouts (2026-11-20).** Each program has save / load buttons. A saved program
   goes into a library that persists across retirements (career state), so a player keeps
   programs for different stages and loads one into any program tab. Programs still empty on
   retirement; loading is how they come back. *Defaults (035):* 12 slots, display names up to
-  40 characters, loading leaves processors as assigned; the buttons show once Programming
-  is bought (above; replaces 035's "open from run 1").
+  40 characters, loading leaves processors as assigned; the buttons are open from run 1.
 - **Programs persist (2026-11-22).** A player's programs carry over across runs (a saved
   library); building it is its own item when Matt asks.
 - **"Add to Program" (2026-11-22)**, not "Add to Program 1": the active program is implied.

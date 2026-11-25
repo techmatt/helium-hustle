@@ -171,14 +171,18 @@ impl GameResult {
     }
 }
 
-/// Whether anything is buyable now: a building or research.
+/// Whether anything is buyable now: a building or research (not research no sim
+/// player buys, `agents::NEVER_BUY`: Programming would otherwise hide idle time).
 fn something_to_buy(s: &Session) -> bool {
     let c = content();
     let (r, g) = (&s.rules, &s.state);
     c.buildings.iter().any(|b| economy::buy_blocker(r, g, b).is_none())
-        || c.research
-            .iter()
-            .any(|x| !g.run.research.contains(&x.id) && research::visible(g, x) && research::blocker(r, g, x).is_none())
+        || c.research.iter().any(|x| {
+            crate::agents::buys_research(&x.id)
+                && !g.run.research.contains(&x.id)
+                && research::visible(g, x)
+                && research::blocker(r, g, x).is_none()
+        })
 }
 
 /// A career's measures, taken as it plays: call [`Meter::look`] after each

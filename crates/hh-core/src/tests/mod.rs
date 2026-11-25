@@ -68,9 +68,9 @@ pub(crate) fn outcomes(g: &crate::GameState) -> Vec<Option<crate::state::LineOut
 // The golden constants: update all four together on a `RULES_REVISION` bump
 // with `python scripts/set_golden.py` (it also sets `GOLDEN_*` in
 // scripts/wasm-smoke.mjs); never type them (README, *Rules changes*).
-const GOLDEN_REVISION: u32 = 30;
-const GOLDEN_FINGERPRINT: &str = "fe6be60aa7fb021d";
-const GOLDEN_CONTENT_HASH: &str = "fe981096eb43a591";
+const GOLDEN_REVISION: u32 = 31;
+const GOLDEN_FINGERPRINT: &str = "106b6b938bc9e1dc";
+const GOLDEN_CONTENT_HASH: &str = "b1e503e5f1ebe7ce";
 const GOLDEN_CONFIG_HASH: &str = "99a96d52255bdd04";
 
 pub(crate) fn golden_session() -> Session {

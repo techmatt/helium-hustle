@@ -118,9 +118,9 @@ const BUILD_ORDER: &[(&str, u32)] = &[
 ];
 
 /// The research the script buys, in order, as soon as it can: Act 1's
-/// Blueprints, which unlock the buildings past Solar Panels and Data Centers,
-/// and Programming (the Programs view, once for the career).
-const RESEARCH: &[&str] = &["basic_blueprints", "advanced_blueprints", "programming"];
+/// Blueprints, which unlock the buildings past Solar Panels and Data Centers.
+/// (Not Programming: it opens only the Programs view, which the script never uses.)
+const RESEARCH: &[&str] = &["basic_blueprints", "advanced_blueprints"];
 
 /// (resource, the command that buys it): bridges for a building's missing input; the
 /// price comes from the view.
