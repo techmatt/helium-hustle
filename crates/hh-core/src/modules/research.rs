@@ -75,6 +75,7 @@ fn shows(g: &GameState, v: &Visibility) -> bool {
             g.career.lifetime.shipments + g.run.stats.shipments >= *count
         }
         Visibility::QuestCompleted { quest } => g.career.completed_quests.contains(quest),
+        Visibility::Flag { flag } => g.career.flags.contains(flag),
         Visibility::AllOf { all } => all.iter().all(|x| shows(g, x)),
     }
 }

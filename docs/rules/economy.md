@@ -141,12 +141,16 @@ A refused action changes nothing.
 `content/resources.json`: each resource's `cap` (null for none). `content/buildings.json`:
 `category`, `ideology`, `requires`, `land`, `cost`, `cost_scaling`, `max_count`, `produces`,
 `upkeep`, `effects` (`grant`, `store`, `speculator_decay` for demand.md) and
-`output_modifiers`. A run opens with only the Solar Panel and Data Center buildable: the
+`output_modifiers`, and a `description` no rule reads: empty (the card shows no line) unless
+the building has a mechanic its stat lines don't show (now the Arbitrage Engine and the
+Microwave Receiver). A run opens with only the Solar Panel and Data Center buildable: the
 Regolith Excavator, Smelter, Launch Pad and Storage Depot require research Basic Blueprints,
 and the Battery, Refinery and Fabricator Advanced Blueprints ([research.md](research.md);
 quests 1.2 and 1.3 lead to them). The Research Lab requires 2 Data Centers. The Recreation
-Dome requires nothing but its event: quest 1.8 Lab's completion enables it
-([events.md](events.md)). The Refinery's upkeep is 5 regolith and 2 energy a day.
+Dome requires nothing but its event: the silent `research_lab_built` event enables it once a
+Research Lab is owned ([events.md](events.md)). The Regolith Excavator makes 2 regolith a day
+(`excavator_output_mult`, 1.5 with research Regolith Processing). The Refinery's upkeep is
+5 regolith and 2 energy a day.
 
 Six resource ids are fixed in code (`economy.rs` constants), named by content rows:
 `energy` (its cap skips `storage_cap_mult`; its output counts toward peak power),
@@ -165,8 +169,9 @@ Six resource ids are fixed in code (`economy.rs` constants), named by content ro
   ([projects.md](projects.md)). Handoffs say it produces energy; the data
   has no production (it enables Buy Power, commands.md). The engine takes the data.
 - Conflict: Arbitrage Engine's `spec_decay`: see [demand.md](demand.md#port-notes).
-- Conflict: the data's Arbitrage Engine requires research `market_analysis`, which is not a
-  research id (Market Analysis is a category); the engine requires `market_awareness`.
+- Changed: the data's Arbitrage Engine requires research `market_analysis` (not a research id);
+  the engine requires the `speculators_seen` flag (speculators' first arrival, 093: nothing
+  upcoming is telegraphed).
 - Candidate: starting buildings take no land and selling one refunds none; they still count
   toward the price (the second Solar Panel costs 30 credits, as in Godot's opening).
 - Candidate: peak power is gross energy buildings made in a day.

@@ -167,6 +167,7 @@ pub fn condition_text(c: &Condition) -> String {
         Condition::Retirements { count } => format!("Retire {count} times"),
         Condition::AdversaryPresent { adversary } => format!("Draw the {adversary} in"),
         Condition::LaunchCredits { amount } => format!("Earn {} credits from one launch", n(*amount)),
+        Condition::TradeCredits { amount } => format!("Earn {} credits from trade this run", n(*amount)),
         Condition::ResearchCluster { min_items, exclude } => {
             let but = if exclude.is_empty() { String::new() } else { format!(" (not {})", exclude.join(", ")) };
             format!("Research every item of one cluster of {min_items} or more{but} in one run")

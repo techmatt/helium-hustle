@@ -538,7 +538,7 @@ async function pass(seed, width, theme) {
     // Run 2 (research wiped) offers the Solar Panel and Data Center only, both short of
     // titanium or circuits a run doesn't start with (074): nothing to probe there.
     if (!id) return when === 'run2' ? undefined : note('input', `card probe (${when}): no affordable card`);
-    const desc = `.card.building[data-id="${id}"] .desc`;
+    const desc = `.card.building[data-id="${id}"] .card-text`;
     let n0 = await ownedOf(id);
     let p = await at(desc);
     await mouse(p.x, p.y);
@@ -554,7 +554,7 @@ async function pass(seed, width, theme) {
     id = await card('.card.building.can-buy');
     if (id) {
       n0 = await ownedOf(id);
-      p = await at(`.card.building[data-id="${id}"] .desc`);
+      p = await at(`.card.building[data-id="${id}"] .card-text`);
       await mouse(p.x, p.y, { modifiers: 8 });
       const got = (await ownedOf(id)) - n0;
       if (got < 1 || got > 10) note('input', `card probe (${when}): a Shift-click on ${id} bought ${got}`);
@@ -598,7 +598,7 @@ async function pass(seed, width, theme) {
     const grey = await card('.card.building.cannot-buy');
     if (grey) {
       n0 = await ownedOf(grey);
-      p = await at(`.card.building[data-id="${grey}"] .desc`);
+      p = await at(`.card.building[data-id="${grey}"] .card-text`);
       await mouse(p.x, p.y);
       const hint = await evaluate(`document.querySelector('.card.building[data-id="${grey}"] .buy-hint').textContent`);
       if ((await ownedOf(grey)) !== n0 || !hint) note('input', `card probe (${when}): grey ${grey}: bought ${(await ownedOf(grey)) - n0}, hint "${hint}"`);
@@ -1246,8 +1246,8 @@ async function pass(seed, width, theme) {
       if (await exists(`[data-testid="buy-${id}"].can-buy`)) await click(`[data-testid="buy-${id}"]`, `buy ${id}`);
       await grant();
     }
-    // A career not yet at 1.8 (Projects opens there): the debug autopilot's "Next quest
-    // step" plays it on, a step at a time; each step must finish and move the quest.
+    // A career without a Research Lab yet (Projects opens with it): the debug autopilot's
+    // "Next quest step" plays it on, a step at a time; each step must finish and move the quest.
     for (let step = 0; step < 10 && !(await exists('.nav-tile[data-nav="projects"]')); step++) {
       await panel('options');
       if (!(await exists('#accel-quest'))) await click('[data-testid="debug"] .fold-head', 'debug fold');

@@ -183,11 +183,11 @@ export function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: bo
           +
         </button>
       </div>
-      {/* The picture sits under the title, beside the description and flows. */}
+      {/* The picture sits under the title, beside the flows (and a line, for a mechanic they don't show). */}
       <div class="card-body">
         {art && <img class="card-art" src={art} alt="" width={96} height={96} draggable={false} />}
         <div class="card-text">
-          <p class="desc">{b.description}</p>
+          {b.description && <p class="desc">{b.description}</p>}
           <div class="effects">
             <FlowLines v={v} amounts={b.produces} sign={1} />
             <FlowLines v={v} amounts={b.upkeep} sign={-1} />

@@ -40,15 +40,15 @@
       "qfirst_shipment",
       "qfull_load",
       "qautomate_automation",
-      "qspeculators_notice",
+      "qtrade",
       "qburnout",
-      "qlab",
       "qthree_voices",
       "qland_rush",
       "qbig_launch",
       "qfull_cluster",
       "qblueprints_for_everyone",
-      "recreation_dome_unlock",
+      "research_lab_built",
+      "speculators_arrive",
       "ideology_unlock",
       "propellant_discovery"
     ]

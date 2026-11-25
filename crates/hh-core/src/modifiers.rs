@@ -1,9 +1,10 @@
 //! The shared modifier framework (docs/rules/README.md, *Modifiers*): a
 //! modifier key's value is the product of every live source naming it
-//! (earned achievements, completed projects, career bonuses), 1 with none.
+//! (earned achievements, completed projects, research done this run, career
+//! bonuses), 1 with none.
 //! Derived on demand, never stored, so it can't go stale.
 
-use crate::content::{content, AchievementReward, ProjectReward};
+use crate::content::{content, AchievementReward, ProjectReward, ResearchEffect};
 use crate::fx::Fx;
 use crate::rules::Rules;
 use crate::state::GameState;
@@ -23,6 +24,13 @@ pub fn modifier(r: &Rules, g: &GameState, key: &str) -> Fx {
         if let ProjectReward::Modifier { key: k, value } = reward {
             if k == key {
                 m = m * crate::modules::projects::stacked(*value, n);
+            }
+        }
+    }
+    for effect in crate::modules::research::live_effects(g) {
+        if let ResearchEffect::Modifier { key: k, value } = effect {
+            if k == key {
+                m = m * *value;
             }
         }
     }

@@ -16,7 +16,8 @@ Service), Act 3 The Vault (Q14 The Vault), Act 4 The Dyson Sphere (Q17 Dyson Sph
 ## Act 1: the lunar operation (draft-playable)
 
 About 25% of play (a readout, not a target). Skill: from clicking commands to programs that run
-whole runs. The chain is 1.1 to 1.11 in order, each opening one mechanic at a time (074); 1.a,
+whole runs. The chain is 1.1 to 1.11 in order, each opening one mechanic at a time (074), and marks
+only significant things: 1.8 is a silent unlock, not a quest; 1.a,
 1.b and 1.c are side quests that complete beside it and never hold it up. A new game can build
 only Solar Panels and Data Centers. Each chain quest's transition is a story modal in the UI
 (its `story` and `payoff` paragraphs in `content/events.json`, placeholder text; no doc copies
@@ -26,20 +27,20 @@ research and projects gated on it).
 
 | Beat | Quest (id) | Trigger | Condition | Opens | Status |
 |---|---|---|---|---|---|
-| 1.1 Online | `qpower_boot_sequence` | game start | 2 Solar Panels | the Buy Science command and the research view (only the Blueprints, and Programming after 1.4, show in it until 1.8) | aligned |
-| 1.2 Blueprints | `qblueprints` | 1.1 | the Basic Blueprints research (20 science) | (the research itself unlocks the Regolith Excavator, Smelter, Launch Pad and Storage Depot) | aligned |
-| 1.3 First shipment | `qfirst_shipment` | 1.2 | one launch carrying 20+ titanium | its start grants 20 Propellant once a career; while it is active pads carry Titanium only, and a partial pad launches by hand from its card; done, Advanced Blueprints (50 science: Battery, Refinery, Fabricator) goes on sale | aligned |
+| 1.1 Online | `qpower_boot_sequence` | game start | 2 Solar Panels | the Buy Science command and the research view (only the Blueprints, and Programming after 1.4, show in it until a Research Lab is built, 1.8) | aligned |
+| 1.2 Blueprints | `qblueprints` | 1.1 | the Basic Blueprints research (10 science) | (the research itself unlocks the Regolith Excavator, Smelter, Launch Pad and Storage Depot) | aligned |
+| 1.3 First shipment | `qfirst_shipment` | 1.2 | one launch carrying 20+ titanium | its start grants 20 Propellant once a career; while it is active pads carry Titanium only, and a partial pad launches by hand from its card; done, Advanced Blueprints (20 science: Battery, Refinery, Fabricator) goes on sale | aligned |
 | 1.4 Full load | `qfull_load` | 1.3 | one launch carrying a full pad of He-3 | (teaches He-3, the claim's real export); Programming goes on sale (research, 200 science, bought once for the career: the Programs view, the full editor; the right column's program, Add to Program and loadouts are open from day 1) | aligned |
 | 1.5 Processors | `qautomate_automation` | 1.4 | 2 Data Centers | the Launch Full Pads command; program logic (the `program_logic` flag at 2 working processors); loadouts are open from run 1 and always kept | draft |
-| 1.6 Speculators notice you | `qspeculators_notice` | 1.5 | speculators present (Attention from units sold) | the adversary tab (the `adversaries` panel; speculator bursts land only while they are present) | draft |
+| 1.6 Trade | `qtrade` | 1.5 | 1,500 credits from trade (launch pay) this run | nothing. Speculators arrive on their own (Attention from units sold, [attention.md](rules/attention.md)): the silent `speculators_arrive` event sets the `speculators_seen` flag and opens the Adversaries panel the first time they are present | draft |
 | 1.7 Burnout | `qburnout` | 1.6 | 1 retirement (boredom forces the first; one forced before 1.7 counts, so 1.7 completes as it is reached) | the Retirement panel (voluntary retirement); bests and firsts carry. Boredom runs from day 1 with its meter shown; 1.7's modals explain it | draft |
-| 1.8 Lab | `qlab` | 1.7 | a Research Lab | the full research catalog, Projects and Foundation Grant, the Recreation Dome; Geopolitical Intelligence shows; the first global projects (Blueprint Archive, then Conditional Logic, opens `if`) are offered | draft |
-| 1.9 Three voices | `qthree_voices` | 1.8 | career-best rank 5 on each axis (three sub-objectives) | each axis's major rank-5 effect (ideology.md); its rank-5 global project | draft |
+| 1.8 Lab | none: a silent unlock on building a Research Lab, not a quest (the silent one-off `research_lab_built`) | game start, any run | a Research Lab owned | the `research_lab` flag: the full research catalog (Geopolitical Intelligence among it), Projects and Foundation Grant, the Recreation Dome | draft |
+| 1.9 Three voices | `qthree_voices` | 1.7 | career-best rank 5 on each axis (three sub-objectives) | each axis's major rank-5 effect (ideology.md); its rank-5 global project; while it is active the first global projects (Blueprint Archive, Conditional Logic, opens `if`) are offered, shown once the Projects panel is open (a Research Lab) | draft |
 | 1.10 Land rush | `qland_rush` | 1.9 | rivals present (Attention from land claimed) | the Contest Claims command (neutralizes the rivals) | draft |
 | 1.11 Deep Space Telescope | `qdeep_space_telescope` | 1.10 | the Deep Space Telescope global project (30,000 credits and 5,000 science at no faster than 3,000 days, so several runs) | Act 2: the `swarm_revealed` flag, the swarm's 100-year countdown, the Timeline view, the Experiment Lab | draft |
-| 1.a Big launch | `qbig_launch` (side) | 1.6 | one launch pays 1,000+ credits | Disrupt Speculators (also takes speculator Attention off) | draft |
-| 1.b Full cluster | `qfull_cluster` (side) | 1.8 | every item of one research category of 2+ items (not the Blueprints) bought in one run | placeholder: every run starts with 50 Science | draft |
-| 1.c Blueprints for everyone | `qblueprints_for_everyone` (side) | 1.8 | the Blueprint Archive global project (placeholder: 500 credits, 200 science) | Basic and Advanced Blueprints count as bought at the start of every run | draft |
+| 1.a Big launch | `qbig_launch` (side) | the `speculators_seen` flag (beside 1.6) | one launch pays 1,000+ credits | Disrupt Speculators (also takes speculator Attention off) | draft |
+| 1.b Full cluster | `qfull_cluster` (side) | the `research_lab` flag (beside 1.7) | every item of one research category of 2+ items (not the Blueprints) bought in one run | placeholder: every run starts with 50 Science | draft |
+| 1.c Blueprints for everyone | `qblueprints_for_everyone` (side) | the `research_lab` flag (beside 1.9, when the Archive is offered) | the Blueprint Archive global project (placeholder: 500 credits, 200 science) | Basic and Advanced Blueprints count as bought at the start of every run | draft |
 
 Placeholder choices (049), all for Matt to keep or replace:
 

@@ -10,8 +10,8 @@
 //      boredom cap, the run summary holding the clock (a double-click on Continue buys
 //      nothing under it), run 2 (known tiles and resources still shown, not cheated), the
 //      career's play log on disk as a bot's.
-//   2. Every panel: scenario late_unlocks opens Research, Projects and Ideologies (1.8 Lab
-//      is past a second run); a locked and a funded project; every nav tile opens; the
+//   2. Every panel: scenario late_unlocks opens Research, Projects and Ideologies (its
+//      Research Lab built, past a second run); a locked and a funded project; every nav tile opens; the
 //      cheated mark, a jump ahead, the cheat building and Complete all research, and the
 //      replay check.
 //   3. A program's current-line frame at 10x and 50x, each speed's days per second,
@@ -979,8 +979,8 @@ async function storyView() {
   await autoStory();
   const content = (f) => JSON.parse(readFileSync(resolve(here, `../../content/${f}`), 'utf8'));
   const beat = () => evaluate(`document.querySelector('[data-testid="quest"]')?.textContent.match(/^1\\.(\\d+)/)?.[1] ?? '0'`).then(Number);
-  // Step until 1.6 is done or active. The step from 1.5 passes 1.6 in the same stretch
-  // (the speculators are already there), so it stops at 1.7 Burnout.
+  // Step until 1.6 is done or active. The step from 1.5 may pass 1.6 in the same stretch
+  // (1.6's trade credits count from the run's start), stopping at 1.7 Burnout.
   for (let step = 0; step < 8 && (await beat()) < 6; step++) {
     await cheats();
     await click('#accel-quest', 'autopilot: next quest step');
@@ -1070,7 +1070,7 @@ async function storyView() {
   );
   await shot('achievements');
   // A side quest has no modal: its completion banner carries its picture (scenario
-  // late_unlocks, 1.8 done and 1.b open; Complete all research finishes 1.b).
+  // late_unlocks, a Research Lab built and 1.b open; Complete all research finishes 1.b).
   await debugMenu();
   await speed(0);
   await setValue('#scenario', 'late_unlocks');
@@ -1465,7 +1465,7 @@ async function freshGame() {
 // ---- 2. every panel, reaching the gated ones from scenario late_unlocks ----
 /** Section 2. Opens the cheats (toggled off and on again) and leaves the debug menu open. */
 async function everyPanel() {
-  // Projects open at 1.8 Lab, after 1.7 Burnout (a second run): the scenario
+  // Projects open with the first Research Lab (in a second run here): the scenario
   // opens them (and Ideologies and Retirement) instead of playing that far.
   await speed(0);
   await debugMenu();
@@ -1564,7 +1564,7 @@ async function speedsAndSaves() {
   const owned = () => evaluate(`document.querySelector('.card.building[data-id="solar_panel"]').dataset.owned`);
   const before = await owned();
   // The card is the Buy button: a click anywhere on its text buys one.
-  await click('.card.building[data-id="solar_panel"].can-buy .desc');
+  await click('.card.building[data-id="solar_panel"].can-buy .card-text');
   const after = await owned();
   await checkAct(Number(after) === Number(before) + 1,`a click on a green card buys a Solar Panel: ${before} -> ${after}`);
   // Its own controls keep their jobs and buy nothing.
@@ -1576,7 +1576,7 @@ async function speedsAndSaves() {
   // A real mouse press on the card, then space: the pause key, not a second buy (a press
   // must not leave the card focused).
   {
-    const p = await evaluate(`(() => { const e = document.querySelector('.card.building[data-id="solar_panel"] .desc'); e.scrollIntoView({ block: 'center' }); const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
+    const p = await evaluate(`(() => { const e = document.querySelector('.card.building[data-id="solar_panel"] .card-text'); e.scrollIntoView({ block: 'center' }); const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
     const n0 = Number(await owned());
     const buyable = await exists('.card.building[data-id="solar_panel"].can-buy');
     for (const type of ['mousePressed', 'mouseReleased']) await send('Input.dispatchMouseEvent', { type, x: p.x, y: p.y, button: 'left', clickCount: 1 });

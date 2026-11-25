@@ -45,7 +45,9 @@ propellant can run out partway through.
 2. Pays `base_values[good] × demand × cargo × shipment_credit_mult` credits, at the good's
    demand for today (set earlier in the day).
 3. Counts a shipment for the run, raises the run's best launch (the most credits one launch
-   paid, which the `launch_credits` condition reads, [events.md](events.md)) and the good's
+   paid, which the `launch_credits` condition reads, [events.md](events.md)), adds the pay
+   to the run's `trade_credits` (every launch's pay this run, which the `trade_credits`
+   condition reads) and raises the good's
    best cargo (the most of it one launch carried this run, `best_cargo`, which the
    `launch_cargo` and `launch_full` conditions read), adds the cargo
    × `speculator_per_unit` to the speculators' Attention ([attention.md](attention.md)),

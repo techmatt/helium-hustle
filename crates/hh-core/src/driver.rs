@@ -97,30 +97,33 @@ const BUILD_ORDER: &[(&str, u32)] = &[
     ("smelter", 1),
     ("refinery", 1),
     ("solar_panel", 3),
-    ("excavator", 2),
+    ("excavator", 3),
     ("storage_depot", 1),
     ("launch_pad", 1),
     ("solar_panel", 4),
-    ("excavator", 3),
-    ("refinery", 2),
-    ("solar_panel", 5),
-    ("fabricator", 1),
-    ("data_center", 2),
-    ("solar_panel", 6),
-    ("research_lab", 1),
     ("excavator", 4),
-    ("smelter", 2),
+    ("refinery", 2),
+    ("excavator", 6),
+    ("solar_panel", 5),
+    ("excavator", 7),
+    ("solar_panel", 6),
+    ("fabricator", 1),
     ("solar_panel", 7),
-    ("excavator", 5),
+    ("data_center", 2),
+    ("research_lab", 1),
+    ("smelter", 2),
+    ("solar_panel", 8),
+    ("excavator", 8),
     ("refinery", 3),
     ("battery", 1),
-    ("solar_panel", 8),
+    ("solar_panel", 9),
 ];
 
 /// The research the script buys, in order, as soon as it can: Act 1's
-/// Blueprints, which unlock the buildings past Solar Panels and Data Centers.
+/// Blueprints, which unlock the buildings past Solar Panels and Data Centers,
+/// then Regolith Processing for the excavators.
 /// (Not Programming: it opens only the Programs view, which the script never uses.)
-const RESEARCH: &[&str] = &["basic_blueprints", "advanced_blueprints"];
+const RESEARCH: &[&str] = &["basic_blueprints", "advanced_blueprints", "regolith_processing"];
 
 /// (resource, the command that buys it): bridges for a building's missing input; the
 /// price comes from the view.

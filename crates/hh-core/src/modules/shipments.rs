@@ -234,6 +234,7 @@ pub fn launch(r: &Rules, g: &mut GameState, i: usize) {
     g.run.stats.shipments += 1;
     let cargo = g.run.pads[i].cargo;
     g.run.stats.best_launch = g.run.stats.best_launch.max(pay);
+    g.run.stats.trade_credits = g.run.stats.trade_credits.saturating_add(pay);
     let best = g.run.stats.best_cargo.entry(good.clone()).or_insert(Fx::ZERO);
     *best = (*best).max(cargo);
     super::attention::on_sale(r, g, cargo);

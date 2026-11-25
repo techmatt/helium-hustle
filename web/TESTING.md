@@ -34,8 +34,8 @@ up directly). It plays, in order:
    open, `autoStory`) to the forced retirement at the boredom cap; the run summary
    holding the clock, run 2 (known tiles and resources still shown, not cheated). Its double-click-on-Continue check failed once (058: a buy hint under
    it, nothing bought) and passed on a rerun: a timing flake, not yet fixed.
-2. **Every panel**: scenario `late_unlocks` opens Research, Projects and Ideologies (1.8 Lab
-   is past a second run); a locked project's condition, a funded one's days to done; every
+2. **Every panel**: scenario `late_unlocks` opens Research, Projects and Ideologies (1.7 done
+   and a Research Lab built, beat 1.8); a locked project's condition, a funded one's days to done; every
    nav tile shown opens, and every Act 1 tile is shown (all of `content/nav.json` but panels
    only a DRAFT quest opens); no CHEATED tag in the bottom bar (the mark in the debug info), a jump ahead, the cheat building (+1000 credits a day, 1 credit,
    no card with Cheats off) and Complete all research, and the replay check.
@@ -66,8 +66,8 @@ up directly). It plays, in order:
    and Esc while typing in it keeps the number (`numberBox`), Text shows the same lines, and at 1x the
    `4x` line's four dots fill 1/4 to 4/4; set to 12, it shows a bar titled `k/12`. Sections open Text through the nav tile
    (`openText`); the mode is remembered.
-   Then `storyView`: a new game played through 1.6 by the autopilot's *Next quest step*
-   (the step from 1.5 passes 1.6 too, stopping at 1.7); Story shows the Act 1 band alone,
+   Then `storyView`: a new game played by the autopilot's *Next quest step* until 1.6 is
+   active or done (it may stop at 1.6 or 1.7); Story shows the Act 1 band alone,
    painted, the finished beats lit (each with its picture's thumbnail; the active
    beat's thumbnail and the left column's foot on the active quest's picture), the active one glowing (in view) with its task, one
    "???" after it and no achievements; a lit beat's click replays its modal; the
@@ -119,7 +119,7 @@ Activity's unread count (counts while folded, clears once read); in `everything`
 takeovers (a program in every form the text grammar writes, pasted in Programs' Text mode:
 each line reads, Blocks holds every line, the text reads back unchanged; the
 Cortex mock by its toggle, closed with Esc) and every open project's Max then − steps,
-each taken. A career short of 1.8 (Projects) is played on by the debug autopilot's
+each taken. A career without the Projects tile (a Research Lab, beat 1.8) is played on by the debug autopilot's
 *Next quest step*, each step timed and checked to move the quest; after the scenarios its
 *Everything* plays to the ending (~15 s) and every later-act panel is audited. Building cards with no
 picture drawn yet (placeholder art) are not findings. The late panels again in

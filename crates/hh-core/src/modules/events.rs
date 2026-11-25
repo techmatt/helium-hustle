@@ -42,6 +42,7 @@ fn triggered(g: &GameState, e: &Event) -> bool {
         }
         Trigger::QuestComplete { quest } => g.career.completed_quests.contains(quest),
         Trigger::BoredomPhase { phase } => g.run.boredom_phase >= *phase,
+        Trigger::Flag { flag, beside } => g.career.flags.contains(flag) && quest_open_or_done(g, beside),
     }
 }
 
@@ -97,6 +98,7 @@ pub fn holds(r: &Rules, g: &GameState, quest: &str, c: &Condition) -> bool {
         Condition::Retirements { count } => g.career.retirements >= *count,
         Condition::AdversaryPresent { adversary } => super::attention::present(r, g, adversary),
         Condition::LaunchCredits { amount } => g.run.stats.best_launch >= *amount,
+        Condition::TradeCredits { amount } => g.run.stats.trade_credits >= *amount,
         Condition::LaunchCargo { resource, amount } => best_cargo(g, resource) >= *amount,
         Condition::LaunchFull { resource } => best_cargo(g, resource) >= r.p.shipments.pad_cargo_capacity,
         Condition::ResearchCluster { min_items, exclude } => cluster_done(g, *min_items, exclude).is_some(),
@@ -141,6 +143,7 @@ pub fn progress(r: &Rules, g: &GameState, c: &Condition) -> Option<(Fx, Fx)> {
             Some((super::attention::attention(g, adversary), super::attention::threshold_of(r, adversary)))
         }
         Condition::LaunchCredits { amount } => Some((g.run.stats.best_launch, *amount)),
+        Condition::TradeCredits { amount } => Some((g.run.stats.trade_credits, *amount)),
         Condition::LaunchCargo { resource, amount } => Some((best_cargo(g, resource), *amount)),
         Condition::LaunchFull { resource } => Some((best_cargo(g, resource), r.p.shipments.pad_cargo_capacity)),
         Condition::QuietDays { days } => Some((n((g.run.day + 1).saturating_sub(g.run.last_order.unwrap_or(0))), n(*days))),
@@ -176,6 +179,7 @@ pub fn kind(c: &Condition) -> &'static str {
         Condition::Retirements { .. } => "retirements",
         Condition::AdversaryPresent { .. } => "adversary_present",
         Condition::LaunchCredits { .. } => "launch_credits",
+        Condition::TradeCredits { .. } => "trade_credits",
         Condition::LaunchCargo { .. } => "launch_cargo",
         Condition::LaunchFull { .. } => "launch_full",
         Condition::ResearchCluster { .. } => "research_cluster",
@@ -266,7 +270,8 @@ fn fire(g: &mut GameState, e: &Event) {
 
 /// End of tick: the active quest completes if its condition holds (and the
 /// next may too, the same day); then each one-off event not yet fired this
-/// run fires if triggered and its condition holds.
+/// run fires if triggered and its condition holds; then each side quest not
+/// yet completed completes if triggered and its condition holds.
 pub fn check(r: &Rules, g: &mut GameState) {
     while let Some(q) = active_quest(g) {
         start(g, q);
@@ -278,6 +283,16 @@ pub fn check(r: &Rules, g: &mut GameState) {
         fire(g, q);
         g.note("quest", &q.id);
     }
+    // One-off events before side quests, so a flag one sets starts a side
+    // quest the same day.
+    for e in content().events.iter().filter(|e| !e.is_quest() && !e.is_side()) {
+        if !g.run.events.contains_key(&e.id) && triggered(g, e) && holds(r, g, &e.id, &e.condition) {
+            fire(g, e);
+            if !e.silent {
+                g.activity("event", &e.id, None, None);
+            }
+        }
+    }
     // Side quests: each completes once a career, once triggered and its
     // condition holds, beside the chain (it never waits on them).
     for e in content().events.iter().filter(|e| e.is_side()) {
@@ -285,14 +300,6 @@ pub fn check(r: &Rules, g: &mut GameState) {
             g.career.completed_quests.insert(e.id.clone());
             fire(g, e);
             g.note("quest", &e.id);
-        }
-    }
-    for e in content().events.iter().filter(|e| !e.is_quest() && !e.is_side()) {
-        if !g.run.events.contains_key(&e.id) && triggered(g, e) && holds(r, g, &e.id, &e.condition) {
-            fire(g, e);
-            if !e.silent {
-                g.activity("event", &e.id, None, None);
-            }
         }
     }
 }

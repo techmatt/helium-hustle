@@ -17,6 +17,7 @@ of every run.
 | `game_start` | always, if `run_number` is null; else only in that run. A quest ignores `run_number`. |
 | `quest_complete` | the quest is completed (in any run) |
 | `boredom_phase` | the run's boredom phase is at least `phase` ([boredom.md](boredom.md)) |
+| `flag` | the career flag `flag` is set and the chain quest `beside` is active or done (a side quest hangs beside it in Story, below, so it never runs unseen) |
 
 **Conditions** (`condition` on the row, and on each sub-objective):
 
@@ -39,6 +40,7 @@ of every run.
 | `credits_earned` | credits produced this run reach `amount` |
 | `retirements` | the career's retirements, forced or chosen, reach `count` |
 | `adversary_present` | the adversary is present now ([attention.md](attention.md)) |
+| `trade_credits` | every launch this run paid at least `amount` credits in all (the run stat `trade_credits`, [shipments.md](shipments.md)) |
 | `launch_credits` | one launch this run paid at least `amount` credits ([shipments.md](shipments.md)) |
 | `launch_cargo` | one launch this run carried at least `amount` of `resource` |
 | `launch_full` | one launch this run carried a full pad (`pad_cargo_capacity`) of `resource` |
@@ -67,13 +69,14 @@ repeat them (career `started_quests`). 1.3 First Shipment's 20 Propellant is the
 While a chain quest naming `pad_goods` is active, a pad may be set only to those goods (1.3:
 Titanium; [shipments.md](shipments.md)).
 
-**Side quests.** After the chain, each `side` row in file order that is not completed
-completes if its trigger has happened and its condition holds: recorded in the career like
+**Side quests.** After the one-off events (so a flag one sets starts a side quest the same
+day), each `side` row in file order that is not completed completes if its trigger has
+happened and its condition holds: recorded in the career like
 a chain quest, fired and logged. Each completes once per career, beside the chain, which
 never waits on one. A side quest's condition can't be `all_of` (sub-objectives latch only
 for the chain's active quest).
 
-**One-off events.** After the quests, each `ongoing` row in file order that has not fired
+**One-off events.** After the chain, each `ongoing` row in file order that has not fired
 this run fires if its trigger has happened and its condition holds. Each fires at most once
 per run, and again in the next run (its fired mark is per run). One triggered by a quest
 completed earlier in the same check can fire that same day.
@@ -84,7 +87,7 @@ completed earlier in the same check can fire that same day.
 | Unlock | Effect |
 |---|---|
 | `enable_building` | the building may be bought this run. A building named by any event's `enable_building` is locked until one enables it ([economy.md](economy.md)). |
-| `enable_nav_panel` | the panel is shown this run. Two gate a rule: `retirement` (the Retire action, [career.md](career.md)) and `research` (buying research, [research.md](research.md)); others (`adversaries` from 1.6, `projects`, `ideologies`, ...) are display. |
+| `enable_nav_panel` | the panel is shown this run. Two gate a rule: `retirement` (the Retire action, [career.md](career.md)) and `research` (buying research, [research.md](research.md)); others (`adversaries` once speculators first arrive, `projects` once a Research Lab is built, `ideologies`, ...) are display. |
 | `enable_project` | a project whose unlock is `project_enabled` may be funded this run ([projects.md](projects.md)) |
 | `set_flag` | sets a career flag |
 | `grant` (`resource`, `amount`) | adds the amount to this run's stock; re-applied at each run start (below), a starting bonus from then on |
@@ -119,9 +122,9 @@ names the acts (placeholder names) and the chain quest each opens with; a quest 
 last act opened at or before it. The view carries each quest's `beat` and `act`, the acts
 reached (`acts`: an act whose first quest is active or completed), whether a later chain
 quest exists (`quest.more`), and `side_quests`: each side quest started (its trigger
-happened) or completed, with the chain quest it branches off (`parent`, its trigger's quest)
-and its progress (a side quest's trigger must be a chain quest's completion: a load error
-otherwise). The Story panel draws the finished beats, the active one and a "???" from
+happened) or completed, with the chain quest it branches off (`parent`, its trigger's quest, or a `flag` trigger's
+`beside`) and its progress (a side quest's trigger must be a chain quest's completion or a
+`flag` beside one: a load error otherwise). The Story panel draws the finished beats, the active one and a "???" from
 these; a finished beat's click replays its modals.
 
 **Activity feed** (display: no rule reads it). The run keeps a feed of what happened, by
@@ -149,13 +152,20 @@ Triggers, conditions and unlocks are content (`content/events.json`).
 
 ## Content
 
-`content/events.json`: 33 rows. Twenty-three `story`: Act 1's beats 1.1 Online to 1.11 Deep
-Space Telescope (the swarm's reveal; [../arc.md](../arc.md)), then the draft Q8 to Q18 and the
-Epilogue. Three `side`: 1.a Big Launch (opens Disrupt Speculators), 1.b Full Cluster (a placeholder
+`content/events.json`: 33 rows. Twenty-two `story`: Act 1's beats 1.1 Online to 1.11 Deep
+Space Telescope (the swarm's reveal; [../arc.md](../arc.md); beat 1.8 is no quest), then the
+draft Q8 to Q18 and the Epilogue. 1.6 Trade completes at 1,500 credits from trade this run and
+unlocks nothing; 1.9 Three Voices follows 1.7. Three `side`: 1.a Big Launch (triggered by the
+`speculators_seen` flag beside 1.6; opens Disrupt Speculators), 1.b Full Cluster (a placeholder
 reward: a `grant` of 50 Science, so every later run starts with it; a cluster of 2 or more
 items, `min_items`, the Blueprints excluded) and 1.c Blueprints for Everyone (completes with
-the Blueprint Archive; no unlock: the Blueprints are the project's reward, [projects.md](projects.md)). Seven `ongoing`: the Recreation Dome unlock
-(once 1.8 is done), Political Currents, propellant discovery, boredom phases 2 to 5.
+the Blueprint Archive; no unlock: the Blueprints are the project's reward, [projects.md](projects.md));
+1.b triggers on the `research_lab` flag beside 1.7, 1.c beside 1.9 (while its Archive is offered). Eight `ongoing`, the first two silent: `research_lab_built` (a Research Lab owned: sets
+the `research_lab` flag, opens the `projects` panel, Foundation Grant and the Recreation
+Dome), `speculators_arrive` (speculators present: sets the `speculators_seen` flag, opens the
+`adversaries` panel), Political Currents, propellant discovery, boredom phases 2 to 5. Both
+first ones trigger at `game_start` in any run, so once seen in the career their unlocks
+re-apply from each run's day 0 (*Run start*).
 
 ## Port notes
 
@@ -163,7 +173,8 @@ the Blueprint Archive; no unlock: the Blueprints are the project's reward, [proj
   Awareness, Q6 Open Horizons and Q7 Signal Detected left the line (Q6 and Q7 are achievement
   candidates, [../arc.md](../arc.md)). Changed (074): the opening teaches one mechanic at a
   time (1.2 Blueprints, 1.3 First Shipment, 1.4 Full Load are new; Q2's Launch Plans event is
-  gone); Retirement opens at 1.7, Foundation Grant and the Projects panel at 1.8.
+  gone); Retirement opens at 1.7, Foundation Grant and the Projects panel with the first
+  Research Lab.
 - Conflict: Dream's falling effectiveness. The boredom phase 3 to 5 events' text says Dream
   drops to 20/15/10%; the ruling is a flat Dream ([dream.md](dream.md)), so these events
   unlock nothing and their text stays as placeholder.

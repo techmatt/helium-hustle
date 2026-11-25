@@ -508,6 +508,8 @@ pub struct RunStats {
     pub peak_energy: Fx,
     /// The most credits one launch paid this run.
     pub best_launch: Fx,
+    /// Credits every launch paid this run, in all (trade).
+    pub trade_credits: Fx,
     /// The most cargo one launch carried this run, by good.
     #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
     pub best_cargo: BTreeMap<String, Fx>,

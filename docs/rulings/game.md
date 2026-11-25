@@ -43,22 +43,37 @@ Programs have their own part ([programs.md](programs.md)).
   achievements (not built yet; candidates in arc.md). Placeholder techniques stand for 1.10
   (Contest Claims) and 1.a (Disrupt Speculators).
 - **Act 1 opening: one mechanic at a time (2026-11-23).** The chain is 1.1 Online, 1.2
-  Blueprints, 1.3 First Shipment, 1.4 Full Load, 1.5 Processors, then Speculators, Burnout, Lab,
-  Three Voices, Land Rush and the Telescope (1.6-1.11, conditions and unlocks as before). A
+  Blueprints, 1.3 First Shipment, 1.4 Full Load, 1.5 Processors, 1.6 Trade, 1.7 Burnout, then
+  Three Voices, Land Rush and the Telescope (1.9-1.11; 1.8 Lab is a silent unlock, below). A
   new game builds only Solar Panels and Data Centers; 1.1 opens Buy Science (placeholder 10
-  credits + 1 energy → 1 science) and the research view, which shows only the Blueprints until
-  1.8. Basic Blueprints (20 science) unlocks the Excavator, Smelter, Launch Pad and Storage
-  Depot; Advanced Blueprints (50, on sale once 1.3 is done) the Battery, Refinery and
-  Fabricator. 1.3: one launch of 20+ titanium; its start grants 20 propellant once; pads
+  credits + 1 energy → 1 science) and the research view, which shows only the Blueprints (and
+  Regolith Processing, Programming) until the first Research Lab. Basic Blueprints (10
+  science, 2026-11-25) unlocks the Excavator, Smelter, Launch Pad and Storage Depot; Advanced
+  Blueprints (20, on sale once 1.3 is done) the Battery, Refinery and Fabricator. 1.3: one launch of 20+ titanium; its start grants 20 propellant once; pads
   carry Titanium only while it is active; a partial pad launches by hand from its card. 1.4: a
   full pad of He-3 (it teaches He-3). Launch Full Pads stays hidden until 1.5 completes; Load
   Launch Pads opens with the first pad. The Launch Plans event is gone. Boredom runs from day
   1 with its meter shown; 1.7's modals explain it, and a retirement forced earlier completes 1.7
-  as it is reached. Side quest 1.c Blueprints for Everyone (from 1.8): the Blueprint Archive
+  as it is reached. Side quest 1.c Blueprints for Everyone (once a Research Lab is built): the Blueprint Archive
   global project (placeholder 500 credits + 200 science, offered first) makes both Blueprints
   bought at every run's start while it counts as completed (2026-11-24: lost at a timeline's
   end, back when re-funded; 1.c stays completed). Refinery upkeep is 5 regolith + 2 energy. *Default (074):* 1.b's
   cluster leaves out the Blueprints category (else 1.c would complete 1.b for free).
+- **The main quest line marks only significant things (2026-11-25).** Never "research
+  this"; a beat may be an untelegraphed expectation. 1.8 Lab left the quest line (its beat
+  stays in [arc.md](../arc.md)): building the first Research Lab silently opens the full
+  research catalog, Projects, Foundation Grant, the Recreation Dome, Geopolitical
+  Intelligence and the first global projects (event `research_lab_built`, career flag
+  `research_lab`); 1.9 follows 1.7 and keeps its number. *Default (093):* side quests 1.b and
+  1.c start with the lab, hung beside 1.7 in Story.
+- **Playtest batch 1 numbers (2026-11-25, placeholders).** Blueprints 10 and 20 science. 1.6
+  Trade: earn 1,500 credits from trade this run (launch pay only, 093 default) and never
+  mention speculators, who still arrive on their own. Regolith Processing: research, 100
+  science, +50% Regolith Excavator output, on sale once a Research Lab can be built (two Data
+  Centers); the excavator makes 2 regolith a day.
+- **Prose round-trip (2026-11-25).** Every player-facing string in `content/` exports to one
+  Markdown file grouped by screen (`content/prose.md`, committed) and imports back by id
+  (`python scripts/prose.py`); ids never change, a missing id leaves its string alone.
 - **Story modals (2026-11-23).** Each chain quest's transition is a modal that pauses the
   game: the finished quest's payoff, then the next quest's story, then its task in one line;
   one paragraph a modal, chained or merged as the story reads best, one button, play resumes

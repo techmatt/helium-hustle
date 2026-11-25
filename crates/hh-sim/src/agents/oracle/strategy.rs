@@ -18,13 +18,14 @@ pub struct Strategy {
     pub label: String,
     pub dir: Directives,
     /// It funds an ideology axis, which needs Geopolitical Intelligence,
-    /// visible once the Lab quest (1.8) is done: until then it is skipped.
+    /// visible once a Research Lab is built (the `research_lab` flag): until
+    /// then it is skipped.
     pub funds: bool,
 }
 
 impl Strategy {
     pub fn available(&self, g: &GameState) -> bool {
-        !self.funds || g.career.completed_quests.contains("qlab")
+        !self.funds || g.career.flags.contains("research_lab")
     }
 }
 
@@ -83,7 +84,10 @@ fn trade() -> Directives {
 
 /// Whether the Three Voices quest (1.9, ranks) is the one under way.
 pub(super) fn three_voices_open(g: &GameState) -> bool {
-    g.career.completed_quests.contains("qlab") && !g.career.completed_quests.contains(THREE_VOICES)
+    // Ranks are bought with Fund, which a Research Lab opens (its research).
+    g.career.completed_quests.contains("qburnout")
+        && g.career.flags.contains("research_lab")
+        && !g.career.completed_quests.contains(THREE_VOICES)
 }
 
 impl Oracle {

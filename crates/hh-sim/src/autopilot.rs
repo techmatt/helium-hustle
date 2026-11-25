@@ -39,7 +39,7 @@ pub const STALL: u64 = 8000;
 /// One thing to reach: a milestone, a main-quest sub-objective or a main quest.
 #[derive(Debug, Clone, Serialize)]
 pub struct Step {
-    /// `milestone:M5`, `quest:qlab`, `quest:qthree_voices:humanist_5`.
+    /// `milestone:M5`, `quest:qburnout`, `quest:qthree_voices:humanist_5`.
     pub id: String,
     pub name: String,
 }

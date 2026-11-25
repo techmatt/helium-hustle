@@ -754,6 +754,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 body: &e.body,
                 parent: match &e.trigger {
                     crate::content::Trigger::QuestComplete { quest } => Some(quest.as_str()),
+                    crate::content::Trigger::Flag { beside, .. } => Some(beside.as_str()),
                     _ => None,
                 },
                 done,

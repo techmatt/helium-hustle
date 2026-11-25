@@ -10,9 +10,19 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
 - **Building art (2026-11-16).** Cards use painterly cut-outs at each building's natural 3/4
   view (019's `cut34`: no fixed camera, a small irregular regolith patch, transparent
   background), as a 96 px thumbnail cropped tight on the building, under the title beside the
-  description and flows. A later "base grows" view uses the crisp painterly isometric set
+  flows (and a line, when it has one). A later "base grows" view uses the crisp painterly isometric set
   (019's `crisp`: fixed 2:1 camera and patch guide, one sun). The icon styles of icon_style_r1
   were all rejected.
+- **Building lines (2026-11-25).** No building description by default: the stat lines say
+  it. A building gets a line only for a mechanic worth pointing out that its stat lines don't
+  show; rising cost is never one. *Default (093):* only the Arbitrage Engine and the Microwave
+  Receiver have one. An empty `description` shows no line.
+- **Nothing upcoming is telegraphed (2026-11-25).** UI for something not yet present stays
+  hidden until it appears. The speculator column (Launch Pads' Markets) and the Adversaries
+  panel's Speculators section wait for speculators' first arrival in the run (093 default:
+  per run), the Adversaries panel, Speculator Analysis and the Arbitrage Engine for their first
+  arrival in the career, and side quest 1.a, which names them, starts then too (once 1.6 is
+  reached).
 - **Icons (025-027).** One icon module, `web/src/ui/icons.tsx`, over
   `web/src/assets/{chips,nav,horizon}/`, so a new style swaps files only. Painterly nav icons at
   normal size (compact tiles use chips or glyphs); the earthlight horizon; chip icons (color

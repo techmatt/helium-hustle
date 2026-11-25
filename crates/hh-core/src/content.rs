@@ -184,6 +184,8 @@ pub enum ResearchEffect {
     /// Buying it sets a career flag for good (Programming); once the flag holds
     /// the item never shows again.
     CareerFlag { flag: String },
+    /// Multiplies a modifier key while it is done this run (`crate::modifiers`).
+    Modifier { key: String, value: Fx },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -198,6 +200,8 @@ pub enum Visibility {
     /// Shipments over the career, this run included.
     ShipmentsCompleted { count: u32 },
     QuestCompleted { quest: String },
+    /// The career flag is set.
+    Flag { flag: String },
     /// Every one holds.
     AllOf { all: Vec<Visibility> },
 }
@@ -207,7 +211,10 @@ impl Visibility {
     /// (`Content::check`).
     fn ids_ok(&self, c: &Content) -> bool {
         match self {
-            Visibility::Always | Visibility::BoredomAbove { .. } | Visibility::ShipmentsCompleted { .. } => true,
+            Visibility::Always
+            | Visibility::BoredomAbove { .. }
+            | Visibility::ShipmentsCompleted { .. }
+            | Visibility::Flag { .. } => true,
             Visibility::EventCompleted { event } => c.event(event).is_some(),
             Visibility::ResearchPurchased { research: x } => c.research_item(x).is_some(),
             Visibility::BuildingCount { building, .. } => c.building(building).is_some(),
@@ -238,6 +245,9 @@ pub enum Trigger {
     GameStart { run_number: Option<u32> },
     QuestComplete { quest: String },
     BoredomPhase { phase: u32 },
+    /// Once the career flag is set and the chain quest `beside` is active or
+    /// done (a side quest hangs beside it in the Story view).
+    Flag { flag: String, beside: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -279,6 +289,8 @@ pub enum Condition {
     Retirements { count: u32 },
     /// The adversary is present now (its Attention at its threshold, attention.md).
     AdversaryPresent { adversary: String },
+    /// Launches this run paid at least `amount` credits in all.
+    TradeCredits { amount: Fx },
     /// One launch this run paid at least `amount` credits.
     LaunchCredits { amount: Fx },
     /// One launch this run carried at least `amount` of the good.
@@ -624,6 +636,7 @@ impl Content {
             | Condition::CreditsEarned { .. }
             | Condition::Retirements { .. }
             | Condition::LaunchCredits { .. }
+            | Condition::TradeCredits { .. }
             | Condition::QuietDays { .. }
             | Condition::EarthScience { .. }
             | Condition::TimelinesEnded { .. }
@@ -727,11 +740,16 @@ impl Content {
             if let Some(ResearchEffect::CommandCostOverride { command, resource, .. }) = &r.effect {
                 need(self.command(command).is_some() && res(resource), format!("{w}: bad override"));
             }
+            if let Some(ResearchEffect::Modifier { key, .. }) = &r.effect {
+                need(modifier(key), format!("{w}: unknown modifier {key:?}"));
+            }
         }
         for e in &self.events {
             let w = format!("event {:?}", e.id);
-            if let Trigger::QuestComplete { quest: q } = &e.trigger {
-                need(quest(q), format!("{w}: trigger names unknown quest {q:?}"));
+            match &e.trigger {
+                Trigger::QuestComplete { quest: q } => need(quest(q), format!("{w}: trigger names unknown quest {q:?}")),
+                Trigger::Flag { beside: q, .. } => need(quest(q), format!("{w}: trigger beside unknown quest {q:?}")),
+                _ => {}
             }
             need(
                 e.category == "story" || e.category == "side" || e.category == "ongoing",
@@ -879,10 +897,14 @@ impl Content {
                 }
             }
             need(!self.acts.is_empty(), "acts.json: no acts".to_string());
-            // Story draws each side quest off the chain quest that starts it.
+            // Story draws each side quest off the chain quest that starts it
+            // (or that a flag-triggered one hangs beside).
             for e in self.events.iter().filter(|e| e.is_side()) {
-                let off_chain = matches!(&e.trigger, Trigger::QuestComplete { quest } if chain.contains(&quest.as_str()));
-                need(off_chain, format!("side quest {:?}: its trigger must be a chain quest's completion", e.id));
+                let off_chain = match &e.trigger {
+                    Trigger::QuestComplete { quest } | Trigger::Flag { beside: quest, .. } => chain.contains(&quest.as_str()),
+                    _ => false,
+                };
+                need(off_chain, format!("side quest {:?}: its trigger must be a chain quest's completion or a flag beside one", e.id));
             }
         }
         // The ids hh-core names in code (docs/rules/README.md, *Content*).

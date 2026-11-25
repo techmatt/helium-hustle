@@ -1,7 +1,7 @@
 # Attention (module `attention`, variant `minimal`): DRAFT
 
 **Draft (049).** The minimal Attention model that brings Act 1's adversaries in: the
-speculators (beat 1.6) and the rival AIs (1.10). Thresholds, drivers and decay are
+speculators (who arrive on their own, no quest asks for them) and the rival AIs (1.10). Thresholds, drivers and decay are
 placeholders ([../arc.md](../arc.md)).
 
 ## Rules
@@ -33,11 +33,15 @@ command (effect `neutralize`, adversary `rivals`; open once beat 1.10 sets its f
 Disrupt Speculators (open once side quest 1.a sets its flag) also takes `disrupt_attention`
 off the speculators' Attention per execution ([demand.md](demand.md)).
 
-**Quests.** The `adversary_present` condition holds while the adversary is present
-([events.md](events.md)): beats 1.6 and 1.10.
+**Events.** The `adversary_present` condition holds while the adversary is present
+([events.md](events.md)): beat 1.10's, and the silent one-off `speculators_arrive`, which the
+first time speculators are present sets the career flag `speculators_seen` (side quest 1.a's
+trigger, Speculator Analysis's visibility) and opens the `adversaries` panel.
 
 **Display.** The view's `adversaries` gives each adversary's Attention, threshold and
-presence (the Adversaries panel, whose tile beat 1.6 opens: the `adversaries` panel).
+presence (the Adversaries panel). Nothing upcoming is telegraphed (UI only): the Speculators
+column of Launch Pads' Markets table and the Adversaries panel's Speculators section stay
+hidden until some market has had speculators this run.
 
 ## Actions
 
@@ -61,4 +65,4 @@ None of its own: Contest Claims and Disrupt Speculators are commands run by prog
 ## Content
 
 `content/commands.json`: Contest Claims (`neutralize`), Disrupt Speculators.
-`content/events.json`: the `adversary_present` conditions of 1.6 and 1.10.
+`content/events.json`: the `adversary_present` conditions of `speculators_arrive` and 1.10.

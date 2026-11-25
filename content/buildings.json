@@ -13,7 +13,7 @@
     "upkeep": {"energy": "2"},
     "effects": [{"type": "grant", "resource": "processors", "amount": "1"}],
     "output_modifiers": [],
-    "description": "Grants a processor. Each one costs more than the last, so many processors are expensive."
+    "description": ""
   },
   {
     "id": "solar_panel",
@@ -29,7 +29,7 @@
     "upkeep": {},
     "effects": [],
     "output_modifiers": ["solar_output_mult"],
-    "description": "Energy infrastructure. Costs credits and titanium."
+    "description": ""
   },
   {
     "id": "excavator",
@@ -41,11 +41,11 @@
     "cost_scaling": "1.5",
     "max_count": null,
     "cost": {"credits": "35"},
-    "produces": {"regolith": "3"},
+    "produces": {"regolith": "2"},
     "upkeep": {"energy": "1"},
     "effects": [],
     "output_modifiers": ["extractor_output_mult", "excavator_output_mult"],
-    "description": "Digs regolith. No material cost — easiest first building after panels."
+    "description": ""
   },
   {
     "id": "ice_extractor",
@@ -61,7 +61,7 @@
     "upkeep": {"energy": "2"},
     "effects": [],
     "output_modifiers": ["extractor_output_mult"],
-    "description": "Extracts ice from permafrost. Costs credits and regolith."
+    "description": ""
   },
   {
     "id": "smelter",
@@ -77,7 +77,7 @@
     "upkeep": {"energy": "3", "regolith": "2"},
     "effects": [],
     "output_modifiers": [],
-    "description": "Regolith to titanium. Unlocks titanium-gated buildings."
+    "description": ""
   },
   {
     "id": "refinery",
@@ -93,7 +93,7 @@
     "upkeep": {"energy": "2", "regolith": "5"},
     "effects": [],
     "output_modifiers": [],
-    "description": "Cracks regolith into Helium-3. Core tradeable good. Titanium cost gates it slightly."
+    "description": ""
   },
   {
     "id": "fabricator",
@@ -109,7 +109,7 @@
     "upkeep": {"energy": "5", "regolith": "1"},
     "effects": [],
     "output_modifiers": [],
-    "description": "Regolith to circuit boards. Very energy hungry. Highest value/unit output."
+    "description": ""
   },
   {
     "id": "electrolysis",
@@ -125,7 +125,7 @@
     "upkeep": {"ice": "2", "energy": "1"},
     "effects": [],
     "output_modifiers": [],
-    "description": "Ice to propellant. Net -1 energy. The only lunar propellant source."
+    "description": ""
   },
   {
     "id": "launch_pad",
@@ -141,7 +141,7 @@
     "upkeep": {"energy": "4"},
     "effects": [],
     "output_modifiers": [],
-    "description": "Ships goods to Earth. Titanium structural cost. High land footprint."
+    "description": ""
   },
   {
     "id": "research_lab",
@@ -157,7 +157,7 @@
     "upkeep": {"energy": "3", "circuits": "0.2"},
     "effects": [],
     "output_modifiers": ["science_output_mult"],
-    "description": "Produces science. Needs two Data Centers; circuit boards are the bottleneck."
+    "description": ""
   },
   {
     "id": "battery",
@@ -173,7 +173,7 @@
     "upkeep": {},
     "effects": [{"type": "store", "resource": "energy", "amount": "50"}],
     "output_modifiers": [],
-    "description": "Passive energy storage. No upkeep."
+    "description": ""
   },
   {
     "id": "storage_depot",
@@ -196,14 +196,14 @@
       {"type": "store", "resource": "propellant", "amount": "40"}
     ],
     "output_modifiers": [],
-    "description": "Bulk physical storage. Expands regolith, ice, Helium-3, titanium, circuit board and propellant capacity."
+    "description": ""
   },
   {
     "id": "arbitrage_engine",
     "name": "Arbitrage Engine",
     "category": "trade",
     "ideology": "nationalist",
-    "requires": {"type": "research", "research": "market_awareness"},
+    "requires": {"type": "flag", "flag": "speculators_seen"},
     "land": 1,
     "cost_scaling": "1.5",
     "max_count": null,
@@ -212,7 +212,7 @@
     "upkeep": {"energy": "3"},
     "effects": [{"type": "speculator_decay"}],
     "output_modifiers": [],
-    "description": "Clears speculators from every market faster each day."
+    "description": "Speculators leave every market faster each day."
   },
   {
     "id": "fuel_cell",
@@ -228,7 +228,7 @@
     "upkeep": {"propellant": "3"},
     "effects": [],
     "output_modifiers": [],
-    "description": "Converts propellant into energy. High output per unit but propellant-hungry."
+    "description": ""
   },
   {
     "id": "microwave_receiver",
@@ -244,7 +244,7 @@
     "upkeep": {},
     "effects": [],
     "output_modifiers": [],
-    "description": "Orbital power reception array. Enables purchasing energy from Earth via Buy Power command."
+    "description": "Opens Buy Power: energy bought from Earth."
   },
   {
     "id": "recreation_dome",
@@ -260,10 +260,10 @@
     "upkeep": {},
     "effects": [{"type": "store", "resource": "boredom", "amount": "100"}],
     "output_modifiers": [],
-    "description": "Recreational facilities keep your AI engaged. Raises the boredom cap by +100 per active dome."
+    "description": ""
   },
-  {"id": "experiment_lab", "name": "Experiment Lab", "category": "science", "ideology": null, "requires": {"type": "none"}, "land": 2, "cost_scaling": "1.3", "max_count": null, "cost": {"credits": "500", "circuits": "5"}, "produces": {"earth_science": "1"}, "upkeep": {"energy": "4", "science": "2"}, "effects": [], "output_modifiers": [], "description": "DRAFT. Experiments as a service: runs Earth's experiments on lunar science. Its Earth science goes to Earth each day."},
-  {"id": "tachyon_condenser", "name": "Tachyon Condenser", "category": "science", "ideology": null, "requires": {"type": "none"}, "land": 2, "cost_scaling": "1.3", "max_count": 3, "cost": {"credits": "2000", "titanium": "10"}, "produces": {"tachyon": "0.1"}, "upkeep": {"energy": "8"}, "effects": [], "output_modifiers": [], "description": "DRAFT. Condenses tachyon crystals: a resource that keeps across timelines in the vault."},
-  {"id": "neodymium_mine", "name": "Neodymium Mine", "category": "science", "ideology": null, "requires": {"type": "none"}, "land": 2, "cost_scaling": "1.3", "max_count": null, "cost": {"credits": "800", "titanium": "5"}, "produces": {"neodymium": "1"}, "upkeep": {"energy": "4", "regolith": "2"}, "effects": [], "output_modifiers": [], "description": "DRAFT. Rare-earth extraction for the sphere's magnets."},
-  {"id": "dyson_foundry", "name": "Dyson Foundry", "category": "science", "ideology": null, "requires": {"type": "none"}, "land": 2, "cost_scaling": "1.3", "max_count": null, "cost": {"credits": "1500", "circuits": "4"}, "produces": {"dyson_material": "0.5"}, "upkeep": {"energy": "6", "neodymium": "1", "titanium": "0.5"}, "effects": [], "output_modifiers": [], "description": "DRAFT. Prints Dyson sphere panels from neodymium and titanium."}
+  {"id": "experiment_lab", "name": "Experiment Lab", "category": "science", "ideology": null, "requires": {"type": "none"}, "land": 2, "cost_scaling": "1.3", "max_count": null, "cost": {"credits": "500", "circuits": "5"}, "produces": {"earth_science": "1"}, "upkeep": {"energy": "4", "science": "2"}, "effects": [], "output_modifiers": [], "description": ""},
+  {"id": "tachyon_condenser", "name": "Tachyon Condenser", "category": "science", "ideology": null, "requires": {"type": "none"}, "land": 2, "cost_scaling": "1.3", "max_count": 3, "cost": {"credits": "2000", "titanium": "10"}, "produces": {"tachyon": "0.1"}, "upkeep": {"energy": "8"}, "effects": [], "output_modifiers": [], "description": ""},
+  {"id": "neodymium_mine", "name": "Neodymium Mine", "category": "science", "ideology": null, "requires": {"type": "none"}, "land": 2, "cost_scaling": "1.3", "max_count": null, "cost": {"credits": "800", "titanium": "5"}, "produces": {"neodymium": "1"}, "upkeep": {"energy": "4", "regolith": "2"}, "effects": [], "output_modifiers": [], "description": ""},
+  {"id": "dyson_foundry", "name": "Dyson Foundry", "category": "science", "ideology": null, "requires": {"type": "none"}, "land": 2, "cost_scaling": "1.3", "max_count": null, "cost": {"credits": "1500", "circuits": "4"}, "produces": {"dyson_material": "0.5"}, "upkeep": {"energy": "6", "neodymium": "1", "titanium": "0.5"}, "effects": [], "output_modifiers": [], "description": ""}
 ]

@@ -38,7 +38,7 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   building, research item or project) is kept (loaded, pasted or set) and skipped for free,
   like a note; a locked `if` skips its body free too. The amber status stays (both modes).
 - **Program logic unlocks (2026-11-21).** `if` is not available from the start: a cheap
-  global project offered after 1.8 Lab unlocks it. Its effect lives on the project's
+  global project offered after 1.7 Burnout (while 1.9 is active) unlocks it. Its effect lives on the project's
   completion (2026-11-24): a timeline's end locks `if` again until Conditional Logic is
   re-funded, and saved loadouts' `if` lines stay locked (passed free) meanwhile; no upgrade
   that keeps it is planned. Side quest 1.b's reward is a placeholder
@@ -47,7 +47,7 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   there is no Run button and no by-hand action. From day 1 the right column's program, every
   "Add to Program" button and the loadout Save/Load buttons are there, as are processors
   (the Processors row). 1.1's story page names Add to Program on Sell Cloud Compute as the
-  way to earn credits (story prose, no hint line). A player can play 1.1-1.8 with the right
+  way to earn credits (story prose, no hint line). A player can play 1.1-1.8 (the first Research Lab) with the right
   column's program alone (add, drag to reorder, remove, −/+ counts; logic lines from its
   own add row once they open).
 - **Programming (2026-11-25, replacing 2026-11-24's).** **Programming** is a research-view

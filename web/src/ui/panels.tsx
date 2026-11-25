@@ -105,6 +105,8 @@ export function CommandBody({ v, c }: { v: View; c: CommandView }) {
 export function LaunchPads({ s }: { s: Store }) {
   const v = s.view;
   const goods = v.loading_priority;
+  // Nothing upcoming is telegraphed: the column waits for speculators' first arrival this run.
+  const specs = speculatorsSeen(v);
   const propellant = v.resources.find((r) => r.id === 'propellant')?.amount ?? '0';
   const swap = (i: number, j: number) => {
     const next = [...store.view.loading_priority];
@@ -120,7 +122,7 @@ export function LaunchPads({ s }: { s: Store }) {
             <tr>
               <th>Good</th>
               <th>Demand</th>
-              <th>Speculators</th>
+              {specs && <th>Speculators</th>}
             </tr>
           </thead>
           <tbody>
@@ -131,7 +133,7 @@ export function LaunchPads({ s }: { s: Store }) {
                 </td>
                 <td>{m.demand !== null ? `${num(Number(m.demand) * 100, 0)}% (${m.tier})` : m.tier}</td>
                 {/* Under 10, a decimal: a pool of 0.4 still draws Disrupt Speculators first. */}
-                <td>{m.speculators !== null ? num(m.speculators, Number(m.speculators) < 10 ? 1 : 0) : '—'}</td>
+                {specs && <td>{m.speculators !== null ? num(m.speculators, Number(m.speculators) < 10 ? 1 : 0) : '—'}</td>}
               </tr>
             ))}
           </tbody>
@@ -480,6 +482,11 @@ export function Ideologies({ s }: { s: Store }) {
 
 // ---- Adversaries -------------------------------------------------------------------
 
+/** Speculators have been in some market this run (the view sends `null` until then). */
+function speculatorsSeen(v: View): boolean {
+  return v.markets.some((m) => m.speculators !== null);
+}
+
 export function Adversaries({ s }: { s: Store }) {
   const v = s.view;
   return (
@@ -526,21 +533,23 @@ export function Adversaries({ s }: { s: Store }) {
           </tbody>
         </table>
       </Section>
-      <Section title="Speculators">
-        <p class="muted">Speculators gather on goods that earn; they suppress demand until they drift away or are disrupted.</p>
-        <table class="grid-table">
-          <tbody>
-            {v.markets.map((m) => (
-              <tr key={m.good}>
-                <td>
-                  <ResChip v={v} id={m.good} /> {m.name}
-                </td>
-                <td>{m.speculators !== null ? `${num(m.speculators, Number(m.speculators) < 10 ? 1 : 0)} speculators` : 'none seen'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Section>
+      {speculatorsSeen(v) && (
+        <Section title="Speculators">
+          <p class="muted">Speculators gather on goods that earn; they suppress demand until they drift away or are disrupted.</p>
+          <table class="grid-table">
+            <tbody>
+              {v.markets.map((m) => (
+                <tr key={m.good}>
+                  <td>
+                    <ResChip v={v} id={m.good} /> {m.name}
+                  </td>
+                  <td>{m.speculators !== null ? `${num(m.speculators, Number(m.speculators) < 10 ? 1 : 0)} speculators` : 'none seen'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Section>
+      )}
     </div>
   );
 }

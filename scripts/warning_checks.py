@@ -17,7 +17,8 @@ Checks:
   call by name not through `libm::`, an `#[allow]` of the ban, the ban's `deny`
   removed, a name missing from clippy.toml).
 - docs: a doc (README, CLAUDE.md, web/README and TESTING, every page under docs/) over 15 KB, or
-  inside the 1 KB margin below it (over 14,336 bytes, `wc -c`).
+  inside the 1 KB margin below it (over 14,336 bytes, `wc -c`); or `content/prose.md` (a
+  generated file, exempt from the cap) out of date with `content/`, or its round trip not clean.
 - balance: each target the judge misses (`hh-sim balance` on experiments/balance.json,
   the judge's one home; targets in docs/principles.md).
 - qa: the last `npm run qa` in this tree (`out/qa/report.json`, if any) had a pass that
@@ -264,6 +265,10 @@ def check_docs():
             warn("docs", f"{rel(p)} is {n:,} B, over the 15 KB cap")
         elif n > DOC_CAP - DOC_MARGIN:
             warn("docs", f"{rel(p)} is {n:,} B, inside the 1 KB margin (trim it before adding)")
+    prose = subprocess.run([sys.executable, str(ROOT / "scripts" / "prose.py"), "check"],
+                           capture_output=True, text=True, encoding="utf-8")
+    if prose.returncode != 0:
+        warn("docs", f"content/prose.md: {prose.stdout.strip() or prose.stderr.strip()}")
 
 
 def check_balance():

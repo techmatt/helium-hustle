@@ -174,15 +174,15 @@ fn the_opening_unlocks_one_mechanic_at_a_time() {
 fn buildings_resolve_in_passes_with_partial_production() {
     let r = rules();
     let mut g = r.new_game(1);
-    // 3 regolith a day for a smelter that wants 2 and a refinery that wants 5:
-    // the smelter (earlier in content order) runs fully, the refinery on the 1 left.
-    own(&mut g, "excavator", 1);
+    // 4 regolith a day for a smelter that wants 2 and a refinery that wants 5:
+    // the smelter (earlier in content order) runs fully, the refinery on the 2 left.
+    own(&mut g, "excavator", 2);
     own(&mut g, "smelter", 1);
     own(&mut g, "refinery", 1);
-    own(&mut g, "solar_panel", 3);
+    own(&mut g, "solar_panel", 4);
     r.advance(&mut g, 1);
     assert_eq!(g.amount("titanium"), f("0.5"));
-    assert_eq!(g.amount("he3"), f("0.2"));
+    assert_eq!(g.amount("he3"), f("0.4"));
     assert_eq!(g.amount("regolith"), Fx::ZERO);
     assert_eq!(g.run.today.stalls.get("refinery"), Some(&Stall::InputStarved));
     assert_eq!(g.run.today.stalls.get("smelter"), None);
@@ -593,7 +593,7 @@ fn research_needs_visibility_and_science() {
     assert!(r.apply(&mut g, &res("basic_blueprints")).unwrap_err().contains("science"));
     // Before 1.8 Lab only the Blueprints show.
     assert!(r.apply(&mut g, &res("market_awareness")).unwrap_err().contains("not available"));
-    g.career.completed_quests.insert("qlab".into());
+    g.career.flags.insert("research_lab".into());
     assert!(r.apply(&mut g, &res("market_awareness")).unwrap_err().contains("science"));
     assert!(r.apply(&mut g, &res("dream_protocols")).unwrap_err().contains("not available"));
     set(&mut g, "science", "250");
@@ -871,6 +871,59 @@ fn the_view_shows_nav_tiles_from_content_and_the_next_run() {
     assert!(v.last_run.is_none());
 }
 
+/// Playtest batch 1 (093): 1.6 is trade credits with no speculator data in the
+/// view before speculators come; the Blueprints cost 10 and 20; building cards
+/// carry a line only for a mechanic their stats don't show; the first Research
+/// Lab opens the catalog silently; Regolith Processing digs 50% more.
+#[test]
+fn playtest_batch_1_reads_as_ruled() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    let v = r.view(&g);
+    let cost = |id: &str| v.research.iter().find(|x| x.id == id).unwrap().cost;
+    assert_eq!((cost("basic_blueprints"), cost("advanced_blueprints")), (f("10"), f("20")));
+    let lines: Vec<_> = v.buildings.iter().filter(|b| !b.description.is_empty()).map(|b| b.id).collect();
+    assert_eq!(lines, ["arbitrage_engine", "microwave_receiver"]);
+    // Through 1.5: 1.6 asks for trade credits, and no market has speculator data.
+    let chain: Vec<_> = crate::content::content().events.iter().filter(|e| e.is_quest()).collect();
+    for e in chain.iter().take_while(|e| e.id != "qtrade") {
+        g.career.completed_quests.insert(e.id.clone());
+    }
+    let v = r.view(&g);
+    let q = v.quest.as_ref().unwrap();
+    assert_eq!((q.id, q.kind, q.beat), ("qtrade", "trade_credits", Some("1.6")));
+    assert!(!q.title.contains("peculator") && !q.summary.contains("peculator") && q.story.iter().all(|s| !s.contains("peculator")));
+    assert!(v.markets.iter().all(|m| m.speculators.is_none()));
+    assert!(!g.run.enabled_panels.contains("adversaries"));
+    // 1.6 counts launch pay only.
+    g.run.stats.trade_credits = f("1500");
+    r.advance(&mut g, 1);
+    assert_eq!(r.view(&g).quest.unwrap().id, "qburnout");
+    // The first Research Lab opens what 1.8 did, silently; 1.b and 1.c start with it.
+    assert!(!r.view(&g).research.iter().any(|x| x.id == "geopolitical_intelligence" && x.visible));
+    own(&mut g, "research_lab", 1);
+    r.advance(&mut g, 1);
+    assert!(g.career.flags.contains("research_lab") && g.run.enabled_panels.contains("projects"));
+    assert!(g.run.enabled_buildings.contains("recreation_dome") && g.run.enabled_projects.contains("foundation_grant"));
+    let v = r.view(&g);
+    assert!(v.research.iter().any(|x| x.id == "geopolitical_intelligence" && x.visible));
+    // 1.b starts beside 1.7; 1.c waits for 1.9, when its Archive is offered.
+    let sides: Vec<_> = v.side_quests.iter().map(|s| (s.id, s.parent)).collect();
+    assert_eq!(sides, [("qfull_cluster", Some("qburnout"))]);
+    g.career.completed_quests.insert("qburnout".into());
+    let sides: Vec<_> = r.view(&g).side_quests.iter().map(|s| (s.id, s.parent)).collect();
+    assert_eq!(sides, [("qfull_cluster", Some("qburnout")), ("qblueprints_for_everyone", Some("qthree_voices"))]);
+    // Regolith Processing: +50% excavator output (2 a day -> 3).
+    let mut g = r.new_game(1);
+    own(&mut g, "excavator", 1);
+    own(&mut g, "solar_panel", 2);
+    r.advance(&mut g, 1);
+    assert_eq!(g.amount("regolith"), f("2"));
+    g.run.research.insert("regolith_processing".into());
+    r.advance(&mut g, 1);
+    assert_eq!(g.amount("regolith"), f("5"));
+}
+
 #[test]
 fn story_timeline_view_has_acts_beats_and_started_side_quests() {
     let r = rules();
@@ -881,15 +934,18 @@ fn story_timeline_view_has_acts_beats_and_started_side_quests() {
     let q = v.quest.as_ref().unwrap();
     assert_eq!((q.id, q.beat, q.act, q.more), ("qpower_boot_sequence", Some("1.1"), Some(1), true));
     assert!(v.side_quests.is_empty());
-    // Through 1.6: Big Launch (1.a) has started off it, not done, with its progress.
+    // Through 1.6: no side quest yet; once speculators have come, Big Launch
+    // (1.a) has started beside 1.6, not done, with its progress.
     let chain: Vec<_> = crate::content::content().events.iter().filter(|e| e.is_quest()).collect();
-    let at = chain.iter().position(|e| e.id == "qspeculators_notice").unwrap();
+    let at = chain.iter().position(|e| e.id == "qtrade").unwrap();
     for e in &chain[..=at] {
         g.career.completed_quests.insert(e.id.clone());
     }
+    assert!(r.view(&g).side_quests.is_empty());
+    g.career.flags.insert("speculators_seen".into());
     let v = r.view(&g);
     let side: Vec<_> = v.side_quests.iter().map(|s| (s.id, s.parent, s.done)).collect();
-    assert_eq!(side, vec![("qbig_launch", Some("qspeculators_notice"), false)]);
+    assert_eq!(side, vec![("qbig_launch", Some("qtrade"), false)]);
     assert!(v.side_quests[0].progress.is_some());
     assert!(v.story.iter().filter(|s| s.chain).all(|s| s.act == Some(1) && s.beat.is_some()));
     // The whole chain: every act reached, the last quest has none after it.
