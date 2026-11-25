@@ -5,6 +5,8 @@
 //! seed, an invalid config, an illegal action) are thrown as JavaScript
 //! strings. A state carries its config, so calls after `new_game` take only it.
 
+use std::cell::RefCell;
+
 use hh_core::{Action, Config, GameState, Record, Rules, Scenario};
 use serde::Serialize;
 use wasm_bindgen::prelude::*;
@@ -27,10 +29,45 @@ fn config(json: &str) -> Result<Config, JsValue> {
     Config::from_json(json).map_err(err)
 }
 
+// Two caches, so a page wake (advance_run, then view on the state it returned) neither
+// rebuilds the rules nor parses the state twice (094: about a third of a wake's engine
+// time). Neither changes a result: the rules are rebuilt from an equal config, and a
+// state's JSON parses back to an equal state (`cached_state_matches_a_fresh_parse`).
+thread_local! {
+    /// The rules last built, reused while states carry an equal config.
+    static RULES: RefCell<Option<Rules>> = const { RefCell::new(None) };
+    /// The last state handed out as JSON, with that JSON: a call on the same string
+    /// takes a copy instead of parsing it.
+    static LAST: RefCell<Option<(String, GameState)>> = const { RefCell::new(None) };
+}
+
+/// The rules for a state's config, built once per config.
+fn rules_for(g: &GameState) -> Result<Rules, JsValue> {
+    RULES.with_borrow_mut(|cached| {
+        if let Some(r) = cached.as_ref().filter(|r| *r.config == *g.config) {
+            return Ok(r.clone());
+        }
+        let r = Rules::for_state(g).map_err(err)?;
+        *cached = Some(r.clone());
+        Ok(r)
+    })
+}
+
+/// A state's JSON, kept with the state for the next call on that string.
+fn hand_out(g: GameState) -> String {
+    let json = g.to_json();
+    LAST.with_borrow_mut(|last| *last = Some((json.clone(), g)));
+    json
+}
+
 /// A state and the rules it plays under, checked to fit.
 fn load(state_json: &str) -> Result<(Rules, GameState), JsValue> {
-    let g = GameState::from_json(state_json).map_err(err)?;
-    let r = Rules::for_state(&g).map_err(err)?;
+    let cached = LAST.with_borrow(|last| last.as_ref().filter(|(j, _)| j == state_json).map(|(_, g)| g.clone()));
+    let g = match cached {
+        Some(g) => g,
+        None => GameState::from_json(state_json).map_err(err)?,
+    };
+    let r = rules_for(&g)?;
     r.check_state(&g).map_err(err)?;
     Ok((r, g))
 }
@@ -74,7 +111,7 @@ pub fn new_game(config_json: &str, seed: &str, scenario: &str) -> Result<String,
     } else {
         Some(hh_core::scenario(scenario).map_err(err)?)
     };
-    Ok(to_json(&r.start(parse_seed(seed)?, s)))
+    Ok(hand_out(r.start(parse_seed(seed)?, s)))
 }
 
 /// Runs `ticks` ticks; returns the new state.
@@ -82,7 +119,7 @@ pub fn new_game(config_json: &str, seed: &str, scenario: &str) -> Result<String,
 pub fn advance(state_json: &str, ticks: u32) -> Result<String, JsValue> {
     let (r, mut g) = load(state_json)?;
     r.advance(&mut g, ticks as u64);
-    Ok(g.to_json())
+    Ok(hand_out(g))
 }
 
 /// Runs up to `ticks` ticks, stopping after a tick that retired the run
@@ -117,7 +154,7 @@ pub fn advance_run(state_json: &str, ticks: u32) -> Result<String, JsValue> {
         stopped: bool,
         ran: u32,
     }
-    Ok(to_json(&Advanced { state: g.to_json(), lines, stopped, ran }))
+    Ok(to_json(&Advanced { state: hand_out(g), lines, stopped, ran }))
 }
 
 /// The active quest's id: a change is a main-story transition, whose modal pauses the
@@ -134,7 +171,7 @@ pub fn apply(state_json: &str, action_json: &str) -> Result<String, JsValue> {
     let a: Action =
         serde_json::from_str(action_json).map_err(|e| err(format!("bad action JSON: {e}")))?;
     r.apply(&mut g, &a).map_err(err)?;
-    Ok(g.to_json())
+    Ok(hand_out(g))
 }
 
 /// A program's lines (a JSON entries array) as the text editor's text
@@ -280,4 +317,54 @@ pub fn replay(record_json: &str) -> Result<String, JsValue> {
         "warnings": warnings,
         "state": g,
     })))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    const BASELINE: &str = include_str!("../../../configs/baseline.json");
+
+    /// The state cache's premise: a state's JSON parses back to an equal state, early,
+    /// late and across a retirement (the golden game).
+    #[test]
+    fn cached_state_matches_a_fresh_parse() {
+        let c = Config::from_json(BASELINE).unwrap();
+        let r = Rules::new(&c).unwrap();
+        let mut states = Vec::new();
+        let mut g = r.start(1, None);
+        for _ in 0..12 {
+            r.advance(&mut g, 50);
+            states.push(g.clone());
+        }
+        let mut late = r.start(1, Some(hh_core::scenario("everything").unwrap()));
+        r.advance(&mut late, 60);
+        states.push(late);
+        states.push(hh_core::driver::golden_session(&c).unwrap().state);
+        for g in states {
+            assert_eq!(GameState::from_json(&g.to_json()).unwrap(), g, "tick {}", g.tick);
+        }
+    }
+
+    /// A wake through the caches reads as one through fresh parses.
+    #[test]
+    fn cached_calls_match_uncached_ones() {
+        let s = new_game(BASELINE, "1", "everything").unwrap();
+        let a = advance_run(&s, 20).unwrap();
+        let a: serde_json::Value = serde_json::from_str(&a).unwrap();
+        let next = a["state"].as_str().unwrap().to_string();
+        let ran = a["ran"].as_u64().unwrap();
+        let cached = view(&next).unwrap();
+        LAST.with_borrow_mut(|l| *l = None);
+        RULES.with_borrow_mut(|r| *r = None);
+        assert_eq!(view(&next).unwrap(), cached);
+        let fresh = {
+            let g = GameState::from_json(&s).unwrap();
+            let r = Rules::for_state(&g).unwrap();
+            let mut g2 = g.clone();
+            r.advance(&mut g2, ran);
+            g2.to_json()
+        };
+        assert_eq!(next, fresh);
+    }
 }

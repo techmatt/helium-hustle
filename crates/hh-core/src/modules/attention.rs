@@ -120,6 +120,23 @@ pub fn decay_day(r: &Rules, g: &mut GameState) {
     }
 }
 
+/// `days` of [`decay_day`] at once (the retirement gap): the decay is linear and
+/// floored at zero, so `days` of it are `max(0, a − days × decay)`, exact. The view
+/// previews a retirement on every look, and the gap's 1,825 days one by one were
+/// most of a late view's cost (094).
+pub fn decay_days(r: &Rules, g: &mut GameState, days: u64) {
+    if days == 0 {
+        return;
+    }
+    // In range: gap_days ≤ 100,000 and a decay ≤ 1,000,000 a day.
+    let n = i64::try_from(days).expect("a gap's days fit an i64");
+    for &who in ADVERSARIES {
+        let lost = decay(r, who).mul_int(n);
+        let a = g.career.attention.entry(who.to_string()).or_insert(Fx::ZERO);
+        *a = if lost >= *a { Fx::ZERO } else { *a - lost };
+    }
+}
+
 /// The neutralize stub: the adversary's Attention goes to zero.
 pub fn neutralize(g: &mut GameState, who: &str) {
     g.career.attention.insert(who.to_string(), Fx::ZERO);

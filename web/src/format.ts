@@ -9,6 +9,10 @@ const SUFFIXES: [number, string][] = [
   [1e3, 'K'],
 ];
 
+/** `toLocaleString('en-US')`'s format, made once: that call builds a formatter each
+ * time, and was the page's costliest function at 200x (094). */
+const WHOLE = new Intl.NumberFormat('en-US');
+
 /** A display number: K/M/B/T past 10,000; whole numbers plain; else up to `digits` decimals. */
 export function num(x: Fx | number, digits = 1): string {
   const n = typeof x === 'number' ? x : Number(x);
@@ -27,7 +31,7 @@ export function num(x: Fx | number, digits = 1): string {
       if (shown < 1000 || i === 0) return `${n < 0 ? '-' : ''}${trim(String(shown))}${s}`;
     }
   }
-  if (Number.isInteger(r)) return r.toLocaleString('en-US');
+  if (Number.isInteger(r)) return WHOLE.format(r);
   return trim(n.toFixed(digits));
 }
 

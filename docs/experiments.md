@@ -82,7 +82,14 @@ about 20 s on 6 threads; `ceiling` about 20 minutes, set by the oracle's careers
 (4 careers) about 6.5 s (092, on mimalloc: half the Windows allocator's time); `vs-human` on a 1,600-tick log a second. Other careers play
 4,000-20,000 ticks a second, slower the more often their
 player looks (random and the author every 5-10 ticks, the casual author every ~130): a view
-(~150-200 µs) costs ten state copies, so a rollout that plays an agent is view-bound.
+(~130-270 µs) costs ten state copies, so a rollout that plays an agent is view-bound.
+
+**The page's own cost** (094): headless Edge's main thread while the game runs, busy
+milliseconds a wall second, early (a new game) and late (`everything`): under 10 at 1x,
+about 35-70 at 200x. A wake (every 100 ms) costs ~1.2-3 ms of engine calls (wasm), and
+the rest is Preact's redraw. `experiments/results/094_profiling_pass/page_profile.mjs`
+measures it against a `vite preview` (an unminified build, `npx vite build --minify false`,
+names the functions); `wake_wasm.mjs` there splits a wake's wasm calls.
 
 **Tuning a sim player:** one ladder with named knob variants, `--agents
 "a=author:fill=4,b=author:fill=8" --seeds 6` (9 author variants × 6 seeds about 1-2 minutes),

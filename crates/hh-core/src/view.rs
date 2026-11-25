@@ -770,8 +770,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         .map(|a| ActView { act: a.act, name: &a.name })
         .collect();
     // The next run if this one retired now.
-    let mut after = g.clone();
-    career::retire(r, &mut after, false);
+    let after = career::next_run_preview(r, g);
     let next_run = NextRunView {
         starting_credits: career::starting_credits(r, &after),
         boredom_resilience: career::boredom_resilience(r, &after),

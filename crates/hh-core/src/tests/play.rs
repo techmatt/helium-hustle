@@ -1167,3 +1167,28 @@ fn scenarios_load_and_bad_ones_are_named() {
     assert!(e.contains("buildings"), "{e}");
     assert!(scenario("nope").is_err());
 }
+
+/// The gap's Attention decay at once is its days one by one: missing, below, at and
+/// above a day's decay, and far above (094).
+#[test]
+fn attention_decays_its_days_at_once() {
+    use crate::modules::attention::{decay_day, decay_days, ADVERSARIES};
+    let r = rules();
+    for start in [None, Some("0"), Some("0.001"), Some("0.02"), Some("0.5"), Some("7.3"), Some("40"), Some("5000")] {
+        for days in [0u64, 1, 2, 3, 100, 1825] {
+            let mut g = r.new_game(1);
+            for &who in ADVERSARIES {
+                match start {
+                    Some(v) => g.career.attention.insert(who.into(), f(v)),
+                    None => g.career.attention.remove(who),
+                };
+            }
+            let mut by_day = g.clone();
+            for _ in 0..days {
+                decay_day(&r, &mut by_day);
+            }
+            decay_days(&r, &mut g, days);
+            assert_eq!(g.career.attention, by_day.career.attention, "{start:?} for {days} days");
+        }
+    }
+}

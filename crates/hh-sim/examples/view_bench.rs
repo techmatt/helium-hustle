@@ -58,8 +58,12 @@ fn main() {
             career::retire(r, &mut h, false);
             std::hint::black_box(h);
         });
+        // What the view itself runs: the retirement without the new run's setup.
+        let preview = time(n, || {
+            std::hint::black_box(career::next_run_preview(r, g));
+        });
         println!(
-            "tick {at:>5}: view {view:6.1} us | state clone {clone:5.1} (config {config:5.1}) | clone+tick {peek:5.1} | clone+retire {retire:5.1}"
+            "tick {at:>5}: view {view:6.1} us | state clone {clone:5.1} (config {config:5.1}) | clone+tick {peek:5.1} | clone+retire {retire:5.1} (next-run preview {preview:5.1})"
         );
     }
 }

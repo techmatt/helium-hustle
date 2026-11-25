@@ -116,6 +116,24 @@ pub fn new_run(r: &Rules, g: &mut GameState) {
 /// Ends the run: its stats fold into the career (lifetime totals, personal
 /// bests), the retirement is logged, and the next run starts.
 pub fn retire(r: &Rules, g: &mut GameState, forced: bool) {
+    close_run(r, g, forced);
+    super::timeline::on_retire(r, g);
+    new_run(r, g);
+}
+
+/// What the next run would start with if this one retired now: the career as a
+/// retirement leaves it, with the carried ideology in the run, without the new run's
+/// setup (a third of a late view's cost, 094). Every next-run number (starting
+/// credits, resilience, Buy Power, ideology ranks) reads only these.
+pub fn next_run_preview(r: &Rules, g: &GameState) -> GameState {
+    let mut h = g.clone();
+    close_run(r, &mut h, false);
+    super::ideology::carry_in(&mut h);
+    h
+}
+
+/// A retirement's first part: the run's stats fold into the career, then the gap.
+fn close_run(r: &Rules, g: &mut GameState, forced: bool) {
     let s = g.run.stats.clone();
     let day = g.run.day;
     g.note(if forced { "forced_retirement" } else { "retired" }, "");
@@ -144,8 +162,6 @@ pub fn retire(r: &Rules, g: &mut GameState, forced: bool) {
     c.run_number += 1;
     c.ideology = g.run.ideology.clone();
     gap(r, g);
-    super::timeline::on_retire(r, g);
-    new_run(r, g);
 }
 
 /// The retirement gap (draft): `gap_days` days, simulated one by one, in which
@@ -154,12 +170,11 @@ pub fn retire(r: &Rules, g: &mut GameState, forced: bool) {
 /// adversary's Attention decays linearly. Unseen in Act 1 (no calendar).
 ///
 /// The scores and the Attention decay apart (neither reads the other), so each runs
-/// its own days; and a day is a function of its values alone, so once one leaves
-/// them as they were, so would every later one: each loop stops there. The same
-/// numbers as day by day, much faster: the view retires a copy on every look.
+/// its own days; and a score's day is a function of its value alone, so once one
+/// leaves it as it was, so would every later one: the loop stops there. The Attention's
+/// linear decay takes its days at once (`attention::decay_days`). The same numbers as
+/// day by day, much faster: the view previews a retirement on every look.
 fn gap(r: &Rules, g: &mut GameState) {
-    use super::attention::{decay_day, ADVERSARIES};
-    const N: usize = ADVERSARIES.len();
     let (f, days) = (super::ideology::gap_decay_factor(r), r.p.career.gap_days);
     for v in g.career.ideology.values_mut() {
         for _ in 0..days {
@@ -170,16 +185,7 @@ fn gap(r: &Rules, g: &mut GameState) {
             *v = next;
         }
     }
-    for _ in 0..days {
-        let mut before = [None; N];
-        for (b, who) in before.iter_mut().zip(ADVERSARIES) {
-            *b = g.career.attention.get(*who).copied();
-        }
-        decay_day(r, g);
-        if ADVERSARIES.iter().zip(before).all(|(who, was)| g.career.attention.get(*who).copied() == was) {
-            break;
-        }
-    }
+    super::attention::decay_days(r, g, days);
     g.career.gap_days += days;
 }
 

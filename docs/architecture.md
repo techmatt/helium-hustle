@@ -8,7 +8,10 @@ How the engine is put together. The rules are in [rules/](rules/README.md); the 
 - **`hh-core`**: every rule; nothing else holds one.
 - **`hh-sim`**: the native CLI: agents, careers, experiments ([simulator.md](simulator.md),
   [agents.md](agents.md)).
-- **`hh-wasm`**: wasm-bindgen adapter, JSON strings in and out, no rules. It also links
+- **`hh-wasm`**: wasm-bindgen adapter, JSON strings in and out, no rules. It keeps two
+  caches that change no result (094): the rules of the last config seen, and the last state
+  it handed out with its JSON, so a call on that same string skips the parse (a page
+  wake's `view` after its `advance_run`). It also links
   `hh-sim`'s library for the debug autopilot alone (a sim player driving the page's game:
   [simulator.md](simulator.md#accelerators)); `hh-sim` code it reaches must not read the
   clock (`Instant` panics in wasm) or the disk.
@@ -167,11 +170,14 @@ borrows content text (`&'static` ids, names, descriptions, content rates; `names
 once) instead of copying it, and answers "can it apply" with blocker functions
 (`economy::buy_blocker`, `land_blocker`, `research::blocker`), never `Rules::is_legal`'s
 state copy; the state's config is shared (`Arc`), so a state copy doesn't copy it. What's
-left is 160-320 µs natively on mimalloc (it grows with the run; about twice that on the
-Windows allocator): the day on a copy ~20-45 µs and the retire on a copy ~15-75 µs, both
-exact by construction (the retire's gap stops each decay once a day changes nothing, 092). `cargo run --release -p hh-sim --example
-view_bench` prints a view's cost split into those parts and a digest of every view's JSON
-over the golden game: a refactor that only reshapes the view keeps the digest.
+left is 130-270 µs natively on mimalloc (it grows with the run; about twice that on the
+Windows allocator, four to five times it in wasm): the day on a copy ~25-70 µs, the
+largest part, and the next run's numbers from `career::next_run_preview` (a retirement
+without the new run's setup) ~5-10 µs, both exact by construction (the gap's ideology
+decay stops once a day changes nothing, its Attention decay takes its days at once, 094).
+`cargo run --release -p hh-sim --example view_bench` prints a view's cost split into those
+parts and a digest of every view's JSON over the golden game: a refactor that only reshapes
+the view keeps the digest. Where a page wake's time goes: [094's write-up](../experiments/results/094_profiling_pass/README.md).
 
 ## State
 

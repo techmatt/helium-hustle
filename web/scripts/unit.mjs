@@ -29,6 +29,8 @@ const cases = [
   [9e12, '∞'],
 ];
 for (const [n, want] of cases) assert.equal(num(n), want, `num(${n})`);
+// Whole numbers read as toLocaleString('en-US') does (num keeps one formatter, 094).
+for (const n of [-0, -9999, -150, 0, 7, 100, 1000, 9999, 3.25e3]) assert.equal(num(n), n.toLocaleString('en-US'), `num(${n})`);
 assert.equal(perDay(-2.5), '−2.5/day');
 assert.equal(perDay(0.001), '0/day');
 assert.equal(perDay(1500.4), '+1,500/day');
