@@ -109,6 +109,8 @@ export interface CommandView {
   costs: Amounts;
   produces: Amounts;
   boredom: Fx;
+  /** It can be run by hand (its card's Run): something paces it (a cost, boredom or an effect). */
+  by_hand: boolean;
   /** A per-target command folded into one verb (Buy, Promote, Fund, Overclock) and its target's label. */
   verb: string | null;
   target: string | null;

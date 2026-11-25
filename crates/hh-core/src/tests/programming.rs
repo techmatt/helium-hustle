@@ -101,6 +101,22 @@ fn a_command_runs_by_hand_once_now() {
     assert!(r.apply(&mut g, &Action::RunCommand { command: "buy_science".into() }).is_err());
     set(&mut g, "energy", "0");
     let drained = g.clone();
-    assert!(r.apply(&mut g, &Action::RunCommand { command: "cloud_compute".into() }).is_err());
+    let err = r.apply(&mut g, &Action::RunCommand { command: "cloud_compute".into() }).unwrap_err();
     assert_eq!(g, drained, "a refusal changes nothing");
+    assert!(err.contains("short of Energy"), "the refusal names what it lacks: {err}");
+}
+
+/// 090: Idle costs nothing and adds no boredom, so by hand it was a free credit a
+/// click (paused on day 0 too): nothing paced it. It runs only in a program now.
+#[test]
+fn a_command_nothing_paces_never_runs_by_hand() {
+    let r = rules();
+    let mut g = r.new_game(7);
+    let view = r.view(&g);
+    let by_hand = |id: &str| view.commands.iter().find(|c| c.id == id).unwrap().by_hand;
+    assert!(!by_hand("idle"), "Idle: no cost, no boredom, no effect");
+    assert!(by_hand("cloud_compute") && by_hand("launch_pads"), "a cost or an effect paces these");
+    let before = g.clone();
+    assert!(r.apply(&mut g, &Action::RunCommand { command: "idle".into() }).is_err());
+    assert_eq!(g, before);
 }

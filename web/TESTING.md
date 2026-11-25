@@ -120,7 +120,7 @@ picture drawn yet (placeholder art) are not findings. The late panels again in
 the other theme; every building's card (`?all-cards`, a display-only URL flag) in both.
 Real mouse and key probes of click-to-buy and the program frame. Checks and `HH_*`
 settings: the script's header. Exit 1 on any finding, but known won't-fix slow frames (a
-debug scenario start, the ending, the first panel after Story: `docs/qa-findings.md`), read
+debug scenario start, the ending, the first panel after Story, opening the Cortex mock: `docs/qa-findings.md`), read
 at that moment and printed tagged `[known: won't fix]`. A pass that never reaches the ending is an `ending`
 finding, its line says NEVER REACHED THE ENDING, `report.json` keeps `ended` per pass, and
 `scripts/warning_checks.py` warns (kind `qa`) while the tree's last report has one.

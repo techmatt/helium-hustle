@@ -116,6 +116,8 @@ pub struct CommandView {
     pub costs: BTreeMap<String, Fx>,
     pub produces: BTreeMap<String, Fx>,
     pub boredom: Fx,
+    /// It can be run by hand (its card's Run): something paces it (`programs::by_hand`).
+    pub by_hand: bool,
     /// A per-target command folded into one verb (docs/rulings/programs.md, the flat
     /// template): its verb (`Buy`, `Promote`, `Fund`, `Overclock`) and its
     /// target's label (the name past the verb). `None` for the rest.
@@ -698,6 +700,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 costs,
                 produces,
                 boredom: program_rules::boredom_cost(g, cmd),
+                by_hand: program_rules::by_hand(r, g, cmd),
             }
         })
         .collect();

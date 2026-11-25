@@ -35,7 +35,9 @@ The module's params, `overclock_base_cap` among them, are in [programs.md](progr
 card's Run): one execution, now, between ticks, by the steps above, with no processor and
 no program; its flows show in the breakdown as "Commands by hand". There is no limit per day.
 Refused (nothing changes) for an unknown or locked command, one that would fail (an input
-short) or be skipped (every output capped). Open from the start; the Programs view and Add
+short; the refusal names the scarcest) or be skipped (every output capped), and one nothing
+paces: no cost, no boredom and no effect (Idle; the view's `by_hand` is false and its card
+has no Run), which runs only as a program line. Open from the start; the Programs view and Add
 to Program open with the Programming research ([research.md](research.md)).
 
 **Overclock.** Each execution adds its own stack on its `target` building category for

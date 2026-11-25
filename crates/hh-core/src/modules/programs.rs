@@ -583,11 +583,29 @@ pub fn run_by_hand(r: &Rules, g: &mut GameState, id: &str) -> Result<(), String>
     if !unlocked(g, c) {
         return Err(format!("run {}: locked", c.name));
     }
+    if !by_hand(r, g, c) {
+        return Err(format!("run {}: it costs nothing, so it runs only in a program", c.name));
+    }
+    let (costs, _) = flows(r, g, c);
     match execute(r, g, c, HAND_SOURCE, HAND_SOURCE, None) {
         LineOutcome::Ran => Ok(()),
-        LineOutcome::Skipped => Err(format!("run {}: every output at its cap", c.name)),
-        _ => Err(format!("run {}: short of an input", c.name)),
+        LineOutcome::Skipped => Err(format!("{}: every output is at its cap", c.name)),
+        _ => Err(match super::economy::scarcest(g, &costs, Fx::ZERO) {
+            Some(s) => {
+                let res = content().resource(&s.resource).map_or(s.resource.as_str(), |x| x.name.as_str());
+                format!("{}: short of {res}", c.name)
+            }
+            None => format!("{}: short of an input", c.name),
+        }),
     }
+}
+
+/// Whether a command can be run by hand: something paces it (a cost, boredom or an
+/// effect). One that costs nothing, adds no boredom and does nothing else (Idle)
+/// would be free credits a click, so it runs only as a program line.
+pub fn by_hand(r: &Rules, g: &GameState, c: &Command) -> bool {
+    let (costs, _) = flows(r, g, c);
+    c.effect.is_some() || boredom_cost(g, c) != Fx::ZERO || costs.values().any(|&v| v > Fx::ZERO)
 }
 
 /// The career flag that opens every instruction but plain commands.

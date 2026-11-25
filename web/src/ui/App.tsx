@@ -346,8 +346,10 @@ function Summary({ s }: { s: Store }) {
           </table>
         </Section>
         <p class="muted small">
-          What persists: quests, achievements, global projects, career bests, saved programs (Load, in
-          each program tab), ideology (faded by the years away), adversaries and everything you have seen.
+          What persists: quests, achievements, global projects, career bests,{' '}
+          {/* Saved programs only mean something once Programming is bought (its nav tile). */}
+          {navShown(v, 'programs') ? 'Programming and saved programs (Load, in each program tab), ' : ''}ideology
+          (faded by the years away), adversaries and everything you have seen.
         </p>
         <button type="button" class="big" data-testid="continue" onClick={continueAfterRetirement}>
           Continue

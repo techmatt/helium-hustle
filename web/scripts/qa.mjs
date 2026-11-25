@@ -45,7 +45,7 @@
 //   HH_SPEED   run 1's speed (default 50; 3 for a real-speed pass)
 //   HH_SIM     the hh-sim that replays the play log (default target/release/hh-sim)
 //   HH_BROWSER a browser off the usual paths
-//   HH_PACE    <seconds>: instead, a first visit left at 1x that long, a shot every 15 s
+//   HH_PACE    <seconds>: instead, a first visit left at 1x that long (story pages turned every 10 s), a shot every 15 s
 //              (`<out>/pace/`)
 //   HH_LONG    <minutes>: instead, one career that long at 200x, logging heap, DOM size,
 //              save size and the worst frame each minute (`<out>/long/`)
@@ -772,8 +772,11 @@ async function pass(seed, width, theme) {
     if (!(await exists('#cortex-mock-toggle'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
     if (await exists('#cortex-mock-toggle')) {
       if (!(await evaluate(`document.getElementById('cortex-mock-toggle').checked`))) await click('#cortex-mock-toggle', 'cortex mock toggle');
+      // Opening it takes one slow frame (a won't-fix row): read at once, not counted (090).
+      await evaluate(`window.__qaFrames && (window.__qaFrames.worst = 0)`);
       await click('[data-takeover-button="cortex"]', 'open the Cortex mock');
       await sleep(400);
+      await knownFrame('opening the Cortex mock');
       await capture(`${when}-cortex`);
       await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`);
       await sleep(200);
@@ -1513,8 +1516,9 @@ async function pass(seed, width, theme) {
   for (const f of findings) console.log(`  ${f.kind.padEnd(8)} m${f.moment} d${f.day} ${f.what}${f.known ? ` [known: ${f.known}]` : ''}`);
 }
 
-/** HH_PACE=<seconds>: a first visit left at 1x for that long, untouched, a screenshot
- * every 15 s and the day each time: what a new player sees while reading, at real speed. */
+/** HH_PACE=<seconds>: a first visit left at 1x for that long, untouched but for a story
+ * page turned every 10 s, a screenshot every 15 s and the day each time: what a new
+ * player sees while reading, at real speed. */
 async function pace(seconds) {
   const dir = resolve(outDir, 'pace');
   mkdirSync(dir, { recursive: true });
@@ -1522,8 +1526,17 @@ async function pace(seconds) {
   await b.send('Page.navigate', { url });
   const t0 = Date.now();
   const days = [];
+  // The opening's story modal holds the clock (074): a page turned every 10 s, as a reader
+  // would, so the clock gets to run (before 090 it sat at Day 0 throughout).
+  let lastTurn = Date.now();
   for (let i = 0; Date.now() - t0 < seconds * 1000; i++) {
-    await sleep(Math.max(0, i * 15_000 - (Date.now() - t0)));
+    while (Date.now() - t0 < i * 15_000) {
+      await sleep(1000);
+      if (Date.now() - lastTurn >= 10_000) {
+        lastTurn = Date.now();
+        await b.evaluate(`document.querySelector('[data-testid="story-next"]')?.click()`).catch(() => {});
+      }
+    }
     const d = await b.evaluate(`document.getElementById('day')?.textContent ?? ''`).catch(() => '');
     days.push(`${Math.round((Date.now() - t0) / 1000)} s: ${d}`);
     const r = await b.send('Page.captureScreenshot', { format: 'png' });

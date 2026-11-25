@@ -6,7 +6,7 @@ import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import type { CommandView, Fx, ProjectView, ResearchView, View } from '../engine';
 import { capitalize, mult, num, perDay } from '../format';
-import { act, seen, store, type Store } from '../store';
+import { act, justMoved, seen, store, type Store } from '../store';
 import { Bar, Breakdown, FlowLines, ResChip, Section, cardButton, freshClass, name, navShown, numBelow, useHint } from './common';
 import { Chip } from './icons';
 import { editProgram } from './programStore';
@@ -61,15 +61,20 @@ export function Commands({ s, program }: { s: Store; program: number }) {
                 </div>
                 <CommandBody v={v} c={c} />
                 <div class="card-actions">
-                  <button
-                    type="button"
-                    data-testid={`run-${c.id}`}
-                    title="Run it once, now"
-                    disabled={!c.unlocked}
-                    onClick={() => act({ type: 'run_command', command: c.id })}
-                  >
-                    {c.unlocked ? 'Run' : 'Locked'}
-                  </button>
+                  {/* No Run for a command nothing paces (Idle): it runs only in a program. */}
+                  {(!c.unlocked || c.by_hand) && (
+                    <button
+                      type="button"
+                      data-testid={`run-${c.id}`}
+                      title="Run it once, now"
+                      disabled={!c.unlocked}
+                      // A double-click's second click on a modal's last button that lands
+                      // here is not a run (as a card's buy, #31).
+                      onClick={(e) => (e.detail > 0 && justMoved() ? undefined : act({ type: 'run_command', command: c.id }))}
+                    >
+                      {c.unlocked ? 'Run' : 'Locked'}
+                    </button>
+                  )}
                   {programming && c.unlocked && (
                     <button type="button" data-testid={`add-${c.id}`} onClick={() => add(c.id)}>
                       Add to Program
@@ -676,7 +681,7 @@ export function Retirement({ s }: { s: Store }) {
       <h2>Retirement</h2>
       <p class="muted">
         Retiring ends this run: buildings, resources, research, Strategic projects and every project's funding rates reset. The career keeps its
-        bests, achievements, global projects, quests, saved programs, ideology (fading through the years away), adversaries and what you have
+        bests, achievements, global projects, quests, {navShown(v, 'programs') ? 'Programming, saved programs, ' : ''}ideology (fading through the years away), adversaries and what you have
         seen. Boredom at its cap retires you anyway.
       </p>
       <Section title={`This run (day ${num(v.day)})`}>

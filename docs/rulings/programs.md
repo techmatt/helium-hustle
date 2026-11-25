@@ -54,6 +54,8 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   it once it can. *Defaults (089):* each Commands card has a **Run** button
   (`run_command`): the command runs once, now, as a program line would, with no processor
   and no limit per day (its costs and boredom pace it); refused if locked, short or capped.
+  *Default (090, question 090_1):* a command nothing paces (no cost, boredom or effect:
+  Idle) has no Run and runs only in a program, so a click is never free credits.
   The engine doesn't refuse program actions before Programming, so sims program from day 1.
   The price takes the Rationalist and Archive discounts like any research. "On load" means a
   state saved before revision 29 (the web autosave of another revision is still discarded).

@@ -8,9 +8,9 @@ The checker that finds most of these is `web/scripts/qa.mjs` ([web/TESTING.md](.
 
 ## Fixed
 
-Rows 1-77 (bug hunts 007 to 030) are fixed, summarized here by kind so a hunt doesn't
-re-report them; the full rows are in git history (this file before 032). A new fixed row
-continues the table below from 78, and a later prune folds it into this summary.
+Rows 1-93 (bug hunts 007 to 068) are fixed, summarized here by kind so a hunt doesn't
+re-report them; the full rows are in git history (rows 1-77: this file before 032; 78-93:
+before 090). A new fixed row continues the table below, and a later prune folds it here.
 
 - **Numbers and text** (#3, 13, 20, 32, 44, 45, 47, 53, 54, 64, 70): `num()` rounding and
   separators; signed ideology scores and next-rank targets; one floored `ranPercent`; "had"
@@ -40,6 +40,12 @@ continues the table below from 78, and a later prune folds it into this summary.
   assignments stay and a short day runs `min(assigned, working)`; "Boredom cap"; pad pause and
   1-based pad errors; Short of inputs only below a full run.
 - **Checker flakes** (#76): the e2e theme-layout check compares from the top.
+- **Rows 78-93:** a notice over a takeover; Projects' Max then − sends six places; Load and
+  Fund verbs not pickable with nothing to name; 1.9's rank progress; flag rewards' `text`;
+  faked bold (h4, Plex Mono 600); eight speed buttons at 1280; the left column's scrollbar
+  room; Saga bars' own width; Esc behind the summary; Q1's pin names Sell Cloud Compute; the
+  20-day average a true mean; Story by day; overclock `{days}`; "the next day"; `{rate}` as
+  Stats rounds it.
 
 Guards that cover them: `the_view_fills_every_text_placeholder`, `a_play_log_replays_…`,
 `a_partial_pass_building_that_ran_in_full_is_not_starved`, `unpaid_upkeep_withholds_…`,
@@ -51,22 +57,6 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 
 | # | Finding | Fix | Guard |
 |---|---|---|---|
-| 78 | A notice or story banner raised while a takeover (text editor, Cortex mock) is open is hidden with the middle column until it closes | Shown at the top of the takeover | qa *hidden* (the notice was flagged covered) |
-| 79 | Projects: Max then − sends a float like `0.6666669999999999`; the engine refuses it and the rate stays at max (Deep Space Telescope's science, Conditional Logic, Foundation Grant, Dyson Sphere) | The step sends six places | qa project probe |
-| 80 | A verb line switched to Load (empty library) or Fund (no open project) is refused with an error | Such a verb is listed but not pickable, "(nothing to name yet)" | `npm run check` |
-| 81 | Quest 1.9's "Rank 5 …" rows never showed how far along they are | `events::progress` counts `ideology_rank` | `a_rank_on_one_axis_shows_its_progress` |
-| 82 | Conditional Logic's card says "Reward: Sets logic_if" (a flag id; Dyson Sphere too) | `flag` rewards (then `set_flag`) carry their `text` (required) | content load |
-| 83 | Stats breakdown and Project rewards headings (h4), the DRAFT tag and Cortex plaque names drawn at weights the bundled fonts lack (browser-faked bold) | h4 at 600, Plex Mono 600 bundled | qa *assets* |
-| 84 | With Cheats on, eight speed buttons: "200x" wider than its button at 1280 | Smaller text and gap at eight | qa *overflow* |
-| 85 | A late career's left column (16 tiles, the calendar) scrolls at 1280×800, and its scrollbar clipped the Resources rates ("fre", "−8/da", the CAP chips) | The column keeps its scrollbar's room (17 px wider) | qa's autopilot-to-the-end audit |
-| 86 | The Saga's progress bars (Timeline's calendar, Vault's super timeline price) were only as wide as their label | A track of its own width | screenshots (qa `saga-*`) |
-| 87 | Esc with the run summary up closed a takeover behind it, trying to save the text editor's draft to the ended run | Esc does nothing to a takeover while the summary is up | manual |
-| 88 | At 1x a new player waits with 0 credits until Sell Cloud Compute is in a program (179 days idle seen) | Q1's summary (the quest pin) names it and Program 1; never pre-filled | content |
-| 89 | A breakdown source new to the 20-day average starts at its whole day's value (a one-off land buy shows −200 in "Avg 20d") | A true mean over the run's days so far, up to 20: a new source enters at zero (rules 21, display only) | `a_one_off_flow_enters_the_average_at_its_share_of_the_days` |
-| 90 | Story lists its texts in reversed content order, not newest first | `Run.events` records each event's day; the view sorts by it (rules 21, display only) | `story_lists_events_by_the_day_they_fired` |
-| 91 | Overclock commands say "for 5 days"; a negative Rationalist rank gives 4 | `{days}` in the text, filled by the view from the effect's own `overclock_days` | `overclock_cards_say_the_days_a_run_lasts` |
-| 92 | Geopolitical Intelligence's Ideologies panel opens the day after | Its text says "the next day" | content |
-| 93 | A boredom story's `{rate}` floors to 0.19 where Stats rounds to +0.2 | The view sends `rate`; the UI fills `{rate}` with Stats' `perDay(rate, 2)` | `npm run unit`, `the_view_fills_every_text_placeholder` |
 | 94 | e2e's "the if held once Credits > 800" read that day's line outcomes after the program moved on (the new Battery drops Energy, the top `if` runs instead): failed 5 of 7 runs in 068 | Checks the depot built and the `if`'s ✓ only (070) | e2e |
 | 95 | Esc with a story modal up closed a view behind it (the Programs view), its unapplied draft refused | Esc does nothing to a takeover while a story modal is up, as behind the summary (#87) | qa story modal probe |
 | 96 | A double-click on a story page's Continue, or a held Enter, turned two or more pages: a chain could end, and play resume, before its task was read | The button ignores pointer clicks for 0.5 s after the modal opens or a page turns, and Enter's key repeats | qa story modal probes |
@@ -85,6 +75,11 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | 109 | The boot line "Loading…" stayed in the page under the app: a page scrolled into view (seen in qa's story_acts Story shot) showed it below the status bar and cut the title | Removed once the app mounts | qa *overflow* (the page scrolled or kept its boot line) |
 | 110 | The Programs view's status strip at 1280 in a late career squeezed its boredom bar to ~50 px: "285 /" | The bar keeps room for its figures (the strip's gaps 10 px; wider figures wrap the strip to a second line) | screenshots (qa `late-programs`) |
 | 111 | qa's run 1 never finished 1.4: Advanced Blueprints marked done before on sale, the pad left on Titanium, launches at 10 cargo | Research waits for its card; during 1.4 the pad carries He-3 and launches full | qa (089) |
+| 112 | Idle's Run (089) was a free credit a click with no limit, paused on day 0 too (a held Enter on the focused button repeats it): nothing paces it | A command with no cost, boredom or effect has no Run and is refused by hand (rules 30; question 090_1, default) | `a_command_nothing_paces_never_runs_by_hand` |
+| 113 | A Run button took the second click of a double-click on a story modal's last button or the summary's Continue (cards already ignored it, #31) | Ignores pointer clicks for 0.5 s after a modal moves, as cards | manual (090 probe) |
+| 114 | A refused Run said "run Sell Cloud Compute: short of an input", naming nothing | "Sell Cloud Compute: short of Energy" (the scarcest input) | `a_command_runs_by_hand_once_now` |
+| 115 | 1.5's text says "Write programs" while Programming (research) may be unbought, with nothing pointing to it | "Research Programming to write programs" | content |
+| 116 | The run summary and Retirement panel list "saved programs (Load, in each program tab)" as kept before Programming opens any | Named (with Programming) only once it is bought | manual |
 
 ## Deferred (Matt's decisions)
 
@@ -102,6 +97,10 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | A reload mid-chain drops the story pages still unread, the new quest's "Next:" line too (the quest pin keeps it) | Save the pending pages with the speed they resume |
 | After a timeline ends, Blueprint Archive (and Conditional Logic, the Telescope) is offered again; funding it gives nothing new | Hide a project whose effects are all spent, or say so on its card |
 | A Blocks number box being typed in keeps its draft on its row index: an instruction inserted above it (keyboard focus only) moves the draft to another line | Key the rows by a stable id |
+| A new player left untouched at 1x after the opening story sits at 0 credits (Day 99 seen, HH_PACE): nothing names Commands or Run, the only way to credits before Programming (#88's quest-pin hint went in 073's no-hint pass) | 1.1's second story page names Sell Cloud Compute's Run on the Commands panel (story prose, not a hint line) |
+| qa once (090, seed 45 at 1280): the debug autopilot's Everything reached super timeline 4 and the page answered nothing for 30 s, so the pass never reached the ending; the same seed passed on a rerun | Debug only; if it recurs, have the autopilot yield between chunks in late timelines |
+| Before Programming the Resources panel shows Processors "1 / 1, 0 free", which nothing the player can reach uses | Hide the row until Programming, as the Programs tile (the 089 ruling's list) |
+| A refusal notice stays up until the next accepted action or its ×, across days and a retirement (089's Run makes refusals common: seen 160 days on) | Clear it at a run's end, or fade it after ~5 s |
 
 
 ## Won't fix
