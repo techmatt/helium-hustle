@@ -98,8 +98,10 @@ impl Agent for Random {
             }
         }
         // Its fixed hands besides retiring, after its buys: a new pad gets a
-        // cargo, and before Launch Full Pads opens a full pad launches by hand.
+        // cargo, before Launch Full Pads opens a full pad launches by hand, and
+        // Programming is bought once affordable.
         super::pick_cargo(p);
         super::hand_launch(p);
+        super::buy_programming(p);
     }
 }

@@ -35,6 +35,9 @@ pub enum Action {
     /// Every tradeable good once, first loaded first.
     SetLoadingPriority { goods: Vec<String> },
     Research { research: String },
+    /// Run one command once, now, by hand (no processor): as a program line
+    /// would run it (commands.md, *Running by hand*).
+    RunCommand { command: String },
     /// A project's funding rate for one resource, per day (0 stops it).
     SetProjectRate { project: String, resource: String, rate: Fx },
     /// Voluntary retirement (once unlocked).

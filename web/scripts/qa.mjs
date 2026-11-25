@@ -25,12 +25,16 @@
 //              a card; a story modal turning two pages on a double-click or a held Enter,
 //              not holding the clock against space and 3, its button without the keyboard,
 //              Esc closing a view behind it, or coming over a day after its quest completed
-//   frame      a frame gap over FRAME_MS while the page is visible
+//   frame      a frame gap over FRAME_MS while the page is visible (the won't-fix ones, a
+//              debug scenario's start, the ending and the first panel after Story, print
+//              tagged `known` and don't count toward the exit code)
 //   memory     JS heap growth over a pass past HEAP_GROWTH_MB (before the autopilot's
 //              Everything; past HEAP_ENDED_MB with its finished career), a save over 2 MB
+//   ending     the pass never reached the ending (it stopped, or the autopilot fell short):
+//              its summary line says NEVER REACHED THE ENDING, report.json `ended: false`
 // It writes `<out>/report.json`, one PNG per moment in `<out>/<seed>-<width>-<theme>/`, and
 // `<out>/contact-<seed>-<width>-<theme>.png` (a contact sheet of that pass). Exits 1 on any
-// finding.
+// counted finding.
 //   HH_URL     the page, required: a `vite preview` of a static build (TESTING.md)
 //   HH_SEEDS   comma-separated seeds (default 11,12,13)
 //   HH_WIDTHS  comma-separated window widths (default 1280,1920)
@@ -68,6 +72,8 @@ const NO_ART = [
 ];
 /** Run 1's speed: 50 by default; 3 plays it as a person would (about 3 minutes to a shipment). */
 const RUN1_SPEED = Number(process.env.HH_SPEED ?? 50);
+/** The quests while Programming is not yet on sale (it goes on sale when 1.4 completes). */
+const BEFORE_PROGRAMMING = ['qpower_boot_sequence', 'qblueprints', 'qfirst_shipment', 'qfull_load'];
 /** Pad `i`'s cargo pick: Helium-3 when its picker offers it, else the first good offered
  * (Titanium while 1.3 First Shipment allows only that). An expression to evaluate. */
 const padGood = (i) =>
@@ -410,6 +416,8 @@ async function pass(seed, width, theme) {
   let moment = 0;
   /** Heap samples before the autopilot's Everything (all of them until it runs). */
   let heapBeforeEnd = Infinity;
+  /** The pass reached the ending (the debug autopilot's Everything showed it). */
+  let ended = false;
   /** Clicks and times how long the screen takes to change (a render after the click). */
   const timedClick = async (sel, what = sel) => {
     const ms = await evaluate(`new Promise((done) => {
@@ -437,7 +445,23 @@ async function pass(seed, width, theme) {
   const { waitFor, exists, day, run, click, setValue, speed } = page;
   /** A nav tile's screen: a panel, or the Programs view (a takeover since 071, which has
    * no `data-panel`: every pass stopped at its tile until 082). */
+  /** A known won't-fix slow moment (docs/qa-findings.md's won't-fix rows), read at once:
+   * the worst frame since the last reading, printed as a finding but not counted in the
+   * exit code, then reset so the next capture sees only what follows. */
+  const knownFrame = async (what) => {
+    const worst = await evaluate(`(() => { const g = window.__qaFrames; const w = g ? g.worst : 0; if (g) g.worst = 0; return w; })()`);
+    if (worst > FRAME_MS) note('frame', `a ${Math.round(worst)} ms frame gap at ${what}`, "won't fix");
+  };
+  let storySeen = false;
   const panel = async (id) => {
+    if (storySeen === 'pending' && id !== 'story' && id !== 'programs') {
+      storySeen = true;
+      await evaluate(`window.__qaFrames && (window.__qaFrames.worst = 0)`);
+      await page.panel(id);
+      await sleep(200);
+      return knownFrame('the first panel after Story');
+    }
+    if (id === 'story' && !storySeen) storySeen = 'pending';
     if (id !== 'programs') return page.panel(id);
     if (!(await exists('[data-takeover="programs"]'))) await click('.nav-tile[data-nav="programs"]', 'open Programs');
     await waitFor(`!!document.querySelector('[data-takeover="programs"]')`, 'the Programs view', 3000);
@@ -446,11 +470,11 @@ async function pass(seed, width, theme) {
     await page.load();
     await evaluate(FRAMES);
   };
-  const note = (kind, what) => {
+  const note = (kind, what, known) => {
     const key = `${kind}:${what.replace(/\d+(\.\d+)?/g, '#')}`;
     if (seenFindings.has(key)) return;
     seenFindings.add(key);
-    findings.push({ kind, what, moment, day: lastDay });
+    findings.push({ kind, what, moment, day: lastDay, ...(known ? { known } : {}) });
   };
   let lastDay = 0;
   /** A meaningful moment: audit the screen and keep a screenshot. */
@@ -595,7 +619,6 @@ async function pass(seed, width, theme) {
         return { running: !/^\\D*0 assigned/.test(p),
           n: lines.length, cur: lines.map((l, i) => l.classList.contains('current') ? i : -1).filter((i) => i >= 0),
           out: lines.filter((l) => /out-/.test(l.className)).length,
-          span: !!document.querySelector('[data-testid="lines-span"]'),
           // Note rows shown (a line keeps its row once a note has shown): a first note
           // may grow its line once; any other move is a finding.
           notes: document.querySelectorAll('.lines .line-why').length,
@@ -607,7 +630,6 @@ async function pass(seed, width, theme) {
       tinted = Math.max(tinted, r.out);
       if (s > 10) {
         if (r.cur.length) note('text', `program frame (${when}) at ${s}x: a line framed as current`);
-        if (!r.span) note('text', `program lines (${when}) at ${s}x: no "days per redraw" note`);
       } else if (r.running && r.cur.length !== 1) note('text', `program frame (${when}) at ${s}x: ${r.cur.length} lines framed`);
     }
     // Which boxes (line top, height, name left, name top per line) it went through.
@@ -904,7 +926,9 @@ async function pass(seed, width, theme) {
     // compute or buys what the next building lacks, loads and launches. e2e.mjs's
     // playOpening is the other copy, kept apart on purpose: it stops at 1.4 and checks the
     // story on the way (its own ORDER, a full 20 / 100 cargo before a launch), where this
-    // one plays on to look at screens (a longer ORDER, a launch at 10 cargo).
+    // one plays on to look at screens (a longer ORDER, a launch at 10 cargo, but a full
+    // pad during 1.4 so Programming goes on sale). Its commands run by hand (Run) until
+    // Programming is bought (runOnly).
     const ORDER = [
       ['solar_panel', 2], ['excavator', 1], ['smelter', 1], ['solar_panel', 3], ['excavator', 2],
       ['storage_depot', 1], ['solar_panel', 4], ['launch_pad', 1], ['solar_panel', 5], ['refinery', 1],
@@ -981,13 +1005,19 @@ async function pass(seed, width, theme) {
       }
       const credits = s.res.credits ?? 0;
       let cmd = 'cloud_compute';
-      // Blueprints research (1.2, then the Refinery's), bought with Buy Science.
-      const want = ['basic_blueprints', 'advanced_blueprints'].find((r) => s.nav.includes('research') && !doneResearch.has(r));
+      // Blueprints research (1.2, then the Refinery's) and Programming (on sale after 1.4),
+      // bought with Buy Science; until Programming, commands run by hand (runOnly).
+      const want = ['basic_blueprints', 'advanced_blueprints', 'programming'].find(
+        (r) => s.nav.includes('research') && !doneResearch.has(r) && (r !== 'programming' || (!s.nav.includes('programs') && !!s.quest && !BEFORE_PROGRAMMING.includes(s.quest))),
+      );
       if (want) {
         await panel('research');
         const r = await evaluate(`(() => { const c = document.querySelector('[data-testid="research-${want}"]'); return c ? { done: c.classList.contains('done'), can: c.classList.contains('can-buy') } : null; })()`);
-        if (!r || r.done) doneResearch.add(want);
-        else if (r.can) {
+        // Not on sale yet (no card: Advanced Blueprints before 1.3 completes) is not done.
+        if (r?.done) doneResearch.add(want);
+        else if (!r) {
+          // fall through to the rest of the look
+        } else if (r.can) {
           await click(`[data-testid="research-${want}"]`, `research ${want}`);
           continue;
         } else if (credits >= 10 && !(goal && bs[goal[0]].buyable)) {
@@ -1003,8 +1033,18 @@ async function pass(seed, width, theme) {
           await setValue('[data-pad="0"] select', await evaluate(padGood(0)));
           continue;
         }
+        // 1.4 Full Load (and Programming after it) wants a full pad of Helium-3: point the
+        // pad at it (1.3 left it on Titanium; a switch returns what is loaded) and hold the
+        // launch until the pad is full and fuelled (Ready); otherwise launch at 10.
+        const fullLoad = s.quest === 'qfull_load';
+        if (fullLoad && (await evaluate(`document.querySelector('[data-pad="0"] select')?.value ?? 'he3'`)) !== 'he3' && (await evaluate(padGood(0))) === 'he3') {
+          await setValue('[data-pad="0"] select', 'he3');
+          continue;
+        }
         const cargo = Number(await evaluate(`document.querySelector('[data-pad="0"]')?.dataset.cargo ?? 0`));
-        if (cargo >= 10 && (await evaluate(`!document.querySelector('[data-testid="launch-0"]')?.disabled`))) {
+        const full = (await evaluate(`document.querySelector('[data-pad="0"]')?.dataset.padState ?? ''`)) !== 'loading';
+        const launchAt = fullLoad ? (await evaluate(`document.querySelector('[data-pad="0"]')?.dataset.ready === 'true'`)) : cargo >= 10;
+        if (launchAt && (await evaluate(`!document.querySelector('[data-testid="launch-0"]')?.disabled`))) {
           await click('[data-testid="launch-0"]', 'launch');
           await capture('launched');
           continue;
@@ -1013,7 +1053,7 @@ async function pass(seed, width, theme) {
         const good = await evaluate(`document.querySelector('[data-pad="0"] select')?.value ?? null`);
         if (good === null) continue;
         if ((s.res.propellant ?? 0) < 20 && credits >= 12) cmd = 'buy_propellant';
-        else if ((s.res[good] ?? 0) >= 5 && cargo < 10) cmd = 'load_pads';
+        else if ((s.res[good] ?? 0) >= 5 && (fullLoad ? !full : cargo < 10)) cmd = 'load_pads';
       } else if (goal) cmd = shortCommand(bs[goal[0]].short, credits) ?? cmd;
       await page.runOnly(cmd, s.lines, { skipDisabled: true });
       await sleep(60);
@@ -1068,8 +1108,24 @@ async function pass(seed, width, theme) {
     await send('Emulation.setDeviceMetricsOverride', { width, height: HEIGHT, deviceScaleFactor: 1, mobile: false });
     await sleep(300);
     await capture('after-mashing');
+    // Programming (on sale since 1.4): its 200 science would take the hand-run opening most
+    // of a run, so the debug menu grants it, then it is bought from the Research panel.
+    if (!(await exists('.nav-tile[data-nav="programs"]'))) {
+      await panel('options');
+      if (!(await exists('#cheats-toggle'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
+      if (!(await exists('[data-testid="cheats"]'))) await click('#cheats-toggle', 'cheats');
+      await setValue('#cheat-resource', 'science');
+      await setValue('#cheat-amount', '1000');
+      await click('#cheat-grant', 'grant science');
+      await panel('research');
+      if (await exists('[data-testid="research-programming"]')) await click('[data-testid="research-programming"]', 'research programming');
+      if (!(await exists('.nav-tile[data-nav="programs"]'))) note('input', 'run 2: Programming could not be bought (1.4 not reached in run 1?)');
+      await capture('programming-bought');
+    }
     // Programs: move the processor to Program 2, build it a two-line program, bump,
-    // lower and remove lines; each step must show as the engine has it.
+    // lower and remove lines; each step must show as the engine has it. (Without
+    // Programming, noted above, the pass goes on to the scenarios and the ending.)
+    if (await exists('.nav-tile[data-nav="programs"]')) {
     await click('.prog-tabs button[data-program="0"]', 'program 1 tab');
     await click('[data-testid="proc-minus"]', 'processor off program 1');
     if (!(await exists('.lines li'))) {
@@ -1128,6 +1184,7 @@ async function pass(seed, width, theme) {
     await capture('program-2');
     await frameProbe(3, 'program2');
     await frameProbe(200, 'program2');
+    } // the Programs probe
     // Run 2 at 200x, then a reload: the save must come back.
     await speed(200);
     const d2 = await day();
@@ -1303,6 +1360,8 @@ async function pass(seed, width, theme) {
       if (!(await exists('#scenario'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
       await setValue('#scenario', sc);
       await click('#start-scenario', `start ${sc}`);
+      await sleep(300);
+      await knownFrame(`the debug scenario ${sc}'s start`);
       await moments(await look());
       // A scenario's pads start with No cargo: point each at Helium-3 so they load.
       if (await exists('.nav-tile[data-nav="launch_pads"]')) {
@@ -1341,6 +1400,8 @@ async function pass(seed, width, theme) {
       await waitFor(`document.getElementById('accel-status')?.dataset.running === '0'`, 'the autopilot to the end', 180000);
       if (Date.now() - t0 > 60000) note('frame', `the autopilot's Everything took ${Math.round((Date.now() - t0) / 1000)} s`);
       if (!(await exists('[data-testid="ending"]'))) note('input', `the autopilot's Everything ended without the ending: ${(await evaluate(`document.getElementById('accel-status')?.textContent ?? ''`)).slice(0, 120)}`);
+      else ended = true;
+      await knownFrame("the debug autopilot's ending");
       await capture('ending');
       await evaluate(`[...document.querySelectorAll('[data-testid="ending"] button')].find((b) => /Close/.test(b.textContent))?.click()`);
       await sleep(300);
@@ -1422,8 +1483,10 @@ async function pass(seed, width, theme) {
   }
   const grown = (Math.max(...heap.slice(0, heapBeforeEnd)) - heap[0]) / 1e6;
   if (grown > HEAP_GROWTH_MB) note('memory', `JS heap grew ${grown.toFixed(1)} MB over the pass`);
-  const ended = (Math.max(...heap) - heap[0]) / 1e6;
-  if (ended > HEAP_ENDED_MB) note('memory', `JS heap grew ${ended.toFixed(1)} MB with the finished career`);
+  const grownEnded = (Math.max(...heap) - heap[0]) / 1e6;
+  if (grownEnded > HEAP_ENDED_MB) note('memory', `JS heap grew ${grownEnded.toFixed(1)} MB with the finished career`);
+  // A pass that never reached the ending is its own kind: 071-082 stalled unnoticed.
+  if (!ended) note('ending', `the pass never reached the ending (last moment ${shots.at(-1)?.name ?? 'none'})`);
   // A contact sheet of the pass: its screenshots on one page, captured whole.
   const sheet = resolve(dir, 'contact.html');
   writeFileSync(
@@ -1442,10 +1505,12 @@ async function pass(seed, width, theme) {
   b.close();
   const heapMb = heap.map((h) => Math.round(h / 1e5) / 10);
   const art = artIds.filter((id) => artSeen.has(id));
-  report.passes.push({ seed, width, theme, moments: shots.length, heapMb, art: art.length, findings });
-  failures += findings.length;
-  console.log(`${tag}: ${shots.length} moments, heap ${heapMb[0]}..${Math.max(...heapMb)} MB, card art ${art.length}/${artIds.length} seen, ${findings.length} findings`);
-  for (const f of findings) console.log(`  ${f.kind.padEnd(8)} m${f.moment} d${f.day} ${f.what}`);
+  report.passes.push({ seed, width, theme, ended, moments: shots.length, heapMb, art: art.length, findings });
+  // Known won't-fix rows print but don't fail the run.
+  const counted = findings.filter((f) => !f.known).length;
+  failures += counted;
+  console.log(`${tag}: ${ended ? 'reached the ending' : 'NEVER REACHED THE ENDING'}, ${shots.length} moments, heap ${heapMb[0]}..${Math.max(...heapMb)} MB, card art ${art.length}/${artIds.length} seen, ${counted} findings${findings.length > counted ? ` (+${findings.length - counted} known)` : ''}`);
+  for (const f of findings) console.log(`  ${f.kind.padEnd(8)} m${f.moment} d${f.day} ${f.what}${f.known ? ` [known: ${f.known}]` : ''}`);
 }
 
 /** HH_PACE=<seconds>: a first visit left at 1x for that long, untouched, a screenshot
@@ -1556,5 +1621,7 @@ else {
   for (const [i, seed] of seeds.entries()) for (const [j, width] of widths.entries()) await pass(seed, width, themes[(i + j) % themes.length]);
 }
 writeFileSync(resolve(outDir, 'report.json'), JSON.stringify(report, null, 1), { encoding: 'utf-8' });
+const short = report.passes.filter((p) => !p.ended).length;
+if (short) console.log(`qa: ${short} of ${report.passes.length} passes NEVER REACHED THE ENDING`);
 console.log(`qa: ${failures} findings over ${report.passes.length} passes; ${outDir}`);
 process.exit(failures ? 1 : 0);

@@ -21,7 +21,7 @@ asked for that day (programs.md); the Retire action retires between days.
   credits earned in a run, most shipments in a run), each axis's best ideology rank and best
   score, the ideology scores carried into the next run, each adversary's Attention
   ([attention.md](attention.md)), the days spent in retirement gaps, peak power, career
-  flags (the program instructions' unlocks among them), the program loadout library
+  flags (the program instructions' unlocks and Programming among them), the program loadout library
   ([programs.md](programs.md)), ids ever researched, owned and used, events seen, quests
   (side quests too) and sub-objectives completed, chain quests started (`started_quests`:
   an `on_start` grant, 1.3's 20 propellant, comes once a career), `timeline` (global) and `forever` project

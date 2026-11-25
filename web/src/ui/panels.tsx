@@ -7,7 +7,7 @@ import { useState } from 'preact/hooks';
 import type { CommandView, Fx, ProjectView, ResearchView, View } from '../engine';
 import { capitalize, mult, num, perDay } from '../format';
 import { act, seen, store, type Store } from '../store';
-import { Bar, Breakdown, FlowLines, ResChip, Section, cardButton, freshClass, name, numBelow, useHint } from './common';
+import { Bar, Breakdown, FlowLines, ResChip, Section, cardButton, freshClass, name, navShown, numBelow, useHint } from './common';
 import { Chip } from './icons';
 import { editProgram } from './programStore';
 
@@ -20,13 +20,11 @@ export function Commands({ s, program }: { s: Store; program: number }) {
   const [picked, setPicked] = useState<Record<string, string>>({});
   const shown = v.commands.filter((c) => c.visible);
   const cards = shown.filter((c, i) => !c.verb || shown.findIndex((x) => x.verb === c.verb) === i);
+  // Add to Program shows once Programming is bought (the Programs nav tile shows).
+  const programming = navShown(v, 'programs');
   return (
     <div class="panel" data-panel="commands">
       <h2>Commands</h2>
-      <p class="muted">
-        Commands run from programs (right): each assigned processor runs one step a day. Adding goes to
-        Program {program + 1}.
-      </p>
       <div class="cards">
         {cards
           .map((first) => {
@@ -63,9 +61,20 @@ export function Commands({ s, program }: { s: Store; program: number }) {
                 </div>
                 <CommandBody v={v} c={c} />
                 <div class="card-actions">
-                  <button type="button" data-testid={`add-${c.id}`} disabled={!c.unlocked} onClick={() => add(c.id)}>
-                    {c.unlocked ? 'Add to Program' : 'Locked'}
+                  <button
+                    type="button"
+                    data-testid={`run-${c.id}`}
+                    title="Run it once, now"
+                    disabled={!c.unlocked}
+                    onClick={() => act({ type: 'run_command', command: c.id })}
+                  >
+                    {c.unlocked ? 'Run' : 'Locked'}
                   </button>
+                  {programming && c.unlocked && (
+                    <button type="button" data-testid={`add-${c.id}`} onClick={() => add(c.id)}>
+                      Add to Program
+                    </button>
+                  )}
                 </div>
               </div>
             );

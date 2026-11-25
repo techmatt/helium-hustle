@@ -84,6 +84,7 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | 108 | qa false findings since 074/078: a click a just-opened story modal refused timed as slow input; run 2's card probe with no card a run's start can afford (074); two frames counted with the right column hidden under the Programs view; the Everything autopilot run from story_acts (no game behind its quests) | Not timed; run 2's probe skipped then; shown frames only; story_acts audited first | qa |
 | 109 | The boot line "Loading…" stayed in the page under the app: a page scrolled into view (seen in qa's story_acts Story shot) showed it below the status bar and cut the title | Removed once the app mounts | qa *overflow* (the page scrolled or kept its boot line) |
 | 110 | The Programs view's status strip at 1280 in a late career squeezed its boredom bar to ~50 px: "285 /" | The bar keeps room for its figures (the strip's gaps 10 px; wider figures wrap the strip to a second line) | screenshots (qa `late-programs`) |
+| 111 | qa's run 1 never finished 1.4: Advanced Blueprints marked done before on sale, the pad left on Titanium, launches at 10 cargo | Research waits for its card; during 1.4 the pad carries He-3 and launches full | qa (089) |
 
 ## Deferred (Matt's decisions)
 

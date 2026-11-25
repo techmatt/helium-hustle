@@ -73,6 +73,7 @@ fn source_label(g: &GameState, source: &str) -> String {
             "sell" => "Buildings sold",
             "land" => "Land bought",
             "research" => "Research",
+            crate::modules::programs::HAND_SOURCE => "Commands by hand",
             "projects" => "Projects",
             "growth" => "Daily growth",
             "dream" => "Dream",

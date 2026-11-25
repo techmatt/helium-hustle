@@ -8,7 +8,8 @@ elsewhere. Buying is a player action; research has no step of its own in
 
 ## Rules
 
-**Visibility.** An item is shown, and so buyable, if it was bought in any run of the career
+**Visibility.** An item with a `career_flag` effect is never shown once its flag is set.
+Otherwise an item is shown, and so buyable, if it was bought in any run of the career
 (`career.researched`), or its `visible_when` holds now:
 
 | `visible_when` | Holds when |
@@ -57,6 +58,13 @@ count as bought from day 0 of every run while the project counts as completed ([
   *Program Analysis*): programs' `energy per day` and `days since a purchase` readings
   open ([programs.md](programs.md)).
 
+- `career_flag` (Programming, 200 science, visible once quest 1.4 Full Load is done, category
+  *Programs*): buying it sets the career flag `flag` for good (`programming`); retirements
+  and a timeline's end keep it, and the item never shows again. The `programming` flag shows
+  the Programs nav tile (`nav.json`, a `flag` condition) and with it the UI's programs and
+  loadout buttons; no rule reads it ([commands.md](commands.md), *Running by hand*). A state
+  saved before revision 29 that loads past 1.4 gets the flag (`Career.flag_research`).
+
 A purchase of research (as of a building or land) sets the run's `last_purchase`.
 
 Items with no effect unlock things: a command or building whose `requires` is
@@ -89,9 +97,10 @@ Every number is on the content rows: costs, visibility thresholds and effect val
 first: Basic Blueprints (20 science, always visible; quest 1.2 buys it) unlocks the Regolith
 Excavator, Smelter, Launch Pad and Storage Depot, and Advanced Blueprints (50, visible once
 quest 1.3 First Shipment is completed) the Battery, Refinery and Fabricator, through those
-buildings' `requires` ([economy.md](economy.md)). Every other item's `visible_when` includes
+buildings' `requires` ([economy.md](economy.md)). Programming (category *Programs*) shows
+from 1.4 Full Load until bought. Every other item's `visible_when` includes
 `quest_completed` 1.8 Lab (alone, or inside an `all_of` with its old condition), so before
-1.8 the panel shows only the Blueprints. A category is a cluster:
+1.8 the panel shows only those. A category is a cluster:
 buying every item of one of 2 or more items in a run (so not the one-item Political
 Influence), outside the categories its `exclude` names (1.b excludes Blueprints), meets side
 quest 1.b's `research_cluster`

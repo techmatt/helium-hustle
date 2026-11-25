@@ -26,11 +26,11 @@ research and projects gated on it).
 
 | Beat | Quest (id) | Trigger | Condition | Opens | Status |
 |---|---|---|---|---|---|
-| 1.1 Online | `qpower_boot_sequence` | game start | 2 Solar Panels | the Buy Science command and the research view (only the Blueprints show in it until 1.8) | aligned |
+| 1.1 Online | `qpower_boot_sequence` | game start | 2 Solar Panels | the Buy Science command and the research view (only the Blueprints, and Programming after 1.4, show in it until 1.8) | aligned |
 | 1.2 Blueprints | `qblueprints` | 1.1 | the Basic Blueprints research (20 science) | (the research itself unlocks the Regolith Excavator, Smelter, Launch Pad and Storage Depot) | aligned |
 | 1.3 First shipment | `qfirst_shipment` | 1.2 | one launch carrying 20+ titanium | its start grants 20 Propellant once a career; while it is active pads carry Titanium only, and a partial pad launches by hand from its card; done, Advanced Blueprints (50 science: Battery, Refinery, Fabricator) goes on sale | aligned |
-| 1.4 Full load | `qfull_load` | 1.3 | one launch carrying a full pad of He-3 | (teaches He-3, the claim's real export) | aligned |
-| 1.5 Processors | `qautomate_automation` | 1.4 | 2 Data Centers | the Launch Full Pads command; program logic (the `program_logic` flag at 2 working processors); loadouts are open from run 1 and always kept | draft |
+| 1.4 Full load | `qfull_load` | 1.3 | one launch carrying a full pad of He-3 | (teaches He-3, the claim's real export); Programming goes on sale (research, 200 science, bought once for the career: the Programs view, Add to Program and loadout buttons; until then commands run by hand) | aligned |
+| 1.5 Processors | `qautomate_automation` | 1.4 | 2 Data Centers | the Launch Full Pads command; program logic (the `program_logic` flag at 2 working processors); the loadout library is always kept | draft |
 | 1.6 Speculators notice you | `qspeculators_notice` | 1.5 | speculators present (Attention from units sold) | the adversary tab (the `adversaries` panel; speculator bursts land only while they are present) | draft |
 | 1.7 Burnout | `qburnout` | 1.6 | 1 retirement (boredom forces the first; one forced before 1.7 counts, so 1.7 completes as it is reached) | the Retirement panel (voluntary retirement); bests and firsts carry. Boredom runs from day 1 with its meter shown; 1.7's modals explain it | draft |
 | 1.8 Lab | `qlab` | 1.7 | a Research Lab | the full research catalog, Projects and Foundation Grant, the Recreation Dome; Geopolitical Intelligence shows; the first global projects (Blueprint Archive, then Conditional Logic, opens `if`) are offered | draft |

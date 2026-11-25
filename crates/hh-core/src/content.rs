@@ -181,6 +181,9 @@ pub enum ResearchEffect {
     /// Programs' `energy per day` and `days since a purchase` readings open
     /// (docs/rules/programs.md, *Conditions*).
     ProgramReadings,
+    /// Buying it sets a career flag for good (Programming); once the flag holds
+    /// the item never shows again.
+    CareerFlag { flag: String },
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -525,6 +528,8 @@ pub enum NavCondition {
     Panel { panel: String },
     /// The building is owned now or was in any run.
     BuildingKnown { building: String },
+    /// The career flag holds (`career::flag_set`).
+    Flag { flag: String },
 }
 
 /// A tile of the UI's nav grid, in display order. Nav ids are panel names, a

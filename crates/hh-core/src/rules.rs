@@ -138,6 +138,7 @@ impl Rules {
             Action::Launch { pad } => shipments::launch_action(self, &mut h, *pad),
             Action::SetLoadingPriority { goods } => shipments::set_loading_priority(self, &mut h, goods),
             Action::Research { research } => research::buy(self, &mut h, research),
+            Action::RunCommand { command } => programs::run_by_hand(self, &mut h, command),
             Action::SetProjectRate { project, resource, rate } => {
                 projects::set_rate(self, &mut h, project, resource, *rate)
             }

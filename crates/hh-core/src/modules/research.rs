@@ -30,9 +30,38 @@ impl Params {
     }
 }
 
-/// Shown (and so buyable): bought in any run, or its `visible_when` holds.
+/// Shown (and so buyable): bought in any run, or its `visible_when` holds; never
+/// a career-flag item once its flag is set (Programming: bought once, for good).
 pub fn visible(g: &GameState, item: &Research) -> bool {
-    g.career.researched.contains(&item.id) || shows(g, &item.visible_when)
+    !flag_held(g, item) && (g.career.researched.contains(&item.id) || shows(g, &item.visible_when))
+}
+
+/// A career-flag item whose flag is set: bought for good, never shown again.
+pub fn flag_held(g: &GameState, item: &Research) -> bool {
+    matches!(&item.effect, Some(ResearchEffect::CareerFlag { flag }) if g.career.flags.contains(flag))
+}
+
+/// A state saved before career-flag research existed (`Career::flag_research`
+/// false): each career-flag item whose `visible_when` already holds counts as
+/// bought, its flag set (Programming for a career past 1.4). Called on load only.
+pub fn grant_past_flags(g: &mut GameState) {
+    if g.career.flag_research.0 {
+        return;
+    }
+    grant_flags_due(g);
+    g.career.flag_research.0 = true;
+}
+
+/// Sets the flag of each career-flag item whose `visible_when` holds now: a
+/// state brought up to date, or a scenario that starts past its quest.
+pub fn grant_flags_due(g: &mut GameState) {
+    for item in &content().research {
+        if let Some(ResearchEffect::CareerFlag { flag }) = &item.effect {
+            if shows(g, &item.visible_when) {
+                g.career.flags.insert(flag.clone());
+            }
+        }
+    }
 }
 
 fn shows(g: &GameState, v: &Visibility) -> bool {
@@ -116,6 +145,9 @@ pub fn buy(r: &Rules, g: &mut GameState, id: &str) -> Result<(), String> {
     g.track("research", SCIENCE, Fx::ZERO, cost);
     g.run.research.insert(item.id.clone());
     g.career.researched.insert(item.id.clone());
+    if let Some(ResearchEffect::CareerFlag { flag }) = &item.effect {
+        g.career.flags.insert(flag.clone());
+    }
     g.run.stats.research_completed += 1;
     g.run.last_purchase = Some(g.run.day);
     g.note("research", &item.id);

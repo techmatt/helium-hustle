@@ -2,7 +2,8 @@
 
 What one execution of a command does, and overclocks. Commands run as program lines
 ([programs.md](programs.md): a step each, in the programs step of [the
-day](README.md#the-day)); expired overclocks drop earlier that day, before the building pass.
+day](README.md#the-day)), or by hand (*Running by hand*, below); expired overclocks drop
+earlier that day, before the building pass.
 The module's params, `overclock_base_cap` among them, are in [programs.md](programs.md#params).
 
 ## Rules
@@ -29,6 +30,13 @@ The module's params, `overclock_base_cap` among them, are in [programs.md](progr
    applies: Load (shipments.md), Launch full pads (shipments.md), Dream (dream.md), Promote and
    Disrupt (demand.md), Fund (ideology.md), Neutralize (Contest Claims: the named
    adversary's Attention to 0, [attention.md](attention.md)), Overclock (below).
+
+**Running by hand** (`run_command` `{"type": "run_command", "command": <id>}`, a Commands
+card's Run): one execution, now, between ticks, by the steps above, with no processor and
+no program; its flows show in the breakdown as "Commands by hand". There is no limit per day.
+Refused (nothing changes) for an unknown or locked command, one that would fail (an input
+short) or be skipped (every output capped). Open from the start; the Programs view and Add
+to Program open with the Programming research ([research.md](research.md)).
 
 **Overclock.** Each execution adds its own stack on its `target` building category for
 `floor(duration × overclock_duration_factor ^ rationalist rank)` days, live from the same

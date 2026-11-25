@@ -112,16 +112,16 @@ fn grid(cmd: &str, agents: &str, extra: &[&str]) -> Vec<String> {
 /// all. Copy them from the failing assertion (or the test's `games.jsonl`).
 /// (The handsoff rows play only the author's runs: [`HANDSOFF_PIN`] pins its loadout.)
 const PINNED: &[(&str, u64, &str)] = &[
-    ("random", 1, "fe9f18527b220f86"),
-    ("random", 2, "17f97194dc92f003"),
-    ("greedy", 1, "2608c8fb4566ce2e"),
-    ("greedy", 2, "8d909f6aa358f8c7"),
-    ("author", 1, "e4028366288b614b"),
-    ("author", 2, "2ccb21fc890e6c3f"),
-    ("casual", 1, "1a0ba7348e727b00"),
-    ("casual", 2, "062f1eb3342bbbcb"),
-    ("handsoff", 1, "e4028366288b614b"),
-    ("handsoff", 2, "2ccb21fc890e6c3f"),
+    ("random", 1, "98b2f86816515e74"),
+    ("random", 2, "7f61cf1e17024505"),
+    ("greedy", 1, "fd6365161c2f89b6"),
+    ("greedy", 2, "08c26b7c2d9cceca"),
+    ("author", 1, "53a6604c5db77a92"),
+    ("author", 2, "1d7365e1ab228cdc"),
+    ("casual", 1, "64a04bea4ebbddae"),
+    ("casual", 2, "2947e154f714c2e9"),
+    ("handsoff", 1, "53a6604c5db77a92"),
+    ("handsoff", 2, "1d7365e1ab228cdc"),
 ];
 
 #[test]
@@ -181,25 +181,26 @@ fn the_ladder_prints_its_tables_and_writes_results() {
 
 /// The hands-off player's own play, pinned: the small grid's careers end
 /// before it loads its loadout (`if` opens in run 2 on seeds 1-2, so PINNED's
-/// handsoff games are the author's), so this one goes to run 3 on seed 1,
-/// where the loadout file plays, and ships and buys. A new loadout file moves
-/// the pin: copy it from the failing assertion.
-const HANDSOFF_PIN: &str = "42cc959a12579978";
+/// handsoff games are the author's), so this one goes to run 5 on seed 1
+/// (`if` opens in run 4 since 089's Programming purchase slowed the opening;
+/// it was run 2), where the loadout file plays, and ships and buys. A new
+/// loadout file moves the pin: copy it from the failing assertion.
+const HANDSOFF_PIN: &str = "5f2dfbcc4225ac27";
 
 #[test]
-#[ignore = "slow lane: a 3-run career (~2 s)"]
-fn the_handsoff_loadout_ships_and_buys_in_run_3() {
+#[ignore = "slow lane: a 5-run career (~3 s)"]
+fn the_handsoff_loadout_ships_and_buys_in_run_5() {
     let dir = root("out/hh-sim-tests/handsoff");
     let mut a = grid("experiment", "handsoff", &["--out", &dir]);
-    for (k, v) in [("--seeds", "1"), ("--retirements", "3")] {
+    for (k, v) in [("--seeds", "1"), ("--retirements", "5")] {
         let i = a.iter().position(|x| x == k).unwrap();
         a[i + 1] = v.into();
     }
     run(&a).unwrap();
     let games = std::fs::read_to_string(format!("{dir}/games.jsonl")).unwrap();
     let v: serde_json::Value = serde_json::from_str(games.lines().next().unwrap()).unwrap();
-    let run3 = v["runs"].as_array().unwrap().iter().find(|r| r["run"] == 3).expect("run 3 finished");
-    assert!(run3["shipments"].as_u64().unwrap() > 0 && run3["buildings_built"].as_u64().unwrap() > 0, "{run3}");
+    let run5 = v["runs"].as_array().unwrap().iter().find(|r| r["run"] == 5).expect("run 5 finished");
+    assert!(run5["shipments"].as_u64().unwrap() > 0 && run5["buildings_built"].as_u64().unwrap() > 0, "{run5}");
     assert_eq!(v["replay_ok"], true);
     assert_eq!(v["fingerprint"], HANDSOFF_PIN, "the hands-off player played another game (HANDSOFF_PIN's doc)");
 }
@@ -343,7 +344,7 @@ fn the_oracle_plays_on_copies_and_its_game_replays() {
     let half = fingerprints.len() / 2;
     assert_eq!(fingerprints[..half], fingerprints[half..]);
     // Seeds 1 and 2 of the oracle, then of the pinned one.
-    assert_eq!(fingerprints[..half], ["ea94b92b65379242", "1bf9dfca25888d24", "7d65ccbd84b3d6f5", "f2fd6b45cee278bb"]);
+    assert_eq!(fingerprints[..half], ["8522afe80a3264e0", "fbe71f3f1bfbe1f7", "80bc8532386038e0", "53183bf339ab609e"]);
 }
 
 /// `--agents` splits players, not knobs: a knob's value may hold a `:` (a

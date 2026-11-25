@@ -98,11 +98,13 @@ both themes, and audits the screen at each meaningful moment (a panel, a story t
 quest, a launch, the summary, a reload). Hunts' findings: `docs/qa-findings.md`. Per pass
 (a seed at a width), in a fresh headless browser: a first visit, a new game on the seed (its
 story modal under real keys and mouse: the clock held, space and 3 ignored, its button
-focused, Esc leaving the Programs view behind it open, a double-click on Continue turning
-one page), run 1 at 3x then 50x with every panel and the Programs view (each chain's
+focused, Esc leaving the Programs view behind it open (only where its tile shows: a new
+game has none until Programming, so this probe is skipped there), a double-click on Continue turning
+one page), run 1 at 3x then 50x, its commands run by hand (Run) until Programming, with every panel (each chain's
 modal at most a day past its "Quest complete" line; on the first, a held Enter turns
 one page), retirement and the summary (keys must not start the
-clock), run 2 at 200x, a reload, the replay check, the play log replayed by `hh-sim
+clock), Programming (bought in run 1 after 1.4, with science bought by hand; if run 1 fell
+short, in run 2 with the debug grant's science) and the Programs view, run 2 at 200x, a reload, the replay check, the play log replayed by `hh-sim
 playlog` (a release build, or `HH_SIM`: a fresh worktree has none, so build it first), a second tab and site data blocked (first pass only). At run 1's end and in every
 debug scenario (each played, its pads given Helium-3 first, or Titanium while 1.3 allows only that, its panels audited): every Resources row's breakdown opened
 and closed, Stats' breakdowns; program lines dragged; in `late_unlocks`, a loaded
@@ -117,7 +119,11 @@ each taken. A career short of 1.8 (Projects) is played on by the debug autopilot
 picture drawn yet (placeholder art) are not findings. The late panels again in
 the other theme; every building's card (`?all-cards`, a display-only URL flag) in both.
 Real mouse and key probes of click-to-buy and the program frame. Checks and `HH_*`
-settings: the script's header. Exit 1 on any finding.
+settings: the script's header. Exit 1 on any finding, but known won't-fix slow frames (a
+debug scenario start, the ending, the first panel after Story: `docs/qa-findings.md`), read
+at that moment and printed tagged `[known: won't fix]`. A pass that never reaches the ending is an `ending`
+finding, its line says NEVER REACHED THE ENDING, `report.json` keeps `ended` per pass, and
+`scripts/warning_checks.py` warns (kind `qa`) while the tree's last report has one.
 
 ```sh
 npm run build && npx vite preview --port 0          # a static build: dev-server reloads break a pass

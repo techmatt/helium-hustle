@@ -9,6 +9,7 @@
 import { useState } from 'preact/hooks';
 import { engine } from '../engine';
 import { parseProgramText, type Store } from '../store';
+import { navShown } from './common';
 import { InstructionPanel } from './Instructions';
 import { AddLogic } from './ProgramLogic';
 import { blockEnd, canAddElse, insertLine } from './programEdit';
@@ -38,7 +39,8 @@ export function programsTakeover(program: number, setProgram: (i: number) => voi
     title: 'Programs',
     bleed: true,
     noButton: true,
-    shown: () => true,
+    // Open once Programming is bought (the engine's nav tile says so).
+    shown: (s) => navShown(s.view, 'programs'),
     render: (s) => <ProgramsView s={s} program={program} setProgram={setProgram} />,
   };
 }

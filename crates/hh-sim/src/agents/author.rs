@@ -78,6 +78,7 @@ pub(crate) const MARKET_NAME: &str = "market";
 pub const RESEARCH: &[&str] = &[
     "basic_blueprints",
     "advanced_blueprints",
+    "programming",
     "propellant_synthesis",
     "market_awareness",
     "dream_protocols",

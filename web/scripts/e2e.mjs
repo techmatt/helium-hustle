@@ -1,7 +1,9 @@
 // Browser check: drives headless Edge or Chrome over the DevTools protocol (no
 // packages) against a served page.
 //   1. A fresh game through the normal UI only (no debug menu): only Solar Panel and Data
-//      Center offered, 1.1's story modal alone, then the opening to 1.4 Full Load (each
+//      Center offered, Commands only (no Programs tile, right-column program, Add to
+//      Program or loadout buttons; two quick Runs both land), 1.1's story modal alone,
+//      then the opening to 1.4 Full Load, commands run by hand (each
 //      quest change a modal chain holding the clock; the first pad offers Titanium only;
 //      Launch Full Pads never shown), no Retirement
 //      tile yet (it opens at 1.7 Burnout), then on at 200x to the forced retirement at the
@@ -35,7 +37,8 @@
 //   8. (Run before 5.) else: an if/else typed in the text editor shows the same lines in
 //      the block view and back, and at 1x each pass runs the branch its if picks. Shot
 //      program-else.png.
-//   9. (Run before 5.) The text editor's All instructions panel: on a new game, amber
+//   9. (Run before 5.) The text editor's All instructions panel: on a fresh career with
+//      Programming bought (scenario rich), amber
 //      entries and clicks writing an `if ... > 0` with its body, else only where it fits,
 //      hover cards; in scenario everything the same clicks Apply cleanly, the block view
 //      matches and the `if` runs at 1x. Shot instructions.png.
@@ -45,7 +48,7 @@
 //      line's run dots fill day by day. Shots programs-blocks.png, programs-text.png,
 //      programs-dots.png.
 //  11. (Run before 5.) Story and Achievements: a new game played through 1.6 by the debug
-//      autopilot (its step stops at 1.7); Story shows the Act 1 band, every finished beat
+//      autopilot (its step stops at 1.7; it bought Programming, so programs show); Story shows the Act 1 band, every finished beat
 //      lit, the active one glowing with its task, one "???" below and no achievements; a lit beat's click replays its modal; the
 //      Achievements tile shows every badge grouped by category. Shots story-1.6.png,
 //      achievements.png.
@@ -192,11 +195,10 @@ async function programOrder() {
   // Read before pausing: paused, the frame is back.
   const fast = await evaluate('window.__ptr');
   const lit = await evaluate(`document.querySelectorAll('.lines .line[class*="out-"]').length`);
-  const note = await exists('[data-testid="lines-span"]');
   const fastOrder = await order();
   await speed(0);
   check(
-    fast.length > 0 && fast.every((p) => p === -1) && note && lit >= 2,
+    fast.length > 0 && fast.every((p) => p === -1) && lit >= 2,
     `50x: no hopping pointer, lines lit by the span (pointer ${fast.join(',')}, ${lit} lit)`,
   );
   check(fastOrder === queued, `50x: lines keep their order: ${fastOrder}`);
@@ -835,7 +837,9 @@ async function instructionPanel() {
 
   await debugMenu();
   await speed(0);
-  await click('#new-game');
+  // A fresh career with Programming bought (a new game has no Programs view until then).
+  await setValue('#scenario', 'rich');
+  await click('#start-scenario');
   await sleep(500);
   await click('.prog-tabs button[data-program="0"]');
   await openText();
@@ -984,6 +988,11 @@ async function storyView() {
   }
   const at = await beat();
   check(at >= 6 && at <= 7, `the autopilot reaches 1.6 (stops at 1.${at})`);
+  // The autopilot buys Programming after 1.4, as every sim player does: programs show.
+  check(
+    (await exists('.nav-tile[data-nav="programs"]')) && (await exists('[data-testid="programs"]')),
+    'after the autopilot bought Programming the Programs tile and right-column program show',
+  );
   await panel('story');
   await sleep(300);
   const st = await evaluate(`(() => {
@@ -1367,12 +1376,24 @@ async function freshGame() {
     const thumb = await evaluate(`document.querySelector('[data-testid="story-beat-active"] [data-testid="quest-pic-thumb"]')?.dataset.picture ?? null`);
     check(thumb === 'q1_1_earthrise', `on 1.1 the active beat shows its thumbnail: ${thumb}`);
   }
-  // Two quick clicks (no render between them) both land.
+  // Commands only until Programming: no Programs tile, right-column program, Add to
+  // Program or loadout buttons; each card runs by hand.
   await panel('commands');
-  await evaluate(`['add-cloud_compute', 'add-idle'].forEach((t) => document.querySelector('[data-testid="' + t + '"]').click())`);
+  const hidden = await evaluate(`({
+    tile: !!document.querySelector('.nav-tile[data-nav="programs"]'),
+    program: !!document.querySelector('[data-testid="programs"]'),
+    add: document.querySelectorAll('[data-testid^="add-"]').length,
+    loadout: !!document.querySelector('[data-testid="loadout-save"], [data-testid="loadout-load"]'),
+    run: !!document.querySelector('[data-testid="run-cloud_compute"]'),
+  })`);
+  check(!hidden.tile && !hidden.program && hidden.add === 0 && !hidden.loadout && hidden.run, `a new game has Commands only (Run, no programs): ${JSON.stringify(hidden)}`);
+  await shot('commands-only');
+  // Two quick Runs (no render between them) both land.
+  const credits0 = await evaluate(`Number(document.querySelector('tr[data-res="credits"]').dataset.amount)`);
+  await evaluate(`[0, 1].forEach(() => document.querySelector('[data-testid="run-cloud_compute"]').click())`);
   await sleep(100);
-  const two = await evaluate(`[...document.querySelectorAll('.lines li')].map((li) => li.dataset.command).join(',')`);
-  check(two === 'cloud_compute,idle', `two quick adds both land: ${two}`);
+  const credits1 = await evaluate(`Number(document.querySelector('tr[data-res="credits"]').dataset.amount)`);
+  check(credits1 - credits0 === 10, `two quick Runs of Cloud Compute both land: ${credits0} -> ${credits1}`);
 
   // ---- 1. a fresh game to the first shipment, a forced retirement and run 2, through the normal UI ----
   const reached = await playOpening();

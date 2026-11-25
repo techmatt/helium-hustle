@@ -139,5 +139,15 @@
     "effect": {"type": "program_readings"},
     "visible_when": {"type": "quest_completed", "quest": "qlab"},
     "description": "Programs read two more gauges: Energy per day (yesterday's net energy) and Days since a purchase (a building, land or research)."
+  },
+  {
+    "id": "programming",
+    "name": "Programming",
+    "category": "Programs",
+    "cost": "200",
+    "requires": null,
+    "effect": {"type": "career_flag", "flag": "programming"},
+    "visible_when": {"type": "quest_completed", "quest": "qfull_load"},
+    "description": "Write programs: the Programs view, Add to Program and saved loadouts. Bought once for the whole career."
   }
 ]

@@ -18,6 +18,8 @@ Checks:
   inside the 1 KB margin below it (over 14,336 bytes, `wc -c`).
 - balance: each target the judge misses (`hh-sim balance` on experiments/balance.json,
   the judge's one home; targets in docs/principles.md).
+- qa: the last `npm run qa` in this tree (`out/qa/report.json`, if any) had a pass that
+  never reached the ending (its `ended` false): qa stalled unnoticed from 071 to 082.
 """
 
 import json
@@ -275,6 +277,19 @@ def check_balance():
             out.append(line)
 
 
+def check_qa():
+    """The last qa run's passes each reached the ending (web/scripts/qa.mjs writes
+    `ended` per pass; a report from before 089 has none and is skipped)."""
+    p = ROOT / "out" / "qa" / "report.json"
+    if not p.exists():
+        return
+    passes = json.loads(p.read_text(encoding="utf-8")).get("passes", [])
+    short = [x for x in passes if x.get("ended") is False]
+    if short:
+        tags = ", ".join(f"seed {x['seed']} {x['width']} {x['theme']}" for x in short)
+        warn("qa", f"{len(short)} of {len(passes)} qa passes never reached the ending ({tags}): {rel(p)}")
+
+
 def main():
     sys.stdout.reconfigure(encoding="utf-8", newline="\n")
     try:
@@ -282,6 +297,7 @@ def main():
         check_tunables(settings)
         check_floats()
         check_docs()
+        check_qa()
         if "--no-parity" not in sys.argv[1:]:
             check_parity()
         if "--no-balance" not in sys.argv[1:]:

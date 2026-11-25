@@ -842,6 +842,9 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         research: c
             .research
             .iter()
+            // A career-flag item once its flag is set (Programming bought) is gone for
+            // good, the run it was bought in included.
+            .filter(|item| !research::flag_held(g, item))
             .map(|item| {
                 let cost = research::price(r, g, item);
                 ResearchView {
@@ -944,6 +947,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                     NavCondition::BuildingKnown { building } => {
                         g.owned(building) > 0 || g.career.owned_buildings.contains(building)
                     }
+                    NavCondition::Flag { flag } => career::flag_set(g, flag),
                 },
             })
             .collect(),

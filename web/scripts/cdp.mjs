@@ -222,8 +222,21 @@ export function driver(b, { url, poll = 100, settle = 500, readyMs = 10000, clic
     })()`);
   /** Program 1 runs just `cmd`: Reset, then add it from the Commands panel. `lines` is the
    * program's commands now (nothing to do when it is just `cmd`). With `skipDisabled`, a
-   * disabled Add button is left alone instead of failing the click. */
+   * disabled Add button is left alone instead of failing the click. Before Programming is
+   * bought (no Programs tile, so no program to write) the command runs by hand instead:
+   * its card's Run once per day since the last hand run (1-30: what a one-processor
+   * program would have run; a refused run changes nothing). */
+  let handDay = null;
   const runOnly = async (cmd, lines, { skipDisabled = false } = {}) => {
+    if (!(await exists('.nav-tile[data-nav="programs"]'))) {
+      const d = await number('day');
+      const hand = handDay === null || d < handDay ? 1 : Math.min(30, Math.max(1, d - handDay));
+      handDay = d;
+      await panel('commands');
+      await pickCommand(cmd);
+      await evaluate(`(() => { const b = document.querySelector('[data-testid="run-${cmd}"]:not([disabled])'); for (let i = 0; i < ${hand}; i++) b?.click(); })()`);
+      return;
+    }
     if (lines.length === 1 && lines[0] === cmd) return;
     await click('.prog-tabs button[data-program="0"]', 'program 1 tab');
     if (lines.length) await click('.prog-procs button[title="Clear this program"]', 'clear program');

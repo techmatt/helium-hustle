@@ -116,7 +116,8 @@ it in the header's `warnings:` line, led by its kind. Before its report, every i
 `python scripts/warning_checks.py` (always exits 0; prints one `<kind>: <text>` line per tripped
 check, nothing when clean). Its kinds are **parity**, **tunables** (exceptions, each with its
 reason, in `scripts/warning_checks.json`), **platform-floats**, **balance** (the judge:
-`docs/principles.md`, *The judge*) and **docs**; the script's docstring defines each.
+`docs/principles.md`, *The judge*), **docs** and **qa** (the tree's last `npm run qa` had a
+pass that never reached the ending); the script's docstring defines each.
 
 And one by hand, also kind **docs:** a rules change without its `docs/rules-history.md` row, or
 a `RULES_REVISION` bump without the golden constants moved (or the reverse).

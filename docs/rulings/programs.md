@@ -43,11 +43,26 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   re-funded, and saved loadouts' `if` lines stay locked (passed free) meanwhile; no upgrade
   that keeps it is planned. Side quest 1.b's reward is a placeholder
   (059, default): every run starts with 50 Science (a `grant` unlock).
+- **Programming (2026-11-24).** A new player starts with Commands only. **Programming** is a
+  research-view item (placeholder 200 science), on sale once quest 1.4 Full Load completes;
+  not a quest task. Buying it is permanent: a career flag (`programming`) that survives
+  retirement and a timeline's end, like `swarm_revealed`; once bought it never shows again.
+  It only hides UI; the program rules are unchanged. Until it is bought, the Programs nav tile
+  and view, the right column's at-a-glance program, every "Add to Program" button and the
+  loadout save/load buttons are hidden (the library itself exists from the start and is
+  always kept). Saves already past 1.4 get the flag on load. Every sim player and script buys
+  it once it can. *Defaults (089):* each Commands card has a **Run** button
+  (`run_command`): the command runs once, now, as a program line would, with no processor
+  and no limit per day (its costs and boredom pace it); refused if locked, short or capped.
+  The engine doesn't refuse program actions before Programming, so sims program from day 1.
+  The price takes the Rationalist and Archive discounts like any research. "On load" means a
+  state saved before revision 29 (the web autosave of another revision is still discarded).
 - **Program loadouts (2026-11-20).** Each program has save / load buttons. A saved program
   goes into a library that persists across retirements (career state), so a player keeps
   programs for different stages and loads one into any program tab. Programs still empty on
   retirement; loading is how they come back. *Defaults (035):* 12 slots, display names up to
-  40 characters, open from run 1, loading leaves processors as assigned.
+  40 characters, loading leaves processors as assigned; the buttons show once Programming
+  is bought (above; replaces 035's "open from run 1").
 - **Programs persist (2026-11-22).** A player's programs carry over across runs (a saved
   library); building it is its own item when Matt asks.
 - **"Add to Program" (2026-11-22)**, not "Add to Program 1": the active program is implied.

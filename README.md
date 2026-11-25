@@ -62,7 +62,7 @@ cargo run -q --release -p hh-sim -- ladder   # the agent ladder, 12 careers: ~11
 node web/scripts/build-wasm.mjs              # -> web/src/wasm (git-ignored); ~80 s cold, <1 s when inputs are unchanged
 node scripts/wasm-smoke.mjs                  # native = wasm on that build; ~1 s
 python scripts/warning_checks.py             # warning checks, incl. parity and balance (rebuilds stale builds); ~7 s, up to a minute cold
-python scripts/warning_checks.py --no-parity --no-balance   # static checks only (tunables, floats, docs), no builds; ~1 s
+python scripts/warning_checks.py --no-parity --no-balance   # static checks only (tunables, floats, docs, qa's last report), no builds; ~1 s
 cd web && npm ci && npm run dev              # the browser UI at http://localhost:5173/ (web/README.md)
 cd web && npm run wasm && npm run check      # type-check alone: a fresh worktree has no web/src/wasm until `npm run wasm` (~80 s)
 ```

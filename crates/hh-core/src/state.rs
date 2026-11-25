@@ -762,6 +762,29 @@ pub struct Career {
     pub ideology: BTreeMap<String, Fx>,
     /// Days spent in retirement gaps over the career (unseen in Act 1).
     pub gap_days: u64,
+    /// The state knows career-flag research (Programming): true in every new
+    /// state, absent (read false) in a save from before it, which loading
+    /// brings up to date (`research::grant_past_flags`).
+    #[serde(default = "FlagResearch::before")]
+    pub flag_research: FlagResearch,
+}
+
+/// Whether a state was made with career-flag research in the game: `Default`
+/// (a new state) is true; a save without the field reads false.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct FlagResearch(pub bool);
+
+impl Default for FlagResearch {
+    fn default() -> FlagResearch {
+        FlagResearch(true)
+    }
+}
+
+impl FlagResearch {
+    fn before() -> FlagResearch {
+        FlagResearch(false)
+    }
 }
 
 /// A saved program: a display name (not an id; duplicates are fine) and its lines.
@@ -790,7 +813,9 @@ impl GameState {
     }
 
     pub fn from_json(json: &str) -> Result<GameState, String> {
-        serde_json::from_str(json).map_err(|e| format!("bad state JSON: {e}"))
+        let mut g: GameState = serde_json::from_str(json).map_err(|e| format!("bad state JSON: {e}"))?;
+        crate::modules::research::grant_past_flags(&mut g);
+        Ok(g)
     }
 
     /// FNV-1a of the JSON form less the config, as 16 hex digits: equal

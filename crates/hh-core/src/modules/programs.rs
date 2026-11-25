@@ -571,6 +571,25 @@ pub fn execute(r: &Rules, g: &mut GameState, c: &Command, src: &str, short: &str
     LineOutcome::Ran
 }
 
+/// The breakdown source of commands run by hand.
+pub const HAND_SOURCE: &str = "hand";
+
+/// The `run_command` action: one command run once, now, by the player's hand
+/// (no processor, no program), exactly as a program line runs it. Refused for
+/// an unknown or locked command, or one that would not run (a missing input,
+/// every output at its cap): a refusal changes nothing.
+pub fn run_by_hand(r: &Rules, g: &mut GameState, id: &str) -> Result<(), String> {
+    let c = content().command(id).ok_or_else(|| format!("run: unknown command {id:?}"))?;
+    if !unlocked(g, c) {
+        return Err(format!("run {}: locked", c.name));
+    }
+    match execute(r, g, c, HAND_SOURCE, HAND_SOURCE, None) {
+        LineOutcome::Ran => Ok(()),
+        LineOutcome::Skipped => Err(format!("run {}: every output at its cap", c.name)),
+        _ => Err(format!("run {}: short of an input", c.name)),
+    }
+}
+
 /// The career flag that opens every instruction but plain commands.
 pub const LOGIC_FLAG: &str = "program_logic";
 
