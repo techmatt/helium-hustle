@@ -53,30 +53,35 @@ Times are on this machine, otherwise idle.
 
 ```sh
 cargo build --workspace                      # ~30 s cold on 3 jobs; target/debug ~680 MB, safe to delete
-cargo test --workspace                       # the fast lane: ~10 s once built (hh-sim's ladder pin ~8 s of it)
-cargo test-all                               # also the slow lane's #[ignore]d tests (the oracle's: ~25 s)
+cargo test --workspace                       # the fast lane: ~4 s once built, ~11 s after an hh-core edit; first build ~1.5 min
+cargo test-all                               # the full run, slow lane too: ~40 s (the autopilot's career)
 cargo clippy --workspace --all-targets       # must stay clean; ~7 s
 cargo run -q -p hh-sim -- run --seed 1 --ticks 365 --policy script
 cargo run -q --release -p hh-sim -- objectives reference/scenarios/run1_fresh.json   # ~0.2 s
-cargo run -q --release -p hh-sim -- ladder   # the agent ladder, 12 careers: ~11 s on 6 threads (the oracle's ceiling.json: ~20 min)
+cargo run -q --release -p hh-sim -- ladder   # the agent ladder, 12 careers: ~20 s on 6 threads (the oracle's ceiling.json: ~20 min)
 node web/scripts/build-wasm.mjs              # -> web/src/wasm (git-ignored); ~80 s cold, <1 s when inputs are unchanged
 node scripts/wasm-smoke.mjs                  # native = wasm on that build; ~1 s
-python scripts/warning_checks.py             # warning checks, incl. parity and balance (rebuilds stale builds); ~7 s, up to a minute cold
+python scripts/warning_checks.py             # warning checks; parity and balance only if the branch touched what they read: ~1 s, else up to 2 min cold
+python scripts/warning_checks.py --all       # parity and balance whatever was touched (rebuilds stale builds)
 python scripts/warning_checks.py --no-parity --no-balance   # static checks only (tunables, floats, docs, qa's last report), no builds; ~1 s
 cd web && npm ci && npm run dev              # the browser UI at http://localhost:5173/ (web/README.md)
 cd web && npm run wasm && npm run check      # type-check alone: a fresh worktree has no web/src/wasm until `npm run wasm` (~80 s)
 ```
 
 **Test lanes.** `cargo test --workspace` is the fast lane and the default: run it after
-every change. `cargo test-all` is the full run, before every commit: a test slower than
-about a second is marked `#[ignore = "slow lane: ..."]`, and `cargo test-slow` runs only
-those. Both aliases (`.cargo/config.toml`) run `crates/xtask`, which takes cargo's flags
-before a `--` and the test binary's after it, as `cargo test` does, and adds `--workspace`
-unless a package is named: `cargo test-all -j 3 -p hh-sim --no-fail-fast golden --
---test-threads=3` works. Tests play whole games, so the test profile
-is optimized (`opt-level = 1`) and keeps overflow checks. To time tests one by one, run
-the test binary itself (`<exe> --list`, `<exe> --exact <name>`): Rust 1.100 puts them under
-`target/debug/build/<crate>/<hash>/out/`, not `target/debug/deps/`.
+every change. `cargo test-all` is the full run, before a commit that touches Rust, content
+or configs (when to run what: CLAUDE.md, *Working rules*): a test over ~3 s is marked
+`#[ignore = "slow lane: ..."]` (but hh-sim's ladder pin, ~4 s, the guard on every agent
+edit), and `cargo test-slow` runs only those. Both aliases (`.cargo/config.toml`) run
+`crates/xtask`: it builds as `cargo test` does (cargo's flags before a `--`, `--workspace`
+unless a package is named), then runs every test binary at once (the slow lane's longest
+tests sit in three), each printed whole as it ends, then their times. A bare word filters
+tests, as for `cargo test`: `cargo test-all -j 3 -p hh-sim golden -- --test-threads=3`.
+The test profile is `opt-level = 2` with overflow checks, and test and sim binaries
+(release `hh-sim` too, never hh-core or wasm) use mimalloc: a game's time goes to the
+view's state copies, twice as slow on the Windows allocator. To time tests one by one, run the test binary itself (`<exe> --list`,
+`<exe> --exact <name>`; per-test times: `RUSTC_BOOTSTRAP=1 <exe> -Z unstable-options
+--report-time`): Rust 1.100 puts them under `target/debug/build/<crate>/<hash>/out/`.
 
 **A second target dir** (a parallel helper, a copy under `out/`) is set absolute:
 `CARGO_TARGET_DIR="$(git rev-parse --show-toplevel)/out/target-<name>"`. Cargo reads a

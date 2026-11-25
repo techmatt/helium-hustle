@@ -10,6 +10,11 @@ mod text;
 mod timeline;
 mod verbs;
 
+// Tests play whole games, and a game's time goes to the view's state copies: the
+// system allocator, not optimization, sets their pace on Windows. Test builds only.
+#[global_allocator]
+static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 use crate::driver::{play, GOLDEN_POLICY, GOLDEN_SEED, GOLDEN_TICKS};
 use crate::{content_hash, Config, Session, RULES_REVISION};
 

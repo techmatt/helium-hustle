@@ -12,3 +12,7 @@ doctest = false
 hh-core.workspace = true
 serde.workspace = true
 serde_json.workspace = true
+
+# The CLI's and the tests' allocator (main.rs); never in hh-wasm's build of this crate.
+[target.'cfg(not(target_arch = "wasm32"))'.dependencies]
+mimalloc.workspace = true

@@ -5,6 +5,11 @@ and serving the page: [README.md](README.md). e2e and qa share the DevTools harn
 `scripts/cdp.mjs`, whose `driver()` holds the page helpers both use (`panel`, `runOnly`,
 `pickCommand`, the debug menu): a UI change a helper reads is fixed there once.
 
+**When to run them** (light testing per item, CLAUDE.md): a `web/` change runs `npm run
+check` and `npm run unit`. e2e (~100 s) and qa (~19 min) run only in a bug hunt or
+when the prompt asks; an item that changes a helper they read still fixes it, unrun. One
+browser at a time on this machine: several exhaust its memory.
+
 ## Browser check
 
 `npm run e2e` (`scripts/e2e.mjs`) drives headless Edge or Chrome over the DevTools

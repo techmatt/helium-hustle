@@ -275,14 +275,31 @@ fn programs_are_paid_before_upkeep_and_the_breakdown_shows_who_went_short() {
     assert!(g.run.flow_average["energy"]["building:solar_panel"].produced > Fx::ZERO);
 }
 
+// Three games, one test each so they run side by side.
 #[test]
-#[ignore = "slow lane: three 900-day games checked day by day (~10 s)"]
-fn every_days_breakdown_adds_up_to_each_resources_change() {
+#[ignore = "slow lane: a 900-day game checked day by day (~3-6 s)"]
+fn every_days_breakdown_adds_up_to_each_resources_change_new_game() {
+    breakdown_adds_up(5, None);
+}
+
+#[test]
+#[ignore = "slow lane: a 900-day game checked day by day (~3-6 s)"]
+fn every_days_breakdown_adds_up_to_each_resources_change_late_unlocks() {
+    breakdown_adds_up(6, Some("late_unlocks"));
+}
+
+#[test]
+#[ignore = "slow lane: a 900-day game checked day by day (~3-6 s)"]
+fn every_days_breakdown_adds_up_to_each_resources_change_rich() {
+    breakdown_adds_up(7, Some("rich"));
+}
+
+fn breakdown_adds_up(seed: u64, scenario: Option<&str>) {
     // The breakdown is the player's answer to "where did it go": for every resource, every
     // day (and the actions after it), its sources less its sinks less what the cap cut is
     // the change in stock, but for the clamp lifting a rounding dip below zero.
     let mut checked = 0;
-    for (seed, scenario) in [(5, None), (6, Some("late_unlocks")), (7, Some("rich"))] {
+    {
         let sc = scenario.map(scenario_by);
         let mut s = Session::new(&baseline(), seed, sc).unwrap();
         for _ in 0..900 {

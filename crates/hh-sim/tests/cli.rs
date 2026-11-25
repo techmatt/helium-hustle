@@ -1,5 +1,9 @@
 use hh_sim::{run, Fail};
 
+// As main.rs: games play about twice as fast on mimalloc.
+#[global_allocator]
+static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 fn baseline() -> String {
     format!("{}/../../configs/baseline.json", env!("CARGO_MANIFEST_DIR"))
 }
@@ -187,7 +191,7 @@ fn the_ladder_prints_its_tables_and_writes_results() {
 const HANDSOFF_PIN: &str = "e4f4c7dcc9d407ac";
 
 #[test]
-#[ignore = "slow lane: a 3-run career (~2 s)"]
+#[ignore = "slow lane: a 3-run career (~4 s)"]
 fn the_handsoff_loadout_ships_and_buys_in_run_3() {
     let dir = root("out/hh-sim-tests/handsoff");
     let mut a = grid("experiment", "handsoff", &["--out", &dir]);
@@ -231,7 +235,7 @@ fn real_time_is_a_projection_that_changes_no_game() {
 }
 
 #[test]
-#[ignore = "slow lane: the grid at two thread counts (~12 s)"]
+#[ignore = "slow lane: the grid at two thread counts (~10 s)"]
 fn a_game_is_the_same_whatever_the_thread_count() {
     let fp = |threads: &str| {
         let dir = root(&format!("out/hh-sim-tests/threads{threads}"));
@@ -321,7 +325,7 @@ fn agents_keep_their_knobs_and_cope_with_one_program() {
 /// (trade) and its knobs parse, and both play the pinned games (an oracle
 /// refactor keeps them; see `PINNED`).
 #[test]
-#[ignore = "slow lane: an oracle career plays thousands of rollouts (~20 s)"]
+#[ignore = "slow lane: an oracle career plays thousands of rollouts (~25 s)"]
 fn the_oracle_plays_on_copies_and_its_game_replays() {
     let dir = root("out/hh-sim-tests/oracle");
     let player = "oracle:horizon=90,long=200,every=200,replan=1000,width=2";

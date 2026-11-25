@@ -12,15 +12,19 @@ hh-core = { path = "crates/hh-core" }
 hh-sim = { path = "crates/hh-sim" }
 serde = { version = "1", features = ["derive", "rc"] }
 serde_json = "1"
+# Native test and sim binaries only (never hh-core's rules or the wasm build): their
+# games spend their time copying state, and the Windows allocator is slow at it.
+mimalloc = { version = "0.1", default-features = false }
 rand = { version = "0.8", default-features = false }
 rand_chacha = { version = "0.3", default-features = false }
 libm = "0.2"
 wasm-bindgen = "0.2"
 
 # Tests play whole games: the test build is optimized but keeps debug assertions and
-# overflow checks (inherited from dev).
+# overflow checks (inherited from dev). 2, not 1 (092): with mimalloc the tests run ~15%
+# faster, more than the extra compile costs even on an edit-and-test loop.
 [profile.test]
-opt-level = 1
+opt-level = 2
 
 [profile.release.package.hh-wasm]
 opt-level = "s"

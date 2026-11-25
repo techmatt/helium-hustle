@@ -23,7 +23,7 @@ The simulator measures balance and pacing: sim players ([agents.md](agents.md)) 
 careers in game time, against the targets in [principles.md](principles.md).
 
 ```sh
-$S ladder                                     # the ladder: experiments/ladder.json (~11 s)
+$S ladder                                     # the ladder: experiments/ladder.json (~20 s)
 $S ladder --agents author --humans mixed --seeds 8 --retirements 5   # any slice of it
 $S experiment experiments/ceiling.json        # the oracle beside the author (~20 min on 6 threads)
 $S experiment experiments/balance.json --out out/b   # any spec

@@ -6,6 +6,10 @@ use std::time::Instant;
 
 use hh_core::{driver, modules::career, play, Config};
 
+// As hh-sim's own binary (main.rs): the browser's wasm allocator is another again.
+#[global_allocator]
+static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 fn time<F: FnMut()>(n: u32, mut f: F) -> f64 {
     let t = Instant::now();
     for _ in 0..n {

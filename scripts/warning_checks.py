@@ -1,7 +1,9 @@
 """Warning checks (CLAUDE.md, *Warning checks*). Prints one `<kind>: <text>` line per
 tripped check and nothing when clean; always exits 0 (warnings never gate).
 
-    python scripts/warning_checks.py            every check
+    python scripts/warning_checks.py            the static checks, and parity and balance when
+                                                the branch touched what they measure
+    python scripts/warning_checks.py --all      every check, whatever was touched
     python scripts/warning_checks.py --no-parity --no-balance  static checks only (no builds)
 
 Checks:
@@ -290,6 +292,37 @@ def check_qa():
         warn("qa", f"{len(short)} of {len(passes)} qa passes never reached the ending ({tags}): {rel(p)}")
 
 
+# What each heavy check measures: it runs only when the branch (commits since it left
+# main, and the work tree) touched one of these, or with --all. An item that changed
+# none of them would read main's numbers, at the cost of a release and a wasm build.
+PARITY_PATHS = ("crates/hh-core/", "crates/hh-wasm/", "content/", "scenarios/", "configs/baseline.json",
+                "scripts/wasm-smoke.mjs", "web/scripts/build-wasm.mjs", "Cargo.")
+BALANCE_PATHS = ("crates/hh-core/", "crates/hh-sim/", "content/", "scenarios/", "configs/",
+                 "experiments/balance.json", "Cargo.")
+
+
+def touched():
+    """Paths changed since the branch left main, committed or not; None when git
+    can't say (then every check runs)."""
+    git = lambda *a: run(["git", *a])
+    base = git("merge-base", "HEAD", "main")
+    if base.returncode != 0:
+        return None
+    diff = git("diff", "--name-only", base.stdout.strip())
+    new = git("ls-files", "--others", "--exclude-standard")
+    if diff.returncode != 0 or new.returncode != 0:
+        return None
+    return set(diff.stdout.split()) | set(new.stdout.split())
+
+
+def wanted(flag, paths, changed):
+    if flag in sys.argv[1:]:
+        return False
+    if "--all" in sys.argv[1:] or changed is None:
+        return True
+    return any(p.startswith(paths) for p in changed)
+
+
 def main():
     sys.stdout.reconfigure(encoding="utf-8", newline="\n")
     try:
@@ -298,9 +331,10 @@ def main():
         check_floats()
         check_docs()
         check_qa()
-        if "--no-parity" not in sys.argv[1:]:
+        changed = touched()
+        if wanted("--no-parity", PARITY_PATHS, changed):
             check_parity()
-        if "--no-balance" not in sys.argv[1:]:
+        if wanted("--no-balance", BALANCE_PATHS, changed):
             check_balance()
     except Exception as e:  # a broken check is itself a warning; never gate
         warn("checks", f"scripts/warning_checks.py failed: {type(e).__name__}: {e}")

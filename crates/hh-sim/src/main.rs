@@ -1,5 +1,10 @@
 use std::process::ExitCode;
 
+// Games spend their time in the view's state copies: mimalloc plays them about
+// twice as fast as the Windows allocator. Changes no game.
+#[global_allocator]
+static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
     match hh_sim::run(&args) {

@@ -71,10 +71,14 @@ Locked by Matt: changing any of these is his decision, not an implementation det
 ## Working rules
 
 - **Commit to the branch you are on.** Leave nothing uncommitted. Never commit to or push `main`.
-- **Test lanes** are in the README, *Build and test*. Run the fast lane after every change and
-  the full run before every commit; a commit touching only Markdown skips the full run, and one
-  touching only `web/` runs the web checks instead (`npm run check`, `npm run unit`, e2e for a
-  UI change: web/TESTING.md). Leave `cargo clippy --workspace --all-targets` clean.
+- **Testing is light by default** (Matt, docs/rulings/engine.md). After every change: the fast
+  lane, `cargo test --workspace` (seconds), plus the checks for what you touched (`npm run
+  check` and `npm run unit` for `web/`). Before the commit: the full run, `cargo test-all`
+  (about a minute), when it touches Rust, `content/` or `configs/`; Markdown or `web/` alone
+  skips it. Leave `cargo clippy --workspace --all-targets` clean. **Heavy reads only on
+  request:** a full `npm run qa`, e2e, balance reads (`hh-sim balance`, ladders, before/after
+  reads) and other sweeps run in a bug hunt or when the prompt asks, never as routine. A
+  balance warning is reported, not chased. Lanes and commands: README, *Build and test*.
 - **Background any step over ~30 seconds** (builds, tests, sims, servers) and wait on the real
   process (the `cargo`, `node` or test binary), never on a launcher that returns before the work
   is done. A fresh worktree's first build takes minutes: give it its time. It also has no
@@ -114,7 +118,8 @@ Write the report to the path conductor's preamble gives, starting with the heade
 Warnings are surfaced, never gate: an item whose own change trips one still finishes, and lists
 it in the header's `warnings:` line, led by its kind. Before its report, every item runs
 `python scripts/warning_checks.py` (always exits 0; prints one `<kind>: <text>` line per tripped
-check, nothing when clean). Its kinds are **parity**, **tunables** (exceptions, each with its
+check, nothing when clean; its parity and balance checks build and run only when the branch
+touched what they measure, `--all` forces them). Its kinds are **parity**, **tunables** (exceptions, each with its
 reason, in `scripts/warning_checks.json`), **platform-floats**, **balance** (the judge:
 `docs/principles.md`, *The judge*), **docs** and **qa** (the tree's last `npm run qa` had a
 pass that never reached the ending); the script's docstring defines each.

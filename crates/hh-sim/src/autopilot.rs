@@ -456,7 +456,7 @@ mod tests {
     }
 
     #[test]
-    #[ignore = "slow lane: a whole career on the autopilot, to the ending, ~90,000 ticks (~70 s)"]
+    #[ignore = "slow lane: a whole career on the autopilot, to the ending, ~114,000 ticks (~40 s)"]
     fn a_fresh_career_on_the_autopilot_reaches_every_step() {
         let (c, ms, g) = fresh(2);
         let boost = Some(parse_boost(DEFAULT_BOOST).unwrap());

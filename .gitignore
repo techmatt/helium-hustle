@@ -9,3 +9,4 @@ node_modules/
 /web/dist/
 /web/src/wasm/
 bash.exe.stackdump
+__pycache__/

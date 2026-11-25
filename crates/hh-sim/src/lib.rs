@@ -21,6 +21,11 @@ pub mod playlog;
 pub mod summary;
 pub mod vs;
 
+// The unit tests' binary (main.rs and tests/cli.rs set their own): see main.rs.
+#[cfg(test)]
+#[global_allocator]
+static ALLOC: mimalloc::MiMalloc = mimalloc::MiMalloc;
+
 pub const USAGE: &str = "usage:
   hh-sim --help                                    this usage (also printed, as an error, with no command)
   hh-sim run [--config F] [--seed S] [--ticks N] [--policy P] [--scenario NAME | --scenario-file F] [--save F] [--json]

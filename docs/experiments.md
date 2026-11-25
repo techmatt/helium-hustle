@@ -77,9 +77,9 @@ After `ladder`'s and `experiment`'s tables, the engine's speed natively and in w
 ## Costs
 
 This machine, idle: the ladder (4 players × 3 seeds, careers of 20 retirements)
-about 11 s on 6 threads; `ceiling` about 20 minutes, set by the oracle's careers
+about 20 s on 6 threads; `ceiling` about 20 minutes, set by the oracle's careers
 ([oracle.md](oracle.md)); `balance`
-(4 careers) about 5 s; `vs-human` on a 1,600-tick log a second. Other careers play
+(4 careers) about 6.5 s (092, on mimalloc: half the Windows allocator's time); `vs-human` on a 1,600-tick log a second. Other careers play
 4,000-20,000 ticks a second, slower the more often their
 player looks (random and the author every 5-10 ticks, the casual author every ~130): a view
 (~150-200 µs) costs ten state copies, so a rollout that plays an agent is view-bound.

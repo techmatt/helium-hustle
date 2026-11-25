@@ -22,6 +22,13 @@ The engine rules that bind every item are in [CLAUDE.md](../../CLAUDE.md), *Engi
 - **Rules history rows (2026-11-22, docs rule).** A `docs/rules-history.md` row stays under
   about 400 bytes; rows older than the last ten revisions are trimmed to a line.
 
+## Testing
+
+- **Light testing per item (2026-11-25, 092).** An ordinary item is a fast edit with minimal
+  testing: the fast lane and the checks covering what it touched, the full run before a commit
+  that touches Rust, content or configs. Serious passes (a full `npm run qa`, e2e, balance
+  reads, other sweeps) happen in bug hunts, when real problems arise, or when a prompt asks.
+
 ## Saves
 
 - **Saves (locked).** A localStorage autosave tagged with the rules revision and config hash,

@@ -167,8 +167,9 @@ borrows content text (`&'static` ids, names, descriptions, content rates; `names
 once) instead of copying it, and answers "can it apply" with blocker functions
 (`economy::buy_blocker`, `land_blocker`, `research::blocker`), never `Rules::is_legal`'s
 state copy; the state's config is shared (`Arc`), so a state copy doesn't copy it. What's
-left is 120-200 µs natively (it grows with the run): the day on a copy ~25-50 µs and the
-retire on a copy ~20-35 µs, both exact by construction. `cargo run --release -p hh-sim --example
+left is 160-320 µs natively on mimalloc (it grows with the run; about twice that on the
+Windows allocator): the day on a copy ~20-45 µs and the retire on a copy ~15-75 µs, both
+exact by construction (the retire's gap stops each decay once a day changes nothing, 092). `cargo run --release -p hh-sim --example
 view_bench` prints a view's cost split into those parts and a digest of every view's JSON
 over the golden game: a refactor that only reshapes the view keeps the digest.
 

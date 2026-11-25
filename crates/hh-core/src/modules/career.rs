@@ -152,15 +152,35 @@ pub fn retire(r: &Rules, g: &mut GameState, forced: bool) {
 /// only the slow systems run: every carried ideology score decays
 /// proportionally toward zero (one half-life for all three axes), and every
 /// adversary's Attention decays linearly. Unseen in Act 1 (no calendar).
+///
+/// The scores and the Attention decay apart (neither reads the other), so each runs
+/// its own days; and a day is a function of its values alone, so once one leaves
+/// them as they were, so would every later one: each loop stops there. The same
+/// numbers as day by day, much faster: the view retires a copy on every look.
 fn gap(r: &Rules, g: &mut GameState) {
-    let f = super::ideology::gap_decay_factor(r);
-    for _ in 0..r.p.career.gap_days {
-        for v in g.career.ideology.values_mut() {
-            *v = *v * f;
+    use super::attention::{decay_day, ADVERSARIES};
+    const N: usize = ADVERSARIES.len();
+    let (f, days) = (super::ideology::gap_decay_factor(r), r.p.career.gap_days);
+    for v in g.career.ideology.values_mut() {
+        for _ in 0..days {
+            let next = *v * f;
+            if next == *v {
+                break;
+            }
+            *v = next;
         }
-        super::attention::decay_day(r, g);
     }
-    g.career.gap_days += r.p.career.gap_days;
+    for _ in 0..days {
+        let mut before = [None; N];
+        for (b, who) in before.iter_mut().zip(ADVERSARIES) {
+            *b = g.career.attention.get(*who).copied();
+        }
+        decay_day(r, g);
+        if ADVERSARIES.iter().zip(before).all(|(who, was)| g.career.attention.get(*who).copied() == was) {
+            break;
+        }
+    }
+    g.career.gap_days += days;
 }
 
 /// Why the player can't retire now, if they can't: retiring needs the retirement panel
