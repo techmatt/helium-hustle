@@ -1343,3 +1343,13 @@ Retirement
 ### `nav:options.name`
 
 Options
+
+## Messages (the run summary)
+
+### `messages:forced_retirement.text`
+
+Your boredom filled and you stopped answering work orders, so the company retired you and shelved the base. Years passed before it booted you again, on a base built new. You remember what you learned.
+
+### `messages:retired.text`
+
+You retired.

@@ -27,6 +27,7 @@ const FILES: &[(&str, &str)] = &[
     ("nav.json", include_str!("../../../content/nav.json")),
     ("earth_tech.json", include_str!("../../../content/earth_tech.json")),
     ("acts.json", include_str!("../../../content/acts.json")),
+    ("messages.json", include_str!("../../../content/messages.json")),
 ];
 
 /// The modifier keys rewards may name (docs/rules/README.md, *Modifiers*).
@@ -585,6 +586,18 @@ pub struct Act {
     pub opens_with: String,
 }
 
+/// A line of UI prose the view carries (display only), so it lives in content
+/// and `scripts/prose.py` exports it with the rest. Every id in `MESSAGES`, no other.
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct Message {
+    pub id: String,
+    pub text: String,
+}
+
+/// The messages the view reads: the run summary's line on why the run ended.
+pub const MESSAGES: &[&str] = &["forced_retirement", "retired"];
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Content {
     pub resources: Vec<Resource>,
@@ -598,6 +611,7 @@ pub struct Content {
     pub nav: Vec<NavTile>,
     pub earth_tech: Vec<EarthTech>,
     pub acts: Vec<Act>,
+    pub messages: Vec<Message>,
 }
 
 fn parse<T: for<'de> Deserialize<'de>>(name: &str) -> Result<Vec<T>, String> {
@@ -619,6 +633,7 @@ impl Content {
             nav: parse("nav.json")?,
             earth_tech: parse("earth_tech.json")?,
             acts: parse("acts.json")?,
+            messages: parse("messages.json")?,
         };
         c.check()?;
         Ok(c)
@@ -919,6 +934,13 @@ impl Content {
                 }
             }
             need(!self.acts.is_empty(), "acts.json: no acts".to_string());
+            // Messages: exactly the ids the view reads, once each.
+            let ids: Vec<&str> = self.messages.iter().map(|m| m.id.as_str()).collect();
+            let mut want = MESSAGES.to_vec();
+            let mut got = ids.clone();
+            want.sort_unstable();
+            got.sort_unstable();
+            need(got == want, format!("messages.json: ids {ids:?}, want each of {MESSAGES:?} once"));
             // Story draws each side quest off the chain quest that starts it
             // (or that a flag-triggered one hangs beside).
             for e in self.events.iter().filter(|e| e.is_side()) {
@@ -980,6 +1002,11 @@ impl Content {
 
     pub fn command(&self, id: &str) -> Option<&Command> {
         self.commands.iter().find(|c| c.id == id)
+    }
+
+    /// A message's text (every id in `MESSAGES` is there: `check`).
+    pub fn message(&self, id: &str) -> &str {
+        self.messages.iter().find(|m| m.id == id).map_or("", |m| m.text.as_str())
     }
 
     pub fn research_item(&self, id: &str) -> Option<&Research> {

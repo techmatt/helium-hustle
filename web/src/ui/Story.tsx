@@ -11,6 +11,7 @@ import type { SideQuestView, StoryView, View } from '../engine';
 import { capitalize, num } from '../format';
 import { justMoved, replayStory, type Store } from '../store';
 import { QuestPicture, actBand } from './art';
+import { ScopeIcon } from './icons';
 import { Bar, Quest } from './common';
 
 /** A finished quest's paragraphs: its opening (its body when it has none), then its payoff. */
@@ -56,6 +57,7 @@ function Side({ x }: { x: SideQuestView }) {
           {x.done && <QuestPicture stem={x.picture} at="thumb" />}
           {x.title}
           {x.done && <span class="ok"> ✓</span>}
+          <ScopeIcon keep={x.keep} />
         </div>
         {x.done ? (
           <button

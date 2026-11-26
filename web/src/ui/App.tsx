@@ -286,11 +286,7 @@ function Summary({ s }: { s: Store }) {
         <h2>
           Run {r.run} ended on day {num(r.days)}
         </h2>
-        <p data-testid="summary-why">
-          {r.forced
-            ? 'Your boredom filled and you stopped answering work orders, so the company retired you and shelved the base. Years passed before it booted you again, on a base built new. You remember what you learned.'
-            : 'You retired.'}
-        </p>
+        <p data-testid="summary-why">{v.last_run_why}</p>
         <Section title="That run">
           <table class="grid-table kv">
             <tbody>

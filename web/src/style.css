@@ -1447,6 +1447,29 @@ button.beat-node.is-done:focus-visible .beat-card {
 .side-title {
   font-weight: 600;
 }
+/* Scope icons (icons.tsx ScopeIcon): the card's top-right corner, after its title row. */
+.scope-icon {
+  flex: none;
+  display: inline-block;
+  min-width: 18px;
+  height: 18px;
+  line-height: 18px;
+  border: 1px solid var(--accent);
+  border-radius: 3px;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  cursor: help;
+}
+.scope-icon.scope-eternal {
+  background: var(--accent);
+  color: var(--card);
+}
+.side-title .scope-icon {
+  float: right;
+  margin-left: 6px;
+}
 /* A finished side quest's one line; a click shows the whole text in place (no modal). */
 .side-text {
   display: block;

@@ -39,6 +39,14 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   normal size (compact tiles use chips or glyphs); the earthlight horizon; chip icons (color
   square, knocked-out glyph, name as tooltip) for every resource, ideology axis and rival,
   everywhere they appear. Rival colors are fixed (`icons.tsx`).
+- **Scope icons (2026-11-25).** A small corner icon on any card whose effect survives a
+  retirement (research, projects, side-quest rewards, Programming): **Legacy** survives a
+  retirement, **Eternal** survives everything. Run-only things have none. Before the swarm's
+  reveal every durable thing shows Legacy; Eternal appears only after it (the difference needs
+  timelines to explain). Hovering gives one line ("Kept when you retire."). The engine's view
+  says which (`keep`); `ScopeIcon` in `icons.tsx`. *Default (099):* placeholder glyphs ◆ and ∞
+  on the amber accent; the icon shows done or not; an owned Programming (its card gone) shows
+  none; a side quest with no reward of its own (1.c) has none.
 - **Chip colors (028, default).** Resource, axis and rival chip colors stay TS maps in
   `icons.tsx` (the chip needs the hex for its ink-contrast choice, and they are the same in
   both themes); only the axis text colors are CSS tokens.
@@ -52,7 +60,8 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   medium above its story modal's paragraph, at the left column's foot while it is the active
   main quest (replacing the lunar-base scene, which stays the fallback for a quest without
   one), and as a thumbnail beside a beat's title in Story. Layouts must look right without
-  one. Act 1's are Matt's picks from `quest_pictures_act1_r1` (080), 1.1's `earthrise`. A
+  one. Act 1's are Matt's picks from `quest_pictures_act1_r1` (080), 1.1's `earthrise`; a
+  picture's stem is a word, never a quest number (099). A
   side quest, which has no modal, shows its picture in its completion banner (Matt, 2026-11-23).
 - **Cortex mock (2026-11-22).** Contrast first: inside the wheel's rim a plain solid ground per
   theme; decoration (bezel, corona, neurons) only outside the rim. It follows the app's

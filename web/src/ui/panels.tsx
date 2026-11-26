@@ -8,7 +8,7 @@ import type { CommandView, Fx, ProjectView, ResearchView, View } from '../engine
 import { capitalize, mult, num, perDay } from '../format';
 import { act, justMoved, seen, store, type Store } from '../store';
 import { Bar, Breakdown, FlowLines, ResChip, Section, cardButton, freshClass, name, navShown, numBelow, useHint } from './common';
-import { Chip } from './icons';
+import { Chip, ScopeIcon } from './icons';
 import { editProgram } from './programStore';
 
 // ---- Commands ------------------------------------------------------------------
@@ -331,6 +331,7 @@ export function ResearchCard({ v, r, fresh }: { v: View; r: ResearchView; fresh:
       <div class="card-head">
         <h3>{r.name}</h3>
         {r.done && <span class="ok">✓ Done</span>}
+        <ScopeIcon keep={r.keep} />
       </div>
       <p class="desc">{r.description}</p>
       {needs && !r.done && <p class="muted small">Needs {name(v, needs)} first.</p>}
@@ -403,6 +404,7 @@ export function Project({ v, p, fresh }: { v: View; p: ProjectView; fresh: Set<s
       <div class="card-head">
         <h3>{p.name}</h3>
         {p.completed && !p.repeatable && <span class="ok">✓ Complete</span>}
+        <ScopeIcon keep={p.keep} />
       </div>
       <p class="desc">{p.description}</p>
       {locked && <p class="muted small">Locked: {p.unlock_text}</p>}

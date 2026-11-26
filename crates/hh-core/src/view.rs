@@ -24,6 +24,7 @@ use crate::modules::programs as program_rules;
 use breakdown::{breakdown, short_view};
 
 mod breakdown;
+mod keep;
 // The programs panel; the game's own programs module is `program_rules` here.
 mod programs;
 // The Projects panel; the game's own projects module is `modules::projects`.
@@ -173,6 +174,8 @@ pub struct ResearchView {
     pub done: bool,
     pub visible: bool,
     pub affordable: bool,
+    /// Its scope icon: `legacy`, `eternal` or none (run-only; `keep.rs`).
+    pub keep: Option<Text>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -239,6 +242,8 @@ pub struct SideQuestView {
     pub progress: Option<ProgressView>,
     /// Its picture's file stem (display only; the UI's `src/assets/quests/`), if it has one.
     pub picture: Option<Text>,
+    /// Its reward's scope icon: `legacy`, `eternal` or none (no reward; `keep.rs`).
+    pub keep: Option<Text>,
 }
 
 /// An act the story has reached (its first quest is active or completed).
@@ -480,6 +485,8 @@ pub struct View {
     pub next_run: NextRunView,
     /// The last finished run's summary, if any.
     pub last_run: Option<LastRun>,
+    /// Why it ended, the run summary's line (`content/messages.json`), if any.
+    pub last_run_why: Option<Text>,
     /// This run's running totals (the state's own).
     pub run_stats: RunStats,
     pub boredom: BoredomView,
@@ -774,6 +781,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 done,
                 progress: if done { None } else { progress(events::progress(r, g, &e.id, &e.condition)) },
                 picture: e.picture.as_deref(),
+                keep: keep::side_quest(g, e),
             }
         })
         .collect();
@@ -871,6 +879,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                     done: g.run.research.contains(&item.id),
                     visible: research::visible(g, item),
                     affordable: research::blocker(r, g, item).is_none(),
+                    keep: keep::research(g, item),
                 }
             })
             .collect(),
@@ -942,6 +951,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         },
         next_run,
         last_run: g.career.last_run.clone(),
+        last_run_why: g.career.last_run.as_ref().map(|l| c.message(if l.forced { "forced_retirement" } else { "retired" })),
         run_stats: g.run.stats.clone(),
         boredom: BoredomView {
             amount: g.amount(economy::BOREDOM),

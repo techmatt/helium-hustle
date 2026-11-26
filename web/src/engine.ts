@@ -304,7 +304,12 @@ export interface ResearchView {
   done: boolean;
   visible: boolean;
   affordable: boolean;
+  keep: Keep;
 }
+
+/** A card's scope icon (`ScopeIcon`): kept when the AI retires, kept through
+ * everything, or null for run-only (the engine folds Eternal into Legacy before the reveal). */
+export type Keep = 'legacy' | 'eternal' | null;
 
 export interface AxisView {
   axis: string;
@@ -320,6 +325,7 @@ export interface ProjectView {
   description: string;
   /** Where its progress and completions live: this run, this timeline, or forever. */
   scope: 'run' | 'timeline' | 'forever';
+  keep: Keep;
   /** Fundable now (its unlock holds and it is not done; a repeatable one is never done). */
   unlocked: boolean;
   /** Completed at least once in its scope. */
@@ -404,6 +410,8 @@ export interface SideQuestView {
   progress: ProgressView | null;
   /** Its picture's file stem (`questPicture`), null when it has none. */
   picture: string | null;
+  /** Its reward's scope icon; null when it has no reward of its own. */
+  keep: Keep;
 }
 
 /** An act the story has reached. */
@@ -602,6 +610,8 @@ export interface View {
   career: CareerView;
   next_run: NextRunView;
   last_run: LastRun | null;
+  /** Why it ended, the run summary's line (content/messages.json). */
+  last_run_why: string | null;
   run_stats: RunStats;
   boredom: { amount: Fx; cap: Fx; rate: Fx; phase: number; phases: number };
   nav: { id: string; name: string; visible: boolean }[];

@@ -1371,8 +1371,8 @@ async function freshGame() {
         earth: !!document.querySelector('.col-mid .earth, .col-mid svg[viewBox="0 0 200 200"]'),
       };
     })()`);
-    check(pic.modal === 'q1_1_earthrise' && pic.above && pic.loaded, `1.1's modal shows its picture above its paragraph: ${JSON.stringify(pic)}`);
-    check(pic.left === 'q1_1_earthrise', `the left column's foot shows 1.1's picture: ${pic.left}`);
+    check(pic.modal === 'earthrise' && pic.above && pic.loaded, `1.1's modal shows its picture above its paragraph: ${JSON.stringify(pic)}`);
+    check(pic.left === 'earthrise', `the left column's foot shows 1.1's picture: ${pic.left}`);
     check(/\bsplit-glow\b/.test(pic.title) && !pic.earth, `the split-glow title and no Earth globe: ${pic.title} earth ${pic.earth}`);
     const pages = await readStory();
     check(
@@ -1382,7 +1382,7 @@ async function freshGame() {
     // On 1.1, Story's active beat carries 1.1's thumbnail.
     await panel('story');
     const thumb = await evaluate(`document.querySelector('[data-testid="story-beat-active"] [data-testid="quest-pic-thumb"]')?.dataset.picture ?? null`);
-    check(thumb === 'q1_1_earthrise', `on 1.1 the active beat shows its thumbnail: ${thumb}`);
+    check(thumb === 'earthrise', `on 1.1 the active beat shows its thumbnail: ${thumb}`);
   }
   // Programs from day 1 (091): the right column's program, Add to Program and the loadout
   // buttons; no Run anywhere; the Programs tile (the full editor) only once Programming.

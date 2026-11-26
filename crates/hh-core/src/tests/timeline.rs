@@ -345,6 +345,33 @@ fn quiet_days_count_from_the_last_order() {
 }
 
 #[test]
+fn scope_icons_show_legacy_until_the_reveal_then_eternal() {
+    let r = rules();
+    let mut g = r.new_game(7);
+    // 1.a Big Launch (a modifier reward) started; 1.c (no reward of its own) too.
+    g.career.flags.insert("speculators_seen".into());
+    g.career.flags.insert("retired".into());
+    g.career.completed_quests.insert("qtrade".into());
+    g.career.completed_quests.insert("qfirst_shipment".into());
+    let research = |v: &crate::View, id: &str| v.research.iter().find(|x| x.id == id).unwrap().keep;
+    let project = |v: &crate::View, id: &str| v.projects.iter().find(|x| x.id == id).unwrap().keep;
+    let side = |v: &crate::View, id: &str| v.side_quests.iter().find(|x| x.id == id).unwrap().keep;
+    let v = r.view(&g);
+    assert_eq!(research(&v, "programming"), Some("legacy"), "before the reveal, Legacy");
+    assert_eq!(research(&v, "regolith_processing"), None, "run-only research shows nothing");
+    assert_eq!(project(&v, "conditional_logic"), Some("legacy"), "a global project");
+    assert!(v.projects.iter().filter(|p| p.scope == "run").all(|p| p.keep.is_none()), "Strategic projects");
+    assert_eq!(side(&v, "qbig_launch"), Some("legacy"));
+    assert_eq!(side(&v, "qblueprints_for_everyone"), None, "no reward of its own");
+    g.career.flags.insert(timeline::REVEAL_FLAG.into());
+    let v = r.view(&g);
+    assert_eq!(research(&v, "programming"), Some("eternal"), "after the reveal, Eternal");
+    assert_eq!(research(&v, "regolith_processing"), None);
+    assert_eq!(project(&v, "conditional_logic"), Some("legacy"), "a timeline's end clears it");
+    assert_eq!(side(&v, "qbig_launch"), Some("eternal"));
+}
+
+#[test]
 fn a_rank_on_one_axis_shows_its_progress() {
     // A career-best rank (Three Voices, 1.d) counts up, as `holds` reads them.
     let r = rules();

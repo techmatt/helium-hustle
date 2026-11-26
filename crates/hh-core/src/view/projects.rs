@@ -19,6 +19,8 @@ pub struct ProjectView {
     pub description: Text,
     /// `run`, `timeline` or `forever`.
     pub scope: Text,
+    /// Its scope icon: `legacy`, `eternal` or none (`run`; `keep.rs`).
+    pub keep: Option<Text>,
     pub unlocked: bool,
     pub completed: bool,
     /// Completions so far in its scope.
@@ -48,6 +50,7 @@ pub(super) fn projects(r: &Rules, g: &GameState) -> Vec<ProjectView> {
             name: &p.name,
             description: &p.description,
             scope: p.scope.name(),
+            keep: super::keep::project(g, p.scope),
             unlocked: projects::unlocked(r, g, p),
             completed: projects::completed(g, &p.id),
             completions: projects::completions(g, p),

@@ -4,7 +4,7 @@
 // experiments/results/027_art_in_game/ from the picked art; a later style only swaps them.
 
 import { useEffect, useRef, useState } from 'preact/hooks';
-import type { View } from '../engine';
+import type { Keep, View } from '../engine';
 
 /** Chip colors: resources, ideology axes (true colors) and rival AIs.
  * experiments/results/026_icon_art_r1/glyphs.mjs reads these three maps as text (the
@@ -70,6 +70,24 @@ export function Chip({ id, title, size = 14 }: { id: string; title: string; size
       <rect x="0.5" y="0.5" width="23" height="23" rx="3" fill={fill} stroke="rgb(0 0 0 / 18%)" stroke-width="1" />
       <g fill={ink} transform="translate(3.6 3.6) scale(0.7)" dangerouslySetInnerHTML={{ __html: GLYPHS[id] ?? '' }} />
     </svg>
+  );
+}
+
+/** Scope icons (placeholder glyphs): what a card's `keep` says survives. The engine
+ * decides which; Eternal shows only after the swarm's reveal. */
+const SCOPE: Record<NonNullable<Keep>, { glyph: string; name: string; line: string }> = {
+  legacy: { glyph: '◆', name: 'Legacy', line: 'Kept when you retire.' },
+  eternal: { glyph: '∞', name: 'Eternal', line: "Kept through everything, even a timeline's end." },
+};
+
+/** A card's corner scope icon, or nothing for a run-only card. Hovering gives one line. */
+export function ScopeIcon({ keep }: { keep: Keep }) {
+  if (!keep) return null;
+  const s = SCOPE[keep];
+  return (
+    <span class={`scope-icon scope-${keep}`} data-keep={keep} title={`${s.name}: ${s.line}`} aria-label={`${s.name}: ${s.line}`}>
+      {s.glyph}
+    </span>
   );
 }
 

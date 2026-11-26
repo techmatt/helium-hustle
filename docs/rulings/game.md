@@ -88,7 +88,9 @@ Programs have their own part ([programs.md](programs.md)).
   expectation. Refinery upkeep is 5 regolith + 2 energy; the excavator makes 2 regolith a day.
 - **Prose round-trip (2026-11-25).** Every player-facing string in `content/` exports to one
   Markdown file grouped by screen (`content/prose.md`, committed) and imports back by id
-  (`python scripts/prose.py`); ids never change, a missing id leaves its string alone.
+  (`python scripts/prose.py`); ids never change, a missing id leaves its string alone. UI
+  prose the engine's view carries (the run summary's line on why the run ended) is content
+  too, in `content/messages.json`.
 - **Story modals (2026-11-23).** Each chain quest's transition is a modal that pauses the
   game: the finished quest's payoff, then the next quest's story, then its task in one line;
   one paragraph a modal, chained or merged as the story reads best, one button, play resumes
