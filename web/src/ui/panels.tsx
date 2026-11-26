@@ -297,17 +297,21 @@ export function Research({ s }: { s: Store }) {
   );
 }
 
+/** The research `r` requires, while it is not done (else null). */
+const unmetRequire = (v: View, r: ResearchView): string | null =>
+  r.requires && !v.research.find((x) => x.id === r.requires)?.done ? r.requires : null;
+
 /** A research card is its Research button, like a building card (`cardButton`). */
 export function ResearchCard({ v, r, fresh }: { v: View; r: ResearchView; fresh: Set<string> }) {
   const key = `research:${r.id}`;
   const [hint, showHint] = useHint();
-  const needs = r.requires && !v.research.find((x) => x.id === r.requires)?.done ? r.requires : null;
+  const needs = unmetRequire(v, r);
   // Reads the engine's view now, not this render's: a double-click researches once.
   const research = () => {
     const now = store.view.research.find((x) => x.id === r.id);
     if (!now || now.done) return;
     if (!now.affordable) {
-      const req = now.requires && !store.view.research.find((x) => x.id === now.requires)?.done ? now.requires : null;
+      const req = unmetRequire(store.view, now);
       // How much more, never "0 more" (199.96 held shows as 200 beside a 200 price).
       const sci = Number(store.view.resources.find((x) => x.id === 'science')?.amount ?? 0);
       const more = Number(now.cost) - sci;
@@ -473,7 +477,7 @@ export function Ideologies({ s }: { s: Store }) {
       <p class="muted">
         Fund commands push one axis up and the other two down. Each whole rank multiplies that axis's bonuses and
         discounts, among them the price of buildings tagged with it; rank 5 is a major rank with its own change.
-        Scores carry into the next run, halving every year of the years away.
+        Scores carry into the next run, fading over the years away.
       </p>
       {v.ideology.map((a) => {
         const lo = Number(a.rank_score);

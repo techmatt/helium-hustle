@@ -38,9 +38,9 @@ Programs have their own part ([programs.md](programs.md)).
   sources multiply. Exponential stacking only for a few named exceptions (Paradigms, late
   techs, the catastrophic-success tech); repeatable projects are rare exceptions.
 - **Act 1 follows the design doc's beats (2026-11-21).** Quests carry beat ids;
-  [arc.md](../arc.md) is the beat → quest → status map, current state only. Q6 Open
-  Horizons and Q7 Signal Detected left the quest line: performance tests belong in
-  achievements (not built yet; candidates in arc.md).
+  [arc.md](../arc.md) is the beat → quest → status map, current state only. Performance
+  tests (Open Horizons, Signal Detected) belong in achievements, not the quest line (not
+  built yet; candidates in arc.md).
 - **No legacy numbers (2026-11-25, standing).** When things are renumbered, nothing keeps the
   old numbers: no mapping column, alias or "was" note in content, code or docs. Content ids
   may stay as they are.
@@ -78,7 +78,7 @@ Programs have their own part ([programs.md](programs.md)).
 - **Staggered unlocks (2026-11-25).** The first Research Lab opens only Regolith Processing
   (100 science, +50% excavator output), Programming and Process Telemetry. The first
   retirement opens Projects (and Foundation Grant), Daydreaming and the boredom research, and
-  the Retirement panel. Speculators' arrival opens the Market Analysis research and Disrupt
+  the Retirement panel. Speculators' arrival opens the Market Analysis research category and Disrupt
   Speculators (through Speculator Analysis, its research). A Voice's start opens Geopolitical
   Intelligence, its completion Overclock Protocols. *Defaults (095):* the Recreation Dome and
   the first global projects (Blueprint Archive, Chemical Energy, Conditional Logic) also open

@@ -46,7 +46,7 @@ credits, a building count) is not seen.
 | M13 | Ideology Influence: rank 3+ in an axis | the career's best rank on any axis ≥ 3 | counter | runs 10–18 |
 | M14 | Timeline Unlocked: Arc 1 → Arc 2 | quest 1.7 Deep Space Telescope completed (the swarm's reveal) | event | runs 15–20 |
 
-**Judgement calls** (candidates; the data may move them):
+**Judgment calls** (candidates; the data may move them):
 
 - **M1** reads "self-sustaining" as quest 1.1 Online's two panels, not an energy-rate
   threshold: at two panels a run's energy runs positive with the opening buildings.

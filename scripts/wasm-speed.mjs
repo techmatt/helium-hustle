@@ -12,10 +12,11 @@ const m = await import(pathToFileURL(path.join(pkg, 'hh_wasm.js')).href);
 await m.default({ module_or_path: readFileSync(path.join(pkg, 'hh_wasm_bg.wasm')) });
 
 const cfg = readFileSync(path.join(root, 'configs', 'baseline.json'), 'utf8');
-const GOLDEN_TICKS = 2000;
 let t = performance.now();
-m.play_golden(cfg);
-const scripted = GOLDEN_TICKS / ((performance.now() - t) / 1000);
+const golden = m.play_golden(cfg);
+const seconds = (performance.now() - t) / 1000;
+// The golden game's length from its own record, not a copy of driver.rs's GOLDEN_TICKS.
+const scripted = JSON.parse(golden).record.ticks / seconds;
 const N = 20000;
 const state = m.new_game(cfg, '1', '');
 t = performance.now();

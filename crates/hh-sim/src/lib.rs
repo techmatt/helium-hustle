@@ -46,7 +46,7 @@ pub const USAGE: &str = "usage:
   hh-sim agents                                    the ladder's rungs
   hh-sim speed                                     native engine speed (ticks/s)
   hh-sim playlog LOG.jsonl [--json] [--milestones F] [--human-models F]   replay and measure a human's play log
-  hh-sim vs-human LOG.jsonl [--agents a,b] [--humans a,b] [--ticks N] [--json] [--threads T] [--milestones F] [--human-models F]
+  hh-sim vs-human LOG.jsonl [--agents a,b] [--humans a,b] [--ticks N] [--json] [--threads T] [--milestones F] [--human-models F] [--include-accelerated]
                                                    the sim players on the log's game, beside the human
   hh-sim accelerate [--seed S] [--config F] [--agent SPEC] [--boost P,R,B | --no-boost] [--target milestone|quest|end]
                     [--budget TICKS] [--save RECORD]   debug: a fresh career on the autopilot (docs/simulator.md, Accelerators)
@@ -92,6 +92,16 @@ pub(crate) fn list(s: &str) -> Vec<String> {
     s.split(',').filter(|x| !x.is_empty()).map(String::from).collect()
 }
 
+/// The milestones file at `path` (errors name it).
+pub(crate) fn load_milestones(path: &str) -> Result<milestones::Milestones, Fail> {
+    milestones::Milestones::from_json(&read(path)?).map_err(|e| Fail::Usage(format!("{path}: {e}")))
+}
+
+/// The human time models file at `path` (errors name it).
+pub(crate) fn load_humans(path: &str) -> Result<human::Humans, Fail> {
+    human::Humans::from_json(&read(path)?).map_err(|e| Fail::Usage(format!("{path}: {e}")))
+}
+
 fn load_config(path: &str) -> Result<Config, Fail> {
     Config::from_json(&read(path)?).map_err(|e| Fail::Usage(format!("{path}: {e}")))
 }
@@ -107,6 +117,19 @@ struct Opts {
     json: bool,
     summary: bool,
     rest: Vec<String>,
+    /// The options given, in order (checked against what the command reads).
+    given: Vec<String>,
+}
+
+/// The options each single-game command reads (`parse` takes them all).
+fn reads(cmd: &str) -> &'static [&'static str] {
+    match cmd {
+        "run" => &["--config", "--seed", "--ticks", "--policy", "--scenario", "--scenario-file", "--save", "--json"],
+        "replay" => &["--summary"],
+        "show" => &["--config"],
+        "objectives" => &["--config", "--seed", "--ticks"],
+        _ => &[],
+    }
 }
 
 fn parse(args: &[String]) -> Result<Opts, Fail> {
@@ -121,6 +144,7 @@ fn parse(args: &[String]) -> Result<Opts, Fail> {
         json: false,
         summary: false,
         rest: Vec::new(),
+        given: Vec::new(),
     };
     let mut it = args.iter();
     while let Some(a) = it.next() {
@@ -129,6 +153,9 @@ fn parse(args: &[String]) -> Result<Opts, Fail> {
                 .cloned()
                 .ok_or_else(|| Fail::Usage(format!("{name} needs a value")))
         };
+        if a.starts_with("--") {
+            o.given.push(a.clone());
+        }
         match a.as_str() {
             "--config" => o.config = val("--config")?,
             "--seed" => {
@@ -189,6 +216,9 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     let o = parse(rest)?;
     if cmd != "replay" && cmd != "objectives" && !o.rest.is_empty() {
         return usage(format!("unexpected argument {:?}", o.rest[0]));
+    }
+    if let Some(opt) = o.given.iter().find(|g| !reads(cmd).contains(&g.as_str())) {
+        return usage(format!("{cmd} does not take {opt}"));
     }
     match cmd.as_str() {
         "run" => run_game(&o),
@@ -288,8 +318,8 @@ fn playlog_cmd(args: &[String]) -> Result<String, Fail> {
     while let Some(a) = it.next() {
         match a.as_str() {
             "--json" => json = true,
-            "--milestones" => milestones = it.next().ok_or(Fail::Usage("--milestones needs a file".into()))?.clone(),
-            "--human-models" => humans = it.next().ok_or(Fail::Usage("--human-models needs a file".into()))?.clone(),
+            "--milestones" => milestones = it.next().ok_or(Fail::Usage("--milestones needs a value".into()))?.clone(),
+            "--human-models" => humans = it.next().ok_or(Fail::Usage("--human-models needs a value".into()))?.clone(),
             f if f.starts_with("--") => return usage(format!("playlog: unknown option {f:?}")),
             f if path.is_none() => path = Some(f.to_string()),
             f => return usage(format!("playlog: one log at a time (also given {f:?})")),
@@ -299,8 +329,8 @@ fn playlog_cmd(args: &[String]) -> Result<String, Fail> {
         return usage("playlog: give a log file");
     };
     let log = playlog::Log::parse(&read(&path)?).map_err(|e| Fail::Usage(format!("{path}: {e}")))?;
-    let ms = milestones::Milestones::from_json(&read(&milestones)?).map_err(Fail::Usage)?;
-    let pf = human::Humans::from_json(&read(&humans)?).map_err(Fail::Usage)?;
+    let ms = load_milestones(&milestones)?;
+    let pf = load_humans(&humans)?;
     let r = playlog::replay(&log, &ms).map_err(|e| Fail::Check(format!("{path}: replay failed: {e}")))?;
     let out = if json {
         serde_json::json!({
@@ -333,7 +363,7 @@ fn summarize_cmd(args: &[String]) -> Result<String, Fail> {
     let mut it = args.iter();
     while let Some(a) = it.next() {
         match a.as_str() {
-            "--milestones" => milestones = it.next().ok_or(Fail::Usage("--milestones needs a file".into()))?.clone(),
+            "--milestones" => milestones = it.next().ok_or(Fail::Usage("--milestones needs a value".into()))?.clone(),
             f if f.starts_with("--") => return usage(format!("summarize: unknown option {f:?}")),
             f if path.is_none() => path = Some(f.to_string()),
             f => return usage(format!("summarize: one games.jsonl at a time (also given {f:?})")),
@@ -343,7 +373,7 @@ fn summarize_cmd(args: &[String]) -> Result<String, Fail> {
         return usage("summarize: give a games.jsonl");
     };
     let games = summary::parse(&read(&path)?).map_err(|e| Fail::Usage(format!("{path}: {e}")))?;
-    let ms = milestones::Milestones::from_json(&read(&milestones)?).map_err(Fail::Usage)?;
+    let ms = load_milestones(&milestones)?;
     Ok(summary::tables(&games, &ms))
 }
 

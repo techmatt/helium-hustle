@@ -3,8 +3,9 @@
 
     python scripts/baseline.py <rev> [--agents-from <rev2>]
 
-Extracts <rev> (`git archive`, no worktree registered) to `out/baseline/<sha>/`
-(replacing an earlier copy there), optionally lays <rev2>'s
+Extracts <rev> (`git archive`, no worktree registered) to `out/baseline/<sha>/`, or
+`out/baseline/<sha>-agents-<rev2>/` with --agents-from (replacing an earlier copy
+there), optionally lays <rev2>'s
 `crates/hh-sim/src/agents/` over it (new rules, old agents: rev HEAD, rev2 main),
 and builds its release `hh-sim` into `out/target-baseline` (absolute, its own
 target dir). Prints the copy's root and binary: run the binary from that root,

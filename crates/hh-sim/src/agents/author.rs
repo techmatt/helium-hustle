@@ -157,12 +157,11 @@ pub struct Directives {
     /// Hold boredom down with Dream (enough processors to outpace growth,
     /// from a third of the cap), and never retire for a stale run.
     pub sustain: bool,
-    /// Buy all visible research, not only [`RESEARCH`]: it differs from the
-    /// plain author only on research outside that list (today Process
-    /// Telemetry, from the first Research Lab, and the draft Novelty
-    /// Simulation, after 1.7),
-    /// since no open project holds
-    /// research back (046).
+    /// Meant to buy all visible research, not only [`RESEARCH`], but a no-op
+    /// today: `next_research` and `science_wanted` look only at the directed
+    /// id and [`RESEARCH`], so it plays as the plain author (kept for the
+    /// oracle's strategy indices and the autopilot's second driver; whether
+    /// to make it work is open, docs/agents.md).
     pub all_research: bool,
     /// Run the market program (Promote what ships, Disrupt) on one processor
     /// whenever two are free, not only three.
@@ -319,8 +318,8 @@ impl Author {
         Author {
             // `diversify` and `all_research` (default 0): the directives of those
             // names, for the debug autopilot, whose boosted runs fill no cap with
-            // the plain rule's goods (`all_research` adds only research outside
-            // `RESEARCH`: the draft Novelty Simulation).
+            // the plain rule's goods (`all_research` is a no-op today: see
+            // `Directives::all_research`).
             dir: Directives {
                 diversify: k.get("diversify", 0) != 0,
                 all_research: k.get("all_research", 0) != 0,

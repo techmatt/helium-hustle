@@ -171,7 +171,7 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
     // Energy first: a building whose upkeep would leave less than a cloud
     // compute's energy spare waits for another Solar Panel.
     if let Some((id, _)) = goal {
-        let upkeep = |b: &str| v.buildings.iter().find(|x| x.id == b).and_then(|x| x.upkeep.get("energy").copied());
+        let upkeep = |b: &str| v.building(b).and_then(|x| x.upkeep.get("energy").copied());
         let spare = energy_surplus(&v) - upkeep(id).unwrap_or(Fx::ZERO);
         if *id != "solar_panel" && spare < v.command_cost("cloud_compute", "energy") {
             goal = Some(&("solar_panel", u32::MAX));
@@ -179,7 +179,7 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
     }
     // A price past a cap needs more storage first.
     if let Some((id, _)) = goal {
-        let b = v.buildings.iter().find(|b| b.id == *id).expect("a content building");
+        let b = v.building(id).expect("a content building");
         let over_cap = b.cost.iter().any(|(res, &c)| {
             v.resources.iter().any(|r| r.id == *res && r.cap.is_some_and(|cap| c > cap))
         });
@@ -189,7 +189,7 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
     }
     // Land runs out: buy more when the credits allow.
     if let Some((id, _)) = goal {
-        let b = v.buildings.iter().find(|b| b.id == *id).expect("a content building");
+        let b = v.building(id).expect("a content building");
         if v.amount("land") < Fx::from_int(b.land as i64) && v.amount("credits") >= v.land_price {
             stale |= s.apply(&Action::BuyLand).is_ok();
         }
@@ -204,7 +204,7 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
         v = s.rules.view(&s.state);
     }
     if let Some((id, _)) = goal {
-        let b = v.buildings.iter().find(|b| b.id == *id).expect("found above");
+        let b = v.building(id).expect("found above");
         if b.affordable {
             s.apply(&b.buy).expect("the view said affordable");
             stale = true;
@@ -334,7 +334,7 @@ fn choose_command(v: &View, goal: Option<&str>, allowed: &Allowed) -> &'static s
         return "buy_science";
     }
     if let Some(id) = goal {
-        let b = v.buildings.iter().find(|b| b.id == id).expect("a content building");
+        let b = v.building(id).expect("a content building");
         let price_credits = b.cost.get("credits").copied().unwrap_or(Fx::ZERO);
         for &(res, cmd) in BRIDGES {
             let need = b.cost.get(res).copied().unwrap_or(Fx::ZERO);

@@ -208,7 +208,7 @@ fn unlocked(v: &View, id: &str) -> bool {
 }
 
 /// The one command a hand-player runs, chosen from the view: launch a full
-/// fuelled pad; fuel a full pad; load when goods wait; buy science for the
+/// fueled pad; fuel a full pad; load when goods wait; buy science for the
 /// next Blueprints on sale; bridge the target's missing titanium, regolith or
 /// ice; else Cloud Compute (Idle without energy).
 pub fn hand_command(v: &View, target: Option<&str>) -> &'static str {

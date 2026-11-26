@@ -24,7 +24,7 @@ of every run.
 | `condition` | Holds when |
 |---|---|
 | `building_owned` | at least `count` owned this run (bonus buildings included) |
-| `resource_cumulative` | this run's production of the resource, before caps, reaches `amount` (starting resources don't count) |
+| `resource_cumulative` | this run's production of the resource, before caps, reaches `amount` (starting resources don't count) (no content row uses it yet) |
 | `shipment_completed` | this run's shipments reach `count` |
 | `research_completed` | the item is bought this run |
 | `immediate` | always |
@@ -32,12 +32,12 @@ of every run.
 | `all_of` | every sub-objective is latched (below) |
 | `ideology_rank_any` | some axis's current rank this run is at least `rank` |
 | `ideology_rank` | the career's best rank on `axis` is at least `rank` |
-| `project_completed_any` | any project of `scope` (`run`, `timeline`, `forever`) is completed |
+| `project_completed_any` | any project of `scope` (`run`, `timeline`, `forever`) is completed (no content row uses it yet) |
 | `project_enabled` | an event's `enable_project` enabled the project this run |
 | `quest_active` | the quest is active now or completed in any run |
 | `flag_set` | the flag holds: a career flag, or a live project `flag` reward's ([projects.md](projects.md)) |
-| `days_survived` | the run's days, today included, reach `days` |
-| `credits_earned` | credits produced this run reach `amount` |
+| `days_survived` | the run's days, today included, reach `days` (no content row uses it yet) |
+| `credits_earned` | credits produced this run reach `amount` (no content row uses it yet) |
 | `retirements` | the career's retirements, forced or chosen, reach `count` |
 | `adversary_present` | the adversary is present now ([attention.md](attention.md)) |
 | `trade_credits` | launches paid at least `amount` credits in all since the quest first became active: the career's launch pay (finished runs' `lifetime.trade_credits` plus this run's `trade_credits`, [shipments.md](shipments.md)) less its mark (*Quest start*); a row with no mark counts from the career's start |
@@ -91,7 +91,7 @@ completed earlier in the same check can fire that same day.
 | Unlock | Effect |
 |---|---|
 | `enable_building` | the building may be bought this run. A building named by any event's `enable_building` is locked until one enables it ([economy.md](economy.md)). |
-| `enable_nav_panel` | the panel is shown this run. Two gate a rule: `retirement` (the Retire action, [career.md](career.md)) and `research` (buying research, [research.md](research.md)); others (`adversaries` once speculators first arrive, `projects` once a Research Lab is built, `ideologies`, ...) are display. |
+| `enable_nav_panel` | the panel is shown this run. Two gate a rule: `retirement` (the Retire action, [career.md](career.md)) and `research` (buying research, [research.md](research.md)); others (`adversaries` once speculators first arrive, `projects` from the first retirement, `ideologies`, ...) are display. |
 | `enable_project` | a project whose unlock is `project_enabled` may be funded this run ([projects.md](projects.md)) |
 | `set_flag` | sets a career flag |
 | `grant` (`resource`, `amount`) | adds the amount to this run's stock; re-applied at each run start (below), a starting bonus from then on |
@@ -180,10 +180,6 @@ re-apply from each run's day 0 (*Run start*).
 
 ## Port notes
 
-- Changed: the Godot chain's Q1 to Q7 became the design doc's beats, then Matt's 1.1-1.7
-  line (2026-11-25). Q5 Market Awareness, Q6 Open Horizons and Q7 Signal Detected left the line
-  (Q6 and Q7 are achievement candidates, [../arc.md](../arc.md)); Q2's Launch Plans event is
-  gone.
 - Conflict: Dream's falling effectiveness. The boredom phase 3 to 5 events' text says Dream
   drops to 20/15/10%; the ruling is a flat Dream ([dream.md](dream.md)), so these events
   unlock nothing and their text stays as placeholder.

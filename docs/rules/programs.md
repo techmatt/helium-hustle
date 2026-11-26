@@ -80,7 +80,7 @@ box reads `%` (`percent`) or an amount (`amount`), "Propellant < 20%" or "< 20".
 **Researched readings** (`energy_per_day`, `days_since_purchase`) open while a research item
 with the `program_readings` effect (Process Telemetry, research.md) is done this run: before
 it, a clause using one is locked (below) and reads nothing. A clause whose reading reads nothing (a cap of 0) is false; an `if` with a
-researched reading not open is locked, never run (its body and its `else`'s passed over). The view's `readings` offer, in that order, each visible capped resource's
+researched reading not open is locked (*Locked lines*). The view's `readings` offer, in that order, each visible capped resource's
 fill, boredom's, each visible uncapped resource's amount, free processors, free land, once
 there is a pad idle pads, and once researched energy per day and days since a purchase
 (`view/programs.rs`): 13 in Act 1, 15 with the research. The Resources panel's per-day
@@ -105,7 +105,7 @@ the first day `logic_unlock_processors` processors work, as programs start to ru
 needs its own flag (draft, 049): `logic_if`, the Conditional Logic global project's `flag`
 reward, held only while that project counts as completed ([projects.md](projects.md)), so a
 timeline's end locks `if` again until it is re-funded; content must set it. A loaded `if`
-not open is locked: passed over free with its body and its `else`'s. The view's `if_open` says whether it is open.
+not open is locked (*Locked lines*). The view's `if_open` says whether it is open.
 
 **Running** (each day): programs in order; each running processor of a program takes one
 step from the shared pointer. A step passes over free lines (notes, unparsed and locked lines; a locked `if` with its

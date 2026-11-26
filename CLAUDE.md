@@ -122,7 +122,8 @@ check, nothing when clean; its parity and balance checks build and run only when
 touched what they measure, `--all` forces them). Its kinds are **parity**, **tunables** (exceptions, each with its
 reason, in `scripts/warning_checks.json`), **platform-floats**, **balance** (the judge:
 `docs/principles.md`, *The judge*), **docs** and **qa** (the tree's last `npm run qa` had a
-pass that never reached the ending); the script's docstring defines each.
+pass that never reached the ending), and **checks** (a check itself crashed); the script's
+docstring defines each.
 
 And one by hand, also kind **docs:** a rules change without its `docs/rules-history.md` row, or
 a `RULES_REVISION` bump without the golden constants moved (or the reverse).

@@ -33,8 +33,8 @@ npm run preview                              # serve web/dist/
 
 ## Checks
 
-`npm run e2e` (the browser check), `npm run unit` and `npm run qa` (the QA checker), each
-against `vite preview`: [TESTING.md](TESTING.md).
+`npm run e2e` (the browser check) and `npm run qa` (the QA checker) against `vite preview`,
+`npm run unit` in Node: [TESTING.md](TESTING.md).
 
 ## The screen
 
@@ -66,7 +66,7 @@ Three columns and a status bar:
   the next line in an accent frame. Once unlocked, Add: If, Else, Build, Buy Land,
   Verb (`ProgramLogic.tsx`): a condition is
   a reading (the view's list), `>`, `<`, `>=` or `<=`, and a number (with `%` for a fill), and
-  `and`/`or` one more; each clause with its live value and ✓/✗; body lines indented under the `if` or `else` (⇥/⇤), greyed with it when jumped; an `else`
+  `and`/`or` one more; each clause with its live value and ✓/✗; body lines indented under the `if` or `else` (⇥/⇤), grayed with it when jumped; an `else`
   row has no outcome (free: its `if` decides).
   Above 10x a redraw covers several days: each line shows its outcome over them
   (`advance_run`'s `lines`), no frame. A note line (`#`) is muted text, an unparsed one a
@@ -93,7 +93,7 @@ Three columns and a status bar:
   of `advance_run`'s `if_true` bits). The engine parses (`parse_program_text`) and writes
   (`program_text`) the text (docs/rules/programs.md, *Text form*); a changed draft is
   applied on Apply, on a tab switch, a mode switch and on closing. **The gutter**
-  (`Gutter.tsx`): a status dot (green ran, grey skipped, red unparsed, amber locked, hollow
+  (`Gutter.tsx`): a status dot (green ran, gray skipped, red unparsed, amber locked, hollow
   failed); a repeated line's runs as dots up to 8 (green done, red failed, hollow pending;
   the view's `repeats`), a bar past 8. Right of either mode, **All instructions**
   (`Instructions.tsx`): the engine's list (`program_instructions`: by group, only lines
@@ -128,7 +128,7 @@ Chips, nav icons, horizon: `src/ui/icons.tsx` over `src/assets/{chips,nav,horizo
 (`experiments/results/027_art_in_game/`), research chips over `src/assets/research/` (100,
 a `"BG"` fill takes the chip's category color); a nav `<id>.svg` stands in for an unpainted
 `<id>.webp`. `src/ui/art.tsx`: act bands and quest pictures (`src/assets/{story,quests}/`,
-by `experiments/results/{078,080}_*/process.py`), and the sky (`.sky`), home for a later live
+by `experiments/results/{078,080}_*/process.py`; 080's is stale: art.tsx), and the sky (`.sky`), home for a later live
 base view: replace what it draws, keep its box.
 
 ## Using it

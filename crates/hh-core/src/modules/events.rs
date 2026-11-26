@@ -103,7 +103,7 @@ pub fn holds(r: &Rules, g: &GameState, quest: &str, c: &Condition) -> bool {
         Condition::LaunchFull { resource } => best_cargo(g, resource) >= r.p.shipments.pad_cargo_capacity,
         Condition::ResearchCount { count } => g.run.research.len() >= *count as usize,
         Condition::IdeologyRankEach { rank } => each_axis_best(g) >= *rank,
-        Condition::QuietDays { days } => g.run.day + 1 >=g.run.last_order.unwrap_or(0) + *days,
+        Condition::QuietDays { days } => g.run.day + 1 >= g.run.last_order.unwrap_or(0) + *days,
         Condition::EarthScience { amount } => {
             g.saga.timeline.as_ref().is_some_and(|t| t.science_made >= *amount)
         }

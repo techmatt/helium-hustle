@@ -123,7 +123,7 @@ function CheatCard({ v }: { v: View }) {
   );
 }
 
-/** Why a grey card buys nothing, in a few words. */
+/** Why a gray card buys nothing, in a few words. */
 function whyNot(v: View, b: BuildingView): string {
   if (b.at_limit) return 'At its limit.';
   if (!b.unlocked) return 'Locked.';

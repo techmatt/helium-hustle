@@ -5,7 +5,8 @@
 //! to a random program, or start funding a random open project. It retires
 //! voluntarily with chance 1 in `retire_odds` (default 500) per look, and
 //! points a No-cargo pad at the first good in loading priority
-//! ([`super::pick_cargo`]).
+//! ([`super::pick_cargo`]), launches a full pad by hand ([`super::hand_launch`]),
+//! and looks every `every` ticks (default 5).
 
 use hh_core::rng::Stream;
 use hh_core::state::Entry;

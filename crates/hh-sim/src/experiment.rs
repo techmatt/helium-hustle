@@ -706,8 +706,8 @@ pub fn tables(sums: &[Summary], l: &Loaded) -> String {
             t,
             "| {} | {} | {} |",
             row_label(&s.cell, multi),
-            list(&s.never_built),
-            list(&s.never_used)
+            joined(&s.never_built),
+            joined(&s.never_used)
         );
     }
     if !objectives.is_empty() {
@@ -742,11 +742,12 @@ pub fn tables(sums: &[Summary], l: &Loaded) -> String {
     t
 }
 
-pub fn list(v: &[String]) -> String {
+/// Items joined with ", ", or "-" for none (a table cell).
+pub fn joined<S: AsRef<str>>(v: &[S]) -> String {
     if v.is_empty() {
         "-".into()
     } else {
-        v.join(", ")
+        v.iter().map(AsRef::as_ref).collect::<Vec<&str>>().join(", ")
     }
 }
 

@@ -265,8 +265,7 @@ impl Autopilot {
     ) -> Result<Autopilot, JsValue> {
         use hh_sim::autopilot as a;
         let g = GameState::from_json(state_json).map_err(err)?;
-        let ms = hh_sim::milestones::Milestones::from_json(include_str!("../../../configs/sim/milestones.json"))
-            .map_err(err)?;
+        let ms = milestones()?;
         let target = a::Target::parse(target).map_err(err)?;
         let agent = if agent.trim().is_empty() { a::DEFAULT_AGENT } else { agent.trim() };
         let boost = if boost.trim().is_empty() { None } else { Some(a::parse_boost(boost.trim()).map_err(err)?) };
@@ -293,12 +292,16 @@ impl Autopilot {
     }
 }
 
+/// The sim's milestones, embedded from `configs/sim/milestones.json`.
+fn milestones() -> Result<hh_sim::milestones::Milestones, JsValue> {
+    hh_sim::milestones::Milestones::from_json(include_str!("../../../configs/sim/milestones.json")).map_err(err)
+}
+
 /// The autopilot's defaults and every step it knows (milestones, then
 /// main-quest steps): `{"agent", "boost", "steps": [{id, name}]}`.
 #[wasm_bindgen]
 pub fn autopilot_info() -> Result<String, JsValue> {
-    let ms = hh_sim::milestones::Milestones::from_json(include_str!("../../../configs/sim/milestones.json"))
-        .map_err(err)?;
+    let ms = milestones()?;
     Ok(to_json(&serde_json::json!({
         "agent": hh_sim::autopilot::DEFAULT_AGENT,
         "boost": hh_sim::autopilot::DEFAULT_BOOST,

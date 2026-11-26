@@ -17,6 +17,8 @@ $S gates                                                # what each quest opens,
 $S golden                                               # the golden game's fingerprint and hashes
 ```
 
+Each command refuses an option it doesn't read (`hh-sim help` lists each one's).
+
 ## Measuring play
 
 The simulator measures balance and pacing: sim players ([agents.md](agents.md)) play whole
@@ -134,9 +136,9 @@ view and act only through actions.
 
 - **`greedy`** buys every affordable building in content order (from a new game, nothing:
   no program runs, so nothing is earned).
-- **`script`** is a fixed Arc 1 opening, one decision a day (build order, Program 1's one
-  command and when it switches: `driver.rs`); it never researches, funds projects or retires
-  voluntarily.
+- **`script`** is a fixed Arc 1 opening, one decision a day (`driver.rs`): its build order,
+  the Blueprints and Regolith Processing research, pad cargo, Program 1's command and, once
+  program logic opens, a condition program. It never funds projects or retires voluntarily.
 
 ## `objectives`
 

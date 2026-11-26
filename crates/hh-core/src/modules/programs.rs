@@ -1,5 +1,7 @@
-//! **programs**: program tabs (command queues), processors, command execution
-//! with output-cap skips and partial production, and overclocks
+//! **programs**: program tabs and their lines (checks and locked lines), the
+//! loadout library, readings and conditions, the interpreter (`if`/`else`,
+//! the `act`, `build` and `buy land` instructions, command execution with
+//! output-cap skips and partial production), processors and overclocks
 //! (docs/rules/programs.md).
 
 use std::collections::BTreeMap;

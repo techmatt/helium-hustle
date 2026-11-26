@@ -216,7 +216,7 @@ pub fn report(rows: &[Row], div: &Divergence, ms: &Milestones, humans: &Humans, 
         let only = |a: &GameResult, x: &GameResult, never: fn(&GameResult) -> &Vec<String>| -> String {
             let v: Vec<String> =
                 never(x).iter().filter(|id| !never(a).contains(id)).cloned().collect();
-            crate::experiment::list(&v)
+            crate::experiment::joined(&v)
         };
         let _ = writeln!(t, "\n## The human against the best player, {}\n", div.best);
         let _ = writeln!(t, "- Buildings only the human built: {}", only(&h.game, &b.game, |g| &g.never_built));
@@ -264,7 +264,7 @@ pub fn report(rows: &[Row], div: &Divergence, ms: &Milestones, humans: &Humans, 
 }
 
 /// `hh-sim vs-human LOG [--agents a,b] [--humans a,b] [--ticks N] [--json]
-/// [--threads T] [--milestones F] [--human-models F]`.
+/// [--threads T] [--milestones F] [--human-models F] [--include-accelerated]`.
 pub fn run(args: &[String]) -> Result<String, Fail> {
     let mut path = None;
     let (mut json, mut threads, mut ticks) = (false, THREADS, None::<u64>);
@@ -307,11 +307,11 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     if agents.is_empty() {
         return usage("vs-human: no players");
     }
-    let humans = Humans::from_json(&read(&human_models)?).map_err(Fail::Usage)?;
+    let humans = crate::load_humans(&human_models)?;
     for m in &models {
         humans.get(m).map_err(Fail::Usage)?;
     }
-    let ms = Milestones::from_json(&read(&milestones)?).map_err(Fail::Usage)?;
+    let ms = crate::load_milestones(&milestones)?;
     let mut names = vec!["human"];
     for a in &agents {
         crate::agents::build(a, 0, &ms).map_err(Fail::Usage)?;

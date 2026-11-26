@@ -1,0 +1,126 @@
+//! Projects, research and ideology.
+
+use super::{f, rules, set};
+use crate::modules::ideology;
+use crate::{Action, Fx, GameState};
+
+#[test]
+fn ideology_ranks_are_geometric() {
+    let r = rules();
+    assert_eq!(ideology::score_for_rank(&r, 1), f("100"));
+    assert_eq!(ideology::score_for_rank(&r, 5), f("1318.75"));
+    assert_eq!(ideology::rank_for_score(&r, f("1318.75")), 5);
+    assert_eq!(ideology::rank_for_score(&r, f("1318.74")), 4);
+    assert_eq!(ideology::rank_for_score(&r, f("-250")), -2);
+    let mut g = r.new_game(1);
+    ideology::fund(&r, &mut g, "humanist");
+    assert_eq!(ideology::score(&g, "humanist"), Fx::ONE);
+    assert_eq!(ideology::score(&g, "nationalist"), f("-0.5"));
+}
+
+#[test]
+fn research_needs_visibility_and_science() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    let res = |id: &str| Action::Research { research: id.into() };
+    // No research before 1.1 Online opens the research panel.
+    assert!(r.apply(&mut g, &res("basic_blueprints")).unwrap_err().contains("not open"));
+    g.run.enabled_panels.insert(crate::modules::research::RESEARCH_PANEL.into());
+    assert!(r.apply(&mut g, &res("basic_blueprints")).unwrap_err().contains("science"));
+    // Before speculators arrive Market Awareness doesn't show.
+    assert!(r.apply(&mut g, &res("market_awareness")).unwrap_err().contains("not available"));
+    g.career.flags.insert("speculators_seen".into());
+    assert!(r.apply(&mut g, &res("market_awareness")).unwrap_err().contains("science"));
+    assert!(r.apply(&mut g, &res("dream_protocols")).unwrap_err().contains("not available"));
+    set(&mut g, "science", "250");
+    r.apply(&mut g, &res("market_awareness")).unwrap();
+    assert_eq!(g.amount("science"), f("50"));
+    assert!(r.view(&g).markets[0].demand.is_some(), "market awareness shows demand");
+}
+
+#[test]
+fn a_repeatable_projects_multiplier_stacks_by_adding() {
+    use crate::modules::projects::stacked;
+    assert_eq!(stacked(f("1.05"), 1), f("1.05"));
+    assert_eq!(stacked(f("1.05"), 10), f("1.5"), "+5% ×10 is +50%");
+    assert_eq!(stacked(f("0.9"), 3), f("0.7"));
+    assert_eq!(stacked(f("0.5"), 3), Fx::ZERO, "floored at 0");
+}
+
+#[test]
+fn projects_drain_at_their_rates_and_complete() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    g.run.research.insert("dream_protocols".into());
+    let rate = |res: &str, v: &str| Action::SetProjectRate {
+        project: "predictive_maintenance".into(),
+        resource: res.into(),
+        rate: f(v),
+    };
+    // min_days 5: science at most 80 / 5 = 16 a day, credits 150 / 5 = 30.
+    assert!(r.apply(&mut g, &rate("science", "17")).is_err(), "over the most a day");
+    r.apply(&mut g, &rate("science", "16")).unwrap();
+    r.apply(&mut g, &rate("credits", "30")).unwrap();
+    assert!(r.apply(&mut g, &rate("credits", "31")).is_err(), "over the most a day");
+    set(&mut g, "science", "1000");
+    set(&mut g, "credits", "1000");
+    assert_eq!(r.view(&g).projects.iter().find(|p| p.id == "predictive_maintenance").unwrap().days_to_done, Some(5));
+    r.advance(&mut g, 4);
+    assert_eq!(g.amount("science"), f("936"), "80 needed: 16 a day");
+    assert!(!crate::modules::projects::completed(&g, "predictive_maintenance"), "credits: 120 of 150");
+    r.advance(&mut g, 1);
+    assert_eq!(g.run.projects.completions.get("predictive_maintenance"), Some(&1));
+    assert!(g.run.project_rates.is_empty(), "done for good: its rates clear");
+    assert_eq!(crate::modifiers::modifier(&r, &g, "building_upkeep_mult"), f("0.9"));
+    let v = r.view(&g);
+    assert!(v.live_rewards.iter().any(|t| t == "Predictive Maintenance: Building upkeep ×0.9"), "{:?}", v.live_rewards);
+}
+
+#[test]
+fn a_repeatable_project_grows_its_costs_and_keeps_its_rates() {
+    use crate::content::{Project, Repeat, Scope};
+    let r = rules();
+    let mut g = r.new_game(1);
+    // A repeatable copy of a row, driven through the module directly.
+    let base = crate::content::content().project("predictive_maintenance").unwrap();
+    let p = Project { repeat: Some(Repeat { cost_growth: f("2") }), scope: Scope::Forever, ..base.clone() };
+    assert_eq!(crate::modules::projects::cost(&g, &p, "credits"), f("150"));
+    g.career.forever_projects.completions.insert(p.id.clone(), 2);
+    assert_eq!(crate::modules::projects::cost(&g, &p, "credits"), f("600"), "150 × 2²");
+    assert_eq!(crate::modules::projects::max_rate(&g, &p, "credits"), f("120"), "600 / 5 days");
+}
+
+#[test]
+fn locked_projects_show_their_condition_and_rewards() {
+    let r = rules();
+    let g = r.new_game(1);
+    let v = r.view(&g);
+    let find = |id: &str| v.projects.iter().find(|p| p.id == id).unwrap();
+    let pm = find("predictive_maintenance");
+    assert!(!pm.unlocked);
+    assert_eq!(pm.unlock_text, "Research Daydreaming");
+    assert_eq!(pm.days_to_done, None, "no rate set");
+    assert_eq!(find("microwave_power").reward_text, vec!["Opens Microwave Receiver".to_string()]);
+    assert_eq!(find("microwave_power").unlock_text, "Reach rank 5 on the Nationalist axis (best in the career)");
+    assert_eq!(find("speculator_dossier").unlock_text, "Use Disrupt Speculators once");
+}
+
+#[test]
+fn overclock_cards_say_the_days_a_run_lasts() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    let text = |g: &GameState| {
+        let v = r.view(g);
+        v.commands.iter().find(|c| c.id == "overclock_mining").unwrap().description.to_string()
+    };
+    assert!(text(&g).contains("for 5 days."), "{}", text(&g));
+    // The first negative Rationalist rank: 5 × 1.03^-1 is 4 whole days, card and effect.
+    let mut score = Fx::ZERO;
+    while crate::modules::ideology::rank(&r, &g, "rationalist") >= 0 {
+        score -= Fx::ONE;
+        g.run.ideology.insert("rationalist".into(), score);
+    }
+    assert_eq!(crate::modules::ideology::rank(&r, &g, "rationalist"), -1);
+    assert!(text(&g).contains("for 4 days."), "{}", text(&g));
+    assert_eq!(crate::modules::programs::overclock_days(&r, &g, 5), 4);
+}

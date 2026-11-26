@@ -16,9 +16,9 @@ Otherwise an item is shown, and so buyable, if it was bought in any run of the c
 |---|---|
 | `always` | always |
 | `event_completed` | that event fired this run ([events.md](events.md)) |
-| `boredom_above` | boredom is strictly above `threshold` |
+| `boredom_above` | boredom is strictly above `threshold` (no content row uses it yet) |
 | `research_purchased` | that item was bought this run |
-| `building_count` | at least `count` of the building owned this run (bonus buildings included) |
+| `building_count` | at least `count` of the building owned this run (bonus buildings included) (no content row uses it yet) |
 | `shipments_completed` | career shipments in finished runs plus this run's reach `count` |
 | `quest_completed` | the quest is completed (in any run) |
 | `quest_active` | the quest is active or completed |

@@ -8,7 +8,11 @@
 // Files: src/assets/story/act<N>.webp (the act bands) and src/assets/quests/<stem>.webp
 // (a quest's `picture` in content/events.json), written by
 // experiments/results/078_ship_story_headers_title_and_picture_slots/process.py (the bands)
-// and experiments/results/080_ship_act1_quest_pictures/process.py (Act 1's pictures).
+// and experiments/results/080_ship_act1_quest_pictures/process.py (Act 1's first set; 099
+// renamed them to bare stems, and 095's new line moved beats, so that script no longer
+// matches content: rerun it only after updating its beat-to-stem map).
+
+import { byName } from './assets';
 
 const STARS: [number, number, number][] = [
   [4, 18, 1], [11, 62, 0.8], [17, 30, 1.2], [26, 80, 0.8], [33, 12, 0.9], [41, 50, 1.1],
@@ -28,8 +32,7 @@ export function Sky() {
   );
 }
 
-const stems = (files: Record<string, string>): Record<string, string> =>
-  Object.fromEntries(Object.entries(files).map(([f, url]) => [f.slice(f.lastIndexOf('/') + 1, -'.webp'.length), url]));
+const stems = (files: Record<string, string>) => byName(files, '.webp');
 
 const ACT_BANDS = stems(import.meta.glob<string>('../assets/story/act*.webp', { eager: true, query: '?url', import: 'default' }));
 const QUEST_PICTURES = stems(import.meta.glob<string>('../assets/quests/*.webp', { eager: true, query: '?url', import: 'default' }));

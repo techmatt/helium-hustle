@@ -18,7 +18,7 @@ function after(block: Block, e: Entry): Block {
 }
 
 /** The block open above line `i`. */
-export function blockAt(es: Entry[], i: number): Block {
+function blockAt(es: Entry[], i: number): Block {
   let block: Block = 'none';
   for (let j = 0; j < i && j < es.length; j++) block = after(block, es[j]);
   return block;
@@ -129,7 +129,7 @@ export function setIndent(es: Entry[], i: number, indented: boolean): Entry[] {
   return next;
 }
 
-export function sameReading(a: Reading, b: Reading): boolean {
+function sameReading(a: Reading, b: Reading): boolean {
   return JSON.stringify(Object.entries(a).sort()) === JSON.stringify(Object.entries(b).sort());
 }
 

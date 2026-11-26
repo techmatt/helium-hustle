@@ -1,14 +1,27 @@
 //! hh-core's tests. `golden_game` pins one fixed game (README, *Rules changes*).
+//! One file per topic, each with a `//!` line saying what it covers. Tests that name
+//! content ids (quests, flags, research) and so move with a content change live
+//! mostly in `story.rs` (the Act 1 line and its unlocks), `view.rs` (the story
+//! timeline) and `programming.rs`; `git grep` the id across `src/tests/` before
+//! renaming one.
 
+mod attention;
+mod cheats;
 mod config;
+mod economy;
 mod fx;
 mod logic;
-mod play;
 mod programming;
+mod projects;
+mod replay;
 mod rng;
+mod shipments;
+mod story;
+mod support;
 mod text;
 mod timeline;
 mod verbs;
+mod view;
 
 // Tests play whole games, and a game's time goes to the view's state copies: the
 // system allocator, not optimization, sets their pace on Windows. Test builds only.
@@ -126,8 +139,12 @@ fn golden_game_runs_its_condition_program() {
         }
     }
     let has = |line: usize, o: O| seen[line].contains(&format!("{o:?}"));
-    assert!(readings.contains(&Reading::FreeProcessors.describe()), "{readings:?}");
-    assert!(readings.contains(&Reading::IdlePads.describe()), "{readings:?}");
+    // Empty readings: the script never wrote its five-line guard program (a content or rules
+    // change stalled its economy first). See where it stops: `hh-sim run --policy script
+    // --scenario golden_start --seed 18446744073709551615 --ticks 700` (then 1500, 2000).
+    let why = "the golden script never ran its guard program: read it with hh-sim run --policy script --scenario golden_start";
+    assert!(readings.contains(&Reading::FreeProcessors.describe()), "{readings:?}: {why}");
+    assert!(readings.contains(&Reading::IdlePads.describe()), "{readings:?}: {why}");
     for (line, outcomes) in [(0, &[O::True, O::False][..]), (1, &[O::Ran]), (2, &[O::True, O::False]), (3, &[O::Ran, O::Done])] {
         for &o in outcomes {
             assert!(has(line, o), "line {line} never {o:?}: {seen:?}");

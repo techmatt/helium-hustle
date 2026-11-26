@@ -67,6 +67,10 @@ fn bad_input_is_a_usage_error() {
         vec!["run", "--policy", "smart"],
         vec!["run", "--scenario", "nope"],
         vec!["objectives"],
+        // An option the command doesn't read is refused, not ignored.
+        vec!["golden", "--config", "configs/baseline.json"],
+        vec!["replay", "--json", "x.json"],
+        vec!["objectives", "x.json", "--policy", "greedy"],
         vec!["frobnicate"],
         vec![],
     ] {

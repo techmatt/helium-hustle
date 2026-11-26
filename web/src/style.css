@@ -508,7 +508,7 @@ ul.plain {
 .te-area:focus-visible {
   box-shadow: inset 0 0 0 2px var(--accent);
 }
-/* Status dots: filled for ran (green), skipped by its if (grey), won't parse (red), locked
+/* Status dots: filled for ran (green), skipped by its if (gray), won't parse (red), locked
    this run (amber); a ring for failed (red) or not run (muted); none for notes and blanks. */
 .te-dot {
   width: 10px;
@@ -520,7 +520,7 @@ ul.plain {
   background: var(--pos);
 }
 /* --muted, not --fill-gray: the gray fill all but vanishes on the dark gutter. */
-.te-grey {
+.te-gray {
   background: var(--muted);
 }
 .te-red {
@@ -950,7 +950,7 @@ ul.plain {
 .card.done {
   background: var(--skip-tint);
 }
-/* A project whose unlock does not hold yet: greyed, no rate controls. */
+/* A project whose unlock does not hold yet: grayed, no rate controls. */
 .card.locked {
   background: var(--disabled);
   color: var(--muted);
@@ -1902,9 +1902,6 @@ button.beat-node.is-done:focus-visible .beat-card {
 .events li {
   border-left: 3px solid transparent;
   padding-left: 3px;
-}
-.events li.is-unread {
-  border-left-color: var(--accent);
 }
 .event-title {
   font-weight: 600;

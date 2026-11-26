@@ -18,7 +18,7 @@ before 090). A new fixed row continues the table below, and a later prune folds 
   decimals under 10; capped and spare-power wording.
 - **Content and rules prose** (#1, 17, 21, 22, 58, 59, 66, 67, 71, 74): `{rate}` filled by the view;
   every completed main quest is told, in order;
-  content texts and rules pages rewritten to what the game does (no play change); Q6 says "in
+  content texts and rules pages rewritten to what the game does (no play change); Open Horizons says "in
   one run"; 1-based program numbers in errors.
 - **Layout and overflow** (#16, 19, 24, 27, 28, 30, 33, 34, 38, 39, 57, 73, 75): tooltips on cut
   names; one value column; the left column fits at 1280 (horizon shrinks, compact nav past nine
@@ -27,7 +27,7 @@ before 090). A new fixed row continues the table below, and a later prune folds 
 - **Input and clock** (#2, 4, 5, 8, 26, 31, 37, 61, 63): a confirm belongs to its run; key
   repeat and modifiers ignored; `setSpeed` settles first; a jump's compute time is forgotten;
   cards don't take focus, ignore clicks 0.5 s after Continue or OK, and are the research button;
-  no action behind the run summary; a cancelled drag clears.
+  no action behind the run summary; a canceled drag clears.
 - **Saves, tabs and the play log** (#6, 7, 9, 10, 11, 18, 23, 25, 36, 60, 62): a second tab
   stands down; failed and blocked saves say so, repeatedly; play log headers, retries, beacons,
   `session_start`, jumps and its folder.
@@ -43,7 +43,7 @@ before 090). A new fixed row continues the table below, and a later prune folds 
 - **Rows 78-93:** a notice over a takeover; Projects' Max then − sends six places; Load and
   Fund verbs not pickable with nothing to name; Three Voices' rank progress; flag rewards' `text`;
   faked bold (h4, Plex Mono 600); eight speed buttons at 1280; the left column's scrollbar
-  room; Saga bars' own width; Esc behind the summary; Q1's pin names Sell Cloud Compute; the
+  room; Saga bars' own width; Esc behind the summary; 1.1 Online's pin names Sell Cloud Compute; the
   20-day average a true mean; Story by day; overclock `{days}`; "the next day"; `{rate}` as
   Stats rounds it.
 
@@ -87,14 +87,12 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 |---|---|
 | The first visit always starts seed 0 | Random seed, as *Start a new career* |
 | Speculator Analysis promises burst timing, targets and sizes; nothing shows them | Build the reveal, or rewrite the text |
-| Project cards never say what completing them gives | A `reward_description` per project |
 | Stats shows internal modifier and overclock keys | Display names in content |
 | Building cards show content rates, before modifiers, unsaid | Effective rates, or a "base" label |
 | Adversaries' dumps counted from the 50 kept lines | A per-run counter (a state change) |
 | A save holds every action: ~40,000 actions outgrow localStorage | Record in the play log, or compress |
 | At 10x a late wake runs two days per redraw and the frame skips a line (an e2e flake under load) | Frame from the days actually run |
 | "Output at cap" beside its resource at 0: the stall is judged before production | A rules item for the balance work (Matt) |
-| A reload mid-chain drops the story pages still unread, the new quest's "Next:" line too (the quest pin keeps it) | Save the pending pages with the speed they resume |
 | After a timeline ends, Blueprint Archive (and Conditional Logic, the Telescope) is offered again; funding it gives nothing new | Hide a project whose effects are all spent, or say so on its card |
 | A Blocks number box being typed in keeps its draft on its row index: an instruction inserted above it (keyboard focus only) moves the draft to another line | Key the rows by a stable id |
 | qa once (090, seed 45 at 1280): the debug autopilot's Everything reached super timeline 4 and the page answered nothing for 30 s, so the pass never reached the ending; the same seed passed on a rerun | Debug only; if it recurs, have the autopilot yield between chunks in late timelines |

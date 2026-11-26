@@ -7,7 +7,7 @@ use hh_core::GameState;
 use super::super::author::Directives;
 use super::super::Player;
 use super::score::Profile;
-use super::{Oracle, A_VOICE};
+use super::Oracle;
 
 /// The ideology axes (mirrors the game's `fund_<axis>` commands, content/commands.json).
 const AXES: &[&str] = &["humanist", "rationalist", "nationalist"];
@@ -85,8 +85,11 @@ fn trade() -> Directives {
 /// Geopolitical Intelligence (Fund's research).
 const TRADE: &str = "qtrade";
 
-/// Whether the A Voice quest (1.6, rank 5 on any axis) is the one under way.
-pub(super) fn a_voice_open(g: &GameState) -> bool {
+/// The A Voice quest (1.6, rank 5 on any axis): the quests profile's ideology stretch.
+const A_VOICE: &str = "qa_voice";
+
+/// Whether the A Voice quest is the one under way.
+fn a_voice_open(g: &GameState) -> bool {
     g.career.completed_quests.contains(TRADE) && !g.career.completed_quests.contains(A_VOICE)
 }
 

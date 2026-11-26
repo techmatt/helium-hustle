@@ -23,6 +23,7 @@ Checks:
   the judge's one home; targets in docs/principles.md).
 - qa: the last `npm run qa` in this tree (`out/qa/report.json`, if any) had a pass that
   never reached the ending (its `ended` false): qa stalled unnoticed from 071 to 082.
+- checks: one of the checks above crashed (its exception); the rest may not have run.
 """
 
 import json

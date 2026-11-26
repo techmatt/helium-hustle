@@ -41,8 +41,7 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   global project offered from the first retirement unlocks it. Its effect lives on the project's
   completion (2026-11-24): a timeline's end locks `if` again until Conditional Logic is
   re-funded, and saved loadouts' `if` lines stay locked (passed free) meanwhile; no upgrade
-  that keeps it is planned. Side quest 1.b Full Cluster's reward (2026-11-25): every run
-  starts with 50 Science (a `grant` unlock).
+  that keeps it is planned.
 - **Commands run only as program lines (2026-11-25).** No command is runnable by clicking:
   there is no Run button and no by-hand action. From day 1 the right column's program, every
   "Add to Program" button and the loadout Save/Load buttons are there, as are processors
@@ -84,7 +83,7 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
 - **Text mode (2026-11-22).** The block view's words, `#` notes kept, aliases fine; red
   and amber lines kept; saved on Apply or leaving; copy/paste is import/export.
   *Defaults (063):* blanks dropped.
-- **One gutter (2026-11-23).** Both modes show run state the same way: green ran, grey
+- **One gutter (2026-11-23).** Both modes show run state the same way: green ran, gray
   skipped, red unparsed, amber locked, fired k/10 on `if`s, the reasons. A repeated line
   shows one small dot per run up to 8 (green done, red failed, hollow pending, filling left
   to right); above 8, a short bar with "done/total, N failed" on hover; a single-run line

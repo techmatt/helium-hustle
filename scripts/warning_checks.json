@@ -58,7 +58,7 @@
       {
         "file": "crates/hh-core/src/cheat.rs",
         "literal": "1000",
-        "why": "the debug boost's largest factor (an overflow guard on a cheat, not a rule of play)"
+        "why": "the debug boost's largest factor (an overflow guard) and the cheat building's daily credits: cheats, not rules of play"
       },
       {
         "file": "crates/hh-core/src/cheat.rs",

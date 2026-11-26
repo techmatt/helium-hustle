@@ -9,7 +9,7 @@ import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
 import { num } from '../format';
 import { store, togglePause, type Store } from '../store';
-import { Bar, RateCell } from './common';
+import { BoredomBar, RateCell } from './common';
 import { Chip } from './icons';
 
 /** One takeover view. `shown` says whether its left-column button shows now. */
@@ -124,7 +124,7 @@ function StatusStrip({ s }: { s: Store }) {
       <span class="takeover-day">Day {num(v.day)}</span>
       <span class="takeover-bored" title="Boredom">
         <span class="status-label">Boredom</span>
-        <Bar frac={Number(v.boredom.amount) / Number(v.boredom.cap)} tone="red" label={`${num(v.boredom.amount)} / ${num(v.boredom.cap)}`} />
+        <BoredomBar v={v} />
       </span>
       {STRIP_RESOURCES.flatMap((id) => v.resources.filter((r) => r.id === id && r.visible)).map((r) => (
         <span key={r.id} class="takeover-res" data-strip-res={r.id} title={r.name}>

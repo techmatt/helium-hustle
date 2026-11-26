@@ -16,7 +16,7 @@
 //      replay check.
 //   3. A program's current-line frame at 10x and 50x, each speed's days per second,
 //      pause, click-to-buy (a green card's text buys, its −/+ and Sell 1 don't, space after
-//      a click pauses and buys nothing, a grey card says why), a reload keeping the save,
+//      a click pauses and buys nothing, a gray card says why), a reload keeping the save,
 //      a save from another revision discarded, the scenarios and the replay check.
 //   6. (Run before 5.) The program instructions, from scenario late_unlocks: an `if` / `build` / `buy land`
 //      / `if` program written through the editor, live values, unattended builds, verb
@@ -30,7 +30,7 @@
 //   4. The theme: light by default; the Options and debug toggles switch it with no
 //      element moving, and a reload keeps it.
 //   7. (Run before 5.) The program text editor, from scenario everything: a pasted
-//      program with a red (junk) and an amber (locked) line, Apply, green and grey dots
+//      program with a red (junk) and an amber (locked) line, Apply, green and gray dots
 //      and an if's fired count; the block editor keeps every line (unparsed and locked
 //      rows); the text round-trips; a tab switch saves; a loadout of it loads in the
 //      next run with every line. Shot text-editor.png.
@@ -38,11 +38,11 @@
 //      the block view and back, and at 1x each pass runs the branch its if picks. Shot
 //      program-else.png.
 //   9. (Run before 5.) The text editor's All instructions panel: on a fresh career with
-//      Programming bought (scenario rich), amber
-//      entries and clicks writing an `if ... > 0` with its body, else only where it fits,
+//      Programming bought (scenario rich), only usable entries (nothing locked or
+//      amber); clicks writing an `if ... > 0` with its body, else only where it fits,
 //      hover cards; in scenario everything the same clicks Apply cleanly, the block view
 //      matches and the `if` runs at 1x. Shot instructions.png.
-//  10. (Run before 5.) The Programs view's Blocks mode, on a new game: the nav tile opens
+//  10. (Run before 5.) The Programs view's Blocks mode, from scenario everything: the nav tile opens
 //      it in Blocks (a new player's mode), an if/else and a 4x line built by clicks and
 //      number fields only, Text shows the same lines (the count first), and at 1x the 4x
 //      line's run dots fill day by day. Shots programs-blocks.png, programs-text.png,
@@ -601,7 +601,7 @@ async function programLogic(grant) {
 
 /** Section 7, from scenario everything (cheats on): the program text editor. L4's Program 1
  * (experiments/results/063_program_text_editor) pasted with a junk line (red, its reason)
- * and a locked building (amber); Apply; days run (green and grey dots, an if's fired
+ * and a locked building (amber); Apply; days run (green and gray dots, an if's fired
  * count); the block editor keeps every line, the unparsed and locked ones marked; the
  * text round-trips; another tab's paste saves on switching back; a loadout saved with
  * those lines loads after a retirement with all of them, the locked one shown locked.
@@ -646,7 +646,7 @@ async function textEditor() {
   const applied = await area();
   // Days run: the gutter lights by each line's outcome, and an if counts its days true.
   await speed(10);
-  await waitFor(`(() => { const s = [...document.querySelectorAll('.te-gutter [data-line-status]')].map((d) => d.dataset.lineStatus); return s.includes('green') && s.includes('grey'); })()`, 'green and grey lines', 10000);
+  await waitFor(`(() => { const s = [...document.querySelectorAll('.te-gutter [data-line-status]')].map((d) => d.dataset.lineStatus); return s.includes('green') && s.includes('gray'); })()`, 'green and gray lines', 10000);
   await sleep(1500);
   await speed(0);
   const g1 = await gutter();
@@ -1608,13 +1608,13 @@ async function speedsAndSaves() {
     if (Number(await owned()) > n0) await click('.card.building[data-id="solar_panel"] button.sell[title^="Sell one"]');
   }
   const kept = await owned();
-  const grey =await evaluate(`document.querySelector('.card.building.cannot-buy')?.dataset.id ?? null`);
-  if (grey) {
-    const greyOwned = () => evaluate(`document.querySelector('.card.building[data-id="${grey}"]').dataset.owned`);
-    const g0 = await greyOwned();
-    await click(`[data-testid="buy-${grey}"]`);
-    const hint = await evaluate(`document.querySelector('.card.building[data-id="${grey}"] .buy-hint').textContent`);
-    check((await greyOwned()) === g0 && hint.length > 0, `a grey card buys nothing and says why (${grey}: "${hint}")`);
+  const gray =await evaluate(`document.querySelector('.card.building.cannot-buy')?.dataset.id ?? null`);
+  if (gray) {
+    const grayOwned = () => evaluate(`document.querySelector('.card.building[data-id="${gray}"]').dataset.owned`);
+    const g0 = await grayOwned();
+    await click(`[data-testid="buy-${gray}"]`);
+    const hint = await evaluate(`document.querySelector('.card.building[data-id="${gray}"] .buy-hint').textContent`);
+    check((await grayOwned()) === g0 && hint.length > 0, `a gray card buys nothing and says why (${gray}: "${hint}")`);
   }
   const savedDay = await day();
   await load(url);

@@ -22,12 +22,12 @@ implemented (the Godot build's Arc 1, ported): [docs/rules/](docs/rules/README.m
 | `crates/hh-wasm` | wasm-bindgen bindings for `web/`, JSON in and out (with `hh-sim`'s agents, for the debug autopilot). |
 | `web/` | The browser UI ([web/README.md](web/README.md)). Renders the engine's view, sends actions, holds no rules. `web/src/engine.ts` mirrors hh-core's `View` by hand, and hh-sim reads view fields the page doesn't: grep both before dropping or renaming one. |
 | `configs/` | Game configs: modules, variants and every tunable number. No defaults in code. |
-| `configs/sim/` | The simulator's data: human time models (real minutes from a career's looks) and the milestones with their targets. |
-| `content/` | Game data (resources, buildings, commands, research, events, projects, achievements, rivals, nav), embedded in `hh-core`. |
+| `configs/sim/` | The simulator's data: human time models, the milestones with their targets, the hands-off player's loadout. |
+| `content/` | Game data (resources, buildings, commands, research, events, acts, projects, achievements, earth_tech, rivals, nav, messages), embedded in `hh-core`; `prose.md` is `scripts/prose.py`'s export. |
 | `scenarios/` | Named starting states for the sim and the web debug menu, embedded in `hh-core`. |
 | `experiments/` | Experiment specs (`ladder.json`, `ceiling.json` the oracle's, `balance.json` the judge's); `results/<item>/` holds an item's write-up and working papers when it left any (bug hunts record into `docs/qa-findings.md`). A read's `games.jsonl`: `hh-sim summarize`. |
 | `scripts/` | `wasm-smoke.mjs` (native = wasm), `wasm-speed.mjs` (engine speed in wasm), `warning_checks.py` (CLAUDE.md, *Warning checks*), `set_golden.py` (re-pins the golden game), `set_pins.py` (re-pins the sim players' games, *Rules changes* below), `seeds.py` (fresh seeds from the ledger, [docs/simulator.md](docs/simulator.md) *Seeds*), `baseline.py` (a built copy of another revision for reads against it, [docs/experiments.md](docs/experiments.md)), `prose.py` (every player-facing string out to `content/prose.md` and back by id: `export`, `import FILE`, `check`; re-export after a text change). |
-| `docs/` | `rules/` (the rules as implemented) and `rules-history.md`; `rulings.md` and `rulings/` (Matt's standing rulings, by area); `architecture.md`; `principles.md` (targets and the judge); `simulator.md`, `experiments.md` (grid reads, measures, costs), `agents.md` and `oracle.md` (hh-sim); `qa-findings.md` (bug hunts). |
+| `docs/` | `rules/` (the rules as implemented) and `rules-history.md`; `rulings.md` and `rulings/` (Matt's standing rulings, by area); `architecture.md`; `principles.md` (targets and the judge); `extending.md` (what a new module or program piece touches); `simulator.md`, `experiments.md` (grid reads, measures, costs), `agents.md` and `oracle.md` (hh-sim); `qa-findings.md` (bug hunts). |
 | `reference/` | The Godot snapshot ([reference/README.md](reference/README.md)). Never edited. |
 | `art/` | Generated art and picker images: a link to the main checkout's `art/`, shared by every worktree and never committed. The scripts that draw it are committed with their item's write-up in `experiments/results/<item>/`. Painted art is drawn by Codex CLI's image tool on Matt's ChatGPT login (no API key), 37–97 s a draw, 3–4 at once: recipe in [018's write-up](experiments/results/018_building_art_round/README.md); drawing against a fixed guide image (`codex exec -i`, isometric patches) in [019's](experiments/results/019_painterly_iso_round/README.md); the shipped building card pictures (draw, cut to WebP, picker) in [020's](experiments/results/020_building_card_art/README.md). **What ships** is in `web/src/assets/`: painted art cut to WebP (020's `process.py`, 027's `images.py`), and chip and compact-nav glyphs as SVG written by 027's `export.mjs` from [026's `glyphs.mjs`](experiments/results/026_icon_art_r1/) (which reads `icons.tsx`'s color maps as text, and holds the nav colors). Finished pickers (`art/pickers/`, mock-ups only) and superseded rounds (`art/buildings/r1/`) move to the Drive archive, `C:\Code\gdrive-sync\helium-hustle\archive\` at the same relative path; a new picker writes `art/pickers/` afresh. |
 | `out/` | Scratch and run output, git-ignored. |
@@ -58,7 +58,7 @@ cargo test-all                               # the full run, slow lane too: ~40 
 cargo clippy --workspace --all-targets       # must stay clean; ~7 s
 cargo run -q -p hh-sim -- run --seed 1 --ticks 365 --policy script
 cargo run -q --release -p hh-sim -- objectives reference/scenarios/run1_fresh.json   # ~0.2 s
-cargo run -q --release -p hh-sim -- ladder   # the agent ladder, 12 careers: ~20 s on 6 threads (the oracle's ceiling.json: ~20 min)
+cargo run -q --release -p hh-sim -- ladder   # the agent ladder, 15 careers: ~20 s on 6 threads (the oracle's ceiling.json: ~20 min)
 node web/scripts/build-wasm.mjs              # -> web/src/wasm (git-ignored); ~80 s cold, <1 s when inputs are unchanged
 node scripts/wasm-smoke.mjs                  # native = wasm on that build; ~1 s
 python scripts/warning_checks.py             # warning checks; parity and balance only if the branch touched what they read: ~1 s, else up to 2 min cold
@@ -111,49 +111,24 @@ keeps them; a rules change moves those whose play it changes): run `cargo test-a
 (the oracle's pin is a slow-lane test; failing pins still write their games to
 `out/hh-sim-tests/`), then `python scripts/set_pins.py` copies them into `cli.rs`. A param
 added, removed or re-ranged regenerates the `docs/rules/` param tables:
-`cargo run -q --release -p hh-sim -- params --write` (a test fails while they are stale). A rename,
-refactor or new config key that plays the same moves no fingerprint; if it does, play changed.
+`cargo run -q --release -p hh-sim -- params --write` (a test fails while they are stale).
 Content ids are also named outside `content/` (`configs/sim/milestones.json`, the sim agents,
 tests, `web/scripts/e2e.mjs`): `git grep` an id before removing it. The program text form
 is read from write-ups too (`experiments/results/063_program_text_editor/*.txt` by hh-core's
 tests, `060_loadout_exploration/loadouts/` by hh-sim's): a grammar change converts them.
 
-**A new module** touches its `modules/<id>.rs`, `modules/mod.rs` (`mod`, `REGISTRY`, `Params`),
-`configs/baseline.json` and a `docs/rules/<id>.md` page whose `<!-- params:<id> -->` block
-`hh-sim params --write` fills; a new event condition (quests and project unlocks share
-them), `content.rs` (`Condition`, `condition_ok`), `events.rs` (`holds`, `progress`, `kind`),
-`view/projects.rs` (`condition_text`) and `hh-sim`'s `agents/progress.rs` (`condition`).
+**Adding to the engine** (a module, an event condition, a program reading, line kind or
+comparison): the files each one touches are listed in [docs/extending.md](docs/extending.md).
 
-**A new program reading** touches `state::Reading` (`describe`, and `researched` for a
-research-gated one), `modules/programs.rs` (`check_line`, `reading`; `locked` for a gated
-one), `program_text.rs` (its text both ways), `view/programs.rs` (`readings`, the editor's
-list), the web
-`Reading` type (`engine.ts`) and `readingLabel` (`ui/ProgramLogic.tsx`), and
-`docs/rules/programs.md`; `npm run check` is the only check on the web two.
-
-**A new program line kind** (as `else`, 067) touches `state::Op` (`describe`),
-`modules/programs.rs` (`check_line`, `Block` if it opens or joins a block, `locked`, `step`),
-`program_text.rs` (`op_text`, `parse_op`), the web `Op` (`engine.ts`), `ProgramLogic.tsx`
-(`lineText`, `LogicBody`, `AddLogic`), `ProgramLines.tsx`'s row (both the right column and
-the Programs view's Blocks mode), `programEdit.ts` (the block shape, with its
-checks in `scripts/unit.mjs`), the run gutter (`Gutter.tsx` `entryStatus`), and
-`docs/rules/programs.md`.
-
-**A new comparison** touches `state::Cmp` (`symbol`), `program_text.rs` (`clause`'s
-`cmp_of`), `modules/programs.rs` (`clause_holds`), the comparison loop in `tests/logic.rs`,
-the web `Cmp` (`engine.ts`) and `CMPS` (`ui/ProgramLogic.tsx`), the form line in
-`agents/loadout.rs`'s doc, and `docs/rules/programs.md` *Conditions*.
-
-**Scenarios are asserted on**: hh-core's `tests/play.rs` (`late_unlocks`' one-energy
-shortage and programs, `everything`'s views and active quest, `rich`), hh-sim's `tests/cli.rs`
-(`rich`) and e2e sections (docs/architecture.md, *Scenarios*). A content change (an upkeep, a
+**Scenarios are asserted on**: hh-core's `tests/economy.rs` (`late_unlocks`' one-energy
+shortage and programs, `rich`), `tests/replay.rs` (`everything`'s views and quest, `rich`),
+hh-sim's `tests/cli.rs` (`rich`) and e2e sections (docs/architecture.md, *Scenarios*). A content change (an upkeep, a
 quest's unlocks) re-checks them.
 
 ## This machine
 
-- Windows 10, Git Bash and PowerShell. 6 cores, 12 threads.
-- LF line endings throughout (`.gitattributes`). Git Bash `grep` can't detect CRLF: use
-  `git ls-files --eol`.
+- Windows 10, Git Bash and PowerShell. 6 cores, 12 threads. LF line endings (`.gitattributes`);
+  Git Bash `grep` can't detect CRLF: use `git ls-files --eol`.
 - Python writes cp1252 and CRLF by default: scripts open files with `encoding='utf-8',
   newline='\n'`.
 - Write a multi-line edit script with the Write tool and run the file: a Git Bash heredoc

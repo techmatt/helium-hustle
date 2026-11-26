@@ -16,7 +16,7 @@ pub enum Action {
     /// Set how many of a building type run.
     SetActive { building: String, active: u32 },
     BuyLand,
-    /// Replace a program's command queue.
+    /// Replace a program's lines.
     SetProgram { program: u32, entries: Vec<Entry> },
     /// Set how many processors run a program.
     SetProcessors { program: u32, processors: u32 },
@@ -76,8 +76,10 @@ pub enum Cheat {
     /// plays them like any others. Marks the game accelerated.
     Autopilot { target: String },
     /// Buys one cheat building for `cheat::CHEAT_BUILDING_COST` credits: each
-    /// adds `cheat::CHEAT_BUILDING_RATE` a day to every shown income and takes
-    /// as much off boredom, for the rest of the run.
+    /// makes a day, for the rest of the run, `cheat::CHEAT_BUILDING_RATE` of
+    /// every shown resource but land, processors and boredom
+    /// (`CHEAT_BUILDING_CREDITS_RATE` of credits) and takes
+    /// `CHEAT_BUILDING_RATE` off boredom (`cheat::tick`).
     CheatBuilding,
     /// Completes every research item not done this run, free.
     CompleteResearch,

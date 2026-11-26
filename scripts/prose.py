@@ -42,8 +42,8 @@ SCREENS = [
     ('nav', 'Navigation'),
     ('messages', 'Messages (the run summary)'),
 ]
-FILES = ['events', 'acts', 'buildings', 'commands', 'research', 'projects', 'achievements',
-         'earth_tech', 'resources', 'rivals', 'nav', 'messages']
+# The content files read and written: SCREENS' stems, each once, in its order.
+FILES = list(dict.fromkeys(stem.split(':')[0] for stem, _ in SCREENS))
 TEXT = {'name', 'title', 'summary', 'body', 'description', 'reward_description', 'label', 'text'}
 PARAGRAPHS = {'story', 'payoff'}
 

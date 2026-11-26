@@ -7,7 +7,8 @@ in, every mechanic in its simplest form, placeholder numbers and text), **unalig
 scaffolding, not yet aligned with the design doc). The rules are in [rules/](rules/README.md):
 [events.md](rules/events.md) for quests, [attention.md](rules/attention.md) for the
 adversaries, [career.md](rules/career.md) for retirement, [timeline.md](rules/timeline.md) for
-Acts 2-4.
+Acts 2-4. Quest numbers (a row's `beat`) are also written out in titles, docs, code comments,
+tests and web/scripts: a renumbering greps each moved number (`git grep -n '\b1\.5\b'`).
 
 The acts' placeholder names and first quests (`content/acts.json`, display only: Story's
 chapter bands): Act 1 The Lunar Operation (1.1), Act 2 The Swarm (Q8 Experiments as a
@@ -44,7 +45,7 @@ quest opens as built (its unlocks, the `requires`, research and projects gated o
 |---|---|---|
 | the first Research Lab | `research_lab_built` (flag `research_lab`) | Regolith Processing, Programming, Process Telemetry |
 | the first retirement | `first_retirement` (flag `retired`) | the Projects panel and Foundation Grant, the first global projects (Blueprint Archive, Chemical Energy, Conditional Logic: opens `if`), Daydreaming and the boredom research, the Recreation Dome, the Retirement panel (voluntary retirement) |
-| speculators' arrival | `speculators_arrive` (flag `speculators_seen`) | the Adversaries panel, the Market Analysis research (Speculator Analysis opens Disrupt Speculators) |
+| speculators' arrival | `speculators_arrive` (flag `speculators_seen`) | the Adversaries panel, the Market Analysis research category (Speculator Analysis opens Disrupt Speculators) |
 | rivals' arrival (Act 2) | `rivals_arrive` (flag `contest_claims`) | Contest Claims |
 
 **Burnout** is no quest: the first time boredom bites (its phase 2, once a career) the story
@@ -67,8 +68,7 @@ Placeholder choices (049), all for Matt to keep or replace:
   adversaries.
 - **Mapped onto what existed.** Self-Maintenance (the lesser boredom measure) is Stress
   Tolerance, in the research category of that name; Daydreaming is the renamed Dream
-  Protocols. Q2 First Extraction and Q5 Market Awareness left the line (Market Awareness stays a
-  research item).
+  Protocols. Market Awareness is a research item, not a quest.
 
 **Achievement candidates** (performance tests, out of the quest line; achievements for them
 aren't built yet):

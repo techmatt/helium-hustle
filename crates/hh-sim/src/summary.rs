@@ -83,11 +83,7 @@ pub fn tables(games: &[Value], ms: &Milestones) -> String {
     let _ = writeln!(t, "|---|---|---|---|---|---|---|---|---|");
     let list = |v: &Value| {
         let xs: Vec<&str> = v.as_array().into_iter().flatten().filter_map(Value::as_str).collect();
-        if xs.is_empty() {
-            "-".to_string()
-        } else {
-            xs.join(", ")
-        }
+        crate::experiment::joined(&xs)
     };
     let count = |v: &Value| v.as_array().map_or(0, Vec::len);
     for g in games {

@@ -59,6 +59,11 @@ export function Bar({ frac, tone = 'green', label }: { frac: number; tone?: stri
   );
 }
 
+/** Boredom against its cap (the status bar and the takeover strip). */
+export function BoredomBar({ v }: { v: View }) {
+  return <Bar frac={Number(v.boredom.amount) / Number(v.boredom.cap)} tone="red" label={`${num(v.boredom.amount)} / ${num(v.boredom.cap)}`} />;
+}
+
 /** How long an open section must be on screen before its unread items count as read. */
 const READ_MS = 1000;
 
@@ -135,7 +140,7 @@ export function Section({
 /** A resource's net rate while it sits at its cap: muted, marked capped (the surplus the
  * cap throws away). `compact` (the narrow Resources column, where several can be capped
  * at once): "+6" and a small "cap" tag, no wider than an ordinary "+0.2/day". */
-export function CappedRate({ net, lost, compact = false, spare = false }: { net: Fx; lost: Fx; compact?: boolean; spare?: boolean }) {
+function CappedRate({ net, lost, compact = false, spare = false }: { net: Fx; lost: Fx; compact?: boolean; spare?: boolean }) {
   const rate = perDay(net);
   const amt = num(lost);
   const title = spare ? `At its cap: ${amt} a day of spare power goes unused` : `At its cap: ${amt} a day is lost`;
@@ -149,7 +154,7 @@ export function CappedRate({ net, lost, compact = false, spare = false }: { net:
 
 /** A rate below the stock's change: demand the day leaves unmet (a brownout reads its
  * shortfall, not 0). The actual change is in the tooltip. */
-export function ShortRate({ rate, unmet, change, compact = false }: { rate: Fx; unmet: Fx; change: Fx; compact?: boolean }) {
+function ShortRate({ rate, unmet, change, compact = false }: { rate: Fx; unmet: Fx; change: Fx; compact?: boolean }) {
   const shown = perDay(rate);
   const title = `Short: ${num(unmet)} a day of demand goes unmet; the stock changes ${perDay(change)}`;
   return (
@@ -197,7 +202,7 @@ export function FlowLines({ v, amounts, sign, suffix = '/day' }: { v: View; amou
 
 /** What a short source had, never shown equal to what it needed ("needs 150, had 150"
  * for 149.6): floored to two decimals then, or "under" the need. */
-export function hadText(s: ShortView): string {
+function hadText(s: ShortView): string {
   return numBelow(s.had, s.need);
 }
 
@@ -347,7 +352,7 @@ export function cardButton(buy: (times: number) => void, shiftTimes = 1) {
   };
 }
 
-/** A short hint on a card that clears itself (why a grey card buys nothing). */
+/** A short hint on a card that clears itself (why a gray card buys nothing). */
 export function useHint(): [string | null, (text: string) => void] {
   const [hint, setHint] = useState<string | null>(null);
   const timer = useRef<number | undefined>(undefined);

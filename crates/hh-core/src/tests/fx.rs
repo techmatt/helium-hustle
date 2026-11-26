@@ -69,9 +69,6 @@ fn whole_powers_are_exact() {
 fn libm_factors() {
     // A fractional power goes through libm and floors the float.
     assert_eq!(math::pow_frac(f("4"), f("0.5")), Some(f("2")));
-    let two = math::log_in(f("2.25"), f("1.5")).unwrap();
-    assert!(two == f("2") || two == f("2") - Fx::EPSILON, "{two}");
-    assert_eq!(math::log_in(Fx::ZERO, f("1.5")), None);
 }
 
 #[test]

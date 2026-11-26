@@ -18,7 +18,7 @@ import {
 } from '../store';
 import { QuestPicture, Sky } from './art';
 import { Buildings } from './Buildings';
-import { Bar, RateCell, Section, navShown } from './common';
+import { Bar, BoredomBar, RateCell, Section, navShown } from './common';
 import { Chip } from './icons';
 import { Left } from './Left';
 import { Options } from './Options';
@@ -195,7 +195,7 @@ function StatusBar({ s }: { s: Store }) {
         Run {v.run}
       </span>
       <span class="status-label">Boredom</span>
-      <Bar frac={Number(v.boredom.amount) / Number(v.boredom.cap)} tone="red" label={`${num(v.boredom.amount)} / ${num(v.boredom.cap)}`} />
+      <BoredomBar v={v} />
       <span class="status-rate">
         {/* The day that retires the run has no rate to show: say what comes. */}
         {v.retires_next ? <span class="neg">cap tomorrow</span> : perDay(bored?.per_day ?? '0', 2)}

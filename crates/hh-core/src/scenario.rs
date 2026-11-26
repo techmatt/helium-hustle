@@ -9,9 +9,10 @@
 //!              "panels": [], "programs": [[{ "op": "command", "command": "idle", "count": 1 }]] } }
 //! ```
 //!
-//! Every key is required (`resources`, `buildings`, `panels` and `programs` may
-//! be empty); a listed resource or building replaces the new game's value, the
-//! rest stay; panels add to the run's; programs replace queues from the first.
+//! `tick`, `resources`, `buildings`, `panels` and `programs` are required (any
+//! may be empty); `flags`, `projects` and `events` are optional. A listed
+//! resource or building replaces the new game's value, the rest stay; panels
+//! and flags add to the run's and career's; programs replace from the first.
 
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -93,7 +94,7 @@ impl Scenario {
             }
         }
         for e in &self.start.events {
-            if !c.events.iter().any(|x| &x.id == e) {
+            if c.event(e).is_none() {
                 errors.push(format!("start.events: {e:?} is no event"));
             }
         }
@@ -118,7 +119,9 @@ impl Scenario {
     }
 
     /// Lays the start over a new game: the tick (and the run's day), resources
-    /// and buildings (owned and active); processors gained go to the first program.
+    /// and buildings (owned and active), completed projects, panels, flags and
+    /// events (fired with their unlocks), career flags now due, and programs;
+    /// processors gained go to the first program.
     pub(crate) fn apply_to(&self, g: &mut GameState) {
         g.tick = self.start.tick;
         g.run.day = self.start.tick;
@@ -150,7 +153,7 @@ impl Scenario {
         g.run.enabled_panels.extend(self.start.panels.iter().cloned());
         g.career.flags.extend(self.start.flags.iter().cloned());
         for id in &self.start.events {
-            let e = content().events.iter().find(|x| &x.id == id).expect("checked");
+            let e = content().event(id).expect("checked");
             if e.is_quest() || e.is_side() {
                 g.career.completed_quests.insert(e.id.clone());
             }

@@ -18,7 +18,7 @@ served page: `HH_URL`, required (it exits naming `vite preview` when unset),
 `HH_BROWSER` for a browser off the usual paths, `HH_SHOTS=<dir>` to save PNGs (an item's
 results folder; kept shots are also copied to the shared screenshots folder, CLAUDE.md). About
 100 s. `HH_ONLY=<n>[,<n>...]` runs only those sections (what a skipped one leaves behind is set
-up directly). It plays, in order:
+up directly). Its sections (`HH_ONLY`'s numbers) run in the order 1, 2, 3, 6 to 11, 5, 4:
 
 1. **A fresh game through the normal UI only** (no debug menu): only Solar Panel and Data
    Center offered, only 1.1's story modal (paused, its task on the last page; 1.1's picture
@@ -41,42 +41,44 @@ up directly). It plays, in order:
    only a DRAFT quest opens); no CHEATED tag in the bottom bar (the mark in the debug info), a jump ahead, the cheat building (+1000 credits a day, 1 credit,
    no card with Cheats off) and Complete all research, and the replay check.
 3. A program's frame at 10x and 50x, each speed's days per second, pause, click-to-buy, a
-   reload keeping the save, another revision's save discarded, the scenarios; in `late_unlocks`, an `if` /
+   reload keeping the save, another revision's save discarded, the scenarios.
+4. **The theme:** the toggles switch it with every element's box unchanged (to 0.01 px);
+   a reload keeps it.
+5. **Readability** (before 4): capped rates, Resources' groups, affordable cards and Land,
+   a pad starting with No cargo (status, red nav dot) given Helium-3, short of fuel then
+   Ready, Story.
+6. **Program instructions** (before 5, `programLogic`): in `late_unlocks`, an `if` /
    `build` program written through the editor (`>` / `<` / `>=` / `<=`, a fill's % / amt toggle, and
    Energy per day and Days since a purchase offered once Process Telemetry is researched;
    `programLogic`), whose guarded build waits for its `if`; saved, then loaded after a retirement, it runs in run 2;
    pause/resume verb lines under `if`s run.
-4. **The theme:** the toggles switch it with every element's box unchanged (to 0.01 px);
-   a reload keeps it.
-5. **Programs, Text mode** (before 6, after 3), from `everything`: 060's L4 Program 1
+7. **Programs, Text mode** (before 5), from `everything`: 060's L4 Program 1
    pasted with a junk line (red, its reason) and a locked building (amber), Apply, green
-   and grey dots and an `if`'s fired count; the block editor keeps every line (unparsed
+   and gray dots and an `if`'s fired count; the block editor keeps every line (unparsed
    and locked rows); the text round-trips; a tab switch saves; 130 lines are red past 128,
    refused, and kept for the next open after a close; a loadout of it loads after
    a retirement with every line.
-   Then `programElse`: an if/else typed there shows the same lines in the block view
+8. **else** (before 5, `programElse`): an if/else typed in the text editor shows the same lines in the block view
    (an Else row, both bodies indented) and back, and at 1x each day's pass runs the
-   branch its `if` picks. Then `instructionPanel`: on a new game the All instructions
-   panel lists only usable entries (Commands and `#`, nothing locked); in `everything`
+   branch its `if` picks.
+9. **The All instructions panel** (before 5, `instructionPanel`): on a new game it
+   lists only usable entries (Commands and `#`, nothing locked); in `everything`
    clicks write an `if … > 0` and a body line under it (caret there), `else` is offered
    only below an `if` or its body, command and building hover cards show, it Applies with
-   no red or amber, the block view shows `if` and its body, and the `if` runs at 1x. Then
-   `programsBlocks`: in `everything` the Programs tile opens Programs in Blocks, an if/else and a `4x` line are built by
+   no red or amber, the block view shows `if` and its body, and the `if` runs at 1x.
+10. **The Programs view's Blocks mode** (before 5, `programsBlocks`): in `everything` the Programs tile opens Programs in Blocks, an if/else and a `4x` line are built by
    panel clicks, ⇤ and the count field only, no help or hint line shows, a real click in the
    count box selects its text (typing replaces it), a drag inside it starts no row drag
    and Esc while typing in it keeps the number (`numberBox`), Text shows the same lines, and at 1x the
    `4x` line's four dots fill 1/4 to 4/4; set to 12, it shows a bar titled `k/12`. Sections open Text through the nav tile
    (`openText`); the mode is remembered.
-   Then `storyView`: a new game played by the autopilot's *Next quest step* until 1.6 A Voice
+11. **Story and Achievements** (before 5, `storyView`): a new game played by the autopilot's *Next quest step* until 1.6 A Voice
    is active (1.5 Trade done); Story shows the Act 1 band alone,
    painted, the finished beats lit (each with its picture's thumbnail; the active
    beat's thumbnail and the left column's foot on the active quest's picture), the active one ringed (in view) with its task, one
    "???" after it and no achievements; a lit beat's click replays its modal; the
    Achievements tile shows every badge by category, each with its reward; then scenario
    `late_unlocks` with *Complete all research*: 1.b's completion banner shows its picture.
-6. **Readability** (before 4): capped rates, Resources' groups, affordable cards and Land,
-   a pad starting with No cargo (status, red nav dot) given Helium-3, short of fuel then
-   Ready, Story.
 
 Any uncaught page error fails the run. Run it against `vite preview` (CLAUDE.md).
 `panel()` closes the debug menu: call `debugMenu()` again before a `grant()` after one.
@@ -84,7 +86,7 @@ A story modal refuses every action and speed until read: `readStory()` reads one
 (the driver's), `autoStory()` clicks every later one away until the page is left.
 
 - **Under load it flakes:** section 3's 10x pointer walk fails beside a cargo build, and
-  so does its "guarded line built" outcome check (066: beside `cargo test-all`; 067: once with
+  so does section 6's "guarded line built" outcome check (066: beside `cargo test-all`; 067: once with
   nothing beside it, then passed on a rerun). Its "if held" check reads only the if's check
   mark since 070 (qa-findings #94). Since 095 its "Storage Depot once the if holds" check
   (`HH_ONLY=6`) fails every run, and so do `HH_ONLY=5`'s "a full pad short on fuel" and
@@ -96,7 +98,8 @@ A story modal refuses every action and speed until read: `readStory()` reads one
 - Leaving a page fires `pagehide`, then `visibilitychange`; the page saves on both, so a
   test editing the save does it after both.
 
-`npm run unit` checks the number formatting (`src/format.ts`), then `scripts/contrast.mjs`
+`npm run unit` (Node, no page) checks the number formatting (`src/format.ts`) and
+`storyBody`, `programEdit.ts`'s line edits, that every quest `picture` has a file, then `scripts/contrast.mjs`
 the text-on-background pairs in its hand-kept `PAIRS` list, in both themes, at
 4.5:1 (7:1 for `pos-text`, the Resources rates' green): a new token needs its pairs there.
 

@@ -599,8 +599,8 @@ pub struct Activity {
     /// `rival_dump` (id: the rival), `event` (a one-off event),
     /// `cargo_lost` (id: the good, quantity: lost, amount: the pad's 1-based
     /// number: cargo a switch returned past the stockpile's cap), and the
-    /// career log's kinds (`quest`, `achievement`, `project`, `research`,
-    /// `unlock`: a career first, id the flag it set).
+    /// career log's kinds but the retirements ([`LogEntry::kind`]; `unlock`: a
+    /// career first, id the flag it set).
     pub kind: String,
     pub id: String,
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -715,7 +715,10 @@ pub struct LogEntry {
     pub tick: u64,
     pub run: u32,
     pub day: u64,
-    /// `quest`, `achievement`, `project`, `research`, `unlock`, `retired`, `forced_retirement`.
+    /// `quest`, `achievement`, `project`, `research`, `unlock`, `retired`,
+    /// `forced_retirement`, and the timeline's: `timeline` (id `timeline_N`),
+    /// `victory` (`swarm_overloaded`), `swarm_repelled` (`false_victory`),
+    /// `timeline_end` (the outcome) and `earth_tech` (the tech's id).
     pub kind: String,
     pub id: String,
 }

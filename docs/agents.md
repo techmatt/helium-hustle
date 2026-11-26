@@ -26,12 +26,16 @@ against: [principles.md](principles.md); how they're run: [simulator.md](simulat
 
 | Rung | What it does | Knobs (defaults) |
 |---|---|---|
-| `random` | Each look, `actions` times: one action uniform over what the view offers (an affordable building or research, land, a random 1-4 line program on a random program, free processors to a random program, a random rate on an open project); points a No-cargo pad at He-3; retires with chance 1 in `retire_odds` a look; looks every `every` ticks. | `actions` 2, `retire_odds` 500, `every` 5 |
+| `random` | Each look, `actions` times: one action uniform over what the view offers (an affordable building or research, land, a random 1-4 line program on a random program, free processors to a random program, a random rate on an open project); points a No-cargo pad at the first good it may carry (`pick_cargo`), launches a full pad by hand; retires with chance 1 in `retire_odds` a look; looks every `every` ticks. | `actions` 2, `retire_odds` 500, `every` 5 |
 | `greedy` | The **builder**: buys the best-scored building it can afford (land included), up to `buys` a look, never saving; the cheapest affordable research; one command on the first program with every processor, chosen afresh each look. No projects, no voluntary retirement. Looks again when its target comes within reach, at most `max_gap` ticks on. | `buys` 3, `decay`, `starved` 100, `reserve` 3, `min_gap` 1, `max_gap` 10 |
-| `author` | The **program author**: the builder's score, but saves for its target; writes condition programs kept in the library; research, projects (first open in `PROJECTS` order: re-funded after a timeline's end), ideology, Dream, market commands; retires a stale run. | the builder's, `min_gap` 1, `max_gap` 10, `compute` 1, `hand_gap` 60, `loads` 20, `pause` 1, `wait_demand` 0, `dream_at` 60, `stale_days` 300, `project_rate` 3, `fund` 1, `market` 1, `construct` 1, `cond` 1, `diversify` 0, `all_research` 0 (1: also research outside its list, today Process Telemetry and the draft Novelty Simulation), `science_share` 50, `ship_loads` 2, `fill` 8, `dream_fill` 1 |
+| `author` | The **program author**: the builder's score, but saves for its target; writes condition programs kept in the library; research, projects (the cheapest open `run` one beside the first other in `PROJECTS` order: re-funded after a timeline's end), ideology, Dream, market commands; retires a stale run. | the builder's, `min_gap` 1, `max_gap` 10, `compute` 1, `hand_gap` 60, `loads` 20, `pause` 1, `wait_demand` 0, `dream_at` 60, `stale_days` 300, `project_rate` 3, `fund` 1, `market` 1, `construct` 1, `cond` 1, `diversify` 0, `all_research` 0 (a no-op today: it should add research outside `RESEARCH`, but the author looks only at that list), `science_share` 50, `ship_loads` 2, `fill` 8, `dream_fill` 1 |
 | `handsoff` | **Automation alone**: the author's until the run `if` opens in (the loadout guards with `if`; again once a timeline's end closes it), then from the next run it loads the best known loadout (`configs/sim/handsoff_loadout.txt`) and seats processors at each reset; its one hand is a stale-run retirement, a backstop to the loadout's own `retire` line. | the author's, `every` 10, `loadout` |
 | `planner` | **Not built.** A strategic player that plans across retirements without peeking: the hook is `Agent::new_run`, called once a run: at the first look after a forced retirement, before `act`; after a retirement the agent chose, at the end of that look (whatever else `act` did in the new run came first, so a planner should retire last in its look). | |
 | `oracle` | The **ceiling**: the author steered by rollouts on copies of the game, the future included ([oracle.md](oracle.md)). Profiles: `profile` 0 milestones, 1 credits, 2 ideology, 3 builder, 4 quests. | `profile` 0, `every` 50, `horizon` 600, `width` 5, `beam` 1, `margin` 20, `long` 2000, `replan` 500, `strategy` -1 (search), `retire` 1, `min_run` 1000, `retire_margin` 0, `first_margin` 0, `early` and `ideology` (the profile's weights), `tail` 400, `hoard_at` 5000, `stale_days` 300, `max_gap` 10, `roll_gap` = `max_gap` |
+
+Where each picks research: random in `RandomAgent::act` (random.rs), greedy in builder.rs's
+`act` (cheapest affordable), the author in `next_research` over `RESEARCH`/`PLAN_RESEARCH`
+(author.rs; handsoff and the oracle inherit it); every one skips `agents::NEVER_BUY` (mod.rs).
 
 ## The builder (`builder.rs`)
 
@@ -57,7 +61,7 @@ Launch Full Pads opens (1.4), every player hand-launches a full pad or one holdi
 `launch_cargo` quest's amount (`agents::hand_launch`). The hands-off loadout's
 Program 2 opens with `set pads he3 up to 1`.
 
-A hand-played command (`hand_command`, greedy's): launch a full fuelled pad; fuel a full pad;
+A hand-played command (`hand_command`, greedy's): launch a full fueled pad; fuel a full pad;
 load when a load of its good waits; Buy Science while short of the next Blueprints on
 sale; buy the target's missing titanium, regolith or ice from
 credits past its price; else Cloud Compute (Idle without the energy).
@@ -75,7 +79,7 @@ How it writes the main program depends on the gap to its next look (*When it loo
 
 | Program | Template | Processors |
 |---|---|---|
-| 1, gap ≤ `hand_gap` | a plan to the next look: `launch_pads` if a pad is full and fuelled (with `wait_demand=1`, only into HIGH demand or better, MEDIUM once the good piles at its cap); `buy_propellant` × the fuel short when a pad is within 25 of full; `load_pads` × the loads that would move cargo, at most `loads`; `buy_*` × the target's missing titanium, regolith or ice as far as spare credits go; then `cloud_compute` × 2 × `max_gap` × processors | the rest |
+| 1, gap ≤ `hand_gap` | a plan to the next look: `launch_pads` if a pad is full and fueled (with `wait_demand=1`, only into HIGH demand or better, MEDIUM once the good piles at its cap); `buy_propellant` × the fuel short when a pad is within 25 of full; `load_pads` × the loads that would move cargo, at most `loads`; `buy_*` × the target's missing titanium, regolith or ice as far as spare credits go; then `cloud_compute` × 2 × `max_gap` × processors | the rest |
 | 1, longer gaps | a standing cycle that earns before it spends: `load_pads × loads`, `launch_pads`, `cloud_compute × loads`, `buy_propellant × fuel`, `buy_*` × the target's missing inputs no building makes, at most `loads` | the rest |
 | 2 | `dream` | 1 while boredom is past `dream_at`% of its cap and the run still builds |
 | 3 | `fund_<axis>`: the first of humanist, rationalist, nationalist whose persistent project isn't done | 1 when 3 or more are left |
@@ -140,11 +144,7 @@ research: the first time, it goes in without those `if` blocks and is rewritten 
 the research is done (once a career). Then nothing by hand but a backstop retirement once the
 run has bought nothing (buildings, research, land) for `stale_days` days; the file's own
 `if days since a purchase > 299` / `retire` usually comes first (062).
-The file holds 060's L5 (three tabs: build and seat, ship, research Dream Protocols and
-dream), picked over L4 on the hands-off measure (061), with Process Telemetry and that
-`retire` in the Dream tab (062's write-up), and for rev 19's step cost its build tab's
-compute at × 100 a pass, its idle block gone (065's write-up); 074 put the
-Blueprints, each under `if science >` its price less 1, at its research tab's head.
+What its tabs do: the file's header.
 
 ## The oracle (`oracle/`)
 

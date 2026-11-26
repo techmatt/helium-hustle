@@ -2,7 +2,7 @@
 
 Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **default** mean).
 
-- **Art direction (2026-11-15): B "Earthrise".** Warm grey regolith surfaces, an amber accent,
+- **Art direction (2026-11-15): B "Earthrise".** Warm gray regolith surfaces, an amber accent,
   a lunar horizon with the habitat at the foot of the left column. The layout is kept.
   Earth lives in the paintings, with no globe over the middle column. Resource colors are
   never hidden. A **light theme** for debugging stays, 1:1 with dark: same layout, markup and art, only color tokens swap. "Flash"/3D (a live
@@ -31,7 +31,7 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   first arrival in the career (096 default: the view's `seen`, present now or their arrival
   event seen). Projects shows only projects that can be funded now: no locked cards, and
   (096 default) no finished one-off ones. No player-facing text names timelines before the
-  swarm's reveal (1.11): the global projects' section reads "Global" until then.
+  swarm's reveal (1.7): the global projects' section reads "Global" until then.
 - **Story cards (2026-11-25).** Each finished quest card in Story shows one line, its first
   sentence with "…"; a click shows the whole text (a main beat replays its modals, a side
   quest opens in place). The current quest's highlight never covers the spine.

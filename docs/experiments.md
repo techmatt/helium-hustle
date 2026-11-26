@@ -81,7 +81,7 @@ After `ladder`'s and `experiment`'s tables, the engine's speed natively and in w
 
 ## Costs
 
-This machine, idle: the ladder (4 players × 3 seeds, careers of 20 retirements)
+This machine, idle: the ladder (5 players × 3 seeds, careers of 20 retirements)
 about 20 s on 6 threads; `ceiling` about 20 minutes, set by the oracle's careers
 ([oracle.md](oracle.md)); `balance`
 (4 careers) about 6.5 s (092, on mimalloc: half the Windows allocator's time); `vs-human` on a 1,600-tick log a second. Other careers play
@@ -118,7 +118,7 @@ the branch's worktree reads the branch's `configs/` and may fail to load them.
   `content/` or `configs/`, rebuild there with an absolute `CARGO_TARGET_DIR`
   ([README](../README.md#build-and-test)), run from it. A `--set` is enough for a param.
 - **Golden plays the same** (a refactor, or a state-only change): diff a pre-change binary's
-  `run --policy script --seed 18446744073709551615 --ticks 2000` printout against the new
+  `run --policy script --scenario golden_start --seed 18446744073709551615 --ticks 2000` printout against the new
   one's; when play is unchanged only the fingerprint lines differ. A config-only change
   (a new key) that plays the same moves no fingerprint at all (the fingerprint leaves the
   config out), so the ladder's pins prove it directly.

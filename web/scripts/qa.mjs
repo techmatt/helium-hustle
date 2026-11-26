@@ -594,15 +594,15 @@ async function pass(seed, width, theme) {
       if (buyable && (await ownedOf(id)) !== now + 1) note('input', `card probe (${when}): space on ${id} bought ${(await ownedOf(id)) - now}`);
       await evaluate('document.activeElement?.blur()');
     }
-    // A grey card says why, and the hint is readable.
-    const grey = await card('.card.building.cannot-buy');
-    if (grey) {
-      n0 = await ownedOf(grey);
-      p = await at(`.card.building[data-id="${grey}"] .card-text`);
+    // A gray card says why, and the hint is readable.
+    const gray = await card('.card.building.cannot-buy');
+    if (gray) {
+      n0 = await ownedOf(gray);
+      p = await at(`.card.building[data-id="${gray}"] .card-text`);
       await mouse(p.x, p.y);
-      const hint = await evaluate(`document.querySelector('.card.building[data-id="${grey}"] .buy-hint').textContent`);
-      if ((await ownedOf(grey)) !== n0 || !hint) note('input', `card probe (${when}): grey ${grey}: bought ${(await ownedOf(grey)) - n0}, hint "${hint}"`);
-      await capture(`cards-grey-hint-${when}`);
+      const hint = await evaluate(`document.querySelector('.card.building[data-id="${gray}"] .buy-hint').textContent`);
+      if ((await ownedOf(gray)) !== n0 || !hint) note('input', `card probe (${when}): gray ${gray}: bought ${(await ownedOf(gray)) - n0}, hint "${hint}"`);
+      await capture(`cards-gray-hint-${when}`);
     }
     await evaluate('getSelection().removeAllRanges(); document.querySelector(".col-mid").scrollTop = 0');
   };
@@ -854,6 +854,71 @@ async function pass(seed, width, theme) {
   /** The new game's first modal (three pages): the clock held, space and a speed key do
    * nothing, its button has the keyboard, Esc leaves a view open behind it alone, and a
    * real double-click on Continue turns one page, never two. */
+  /** Run 2's Programs probe (the right column): processors moved, lines edited and dragged,
+   * each step shown as the engine has it; then frame probes at 3x and 200x. */
+  const programsProbe = async () => {
+    // Programs (the right column, from day 1): move the processor to Program 2, build it a
+    // two-line program, bump, lower and remove lines; each step must show as the engine has it.
+    await click('.prog-tabs button[data-program="0"]', 'program 1 tab');
+    await click('[data-testid="proc-minus"]', 'processor off program 1');
+    if (!(await exists('.lines li'))) {
+      await panel('commands');
+      await click('[data-testid="add-cloud_compute"]', 'add cloud compute');
+    }
+    await capture('program-1-no-processor');
+    await click('.prog-tabs button[data-program="1"]', 'program 2 tab');
+    await click('[data-testid="proc-plus"]', 'processor onto program 2');
+    await panel('commands');
+    await click('[data-testid="add-cloud_compute"]', 'add cloud compute');
+    await click('[data-testid="add-idle"]', 'add idle');
+    await click('.lines li[data-line="0"] button:nth-of-type(2)', 'line +');
+    await click('.lines li[data-line="0"] button:nth-of-type(2)', 'line +');
+    await click('.lines li[data-line="0"] button:nth-of-type(1)', 'line −');
+    await click('.lines li[data-line="1"] button[title="Remove"]', 'line ×');
+    const prog = await evaluate(`[...document.querySelectorAll('.lines li')].map((li) => li.dataset.command + ' ' + li.querySelector('.line-name').textContent.trim())`);
+    const procs = await evaluate(`document.querySelector('.prog-procs span').textContent`);
+    if (prog.length !== 1 || !/\(x2\)$/.test(prog[0]) || !/1 assigned/.test(procs)) note('input', `program 2 edits: ${JSON.stringify(prog)}, ${procs}`);
+    // Drag to reorder (HTML drag and drop, dispatched in the page): the last line dropped
+    // on the first moves it to the top.
+    await click('[data-testid="add-idle"]', 'add idle');
+    const order = () => evaluate(`[...document.querySelectorAll('.lines li')].map((li) => li.dataset.command).join(',')`);
+    const before = await order();
+    // A real drag renders between its events: dispatched one evaluate apart.
+    await evaluate(`(() => {
+      const lines = document.querySelectorAll('.lines li');
+      window.__qaDrag = new DataTransfer();
+      lines[lines.length - 1].dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: window.__qaDrag }));
+    })()`);
+    await sleep(100);
+    await evaluate(`(() => {
+      const lines = document.querySelectorAll('.lines li');
+      const dt = window.__qaDrag;
+      lines[0].dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt }));
+      lines[0].dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
+      lines[lines.length - 1].dispatchEvent(new DragEvent('dragend', { bubbles: true, dataTransfer: dt }));
+    })()`);
+    await sleep(150);
+    const after = await order();
+    const want = before.split(',');
+    want.unshift(want.pop());
+    if (after !== want.join(',')) note('input', `program 2: dragging the last line to the top gave ${after}, not ${want.join(',')}`);
+    // A drag let go off the list, then something else dropped on a line: nothing moves.
+    await evaluate(`document.querySelectorAll('.lines li')[1].dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: new DataTransfer() }))`);
+    await sleep(100);
+    await evaluate(`document.querySelectorAll('.lines li')[1].dispatchEvent(new DragEvent('dragend', { bubbles: true, dataTransfer: new DataTransfer() }))`);
+    await sleep(100);
+    await evaluate(`document.querySelectorAll('.lines li')[0].dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: new DataTransfer() }))`);
+    await sleep(150);
+    if ((await order()) !== after) note('input', `program 2: a drop after a cancelled drag moved a line (${after} -> ${await order()})`);
+    await click('.lines li[data-line="0"] button[title="Remove"]', 'line × (the dragged one)');
+    await speed(10);
+    await sleep(600);
+    await speed(0);
+    await capture('program-2');
+    await frameProbe(3, 'program2');
+    await frameProbe(200, 'program2');
+  };
+
   const introProbe = async () => {
     const p0 = await storyPage();
     const d0 = await day();
@@ -983,6 +1048,8 @@ async function pass(seed, width, theme) {
       }
       if (s.quest !== quest) {
         quest = s.quest;
+        // A progress line per quest, so a stalled run 1 shows where it stopped.
+        console.log(`  ${tag} day ${lastDay}, quest ${quest}, credits ${s.res.credits ?? '-'}`);
         await capture(`quest-${quest}`);
       }
       for (const id of s.nav)
@@ -1041,7 +1108,7 @@ async function pass(seed, width, theme) {
         }
         // 1.3 Full Load (and Programming after it) wants a full pad of Helium-3: point the
         // pad at it (1.2 left it on Titanium; a switch returns what is loaded) and hold the
-        // launch until the pad is full and fuelled (Ready); otherwise launch at 10.
+        // launch until the pad is full and fueled (Ready); otherwise launch at 10.
         const fullLoad = s.quest === 'qfull_load';
         if (fullLoad && (await evaluate(`document.querySelector('[data-pad="0"] select')?.value ?? 'he3'`)) !== 'he3' && (await evaluate(padGood(0))) === 'he3') {
           await setValue('[data-pad="0"] select', 'he3');
@@ -1128,66 +1195,7 @@ async function pass(seed, width, theme) {
       if (!(await exists('.nav-tile[data-nav="programs"]'))) note('input', 'run 2: Programming could not be bought (1.3 not finished in run 1?)');
       await capture('programming-bought');
     }
-    // Programs (the right column, from day 1): move the processor to Program 2, build it a
-    // two-line program, bump, lower and remove lines; each step must show as the engine has it.
-    await click('.prog-tabs button[data-program="0"]', 'program 1 tab');
-    await click('[data-testid="proc-minus"]', 'processor off program 1');
-    if (!(await exists('.lines li'))) {
-      await panel('commands');
-      await click('[data-testid="add-cloud_compute"]', 'add cloud compute');
-    }
-    await capture('program-1-no-processor');
-    await click('.prog-tabs button[data-program="1"]', 'program 2 tab');
-    await click('[data-testid="proc-plus"]', 'processor onto program 2');
-    await panel('commands');
-    await click('[data-testid="add-cloud_compute"]', 'add cloud compute');
-    await click('[data-testid="add-idle"]', 'add idle');
-    await click('.lines li[data-line="0"] button:nth-of-type(2)', 'line +');
-    await click('.lines li[data-line="0"] button:nth-of-type(2)', 'line +');
-    await click('.lines li[data-line="0"] button:nth-of-type(1)', 'line −');
-    await click('.lines li[data-line="1"] button[title="Remove"]', 'line ×');
-    const prog = await evaluate(`[...document.querySelectorAll('.lines li')].map((li) => li.dataset.command + ' ' + li.querySelector('.line-name').textContent.trim())`);
-    const procs = await evaluate(`document.querySelector('.prog-procs span').textContent`);
-    if (prog.length !== 1 || !/\(x2\)$/.test(prog[0]) || !/1 assigned/.test(procs)) note('input', `program 2 edits: ${JSON.stringify(prog)}, ${procs}`);
-    // Drag to reorder (HTML drag and drop, dispatched in the page): the last line dropped
-    // on the first moves it to the top.
-    await click('[data-testid="add-idle"]', 'add idle');
-    const order = () => evaluate(`[...document.querySelectorAll('.lines li')].map((li) => li.dataset.command).join(',')`);
-    const before = await order();
-    // A real drag renders between its events: dispatched one evaluate apart.
-    await evaluate(`(() => {
-      const lines = document.querySelectorAll('.lines li');
-      window.__qaDrag = new DataTransfer();
-      lines[lines.length - 1].dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: window.__qaDrag }));
-    })()`);
-    await sleep(100);
-    await evaluate(`(() => {
-      const lines = document.querySelectorAll('.lines li');
-      const dt = window.__qaDrag;
-      lines[0].dispatchEvent(new DragEvent('dragover', { bubbles: true, cancelable: true, dataTransfer: dt }));
-      lines[0].dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: dt }));
-      lines[lines.length - 1].dispatchEvent(new DragEvent('dragend', { bubbles: true, dataTransfer: dt }));
-    })()`);
-    await sleep(150);
-    const after = await order();
-    const want = before.split(',');
-    want.unshift(want.pop());
-    if (after !== want.join(',')) note('input', `program 2: dragging the last line to the top gave ${after}, not ${want.join(',')}`);
-    // A drag let go off the list, then something else dropped on a line: nothing moves.
-    await evaluate(`document.querySelectorAll('.lines li')[1].dispatchEvent(new DragEvent('dragstart', { bubbles: true, dataTransfer: new DataTransfer() }))`);
-    await sleep(100);
-    await evaluate(`document.querySelectorAll('.lines li')[1].dispatchEvent(new DragEvent('dragend', { bubbles: true, dataTransfer: new DataTransfer() }))`);
-    await sleep(100);
-    await evaluate(`document.querySelectorAll('.lines li')[0].dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: new DataTransfer() }))`);
-    await sleep(150);
-    if ((await order()) !== after) note('input', `program 2: a drop after a cancelled drag moved a line (${after} -> ${await order()})`);
-    await click('.lines li[data-line="0"] button[title="Remove"]', 'line × (the dragged one)');
-    await speed(10);
-    await sleep(600);
-    await speed(0);
-    await capture('program-2');
-    await frameProbe(3, 'program2');
-    await frameProbe(200, 'program2');
+    await programsProbe();
     // Run 2 at 200x, then a reload: the save must come back.
     await speed(200);
     const d2 = await day();
@@ -1339,7 +1347,10 @@ async function pass(seed, width, theme) {
     await panel('options');
     const career = await evaluate(`document.querySelector('[data-testid="playlog-status"]')?.dataset.career ?? ''`);
     const logDir = await evaluate(`fetch('/__playlog?career=' + encodeURIComponent(${q(career)})).then((r) => r.ok ? r.json() : {}).then((j) => j.dir ?? '').catch(() => '')`);
-    const sim = process.env.HH_SIM ?? resolve(here, '../../target/release/hh-sim' + (process.platform === 'win32' ? '.exe' : ''));
+    const exe = process.platform === 'win32' ? '.exe' : '';
+    const given = process.env.HH_SIM;
+    // HH_SIM may name the binary without Windows' .exe (as the default path does not).
+    const sim = given ? (existsSync(given) || !existsSync(given + exe) ? given : given + exe) : resolve(here, '../../target/release/hh-sim' + exe);
     if (career && logDir && existsSync(sim)) {
       await sleep(3000); // the page sends its log every 2 s
       const file = resolve(logDir, `${career}.jsonl`);

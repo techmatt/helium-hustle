@@ -4,8 +4,9 @@
 // card's 96 px box, transparent around the subject. Originals are in the shared art/ folder.
 // Presentation only: a card with no file simply shows no picture.
 
-const stems = (files: Record<string, string>): Record<string, string> =>
-  Object.fromEntries(Object.entries(files).map(([f, url]) => [f.slice(f.lastIndexOf('/') + 1, -'.webp'.length), url]));
+import { byName } from './assets';
+
+const stems = (files: Record<string, string>) => byName(files, '.webp');
 
 const BUILDINGS = stems(import.meta.glob<string>('../assets/buildings/*.webp', { eager: true, query: '?url', import: 'default' }));
 const PROJECTS = stems(import.meta.glob<string>('../assets/projects/*.webp', { eager: true, query: '?url', import: 'default' }));

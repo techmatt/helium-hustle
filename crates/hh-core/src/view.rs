@@ -13,7 +13,7 @@ use std::collections::BTreeMap;
 use std::sync::OnceLock;
 
 use crate::action::Action;
-use crate::content::{content, Amounts, BuildingEffect, CommandEffect, Condition, NavCondition, Requirement, AXES, MODIFIER_KEYS};
+use crate::content::{content, Amounts, Requirement, AXES, MODIFIER_KEYS};
 use crate::fx::Fx;
 use crate::modifiers::modifier;
 use crate::modules::*;
@@ -21,15 +21,23 @@ use crate::rules::Rules;
 use crate::state::{Activity, GameState, LastRun, Loadout, Overclock, RunStats, Stall};
 
 use crate::modules::programs as program_rules;
-use breakdown::{breakdown, short_view};
+use breakdown::breakdown;
 
 mod breakdown;
+mod commands;
 mod keep;
+mod lab;
+mod nav;
 // The programs panel; the game's own programs module is `program_rules` here.
 mod programs;
 // The Projects panel; the game's own projects module is `modules::projects`.
 mod projects;
+mod quests;
+mod rivals;
 mod saga;
+mod stats;
+mod stock;
+mod trade;
 
 pub use self::projects::{condition_text, ProjectView};
 pub use saga::{SagaView, TechView};
@@ -310,15 +318,6 @@ pub struct AdversaryView {
     pub seen: bool,
 }
 
-/// Present now, or a seen event's condition was its presence.
-fn adversary_seen(r: &Rules, g: &GameState, id: &str) -> bool {
-    crate::modules::attention::present(r, g, id)
-        || content().events.iter().any(|e| {
-            matches!(&e.condition, Condition::AdversaryPresent { adversary } if adversary == id)
-                && (g.career.seen_events.contains(&e.id) || g.career.completed_quests.contains(&e.id))
-        })
-}
-
 #[derive(Debug, Clone, Serialize)]
 pub struct NavView {
     pub id: Text,
@@ -390,9 +389,14 @@ impl View {
         self.resources.iter().find(|r| r.id == id).map_or(Fx::ZERO, |r| r.amount)
     }
 
+    /// A building's card (`None` for an unknown id).
+    pub fn building(&self, id: &str) -> Option<&BuildingView> {
+        self.buildings.iter().find(|b| b.id == id)
+    }
+
     /// How many of a building are owned (zero for an unknown id).
     pub fn owned(&self, id: &str) -> u32 {
-        self.buildings.iter().find(|b| b.id == id).map_or(0, |b| b.owned)
+        self.building(id).map_or(0, |b| b.owned)
     }
 
     /// What one run of a command costs in `res` (zero if nothing).
@@ -530,11 +534,7 @@ fn names() -> &'static BTreeMap<Text, Text> {
     })
 }
 
-
-fn progress(p: Option<(Fx, Fx)>) -> Option<ProgressView> {
-    p.map(|(now, target)| ProgressView { now, target })
-}
-
+/// Each ideology axis's score and rank, for the given state (this run or the next run's preview).
 fn axes(r: &Rules, g: &GameState) -> Vec<AxisView> {
     AXES.iter()
         .map(|&a| {
@@ -550,255 +550,19 @@ fn axes(r: &Rules, g: &GameState) -> Vec<AxisView> {
         .collect()
 }
 
-fn story(e: &'static crate::content::Event) -> StoryView {
-    StoryView {
-        id: &e.id,
-        title: &e.title,
-        summary: &e.summary,
-        body: &e.body,
-        rate: None,
-        chain: e.is_quest(),
-        story: &e.story,
-        payoff: &e.payoff,
-        beat: e.beat.as_deref(),
-        act: content().act_of(&e.id),
-        picture: e.picture.as_deref(),
-    }
-}
-
-/// An event's text with the number its `{rate}` takes: for a boredom-phase event, that
-/// phase's boredom per day under this run's multiplier (display only; the UI formats it).
-fn event_story(r: &Rules, g: &GameState, e: &'static crate::content::Event) -> StoryView {
-    let mut s = story(e);
-    if let crate::content::Trigger::BoredomPhase { phase } = e.trigger {
-        let rates = &r.p.boredom.phase_rates;
-        let i = (phase.max(1) as usize - 1).min(rates.len() - 1);
-        s.rate = Some(rates[i] * boredom::multiplier(r, g));
-    }
-    s
-}
-
-/// A command's description with an overclock's `{days}` filled in: the days one run
-/// lasts under this run's Rationalist rank ("4 days", "1 day").
-fn command_description(r: &Rules, g: &GameState, cmd: &'static crate::content::Command) -> Cow<'static, str> {
-    match &cmd.effect {
-        Some(CommandEffect::Overclock { duration, .. }) => {
-            let n = program_rules::overclock_days(r, g, *duration);
-            let days = if n == 1 { "1 day".to_string() } else { format!("{n} days") };
-            Cow::Owned(cmd.description.replace("{days}", &days))
-        }
-        _ => Cow::Borrowed(&cmd.description),
-    }
-}
-
-/// The one-off events fired this run, oldest first by the day each fired (content order
-/// within a day), but of the boredom-phase events only the latest phase's (a `once`
-/// story event stays).
-fn event_texts(r: &Rules, g: &GameState, latest_phase: Option<u32>) -> Vec<StoryView> {
-    let mut fired: Vec<(u64, &'static crate::content::Event)> = content()
-        .events
-        .iter()
-        .filter(|e| !e.is_quest() && !e.silent)
-        .filter_map(|e| g.run.events.get(&e.id).map(|&day| (day, e)))
-        .filter(|(_, e)| match e.trigger {
-            crate::content::Trigger::BoredomPhase { phase } if !e.once => Some(phase) == latest_phase,
-            _ => true,
-        })
-        .collect();
-    // Stable: same-day events keep content order.
-    fired.sort_by_key(|&(day, _)| day);
-    fired.into_iter().map(|(_, e)| event_story(r, g, e)).collect()
-}
-
 pub fn build(r: &Rules, g: &GameState) -> View {
     let c = content();
     let next = r.peek(g);
     let same_run = next.career.run_number == g.career.run_number;
-    // The highest boredom phase whose event fired this run: Story lists only its text.
-    let latest_phase = c
-        .events
-        .iter()
-        .filter(|e| !e.silent && g.run.events.contains_key(&e.id))
-        .filter_map(|e| match e.trigger {
-            crate::content::Trigger::BoredomPhase { phase } => Some(phase),
-            _ => None,
-        })
-        .max();
-    let resources: Vec<ResourceView> = c
-        .resources
-        .iter()
-        .map(|res| {
-            ResourceView {
-                id: &res.id,
-                name: &res.name,
-                amount: g.amount(&res.id),
-                cap: economy::cap(r, g, &res.id),
-                per_day: if same_run { next.run.day_net.get(&res.id).copied().unwrap_or(Fx::ZERO) } else { Fx::ZERO },
-                change_per_day: if same_run { next.amount(&res.id) - g.amount(&res.id) } else { Fx::ZERO },
-                overflow: if same_run { next.run.today.overflow.get(&res.id).copied().unwrap_or(Fx::ZERO) } else { Fx::ZERO },
-                unmet: if same_run { next.run.today.unmet.get(&res.id).copied().unwrap_or(Fx::ZERO) } else { Fx::ZERO },
-                visible: economy::shown(g, res),
-                grantable: crate::cheat::grantable(&res.id),
-            }
-        })
-        .collect();
-    let buildings: Vec<BuildingView> = c
-        .buildings
-        .iter()
-        .map(|b| {
-            let h = g.run.buildings.get(&b.id).copied().unwrap_or_default();
-            let cost = economy::price(r, g, b);
-            let mut short: Vec<String> =
-                cost.iter().filter(|(res, &v)| g.amount(res) < v).map(|(res, _)| res.clone()).collect();
-            if g.amount(economy::LAND) < Fx::from_int(b.land as i64) {
-                short.push(economy::LAND.to_string());
-            }
-            let effect = |grant: bool| {
-                b.effects
-                    .iter()
-                    .filter_map(|e| match e {
-                        BuildingEffect::Store { resource, amount } if !grant => Some((resource.as_str(), *amount)),
-                        BuildingEffect::Grant { resource, amount } if grant => Some((resource.as_str(), *amount)),
-                        _ => None,
-                    })
-                    .collect()
-            };
-            BuildingView {
-                id: &b.id,
-                name: &b.name,
-                description: &b.description,
-                category: &b.category,
-                ideology: b.ideology.as_deref(),
-                owned: h.owned,
-                active: h.active,
-                working: g.working(&b.id),
-                bonus: h.bonus,
-                max_count: b.max_count,
-                cost,
-                land: b.land,
-                short,
-                produces: &b.produces,
-                upkeep: &b.upkeep,
-                requires: &b.requires,
-                stores: effect(false),
-                grants: effect(true),
-                affordable: economy::buy_blocker(r, g, b).is_none(),
-                at_limit: economy::at_limit(g, b),
-                unlocked: economy::unlocked(g, b),
-                visible: economy::visible(g, b),
-                stall: g.run.today.stalls.get(&b.id).copied(),
-                starved: {
-                    let k = format!("building:{}", b.id);
-                    g.run.today.shorts.get(&k).map(|s| short_view(g, &k, s))
-                },
-                buy: Action::Buy { building: b.id.clone() },
-            }
-        })
-        .collect();
-    let commands = c
-        .commands
-        .iter()
-        .map(|cmd| {
-            let (costs, produces) = program_rules::flows(r, g, cmd);
-            let verb = match &cmd.effect {
-                Some(CommandEffect::Promote { .. }) => Some("Promote"),
-                Some(CommandEffect::Fund { .. }) => Some("Fund"),
-                Some(CommandEffect::Overclock { .. }) => Some("Overclock"),
-                None if cmd.costs.contains_key(economy::CREDITS) && cmd.produces.len() == 1 => Some("Buy"),
-                _ => None,
-            };
-            let target = verb.and_then(|vb| cmd.name.strip_prefix(vb)).map(str::trim);
-            CommandView {
-                verb,
-                target,
-                id: &cmd.id,
-                name: &cmd.name,
-                description: command_description(r, g, cmd),
-                unlocked: program_rules::unlocked(g, cmd),
-                visible: program_rules::visible(g, cmd),
-                costs,
-                produces,
-                boredom: program_rules::boredom_cost(g, cmd),
-            }
-        })
-        .collect();
-    let aware = research::reveals_demand(g);
-    let markets = shipments::goods(r)
-        .into_iter()
-        .filter_map(|good| {
-            let m = g.run.markets.get(&good)?;
-            Some(MarketView {
-                name: c.resource(&good).map_or(good.clone(), |x| x.name.clone()),
-                demand: aware.then_some(m.demand),
-                tier: demand::TIERS[demand::tier(r, m.demand)],
-                speculators: m.speculators_seen.then_some(m.speculators),
-                good,
-            })
-        })
-        .collect();
-    let quest = events::active_quest(g).map(|q| QuestView {
-        id: &q.id,
-        kind: events::kind(&q.condition),
-        title: &q.title,
-        summary: &q.summary,
-        body: &q.body,
-        story: &q.story,
-        progress: progress(events::progress(r, g, &q.id, &q.condition)),
-        sub_objectives: match &q.condition {
-            Condition::AllOf { sub_objectives } => sub_objectives
-                .iter()
-                .map(|s| SubObjectiveView {
-                    id: &s.id,
-                    label: &s.label,
-                    done: g.career.completed_sub_objectives.contains(&events::sub_key(&q.id, &s.id)),
-                    progress: progress(events::progress(r, g, &q.id, &s.condition)),
-                })
-                .collect(),
-            _ => Vec::new(),
-        },
-        beat: q.beat.as_deref(),
-        act: c.act_of(&q.id),
-        more: c.events.iter().filter(|e| e.is_quest()).skip_while(|e| e.id != q.id).nth(1).is_some(),
-        picture: q.picture.as_deref(),
-    });
-    let side_quests = c
-        .events
-        .iter()
-        .filter(|e| events::side_started(g, e))
-        .map(|e| {
-            let done = g.career.completed_quests.contains(&e.id);
-            SideQuestView {
-                id: &e.id,
-                beat: e.beat.as_deref(),
-                title: &e.title,
-                summary: &e.summary,
-                body: &e.body,
-                parent: match &e.trigger {
-                    crate::content::Trigger::QuestComplete { quest } => Some(quest.as_str()),
-                    crate::content::Trigger::Flag { beside, .. } => Some(beside.as_str()),
-                    _ => None,
-                },
-                done,
-                progress: if done { None } else { progress(events::progress(r, g, &e.id, &e.condition)) },
-                picture: e.picture.as_deref(),
-                keep: keep::side_quest(g, e),
-            }
-        })
-        .collect();
-    let acts = c
-        .acts
-        .iter()
-        .filter(|a| events::quest_open_or_done(g, &a.opens_with))
-        .map(|a| ActView { act: a.act, name: &a.name })
-        .collect();
-    // The next run if this one retired now.
-    let after = career::next_run_preview(r, g);
-    let next_run = NextRunView {
-        starting_credits: career::starting_credits(r, &after),
-        boredom_resilience: career::boredom_resilience(r, &after),
-        buy_power_mult: career::buy_power_mult(r, &after),
-        ideology: axes(r, &after),
-    };
+    let latest_phase = quests::latest_phase(g);
+    let resources = stock::resources(r, g, &next, same_run);
+    let buildings = stock::buildings(r, g);
+    let commands = commands::commands(r, g);
+    let markets = trade::markets(r, g);
+    let quest = quests::quest(r, g);
+    let side_quests = quests::side_quests(r, g);
+    let acts = quests::acts(g);
+    let next_run = stats::next_run(r, g);
     let procs = program_rules::capacity(g);
     let running = program_rules::running(g);
     let readings = programs::readings(r, g, &resources);
@@ -837,118 +601,28 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         processors: procs,
         processors_free: program_rules::free(g),
         processors_running: running.iter().sum(),
-        pads: (0..g.run.pads.len())
-            .map(|i| {
-                let p = &g.run.pads[i];
-                PadView {
-                    good: p.good.clone(),
-                    paused: p.paused,
-                    active: shipments::pad_active(g, i),
-                    unpaid: i < g.active(shipments::LAUNCH_PAD) as usize && !shipments::pad_active(g, i),
-                    cargo: p.cargo,
-                    capacity: r.p.shipments.pad_cargo_capacity,
-                    cooldown: p.cooldown,
-                    fuel: r.p.shipments.fuel_per_pad,
-                    load: shipments::load_amount(r, g),
-                    payout: shipments::payout(r, g, i),
-                    can_launch: shipments::can_launch(r, g, i),
-                    fueled: g.amount(shipments::PROPELLANT) >= r.p.shipments.fuel_per_pad,
-                    ready: shipments::ready(r, g, i),
-                    switch_returns: shipments::switch_returns(r, g, i),
-                }
-            })
-            .collect(),
+        pads: trade::pads(r, g),
         loading_priority: g.run.loading_priority.clone(),
-        pad_goods: g.run.loading_priority.iter().filter(|x| shipments::allowed(g, x)).cloned().collect(),
+        pad_goods: trade::pad_goods(g),
         markets,
-        research: c
-            .research
-            .iter()
-            // A career-flag item once its flag is set (Programming bought) is gone for
-            // good, the run it was bought in included.
-            .filter(|item| !research::flag_held(g, item))
-            .map(|item| {
-                let cost = research::price(r, g, item);
-                ResearchView {
-                    id: &item.id,
-                    name: &item.name,
-                    description: &item.description,
-                    category: &item.category,
-                    cost,
-                    requires: item.requires.as_deref(),
-                    done: g.run.research.contains(&item.id),
-                    visible: research::visible(g, item),
-                    affordable: research::blocker(r, g, item).is_none(),
-                    keep: keep::research(g, item),
-                }
-            })
-            .collect(),
+        research: lab::research(r, g),
         ideology: axes(r, g),
         projects: self::projects::projects(r, g),
         live_rewards: self::projects::live_rewards(g),
         quest,
-        completed_quests: c
-            .events
-            .iter()
-            .filter(|e| g.career.completed_quests.contains(&e.id))
-            .map(|e| e.id.as_str())
-            .collect(),
-        story: c.events.iter().filter(|e| g.career.completed_quests.contains(&e.id)).map(story).collect(),
+        completed_quests: quests::completed_quests(g),
+        story: quests::story_list(g),
         side_quests,
         acts,
-        event_texts: event_texts(r, g, latest_phase),
-        achievement_list: c
-            .achievements
-            .iter()
-            .map(|a| AchievementView {
-                id: &a.id,
-                name: &a.name,
-                category: &a.category,
-                description: &a.description,
-                reward: &a.reward_description,
-                earned: g.career.achievements.contains(&a.id),
-            })
-            .collect(),
-        rivals: c
-            .rivals
-            .iter()
-            .map(|rv| RivalView {
-                id: &rv.id,
-                name: &rv.name,
-                good: &rv.good,
-                dumps_seen: g.run.activity.iter().filter(|a| a.kind == "rival_dump" && a.id == rv.id).count() as u32,
-            })
-            .collect(),
-        adversaries: crate::modules::attention::ADVERSARIES
-            .iter()
-            .map(|&id| AdversaryView {
-                id,
-                attention: crate::modules::attention::attention(g, id),
-                threshold: crate::modules::attention::threshold_of(r, id),
-                present: crate::modules::attention::present(r, g, id),
-                seen: adversary_seen(r, g, id),
-            })
-            .collect(),
+        event_texts: quests::event_texts(r, g, latest_phase),
+        achievement_list: stats::achievements(g),
+        rivals: rivals::rivals(g),
+        adversaries: rivals::adversaries(r, g),
         // Only those the next day still applies: one whose last day has passed lingers in
         // state until the next tick drops it.
         overclocks: g.run.overclocks.iter().filter(|o| o.until_day > g.run.day).cloned().collect(),
         modifiers: MODIFIER_KEYS.iter().map(|&k| (k, modifier(r, g, k))).collect(),
-        career: CareerView {
-            retirements: g.career.retirements,
-            best_run_days: g.career.best_run_days,
-            best_run_credits: g.career.best_run_credits,
-            best_run_shipments: g.career.best_run_shipments,
-            peak_power: g.career.peak_power,
-            starting_credits: career::starting_credits(r, g),
-            boredom_resilience: career::boredom_resilience(r, g),
-            buy_power_mult: career::buy_power_mult(r, g),
-            lifetime_shipments: g.career.lifetime.shipments,
-            lifetime_credits_earned: g.career.lifetime.credits_earned,
-            lifetime_days: g.career.lifetime.days,
-            lifetime_buildings_built: g.career.lifetime.buildings_built,
-            lifetime_research_completed: g.career.lifetime.research_completed,
-            max_ideology_ranks: g.career.max_ideology_ranks.clone(),
-        },
+        career: stats::career(r, g),
         next_run,
         last_run: g.career.last_run.clone(),
         last_run_why: g.career.last_run.as_ref().map(|l| c.message(if l.forced { "forced_retirement" } else { "retired" })),
@@ -960,22 +634,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             phase: boredom::phase(r, g.run.day),
             phases: r.p.boredom.phase_days.len() as u32,
         },
-        nav: c
-            .nav
-            .iter()
-            .map(|t| NavView {
-                id: &t.id,
-                name: &t.name,
-                visible: match &t.visible {
-                    NavCondition::Always => true,
-                    NavCondition::Panel { panel } => g.run.enabled_panels.contains(panel),
-                    NavCondition::BuildingKnown { building } => {
-                        g.owned(building) > 0 || g.career.owned_buildings.contains(building)
-                    }
-                    NavCondition::Flag { flag } => career::flag_set(g, flag),
-                },
-            })
-            .collect(),
+        nav: nav::nav(g),
         can_retire: career::retire_blocker(g).is_none(),
         retires_next: !same_run,
         activity: g.run.activity.clone(),

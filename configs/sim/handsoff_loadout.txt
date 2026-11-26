@@ -3,24 +3,17 @@
 # when the rules or the best loadout change, replace this file and re-pin
 # HANDSOFF_PIN (crates/hh-sim/tests/cli.rs). Form: crates/hh-sim/src/agents/loadout.rs.
 #
-# Now: 060's L5 (experiments/results/060_loadout_exploration/loadouts/L5_dream_tab.txt),
-# chosen in 061 over L4 on the ladder's hands-off measure (credits a run from run 2:
-# 281% of the author against L4's 213%, milestones tied; 060's seeds 3119-3124),
-# rewritten in 065 for rules 19's step cost (every `if` a step): Program 1's
-# compute runs 100x a pass, not 10x, so its guards cost a few steps in a hundred,
-# and the `if energy < 21%` / `5x idle` block is gone (065's write-up). 071: repeat
-# counts lead (`100x cloud_compute`).
-# 069 (rules 22: a new pad has No cargo) added Program 2's `set pads he3 up to 1`: keep its
-# N at least Program 1's `build launch_pad up to` N, or the extra pads idle all run.
+# Its origin is 060's L5 (experiments/results/060_loadout_exploration/loadouts/), picked on
+# the ladder's hands-off measure; how it changed since is in git and the items' write-ups.
 #
-# 074 (rules 25: buildings past Solar Panels and Data Centers come from the Blueprints
-# research) added Program 3's Buy Science line (science up to 50 while credits allow) and
-# its two Blueprints lines (done at once once 1.c gives them every run).
-#
-# Program 1 builds (and seats processors as Data Centers add them), Program 2
-# picks its pad's cargo and ships, Program 3 researches the Blueprints and Process Telemetry, retires
-# a run that has bought nothing for 300 days (062: before the player's hand
-# backstop), researches Dream Protocols and dreams when bored.
+# Program 1 builds (and seats processors as Data Centers add them); its compute runs 100x a
+# pass, so each guarding `if` (a step) costs a few steps in a hundred. Program 2 picks its
+# pads' cargo and ships: keep its `set pads he3 up to` N at least Program 1's
+# `build launch_pad up to` N, or the extra pads (a new pad carries nothing) idle all run.
+# Program 3 buys Science (up to 50 while credits allow), researches the Blueprints (done at
+# once in a run where the Blueprint Archive project already granted them) and Process
+# Telemetry, retires a run that has bought nothing for 300 days (before the player's hand
+# backstop), researches Daydreaming (`dream_protocols`) and dreams when bored.
 seat: 1=all
 [1]
 if free processors > 0

@@ -1,6 +1,8 @@
 //! The measuring commands: `ladder`, `experiment`, `compare`, `balance`, `trace`
 //! (with its state dump and line replay), `agents`, `speed` (docs/simulator.md).
-//! `lib.rs` dispatches these here, `vs-human` to `vs.rs`, and runs the rest itself.
+//! `lib.rs` dispatches these here, `vs-human` to `vs.rs`, `accelerate` to
+//! `autopilot.rs`, `params` to `params.rs`, `playlog` and `summarize` to
+//! `playlog.rs` and `summary.rs`, and runs the rest itself.
 
 use std::fmt::Write as _;
 use std::time::Instant;

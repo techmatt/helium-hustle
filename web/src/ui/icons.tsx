@@ -6,6 +6,7 @@
 
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Keep, View } from '../engine';
+import { byName, svgInner } from './assets';
 
 /** Chip colors: resources, ideology axes (true colors) and rival AIs.
  * experiments/results/026_icon_art_r1/glyphs.mjs reads these three maps as text (the
@@ -44,15 +45,8 @@ const RIVAL_COLORS: Record<string, string> = {
   fringe9: '#9e9d24',
 };
 
-const byName = <T,>(files: Record<string, T>, ext: string): Record<string, T> =>
-  Object.fromEntries(Object.entries(files).map(([f, x]) => [f.slice(f.lastIndexOf('/') + 1, -ext.length), x]));
-
 /** Each chip's glyph: the inside of its 24-unit SVG file. */
-const GLYPHS = Object.fromEntries(
-  Object.entries(byName(import.meta.glob<string>('../assets/chips/*.svg', { eager: true, query: '?raw', import: 'default' }), '.svg')).map(
-    ([id, svg]) => [id, svg.slice(svg.indexOf('>') + 1, svg.lastIndexOf('</svg>'))],
-  ),
-);
+const GLYPHS = svgInner(import.meta.glob<string>('../assets/chips/*.svg', { eager: true, query: '?raw', import: 'default' }));
 
 /** Relative luminance of a #rrggbb color (WCAG). */
 function lum(hex: string): number {
@@ -95,11 +89,7 @@ const CATEGORY_COLORS: Record<string, string> = {
 /** Each research item's glyph (`src/assets/research/<id>.svg`, written by
  * experiments/results/100_wire_project_art_and_research_glyphs/research.mjs); a `"BG"`
  * fill in it is a knock-out drawn over a solid part, filled with the chip's own color. */
-const RESEARCH_GLYPHS = Object.fromEntries(
-  Object.entries(byName(import.meta.glob<string>('../assets/research/*.svg', { eager: true, query: '?raw', import: 'default' }), '.svg')).map(
-    ([id, svg]) => [id, svg.slice(svg.indexOf('>') + 1, svg.lastIndexOf('</svg>'))],
-  ),
-);
+const RESEARCH_GLYPHS = svgInner(import.meta.glob<string>('../assets/research/*.svg', { eager: true, query: '?raw', import: 'default' }));
 
 /** A research card's chip: its glyph knocked out of a square in its category's color.
  * Nothing for an item without a glyph. */

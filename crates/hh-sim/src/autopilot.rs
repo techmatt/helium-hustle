@@ -26,10 +26,9 @@ use crate::milestones::{Milestones, Tracker};
 /// Both are the author, kept on in a run while it lasts (the Telescope wants
 /// long runs) and dreaming from the first boredom (the boost's slow boredom
 /// never reaches its usual threshold); the first ships every good made
-/// (`diversify`), the second doesn't, and buys all visible research
-/// (`all_research`: past [`author::RESEARCH`](crate::agents::author::RESEARCH),
-/// today Process Telemetry, from the first Research Lab, and the draft Novelty
-/// Simulation, after 1.7).
+/// (`diversify`), the second doesn't. The second's `all_research` is a no-op
+/// today ([`Directives::all_research`](crate::agents::author::Directives)), so
+/// the two differ only in `diversify`.
 pub const DEFAULT_AGENT: &str =
     "author:stale_days=4000,dream_at=1,diversify=1|author:stale_days=4000,dream_at=1,all_research=1";
 
@@ -361,7 +360,7 @@ pub fn cli(args: &[String]) -> Result<String, crate::Fail> {
         }
     }
     let c = hh_core::Config::from_json(&read(&config)?).map_err(Fail::Usage)?;
-    let ms = Milestones::from_json(&read(crate::MILESTONES)?).map_err(Fail::Usage)?;
+    let ms = crate::load_milestones(crate::MILESTONES)?;
     let boost = boost.map(|b| parse_boost(&b)).transpose().map_err(Fail::Usage)?;
     let target = Target::parse(&target).map_err(Fail::Usage)?;
     let start = std::time::Instant::now();

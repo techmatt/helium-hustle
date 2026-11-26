@@ -10,9 +10,9 @@ import type { LineOutcome, ProgramView, Repeat, View } from '../engine';
 import { ifFired, type Store } from '../store';
 import { shortText } from './common';
 
-/** A status dot: ran (green), skipped by its `if` (grey), won't parse (red), not unlocked
+/** A status dot: ran (green), skipped by its `if` (gray), won't parse (red), not unlocked
  * this run (amber), failed (a hollow red ring), not run (an empty ring), a note (none). */
-export type Dot = 'green' | 'grey' | 'red' | 'amber' | 'failed' | 'none' | 'note' | 'blank';
+export type Dot = 'green' | 'gray' | 'red' | 'amber' | 'failed' | 'none' | 'note' | 'blank';
 
 export interface LineStatus {
   dot: Dot;
@@ -40,8 +40,8 @@ const DOT_OF: Record<LineOutcome, Dot> = {
   done: 'green',
   true: 'green',
   skipped: 'green',
-  jumped: 'grey',
-  false: 'grey',
+  jumped: 'gray',
+  false: 'gray',
   failed: 'failed',
 };
 
@@ -50,7 +50,7 @@ export const ELSE_TITLE = 'Else: free; its if decides which body runs';
 
 export const DOT_TITLE: Record<Dot, string> = {
   green: 'Ran on the last day',
-  grey: 'Skipped by its if on the last day',
+  gray: 'Skipped by its if on the last day',
   red: "Doesn't parse",
   amber: 'Valid, but not unlocked yet this run',
   failed: 'Failed on the last day',
@@ -114,7 +114,7 @@ export function GutterMark({ st, line }: { st: LineStatus | null; line: number }
   // A red or amber line shows its status, never its runs.
   if (r && st && st.dot !== 'red' && st.dot !== 'amber') {
     // Not run on the last day (jumped with its `if`, or not reached): the last pass, muted.
-    const stale = st.dot === 'grey' || st.dot === 'none' ? ' rep-stale' : '';
+    const stale = st.dot === 'gray' || st.dot === 'none' ? ' rep-stale' : '';
     const title = `${r.done}/${r.of}${r.failed > 0 ? `, ${r.failed} failed` : ''}${stale ? ' (an earlier pass)' : ''}`;
     if (r.of <= MAX_DOTS) {
       return (
