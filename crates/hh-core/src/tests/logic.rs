@@ -534,7 +534,7 @@ fn the_researched_readings_open_with_process_telemetry() {
     assert!(r.view(&g).programs[0].locked[0].as_deref().is_some_and(|w| w.contains("research")));
     assert_eq!(read(&g, Reading::EnergyPerDay), None);
     assert_eq!(read(&g, Reading::DaysSincePurchase), None);
-    // Research it (the panel open, past 1.8 Lab, science enough): offered last, and readable.
+    // Research it (the panel open, a Research Lab built, science enough): offered last, and readable.
     g.run.enabled_panels.insert(crate::modules::research::RESEARCH_PANEL.into());
     g.career.flags.insert("research_lab".into());
     set(&mut g, "science", "50");

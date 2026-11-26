@@ -41,7 +41,7 @@ before 090). A new fixed row continues the table below, and a later prune folds 
   1-based pad errors; Short of inputs only below a full run.
 - **Checker flakes** (#76): the e2e theme-layout check compares from the top.
 - **Rows 78-93:** a notice over a takeover; Projects' Max then − sends six places; Load and
-  Fund verbs not pickable with nothing to name; 1.9's rank progress; flag rewards' `text`;
+  Fund verbs not pickable with nothing to name; Three Voices' rank progress; flag rewards' `text`;
   faked bold (h4, Plex Mono 600); eight speed buttons at 1280; the left column's scrollbar
   room; Saga bars' own width; Esc behind the summary; Q1's pin names Sell Cloud Compute; the
   20-day average a true mean; Story by day; overclock `{days}`; "the next day"; `{rate}` as
@@ -74,11 +74,11 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | 108 | qa false findings since 074/078: a click a just-opened story modal refused timed as slow input; run 2's card probe with no card a run's start can afford (074); two frames counted with the right column hidden under the Programs view; the Everything autopilot run from story_acts (no game behind its quests) | Not timed; run 2's probe skipped then; shown frames only; story_acts audited first | qa |
 | 109 | The boot line "Loading…" stayed in the page under the app: a page scrolled into view (seen in qa's story_acts Story shot) showed it below the status bar and cut the title | Removed once the app mounts | qa *overflow* (the page scrolled or kept its boot line) |
 | 110 | The Programs view's status strip at 1280 in a late career squeezed its boredom bar to ~50 px: "285 /" | The bar keeps room for its figures (the strip's gaps 10 px; wider figures wrap the strip to a second line) | screenshots (qa `late-programs`) |
-| 111 | qa's run 1 never finished 1.4: Advanced Blueprints marked done before on sale, the pad left on Titanium, launches at 10 cargo | Research waits for its card; during 1.4 the pad carries He-3 and launches full | qa (089) |
+| 111 | qa's run 1 never finished Full Load: Advanced Blueprints marked done before on sale, the pad left on Titanium, launches at 10 cargo | Research waits for its card; during Full Load the pad carries He-3 and launches full | qa (089) |
 | 112 | Idle's Run (089) was a free credit a click with no limit, paused on day 0 too (a held Enter on the focused button repeats it): nothing paces it | Moot since 091 (rules 31): Run by hand is gone, commands run only as program lines | none |
 | 113 | A Run button took the second click of a double-click on a story modal's last button or the summary's Continue (cards already ignored it, #31) | 091: Run gone; Add to Program ignores pointer clicks for 0.5 s after a modal moves, as cards | manual (090 probe) |
 | 114 | A refused Run said "run Sell Cloud Compute: short of an input", naming nothing | Moot since 091: Run gone | none |
-| 115 | 1.5's text says "Write programs" while Programming (research) may be unbought, with nothing pointing to it | Moot since 091: programs are open from day 1; "Write programs" is true again | content |
+| 115 | Processors' text says "Write programs" while Programming (research) may be unbought, with nothing pointing to it | Moot since 091: programs are open from day 1; "Write programs" is true again | content |
 | 116 | The run summary and Retirement panel list "saved programs (Load, in each program tab)" as kept before Programming opens any | 091: loadouts open from day 1, so saved programs always listed; Programming named once bought | manual |
 
 ## Deferred (Matt's decisions)

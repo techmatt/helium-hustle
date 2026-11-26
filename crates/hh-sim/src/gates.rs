@@ -21,13 +21,14 @@ fn unlock(u: &Unlock) -> String {
             let a = amount.to_string();
             format!("grant {} {resource}", if a.contains('.') { a.trim_end_matches('0').trim_end_matches('.') } else { &a })
         }
+        Unlock::Modifier { key, value } => format!("modifier {key} x{value}"),
     }
 }
 
 fn visible_on(v: &Visibility, q: &str) -> bool {
     match v {
-        Visibility::QuestCompleted { quest } => quest == q,
-        Visibility::AllOf { all } => all.iter().any(|x| visible_on(x, q)),
+        Visibility::QuestCompleted { quest } | Visibility::QuestActive { quest } => quest == q,
+        Visibility::AllOf { all: xs } | Visibility::AnyOf { any: xs } => xs.iter().any(|x| visible_on(x, q)),
         _ => false,
     }
 }
@@ -35,7 +36,7 @@ fn visible_on(v: &Visibility, q: &str) -> bool {
 fn visible_with(v: &Visibility, f: &str) -> bool {
     match v {
         Visibility::Flag { flag } => flag == f,
-        Visibility::AllOf { all } => all.iter().any(|x| visible_with(x, f)),
+        Visibility::AllOf { all: xs } | Visibility::AnyOf { any: xs } => xs.iter().any(|x| visible_with(x, f)),
         _ => false,
     }
 }

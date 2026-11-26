@@ -82,8 +82,17 @@ fn condition(r: &Rules, g: &hh_core::GameState, quest: &str, c: &Condition) -> F
             let best = g.career.max_ideology_scores.get(axis).copied().unwrap_or(Fx::ZERO);
             frac(best.max(ideology::score(g, axis)), ideology::score_for_rank(r, *rank))
         }
+        // Each axis as `IdeologyRank` reads it, averaged.
+        Condition::IdeologyRankEach { rank } => {
+            let need = ideology::score_for_rank(r, *rank);
+            let sum = hh_core::content::AXES.iter().fold(Fx::ZERO, |s, a| {
+                let best = g.career.max_ideology_scores.get(*a).copied().unwrap_or(Fx::ZERO);
+                s + frac(best.max(ideology::score(g, a)), need)
+            });
+            sum.mul_ratio(1, hh_core::content::AXES.len() as i64)
+        }
         // The rest: the engine's own countable progress, where it has one.
-        _ => events::progress(r, g, c).map_or(Fx::ZERO, |(now, target)| frac(now, target)),
+        _ => events::progress(r, g, quest, c).map_or(Fx::ZERO, |(now, target)| frac(now, target)),
     }
 }
 

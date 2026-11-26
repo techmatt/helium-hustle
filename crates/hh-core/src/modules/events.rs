@@ -98,10 +98,11 @@ pub fn holds(r: &Rules, g: &GameState, quest: &str, c: &Condition) -> bool {
         Condition::Retirements { count } => g.career.retirements >= *count,
         Condition::AdversaryPresent { adversary } => super::attention::present(r, g, adversary),
         Condition::LaunchCredits { amount } => g.run.stats.best_launch >= *amount,
-        Condition::TradeCredits { amount } => g.run.stats.trade_credits >= *amount,
+        Condition::TradeCredits { amount } => trade_since_start(g, quest) >= *amount,
         Condition::LaunchCargo { resource, amount } => best_cargo(g, resource) >= *amount,
         Condition::LaunchFull { resource } => best_cargo(g, resource) >= r.p.shipments.pad_cargo_capacity,
-        Condition::ResearchCluster { min_items, exclude } => cluster_done(g, *min_items, exclude).is_some(),
+        Condition::ResearchCount { count } => g.run.research.len() >= *count as usize,
+        Condition::IdeologyRankEach { rank } => each_axis_best(g) >= *rank,
         Condition::QuietDays { days } => g.run.day + 1 >=g.run.last_order.unwrap_or(0) + *days,
         Condition::EarthScience { amount } => {
             g.saga.timeline.as_ref().is_some_and(|t| t.science_made >= *amount)
@@ -120,7 +121,7 @@ pub fn holds(r: &Rules, g: &GameState, quest: &str, c: &Condition) -> bool {
 
 /// How far along a countable condition is: `(now, target)` (display only;
 /// `None` for one with nothing to count).
-pub fn progress(r: &Rules, g: &GameState, c: &Condition) -> Option<(Fx, Fx)> {
+pub fn progress(r: &Rules, g: &GameState, quest: &str, c: &Condition) -> Option<(Fx, Fx)> {
     let n = |v: u64| Fx::from_int(i64::try_from(v).unwrap_or(i64::MAX));
     match c {
         Condition::BuildingOwned { building, count } => Some((n(g.owned(building).into()), n((*count).into()))),
@@ -143,7 +144,9 @@ pub fn progress(r: &Rules, g: &GameState, c: &Condition) -> Option<(Fx, Fx)> {
             Some((super::attention::attention(g, adversary), super::attention::threshold_of(r, adversary)))
         }
         Condition::LaunchCredits { amount } => Some((g.run.stats.best_launch, *amount)),
-        Condition::TradeCredits { amount } => Some((g.run.stats.trade_credits, *amount)),
+        Condition::TradeCredits { amount } => Some((trade_since_start(g, quest), *amount)),
+        Condition::ResearchCount { count } => Some((n(g.run.research.len() as u64), n((*count).into()))),
+        Condition::IdeologyRankEach { rank } => Some((Fx::from_int(each_axis_best(g)), Fx::from_int(*rank))),
         Condition::LaunchCargo { resource, amount } => Some((best_cargo(g, resource), *amount)),
         Condition::LaunchFull { resource } => Some((best_cargo(g, resource), r.p.shipments.pad_cargo_capacity)),
         Condition::QuietDays { days } => Some((n((g.run.day + 1).saturating_sub(g.run.last_order.unwrap_or(0))), n(*days))),
@@ -182,7 +185,8 @@ pub fn kind(c: &Condition) -> &'static str {
         Condition::TradeCredits { .. } => "trade_credits",
         Condition::LaunchCargo { .. } => "launch_cargo",
         Condition::LaunchFull { .. } => "launch_full",
-        Condition::ResearchCluster { .. } => "research_cluster",
+        Condition::ResearchCount { .. } => "research_count",
+        Condition::IdeologyRankEach { .. } => "ideology_rank_each",
         Condition::QuietDays { .. } => "quiet_days",
         Condition::EarthScience { .. } => "earth_science",
         Condition::EarthTech { .. } => "earth_tech",
@@ -200,14 +204,22 @@ fn best_cargo(g: &GameState, good: &str) -> Fx {
     g.run.stats.best_cargo.get(good).copied().unwrap_or(Fx::ZERO)
 }
 
-/// The first research category (in content order), not in `exclude`, of at
-/// least `min_items` items whose every item is bought this run: a whole cluster.
-pub fn cluster_done(g: &GameState, min_items: u32, exclude: &[String]) -> Option<&'static str> {
-    let c = content();
-    c.research.iter().map(|item| item.category.as_str()).filter(|cat| !exclude.iter().any(|x| x == cat)).find(|&cat| {
-        let n = c.research.iter().filter(|i| i.category == cat).count();
-        n >= min_items as usize && c.research.iter().filter(|i| i.category == cat).all(|i| g.run.research.contains(&i.id))
-    })
+/// Launch pay over the career, this run included.
+pub fn career_trade(g: &GameState) -> Fx {
+    g.career.lifetime.trade_credits.saturating_add(g.run.stats.trade_credits)
+}
+
+/// Launch pay since `quest` first became active (its mark; zero for a row
+/// with none, which counts from the career's start).
+fn trade_since_start(g: &GameState, quest: &str) -> Fx {
+    let mark = g.career.quest_marks.get(quest).copied().unwrap_or(Fx::ZERO);
+    // The career total only grows, so it never falls below a mark taken from it.
+    (career_trade(g) - mark).max(Fx::ZERO)
+}
+
+/// The lowest of the career's best ranks over the axes.
+fn each_axis_best(g: &GameState) -> i64 {
+    crate::content::AXES.iter().map(|a| g.career.max_ideology_ranks.get(*a).copied().unwrap_or(0)).min().unwrap_or(0)
 }
 
 pub fn sub_key(quest: &str, sub: &str) -> String {
@@ -245,14 +257,21 @@ pub fn apply_unlocks(g: &mut GameState, e: &Event) {
                 g.add(resource, *amount);
                 g.track("event", resource, *amount, Fx::ZERO);
             }
+            // Read live while the quest is completed (modifiers.rs).
+            Unlock::Modifier { .. } => {}
         }
     }
 }
 
 /// A chain quest becoming active for the first time in the career applies
-/// its `on_start` grants (once: a retirement doesn't repeat them).
+/// its `on_start` grants (once: a retirement doesn't repeat them) and, for a
+/// `trade_credits` condition, marks the career's launch pay so far.
 fn start(g: &mut GameState, q: &Event) {
     if g.career.started_quests.insert(q.id.clone()) {
+        if matches!(q.condition, Condition::TradeCredits { .. }) {
+            let mark = career_trade(g);
+            g.career.quest_marks.insert(q.id.clone(), mark);
+        }
         for u in &q.on_start {
             if let Unlock::Grant { resource, amount } = u {
                 g.add(resource, *amount);
@@ -286,7 +305,8 @@ pub fn check(r: &Rules, g: &mut GameState) {
     // One-off events before side quests, so a flag one sets starts a side
     // quest the same day.
     for e in content().events.iter().filter(|e| !e.is_quest() && !e.is_side()) {
-        if !g.run.events.contains_key(&e.id) && triggered(g, e) && holds(r, g, &e.id, &e.condition) {
+        let done = g.run.events.contains_key(&e.id) || (e.once && g.career.seen_events.contains(&e.id));
+        if !done && triggered(g, e) && holds(r, g, &e.id, &e.condition) {
             fire(g, e);
             if !e.silent {
                 g.activity("event", &e.id, None, None);

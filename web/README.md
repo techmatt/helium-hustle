@@ -104,8 +104,9 @@ Three columns and a status bar:
   `else` at the top level with an empty body line, an empty caret line filled in place;
   `programEdit.ts` `insertLine`) and moves the caret or selection there; a hover shows the
   live card of its command, building, research or project.
-- **Modals**, each holding the clock: the run summary when a run ends; the story modal
-  (`store.ts` `tell`) at each main-quest change, a page per paragraph of the view's
+- **Modals**, each holding the clock: the run summary when a run ends (forced: why, and
+  that years passed); the story modal (`store.ts` `tell`) at each main-quest change and
+  for a once-a-career `story` one-off (Burnout), a page per paragraph of the view's
   `story`/`payoff`, the new task last (a new game: the first quest's; the autopilot: none; a
   load: a saved chain's unread pages, `stories`/`storyPages` in `store.ts` `save()`; after a
   summary, once closed).

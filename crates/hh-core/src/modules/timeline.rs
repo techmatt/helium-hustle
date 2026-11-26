@@ -3,7 +3,7 @@
 //! Earth techs, the hard reset when a timeline ends (the mind sent back), the
 //! meta-controller's reset plan, the vault, the super timeline and the
 //! Dyson-sphere ending. Everything here waits on the swarm's reveal (the
-//! flag 1.11 Deep Space Telescope sets), so Act 1 never meets it.
+//! flag 1.7 Deep Space Telescope sets), so Act 1 never meets it.
 
 use super::{param, ModuleDef, ParamKind as K, VariantDef};
 use crate::config::ModuleConfig;
@@ -13,7 +13,7 @@ use crate::rules::Rules;
 use crate::state::{Career, GameState, Timeline, TimelineEnd};
 use std::collections::BTreeMap;
 
-/// The flag 1.11 (the Deep Space Telescope) sets: the swarm is discovered and
+/// The flag 1.7 (the Deep Space Telescope) sets: the swarm is discovered and
 /// the countdown starts. A career flag: every later timeline's countdown runs
 /// from its first day, Telescope rebuilt or not (the rebuild gives only its passive).
 pub const REVEAL_FLAG: &str = "swarm_revealed";
@@ -31,7 +31,7 @@ pub static DEF: ModuleDef = ModuleDef {
     variants: &[VariantDef {
         name: "draft",
         params: &[
-            param("arrival_days", K::Int, Some(("1", "10000000")), "countdown days to the swarm's arrival, from its discovery (1.11) in timeline 1 and from the first day in each later one, before delays"),
+            param("arrival_days", K::Int, Some(("1", "10000000")), "countdown days to the swarm's arrival, from its discovery (1.7) in timeline 1 and from the first day in each later one, before delays"),
             param("arrival_days_per_science", K::Fx, Some(("0", "1000")), "days of delay per unit of Earth science carried into a timeline"),
             param("entangle_mult", K::Fx, Some(("1", "100")), "the swarm's strength once it learns entanglement (after the first false victory)"),
             param("repel_science", K::Fx, Some(("0", "100000000")), "Earth science made this timeline that repels the swarm once"),
@@ -131,7 +131,7 @@ fn start_timeline(r: &Rules, g: &mut GameState, number: u32, super_timeline: boo
     g.note("timeline", &format!("timeline_{number}"));
 }
 
-/// The last step of the day: the calendar starts at the discovery (1.11),
+/// The last step of the day: the calendar starts at the discovery (1.7),
 /// moves the day's Earth science to Earth, advances and meets the swarm on
 /// its day.
 pub fn tick(r: &Rules, g: &mut GameState) {

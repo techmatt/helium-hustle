@@ -214,7 +214,7 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
         v = s.rules.view(&s.state);
     }
     // A new pad has No cargo: the script points it at the first good a pad
-    // may carry (Titanium during 1.3, then He-3 at baseline), and an empty
+    // may carry (Titanium during 1.2, then He-3 at baseline), and an empty
     // pad on another good is pointed again. hh-sim's players have their own
     // hand (`agents::pick_cargo`, `hand_launch`, `builder::hand_command`):
     // alike in spirit, deliberately not the same (it reads the view's quest
@@ -231,8 +231,8 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
         }
         v = s.rules.view(&s.state);
     }
-    // Before Launch Full Pads opens (1.5), a pad launches by hand: when full,
-    // or with 20 titanium aboard (1.3's shipment; the script's own threshold).
+    // Before Launch Full Pads opens (1.4), a pad launches by hand: when full,
+    // or with 20 titanium aboard (1.2's shipment; the script's own threshold).
     if !v.commands.iter().any(|c| c.id == "launch_pads" && c.unlocked) {
         let hand: Vec<u32> = (0..v.pads.len())
             .filter(|&i| {
@@ -251,7 +251,7 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
         }
     }
     let pick = choose_command(&v, goal.map(|(id, _)| *id), allowed);
-    // Before `if` opens (a global project offered from 1.8), the guards' bodies
+    // Before `if` opens (a global project offered from the first retirement), the guards' bodies
     // run bare: the verbs and `build` still pin the interpreter.
     let mut want = if v.if_open {
         guard_lines(allowed)

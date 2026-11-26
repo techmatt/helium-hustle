@@ -158,7 +158,7 @@ impl Scenario {
             g.career.seen_events.insert(e.id.clone());
             crate::modules::events::apply_unlocks(g, e);
         }
-        // A scenario past 1.4 Full Load starts with Programming bought.
+        // A scenario past 1.3 Full Load (or with a Research Lab) starts with Programming bought.
         crate::modules::research::grant_flags_due(g);
         for (p, entries) in g.run.programs.iter_mut().zip(&self.start.programs) {
             p.entries = entries.clone();

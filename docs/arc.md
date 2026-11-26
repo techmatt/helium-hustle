@@ -16,66 +16,73 @@ Service), Act 3 The Vault (Q14 The Vault), Act 4 The Dyson Sphere (Q17 Dyson Sph
 ## Act 1: the lunar operation (draft-playable)
 
 About 25% of play (a readout, not a target). Skill: from clicking commands to programs that run
-whole runs. The chain is 1.1 to 1.11 in order, each opening one mechanic at a time (074), and marks
-only significant things: 1.8 is a silent unlock, not a quest; 1.a,
-1.b and 1.c are side quests that complete beside it and never hold it up. A new game can build
-only Solar Panels and Data Centers. Each chain quest's transition is a story modal in the UI
-(its `story` and `payoff` paragraphs in `content/events.json`, placeholder text; no doc copies
-them; [rules/events.md](rules/events.md), *Story modals*). The Opens columns are the design's,
-by hand; `hh-sim gates` lists what each quest opens as built (its unlocks, the `requires`,
-research and projects gated on it).
+whole runs. The chain is 1.1 to 1.7 in order, each opening one mechanic at a time, and marks
+only significant things; 1.a to 1.d are side quests that complete beside it, never hold it up,
+and give permanent rewards. A new game can build only Solar Panels and Data Centers. Each chain
+quest's transition is a story modal in the UI (its `story` and `payoff` paragraphs in
+`content/events.json`, placeholder text; no doc copies them; [rules/events.md](rules/events.md),
+*Story modals*). The Opens columns are the design's, by hand; `hh-sim gates` lists what each
+quest opens as built (its unlocks, the `requires`, research and projects gated on it).
 
 | Beat | Quest (id) | Trigger | Condition | Opens | Status |
 |---|---|---|---|---|---|
-| 1.1 Online | `qpower_boot_sequence` | game start | 2 Solar Panels | the Buy Science command and the research view (only the Blueprints, and Programming after 1.4, show in it until a Research Lab is built, 1.8) | aligned |
-| 1.2 Blueprints | `qblueprints` | 1.1 | the Basic Blueprints research (10 science) | (the research itself unlocks the Regolith Excavator, Smelter, Launch Pad and Storage Depot) | aligned |
-| 1.3 First shipment | `qfirst_shipment` | 1.2 | one launch carrying 20+ titanium | its start grants 20 Propellant once a career; while it is active pads carry Titanium only, and a partial pad launches by hand from its card; done, Advanced Blueprints (20 science: Battery, Refinery, Fabricator) goes on sale | aligned |
-| 1.4 Full load | `qfull_load` | 1.3 | one launch carrying a full pad of He-3 | (teaches He-3, the claim's real export); Programming goes on sale (research, 200 science, bought once for the career: the Programs view, the full editor; the right column's program, Add to Program and loadouts are open from day 1) | aligned |
-| 1.5 Processors | `qautomate_automation` | 1.4 | 2 Data Centers | the Launch Full Pads command; program logic (the `program_logic` flag at 2 working processors); loadouts are open from run 1 and always kept | draft |
-| 1.6 Trade | `qtrade` | 1.5 | 1,500 credits from trade (launch pay) this run | nothing. Speculators arrive on their own (Attention from units sold, [attention.md](rules/attention.md)): the silent `speculators_arrive` event sets the `speculators_seen` flag and opens the Adversaries panel the first time they are present | draft |
-| 1.7 Burnout | `qburnout` | 1.6 | 1 retirement (boredom forces the first; one forced before 1.7 counts, so 1.7 completes as it is reached) | the Retirement panel (voluntary retirement); bests and firsts carry. Boredom runs from day 1 with its meter shown; 1.7's modals explain it | draft |
-| 1.8 Lab | none: a silent unlock on building a Research Lab, not a quest (the silent one-off `research_lab_built`) | game start, any run | a Research Lab owned | the `research_lab` flag: the full research catalog (Geopolitical Intelligence among it), Projects and Foundation Grant, the Recreation Dome | draft |
-| 1.9 Three voices | `qthree_voices` | 1.7 | career-best rank 5 on each axis (three sub-objectives) | each axis's major rank-5 effect (ideology.md); its rank-5 global project; while it is active the first global projects (Blueprint Archive, Conditional Logic, opens `if`) are offered, shown once the Projects panel is open (a Research Lab) | draft |
-| 1.10 Land rush | `qland_rush` | 1.9 | rivals present (Attention from land claimed) | the Contest Claims command (neutralizes the rivals) | draft |
-| 1.11 Deep Space Telescope | `qdeep_space_telescope` | 1.10 | the Deep Space Telescope global project (30,000 credits and 5,000 science at no faster than 3,000 days, so several runs) | Act 2: the `swarm_revealed` flag, the swarm's 100-year countdown, the Timeline view, the Experiment Lab | draft |
-| 1.a Big launch | `qbig_launch` (side) | the `speculators_seen` flag (beside 1.6) | one launch pays 1,000+ credits | Disrupt Speculators (also takes speculator Attention off) | draft |
-| 1.b Full cluster | `qfull_cluster` (side) | the `research_lab` flag (beside 1.7) | every item of one research category of 2+ items (not the Blueprints) bought in one run | placeholder: every run starts with 50 Science | draft |
-| 1.c Blueprints for everyone | `qblueprints_for_everyone` (side) | the `research_lab` flag (beside 1.9, when the Archive is offered) | the Blueprint Archive global project (placeholder: 500 credits, 200 science) | Basic and Advanced Blueprints count as bought at the start of every run | draft |
+| 1.1 Online | `qpower_boot_sequence` | game start | 2 Solar Panels | the Buy Science command and the research view (Basic Blueprints, 10 science, shows: the Excavator, Smelter, Launch Pad and Storage Depot; nothing asks for it) | aligned |
+| 1.2 First shipment | `qfirst_shipment` | 1.1 | one launch carrying 20+ titanium | its start grants 20 Propellant once a career; while it is active pads carry Titanium only, and a partial pad launches by hand from its card; done, Advanced Blueprints (20 science: Battery, Refinery, Fabricator) goes on sale | aligned |
+| 1.3 Full load | `qfull_load` | 1.2 | one launch carrying a full pad of He-3 | (teaches He-3, the claim's real export); Programming goes on sale (research, 200 science, bought once for the career: the Programs view, the full editor; programs, Add to Program and loadouts are open from day 1) | aligned |
+| 1.4 Processors | `qautomate_automation` | 1.3 | 2 Data Centers | the Launch Full Pads command; program logic (the `program_logic` flag at 2 working processors) | draft |
+| 1.5 Trade | `qtrade` | 1.4 | 1,500 credits from launches since the quest started (the career's launch pay, across retirements) | nothing. Speculators arrive on their own (Attention from units sold, [attention.md](rules/attention.md)) | draft |
+| 1.6 A voice | `qa_voice` | 1.5 | rank 5 on any ideology axis this run | on start, Geopolitical Intelligence (Fund, the Ideologies panel); done, Overclock Protocols | draft |
+| 1.7 Deep Space Telescope | `qdeep_space_telescope` | 1.6 | the Deep Space Telescope global project (30,000 credits and 5,000 science at no faster than 3,000 days, so several runs) | Act 2: the `swarm_revealed` flag, the swarm's 100-year countdown, the Timeline view, the Experiment Lab, the rivals | draft |
+| 1.a Big launch | `qbig_launch` (side) | the `speculators_seen` flag (beside 1.5) | one launch pays 1,000+ credits | for good: +10% launch pay (`shipment_credit_mult` ×1.1) | draft |
+| 1.b Full cluster | `qfull_cluster` (side) | the `research_lab` flag (beside 1.4) | 5 research items bought in one run | for good: every run starts with 50 Science | draft |
+| 1.c Blueprints for everyone | `qblueprints_for_everyone` (side) | the `retired` flag (beside 1.2, so it starts as the Archive is offered) | the Blueprint Archive global project (placeholder: 500 credits, 200 science) | (the Archive's effect: Basic and Advanced Blueprints bought at the start of every run while it counts as completed) | draft |
+| 1.d Three voices | `qthree_voices` (side) | 1.6 | career-best rank 5 on each axis, in any runs | for good: ideology decays half as fast in the retirement gap (`ideology_half_life_mult` ×2) | draft |
+
+**Silent unlocks** (one-off events, re-applied from day 0 of every later run once seen):
+
+| When | Event | Opens |
+|---|---|---|
+| the first Research Lab | `research_lab_built` (flag `research_lab`) | Regolith Processing, Programming, Process Telemetry |
+| the first retirement | `first_retirement` (flag `retired`) | the Projects panel and Foundation Grant, the first global projects (Blueprint Archive, Chemical Energy, Conditional Logic: opens `if`), Daydreaming and the boredom research, the Recreation Dome, the Retirement panel (voluntary retirement) |
+| speculators' arrival | `speculators_arrive` (flag `speculators_seen`) | the Adversaries panel, the Market Analysis research (Speculator Analysis opens Disrupt Speculators) |
+| rivals' arrival (Act 2) | `rivals_arrive` (flag `contest_claims`) | Contest Claims |
+
+**Burnout** is no quest: the first time boredom bites (its phase 2, once a career) the story
+event `boredom_bites` is a modal, and every forced retirement's summary modal says why the AI
+retired and that years passed. Boredom runs from day 1 with its meter shown. Act 1 has no
+calendar.
 
 Placeholder choices (049), all for Matt to keep or replace:
 
 - **Major ranks (rank 5).** Nationalist: speculator bursts stop landing. Humanist: Dream costs
   only its energy (no He-3). Rationalist: research bought in an earlier run is free. The ranks
   between scale as before.
-- **Techniques.** Anti-rival (1.10): *Contest Claims*, 500 credits and 10 energy, sets the
-  rivals' Attention to zero (the neutralize stub). Speculator disruption (1.a): the existing
-  *Disrupt Speculators*, now gated on 1.a instead of Market Awareness, also takes 20
-  speculator Attention off per execution.
+- **Techniques.** Speculator disruption: *Disrupt Speculators*, open once Speculator Analysis
+  is researched, takes 20 speculator Attention off per execution. Anti-rival (Act 2): *Contest
+  Claims*, 500 credits and 10 energy, sets the rivals' Attention to zero (the neutralize stub).
 - **Retirement.** A 5-year gap (1,825 days), simulated day by day, the same in every act and
   unseen in Act 1 (no calendar): ideology scores halve every 365 days (so a run starts with
-  about 3% of the last one's scores), Attention decays linearly. Retirement keeps loadouts,
-  bests and firsts, achievements, quests, global projects, ideology and adversaries.
+  about 3% of the last one's scores; every 730 with 1.d), Attention decays linearly. Retirement
+  keeps loadouts, bests and firsts, achievements, quests, global projects, ideology and
+  adversaries.
 - **Mapped onto what existed.** Self-Maintenance (the lesser boredom measure) is Stress
   Tolerance, in the research category of that name; Daydreaming is the renamed Dream
-  Protocols. Research categories are 1.b's clusters (Overclock Algorithms and Market Analysis
-  can be finished in Act 1; Self-Maintenance holds the draft Novelty Simulation, shown after
-  1.11; the Blueprints category is no cluster). Q2 First Extraction became an event, since
-  removed for 1.2 Blueprints (074); Q5 Market Awareness left the line (Market Awareness stays a
+  Protocols. Q2 First Extraction and Q5 Market Awareness left the line (Market Awareness stays a
   research item).
 
 **Achievement candidates** (performance tests, out of the quest line; achievements for them
 aren't built yet):
 
-- *Open Horizons* (was Q6): rank 5 on any axis, a global project, ten years in one run and
-  100,000 credits in one run.
-- *Signal Detected* (was Q7): a run of 300 days with no order from the player, only programs.
-  The `quiet_days` condition it used stays in the engine.
+- *Open Horizons*: rank 5 on any axis, a global project, ten years in one run and 100,000
+  credits in one run.
+- *Signal Detected*: a run of 300 days with no order from the player, only programs. The
+  `quiet_days` condition it used stays in the engine.
 
 ## Acts 2-4: unaligned with the design doc
 
 The 042 scaffolding: rough mechanics, placeholder numbers, art and text, kept running so the
 autopilot reaches the ending. **Unaligned with the design doc.** Act 2 starts when the
-Telescope (1.11) is finished.
+Telescope (1.7) is finished.
 
 **The swarm's clock.** Finishing the Telescope discovers the swarm and starts its countdown:
 placeholder 100 years (36,500 days), the same every timeline, pushed later only by carried

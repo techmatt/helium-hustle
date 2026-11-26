@@ -159,7 +159,8 @@ pub struct Directives {
     pub sustain: bool,
     /// Buy all visible research, not only [`RESEARCH`]: it differs from the
     /// plain author only on research outside that list (today Process
-    /// Telemetry, from 1.8, and the draft Novelty Simulation, after 1.11),
+    /// Telemetry, from the first Research Lab, and the draft Novelty
+    /// Simulation, after 1.7),
     /// since no open project holds
     /// research back (046).
     pub all_research: bool,

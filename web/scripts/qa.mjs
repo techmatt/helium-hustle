@@ -72,10 +72,10 @@ const NO_ART = [
 ];
 /** Run 1's speed: 50 by default; 3 plays it as a person would (about 3 minutes to a shipment). */
 const RUN1_SPEED = Number(process.env.HH_SPEED ?? 50);
-/** The quests while Programming is not yet on sale (it goes on sale when 1.4 completes). */
-const BEFORE_PROGRAMMING = ['qpower_boot_sequence', 'qblueprints', 'qfirst_shipment', 'qfull_load'];
+/** The quests while Programming is not yet on sale (it goes on sale when 1.3 completes). */
+const BEFORE_PROGRAMMING = ['qpower_boot_sequence', 'qfirst_shipment', 'qfull_load'];
 /** Pad `i`'s cargo pick: Helium-3 when its picker offers it, else the first good offered
- * (Titanium while 1.3 First Shipment allows only that). An expression to evaluate. */
+ * (Titanium while 1.2 First Shipment allows only that). An expression to evaluate. */
 const padGood = (i) =>
   `(() => { const o = [...document.querySelectorAll('.card.pad[data-pad="${i}"] select option')].map((x) => x.value).filter(Boolean); return o.includes('he3') ? 'he3' : o[0] ?? ''; })()`;
 const INPUT_MS = 300;
@@ -931,10 +931,10 @@ async function pass(seed, width, theme) {
 
     // Run 1, played from the screen: buildings in a fixed order, a program that sells
     // compute or buys what the next building lacks, loads and launches. e2e.mjs's
-    // playOpening is the other copy, kept apart on purpose: it stops at 1.4 and checks the
+    // playOpening is the other copy, kept apart on purpose: it stops at 1.3 and checks the
     // story on the way (its own ORDER, a full 20 / 100 cargo before a launch), where this
     // one plays on to look at screens (a longer ORDER, a launch at 10 cargo, but a full
-    // pad during 1.4 so Programming goes on sale, bought then to open the Programs view).
+    // pad during 1.3 so Programming goes on sale, bought then to open the Programs view).
     const ORDER = [
       ['solar_panel', 2], ['excavator', 1], ['smelter', 1], ['solar_panel', 3], ['excavator', 2],
       ['storage_depot', 1], ['solar_panel', 4], ['launch_pad', 1], ['solar_panel', 5], ['refinery', 1],
@@ -1011,7 +1011,7 @@ async function pass(seed, width, theme) {
       }
       const credits = s.res.credits ?? 0;
       let cmd = 'cloud_compute';
-      // Blueprints research (1.2, then the Refinery's) and Programming (on sale after 1.4),
+      // Blueprints research (1.2's, then the Refinery's) and Programming (on sale after 1.3),
       // bought with Buy Science (Programming opens the Programs view the pass looks at).
       const want = ['basic_blueprints', 'advanced_blueprints', 'programming'].find(
         (r) => s.nav.includes('research') && !doneResearch.has(r) && (r !== 'programming' || (!s.nav.includes('programs') && !!s.quest && !BEFORE_PROGRAMMING.includes(s.quest))),
@@ -1019,7 +1019,7 @@ async function pass(seed, width, theme) {
       if (want) {
         await panel('research');
         const r = await evaluate(`(() => { const c = document.querySelector('[data-testid="research-${want}"]'); return c ? { done: c.classList.contains('done'), can: c.classList.contains('can-buy') } : null; })()`);
-        // Not on sale yet (no card: Advanced Blueprints before 1.3 completes) is not done.
+        // Not on sale yet (no card: Advanced Blueprints before 1.2 completes) is not done.
         if (r?.done) doneResearch.add(want);
         else if (!r) {
           // fall through to the rest of the look
@@ -1034,13 +1034,13 @@ async function pass(seed, width, theme) {
       }
       if ((bs.launch_pad?.owned ?? 0) > 0) {
         await panel('launch_pads');
-        // A new pad has No cargo: pick Helium-3, or Titanium while 1.3 allows only that.
+        // A new pad has No cargo: pick Helium-3, or Titanium while 1.2 allows only that.
         if ((await evaluate(`document.querySelector('[data-pad="0"] select')?.value ?? null`)) === '') {
           await setValue('[data-pad="0"] select', await evaluate(padGood(0)));
           continue;
         }
-        // 1.4 Full Load (and Programming after it) wants a full pad of Helium-3: point the
-        // pad at it (1.3 left it on Titanium; a switch returns what is loaded) and hold the
+        // 1.3 Full Load (and Programming after it) wants a full pad of Helium-3: point the
+        // pad at it (1.2 left it on Titanium; a switch returns what is loaded) and hold the
         // launch until the pad is full and fuelled (Ready); otherwise launch at 10.
         const fullLoad = s.quest === 'qfull_load';
         if (fullLoad && (await evaluate(`document.querySelector('[data-pad="0"] select')?.value ?? 'he3'`)) !== 'he3' && (await evaluate(padGood(0))) === 'he3') {
@@ -1114,7 +1114,7 @@ async function pass(seed, width, theme) {
     await send('Emulation.setDeviceMetricsOverride', { width, height: HEIGHT, deviceScaleFactor: 1, mobile: false });
     await sleep(300);
     await capture('after-mashing');
-    // Programming (on sale since 1.4) opens the Programs view, which the scenarios' probes
+    // Programming (on sale since 1.3) opens the Programs view, which the scenarios' probes
     // use: if run 1 did not buy it, the debug menu grants science and it is bought here.
     if (!(await exists('.nav-tile[data-nav="programs"]'))) {
       await panel('options');
@@ -1125,7 +1125,7 @@ async function pass(seed, width, theme) {
       await click('#cheat-grant', 'grant science');
       await panel('research');
       if (await exists('[data-testid="research-programming"]')) await click('[data-testid="research-programming"]', 'research programming');
-      if (!(await exists('.nav-tile[data-nav="programs"]'))) note('input', 'run 2: Programming could not be bought (1.4 not reached in run 1?)');
+      if (!(await exists('.nav-tile[data-nav="programs"]'))) note('input', 'run 2: Programming could not be bought (1.3 not finished in run 1?)');
       await capture('programming-bought');
     }
     // Programs (the right column, from day 1): move the processor to Program 2, build it a
@@ -1220,8 +1220,8 @@ async function pass(seed, width, theme) {
     const n = await evaluate(`document.getElementById('notice')?.textContent ?? ''`);
     if (!/^Replay ok/.test(n)) note('console', `replay check: ${n}`);
     await capture('replay-check');
-    // With cheats, on this career (its quests far enough along for research to open
-    // Projects and Ideologies): the late panels with science to spend.
+    // With cheats, on this career (retired once, so Projects is open): the late panels
+    // with science to spend.
     await panel('options');
     if (!(await exists('#cheats-toggle'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
     if (!(await exists('[data-testid="cheats"]'))) await click('#cheats-toggle', 'cheats');
@@ -1246,7 +1246,7 @@ async function pass(seed, width, theme) {
       if (await exists(`[data-testid="buy-${id}"].can-buy`)) await click(`[data-testid="buy-${id}"]`, `buy ${id}`);
       await grant();
     }
-    // A career without a Research Lab yet (Projects opens with it): the debug autopilot's
+    // A career without the Projects tile yet (it opens at the first retirement): the debug autopilot's
     // "Next quest step" plays it on, a step at a time; each step must finish and move the quest.
     for (let step = 0; step < 10 && !(await exists('.nav-tile[data-nav="projects"]')); step++) {
       await panel('options');
@@ -1314,7 +1314,7 @@ async function pass(seed, width, theme) {
     try {
       await waitFor(`!!document.querySelector('[data-testid="summary"]')`, 'the forced retirement', 15000);
       const said = await evaluate(`document.querySelector('[data-testid="summary"]').textContent`);
-      if (!/Boredom reached its cap/.test(said)) note('text', `forced retirement summary: ${said.slice(0, 80)}`);
+      if (!/boredom filled.*Years passed/.test(said)) note('text', `forced retirement summary: ${said.slice(0, 80)}`);
       const d = await day();
       await sleep(700);
       if ((await day()) !== d || (await run()) !== runBefore + 1) note('input', `forced retirement: day ${d} -> ${await day()}, run ${runBefore} -> ${await run()}`);

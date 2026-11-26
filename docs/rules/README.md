@@ -1,6 +1,6 @@
 # Rules
 
-The rules as implemented, rules revision **32** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **33** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
 The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
@@ -78,7 +78,7 @@ the page of the module that takes them (`crates/hh-core/src/action.rs` has them 
 ## Content
 
 `content/*.json`, embedded in `hh-core`: resources (16), buildings (20), commands (23),
-research (17), events (33: twenty-two the quest chain, three side quests), projects (15),
+research (17), events (34: nineteen the quest chain, four side quests), projects (15),
 achievements (6), rivals (4), Earth techs (6, `earth_tech.json`), and two display-only
 files: the UI's nav tiles (`nav.json`, 18: when each panel's tile shows) and the acts
 (`acts.json`, 4: each act's name and the chain quest it opens with, [events.md](events.md)). Act 1's beats are draft from
@@ -133,7 +133,7 @@ A modifier key's value is the product of every live source naming it, 1 with non
 | `speculator_burst_interval_mult` | Speculator Dossier (Strategic) | days between speculator bursts |
 | `land_cost_mult` | Lunar Cartography (global; unreachable) | land price |
 | `storage_cap_mult` | Silicon Valley (achievement) | every cap but energy's (and boredom's) |
-| `shipment_credit_mult` | First Profit (achievement) | shipment payouts |
+| `shipment_credit_mult` | First Profit (achievement), 1.a Big Launch (side quest) | shipment payouts |
 | `cargo_capacity_mult` | Bulk Shipper (achievement) | cargo loaded per Load |
 | `demand_ceiling` | Market Timer (achievement) | the demand ceiling |
 | `buy_power_mult` | career peak power ([career.md](career.md)) | Buy Power's cost and output |
@@ -141,6 +141,7 @@ A modifier key's value is the product of every live source naming it, 1 with non
 | `ideology_cross_mult` | Consensus Engine (Earth tech, draft) | Fund's cross-penalty on the other axes |
 | `science_output_mult` | Deep Space Telescope (global) | Research Lab output |
 | `nationalist_growth_mult` | Deep Space Telescope (global) | a Fund Nationalist's push to its own axis |
+| `ideology_half_life_mult` | 1.d Three Voices (side quest) | the retirement gap's ideology half-life ([ideology.md](ideology.md)) |
 
 A building lists the keys that multiply its output (`output_modifiers`); a command its
 `scale_modifier`. Achievement and `forever` project rewards apply from the moment they are

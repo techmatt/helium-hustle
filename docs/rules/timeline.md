@@ -2,12 +2,12 @@
 
 **Draft (042).** Acts 2 and 3 as a rough, playable sketch: placeholder mechanics, numbers and
 text, for Matt to keep, cut or rewrite, unaligned with the design doc. The story they serve
-is [../arc.md](../arc.md). Nothing here runs before the swarm's reveal (quest 1.11), so Act 1
+is [../arc.md](../arc.md). Nothing here runs before the swarm's reveal (quest 1.7), so Act 1
 doesn't see it.
 
 ## Rules
 
-**The reveal and the calendar.** Act 1's last beat, quest 1.11 Deep Space Telescope, completes
+**The reveal and the calendar.** Act 1's last beat, quest 1.7 Deep Space Telescope, completes
 when the Deep Space Telescope global project first does ([events.md](events.md)). It sets the career
 flag `swarm_revealed`, opens the Timeline panel and the Experiment Lab, and Act 2 begins;
 all of that stays for the career. The Telescope itself is a `timeline` project: a timeline's
@@ -18,7 +18,7 @@ calendar. The draft `quiet_days` condition (days this run since
 the player's last order, `Run.last_order`: the run's day of the last applied action other than
 a cheat; programs don't count) stays in the engine; no row uses it.
 
-**The discovery is career-long.** The countdown starts the day 1.11 first completes; before
+**The discovery is career-long.** The countdown starts the day 1.7 first completes; before
 that no day and no retirement counts and no calendar shows, so a player who never finishes
 the Telescope never reaches a timeline's end. From then on every timeline's countdown (a super
 timeline's too) runs from that timeline's first day and the swarm arrives on schedule,
@@ -73,7 +73,7 @@ super timeline. Inside one, each retirement keeps `super_carry` fractions of tho
 for the next run.
 
 **Distract** (content, plus one rule in programs): the Novelty Simulation research (shown
-once quest 1.11 is done) opens a
+once quest 1.7 is done) opens a
 command whose flat boredom is −10, so each run takes 10 boredom off (never below zero) for 200
 credits; like an effect command it needs its full cost.
 
@@ -87,7 +87,7 @@ credits; like an effect command it needs its full cost.
 <!-- params:timeline -->
 | Param | Baseline | Range | Meaning |
 |---|---|---|---|
-| `arrival_days` | 36500 | 1 to 10000000 | Countdown days to the swarm's arrival, from its discovery (1.11) in timeline 1 and from the first day in each later one, before delays. |
+| `arrival_days` | 36500 | 1 to 10000000 | Countdown days to the swarm's arrival, from its discovery (1.7) in timeline 1 and from the first day in each later one, before delays. |
 | `arrival_days_per_science` | 0.05 | 0 to 1000 | Days of delay per unit of Earth science carried into a timeline. |
 | `entangle_mult` | 1.5 | 1 to 100 | The swarm's strength once it learns entanglement (after the first false victory). |
 | `repel_science` | 3000 | 0 to 100000000 | Earth science made this timeline that repels the swarm once. |

@@ -251,9 +251,9 @@ fn read_loadout(path: &str) -> Result<String, String> {
 
 /// Every sim player's fixed hand on pads (the golden script, `hh_core::driver`,
 /// keeps its own, deliberately unlike this one; see its comment there): a No-cargo pad carries the first
-/// good a pad may carry now (`pad_goods`: Titanium during 1.3, then the
+/// good a pad may carry now (`pad_goods`: Titanium during 1.2, then the
 /// loading priority's first, He-3 at baseline), and so does an empty first pad
-/// on another good (1.3's Titanium pad turns to He-3 after it), as
+/// on another good (1.2's Titanium pad turns to He-3 after it), as
 /// `driver.rs`'s script does. Player strategy, not a rule (docs/agents.md).
 pub fn pick_cargo(p: &mut Player) {
     let v = p.view();
@@ -270,9 +270,9 @@ pub fn pick_cargo(p: &mut Player) {
     }
 }
 
-/// Before Launch Full Pads opens (1.5 Processors), a player launches pads by
+/// Before Launch Full Pads opens (1.4 Processors), a player launches pads by
 /// hand from their cards: a full one, or one carrying what the active
-/// `launch_cargo` quest asks for (1.3's 20 titanium). Player strategy.
+/// `launch_cargo` quest asks for (1.2's 20 titanium). Player strategy.
 pub fn hand_launch(p: &mut Player) {
     let v = p.view();
     if command_unlocked(v, "launch_pads") {

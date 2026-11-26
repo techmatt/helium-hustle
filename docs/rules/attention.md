@@ -1,8 +1,8 @@
 # Attention (module `attention`, variant `minimal`): DRAFT
 
-**Draft (049).** The minimal Attention model that brings Act 1's adversaries in: the
-speculators (who arrive on their own, no quest asks for them) and the rival AIs (1.10). Thresholds, drivers and decay are
-placeholders ([../arc.md](../arc.md)).
+**Draft (049).** The minimal Attention model that brings the adversaries in: the
+speculators, Act 1's (who arrive on their own, no quest asks for them), and the rival AIs,
+Act 2's. Thresholds, drivers and decay are placeholders ([../arc.md](../arc.md)).
 
 ## Rules
 
@@ -14,7 +14,7 @@ retirement gap ([career.md](career.md)). A timeline's end clears it (draft,
 | Adversary | Driver | Rises by |
 |---|---|---|
 | speculators | units sold | each launch's cargo × `speculator_per_unit` |
-| rivals | land claimed | each Buy Land's land (`land_per_purchase`) × `rival_per_land`, by hand or program |
+| rivals | land claimed | each Buy Land's land (`land_per_purchase`) × `rival_per_land`, by hand or program, once the career flag `swarm_revealed` is set (Act 2, quest 1.7 done; `attention::RIVALS_FROM_FLAG`); none before |
 
 **Decay.** Each day, before demand is set ([the day](README.md#the-day), step 4, inside
 demand's update), each adversary loses its `*_decay` (linear), floored at 0. Each day of the
@@ -29,14 +29,16 @@ retirement gap does the same.
   the land price is multiplied by `rival_land_price_mult` ([economy.md](economy.md)).
 
 **Techniques.** The *neutralize* stub sets an adversary's Attention to 0: the Contest Claims
-command (effect `neutralize`, adversary `rivals`; open once beat 1.10 sets its flag) runs it.
-Disrupt Speculators (open once side quest 1.a sets its flag) also takes `disrupt_attention`
-off the speculators' Attention per execution ([demand.md](demand.md)).
+command (effect `neutralize`, adversary `rivals`; open once the silent `rivals_arrive` sets
+the career flag `contest_claims`) runs it. Disrupt Speculators (open while research
+Speculator Analysis is bought) also takes `disrupt_attention` off the speculators' Attention
+per execution ([demand.md](demand.md)).
 
 **Events.** The `adversary_present` condition holds while the adversary is present
-([events.md](events.md)): beat 1.10's, and the silent one-off `speculators_arrive`, which the
-first time speculators are present sets the career flag `speculators_seen` (side quest 1.a's
-trigger, Speculator Analysis's visibility) and opens the `adversaries` panel.
+([events.md](events.md)). Two silent one-offs read it: `rivals_arrive`, the first time rivals
+are present, sets `contest_claims`; `speculators_arrive`, the first time speculators are
+present, sets the career flag `speculators_seen` (side quest 1.a's trigger, the Market
+Analysis research's visibility) and opens the `adversaries` panel.
 
 **Display.** The view's `adversaries` gives each adversary's Attention, threshold and
 presence (the Adversaries panel). Nothing upcoming is telegraphed (UI only): the Speculators
@@ -65,4 +67,4 @@ None of its own: Contest Claims and Disrupt Speculators are commands run by prog
 ## Content
 
 `content/commands.json`: Contest Claims (`neutralize`), Disrupt Speculators.
-`content/events.json`: the `adversary_present` conditions of `speculators_arrive` and 1.10.
+`content/events.json`: the `adversary_present` conditions of `speculators_arrive` and `rivals_arrive`.

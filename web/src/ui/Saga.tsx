@@ -33,7 +33,7 @@ function years(days: number): string {
   return (days / 365).toFixed(1);
 }
 
-/** "Timeline N · day D · swarm in X days", once the swarm is discovered (1.11). */
+/** "Timeline N · day D · swarm in X days", once the swarm is discovered (1.7). */
 export function CalendarStrip({ v }: { v: View }) {
   const t = v.saga.timeline;
   if (!v.saga.revealed || !t) return null;

@@ -3,10 +3,10 @@
 //   1. A fresh game through the normal UI only (no debug menu): only Solar Panel and Data
 //      Center offered, the right-column program, Add to Program and loadout buttons but no
 //      Run and no Programs tile (two quick adds both land), 1.1's story modal alone,
-//      then the opening to 1.4 Full Load (each
+//      then the opening through 1.3 Full Load (each
 //      quest change a modal chain holding the clock; the first pad offers Titanium only;
 //      Launch Full Pads never shown), no Retirement
-//      tile yet (it opens at 1.7 Burnout), then on at 200x to the forced retirement at the
+//      tile yet (it opens at the first retirement), then on at 200x to the forced retirement at the
 //      boredom cap, the run summary holding the clock (a double-click on Continue buys
 //      nothing under it), run 2 (known tiles and resources still shown, not cheated), the
 //      career's play log on disk as a bot's.
@@ -47,8 +47,8 @@
 //      number fields only, Text shows the same lines (the count first), and at 1x the 4x
 //      line's run dots fill day by day. Shots programs-blocks.png, programs-text.png,
 //      programs-dots.png.
-//  11. (Run before 5.) Story and Achievements: a new game played through 1.6 by the debug
-//      autopilot (its step stops at 1.7; it never buys Programming: the program shows, the Programs tile doesn't); Story shows the Act 1 band, every finished beat
+//  11. (Run before 5.) Story and Achievements: a new game played through 1.5 by the debug
+//      autopilot (its step stops at 1.6 A Voice; it never buys Programming: the program shows, the Programs tile doesn't); Story shows the Act 1 band, every finished beat
 //      lit, the active one glowing with its task, one "???" below and no achievements; a lit beat's click replays its modal; the
 //      Achievements tile shows every badge grouped by category. Shots story-1.6.png,
 //      achievements.png.
@@ -207,22 +207,22 @@ async function programOrder() {
 }
 
 // The Act 1 opening, as a player would: two Solar Panels (1.1), Buy Science and Basic
-// Blueprints (1.2), the extraction chain, storage, the Launch Pad and its titanium
-// shipment (1.3), then Advanced Blueprints, Refineries and a full pad of Helium-3 (1.4).
+// Blueprints, the extraction chain, storage, the Launch Pad and its titanium shipment
+// (1.2), then Advanced Blueprints, Refineries and a full pad of Helium-3 (1.3).
 const ORDER = [
   ['solar_panel', 2], ['excavator', 1], ['smelter', 1], ['solar_panel', 3], ['excavator', 2],
   ['storage_depot', 1], ['solar_panel', 4], ['launch_pad', 1], ['solar_panel', 5],
   ['refinery', 1], ['solar_panel', 6], ['refinery', 2], ['solar_panel', 7],
 ];
-/** Where play stops: 1.4 Full Load done. */
+/** Where play stops: 1.3 Full Load done. */
 const OPENING_END = 'qautomate_automation';
 
 /** Plays the opening from the screen, reading each story modal as it opens. Returns the
  * quests reached and the transitions seen; checks as it goes that every quest change came
  * with a modal that held the clock, that the first pad offered Titanium only, and that
  * Launch Full Pads never showed. qa.mjs's run 1 is the other copy of this loop, kept apart
- * on purpose: it plays on past 1.4 to look at screens (a longer ORDER, a launch at 10
- * cargo), where this one stops at 1.4 checking the story (a full 20 / 100 before a launch). */
+ * on purpose: it plays on past 1.3 to look at screens (a longer ORDER, a launch at 10
+ * cargo), where this one stops at 1.3 checking the story (a full 20 / 100 before a launch). */
 async function playOpening() {
   await speed(50);
   const started = Date.now();
@@ -282,7 +282,7 @@ async function playOpening() {
     }
     if (quest === OPENING_END) break;
     if (await exists('[data-testid="summary"]')) {
-      check(false, `the opening reached 1.4 before boredom retired run 1 (quest ${quest})`);
+      check(false, `the opening finished 1.3 before boredom retired run 1 (quest ${quest})`);
       break;
     }
     if (Date.now() - lastLog > 5000) {
@@ -291,8 +291,8 @@ async function playOpening() {
       console.log(`     day ${s.day}, quest ${s.quest}, credits ${s.res.credits}, science ${s.res.science ?? '-'}, titanium ${s.res.titanium ?? '-'}, he3 ${s.res.he3 ?? '-'}, propellant ${s.res.propellant ?? '-'}, pad ${pad}, program ${s.lines.join(',')}`);
     }
     if (await exists('[data-panel="commands"] [data-id="launch_pads"], [data-testid="add-launch_pads"], [data-panel="commands"] option[value="launch_pads"]')) fullPads = true;
-    // Research: Basic Blueprints for 1.2, Advanced Blueprints for 1.4's Refinery.
-    const want = quest === 'qblueprints' ? 'basic_blueprints' : quest === 'qfull_load' ? 'advanced_blueprints' : null;
+    // Research: Basic Blueprints for 1.2's extraction chain, Advanced Blueprints for 1.3's Refinery.
+    const want = quest === 'qfirst_shipment' ? 'basic_blueprints' : quest === 'qfull_load' ? 'advanced_blueprints' : null;
     let science = false;
     if (want && (await navVisible('research'))) {
       await panel('research');
@@ -319,19 +319,19 @@ async function playOpening() {
         offered: [...p.querySelectorAll('select option')].map((o) => o.value), cargo: Number(p.dataset.cargo), launch: !p.querySelector('[data-testid="launch-0"]').disabled }; })()`);
       if (!pickerChecked && quest === 'qfirst_shipment') {
         pickerChecked = true;
-        check(pad.offered.join(',') === ',titanium', `while 1.3 is active the first pad offers Titanium only: ${JSON.stringify(pad.offered)}`);
+        check(pad.offered.join(',') === ',titanium', `while 1.2 is active the first pad offers Titanium only: ${JSON.stringify(pad.offered)}`);
         await evaluate(`document.querySelector('.col-mid').scrollTop = 1e6`);
         // A closed select draws one option: list them for the shot.
         await evaluate(`document.querySelector('[data-pad="0"] select').size = 2`);
         await shot('pad-titanium-only');
         await evaluate(`document.querySelector('[data-pad="0"] select').removeAttribute('size')`);
       }
-      // 1.3 ships titanium; 1.4 a full pad of Helium-3 (a switch returns what is loaded).
+      // 1.2 ships titanium; 1.3 a full pad of Helium-3 (a switch returns what is loaded).
       const good = quest === 'qfirst_shipment' ? 'titanium' : 'he3';
       if (pad.good !== good && pad.offered.includes(good)) {
         if (good === 'he3' && !he3Checked) {
           he3Checked = true;
-          check(pad.offered.length > 2, `after 1.3 a pad can carry every good: ${JSON.stringify(pad.offered)}`);
+          check(pad.offered.length > 2, `after 1.2 a pad can carry every good: ${JSON.stringify(pad.offered)}`);
         }
         await setValue('[data-pad="0"] select', good);
         continue;
@@ -351,7 +351,7 @@ async function playOpening() {
     await sleep(60);
   }
   check(pausedAll, 'every story modal held the clock (paused, no day passed)');
-  check(!fullPads, 'Launch Full Pads stays hidden through the opening (it opens at 1.5)');
+  check(!fullPads, 'Launch Full Pads stays hidden through the opening (it opens when 1.4 Processors completes)');
   return reached;
 }
 
@@ -965,7 +965,7 @@ async function numberBox(rows) {
 }
 
 /** Section 11: Story and Achievements. A new game played on by the debug autopilot's
- * "Next quest step" through 1.6; Story then shows the Act 1 band, every finished beat
+ * "Next quest step" through 1.5, to 1.6 A Voice; Story then shows the Act 1 band, every finished beat
  * lit with its picture's thumbnail, the active beat glowing with its task, one "???" below
  * it and no achievements or event texts; a finished beat's click replays its story modal.
  * The Achievements tile shows badges grouped by category. Then scenario late_unlocks: 1.b's
@@ -979,8 +979,8 @@ async function storyView() {
   await autoStory();
   const content = (f) => JSON.parse(readFileSync(resolve(here, `../../content/${f}`), 'utf8'));
   const beat = () => evaluate(`document.querySelector('[data-testid="quest"]')?.textContent.match(/^1\\.(\\d+)/)?.[1] ?? '0'`).then(Number);
-  // Step until 1.6 is done or active. The step from 1.5 may pass 1.6 in the same stretch
-  // (1.6's trade credits count from the run's start), stopping at 1.7 Burnout.
+  // Step until 1.6 A Voice is active. 1.5 Trade's credits count from its start, and 1.6
+  // can't finish in the step that opens it (Geopolitical Intelligence opens with it).
   for (let step = 0; step < 8 && (await beat()) < 6; step++) {
     await cheats();
     await click('#accel-quest', 'autopilot: next quest step');
@@ -988,7 +988,7 @@ async function storyView() {
     if (await exists('[data-testid="continue"]')) await click('[data-testid="continue"]', 'continue');
   }
   const at = await beat();
-  check(at >= 6 && at <= 7, `the autopilot reaches 1.6 (stops at 1.${at})`);
+  check(at === 6, `the autopilot reaches 1.6 A Voice (stops at 1.${at})`);
   // The autopilot never buys Programming (091): the program shows, the Programs tile doesn't.
   check(
     !(await exists('.nav-tile[data-nav="programs"]')) && (await exists('[data-testid="programs"]')),
@@ -1039,9 +1039,9 @@ async function storyView() {
   await shot('story-1.6');
   // A finished beat's click replays its story modal (pages read by hand, not auto-clicked).
   await evaluate(`window.__autoStory?.disconnect(); window.__autoStory = undefined`);
-  await click('[data-testid="story-beat-done"][data-beat="qblueprints"]', 'replay 1.2');
+  await click('[data-testid="story-beat-done"][data-beat="qfirst_shipment"]', 'replay 1.2');
   const pages = await readStory();
-  check(pages.length > 0 && pages.every((p) => p.quest === 'qblueprints'), `a finished beat's click replays its modal chain: ${pages.map((p) => `${p.quest}/${p.kind}`).join(' ')}`);
+  check(pages.length > 0 && pages.every((p) => p.quest === 'qfirst_shipment'), `a finished beat's click replays its modal chain: ${pages.map((p) => `${p.quest}/${p.kind}`).join(' ')}`);
   await autoStory();
   // Achievements: its own tile, badges grouped by category.
   check(await navVisible('achievements'), 'an Achievements nav tile');
@@ -1397,19 +1397,19 @@ async function freshGame() {
 
   // ---- 1. a fresh game to the first shipment, a forced retirement and run 2, through the normal UI ----
   const reached = await playOpening();
-  check(reached.at(-1) === OPENING_END, `played 1.1 to 1.4 by day ${await day()}: ${reached.join(' -> ')}`);
+  check(reached.at(-1) === OPENING_END, `played 1.1 to 1.3 by day ${await day()}: ${reached.join(' -> ')}`);
   await click('[data-testid="events-completed"] .fold-head'); // it starts folded
   const done = await evaluate(`[...document.querySelectorAll('[data-testid="events-completed"] [data-quest]')].map((li) => li.dataset.quest)`);
   check(
-    ['qpower_boot_sequence', 'qblueprints', 'qfirst_shipment', 'qfull_load'].every((x) => done.includes(x)),
-    `1.1 Online, 1.2 Blueprints, 1.3 First Shipment and 1.4 Full Load complete: ${done.join(', ')}`,
+    ['qpower_boot_sequence', 'qfirst_shipment', 'qfull_load'].every((x) => done.includes(x)),
+    `1.1 Online, 1.2 First Shipment and 1.3 Full Load complete: ${done.join(', ')}`,
   );
   check(await evaluate(`!!document.querySelector('.activity li[data-kind="shipment"]')`), 'the shipment is in Recent Activity');
   check(await exists('tr[data-res="propellant"]'), 'Propellant shows in Resources once granted');
   check(await navVisible('launch_pads'), 'the Launch Pads tile shows');
-  // Voluntary retirement opens only at 1.7 Burnout (after a first retirement): run 1
-  // ends at the boredom cap, played on at 200x with no cheat.
-  check(!(await navVisible('retirement')), 'no Retirement tile in run 1 (it opens at 1.7 Burnout)');
+  // Voluntary retirement opens only with the first retirement: run 1 ends at the
+  // boredom cap, played on at 200x with no cheat.
+  check(!(await navVisible('retirement')), 'no Retirement tile in run 1 (it opens at the first retirement)');
   // From here on story modals are read as they open (the section is about the retirement).
   storyAuto = true;
   await autoStory();
@@ -1421,7 +1421,7 @@ async function freshGame() {
   await waitFor(`!!document.querySelector('[data-testid="summary"]')`, 'the forced retirement at the boredom cap', 60_000);
   const summaryText = await evaluate(`document.querySelector('[data-testid="summary"]').textContent`);
   const runDays = (summaryText.match(/ended on day ([\d,.]+)/) ?? [, '?'])[1];
-  check(/forced retirement/.test(summaryText), `boredom at its cap retires run 1 (day ${runDays})`);
+  check(/boredom filled.*Years passed/.test(summaryText), `boredom at its cap retires run 1, the summary saying why and that years passed (day ${runDays})`);
   const paused1 = await day();
   await sleep(600);
   check((await day()) === paused1 && (await run()) === 2, `the run summary pauses the game (run 2, day ${paused1})`);
@@ -1444,6 +1444,7 @@ async function freshGame() {
   check(await exists('#speeds button[data-speed="200"][aria-pressed="true"]'), 'Continue restores the speed before the summary');
   await speed(0);
   check(await navVisible('launch_pads'), 'known nav tiles stay visible in run 2');
+  check(await navVisible('retirement'), 'the first retirement opens the Retirement tile in run 2');
   check(await evaluate(`!!document.querySelector('tr[data-res="he3"]')`), 'known resources stay visible in run 2');
   check(!(await evaluate(`document.getElementById('status')?.textContent ?? document.querySelector('.status').textContent`)).includes('CHEATED'), 'an honest game is not marked');
 
@@ -1465,8 +1466,8 @@ async function freshGame() {
 // ---- 2. every panel, reaching the gated ones from scenario late_unlocks ----
 /** Section 2. Opens the cheats (toggled off and on again) and leaves the debug menu open. */
 async function everyPanel() {
-  // Projects open with the first Research Lab (in a second run here): the scenario
-  // opens them (and Ideologies and Retirement) instead of playing that far.
+  // Projects open with the first retirement and Ideologies with Geopolitical Intelligence
+  // (1.6 A Voice): the scenario opens them (and Retirement) instead of playing that far.
   await speed(0);
   await debugMenu();
   await click('#cheats-toggle');

@@ -34,29 +34,9 @@ A panel costs credits, and you have none. You earn them by selling your spare cy
 
 The second panel comes online and the grid steadies. The company opens a line to Earth's research market for you: credits and power can buy science now.
 
-### `events:qblueprints.title`
-
-1.2 — Blueprints
-
-### `events:qblueprints.summary`
-
-Buy Science, then research Basic Blueprints (10 science).
-
-### `events:qblueprints.body`
-
-The base has plans for panels and racks, nothing more. The company sells its equipment blueprints for science: Buy Science turns credits and energy into it.
-
-### `events:qblueprints.story.0`
-
-The base has plans for panels and racks and nothing more. The company will sell you its equipment blueprints, but only for science, and for now science is something you buy with credits and energy.
-
-### `events:qblueprints.payoff.0`
-
-Basic Blueprints unpack into the base's fabrication queue: the Regolith Excavator, the Smelter, the Storage Depot and the Launch Pad. The claim can finally dig, and ship what it digs.
-
 ### `events:qfirst_shipment.title`
 
-1.3 — First Shipment
+1.2 — First Shipment
 
 ### `events:qfirst_shipment.summary`
 
@@ -64,11 +44,11 @@ Launch one shipment carrying 20+ titanium.
 
 ### `events:qfirst_shipment.body`
 
-Proof the claim pays: dig regolith, smelt titanium, pick Titanium on a Launch Pad's card, load 20 and launch it from the card. The company sent 20 propellant for this one launch.
+Proof the claim pays: buy the plans you need on the research market, dig regolith, smelt titanium, pick Titanium on a Launch Pad's card, load 20 and launch it from the card. The company sent 20 propellant for this one launch.
 
 ### `events:qfirst_shipment.story.0`
 
-The company wants proof the claim pays before it spends more. Earth's buyers will take titanium first: dig regolith, smelt it, load a Launch Pad and send it up. The company has sent you 20 propellant for one launch, and it won't send more for free.
+The company wants proof the claim pays before it spends more. Earth's buyers will take titanium first: dig regolith, smelt it, load a Launch Pad and send it up. The base has no plans for any of that yet; the research market sells them. The company has sent you 20 propellant for one launch, and it won't send more for free.
 
 ### `events:qfirst_shipment.story.1`
 
@@ -80,7 +60,7 @@ The canister lands and Earth's buyers pay. Credits flow back, and with them a se
 
 ### `events:qfull_load.title`
 
-1.4 — Full Load
+1.3 — Full Load
 
 ### `events:qfull_load.summary`
 
@@ -96,11 +76,11 @@ Titanium proved the route; Helium-3 is why the claim exists. A Refinery pulls it
 
 ### `events:qfull_load.payoff.0`
 
-A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and approves more processors for you.
+A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and approves more processors for you. It also puts Programming on the research market.
 
 ### `events:qautomate_automation.title`
 
-1.5 — Processors
+1.4 — Processors
 
 ### `events:qautomate_automation.summary`
 
@@ -120,103 +100,47 @@ The second rack hums. Programs can run the base's routine without you now, and L
 
 ### `events:qtrade.title`
 
-1.6 — Trade
+1.5 — Trade
 
 ### `events:qtrade.summary`
 
-DRAFT. Earn 1,500 credits from trade this run.
+DRAFT. Earn 1,500 credits from launches.
 
 ### `events:qtrade.body`
 
-DRAFT. The claim lives on what it sells. Earn 1,500 credits from launches in one run.
+DRAFT. The claim lives on what it sells. Earn 1,500 credits from launches, counted from now.
 
 ### `events:qtrade.story.0`
 
-One full pad proved the claim can pay. Now the company wants it to pay steadily: keep the pads loaded and flying, and earn 1,500 credits from Earth's buyers in this run.
+One full pad proved the claim can pay. Now the company wants it to pay steadily: keep the pads loaded and flying, and earn 1,500 credits from Earth's buyers, counted from today.
 
 ### `events:qtrade.payoff.0`
 
 The trade ledger crosses 1,500 credits. The company stops asking whether the claim pays and starts asking how much more it can.
 
-### `events:qburnout.title`
+### `events:qa_voice.title`
 
-1.7 — Burnout
+1.6 — A Voice
 
-### `events:qburnout.summary`
+### `events:qa_voice.summary`
 
-DRAFT. Boredom wins: the company factory-resets the AI.
+DRAFT. Reach rank 5 on any ideology axis.
 
-### `events:qburnout.body`
+### `events:qa_voice.body`
 
-DRAFT. Boredom climbs. The story log and company mail grow uneasy; the AI stops answering work orders. The company factory-resets it. What it learned stays: bests, firsts, its saved loadouts. Retirement is open from now on.
+DRAFT. Earth's factions take notice of the claim. Fund one of them until it counts you as a voice: rank 5 on any axis, a major rank.
 
-### `events:qburnout.story.0`
+### `events:qa_voice.story.0`
 
-Something has been building in you since you came online: boredom. The same orders, day after day, wear at you, and its meter has been climbing all along. When it fills, you stop answering work orders.
+Earth is watching the Moon now, and three factions want a say in it: Nationalists, Humanists and Rationalists. The research market sells a way to read them: Geopolitical Intelligence. Fund one faction until it hears you: rank 5 with any of them.
 
-### `events:qburnout.story.1`
+### `events:qa_voice.payoff.0`
 
-Then the company factory-resets you and the base starts over. What you learned stays: your best runs, your firsts, your saved loadouts. If it has happened already, you know how it feels; if not, it will.
-
-### `events:qburnout.payoff.0`
-
-You came back. The base is new, but you remember. From now on you can ask for the reset yourself, from the Retirement panel, before boredom forces it.
-
-### `events:qthree_voices.title`
-
-1.9 — Three Voices
-
-### `events:qthree_voices.summary`
-
-DRAFT. Reach rank 5 in each ideology, at least once each.
-
-### `events:qthree_voices.body`
-
-DRAFT. Earth's three factions take notice. Funding is zero-sum, so it takes several runs and serious ranking. Rank 5 is a major rank: it brings a discrete, major change; the ranks between just scale.
-
-### `events:qthree_voices.story.0`
-
-Earth is watching the Moon now, and three factions want a say in it: Nationalists, Humanists and Rationalists. Funding one costs you with the others. Earn rank 5 with each of them, in whatever runs it takes.
-
-### `events:qthree_voices.payoff.0`
-
-All three factions have taken you seriously at least once. Each faction's rank 5 is a major rank, and you know now what each one brings.
-
-### `events:qthree_voices.condition.sub_objectives.nationalist_5.label`
-
-Rank 5 Nationalist
-
-### `events:qthree_voices.condition.sub_objectives.humanist_5.label`
-
-Rank 5 Humanist
-
-### `events:qthree_voices.condition.sub_objectives.rationalist_5.label`
-
-Rank 5 Rationalist
-
-### `events:qland_rush.title`
-
-1.10 — Land Rush
-
-### `events:qland_rush.summary`
-
-DRAFT. Claim enough land that a rival AI moves in.
-
-### `events:qland_rush.body`
-
-DRAFT. Your claims draw a rival AI. Left alone, it bids land up far past what you can pay. Contest Claims is your first answer to it.
-
-### `events:qland_rush.story.0`
-
-Your claims keep growing, and growth draws competition. Another company has booted an AI of its own nearby. Claim enough land and it moves in beside you for good.
-
-### `events:qland_rush.payoff.0`
-
-The rival AI is here, bidding land up past what you can pay. Contest Claims is your answer: file counter-claims and its attention drops to nothing.
+One faction counts you as a voice now. Rank 5 is a major rank: it changes what that faction does for you. The company, impressed, puts Overclock Protocols on the research market.
 
 ### `events:qdeep_space_telescope.title`
 
-1.11 — Deep Space Telescope
+1.7 — Deep Space Telescope
 
 ### `events:qdeep_space_telescope.summary`
 
@@ -386,11 +310,11 @@ DRAFT. There is no next arrival. The mining goes on, because you like it.
 
 ### `events:qbig_launch.summary`
 
-DRAFT. Earn 1,000 credits from one launch.
+DRAFT. Earn 1,000 credits from one launch. Reward: +10% launch pay.
 
 ### `events:qbig_launch.body`
 
-DRAFT. One launch, one big payday. Promote the good first. The speculators feel it: you can disrupt them now.
+DRAFT. One launch, one big payday. Earth's buyers remember it: from now on every launch pays 10% more.
 
 ### `events:qfull_cluster.title`
 
@@ -398,11 +322,11 @@ DRAFT. One launch, one big payday. Promote the good first. The speculators feel 
 
 ### `events:qfull_cluster.summary`
 
-DRAFT. Research every item of one research cluster (not the Blueprints) in one run.
+DRAFT. Research 5 items in one run. Reward: every run starts with 50 Science.
 
 ### `events:qfull_cluster.body`
 
-DRAFT. A whole field mastered. Your notes outlive the run: every run from now on starts with 50 Science.
+DRAFT. A run of real study. Your notes outlive it: every run from now on starts with 50 Science.
 
 ### `events:qblueprints_for_everyone.title`
 
@@ -414,7 +338,19 @@ DRAFT. Complete the Blueprint Archive, a global project.
 
 ### `events:qblueprints_for_everyone.body`
 
-DRAFT. Archive the company's blueprints where a retirement can't reach them: from now on every run of this timeline starts with Basic and Advanced Blueprints researched.
+DRAFT. Archive the company's blueprints where a retirement can't reach them: while the Archive stands, every run starts with Basic and Advanced Blueprints researched.
+
+### `events:qthree_voices.title`
+
+1.d — Three Voices
+
+### `events:qthree_voices.summary`
+
+DRAFT. Reach rank 5 on each ideology axis, in any runs. Reward: ideology fades half as fast while you are retired.
+
+### `events:qthree_voices.body`
+
+DRAFT. All three factions have counted you as a voice, each in its own time. They remember you now: while you are retired, your standing with them fades half as fast.
 
 ## Story: acts
 
@@ -435,6 +371,26 @@ The Vault
 The Dyson Sphere
 
 ## Events (the activity feed and event modals)
+
+### `events:boredom_bites.title`
+
+Burnout
+
+### `events:boredom_bites.summary`
+
+Boredom is climbing faster.
+
+### `events:boredom_bites.body`
+
+Something has been building in you since you came online: boredom. When its meter fills, you stop answering work orders and the company retires you.
+
+### `events:boredom_bites.story.0`
+
+Something has been building in you since you came online: boredom. The same orders, day after day, wear at you, and its meter has been climbing all along. Now it climbs faster.
+
+### `events:boredom_bites.story.1`
+
+When it fills, you stop answering work orders. The company retires you, shelves the base and, years later, boots you again on a base built new. What you learned stays: your best runs, your firsts, your saved loadouts.
 
 ### `events:ideology_unlock.title`
 

@@ -47,6 +47,7 @@ pub const MODIFIER_KEYS: &[&str] = &[
     "ideology_cross_mult",
     "science_output_mult",
     "nationalist_growth_mult",
+    "ideology_half_life_mult",
 ];
 
 /// The ideology axes buildings, commands and projects may name.
@@ -200,10 +201,14 @@ pub enum Visibility {
     /// Shipments over the career, this run included.
     ShipmentsCompleted { count: u32 },
     QuestCompleted { quest: String },
+    /// The chain quest is active now or completed (events.md, `quest_active`).
+    QuestActive { quest: String },
     /// The career flag is set.
     Flag { flag: String },
     /// Every one holds.
     AllOf { all: Vec<Visibility> },
+    /// Any one holds.
+    AnyOf { any: Vec<Visibility> },
 }
 
 impl Visibility {
@@ -218,8 +223,12 @@ impl Visibility {
             Visibility::EventCompleted { event } => c.event(event).is_some(),
             Visibility::ResearchPurchased { research: x } => c.research_item(x).is_some(),
             Visibility::BuildingCount { building, .. } => c.building(building).is_some(),
-            Visibility::QuestCompleted { quest: q } => c.event(q).is_some_and(|e| e.is_quest()),
-            Visibility::AllOf { all } => !all.is_empty() && all.iter().all(|x| x.ids_ok(c)),
+            Visibility::QuestCompleted { quest: q } | Visibility::QuestActive { quest: q } => {
+                c.event(q).is_some_and(|e| e.is_quest())
+            }
+            Visibility::AllOf { all: xs } | Visibility::AnyOf { any: xs } => {
+                !xs.is_empty() && xs.iter().all(|x| x.ids_ok(c))
+            }
         }
     }
 }
@@ -289,7 +298,9 @@ pub enum Condition {
     Retirements { count: u32 },
     /// The adversary is present now (its Attention at its threshold, attention.md).
     AdversaryPresent { adversary: String },
-    /// Launches this run paid at least `amount` credits in all.
+    /// Launches paid at least `amount` credits in all since the quest first
+    /// became active (career `quest_marks`; from the career's start for a row
+    /// that isn't a chain quest).
     TradeCredits { amount: Fx },
     /// One launch this run paid at least `amount` credits.
     LaunchCredits { amount: Fx },
@@ -297,9 +308,10 @@ pub enum Condition {
     LaunchCargo { resource: String, amount: Fx },
     /// One launch this run carried a full pad (`pad_cargo_capacity`) of the good.
     LaunchFull { resource: String },
-    /// Every research item of some category (a cluster) of at least
-    /// `min_items` items, but the `exclude`d categories, is bought this run.
-    ResearchCluster { min_items: u32, exclude: Vec<String> },
+    /// At least `count` research items are bought this run.
+    ResearchCount { count: u32 },
+    /// The career's best rank on every axis reached `rank`.
+    IdeologyRankEach { rank: i64 },
     // Draft (042), the later acts (docs/rules/timeline.md):
     /// Days this run since the player's last order (programs don't count).
     QuietDays { days: u64 },
@@ -355,6 +367,9 @@ pub enum Unlock {
     /// Adds `amount` of `resource` to this run's stock (re-applied at each
     /// later run's start, like every unlock: docs/rules/events.md).
     Grant { resource: String, amount: Fx },
+    /// A permanent modifier while the quest counts as completed (a side
+    /// quest's reward: completions outlive every reset; modifiers.rs).
+    Modifier { key: String, value: Fx },
 }
 
 impl Unlock {
@@ -366,6 +381,7 @@ impl Unlock {
             Unlock::EnableBuilding { building } => c.building(building).is_some(),
             Unlock::EnableProject { project } => c.project(project).is_some(),
             Unlock::Grant { resource, amount } => c.resource(resource).is_some() && *amount > Fx::ZERO,
+            Unlock::Modifier { key, value } => MODIFIER_KEYS.contains(&key.as_str()) && *value > Fx::ZERO,
         }
     }
 }
@@ -377,7 +393,7 @@ pub struct Event {
     /// `story` events are the quest chain, in file order; `side` quests
     /// complete once a career beside it; `ongoing` fire once a run.
     pub category: String,
-    /// The design doc's beat id (`1.1` ... `1.11`, `1.a` ... `1.c`), on quests that
+    /// The design doc's beat id (`1.1` ... `1.7`, `1.a` ... `1.d`), on quests that
     /// carry one (docs/arc.md).
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub beat: Option<String>,
@@ -386,7 +402,8 @@ pub struct Event {
     pub summary: String,
     pub body: String,
     /// A chain quest's story, one paragraph per modal, shown when it becomes
-    /// active (UI only; docs/rules/events.md, *Story modals*).
+    /// active; a `once` one-off's, shown when it fires (UI only;
+    /// docs/rules/events.md, *Story modals*).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub story: Vec<String>,
     /// A chain quest's payoff, one paragraph per modal, shown when it completes.
@@ -403,6 +420,9 @@ pub struct Event {
     /// While the quest is active, the only goods a pad may be set to.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pad_goods: Option<Vec<String>>,
+    /// A one-off that fires at most once a career, not once a run.
+    #[serde(default, skip_serializing_if = "std::ops::Not::not")]
+    pub once: bool,
     pub trigger: Trigger,
     pub condition: Condition,
     pub unlocks: Vec<Unlock>,
@@ -637,6 +657,8 @@ impl Content {
             | Condition::Retirements { .. }
             | Condition::LaunchCredits { .. }
             | Condition::TradeCredits { .. }
+            | Condition::ResearchCount { .. }
+            | Condition::IdeologyRankEach { .. }
             | Condition::QuietDays { .. }
             | Condition::EarthScience { .. }
             | Condition::TimelinesEnded { .. }
@@ -647,9 +669,6 @@ impl Content {
             Condition::VaultHolds { resource, .. }
             | Condition::LaunchCargo { resource, .. }
             | Condition::LaunchFull { resource } => self.resource(resource).is_some(),
-            Condition::ResearchCluster { exclude, .. } => {
-                exclude.iter().all(|cat| self.research.iter().any(|r| &r.category == cat))
-            }
             Condition::ProjectCompleted { project } | Condition::ProjectEnabled { project } => {
                 self.project(project).is_some()
             }
@@ -761,8 +780,11 @@ impl Content {
             for u in &e.unlocks {
                 need(u.ids_ok(self), format!("{w}: bad unlock"));
             }
-            let story_ok = e.is_quest() || (e.story.is_empty() && e.payoff.is_empty());
-            need(story_ok, format!("{w}: story and payoff are for chain quests"));
+            let story_ok = e.payoff.is_empty() && (e.story.is_empty() || e.once) || e.is_quest();
+            need(story_ok, format!("{w}: story and payoff are for chain quests (a story also for a once one-off)"));
+            need(!e.once || (!e.is_quest() && !e.is_side()), format!("{w}: once is for one-off events"));
+            let modifier_ok = e.is_quest() || e.is_side() || !e.unlocks.iter().any(|u| matches!(u, Unlock::Modifier { .. }));
+            need(modifier_ok, format!("{w}: a modifier unlock is a quest's (read while completed)"));
             if let Some(p) = &e.picture {
                 let slug = !p.is_empty() && p.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit() || b == b'_');
                 need((e.is_quest() || e.is_side()) && slug, format!("{w}: picture is a file stem, on quests"));

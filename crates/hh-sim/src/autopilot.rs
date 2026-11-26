@@ -28,7 +28,8 @@ use crate::milestones::{Milestones, Tracker};
 /// never reaches its usual threshold); the first ships every good made
 /// (`diversify`), the second doesn't, and buys all visible research
 /// (`all_research`: past [`author::RESEARCH`](crate::agents::author::RESEARCH),
-/// today Process Telemetry, from 1.6, and the draft Novelty Simulation, after 1.9).
+/// today Process Telemetry, from the first Research Lab, and the draft Novelty
+/// Simulation, after 1.7).
 pub const DEFAULT_AGENT: &str =
     "author:stale_days=4000,dream_at=1,diversify=1|author:stale_days=4000,dream_at=1,all_research=1";
 
@@ -39,7 +40,7 @@ pub const STALL: u64 = 8000;
 /// One thing to reach: a milestone, a main-quest sub-objective or a main quest.
 #[derive(Debug, Clone, Serialize)]
 pub struct Step {
-    /// `milestone:M5`, `quest:qburnout`, `quest:qthree_voices:humanist_5`.
+    /// `milestone:M5`, `quest:qtrade`, `quest:qa_voice`.
     pub id: String,
     pub name: String,
 }
@@ -53,7 +54,7 @@ pub fn steps(ms: &Milestones) -> Vec<Step> {
         .iter()
         .map(|m| Step { id: format!("milestone:{}", m.id), name: format!("{} {}", m.id, m.name) })
         .collect();
-    // Side quests (1.a, 1.b) are steps too, in file order.
+    // Side quests (1.a ... 1.d) are steps too, in file order.
     for e in content().events.iter().filter(|e| e.is_quest() || e.is_side()) {
         match &e.condition {
             Condition::Never => continue,
@@ -424,7 +425,7 @@ mod tests {
         let st = steps(&ms);
         assert_eq!(st.iter().filter(|s| s.id.starts_with("milestone:")).count(), ms.milestones.len());
         assert!(st.iter().any(|s| s.id == "quest:qpower_boot_sequence"));
-        assert!(st.iter().any(|s| s.id == "quest:qthree_voices:humanist_5"));
+        assert!(st.iter().any(|s| s.id == "quest:qa_voice"));
         assert!(st.iter().any(|s| s.id == "quest:qbig_launch"), "side quests are steps");
         assert!(st.iter().any(|s| s.id == "quest:qoverload"), "the later acts' quests are steps");
         assert!(!st.iter().any(|s| s.id == "quest:qepilogue"), "a `never` quest is no step");
@@ -461,7 +462,7 @@ mod tests {
         let (c, ms, g) = fresh(2);
         let boost = Some(parse_boost(DEFAULT_BOOST).unwrap());
         let mut ap = Autopilot::new(g, ms, DEFAULT_AGENT, Target::End, boost, 200_000, &[]).unwrap();
-        // The swarm's clock, tick by tick (085, 086): nothing before 1.11; then
+        // The swarm's clock, tick by tick (085, 086): nothing before 1.7; then
         // a 100-year countdown that each retirement moves by the 5-year gap;
         // every later timeline's runs from its first day, Telescope or not.
         use hh_core::modules::projects::completed;
@@ -473,7 +474,7 @@ mod tests {
             let st = ap.step(1);
             let g = ap.state();
             if !g.career.completed_quests.contains("qdeep_space_telescope") && g.saga.ended == 0 {
-                assert!(g.saga.timeline.is_none(), "no calendar before 1.11");
+                assert!(g.saga.timeline.is_none(), "no calendar before 1.7");
             }
             if let Some(b) = &g.saga.timeline {
                 if was.is_none() {

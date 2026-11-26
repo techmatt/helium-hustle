@@ -62,7 +62,7 @@ lowers the next price. Starting buildings count toward the price (they are not `
 `land_base_cost × land_cost_scaling ^ land_bought × land_cost_mult × discount_factor ^ nationalist rank × R`
 credits and gives `land_per_purchase` land, where `R` is `rival_land_price_mult` while the
 rivals are present, else 1 ([attention.md](attention.md)). Each purchase raises the rivals'
-Attention by the land gained × `rival_per_land`. `land_bought` counts this run's purchases.
+Attention by the land gained × `rival_per_land`, once Act 2 begins (`swarm_revealed`). `land_bought` counts this run's purchases.
 
 **Daily resolution**, over building types in content order, each type's active copies
 together, in two stages around the programs ([the day](README.md#the-day)): first the
@@ -146,9 +146,9 @@ the building has a mechanic its stat lines don't show (now the Arbitrage Engine 
 Microwave Receiver). A run opens with only the Solar Panel and Data Center buildable: the
 Regolith Excavator, Smelter, Launch Pad and Storage Depot require research Basic Blueprints,
 and the Battery, Refinery and Fabricator Advanced Blueprints ([research.md](research.md);
-quests 1.2 and 1.3 lead to them). The Research Lab requires 2 Data Centers. The Recreation
-Dome requires nothing but its event: the silent `research_lab_built` event enables it once a
-Research Lab is owned ([events.md](events.md)). The Regolith Excavator makes 2 regolith a day
+quest 1.2 First Shipment needs the first, and its completion shows the second). The Research Lab requires 2 Data Centers. The Recreation
+Dome requires nothing but its event: the silent `first_retirement` event enables it from the
+first retirement ([events.md](events.md)). The Regolith Excavator makes 2 regolith a day
 (`excavator_output_mult`, 1.5 with research Regolith Processing). The Refinery's upkeep is
 5 regolith and 2 energy a day.
 

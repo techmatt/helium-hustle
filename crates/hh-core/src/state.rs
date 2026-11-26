@@ -92,7 +92,7 @@ impl Saga {
 pub struct Timeline {
     /// 1-based.
     pub number: u32,
-    /// Countdown days this timeline: from the swarm's discovery (1.11) in
+    /// Countdown days this timeline: from the swarm's discovery (1.7) in
     /// timeline 1, from the first day in each later one; each retirement's
     /// gap counts too.
     pub day: u64,
@@ -703,6 +703,9 @@ pub struct Lifetime {
     pub days: u64,
     pub buildings_built: u32,
     pub research_completed: u32,
+    /// Launch pay (`RunStats::trade_credits`) over every finished run.
+    #[serde(default)]
+    pub trade_credits: Fx,
 }
 
 /// A milestone, for the log the simulator and UI read.
@@ -741,6 +744,10 @@ pub struct Career {
     /// Chain quests that have become active (their `on_start` applied once).
     #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
     pub started_quests: BTreeSet<String>,
+    /// A `trade_credits` chain quest's mark: the career's launch pay when it
+    /// first became active (events.md).
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub quest_marks: BTreeMap<String, Fx>,
     /// `quest:sub_objective`, latched.
     pub completed_sub_objectives: BTreeSet<String>,
     /// `timeline`-scoped projects' progress and completions (a timeline's end

@@ -1,4 +1,4 @@
-//! Programming (089, 091): a research-view item on sale once 1.4 Full Load is
+//! Programming (089, 091): a research-view item on sale once 1.3 Full Load is
 //! done, bought once for the career (a career flag), opening the Programs nav
 //! tile (the editors) and nothing else: programs run from day 1.
 
@@ -18,7 +18,7 @@ fn research_shown(r: &crate::Rules, g: &GameState, id: &str) -> bool {
     r.view(g).research.iter().any(|x| x.id == id && x.visible)
 }
 
-/// A game with the research panel open and 1.4 done, science to spare.
+/// A game with the research panel open and 1.3 done, science to spare.
 fn past_full_load(r: &crate::Rules) -> GameState {
     let mut g = r.new_game(7);
     g.run.enabled_panels.insert(research::RESEARCH_PANEL.into());
@@ -34,10 +34,10 @@ fn programming_is_sold_after_full_load_and_bought_once_for_the_career() {
     g.run.enabled_panels.insert(research::RESEARCH_PANEL.into());
     set(&mut g, "science", "500");
     assert!(!nav_shown(&r, &g, "programs"), "a new game has no Programs tile");
-    assert!(!research_shown(&r, &g, FLAG), "not on sale before 1.4");
+    assert!(!research_shown(&r, &g, FLAG), "not on sale before 1.3");
     assert!(r.apply(&mut g, &Action::Research { research: FLAG.into() }).is_err());
     g.career.completed_quests.insert("qfull_load".into());
-    assert!(research_shown(&r, &g, FLAG), "on sale once 1.4 is done");
+    assert!(research_shown(&r, &g, FLAG), "on sale once 1.3 is done");
     r.apply(&mut g, &Action::Research { research: FLAG.into() }).unwrap();
     assert_eq!(g.amount("science"), f("300"), "200 science");
     assert!(career::flag_set(&g, FLAG));
@@ -69,7 +69,7 @@ fn programming_survives_a_timeline_end() {
 #[test]
 fn a_state_from_before_programming_gets_it_on_load_when_past_full_load() {
     let r = rules();
-    // A save from before the field: past 1.4 gets the flag, a new career doesn't.
+    // A save from before the field: past 1.3 gets the flag, a new career doesn't.
     let strip = |g: &GameState| {
         let mut v: serde_json::Value = serde_json::from_str(&g.to_json()).unwrap();
         v["career"].as_object_mut().unwrap().remove("flag_research").expect("serialized");
@@ -77,10 +77,10 @@ fn a_state_from_before_programming_gets_it_on_load_when_past_full_load() {
     };
     let old = past_full_load(&r);
     let loaded = GameState::from_json(&strip(&old)).unwrap();
-    assert!(career::flag_set(&loaded, FLAG), "a career past 1.4 gets Programming");
+    assert!(career::flag_set(&loaded, FLAG), "a career past 1.3 gets Programming");
     let fresh = GameState::from_json(&strip(&r.new_game(7))).unwrap();
     assert!(!career::flag_set(&fresh, FLAG));
-    // A current state round-trips as it is: past 1.4, not bought, stays not bought.
+    // A current state round-trips as it is: past 1.3, not bought, stays not bought.
     let now = GameState::from_json(&old.to_json()).unwrap();
     assert!(!career::flag_set(&now, FLAG), "loading never buys it for a current state");
     assert_eq!(now, old);

@@ -154,6 +154,7 @@ fn close_run(r: &Rules, g: &mut GameState, forced: bool) {
     c.lifetime.days += day;
     c.lifetime.buildings_built += s.buildings_built;
     c.lifetime.research_completed += s.research_completed;
+    c.lifetime.trade_credits = c.lifetime.trade_credits.saturating_add(s.trade_credits);
     c.best_run_days = c.best_run_days.max(day);
     c.best_run_credits = c.best_run_credits.max(s.credits_earned);
     c.best_run_shipments = c.best_run_shipments.max(s.shipments);
@@ -175,7 +176,7 @@ fn close_run(r: &Rules, g: &mut GameState, forced: bool) {
 /// linear decay takes its days at once (`attention::decay_days`). The same numbers as
 /// day by day, much faster: the view previews a retirement on every look.
 fn gap(r: &Rules, g: &mut GameState) {
-    let (f, days) = (super::ideology::gap_decay_factor(r), r.p.career.gap_days);
+    let (f, days) = (super::ideology::gap_decay_factor(r, g), r.p.career.gap_days);
     for v in g.career.ideology.values_mut() {
         for _ in 0..days {
             let next = *v * f;

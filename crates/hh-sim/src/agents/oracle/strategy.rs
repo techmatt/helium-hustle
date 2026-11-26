@@ -7,7 +7,7 @@ use hh_core::GameState;
 use super::super::author::Directives;
 use super::super::Player;
 use super::score::Profile;
-use super::{Oracle, THREE_VOICES};
+use super::{Oracle, A_VOICE};
 
 /// The ideology axes (mirrors the game's `fund_<axis>` commands, content/commands.json).
 const AXES: &[&str] = &["humanist", "rationalist", "nationalist"];
@@ -18,14 +18,13 @@ pub struct Strategy {
     pub label: String,
     pub dir: Directives,
     /// It funds an ideology axis, which needs Geopolitical Intelligence,
-    /// visible once a Research Lab is built (the `research_lab` flag): until
-    /// then it is skipped.
+    /// visible once A Voice starts (Trade done): until then it is skipped.
     pub funds: bool,
 }
 
 impl Strategy {
     pub fn available(&self, g: &GameState) -> bool {
-        !self.funds || g.career.flags.contains("research_lab")
+        !self.funds || g.career.completed_quests.contains(TRADE)
     }
 }
 
@@ -57,7 +56,7 @@ pub fn strategy_index(label: &str) -> Option<usize> {
     strategies().iter().position(|s| s.label == label)
 }
 
-/// The Three Voices campaign (the quests profile, 1.9): one run held long by
+/// The A Voice campaign (the quests profile, 1.6): one run held long by
 /// Dream, funding Humanist toward rank 5 (cheaper boredom,
 /// stronger Dream) and then its AI Consciousness project, trading meanwhile.
 pub fn campaign() -> (String, Directives) {
@@ -82,21 +81,22 @@ fn trade() -> Directives {
     }
 }
 
-/// Whether the Three Voices quest (1.9, ranks) is the one under way.
-pub(super) fn three_voices_open(g: &GameState) -> bool {
-    // Ranks are bought with Fund, which a Research Lab opens (its research).
-    g.career.completed_quests.contains("qburnout")
-        && g.career.flags.contains("research_lab")
-        && !g.career.completed_quests.contains(THREE_VOICES)
+/// The Trade quest (1.5): its completion starts A Voice, which opens
+/// Geopolitical Intelligence (Fund's research).
+const TRADE: &str = "qtrade";
+
+/// Whether the A Voice quest (1.6, rank 5 on any axis) is the one under way.
+pub(super) fn a_voice_open(g: &GameState) -> bool {
+    g.career.completed_quests.contains(TRADE) && !g.career.completed_quests.contains(A_VOICE)
 }
 
 impl Oracle {
     /// Plays each strategy for `long` ticks and keeps the best: the pinned
     /// one only, while it is available (else every available one); the
-    /// quests profile's campaign alone while Three Voices (1.9) is open.
+    /// quests profile's campaign alone while A Voice (1.6) is open.
     pub(super) fn choose_strategy(&mut self, p: &mut Player) {
         let mut best: Option<(i64, String, Directives)> = None;
-        let all: Vec<(String, Directives)> = if self.profile == Profile::Quests && three_voices_open(p.state()) {
+        let all: Vec<(String, Directives)> = if self.profile == Profile::Quests && a_voice_open(p.state()) {
             vec![campaign()]
         } else {
             let table = strategies();

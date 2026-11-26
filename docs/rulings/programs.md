@@ -38,24 +38,24 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   building, research item or project) is kept (loaded, pasted or set) and skipped for free,
   like a note; a locked `if` skips its body free too. The amber status stays (both modes).
 - **Program logic unlocks (2026-11-21).** `if` is not available from the start: a cheap
-  global project offered after 1.7 Burnout (while 1.9 is active) unlocks it. Its effect lives on the project's
+  global project offered from the first retirement unlocks it. Its effect lives on the project's
   completion (2026-11-24): a timeline's end locks `if` again until Conditional Logic is
   re-funded, and saved loadouts' `if` lines stay locked (passed free) meanwhile; no upgrade
-  that keeps it is planned. Side quest 1.b's reward is a placeholder
-  (059, default): every run starts with 50 Science (a `grant` unlock).
+  that keeps it is planned. Side quest 1.b Full Cluster's reward (2026-11-25): every run
+  starts with 50 Science (a `grant` unlock).
 - **Commands run only as program lines (2026-11-25).** No command is runnable by clicking:
   there is no Run button and no by-hand action. From day 1 the right column's program, every
   "Add to Program" button and the loadout Save/Load buttons are there, as are processors
   (the Processors row). 1.1's story page names Add to Program on Sell Cloud Compute as the
-  way to earn credits (story prose, no hint line). A player can play 1.1-1.8 (the first Research Lab) with the right
+  way to earn credits (story prose, no hint line). A player can play Act 1 up to the first Research Lab with the right
   column's program alone (add, drag to reorder, remove, −/+ counts; logic lines from its
   own add row once they open).
 - **Programming (2026-11-25, replacing 2026-11-24's).** **Programming** is a research-view
-  item (placeholder 200 science), on sale once quest 1.4 Full Load completes; not a quest
+  item (placeholder 200 science), on sale once quest 1.3 Full Load completes or a Research Lab is built; not a quest
   task. Buying it is permanent: a career flag (`programming`) that survives retirement and
   a timeline's end, like `swarm_revealed`; once bought it never shows again. It hides only
   the Programs nav tile and its view (Text | Blocks, the all-instructions panel); the
-  program rules are unchanged. Saves already past 1.4 get the flag on load (a state saved
+  program rules are unchanged. Saves already past it get the flag on load (a state saved
   before revision 29). Sim players and the golden script never buy it (nothing they use is
   gated). The price takes the Rationalist and Archive discounts like any research.
 - **Program loadouts (2026-11-20).** Each program has save / load buttons. A saved program

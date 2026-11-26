@@ -102,9 +102,15 @@ pub fn on_sale(r: &Rules, g: &mut GameState, units: Fx) {
     add(g, SPECULATORS, units * r.p.attention.speculator_per_unit);
 }
 
+/// The career flag that opens Act 2, where the rivals come in: before it,
+/// land claimed draws no rival Attention (attention.md).
+pub const RIVALS_FROM_FLAG: &str = "swarm_revealed";
+
 /// `land` units of land were claimed.
 pub fn on_land(r: &Rules, g: &mut GameState, land: Fx) {
-    add(g, RIVALS, land * r.p.attention.rival_per_land);
+    if g.career.flags.contains(RIVALS_FROM_FLAG) {
+        add(g, RIVALS, land * r.p.attention.rival_per_land);
+    }
 }
 
 /// Disrupt Speculators ran once.

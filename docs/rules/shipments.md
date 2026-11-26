@@ -79,7 +79,7 @@ unpaused, cooled down) and the default loading priority.
   propellant below `fuel_per_pad`).
 - **`set_pad_good { pad, good }`**: sets the good a pad carries; `good` null returns it to
   No cargo. Illegal if the good is not tradeable, the pad doesn't exist, or the active
-  quest's `pad_goods` list doesn't name the good (1.3 First Shipment allows only Titanium;
+  quest's `pad_goods` list doesn't name the good (1.2 First Shipment allows only Titanium;
   a pad already on another good keeps it; the view's `pad_goods` lists the goods a pad may
   be set to now, [events.md](events.md)); setting the same
   choice again does nothing. A loaded pad
@@ -92,10 +92,10 @@ unpaused, cooled down) and the default loading priority.
 
 Pad indices are 0-based. The commands Load Launch Pads and Launch Full Pads run through
 programs; they need their full cost to run (Load costs energy; Launch Full Pads has no cost of
-its own, the propellant is the launch's). Launch Full Pads is locked until quest 1.5
+its own, the propellant is the launch's). Launch Full Pads is locked until quest 1.4
 Processors is completed (`requires: quest_completed`, [commands.md](commands.md)); before
-then a pad launches by hand (`launch`, from its card), which 1.3 First Shipment (one launch
-carrying 20 titanium) and 1.4 Full Load (a full pad of He-3) teach.
+then a pad launches by hand (`launch`, from its card), which 1.2 First Shipment (one launch
+carrying 20 titanium) and 1.3 Full Load (a full pad of He-3) teach.
 
 ## Params
 
@@ -110,7 +110,8 @@ carrying 20 titanium) and 1.4 Full Load (a full pad of He-3) teach.
 <!-- /params -->
 
 Modifiers read ([README.md](README.md)): `cargo_capacity_mult` (Bulk Shipper achievement),
-`shipment_credit_mult` (First Profit achievement).
+`shipment_credit_mult` (First Profit achievement; side quest 1.a Big Launch's ×1.1, live
+while it is completed).
 
 ## Content
 
@@ -130,6 +131,6 @@ Modifiers read ([README.md](README.md)): `cargo_capacity_mult` (Bulk Shipper ach
 - Ruling (revision 4): a loaded pad may switch goods; its cargo returns to the stockpile up
   to the cap and the rest is lost.
 - Ruling (Matt, 2026-11-23; revision 22): players must learn to pick a pad's cargo, so a new
-  pad, and every pad a run starts with, has No cargo; quest 1.3 teaches it.
+  pad, and every pad a run starts with, has No cargo; quest 1.2 teaches it.
 - Candidate: `shipment_completed` events and the shipments-this-run achievement count this
   run's shipments.

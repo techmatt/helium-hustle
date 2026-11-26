@@ -198,9 +198,10 @@ function openingOf(q: { story?: string[]; body: string }): string[] {
  * was never shown active first gets its opening), its payoff, then Y's opening with its
  * task on the last page. On load nothing is queued; a brand-new game (run 1, day 0,
  * nothing completed) queues only its first quest's opening (`intro`). A completed side
- * quest goes to the story banner as before. Other events (boredom beats, side story)
- * are never queued here: they land in the right column's Events sections as unread
- * items (`eventItems`). */
+ * quest goes to the story banner as before. A once-a-career one-off with a `story`
+ * (Burnout, the first time boredom bites) queues its pages too. Other events (boredom
+ * beats, side story) are never queued here: they land in the right column's Events
+ * sections as unread items (`eventItems`). */
 function tell(v: View, mode: 'load' | 'intro' | 'play'): void {
   const pages: StoryPage[] = [];
   const quest = v.quest;
@@ -214,6 +215,13 @@ function tell(v: View, mode: 'load' | 'intro' | 'play'): void {
     }
     if (q.id !== lastQuest) for (const t of openingOf(q)) pages.push({ quest: q.id, title: q.title, kind: 'story', text: t, picture: q.picture ?? null });
     for (const t of q.payoff ?? []) pages.push({ quest: q.id, title: q.title, kind: 'payoff', text: t, picture: q.picture ?? null });
+  }
+  // A once-a-career one-off with a story (the first time boredom bites) is a modal too.
+  for (const e of v.event_texts) {
+    if (e.chain || !e.story || e.story.length === 0 || toldStories.has(e.id)) continue;
+    toldStories.add(e.id);
+    if (mode !== 'play') continue;
+    for (const t of e.story) pages.push({ quest: e.id, title: e.title, kind: 'story', text: t, picture: null });
   }
   const fresh = mode === 'intro' && v.run === 1 && v.day === 0 && v.completed_quests.length === 0;
   if (quest && quest.id !== lastQuest && !openedQuests.has(quest.id)) {

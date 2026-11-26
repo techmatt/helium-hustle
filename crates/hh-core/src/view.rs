@@ -572,7 +572,8 @@ fn command_description(r: &Rules, g: &GameState, cmd: &'static crate::content::C
 }
 
 /// The one-off events fired this run, oldest first by the day each fired (content order
-/// within a day), but of the boredom-phase events only the latest phase's.
+/// within a day), but of the boredom-phase events only the latest phase's (a `once`
+/// story event stays).
 fn event_texts(r: &Rules, g: &GameState, latest_phase: Option<u32>) -> Vec<StoryView> {
     let mut fired: Vec<(u64, &'static crate::content::Event)> = content()
         .events
@@ -580,7 +581,7 @@ fn event_texts(r: &Rules, g: &GameState, latest_phase: Option<u32>) -> Vec<Story
         .filter(|e| !e.is_quest() && !e.silent)
         .filter_map(|e| g.run.events.get(&e.id).map(|&day| (day, e)))
         .filter(|(_, e)| match e.trigger {
-            crate::content::Trigger::BoredomPhase { phase } => Some(phase) == latest_phase,
+            crate::content::Trigger::BoredomPhase { phase } if !e.once => Some(phase) == latest_phase,
             _ => true,
         })
         .collect();
@@ -722,7 +723,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         summary: &q.summary,
         body: &q.body,
         story: &q.story,
-        progress: progress(events::progress(r, g, &q.condition)),
+        progress: progress(events::progress(r, g, &q.id, &q.condition)),
         sub_objectives: match &q.condition {
             Condition::AllOf { sub_objectives } => sub_objectives
                 .iter()
@@ -730,7 +731,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                     id: &s.id,
                     label: &s.label,
                     done: g.career.completed_sub_objectives.contains(&events::sub_key(&q.id, &s.id)),
-                    progress: progress(events::progress(r, g, &s.condition)),
+                    progress: progress(events::progress(r, g, &q.id, &s.condition)),
                 })
                 .collect(),
             _ => Vec::new(),
@@ -758,7 +759,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                     _ => None,
                 },
                 done,
-                progress: if done { None } else { progress(events::progress(r, g, &e.condition)) },
+                progress: if done { None } else { progress(events::progress(r, g, &e.id, &e.condition)) },
                 picture: e.picture.as_deref(),
             }
         })

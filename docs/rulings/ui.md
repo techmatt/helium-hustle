@@ -21,7 +21,7 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   hidden until it appears. The speculator column (Launch Pads' Markets) and the Adversaries
   panel's Speculators section wait for speculators' first arrival in the run (093 default:
   per run), the Adversaries panel, Speculator Analysis and the Arbitrage Engine for their first
-  arrival in the career, and side quest 1.a, which names them, starts then too (once 1.6 is
+  arrival in the career, and side quest 1.a, which names them, starts then too (once 1.5 is
   reached).
 - **Icons (025-027).** One icon module, `web/src/ui/icons.tsx`, over
   `web/src/assets/{chips,nav,horizon}/`, so a new style swaps files only. Painterly nav icons at

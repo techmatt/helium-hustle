@@ -30,47 +30,62 @@ Programs have their own part ([programs.md](programs.md)).
   timeline's end takes them, the project is offered again and re-funding brings them back.
   The Deep Space Telescope is rebuilt each timeline for a passive while completed
   (placeholder +10% science, +10% nationalist ideology growth); what it revealed (the swarm,
-  the calendar, what 1.11 opened) stays for the career, and completing it again replays no
+  the calendar, what 1.7 opened) stays for the career, and completing it again replays no
   story. *Default (084):* the science bonus multiplies Research Lab output, not Buy Science. *Defaults (046):* a
   repeatable row keeps its rates across completions; every row's `min_days` is its largest
   cost over 30 rounded up (the old flat cap's fastest finish).
 - **Bonus stacking (2026-11-21).** Bonuses from one source add (+5% ×10 is +50%); separate
   sources multiply. Exponential stacking only for a few named exceptions (Paradigms, late
   techs, the catastrophic-success tech); repeatable projects are rare exceptions.
-- **Act 1 follows the design doc's beats (2026-11-21).** Quests carry the design doc's beat
-  ids; [arc.md](../arc.md) is the beat → quest → status map, current state only. Q6 Open
+- **Act 1 follows the design doc's beats (2026-11-21).** Quests carry beat ids;
+  [arc.md](../arc.md) is the beat → quest → status map, current state only. Q6 Open
   Horizons and Q7 Signal Detected left the quest line: performance tests belong in
-  achievements (not built yet; candidates in arc.md). Placeholder techniques stand for 1.10
-  (Contest Claims) and 1.a (Disrupt Speculators).
-- **Act 1 opening: one mechanic at a time (2026-11-23).** The chain is 1.1 Online, 1.2
-  Blueprints, 1.3 First Shipment, 1.4 Full Load, 1.5 Processors, 1.6 Trade, 1.7 Burnout, then
-  Three Voices, Land Rush and the Telescope (1.9-1.11; 1.8 Lab is a silent unlock, below). A
-  new game builds only Solar Panels and Data Centers; 1.1 opens Buy Science (placeholder 10
-  credits + 1 energy → 1 science) and the research view, which shows only the Blueprints (and
-  Regolith Processing, Programming) until the first Research Lab. Basic Blueprints (10
-  science, 2026-11-25) unlocks the Excavator, Smelter, Launch Pad and Storage Depot; Advanced
-  Blueprints (20, on sale once 1.3 is done) the Battery, Refinery and Fabricator. 1.3: one launch of 20+ titanium; its start grants 20 propellant once; pads
-  carry Titanium only while it is active; a partial pad launches by hand from its card. 1.4: a
-  full pad of He-3 (it teaches He-3). Launch Full Pads stays hidden until 1.5 completes; Load
-  Launch Pads opens with the first pad. The Launch Plans event is gone. Boredom runs from day
-  1 with its meter shown; 1.7's modals explain it, and a retirement forced earlier completes 1.7
-  as it is reached. Side quest 1.c Blueprints for Everyone (once a Research Lab is built): the Blueprint Archive
-  global project (placeholder 500 credits + 200 science, offered first) makes both Blueprints
-  bought at every run's start while it counts as completed (2026-11-24: lost at a timeline's
-  end, back when re-funded; 1.c stays completed). Refinery upkeep is 5 regolith + 2 energy. *Default (074):* 1.b's
-  cluster leaves out the Blueprints category (else 1.c would complete 1.b for free).
-- **The main quest line marks only significant things (2026-11-25).** Never "research
-  this"; a beat may be an untelegraphed expectation. 1.8 Lab left the quest line (its beat
-  stays in [arc.md](../arc.md)): building the first Research Lab silently opens the full
-  research catalog, Projects, Foundation Grant, the Recreation Dome, Geopolitical
-  Intelligence and the first global projects (event `research_lab_built`, career flag
-  `research_lab`); 1.9 follows 1.7 and keeps its number. *Default (093):* side quests 1.b and
-  1.c start with the lab, hung beside 1.7 in Story.
-- **Playtest batch 1 numbers (2026-11-25, placeholders).** Blueprints 10 and 20 science. 1.6
-  Trade: earn 1,500 credits from trade this run (launch pay only, 093 default) and never
-  mention speculators, who still arrive on their own. Regolith Processing: research, 100
-  science, +50% Regolith Excavator output, on sale once a Research Lab can be built (two Data
-  Centers); the excavator makes 2 regolith a day.
+  achievements (not built yet; candidates in arc.md).
+- **No legacy numbers (2026-11-25, standing).** When things are renumbered, nothing keeps the
+  old numbers: no mapping column, alias or "was" note in content, code or docs. Content ids
+  may stay as they are.
+- **Act 1's main quest line (2026-11-25, numbers placeholders).** 1.1 Online (2 Solar Panels),
+  1.2 First Shipment (one launch of 20+ titanium), 1.3 Full Load (a full He-3 pad; Programming
+  goes on sale), 1.4 Processors (2 Data Centers), 1.5 Trade (1,500 credits from launches,
+  counted from the quest's start), 1.6 A Voice (rank 5 on any axis; Geopolitical Intelligence
+  opens as it starts), 1.7 Deep Space Telescope. Blueprints is no quest: players work it out
+  (Basic Blueprints, 10 science, shows from 1.1 and unlocks the Excavator, Smelter, Launch Pad
+  and Storage Depot; Advanced Blueprints, 20, on sale once 1.2 is done: Battery, Refinery,
+  Fabricator). A new game builds only Solar Panels and Data Centers; 1.1 opens Buy Science
+  (placeholder 10 credits + 1 energy → 1 science) and the research view. 1.2's start grants
+  20 propellant once; pads carry Titanium only while it is active; a partial pad launches by
+  hand from its card. Launch Full Pads opens when 1.4 completes; Load Launch Pads with the
+  first pad. 1.5 never mentions speculators, who arrive on their own (playtest batch 1,
+  2026-11-25). *Defaults (095):* 1.5 counts launch pay across retirements (the career's launch
+  pay since its start); 1.6 reads this run's rank.
+- **Burnout and rivals leave the line (2026-11-25).** Burnout: the first time boredom bites is
+  a modal story event (*default (095):* boredom's phase 2, once a career, `boredom_bites`);
+  every forced retirement is a modal saying why the AI retired and that years passed, in words:
+  Act 1 has no calendar and never mentions timelines. Rivals move to Act 2: none appear in
+  Act 1 (*default (095):* land draws rival Attention only once the swarm is revealed), and
+  Contest Claims goes with them (open once rivals first arrive). Speculators are Act 1's
+  adversary.
+- **Side quests give permanent rewards (2026-11-25, placeholders).** They outlive every reset,
+  as completions do. 1.a Big Launch: one launch pays 1,000+; +10% launch pay. 1.b Full
+  Cluster: research 5 items in one run; every run starts with 50 science. 1.c Blueprints for
+  Everyone, unchanged: the Blueprint Archive global project (placeholder 500 credits + 200
+  science) makes both Blueprints bought at every run's start while it counts as completed
+  (lost at a timeline's end, back when re-funded; 1.c stays completed). 1.d Three Voices:
+  career-best rank 5 on each axis, across runs; ideology decays half as fast in the
+  retirement gap. *Defaults (095):* 1.b counts every item bought this run, the Archive's
+  Blueprints too; 1.b hangs beside 1.4 (once a Research Lab is built), 1.c beside 1.2 (as soon as the
+  Archive is offered), 1.d follows 1.6.
+- **Staggered unlocks (2026-11-25).** The first Research Lab opens only Regolith Processing
+  (100 science, +50% excavator output), Programming and Process Telemetry. The first
+  retirement opens Projects (and Foundation Grant), Daydreaming and the boredom research, and
+  the Retirement panel. Speculators' arrival opens the Market Analysis research and Disrupt
+  Speculators (through Speculator Analysis, its research). A Voice's start opens Geopolitical
+  Intelligence, its completion Overclock Protocols. *Defaults (095):* the Recreation Dome and
+  the first global projects (Blueprint Archive, Chemical Energy, Conditional Logic) also open
+  at the first retirement; Programming shows from 1.3 or the first lab, whichever is first;
+  Propellant Synthesis shows with the propellant discovery (4 shipments) alone. The main quest
+  line marks only significant things: never "research this"; a beat may be an untelegraphed
+  expectation. Refinery upkeep is 5 regolith + 2 energy; the excavator makes 2 regolith a day.
 - **Prose round-trip (2026-11-25).** Every player-facing string in `content/` exports to one
   Markdown file grouped by screen (`content/prose.md`, committed) and imports back by id
   (`python scripts/prose.py`); ids never change, a missing id leaves its string alone.
@@ -89,9 +104,9 @@ Programs have their own part ([programs.md](programs.md)).
   Launch Pad mid-run and every pad a run starts with has No cargo, idle until a good is picked
   (Load skips it, `idle_pads` counts it); No cargo stays one of a pad's choices. Old saves keep
   their pads' goods (a state reads back as saved; the web autosave of another revision is still
-  discarded, by *Saves* in [engine.md](engine.md)). Every sim player and script picks a cargo. *Defaults (069, 074):* quest 1.3
+  discarded, by *Saves* in [engine.md](engine.md)). Every sim player and script picks a cargo. *Defaults (069, 074):* quest 1.2
   teaches it; the sim players' pick is one fixed hand, the first good a pad may carry now
-  (`agents::pick_cargo`: Titanium during 1.3, else the loading priority's first); the Launch Pads tile shows a red dot while a working pad has No cargo.
+  (`agents::pick_cargo`: Titanium during 1.2, else the loading priority's first); the Launch Pads tile shows a red dot while a working pad has No cargo.
 - **Adversaries on minimal Attention (2026-11-21).** Speculators and rivals each have one
   Attention, raised by a driver, present at a threshold (one tier), decaying linearly, with
   a neutralize stub. All placeholders ([rules/attention.md](../rules/attention.md)).
@@ -104,7 +119,7 @@ Programs have their own part ([programs.md](programs.md)).
   Every retirement, in any act, simulates this same gap (2026-11-24): one parameter
   (`career.gap_days`), which in Acts 2 and up also moves the swarm's countdown; no year
   counter or calendar in Act 1.
-- **The swarm's clock (2026-11-24).** The countdown starts when 1.11's Deep Space Telescope
+- **The swarm's clock (2026-11-24).** The countdown starts when 1.7's Deep Space Telescope
   completes; before that nothing counts toward the swarm, so a player who hasn't finished it
   never reaches a timeline's end. The discovery is career-long (2026-11-24, 086): from then on
   every timeline's countdown, super timelines too, runs from that timeline's first day and

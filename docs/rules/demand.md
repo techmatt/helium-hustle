@@ -82,8 +82,8 @@ A good's speculator pool shows once it has been above 0 this run (set by a burst
 
 ## Actions
 
-None of its own. Promote (`promote_*`, after Trade Promotion) and Disrupt Speculators (once
-side quest 1.a Big Launch sets the career flag `speculator_disruption`) are commands run by programs ([commands.md](commands.md)); as effect
+None of its own. Promote (`promote_*`, after Trade Promotion) and Disrupt Speculators (after
+Speculator Analysis) are commands run by programs ([commands.md](commands.md)); as effect
 commands they need their full cost. Loading priority, which Disrupt reads, is set by
 `set_loading_priority` ([shipments.md](shipments.md)).
 

@@ -15,7 +15,7 @@ pub struct SagaView {
     /// The swarm is revealed: the calendar shows.
     pub revealed: bool,
     pub timeline: Option<Timeline>,
-    /// Calendar days left to the swarm (`None` before the discovery, 1.11).
+    /// Calendar days left to the swarm (`None` before the discovery, 1.7).
     pub days_left: Option<u64>,
     /// Earth science to spend.
     pub science: Fx,

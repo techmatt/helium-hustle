@@ -17,14 +17,15 @@ asked for that day (programs.md); the Retire action retires between days.
   scope's), `run` project progress and completions, events fired and the buildings, panels and projects they enabled, the
   boredom phase, run stats (best launch and best cargo per good among them). The run's ideology scores are replaced by the carried ones.
 - *Career (persists):* run number, retirements, lifetime totals (credits earned, shipments,
-  days, buildings built, research completed), personal bests (longest run in days, most
+  days, buildings built, research completed, launch pay as `trade_credits`), personal bests (longest run in days, most
   credits earned in a run, most shipments in a run), each axis's best ideology rank and best
   score, the ideology scores carried into the next run, each adversary's Attention
   ([attention.md](attention.md)), the days spent in retirement gaps, peak power, career
   flags (the program instructions' unlocks and Programming among them), the program loadout library
   ([programs.md](programs.md)), ids ever researched, owned and used, events seen, quests
   (side quests too) and sub-objectives completed, chain quests started (`started_quests`:
-  an `on_start` grant, 1.3's 20 propellant, comes once a career), `timeline` (global) and `forever` project
+  an `on_start` grant, 1.2's 20 propellant, comes once a career), each `trade_credits`
+  quest's mark (`quest_marks`: the career's launch pay when it started, [events.md](events.md)), `timeline` (global) and `forever` project
   progress and completions, achievements, the log, and the last finished run's summary
   (display: its number, length, whether forced, stats and final ranks, for the UI's run
   summary).
@@ -39,8 +40,9 @@ count at retirement is its length (a forced retirement counts the tick it happen
 
 **The retirement gap** (draft, 049). Between runs `gap_days` days pass, simulated one by
 one, in which only the slow systems run: each carried ideology score is multiplied by
-`0.5^(1 / half_life_days)` each day ([ideology.md](ideology.md); with the baseline's 1,825
-days and 365-day half-life, about 3% of each score is left), and each adversary's Attention
+`0.5^(1 / (half_life_days × ideology_half_life_mult))` each day ([ideology.md](ideology.md);
+with the baseline's 1,825 days and 365-day half-life, about 3% of each score is left, about
+18% once side quest 1.d Three Voices doubles the half-life), and each adversary's Attention
 loses its daily decay ([attention.md](attention.md)). The career counts the gap's days. It is
 the one gap of every act: unseen in Act 1 (no calendar), and in Acts 2 and up the same days
 move the swarm's countdown.
@@ -59,7 +61,8 @@ move the swarm's countdown.
    achievements (`bonus_buildings` rewards): owned and active, outside the cost curve
    ([economy.md](economy.md)), taking no land.
 6. Every building now held is recorded as owned in the career.
-7. Each seen event's unlocks are reapplied (panels, buildings, projects; [events.md](events.md)).
+7. Each seen event's unlocks are reapplied (panels, buildings, projects, side quest 1.b's 50
+   science; [events.md](events.md)).
 8. Derived resources and pads refreshed (processors from Data Centers, a pad per Launch Pad).
 9. Empty programs, every processor on Program 1 ([programs.md](programs.md)).
 10. Fresh markets: new noise, empty speculator pools, the first burst and rival dumps
@@ -85,9 +88,9 @@ A timeline's end (draft) hard-resets the career itself to run 1: [timeline.md](t
 ## Actions
 
 - **Retire** (`{"type": "retire"}`): voluntary retirement, exactly as a forced one but logged
-  `retired`. Illegal until the `retirement` panel is enabled this run, which quest 1.7
-  Burnout (the first retirement, forced by boredom) does; seen events reapply it at every
-  later run start.
+  `retired`. Illegal until the `retirement` panel is enabled this run, which the silent
+  `first_retirement` event does at the first retirement (forced by boredom); seen events
+  reapply it at every later run start.
 
 ## Params
 
@@ -106,7 +109,7 @@ The starting resources and buildings are economy params (`configs/baseline.json`
 
 ## Content
 
-`content/events.json` `enable_nav_panel: retirement` (1.7 Burnout);
+`content/events.json` `enable_nav_panel: retirement` (`first_retirement`);
 `content/projects.json` `starting_buildings` rewards; `content/achievements.json`
 `bonus_buildings` rewards; `content/commands.json` `scale_modifier: buy_power_mult` (Buy Power).
 The panel id `retirement` is fixed in code (`career::RETIREMENT_PANEL`: retiring needs it

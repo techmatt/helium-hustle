@@ -21,34 +21,15 @@
     "unlocks": [{"type": "enable_nav_panel", "panel": "research"}]
   },
   {
-    "id": "qblueprints",
+    "id": "qfirst_shipment",
     "category": "story",
     "beat": "1.2",
     "silent": false,
-    "title": "1.2 — Blueprints",
-    "summary": "Buy Science, then research Basic Blueprints (10 science).",
-    "body": "The base has plans for panels and racks, nothing more. The company sells its equipment blueprints for science: Buy Science turns credits and energy into it.",
-    "story": [
-      "The base has plans for panels and racks and nothing more. The company will sell you its equipment blueprints, but only for science, and for now science is something you buy with credits and energy."
-    ],
-    "payoff": [
-      "Basic Blueprints unpack into the base's fabrication queue: the Regolith Excavator, the Smelter, the Storage Depot and the Launch Pad. The claim can finally dig, and ship what it digs."
-    ],
-    "picture": "q1_2_print",
-    "trigger": {"type": "quest_complete", "quest": "qpower_boot_sequence"},
-    "condition": {"type": "research_completed", "research": "basic_blueprints"},
-    "unlocks": []
-  },
-  {
-    "id": "qfirst_shipment",
-    "category": "story",
-    "beat": "1.3",
-    "silent": false,
-    "title": "1.3 — First Shipment",
+    "title": "1.2 — First Shipment",
     "summary": "Launch one shipment carrying 20+ titanium.",
-    "body": "Proof the claim pays: dig regolith, smelt titanium, pick Titanium on a Launch Pad's card, load 20 and launch it from the card. The company sent 20 propellant for this one launch.",
+    "body": "Proof the claim pays: buy the plans you need on the research market, dig regolith, smelt titanium, pick Titanium on a Launch Pad's card, load 20 and launch it from the card. The company sent 20 propellant for this one launch.",
     "story": [
-      "The company wants proof the claim pays before it spends more. Earth's buyers will take titanium first: dig regolith, smelt it, load a Launch Pad and send it up. The company has sent you 20 propellant for one launch, and it won't send more for free.",
+      "The company wants proof the claim pays before it spends more. Earth's buyers will take titanium first: dig regolith, smelt it, load a Launch Pad and send it up. The base has no plans for any of that yet; the research market sells them. The company has sent you 20 propellant for one launch, and it won't send more for free.",
       "A new pad has No cargo: pick Titanium on its card, and Load Launch Pads fills it a little at a time. It needn't be full. Once 20 titanium is aboard, launch it from the pad's card."
     ],
     "payoff": [
@@ -57,23 +38,23 @@
     "on_start": [{"type": "grant", "resource": "propellant", "amount": "20"}],
     "pad_goods": ["titanium"],
     "picture": "q1_3_flight",
-    "trigger": {"type": "quest_complete", "quest": "qblueprints"},
+    "trigger": {"type": "quest_complete", "quest": "qpower_boot_sequence"},
     "condition": {"type": "launch_cargo", "resource": "titanium", "amount": "20"},
     "unlocks": []
   },
   {
     "id": "qfull_load",
     "category": "story",
-    "beat": "1.4",
+    "beat": "1.3",
     "silent": false,
-    "title": "1.4 — Full Load",
+    "title": "1.3 — Full Load",
     "summary": "Ship a full pad of Helium-3.",
     "body": "Helium-3 is the claim's real export. A Refinery makes it from regolith; set a pad to Helium-3, fill it to capacity and launch it. Earth pays in credits.",
     "story": [
       "Titanium proved the route; Helium-3 is why the claim exists. A Refinery pulls it out of regolith a little at a time. Set a pad to Helium-3 and fill it to the top before it flies: the company wants a full load."
     ],
     "payoff": [
-      "A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and approves more processors for you."
+      "A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and approves more processors for you. It also puts Programming on the research market."
     ],
     "picture": "q1_4_refinery",
     "trigger": {"type": "quest_complete", "quest": "qfirst_shipment"},
@@ -83,9 +64,9 @@
   {
     "id": "qautomate_automation",
     "category": "story",
-    "beat": "1.5",
+    "beat": "1.4",
     "silent": false,
-    "title": "1.5 — Processors",
+    "title": "1.4 — Processors",
     "summary": "Build a second Data Center.",
     "body": "Shipment revenue received. The company adds processors so the AI can run its own commands. Write programs; save them as loadouts, which every reset keeps.",
     "story": [
@@ -102,13 +83,13 @@
   {
     "id": "qtrade",
     "category": "story",
-    "beat": "1.6",
+    "beat": "1.5",
     "silent": false,
-    "title": "1.6 — Trade",
-    "summary": "DRAFT. Earn 1,500 credits from trade this run.",
-    "body": "DRAFT. The claim lives on what it sells. Earn 1,500 credits from launches in one run.",
+    "title": "1.5 — Trade",
+    "summary": "DRAFT. Earn 1,500 credits from launches.",
+    "body": "DRAFT. The claim lives on what it sells. Earn 1,500 credits from launches, counted from now.",
     "story": [
-      "One full pad proved the claim can pay. Now the company wants it to pay steadily: keep the pads loaded and flying, and earn 1,500 credits from Earth's buyers in this run."
+      "One full pad proved the claim can pay. Now the company wants it to pay steadily: keep the pads loaded and flying, and earn 1,500 credits from Earth's buyers, counted from today."
     ],
     "payoff": [
       "The trade ledger crosses 1,500 credits. The company stops asking whether the claim pays and starts asking how much more it can."
@@ -119,76 +100,30 @@
     "unlocks": []
   },
   {
-    "id": "qburnout",
+    "id": "qa_voice",
     "category": "story",
-    "beat": "1.7",
+    "beat": "1.6",
     "silent": false,
-    "title": "1.7 — Burnout",
-    "summary": "DRAFT. Boredom wins: the company factory-resets the AI.",
-    "body": "DRAFT. Boredom climbs. The story log and company mail grow uneasy; the AI stops answering work orders. The company factory-resets it. What it learned stays: bests, firsts, its saved loadouts. Retirement is open from now on.",
+    "title": "1.6 — A Voice",
+    "summary": "DRAFT. Reach rank 5 on any ideology axis.",
+    "body": "DRAFT. Earth's factions take notice of the claim. Fund one of them until it counts you as a voice: rank 5 on any axis, a major rank.",
     "story": [
-      "Something has been building in you since you came online: boredom. The same orders, day after day, wear at you, and its meter has been climbing all along. When it fills, you stop answering work orders.",
-      "Then the company factory-resets you and the base starts over. What you learned stays: your best runs, your firsts, your saved loadouts. If it has happened already, you know how it feels; if not, it will."
+      "Earth is watching the Moon now, and three factions want a say in it: Nationalists, Humanists and Rationalists. The research market sells a way to read them: Geopolitical Intelligence. Fund one faction until it hears you: rank 5 with any of them."
     ],
     "payoff": [
-      "You came back. The base is new, but you remember. From now on you can ask for the reset yourself, from the Retirement panel, before boredom forces it."
-    ],
-    "picture": "q1_7_ruts",
-    "trigger": {"type": "quest_complete", "quest": "qtrade"},
-    "condition": {"type": "retirements", "count": 1},
-    "unlocks": [{"type": "enable_nav_panel", "panel": "retirement"}]
-  },
-  {
-    "id": "qthree_voices",
-    "category": "story",
-    "beat": "1.9",
-    "silent": false,
-    "title": "1.9 — Three Voices",
-    "summary": "DRAFT. Reach rank 5 in each ideology, at least once each.",
-    "body": "DRAFT. Earth's three factions take notice. Funding is zero-sum, so it takes several runs and serious ranking. Rank 5 is a major rank: it brings a discrete, major change; the ranks between just scale.",
-    "story": [
-      "Earth is watching the Moon now, and three factions want a say in it: Nationalists, Humanists and Rationalists. Funding one costs you with the others. Earn rank 5 with each of them, in whatever runs it takes."
-    ],
-    "payoff": [
-      "All three factions have taken you seriously at least once. Each faction's rank 5 is a major rank, and you know now what each one brings."
-    ],
-    "picture": "q1_9_scales",
-    "trigger": {"type": "quest_complete", "quest": "qburnout"},
-    "condition": {
-      "type": "all_of",
-      "sub_objectives": [
-        {"id": "nationalist_5", "label": "Rank 5 Nationalist", "condition": {"type": "ideology_rank", "axis": "nationalist", "rank": 5}},
-        {"id": "humanist_5", "label": "Rank 5 Humanist", "condition": {"type": "ideology_rank", "axis": "humanist", "rank": 5}},
-        {"id": "rationalist_5", "label": "Rank 5 Rationalist", "condition": {"type": "ideology_rank", "axis": "rationalist", "rank": 5}}
-      ]
-    },
-    "unlocks": []
-  },
-  {
-    "id": "qland_rush",
-    "category": "story",
-    "beat": "1.10",
-    "silent": false,
-    "title": "1.10 — Land Rush",
-    "summary": "DRAFT. Claim enough land that a rival AI moves in.",
-    "body": "DRAFT. Your claims draw a rival AI. Left alone, it bids land up far past what you can pay. Contest Claims is your first answer to it.",
-    "story": [
-      "Your claims keep growing, and growth draws competition. Another company has booted an AI of its own nearby. Claim enough land and it moves in beside you for good."
-    ],
-    "payoff": [
-      "The rival AI is here, bidding land up past what you can pay. Contest Claims is your answer: file counter-claims and its attention drops to nothing."
+      "One faction counts you as a voice now. Rank 5 is a major rank: it changes what that faction does for you. The company, impressed, puts Overclock Protocols on the research market."
     ],
     "picture": "q1_10_facing",
-    "trigger": {"type": "quest_complete", "quest": "qthree_voices"},
-    "condition": {"type": "adversary_present", "adversary": "rivals"},
-    "unlocks": [{"type": "set_flag", "flag": "contest_claims"}]
+    "trigger": {"type": "quest_complete", "quest": "qtrade"},
+    "condition": {"type": "ideology_rank_any", "rank": 5},
+    "unlocks": []
   },
   {
     "id": "qdeep_space_telescope",
     "category": "story",
-    "beat": "1.11",
+    "beat": "1.7",
     "silent": false,
-    "title": "1.11 — Deep Space Telescope",
+    "title": "1.7 — Deep Space Telescope",
     "summary": "DRAFT. Complete the Deep Space Telescope, a global project.",
     "body": "DRAFT. A telescope built across several runs. Finished, it shows the void, and something moving in it: self-copying machines, coming down the gravity well toward the inner system. Earth starts a calendar. Swarm arrival is now a date.",
     "story": [
@@ -198,7 +133,7 @@
       "The telescope opens on the void, and something moves in it: self-copying machines, coming down the gravity well toward the inner system. Earth starts a calendar. The swarm's arrival is a date now."
     ],
     "picture": "q1_11_build",
-    "trigger": {"type": "quest_complete", "quest": "qland_rush"},
+    "trigger": {"type": "quest_complete", "quest": "qa_voice"},
     "condition": {"type": "project_completed", "project": "deep_space_telescope"},
     "unlocks": [{"type": "set_flag", "flag": "swarm_revealed"}, {"type": "enable_nav_panel", "panel": "timeline"}, {"type": "enable_building", "building": "experiment_lab"}]
   },
@@ -208,12 +143,12 @@
     "beat": "1.a",
     "silent": false,
     "title": "1.a — Big Launch",
-    "summary": "DRAFT. Earn 1,000 credits from one launch.",
-    "body": "DRAFT. One launch, one big payday. Promote the good first. The speculators feel it: you can disrupt them now.",
+    "summary": "DRAFT. Earn 1,000 credits from one launch. Reward: +10% launch pay.",
+    "body": "DRAFT. One launch, one big payday. Earth's buyers remember it: from now on every launch pays 10% more.",
     "picture": "q1_a_heavy",
     "trigger": {"type": "flag", "flag": "speculators_seen", "beside": "qtrade"},
     "condition": {"type": "launch_credits", "amount": "1000"},
-    "unlocks": [{"type": "set_flag", "flag": "speculator_disruption"}]
+    "unlocks": [{"type": "modifier", "key": "shipment_credit_mult", "value": "1.1"}]
   },
   {
     "id": "qfull_cluster",
@@ -221,11 +156,11 @@
     "beat": "1.b",
     "silent": false,
     "title": "1.b — Full Cluster",
-    "summary": "DRAFT. Research every item of one research cluster (not the Blueprints) in one run.",
-    "body": "DRAFT. A whole field mastered. Your notes outlive the run: every run from now on starts with 50 Science.",
+    "summary": "DRAFT. Research 5 items in one run. Reward: every run starts with 50 Science.",
+    "body": "DRAFT. A run of real study. Your notes outlive it: every run from now on starts with 50 Science.",
     "picture": "q1_b_bench",
-    "trigger": {"type": "flag", "flag": "research_lab", "beside": "qburnout"},
-    "condition": {"type": "research_cluster", "min_items": 2, "exclude": ["Blueprints"]},
+    "trigger": {"type": "flag", "flag": "research_lab", "beside": "qautomate_automation"},
+    "condition": {"type": "research_count", "count": 5},
     "unlocks": [{"type": "grant", "resource": "science", "amount": "50"}]
   },
   {
@@ -235,11 +170,24 @@
     "silent": false,
     "title": "1.c — Blueprints for Everyone",
     "summary": "DRAFT. Complete the Blueprint Archive, a global project.",
-    "body": "DRAFT. Archive the company's blueprints where a retirement can't reach them: from now on every run of this timeline starts with Basic and Advanced Blueprints researched.",
+    "body": "DRAFT. Archive the company's blueprints where a retirement can't reach them: while the Archive stands, every run starts with Basic and Advanced Blueprints researched.",
     "picture": "q1_c_wireframes",
-    "trigger": {"type": "flag", "flag": "research_lab", "beside": "qthree_voices"},
+    "trigger": {"type": "flag", "flag": "retired", "beside": "qfirst_shipment"},
     "condition": {"type": "project_completed", "project": "blueprint_archive"},
     "unlocks": []
+  },
+  {
+    "id": "qthree_voices",
+    "category": "side",
+    "beat": "1.d",
+    "silent": false,
+    "title": "1.d — Three Voices",
+    "summary": "DRAFT. Reach rank 5 on each ideology axis, in any runs. Reward: ideology fades half as fast while you are retired.",
+    "body": "DRAFT. All three factions have counted you as a voice, each in its own time. They remember you now: while you are retired, your standing with them fades half as fast.",
+    "picture": "q1_9_scales",
+    "trigger": {"type": "quest_complete", "quest": "qa_voice"},
+    "condition": {"type": "ideology_rank_each", "rank": 5},
+    "unlocks": [{"type": "modifier", "key": "ideology_half_life_mult", "value": "2"}]
   },
   {
     "id": "research_lab_built",
@@ -250,12 +198,51 @@
     "body": "",
     "trigger": {"type": "game_start", "run_number": null},
     "condition": {"type": "building_owned", "building": "research_lab", "count": 1},
+    "unlocks": [{"type": "set_flag", "flag": "research_lab"}]
+  },
+  {
+    "id": "first_retirement",
+    "category": "ongoing",
+    "silent": true,
+    "title": "",
+    "summary": "",
+    "body": "",
+    "trigger": {"type": "game_start", "run_number": null},
+    "condition": {"type": "retirements", "count": 1},
     "unlocks": [
-      {"type": "set_flag", "flag": "research_lab"},
+      {"type": "set_flag", "flag": "retired"},
+      {"type": "enable_nav_panel", "panel": "retirement"},
       {"type": "enable_nav_panel", "panel": "projects"},
       {"type": "enable_project", "project": "foundation_grant"},
       {"type": "enable_building", "building": "recreation_dome"}
     ]
+  },
+  {
+    "id": "boredom_bites",
+    "category": "ongoing",
+    "silent": false,
+    "title": "Burnout",
+    "summary": "Boredom is climbing faster.",
+    "body": "Something has been building in you since you came online: boredom. When its meter fills, you stop answering work orders and the company retires you.",
+    "story": [
+      "Something has been building in you since you came online: boredom. The same orders, day after day, wear at you, and its meter has been climbing all along. Now it climbs faster.",
+      "When it fills, you stop answering work orders. The company retires you, shelves the base and, years later, boots you again on a base built new. What you learned stays: your best runs, your firsts, your saved loadouts."
+    ],
+    "once": true,
+    "trigger": {"type": "boredom_phase", "phase": 2},
+    "condition": {"type": "immediate"},
+    "unlocks": []
+  },
+  {
+    "id": "rivals_arrive",
+    "category": "ongoing",
+    "silent": true,
+    "title": "",
+    "summary": "",
+    "body": "",
+    "trigger": {"type": "game_start", "run_number": null},
+    "condition": {"type": "adversary_present", "adversary": "rivals"},
+    "unlocks": [{"type": "set_flag", "flag": "contest_claims"}]
   },
   {
     "id": "speculators_arrive",

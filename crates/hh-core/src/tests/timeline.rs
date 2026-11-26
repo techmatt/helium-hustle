@@ -58,7 +58,7 @@ fn nothing_counts_toward_the_swarm_before_the_first_discovery() {
     g.run.enabled_panels.insert("retirement".into());
     r.apply(&mut g, &Action::Retire).unwrap();
     r.advance(&mut g, 10);
-    assert!(g.saga.is_default(), "neither days nor retirements count before 1.11");
+    assert!(g.saga.is_default(), "neither days nor retirements count before 1.7");
     let v = r.view(&g);
     assert!(!v.saga.revealed && v.saga.days_left.is_none(), "no calendar shows");
     // The discovery starts the countdown that day, with no Telescope standing.
@@ -178,7 +178,9 @@ fn global_projects_effects_last_as_long_as_their_completion() {
     let r = rules();
     let mut g = revealed(&r);
     g.career.flags.insert(programs::LOGIC_FLAG.into());
-    for q in ["qthree_voices", "qdeep_space_telescope", "qblueprints_for_everyone"] {
+    // The first global projects are offered from the first retirement.
+    g.career.flags.insert("retired".into());
+    for q in ["qa_voice", "qdeep_space_telescope", "qblueprints_for_everyone"] {
         g.career.completed_quests.insert(q.into());
         g.career.seen_events.insert(q.into());
     }
@@ -344,11 +346,11 @@ fn quiet_days_count_from_the_last_order() {
 
 #[test]
 fn a_rank_on_one_axis_shows_its_progress() {
-    // Quest 1.7's rows ("Rank 5 ...") count up, as `holds` reads them.
+    // A career-best rank (Three Voices, 1.d) counts up, as `holds` reads them.
     let r = rules();
     let mut g = r.new_game(7);
     let c = crate::content::Condition::IdeologyRank { axis: "humanist".into(), rank: 5 };
     g.career.max_ideology_ranks.insert("humanist".into(), 3);
-    assert_eq!(crate::modules::events::progress(&r, &g, &c), Some((f("3"), f("5"))));
+    assert_eq!(crate::modules::events::progress(&r, &g, "", &c), Some((f("3"), f("5"))));
     assert!(!crate::modules::events::holds(&r, &g, "", &c));
 }

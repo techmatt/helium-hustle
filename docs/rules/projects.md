@@ -105,30 +105,29 @@ The `drain` variant has no params (`"params": {}`).
 `content/projects.json`: 15 rows, ten `timeline` (the Dyson Sphere among them: draft,
 [timeline.md](timeline.md)) and five `run`, each with `scope`, `unlock`, `costs`,
 `min_days` and `rewards` (none repeats yet); names and descriptions are the Godot
-placeholders but for the draft rows (049): Conditional Logic (offered once quest 1.9 is
-active, so once 1.7 is done, its reward the `logic_if` flag that opens `if`, [programs.md](programs.md)) and the
-Deep Space Telescope (offered once 1.10 is done; its first completion completes quest 1.11,
+placeholders but for the draft rows (049): Conditional Logic (offered from the first
+retirement, the career flag `retired`; its reward the `logic_if` flag that opens `if`, [programs.md](programs.md)) and the
+Deep Space Telescope (offered once quest 1.7 is active; its first completion completes 1.7,
 so it spans several runs: `min_days` 3,000; rebuilt each timeline, at the same cost, for
 its placeholder passive, `science_output_mult` and `nationalist_growth_mult` ×1.1, and only
-that: the swarm's countdown runs without it, and what 1.11 opened stays:
-[timeline.md](timeline.md)). Chemical Energy Initiative is offered once 1.9 is
-active. Blueprint Archive (draft, offered once 1.9 is active: 500 credits and 200 science,
+that: the swarm's countdown runs without it, and what 1.7 opened stays:
+[timeline.md](timeline.md)). Chemical Energy Initiative is offered from the first
+retirement. Blueprint Archive (draft, offered from the first retirement: 500 credits and 200 science,
 `min_days` 17) completes side quest 1.c Blueprints for Everyone; its `starting_research`
 reward has both Blueprints bought from the start of every run of the timeline
 ([research.md](research.md)). Every other row's `min_days` is its largest cost over 30, rounded up: the days the old
-flat cap of 30 a day took. The Projects panel, where a player sees them, opens only once a
-Research Lab is built (the silent `research_lab_built` event, [events.md](events.md)).
+flat cap of 30 a day took. The Projects panel, where a player sees them, opens at the first
+retirement (the silent `first_retirement` event, [events.md](events.md)).
 
 ## Port notes
 
 - Conflict: Microwave Receiver gate: see [economy.md](economy.md#port-notes).
-- Changed (049): the first Research Lab enables Foundation Grant and the Projects panel (the Godot
+- Changed: the first retirement enables Foundation Grant and the Projects panel (the Godot
   data had Market Awareness, a quest no longer in the line).
 - Conflict: Lunar Cartography and Deep Core Survey unlock by `project_enabled`, but no
   event enables them. Kept as data, so both are unreachable (candidate: give each an
   enabling event or another unlock).
 - Candidate: a `quest_active` gate holds while the quest is active or after it is
-  completed (Chemical Energy Initiative and Conditional Logic stay fundable after 1.9
-  Three Voices completes).
+  completed (the Deep Space Telescope stays fundable after 1.7 completes).
 - Candidate: AI Consciousness Act's `command_boredom` values replace the commands' own
   boredom per execution rather than adding to it.

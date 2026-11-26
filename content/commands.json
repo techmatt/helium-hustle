@@ -194,7 +194,7 @@
   {
     "id": "disrupt_speculators",
     "name": "Disrupt Speculators",
-    "requires": {"type": "flag", "flag": "speculator_disruption"},
+    "requires": {"type": "research", "research": "speculator_analysis"},
     "costs": {"energy": "3"},
     "produces": {},
     "boredom": "0",

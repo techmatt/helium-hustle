@@ -21,8 +21,10 @@ Otherwise an item is shown, and so buyable, if it was bought in any run of the c
 | `building_count` | at least `count` of the building owned this run (bonus buildings included) |
 | `shipments_completed` | career shipments in finished runs plus this run's reach `count` |
 | `quest_completed` | the quest is completed (in any run) |
+| `quest_active` | the quest is active or completed |
 | `flag` | the career flag `flag` is set |
 | `all_of` | every condition in `all` holds |
+| `any_of` | some condition in `any` holds |
 
 Visibility is checked only at purchase: an item that was shown and stops being so (boredom
 falls back) can't be bought until it holds again.
@@ -57,27 +59,28 @@ count as bought from day 0 of every run while the project counts as completed ([
   a tier (display only, [demand.md](demand.md)).
 - `modifier` (`key`, `value`): multiplies the modifier `key` by `value`, one more source in
   the shared modifier framework ([README.md](README.md), *Modifiers*). Regolith Processing
-  (100 science, category *Extraction*, visible at 2 Data Centers): `excavator_output_mult`
+  (100 science, category *Extraction*, visible once a Research Lab is built): `excavator_output_mult`
   1.5, so Regolith Excavators make 50% more ([economy.md](economy.md)).
 - `program_readings` (Process Telemetry, 50 science, visible once a Research Lab is built, its own category
   *Program Analysis*): programs' `energy per day` and `days since a purchase` readings
   open ([programs.md](programs.md)).
 
-- `career_flag` (Programming, 200 science, visible once quest 1.4 Full Load is done, category
+- `career_flag` (Programming, 200 science, visible once quest 1.3 Full Load is done or a
+  Research Lab is built, category
   *Programs*): buying it sets the career flag `flag` for good (`programming`); retirements
   and a timeline's end keep it, and the item never shows again. The `programming` flag shows
   the Programs nav tile (`nav.json`, a `flag` condition) and with it the Programs view (the
   text and block editors, the all-instructions panel); no rule reads it, and the right
   column's program, Add to Program and loadouts are open without it. A state
-  saved before revision 29 that loads past 1.4 gets the flag (`Career.flag_research`).
+  saved before revision 29 that loads with Programming visible gets the flag (`Career.flag_research`).
 
 A purchase of research (as of a building or land) sets the run's `last_purchase`.
 
 Items with no effect unlock things: a command or building whose `requires` is
 `{"type": "research", ...}` is available only while that item is bought this run, and a
 project or quest can name it ([projects.md](projects.md), [events.md](events.md)).
-Speculator Analysis has no effect and nothing names it: buying it changes nothing (its
-description's burst forecast is not built).
+Speculator Analysis has no effect: it opens Disrupt Speculators, the command's `requires`
+(its description's burst forecast is not built).
 
 ## Actions
 
@@ -100,25 +103,25 @@ Every number is on the content rows: costs, visibility thresholds and effect val
 
 `content/research.json`: 17 rows, each with `cost`, optional `requires`, optional `effect`,
 `visible_when`, a `category` and a placeholder `description`. The *Blueprints* category comes
-first: Basic Blueprints (10 science, always visible; quest 1.2 buys it) unlocks the Regolith
+first: Basic Blueprints (10 science, always visible; no quest asks for it) unlocks the Regolith
 Excavator, Smelter, Launch Pad and Storage Depot, and Advanced Blueprints (20, visible once
-quest 1.3 First Shipment is completed) the Battery, Refinery and Fabricator, through those
-buildings' `requires` ([economy.md](economy.md)). Programming (category *Programs*) shows
-from 1.4 Full Load until bought, Regolith Processing (category *Extraction*) from 2 Data
-Centers (when a Research Lab can be built). Every other item but Novelty Simulation has the
-`flag` `research_lab` in its `visible_when` (alone, or inside an `all_of` with its old
-condition): the flag the silent `research_lab_built` event sets once a Research Lab is owned
-(beat 1.8, no quest; [events.md](events.md)), so before a Lab the panel shows only those.
-Speculator Analysis also needs the `speculators_seen` flag (speculators have arrived). A
-category is a cluster:
-buying every item of one of 2 or more items in a run (so not the one-item Political
-Influence or Extraction), outside the categories its `exclude` names (1.b excludes Blueprints), meets side
-quest 1.b's `research_cluster`
-([events.md](events.md)). Dream Protocols is named Daydreaming; Novelty Simulation (draft,
-[timeline.md](timeline.md)) stays in Self-Maintenance, so that cluster can't be finished
-before quest 1.11 shows it;
-Geopolitical Intelligence shows once a Research Lab is built; Market Awareness only reveals demand
-(Disrupt Speculators opens on side quest 1.a, [demand.md](demand.md)). The `research` panel
+quest 1.2 First Shipment is completed) the Battery, Refinery and Fabricator, through those
+buildings' `requires` ([economy.md](economy.md)). The rest open in stages
+([events.md](events.md)):
+
+| When | Shows |
+|---|---|
+| First Research Lab (flag `research_lab`, the silent `research_lab_built`) | Regolith Processing, Process Telemetry, Programming (also once 1.3 Full Load is done) |
+| First retirement (flag `retired`) | Daydreaming (Dream Protocols); Stress Tolerance and Efficient Dreaming once it is bought |
+| Speculators' arrival (flag `speculators_seen`) | Market Awareness; Speculator Analysis and Trade Promotion once it is bought; Shipping Efficiency at 10 shipments |
+| Quest 1.6 A Voice starts | Geopolitical Intelligence |
+| 1.6 completes | Overclock Protocols; Overclock Boost once it is bought |
+| 1.7 Deep Space Telescope completes | Novelty Simulation (draft, [timeline.md](timeline.md)) |
+
+Propellant Synthesis shows with the propellant discovery event (4 shipments). Side quest 1.b
+Full Cluster's `research_count` counts the items bought this run (Archive-granted Blueprints
+included); Market Awareness only reveals demand, and Speculator Analysis opens Disrupt
+Speculators ([demand.md](demand.md)). The `research` panel
 id is fixed in code (`research::RESEARCH_PANEL`). Unlocks live on the unlocked rows'
 `requires` (`content/commands.json`, `content/buildings.json`), not here.
 
@@ -129,7 +132,7 @@ id is fixed in code (`research::RESEARCH_PANEL`). Unlocks live on the unlocked r
 - Conflict: Overclock cap. The Godot command text said "+200%" (rewritten to the engine's caps); Overclock Boost's data says the
   cap goes from 150% to 200%. The engine has a base cap of 1.5 in config
   (`programs.overclock_base_cap`) and Overclock Boost's `overclock_cap` 2.
-- Changed (049): Geopolitical Intelligence shows once a Research Lab is built (the handoffs had
+- Changed: Geopolitical Intelligence shows once quest 1.6 A Voice starts (the handoffs had
   QAutomate, the data QMarket, a quest no longer in the line).
 - Conflict: the data's research `unlocks_commands` lists duplicate each command's own
   `requires`. Dropped: the command's `requires` is the one home.

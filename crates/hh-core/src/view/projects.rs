@@ -167,11 +167,9 @@ pub fn condition_text(c: &Condition) -> String {
         Condition::Retirements { count } => format!("Retire {count} times"),
         Condition::AdversaryPresent { adversary } => format!("Draw the {adversary} in"),
         Condition::LaunchCredits { amount } => format!("Earn {} credits from one launch", n(*amount)),
-        Condition::TradeCredits { amount } => format!("Earn {} credits from trade this run", n(*amount)),
-        Condition::ResearchCluster { min_items, exclude } => {
-            let but = if exclude.is_empty() { String::new() } else { format!(" (not {})", exclude.join(", ")) };
-            format!("Research every item of one cluster of {min_items} or more{but} in one run")
-        }
+        Condition::TradeCredits { amount } => format!("Earn {} credits from trade", n(*amount)),
+        Condition::ResearchCount { count } => format!("Research {count} items in one run"),
+        Condition::IdeologyRankEach { rank } => format!("Reach rank {rank} on every axis"),
         Condition::LaunchCargo { resource, amount } => format!("Launch {} {} at once", n(*amount), name(resource)),
         Condition::LaunchFull { resource } => format!("Launch a full pad of {}", name(resource)),
         Condition::QuietDays { days } => format!("{days} days without an order"),

@@ -60,8 +60,8 @@ pub const KNOBS: &[&str] = &[
     "first_margin", "ideology",
 ];
 
-/// The Three Voices quest (1.9): the quests profile's ideology stretch.
-const THREE_VOICES: &str = "qthree_voices";
+/// The A Voice quest (1.6, rank 5 on any axis): the quests profile's ideology stretch.
+const A_VOICE: &str = "qa_voice";
 
 /// Ticks between retirement checks (each plays the run out on a copy).
 const RETIRE_EVERY: u64 = 100;

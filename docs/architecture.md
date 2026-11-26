@@ -122,7 +122,7 @@ as much (they start from that day, not day 0), and processors gained go to the f
 errors naming them. `hh-sim run --scenario NAME` (or `--scenario-file F`) and the web
 debug menu use them. A record carries its scenario in full, so a later edit to the file
 can't change an old record. `everything` (first, the menu's default) is Matt's test-all
-start: Act 1's beats 1.1-1.10 and 1.a-1.c done, every Act 1 view open, a rich working base;
+start: Act 1's beats 1.1-1.6 and 1.a-1.d done, every Act 1 view open, a rich working base;
 the rest serve tests and e2e (`golden_start` the golden; `story_acts`, every chain quest
 before Act 4's done, shows Story's four act bands). Their contents are asserted on: hh-core's
 `tests/play.rs` reads `late_unlocks`' one-energy shortage and its programs, `everything`'s
