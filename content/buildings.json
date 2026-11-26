@@ -251,7 +251,7 @@
     "name": "Recreation Dome",
     "category": "storage",
     "ideology": "humanist",
-    "requires": {"type": "none"},
+    "requires": {"type": "research", "research": "recreation_dome_blueprints"},
     "land": 3,
     "cost_scaling": "1.5",
     "max_count": null,

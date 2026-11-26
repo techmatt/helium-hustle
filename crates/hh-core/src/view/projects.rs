@@ -120,9 +120,10 @@ fn reward_text(p: &Project) -> Vec<String> {
                     command_boredom.iter().map(|(c, v)| format!("{} {}", name(c), short(*v))).collect();
                 format!("Boredom growth ×{}; boredom per run of {}", short(*base_rate_mult), cmds.join(", "))
             }
-            ProjectReward::ResearchDiscount { mult } => {
-                format!("Research bought in an earlier run costs ×{}", short(*mult))
-            }
+            ProjectReward::ResearchDiscount { mult, category } => match category {
+                Some(cat) => format!("{cat} research bought in an earlier run costs ×{}", short(*mult)),
+                None => format!("Research bought in an earlier run costs ×{}", short(*mult)),
+            },
         })
         .collect();
     for b in &content().buildings {

@@ -32,9 +32,10 @@ falls back) can't be bought until it holds again.
 **Price** in science: `cost × discount_factor ^ rationalist rank` (the run's current
 rank, [ideology.md](ideology.md); a negative rank raises the price). If the item was bought
 in an earlier run and Rationalist is at its major rank, the price is 0 (the major effect,
-[ideology.md](ideology.md#rules)); else, if a project with a `research_discount` reward is completed (Universal
-Research Archive, [projects.md](projects.md)), the price is further multiplied by its
-`mult` (0.75). Each product is floored once (the [rounding rule](README.md#numbers)).
+[ideology.md](ideology.md#rules)); else each live `research_discount` project reward whose
+`category` is null or the item's multiplies the price by its `mult`, in content order
+([projects.md](projects.md)): the Blueprint Archive's 0.8 (Blueprints only), then the Universal
+Research Archive's 0.75 (any research), so a Blueprint bought before with both done costs ×0.6. Each product is floored once (the [rounding rule](README.md#numbers)).
 
 **Buying** checks, in order: the `research` panel is enabled this run (quest 1.1 Online's completion opens
 it, [events.md](events.md); the nav's Research tile shows with it); not already bought this
@@ -101,12 +102,13 @@ Every number is on the content rows: costs, visibility thresholds and effect val
 
 ## Content
 
-`content/research.json`: 17 rows, each with `cost`, optional `requires`, optional `effect`,
+`content/research.json`: 18 rows, each with `cost`, optional `requires`, optional `effect`,
 `visible_when`, a `category` and a placeholder `description`. The *Blueprints* category comes
 first: Basic Blueprints (10 science, always visible; no quest asks for it) unlocks the Regolith
-Excavator, Smelter, Launch Pad and Storage Depot, and Advanced Blueprints (20, visible once
-quest 1.2 First Shipment is completed) the Battery, Refinery, Fabricator and Research Lab, through those
-buildings' `requires` ([economy.md](economy.md)). The rest open in stages
+Excavator, Smelter, Launch Pad and Storage Depot, Advanced Blueprints (20, visible once
+quest 1.2 First Shipment is completed) the Battery, Refinery, Fabricator and Research Lab, and
+Recreation Dome Blueprints (300, placeholder, visible from the first retirement) the Recreation
+Dome, through those buildings' `requires` ([economy.md](economy.md)). The rest open in stages
 ([events.md](events.md)):
 
 | When | Shows |

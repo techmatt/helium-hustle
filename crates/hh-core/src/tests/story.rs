@@ -92,7 +92,7 @@ fn unlocks_are_staggered() {
     let after = shown(&r, &g);
     let opened: Vec<&str> = after.iter().copied().filter(|x| !before.contains(x)).collect();
     assert_eq!(opened, ["regolith_processing", "process_telemetry", "programming"]);
-    assert!(!g.run.enabled_panels.contains("projects") && !g.run.enabled_buildings.contains("recreation_dome"));
+    assert!(!g.run.enabled_panels.contains("projects"));
     // The first retirement: Projects, Daydreaming, the Retirement panel.
     g.career.retirements = 1;
     r.advance(&mut g, 1);
@@ -282,7 +282,7 @@ fn playtest_batch_1_reads_as_ruled() {
     // The first retirement opens Projects and offers the Archive: 1.c starts at once, beside 1.2.
     g.career.retirements = 1;
     r.advance(&mut g, 1);
-    assert!(g.run.enabled_buildings.contains("recreation_dome") && g.run.enabled_projects.contains("foundation_grant"));
+    assert!(g.run.enabled_projects.contains("foundation_grant"));
     let sides: Vec<_> = r.view(&g).side_quests.iter().map(|s| (s.id, s.parent)).collect();
     assert_eq!(sides, [("qfull_cluster", Some("qautomate_automation")), ("qblueprints_for_everyone", Some("qfirst_shipment"))]);
     // Regolith Processing: +50% excavator output (2 a day -> 3).

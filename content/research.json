@@ -20,6 +20,16 @@
     "description": "The company's plans for the Battery, Refinery, Fabricator and Research Lab."
   },
   {
+    "id": "recreation_dome_blueprints",
+    "name": "Recreation Dome Blueprints",
+    "category": "Blueprints",
+    "cost": "300",
+    "requires": null,
+    "effect": null,
+    "visible_when": {"type": "flag", "flag": "retired"},
+    "description": "The company's plans for the Recreation Dome."
+  },
+  {
     "id": "regolith_processing",
     "name": "Regolith Processing",
     "category": "Extraction",

@@ -503,8 +503,9 @@ pub enum ProjectReward {
     StartingResearch { research: Vec<String> },
     /// Multiplies the boredom growth rate; replaces commands' flat boredom.
     BoredomModifiers { base_rate_mult: Fx, command_boredom: Amounts },
-    /// Research bought in an earlier run costs this much of its price.
-    ResearchDiscount { mult: Fx },
+    /// Research bought in an earlier run costs this much of its price: only
+    /// research of `category` (a research row's), or every item when null.
+    ResearchDiscount { mult: Fx, category: Option<String> },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -870,6 +871,12 @@ impl Content {
                     ProjectReward::StartingResearch { research } => need(
                         !research.is_empty() && research.iter().all(|x| self.research_item(x).is_some()),
                         format!("{w}: unknown research"),
+                    ),
+                    ProjectReward::ResearchDiscount { mult, category } => need(
+                        *mult > Fx::ZERO
+                            && *mult <= Fx::ONE
+                            && category.as_ref().is_none_or(|c| self.research.iter().any(|x| x.category == *c)),
+                        format!("{w}: research_discount mult outside (0, 1] or unknown category"),
                     ),
                     _ => {}
                 }

@@ -84,7 +84,8 @@ fn shows(g: &GameState, v: &Visibility) -> bool {
 }
 
 /// Its price in science: `cost × discount ^ rationalist rank`, times a
-/// completed research-discount project's multiplier if bought in an earlier run.
+/// live research-discount project reward's multiplier (each whose category, if
+/// it names one, is the item's) if bought in an earlier run.
 pub fn price(r: &Rules, g: &GameState, item: &Research) -> Fx {
     let mut c = item.cost * super::ideology::discount(r, g, "rationalist");
     if g.career.researched.contains(&item.id) {
@@ -93,8 +94,10 @@ pub fn price(r: &Rules, g: &GameState, item: &Research) -> Fx {
             return Fx::ZERO;
         }
         for reward in super::projects::live_rewards(g) {
-            if let ProjectReward::ResearchDiscount { mult } = reward {
-                c = c * *mult;
+            if let ProjectReward::ResearchDiscount { mult, category } = reward {
+                if category.as_ref().is_none_or(|cat| *cat == item.category) {
+                    c = c * *mult;
+                }
             }
         }
     }

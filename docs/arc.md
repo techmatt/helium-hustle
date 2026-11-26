@@ -36,7 +36,7 @@ quest opens as built (its unlocks, the `requires`, research and projects gated o
 | 1.7 Deep Space Telescope | `qdeep_space_telescope` | 1.6 | the Deep Space Telescope global project (30,000 credits and 5,000 science at no faster than 3,000 days, so several runs) | Act 2: the `swarm_revealed` flag, the swarm's 100-year countdown, the Timeline view, the Experiment Lab, the rivals | draft |
 | 1.a Big launch | `qbig_launch` (side) | the `speculators_seen` flag (beside 1.5) | one launch pays 1,000+ credits | for good: +10% launch pay (`shipment_credit_mult` ×1.1) | draft |
 | 1.b Full cluster | `qfull_cluster` (side) | the `research_lab` flag (beside 1.4) | 5 research items bought in one run | for good: every run starts with 50 Science | draft |
-| 1.c Blueprints for everyone | `qblueprints_for_everyone` (side) | the `retired` flag (beside 1.2, so it starts as the Archive is offered) | the Blueprint Archive global project (placeholder: 500 credits, 200 science) | (the Archive's effect: Basic and Advanced Blueprints bought at the start of every run while it counts as completed) | draft |
+| 1.c Blueprints for everyone | `qblueprints_for_everyone` (side) | the `retired` flag (beside 1.2, so it starts as the Archive is offered) | the Blueprint Archive global project (placeholder: 500 credits, 200 science) | (the Archive's effects while it counts as completed: Basic and Advanced Blueprints bought at the start of every run; Blueprints research bought in an earlier run 20% cheaper) | draft |
 | 1.d Three voices | `qthree_voices` (side) | 1.6 | career-best rank 5 on each axis, in any runs | for good: ideology decays half as fast in the retirement gap (`ideology_half_life_mult` ×2) | draft |
 
 **Silent unlocks** (one-off events, re-applied from day 0 of every later run once seen):
@@ -44,7 +44,7 @@ quest opens as built (its unlocks, the `requires`, research and projects gated o
 | When | Event | Opens |
 |---|---|---|
 | the first Research Lab | `research_lab_built` (flag `research_lab`) | Regolith Processing, Programming, Process Telemetry |
-| the first retirement | `first_retirement` (flag `retired`) | the Projects panel and Foundation Grant, the first global projects (Blueprint Archive, Chemical Energy, Conditional Logic: opens `if`), Daydreaming and the boredom research, the Recreation Dome, the Retirement panel (voluntary retirement) |
+| the first retirement | `first_retirement` (flag `retired`) | the Projects panel and Foundation Grant, the first global projects (Blueprint Archive, Chemical Energy, Conditional Logic: opens `if`), Daydreaming and the boredom research, Recreation Dome Blueprints (300 science; the Dome needs them), the Retirement panel (voluntary retirement) |
 | speculators' arrival | `speculators_arrive` (flag `speculators_seen`) | the Adversaries panel, the Market Analysis research category (Speculator Analysis opens Disrupt Speculators) |
 | rivals' arrival (Act 2) | `rivals_arrive` (flag `contest_claims`) | Contest Claims |
 

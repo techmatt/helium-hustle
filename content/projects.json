@@ -2,12 +2,15 @@
   {
     "id": "blueprint_archive",
     "name": "Blueprint Archive",
-    "description": "DRAFT. Archive the company's blueprints beyond a retirement's reach, kept across retirements (completes 1.c Blueprints for Everyone).",
+    "description": "DRAFT. Archive the company's blueprints beyond a retirement's reach: every run starts with Basic and Advanced Blueprints, and any blueprints bought before cost 20% less (completes 1.c Blueprints for Everyone).",
     "scope": "timeline",
     "unlock": {"type": "flag_set", "flag": "retired"},
     "costs": {"credits": "500", "science": "200"},
     "min_days": 17,
-    "rewards": [{"type": "starting_research", "research": ["basic_blueprints", "advanced_blueprints"]}]
+    "rewards": [
+      {"type": "starting_research", "research": ["basic_blueprints", "advanced_blueprints"]},
+      {"type": "research_discount", "mult": "0.8", "category": "Blueprints"}
+    ]
   },
   {
     "id": "foundation_grant",
@@ -63,7 +66,7 @@
     "unlock": {"type": "ideology_rank", "axis": "rationalist", "rank": 5},
     "costs": {"credits": "800", "science": "300"},
     "min_days": 27,
-    "rewards": [{"type": "research_discount", "mult": "0.75"}]
+    "rewards": [{"type": "research_discount", "mult": "0.75", "category": null}]
   },
   {
     "id": "chemical_energy",

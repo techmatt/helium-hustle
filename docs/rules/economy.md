@@ -147,8 +147,8 @@ Microwave Receiver). A run opens with only the Solar Panel and Data Center build
 Regolith Excavator, Smelter, Launch Pad and Storage Depot require research Basic Blueprints,
 and the Battery, Refinery, Fabricator and Research Lab Advanced Blueprints ([research.md](research.md);
 quest 1.2 First Shipment needs the first, and its completion shows the second). The Recreation
-Dome requires nothing but its event: the silent `first_retirement` event enables it from the
-first retirement ([events.md](events.md)). The Regolith Excavator makes 2 regolith a day
+Dome requires research Recreation Dome Blueprints, shown from the first retirement
+([research.md](research.md)). The Regolith Excavator makes 2 regolith a day
 (`excavator_output_mult`, 1.5 with research Regolith Processing). The Refinery's upkeep is
 5 regolith and 2 energy a day.
 

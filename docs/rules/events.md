@@ -167,13 +167,12 @@ on any axis this run. Four `side`, each with a permanent reward: 1.a Big Launch 
 `speculators_seen` flag beside 1.5; `modifier` `shipment_credit_mult` ×1.1), 1.b Full Cluster
 (the `research_lab` flag beside 1.4; 5 research items in one run; a `grant` of 50 Science, so
 every later run starts with it), 1.c Blueprints for Everyone (the `retired` flag beside 1.2;
-completes with the Blueprint Archive; no unlock: the Blueprints are the project's reward,
+completes with the Blueprint Archive; no unlock: the rewards are the project's,
 [projects.md](projects.md)) and 1.d Three Voices (1.6's completion; career-best rank 5 on each
 axis; `modifier` `ideology_half_life_mult` ×2). Eleven `ongoing`, four silent:
 `research_lab_built` (a Research Lab owned: sets the `research_lab` flag), `first_retirement`
 (a retirement in the career: sets the `retired` flag, opens the `retirement` and `projects`
-panels, Foundation Grant and the Recreation Dome), `speculators_arrive` (speculators present:
-sets the `speculators_seen` flag, opens the `adversaries` panel), `rivals_arrive` (rivals
+panels and Foundation Grant), `speculators_arrive` (speculators present: sets the `speculators_seen` flag, opens the `adversaries` panel), `rivals_arrive` (rivals
 present, Act 2: sets the `contest_claims` flag); then `boredom_bites` (Burnout: boredom phase
 2, `once`, a story modal), Political Currents, propellant discovery and boredom phases 2 to 5.
 The silent ones trigger at `game_start` in any run, so once seen in the career their unlocks

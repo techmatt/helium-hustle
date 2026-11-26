@@ -39,6 +39,56 @@ fn research_needs_visibility_and_science() {
 }
 
 #[test]
+fn the_dome_needs_its_blueprints_which_the_archive_discounts_once_bought() {
+    use crate::modules::{economy, projects, research};
+    let r = rules();
+    let mut g = r.new_game(1);
+    let c = crate::content::content();
+    let dome = || c.building("recreation_dome").unwrap();
+    let item = c.research_item("recreation_dome_blueprints").unwrap();
+    let res = Action::Research { research: item.id.clone() };
+    g.run.enabled_panels.insert(research::RESEARCH_PANEL.into());
+    assert!(r.apply(&mut g, &res).unwrap_err().contains("not available"), "hidden before the first retirement");
+    // Run 2: the blueprint shows at 300 science; the Dome waits for it.
+    g.run.enabled_panels.insert("retirement".into());
+    r.apply(&mut g, &Action::Retire).unwrap();
+    r.advance(&mut g, 1);
+    assert_eq!(g.career.run_number, 2);
+    g.run.enabled_panels.insert(research::RESEARCH_PANEL.into());
+    assert!(!economy::unlocked(&g, dome()), "no Dome before its blueprint");
+    let shown = |g: &GameState| r.view(g).research.into_iter().find(|x| x.id == item.id).unwrap();
+    assert!(shown(&g).visible);
+    assert_eq!(shown(&g).cost, f("300"));
+    set(&mut g, "science", "300");
+    r.apply(&mut g, &res).unwrap();
+    assert!(economy::unlocked(&g, dome()));
+    // Run 3 with the Archive done: its opening Blueprints, and this one at 240.
+    r.apply(&mut g, &Action::Retire).unwrap();
+    r.advance(&mut g, 1);
+    assert!(!economy::unlocked(&g, dome()), "a new run needs it again");
+    assert_eq!(shown(&g).cost, f("300"), "full price without the Archive");
+    let p = c.project("blueprint_archive").unwrap();
+    for (rs, cost) in &p.costs {
+        g.career.projects.progress.entry(p.id.clone()).or_default().insert(rs.clone(), *cost - f("1"));
+        set(&mut g, rs, "10");
+        r.apply(&mut g, &Action::SetProjectRate { project: p.id.clone(), resource: rs.clone(), rate: f("1") })
+            .unwrap();
+    }
+    r.advance(&mut g, 1);
+    assert!(projects::completed(&g, "blueprint_archive"));
+    assert!(g.run.research.contains("basic_blueprints") && g.run.research.contains("advanced_blueprints"));
+    assert_eq!(research::price(&r, &g, item), f("240"));
+    assert_eq!(shown(&g).cost, f("240"));
+    // Only Blueprints: other research bought before keeps its price.
+    let other = c.research_item("regolith_processing").unwrap();
+    g.career.researched.insert(other.id.clone());
+    assert_eq!(research::price(&r, &g, other), other.cost);
+    // A later run still opens with both Blueprints.
+    r.apply(&mut g, &Action::Retire).unwrap();
+    assert!(g.run.research.contains("basic_blueprints") && g.run.research.contains("advanced_blueprints"));
+}
+
+#[test]
 fn a_repeatable_projects_multiplier_stacks_by_adding() {
     use crate::modules::projects::stacked;
     assert_eq!(stacked(f("1.05"), 1), f("1.05"));

@@ -202,7 +202,7 @@
     "silent": false,
     "title": "1.c — Blueprints for Everyone",
     "goal": "DRAFT. Complete the Blueprint Archive, a global project.",
-    "reward": "None of its own. The Archive's: while it stands, every run starts with Basic and Advanced Blueprints researched.",
+    "reward": "None of its own. The Archive's, while it stands: every run starts with Basic and Advanced Blueprints researched, and Blueprints research bought in an earlier run costs 20% less.",
     "body": "DRAFT. The company's blueprints, archived where a retirement can't reach them.",
     "picture": "wireframes",
     "trigger": {"type": "flag", "flag": "retired", "beside": "qfirst_shipment"},
@@ -247,8 +247,7 @@
       {"type": "set_flag", "flag": "retired"},
       {"type": "enable_nav_panel", "panel": "retirement"},
       {"type": "enable_nav_panel", "panel": "projects"},
-      {"type": "enable_project", "project": "foundation_grant"},
-      {"type": "enable_building", "building": "recreation_dome"}
+      {"type": "enable_project", "project": "foundation_grant"}
     ]
   },
   {

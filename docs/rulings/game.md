@@ -71,9 +71,10 @@ Programs have their own part ([programs.md](programs.md)).
 - **Side quests give permanent rewards (2026-11-25, placeholders).** They outlive every reset,
   as completions do. 1.a Big Launch: one launch pays 1,000+; +10% launch pay. 1.b Full
   Cluster: research 5 items in one run; every run starts with 50 science. 1.c Blueprints for
-  Everyone, unchanged: the Blueprint Archive global project (placeholder 500 credits + 200
+  Everyone: the Blueprint Archive global project (placeholder 500 credits + 200
   science) makes both Blueprints bought at every run's start while it counts as completed
-  (lost at a timeline's end, back when re-funded; 1.c stays completed). 1.d Three Voices:
+  (lost at a timeline's end, back when re-funded; 1.c stays completed), and (2026-11-25) every
+  blueprint research ever bought in the career 20% cheaper. 1.d Three Voices:
   career-best rank 5 on each axis, across runs; ideology decays half as fast in the
   retirement gap. *Defaults (095):* 1.b counts every item bought this run, the Archive's
   Blueprints too; 1.b hangs beside 1.4 (once a Research Lab is built), 1.c beside 1.2 (as soon as the
@@ -83,9 +84,10 @@ Programs have their own part ([programs.md](programs.md)).
   retirement opens Projects (and Foundation Grant), Daydreaming and the boredom research, and
   the Retirement panel. Speculators' arrival opens the Market Analysis research category and Disrupt
   Speculators (through Speculator Analysis, its research). A Voice's start opens Geopolitical
-  Intelligence, its completion Overclock Protocols. *Defaults (095):* the Recreation Dome and
-  the first global projects (Blueprint Archive, Chemical Energy, Conditional Logic) also open
-  at the first retirement; Programming shows from 1.3 or the first lab, whichever is first;
+  Intelligence, its completion Overclock Protocols. *Defaults (095):* the first global projects
+  (Blueprint Archive, Chemical Energy, Conditional Logic) also open at the first retirement.
+  The Recreation Dome is never ungated (Matt, 2026-11-25): it needs its own Blueprints research,
+  Recreation Dome Blueprints (300 science, placeholder), shown from the first retirement; Programming shows from 1.3 or the first lab, whichever is first;
   Propellant Synthesis shows with the propellant discovery (4 shipments) alone. The main quest
   line marks only significant things: never "research this"; a beat may be an untelegraphed
   expectation. Refinery upkeep is 5 regolith + 2 energy; the excavator makes 2 regolith a day.

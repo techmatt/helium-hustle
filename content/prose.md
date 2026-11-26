@@ -470,7 +470,7 @@ DRAFT. Complete the Blueprint Archive, a global project.
 
 ### `events:qblueprints_for_everyone.reward`
 
-None of its own. The Archive's: while it stands, every run starts with Basic and Advanced Blueprints researched.
+None of its own. The Archive's, while it stands: every run starts with Basic and Advanced Blueprints researched, and Blueprints research bought in an earlier run costs 20% less.
 
 ### `events:qblueprints_for_everyone.body`
 
@@ -980,6 +980,14 @@ Advanced Blueprints
 
 The company's plans for the Battery, Refinery, Fabricator and Research Lab.
 
+### `research:recreation_dome_blueprints.name`
+
+Recreation Dome Blueprints
+
+### `research:recreation_dome_blueprints.description`
+
+The company's plans for the Recreation Dome.
+
 ### `research:regolith_processing.name`
 
 Regolith Processing
@@ -1108,7 +1116,7 @@ Blueprint Archive
 
 ### `projects:blueprint_archive.description`
 
-DRAFT. Archive the company's blueprints beyond a retirement's reach, kept across retirements (completes 1.c Blueprints for Everyone).
+DRAFT. Archive the company's blueprints beyond a retirement's reach: every run starts with Basic and Advanced Blueprints, and any blueprints bought before cost 20% less (completes 1.c Blueprints for Everyone).
 
 ### `projects:foundation_grant.name`
 

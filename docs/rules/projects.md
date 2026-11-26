@@ -69,7 +69,8 @@ at 0), and `n` times each starting building; the others live once (no row repeat
 - `boredom_modifiers`: `base_rate_mult` multiplies boredom growth (stacking as a
   multiplier, [boredom.md](boredom.md)); `command_boredom` replaces the named commands' flat
   boredom per execution ([commands.md](commands.md)).
-- `research_discount`: research bought in an earlier run costs `mult` of its price
+- `research_discount`: research bought in an earlier run (career-wide) costs `mult` of its
+  price, only research of `category` (a research row's) when it names one, any when null
   ([research.md](research.md)).
 
 A building gated on a project (`requires: {"type": "project"}`, [economy.md](economy.md))
@@ -116,8 +117,9 @@ that: the swarm's countdown runs without it, and what 1.7 opened stays:
 [timeline.md](timeline.md)). Chemical Energy Initiative is offered from the first
 retirement. Blueprint Archive (draft, offered from the first retirement: 500 credits and 200 science,
 `min_days` 17) completes side quest 1.c Blueprints for Everyone; its `starting_research`
-reward has both Blueprints bought from the start of every run of the timeline
-([research.md](research.md)). Every other row's `min_days` is its largest cost over 30, rounded up: the days the old
+reward has Basic and Advanced Blueprints bought from the start of every run of the timeline,
+and its `research_discount` (0.8, category Blueprints) makes every Blueprints item bought in
+an earlier run cost 20% less while it counts as completed ([research.md](research.md)). Every other row's `min_days` is its largest cost over 30, rounded up: the days the old
 flat cap of 30 a day took. The Projects panel, where a player sees them, opens at the first
 retirement (the silent `first_retirement` event, [events.md](events.md)).
 
