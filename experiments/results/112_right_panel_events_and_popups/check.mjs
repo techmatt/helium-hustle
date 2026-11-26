@@ -139,7 +139,8 @@ for (let i = 0; i < 10 && (await exists('[data-testid="story-modal"]')); i++) {
   if (m.quest === 'boredom_bites') await shot('burnout_popup');
   await click('[data-testid="story-next"]');
 }
-check(run1.includes('boredom_bites') && run1.includes('boredom_phase_2'), `run 1: Burnout and Boredom Rising pop up: ${run1}`);
+// Since 113, Boredom Rising is skipped in the run Burnout fires in (no popup, no line).
+check(run1.includes('boredom_bites') && !run1.includes('boredom_phase_2'), `run 1: Burnout pops up, Boredom Rising skipped: ${run1}`);
 const ev1 = (await events()).map((e) => e.id);
 check(ev1.includes('boredom_bites') && !ev1.includes('boredom_phase_2'), `run 1's Events: Burnout stands for the day (phase 2 superseded): ${ev1}`);
 await shot('run1_events');
@@ -163,7 +164,8 @@ for (let i = 0; i < 10 && (await exists('[data-testid="story-modal"]')); i++) {
 }
 const ev2 = (await events()).map((e) => e.id);
 const run = await evaluate(`document.getElementById('run').textContent`);
-check(!run2.some((q) => q.startsWith('boredom')) && ev2.includes('boredom_phase_2'), `${run}: no boredom popup (Burnout once, Boredom Rising seen), Events lists Boredom Rising: popups ${run2}, events ${ev2}`);
+// Burnout fires once a career; Boredom Rising, first fired here (113), pops up once.
+check(!run2.includes('boredom_bites') && ev2.includes('boredom_phase_2'), `${run}: no Burnout popup, Events lists Boredom Rising: popups ${run2}, events ${ev2}`);
 await shot('run2_events');
 console.log(results.join('\n'));
 console.log('page errors:', JSON.stringify(b.errors));

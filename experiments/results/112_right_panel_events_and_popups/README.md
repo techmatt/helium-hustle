@@ -14,6 +14,9 @@ repo root: `HH_URL=http://localhost:<port>/ node experiments/results/112_right_p
 Also seen: an open side quest's click opens its popup (story, Reward, Goal); the checkbox
 starts on; run 1's Events shows Burnout alone the day it fires with phase 2. No page errors.
 
+Since 113 (rules 39) Boredom Rising is skipped in the run Burnout fires in, so it first pops up
+in run 2; `check.mjs`'s run-1 and run-2 assertions were updated for that in 115 (not re-run).
+
 Screenshots (`112_*.png`, also in the Drive screenshots folder): the open side quests under
 the main quest, a side quest's popup and its completion popup, the Propellant popup and its
 Events line, the Burnout popup, run 1's and run 2's Events.
