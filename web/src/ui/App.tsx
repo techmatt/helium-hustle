@@ -18,7 +18,7 @@ import {
 } from '../store';
 import { QuestPicture, Sky } from './art';
 import { Buildings } from './Buildings';
-import { Bar, BoredomBar, RateCell, Section, navShown } from './common';
+import { Bar, BoredomBar, RateCell, Section, isCapped, navShown } from './common';
 import { Chip } from './icons';
 import { Left } from './Left';
 import { Options } from './Options';
@@ -46,7 +46,9 @@ const TAKEOVERS: Takeover[] = [cortexMockTakeover];
 const KEY_SPEEDS: Record<string, Speed> = Object.fromEntries(SPEEDS.slice(1).map((sp, i) => [String(i + 1), sp]));
 
 export function App() {
-  const s = useStore();
+  const live = useStore();
+  // Behind the run summary the screen keeps the ended run (its last day) until Continue.
+  const s: Store = live.summary && live.backdrop ? { ...live, view: live.backdrop } : live;
   const [panel, setPanel] = useState('buildings');
   const [program, setProgram] = useState(0);
   const [takeoverId, setTakeoverId] = useState<string | null>(null);
@@ -134,7 +136,7 @@ export function App() {
       <Right s={s} program={program} setProgram={pickProgram} />
       {takeover && <TakeoverView s={s} t={takeover} close={closeTakeover} banners={banners} />}
       <StatusBar s={s} />
-      {s.summary && <Summary s={s} />}
+      {live.summary && <Summary s={live} />}
       {/* Never two modals at once: a story chain that came with a retirement waits for
           the summary's Continue (the clock stays stopped throughout). */}
       {!s.summary && s.storyPages.length > 0 && <StoryModal s={s} />}
@@ -207,8 +209,9 @@ function StatusBar({ s }: { s: Store }) {
         label={`${num(energy?.amount ?? '0')} / ${num(energy?.cap ?? '0')}`}
       />
       <span class="status-rate" data-testid="energy-rate">
-        {/* Capped, short or plain, as in Resources. */}
-        {v.retires_next ? '—' : energy !== undefined ? <RateCell r={energy} /> : perDay('0')}
+        {/* Short or plain: Energy at its cap is spare power, not news, so no "capped" here
+            (Resources still marks it). */}
+        {v.retires_next ? '—' : energy !== undefined && !isCapped(energy) ? <RateCell r={energy} /> : perDay(energy?.per_day ?? '0')}
       </span>
     </footer>
   );
@@ -277,9 +280,32 @@ function StoryModal({ s }: { s: Store }) {
   );
 }
 
+/** A difference to three places, trailing zeros dropped ("0.05"). */
+function trimFixed(d: number, places: number): string {
+  return String(Number(d.toFixed(places)));
+}
+
+/** A next-run value's change from what the ended run started with: " (+10)", green when
+ * better, red when worse; nothing when unchanged or not known. */
+function Delta({ now, was, show, lowerIsBetter = false }: { now: string; was: string | undefined; show: (d: number) => string; lowerIsBetter?: boolean }) {
+  if (was === undefined) return null;
+  const d = Number(now) - Number(was);
+  const text = show(Math.abs(d));
+  if (d === 0 || Number(text.replace(/[^0-9.]/g, '')) === 0) return null;
+  const better = lowerIsBetter ? d < 0 : d > 0;
+  return (
+    <span class={`summary-delta ${better ? 'pos' : 'neg'}`} data-testid="summary-delta">
+      {' '}
+      ({d > 0 ? '+' : '−'}
+      {text})
+    </span>
+  );
+}
+
 function Summary({ s }: { s: Store }) {
   const r = s.summary!;
   const v = s.view;
+  const base = s.summaryBase;
   return (
     <div class="modal-back">
       <div class="modal" role="dialog" aria-label="Run summary" data-testid="summary">
@@ -287,7 +313,7 @@ function Summary({ s }: { s: Store }) {
           Run {r.run} ended on day {num(r.days)}
         </h2>
         <p data-testid="summary-why">{v.last_run_why}</p>
-        <Section title="That run">
+        <Section title={`Run ${r.run}`}>
           <table class="grid-table kv">
             <tbody>
               <tr>
@@ -318,16 +344,25 @@ function Summary({ s }: { s: Store }) {
             <tbody>
               <tr>
                 <td>Starting credits</td>
-                <td class="num">{num(v.career.starting_credits)}</td>
+                <td class="num">
+                  {num(v.career.starting_credits)}
+                  <Delta now={v.career.starting_credits} was={base?.starting_credits} show={(d) => num(d)} />
+                </td>
               </tr>
               <tr>
                 <td>Boredom growth (resilience)</td>
-                <td class="num">{mult(v.career.boredom_resilience)}</td>
+                <td class="num">
+                  {mult(v.career.boredom_resilience)}
+                  <Delta now={v.career.boredom_resilience} was={base?.boredom_resilience} show={(d) => trimFixed(d, 3)} lowerIsBetter />
+                </td>
               </tr>
               {Number(v.career.buy_power_mult) !== 1 && (
                 <tr>
                   <td>Buy Power scaling</td>
-                  <td class="num">{mult(v.career.buy_power_mult)}</td>
+                  <td class="num">
+                    {mult(v.career.buy_power_mult)}
+                    <Delta now={v.career.buy_power_mult} was={base?.buy_power_mult} show={(d) => trimFixed(d, 3)} />
+                  </td>
                 </tr>
               )}
               {v.ideology

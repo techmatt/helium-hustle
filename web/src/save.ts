@@ -3,7 +3,7 @@
 
 import type { LastRun, Scenario, Stamped, StoryView } from './engine';
 import type { Speed } from './clock';
-import type { StoryPage } from './store';
+import type { StoryPage, SummaryBase } from './store';
 
 export const SAVE_KEY = 'hh.save';
 
@@ -22,6 +22,8 @@ export interface Save {
   /** A run summary still open, the speed Continue restores, and the last speed played. */
   summary?: LastRun | null;
   speedBeforeSummary?: Speed;
+  /** What the summarized run started with (the summary's deltas). */
+  summaryBase?: SummaryBase | null;
   resumeSpeed?: Speed;
   /** Story texts not yet read. */
   stories?: StoryView[];

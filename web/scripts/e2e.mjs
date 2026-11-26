@@ -21,8 +21,8 @@
 //   6. (Run before 5.) The program instructions, from scenario late_unlocks: an `if` / `build` / `buy land`
 //      / `if` program written through the editor, live values, unattended builds, verb
 //      lines, a false `if` taking its step and jumping its body. Shot program-logic.png.
-//   5. (Run before 4.) Readability: a capped resource's positive rate (Resources and the
-//      status bar; Energy's green), Resources' two groups, an affordable card's tinted
+//   5. (Run before 4.) Readability: a capped resource's positive rate (Resources, Energy's
+//      green; the status bar's unmarked), Resources' two groups, an affordable card's tinted
 //      header and the Land row's green, scenario pad_loading's full pad short on fuel
 //      then Ready (green Launch, border, nav dot), a boredom beat that leaves the main
 //      quest pinned and counts unread in a folded Story until it is open and on screen
@@ -1187,7 +1187,8 @@ async function readability(grant) {
   const capped = await evaluate(`document.querySelector('tr[data-res="energy"] [data-capped]')?.textContent ?? ''`);
   check(/^\+[\d.]+ cap$/.test(capped), `a capped resource shows its positive rate: "${capped}"`);
   const bar = await evaluate(`document.querySelector('[data-testid="energy-rate"]').textContent`);
-  check(/^\+[\d.]+\/day \(capped\)$/.test(bar), `the status bar's Energy rate too: "${bar}"`);
+  // The status bar never says "capped" for Energy (Matt, 2026-11-25): its plain rate.
+  check(/^\+[\d.]+\/day$/.test(bar), `the status bar's Energy rate, unmarked: "${bar}"`);
   // Capped Energy's surplus is spare power: green (the text token), not muted.
   const spare = await evaluate(`(() => {
     const el = document.querySelector('tr[data-res="energy"] [data-capped]');
@@ -1195,8 +1196,7 @@ async function readability(grant) {
     const probe = (v) => { const s = document.createElement('span'); s.style.color = v; document.body.append(s); const c = getComputedStyle(s).color; s.remove(); return c; };
     return { color: getComputedStyle(el).color, green: probe(root.getPropertyValue('--pos-text')), muted: probe(root.getPropertyValue('--muted')) };
   })()`);
-  const barSpare = await evaluate(`getComputedStyle(document.querySelector('[data-testid="energy-rate"] [data-capped]')).color`);
-  check(spare.color === spare.green && spare.color !== spare.muted && barSpare === spare.green, `capped Energy's rate is green, in the status bar too: ${JSON.stringify({ ...spare, barSpare })}`);
+  check(spare.color === spare.green && spare.color !== spare.muted, `capped Energy's rate is green: ${JSON.stringify(spare)}`);
   // Resources in two groups: Energy, Credits, Land, Boredom, Processors (those shown), then the rest.
   const groups = await evaluate(`[...document.querySelectorAll('[data-testid="resources"] tbody')].map((b) => [...b.querySelectorAll('tr')].map((r) => r.dataset.res))`);
   const first = ['energy', 'credits', 'land', 'boredom', 'processors'];

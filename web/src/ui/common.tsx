@@ -12,6 +12,46 @@ export function ResChip({ v, id, size }: { v: View; id: string; size?: number })
   return <Chip id={id} title={name(v, id)} size={size} />;
 }
 
+/** A view's "Hide completed" checkbox (Research, Projects): kept per browser under `key`
+ * (a UI preference like the Programs mode, not game state, so it outlives reloads, runs
+ * and resets). Something completed while the view is open stays shown until the player
+ * leaves the view (the component unmounts). `shows(id, done)`: whether a card shows. */
+export function useHideCompleted(key: string, byDefault: boolean) {
+  const [hide, setHide] = useState(() => {
+    try {
+      const s = localStorage.getItem(key);
+      return s === null ? byDefault : s === '1';
+    } catch {
+      return byDefault;
+    }
+  });
+  // Ids seen not yet completed during this visit to the view.
+  const open = useRef(new Set<string>());
+  const set = (on: boolean) => {
+    // Ticking it hides everything completed, this visit's too.
+    open.current.clear();
+    setHide(on);
+    try {
+      localStorage.setItem(key, on ? '1' : '0');
+    } catch {
+      // A private window may refuse storage: the setting still applies for now.
+    }
+  };
+  const shows = (id: string, done: boolean): boolean => {
+    if (!done) {
+      open.current.add(id);
+      return true;
+    }
+    return !hide || open.current.has(id);
+  };
+  const box = (
+    <label class="hide-completed" data-testid="hide-completed">
+      <input type="checkbox" checked={hide} onChange={(e) => set((e.target as HTMLInputElement).checked)} /> Hide completed
+    </label>
+  );
+  return { shows, box };
+}
+
 /** Whether a resource going up is bad news (Boredom): its rates read the other way round. */
 export function risingIsBad(id: string): boolean {
   return id === 'boredom';

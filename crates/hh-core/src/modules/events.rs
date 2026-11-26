@@ -350,6 +350,32 @@ pub fn check(r: &Rules, g: &mut GameState) {
     }
 }
 
+/// The nav panels a one-off event would enable at this tick's end, read now
+/// (display only: the view shows a panel a purchase opens at once, paused
+/// included, rather than a day later; the event itself still fires in
+/// [`check`]). A panel whose actions check the enabled set (Research,
+/// Retirement) is left out: it would show before its buttons work.
+pub fn pending_panels(r: &Rules, g: &GameState) -> Vec<&'static str> {
+    const GATED: &[&str] = &[super::research::RESEARCH_PANEL, super::career::RETIREMENT_PANEL];
+    let mut out = Vec::new();
+    for e in content().events.iter().filter(|e| !e.is_quest() && !e.is_side()) {
+        let done = g.run.events.contains_key(&e.id) || (e.once && g.career.seen_events.contains(&e.id));
+        if done || !e.unlocks.iter().any(|u| matches!(u, Unlock::EnableNavPanel { .. })) {
+            continue;
+        }
+        if triggered(g, e) && holds(r, g, &e.id, &e.condition) {
+            for u in &e.unlocks {
+                if let Unlock::EnableNavPanel { panel } = u {
+                    if !GATED.contains(&panel.as_str()) {
+                        out.push(panel.as_str());
+                    }
+                }
+            }
+        }
+    }
+    out
+}
+
 /// Drops the activity feed's oldest lines beyond `activity_kept` (end of each
 /// tick and after each action).
 pub fn trim_activity(r: &Rules, g: &mut GameState) {

@@ -634,7 +634,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             phase: boredom::phase(r, g.run.day),
             phases: r.p.boredom.phase_days.len() as u32,
         },
-        nav: nav::nav(g),
+        nav: nav::nav(r, g),
         can_retire: career::retire_blocker(g).is_none(),
         retires_next: !same_run,
         activity: g.run.activity.clone(),

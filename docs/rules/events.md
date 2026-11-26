@@ -93,7 +93,7 @@ completed earlier in the same check can fire that same day.
 | Unlock | Effect |
 |---|---|
 | `enable_building` | the building may be bought this run. A building named by any event's `enable_building` is locked until one enables it ([economy.md](economy.md)). |
-| `enable_nav_panel` | the panel is shown this run. Two gate a rule: `retirement` (the Retire action, [career.md](career.md)) and `research` (buying research, [research.md](research.md)); others (`adversaries` once speculators first arrive, `projects` from the first retirement, `ideologies`, ...) are display. |
+| `enable_nav_panel` | the panel is shown this run. Two gate a rule: `retirement` (the Retire action, [career.md](career.md)) and `research` (buying research, [research.md](research.md)); others (`adversaries` once speculators first arrive, `projects` from the first retirement, `ideologies`, ...) are display, and the view shows such a tile at once when its event would fire at the tick's end (`events::pending_panels`: a purchase while paused). |
 | `enable_project` | a project whose unlock is `project_enabled` may be funded this run ([projects.md](projects.md)) |
 | `set_flag` | sets a career flag |
 | `grant` (`resource`, `amount`) | adds the amount to this run's stock; re-applied at each run start (below), a starting bonus from then on |

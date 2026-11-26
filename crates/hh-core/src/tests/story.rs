@@ -331,6 +331,26 @@ fn the_script_reaches_the_first_shipment_and_retires() {
     assert!(last.stats.shipments >= 1);
 }
 
+/// A panel a purchase opens shows at once (the clock paused), before its event
+/// fires at the tick's end; Research and Retirement wait for theirs.
+#[test]
+fn a_panel_a_purchase_opens_shows_at_once() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    let shown = |g: &GameState, id: &str| r.view(g).nav.iter().any(|t| t.id == id && t.visible);
+    assert!(!shown(&g, "ideologies"));
+    g.run.research.insert("geopolitical_intelligence".into());
+    assert!(shown(&g, "ideologies"));
+    assert!(!g.run.enabled_panels.contains("ideologies"), "the event itself waits for the tick");
+    r.advance(&mut g, 1);
+    assert!(g.run.enabled_panels.contains("ideologies"));
+    assert!(shown(&g, "ideologies"));
+    // Two Solar Panels open Research only once the day's events have run.
+    let mut g = r.new_game(1);
+    own(&mut g, "solar_panel", 2);
+    assert!(!shown(&g, "research"));
+}
+
 #[test]
 fn an_event_records_the_day_it_fired() {
     let mut s = Session::new(&baseline(), 2, None).unwrap();

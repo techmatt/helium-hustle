@@ -196,6 +196,23 @@ h2 {
 h3 {
   font-size: 16px;
 }
+/* A panel's title with a control at its right (Research's and Projects' Hide completed). */
+.panel-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+.hide-completed {
+  font-size: 13px;
+  color: var(--muted);
+  cursor: pointer;
+  user-select: none;
+}
+.hide-completed input {
+  vertical-align: middle;
+  margin: 0 4px 0 0;
+}
 hr {
   border: none;
   border-top: 1px solid var(--line);
@@ -292,17 +309,32 @@ ul.plain {
   flex: 1;
   height: 18px;
 }
+/* Every slot but the bars has a fixed width, so a value changing width (0/day to
+   +10/day, day 999 to 1,000) never moves the row. */
+.status > span {
+  flex: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-variant-numeric: tabular-nums;
+}
 .status-day {
   font-weight: 600;
-  min-width: 90px;
+  width: 100px;
 }
 .status-run {
+  width: 72px;
   color: var(--muted);
   border-right: 1px solid var(--line);
   padding-right: 10px;
 }
+.status > .status-label {
+  width: 60px;
+  text-align: right;
+}
 .status-rate {
-  min-width: 72px;
+  /* Room for "−1,234.5/day (short)". */
+  width: 156px;
   color: var(--muted);
   font-family: var(--font-mono);
   font-size: 13px;

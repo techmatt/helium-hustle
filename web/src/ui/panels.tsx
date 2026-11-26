@@ -7,7 +7,7 @@ import { useState } from 'preact/hooks';
 import type { CommandView, Fx, ProjectView, ResearchView, View } from '../engine';
 import { capitalize, mult, num, perDay } from '../format';
 import { act, justMoved, seen, store, type Store } from '../store';
-import { Bar, Breakdown, FlowLines, ResChip, Section, cardButton, freshClass, name, navShown, numBelow, useHint } from './common';
+import { Bar, Breakdown, FlowLines, ResChip, Section, cardButton, freshClass, name, navShown, numBelow, useHideCompleted, useHint } from './common';
 import { projectArt } from './cardArt';
 import { Chip, ResearchChip, ScopeIcon } from './icons';
 import { editProgram } from './programStore';
@@ -269,12 +269,16 @@ export function LaunchPads({ s }: { s: Store }) {
 
 export function Research({ s }: { s: Store }) {
   const v = s.view;
-  const shown = v.research.filter((r) => r.visible || r.done);
+  const hide = useHideCompleted('hh.hideCompleted.research', false);
+  const shown = v.research.filter((r) => (r.visible || r.done) && hide.shows(r.id, r.done));
   const cats = [...new Set(v.research.map((r) => r.category))];
   const sci = v.resources.find((r) => r.id === 'science');
   return (
     <div class="panel" data-panel="research">
-      <h2>Research</h2>
+      <div class="panel-head">
+        <h2>Research</h2>
+        {hide.box}
+      </div>
       <p class="muted">
         <ResChip v={v} id="science" /> {num(sci?.amount ?? '0')} Science ({perDay(sci?.per_day ?? '0')}). Research resets each
         run.
@@ -367,14 +371,19 @@ export function Projects({ s }: { s: Store }) {
       : ['timeline', 'Global', 'Progress and completion carry across retirements; funding rates reset, so set them again each run.'],
     ['forever', 'Forever', 'Progress and completion are kept for good.'],
   ];
+  // Finished one-offs show as done cards unless hidden (the default).
+  const hide = useHideCompleted('hh.hideCompleted.projects', true);
   return (
     <div class="panel" data-panel="projects">
-      <h2>Projects</h2>
+      <div class="panel-head">
+        <h2>Projects</h2>
+        {hide.box}
+      </div>
       <p class="muted">Fund a project by setting a daily rate per resource; it drains that much each day until done.</p>
       {!v.projects.some((p) => p.unlocked) && <p class="muted hint">No project to fund right now.</p>}
       {scopes.map(([scope, title, note]) => {
-        // Only what can be funded now: no locked cards, no finished one-offs (ui.md).
-        const items = v.projects.filter((p) => p.scope === scope && p.unlocked);
+        // What can be funded now, and finished one-offs unless hidden; never a locked card (ui.md).
+        const items = v.projects.filter((p) => p.scope === scope && (p.unlocked || p.completed) && hide.shows(p.id, p.completed && !p.unlocked));
         if (items.length === 0) return null;
         return (
           <Section key={scope} title={`${title} (${items.length})`} dark>

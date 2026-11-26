@@ -45,12 +45,24 @@ interface Game {
 const CHECKPOINT_MS = 10_000;
 let lastCheckpoint = 0;
 
+/** A run's starting values, as the career view gives them. */
+export interface SummaryBase {
+  starting_credits: string;
+  boredom_resilience: string;
+  buy_power_mult: string;
+}
+
 export interface Store {
   view: View;
   speed: Speed;
   notice: string | null;
   /** The finished run's summary, shown until Continue (the clock is paused meanwhile). */
   summary: LastRun | null;
+  /** The ended run's view, shown behind its summary until Continue (null after a reload:
+   * the new run shows). */
+  backdrop: View | null;
+  /** What the ended run started with (the summary's deltas; null: not known). */
+  summaryBase: SummaryBase | null;
   /** Keys (`kind:id`) revealed during this run and not yet looked at. */
   fresh: Set<string>;
   /** Side-quest texts waiting to be read in the story banner, oldest first. */
@@ -84,6 +96,9 @@ let speedBeforeStory: Speed = 1;
 /** The last speed other than pause. */
 let resumeSpeed: Speed = 1;
 let baselineRun = -1;
+/** The ended run's last state, when the ticks or action just played retired it, for the
+ * next refresh (the summary's backdrop). */
+let endedState: string | null = null;
 /** The lines run by the ticks just played, for the next refresh. */
 let ranLines: LinesRun | null = null;
 const baseline = new Set<string>();
@@ -95,6 +110,8 @@ export const store: Store = {
   speed: 1,
   notice: null,
   summary: null,
+  backdrop: null,
+  summaryBase: null,
   fresh: new Set(),
   stories: [],
   storyPages: [],
@@ -398,6 +415,11 @@ function refresh(reset = false, story: 'load' | 'intro' | 'play' = reset ? 'load
     // A run just ended: show its summary with the clock stopped; Continue restores the
     // speed it had (paused included).
     store.summary = v.last_run;
+    store.backdrop = endedState ? engine.view(endedState) : null;
+    const c = store.backdrop?.career;
+    store.summaryBase = c
+      ? { starting_credits: c.starting_credits, boredom_resilience: c.boredom_resilience, buy_power_mult: c.buy_power_mult }
+      : null;
     // An open story modal already stopped the clock: Continue resumes what it held.
     const was = holdClock();
     speedBeforeSummary = store.storyPages.length > 0 ? speedBeforeStory : was;
@@ -405,6 +427,7 @@ function refresh(reset = false, story: 'load' | 'intro' | 'play' = reset ? 'load
     checkpoint();
     save();
   }
+  endedState = null;
   track(v, reset);
   if (reset) baselineRead(v);
   tell(v, story);
@@ -478,10 +501,14 @@ function runTicks(ticks: number, toQuest = true): void {
   let lines: LinesRun | null = null;
   while (ticks > 0) {
     const n = Math.min(ticks, MAX_CHUNK);
-    const r = engine.advanceRun(game.state, n);
+    const pre = game.state;
+    const r = engine.advanceRun(pre, n);
     game.state = r.state;
     lines = r.lines; // one chunk in practice (MAX_CHUNK); a later one supersedes
     ticks -= r.ran;
+    // The run ended on this chunk's last tick (nothing changed before it, or the chunk
+    // would have stopped there): its last day's state, again, for the summary's backdrop.
+    if (r.stopped && head().career.run_number !== run) endedState = r.ran > 1 ? engine.advanceRun(pre, r.ran - 1).state : pre;
     if (r.stopped && (toQuest || head().career.run_number !== run)) break;
   }
   if (performance.now() - lastSave > SAVE_EVERY_MS) save();
@@ -506,6 +533,7 @@ function save(): void {
     speed: clock.speed,
     summary: store.summary,
     speedBeforeSummary,
+    summaryBase: store.summaryBase,
     resumeSpeed,
     stories: store.stories,
     storyPages: store.storyPages,
@@ -584,6 +612,8 @@ export function newGame(seed: string, scenario: Scenario | null, why = 'new game
   // A career begun mid-visit starts its own session (a page load logs its own).
   if (sessionOpen) playlog.log('session_start', { how: 'new', width: window.innerWidth, height: window.innerHeight, agent: navigator.userAgent });
   store.summary = null;
+  store.backdrop = null;
+  store.summaryBase = null;
   store.stories = [];
   store.storyPages = [];
   toldStories.clear();
@@ -623,8 +653,11 @@ export function act(action: Action): boolean {
     return false;
   }
   let ok = true;
+  const before = game.state;
   try {
     game.state = engine.apply(game.state, action);
+    // A retirement: the run's last state backs its summary.
+    if (head().career.run_number !== run) endedState = before;
     const tick = head().tick;
     game.actions.push({ tick, action });
     playlog.log('action', { tick, action });
@@ -671,6 +704,8 @@ export function continueAfterRetirement(): void {
   if (stoodDown) return;
   movedAt = performance.now();
   store.summary = null;
+  store.backdrop = null;
+  store.summaryBase = null;
   playlog.log('continue');
   // A story chain that came with the retirement shows next, the clock still stopped;
   // its last page resumes the speed before the summary.
@@ -918,6 +953,7 @@ export function start(): void {
       refresh(true);
       // A run summary left open is still open, and unread story texts still wait.
       store.summary = s.summary ?? null;
+      store.summaryBase = (store.summary && s.summaryBase) || null;
       store.stories = Array.isArray(s.stories) ? s.stories : [];
     } catch (e) {
       clearSave();

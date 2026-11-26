@@ -29,9 +29,19 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   arrival in the career, and side quest 1.a, which names them, starts then too (once 1.5 is
   reached). The Adversaries panel's Rival AIs section and Attention row wait for the rivals'
   first arrival in the career (096 default: the view's `seen`, present now or their arrival
-  event seen). Projects shows only projects that can be funded now: no locked cards, and
-  (096 default) no finished one-off ones. No player-facing text names timelines before the
-  swarm's reveal (1.7): the global projects' section reads "Global" until then.
+  event seen). Projects never shows a locked card. No player-facing text names timelines before
+  the swarm's reveal (1.7): the global projects' section reads "Global" until then.
+- **Hide completed (Matt, 2026-11-25).** Research and Projects each have a "Hide completed"
+  checkbox at the top (bought research; finished one-off projects), remembered per browser
+  (`localStorage`, like the Programs mode), not in the save. Something completed while the
+  view is open stays shown until the player leaves the view. *Default (104):* Projects starts
+  ticked (096's no finished one-offs), Research unticked.
+- **Bottom bar and modals (Matt, 2026-11-25).** The status bar's slots have fixed widths, so
+  no value changing width moves the row, and Energy never reads "capped" there. Behind the run
+  summary the ended run's last day stays on screen until Continue; the summary's sections read
+  "Run N" and "Run N+1 starts with", each start value with its change from the ended run's
+  start (green better, red worse; lower boredom growth is better). A panel a purchase opens
+  (Geopolitical Intelligence's Ideologies) shows at once, paused too.
 - **Story cards (2026-11-25).** Each finished quest card in Story shows one line, its first
   sentence with "…"; a click shows the whole text (a main beat replays its modals, a side
   quest opens in place). The current quest's highlight never covers the spine.

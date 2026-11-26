@@ -906,7 +906,7 @@ Geopolitical Intelligence
 
 ### `research:geopolitical_intelligence.description`
 
-Study Earth's political power structures. Unlocks the Fund Nationalists, Fund Humanists and Fund Rationalists commands. Reveals the Ideologies panel the next day.
+Study Earth's political power structures. Unlocks the Fund Nationalists, Fund Humanists and Fund Rationalists commands. Reveals the Ideologies panel at once.
 
 ### `research:novelty_simulation.name`
 
