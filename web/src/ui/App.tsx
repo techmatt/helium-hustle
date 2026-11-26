@@ -6,7 +6,6 @@ import { SPEEDS, type Speed } from '../clock';
 import { capitalize, delta, mult, num, perDay } from '../format';
 import {
   continueAfterRetirement,
-  dismissStory,
   justMoved,
   nextStoryPage,
   noteOpened,
@@ -79,8 +78,8 @@ export function App() {
   // A takeover whose button hides closes with it.
   const takeover = [...TAKEOVERS, programs].find((t) => t.id === takeoverId && t.shown(s)) ?? null;
   const closeTakeover = useCallback(() => setTakeoverId(null), []);
-  // The notice and story banner: over the middle column, or over a takeover while one
-  // hides that column (a story or a failed save mustn't wait for it to close).
+  // The notice: over the middle column, or over a takeover while one hides that column
+  // (a failed save mustn't wait for it to close).
   const banners = (
     <>
       {s.notice && (
@@ -90,22 +89,6 @@ export function App() {
             ×
           </button>
         </p>
-      )}
-      {s.stories.length > 0 && (
-        <div class="story-banner" data-testid="story-banner" data-story={s.stories[0].id}>
-          <div class="story-head">
-            <strong>{s.stories[0].title}</strong>
-            {s.stories[0].summary && <span class="muted">{s.stories[0].summary}</span>}
-          </div>
-          <div class="story-banner-body">
-            <QuestPicture stem={s.stories[0].picture} at="banner" />
-            <blockquote>{s.stories[0].body}</blockquote>
-          </div>
-          <Mechanics goal={s.stories[0].goal} reward={s.stories[0].reward} />
-          <button type="button" onClick={dismissStory}>
-            {s.stories.length > 1 ? `Next (${s.stories.length - 1} more)` : 'OK'}
-          </button>
-        </div>
       )}
     </>
   );
@@ -275,7 +258,7 @@ function StoryModal({ s }: { s: Store }) {
             if (e.key === 'Enter' && (e.repeat || justMoved())) e.preventDefault();
           }}
         >
-          {last ? 'Begin' : 'Continue'}
+          {last ? (p.close ?? 'Begin') : 'Continue'}
         </button>
       </div>
     </div>

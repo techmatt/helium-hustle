@@ -2,7 +2,7 @@
 //   node scripts/unit.mjs   (npm run unit)
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
-import { delta, fillRate, num, perDay } from '../src/format.ts';
+import { commandTip, delta, fillRate, num, perDay } from '../src/format.ts';
 import { navSlots } from '../src/ui/navSlots.ts';
 import { offeredSpeed, speedsOffered } from '../src/speeds.ts';
 import { blockEnd, blockLen, canAddElse, canIndent, insertLine, moveLines, otherUnit, removeLine, sameEntry, setIndent, tidy } from '../src/ui/programEdit.ts';
@@ -39,6 +39,14 @@ assert.equal(perDay(1500.4), '+1,500/day');
 // An event effect's `{rate}` reads as Stats shows boredom growth: 0.199 is +0.2, not a floored 0.19.
 assert.equal(fillRate('Current rate: {rate}.', '0.199'), 'Current rate: +0.2/day.');
 assert.equal(fillRate('No {rate} here.', null), 'No {rate} here.');
+// A command's tooltip: costs, produces, boredom, one per line; each run, then the repeat count's totals.
+{
+  const names = { energy: 'Energy', credits: 'Credits', boredom: 'Boredom' };
+  const c = { costs: { energy: '2' }, produces: { credits: '5' }, boredom: '0.1' };
+  assert.equal(commandTip(c, names), 'Each run:\n−2 Energy\n+5 Credits\n+0.1 Boredom');
+  assert.equal(commandTip(c, names, 3), 'Each run:\n−2 Energy\n+5 Credits\n+0.1 Boredom\n\n3 runs:\n−6 Energy\n+15 Credits\n+0.3 Boredom');
+  assert.equal(commandTip({ costs: {}, produces: {}, boredom: '0' }, names, 4), '');
+}
 // The retirement summary's deltas round to the row's precision first: boredom growth moving
 // by 0.001 (×0.98 to ×0.979) shows no delta; credits round to whole numbers.
 assert.equal(delta('0.979', '0.98', 2), null);

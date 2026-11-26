@@ -374,8 +374,8 @@ const AUDIT = `(() => {
   // (Shown ones: the right column's stay mounted, hidden, under the Programs view.)
   if ([...document.querySelectorAll('.lines li.current')].filter(shown).length > 1) out.push({ kind: 'text', what: 'more than one program line framed as current' });
   if (/^\\D*0 assigned/.test(document.querySelector('.prog-procs span')?.textContent ?? '') && document.querySelector('.lines li.current')) out.push({ kind: 'text', what: 'a program with no processor frames a line as the one it runs next' });
-  // The story banner and the notice sit over the sky: their text is not covered by the art.
-  for (const el of document.querySelectorAll('.story-banner, #notice')) {
+  // The notice sits over the sky: its text is not covered by the art.
+  for (const el of document.querySelectorAll('#notice')) {
     const r = el.getBoundingClientRect();
     for (const [x, y] of [[r.left + 20, r.top + 12], [r.right - 20, r.top + 12], [r.right - 20, r.bottom - 12]]) {
       if (y < 0 || y > H) continue;
@@ -1011,7 +1011,6 @@ async function pass(seed, width, theme) {
         for (const tr of document.querySelectorAll('tr[data-res]')) res[tr.dataset.res] = Number(tr.dataset.amount);
         return { res, quest: document.querySelector('[data-testid="quest"]')?.dataset.quest ?? null,
           lines: [...document.querySelectorAll('.lines li')].map((li) => li.dataset.command),
-          stories: document.querySelector('[data-testid="story-banner"]')?.dataset.story ?? null,
           summary: !!document.querySelector('[data-testid="summary"]'),
           nav: [...document.querySelectorAll('.nav-tile')].map((t) => t.dataset.nav) };
       })()`);
@@ -1035,16 +1034,6 @@ async function pass(seed, width, theme) {
           }
         }
         await click('[data-testid="story-next"]', 'story next');
-      }
-      // Side-quest texts in the banner, likewise.
-      for (let i = 0; i < 10; i++) {
-        const id = await evaluate(`document.querySelector('[data-testid="story-banner"]')?.dataset.story ?? null`);
-        if (!id) break;
-        if (id !== story) {
-          story = id;
-          await capture(`story-${story}`);
-        }
-        await click('[data-testid="story-banner"] button', 'story OK');
       }
       if (s.quest !== quest) {
         quest = s.quest;
@@ -1143,7 +1132,6 @@ async function pass(seed, width, theme) {
       await panel(id);
       await capture(`run1-${id}`);
     }
-    await click('[data-testid="events-completed"] .fold-head', 'completed quests fold');
     await capture('run1-events-open');
     if (!(await exists('[data-testid="summary"]'))) {
       await breakdownProbe('run1');
@@ -1590,7 +1578,7 @@ async function longRun(minutes) {
     await evaluate(FRAMES);
   };
   await open();
-  await js(`for (let i = 0; i < 40; i++) document.querySelector('[data-testid="story-next"]')?.click(); document.querySelector('[data-testid="story-banner"] button')?.click()`);
+  await js(`for (let i = 0; i < 40; i++) document.querySelector('[data-testid="story-next"]')?.click()`);
   await js(`document.querySelector('.nav-tile[data-nav="commands"]').click()`);
   await sleep(200);
   await js(`document.querySelector('[data-testid="add-cloud_compute"]')?.click()`);
@@ -1603,7 +1591,6 @@ async function longRun(minutes) {
     await sleep(2000);
     // Story texts, summaries and an empty program after a new run: as a player would.
     await js(`for (let i = 0; i < 40; i++) document.querySelector('[data-testid="story-next"]')?.click();
-      for (let i = 0; i < 10; i++) document.querySelector('[data-testid="story-banner"] button')?.click();
       document.querySelector('[data-testid="continue"]')?.click();
       if (!document.querySelector('.lines li') && document.querySelector('[data-panel="commands"]')) document.querySelector('[data-testid="add-cloud_compute"]')?.click();
       if (!document.querySelector('[data-panel="commands"]')) document.querySelector('.nav-tile[data-nav="commands"]')?.click();

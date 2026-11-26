@@ -297,6 +297,9 @@ pub struct StoryView {
     pub act: Option<u32>,
     /// Its picture's file stem (display only; the UI's `src/assets/quests/`), if it has one.
     pub picture: Option<Text>,
+    /// A one-off event a later one of its kind replaced in the Events list (Burnout and the
+    /// boredom phases show only the latest fired this run); false on the rest.
+    pub superseded: bool,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -483,9 +486,10 @@ pub struct View {
     pub side_quests: Vec<SideQuestView>,
     /// The acts reached, in order.
     pub acts: Vec<ActView>,
-    /// The texts of the one-off events fired this run, in content order, but of the
-    /// boredom-phase events only the latest phase's: each phase supersedes the last
-    /// (the earlier ones stay in `activity`).
+    /// The texts of the one-off events (not side quests) fired this run, by the day each
+    /// fired (content order within a day), each popped up by the UI as it fires; of
+    /// Burnout and the boredom phases all but the latest carry `superseded` (the Events
+    /// list leaves them out; they stay in `activity`).
     pub event_texts: Vec<StoryView>,
     /// Every achievement, earned or not, in content order.
     pub achievement_list: Vec<AchievementView>,
@@ -570,7 +574,6 @@ pub fn build(r: &Rules, g: &GameState) -> View {
     let c = content();
     let next = r.peek(g);
     let same_run = next.career.run_number == g.career.run_number;
-    let latest_phase = quests::latest_phase(g);
     let resources = stock::resources(r, g, &next, same_run);
     let buildings = stock::buildings(r, g);
     let commands = commands::commands(r, g);
@@ -630,7 +633,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         story: quests::story_list(g),
         side_quests,
         acts,
-        event_texts: quests::event_texts(r, g, latest_phase),
+        event_texts: quests::event_texts(r, g),
         achievement_list: stats::achievements(g),
         rivals: rivals::rivals(g),
         adversaries: rivals::adversaries(r, g),

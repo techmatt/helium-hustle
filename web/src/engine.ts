@@ -387,8 +387,7 @@ export interface StoryView {
    * fill it with `fillRate` (format.ts). */
   effect: string;
   body: string;
-  /** A boredom-phase event's boredom per day, for `{rate}`; null for the rest (absent on
-   * a quest told through the story banner). */
+  /** A boredom-phase event's boredom per day, for `{rate}`; null for the rest. */
   rate?: Fx | null;
   /** A completed quest's paragraphs shown when it began (absent on event texts). */
   story?: string[];
@@ -402,6 +401,9 @@ export interface StoryView {
   act?: number | null;
   /** A quest's picture's file stem (`questPicture`), null when it has none. */
   picture?: string | null;
+  /** A one-off event a later one of its kind replaced in the Events list (Burnout and the
+   * boredom phases show only the latest this run). */
+  superseded?: boolean;
 }
 
 /** A side quest started (its trigger happened) or completed. */

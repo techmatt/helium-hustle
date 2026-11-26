@@ -47,8 +47,9 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   columns of tiles, each a medium icon (24 px) beside its label, in fixed-height rows; Act 1's
   full set fits about the old 3×3 large grid's height. No reserved blank cells (Matt,
   2026-11-26, over 109's default): the open tiles pack from the top in `content/nav.json`'s
-  order with no gaps, a panel that opens appears with a short fade and the unread dot (fully
-  inside its own tile, at its right edge centered on the label, 111), and the
+  order with no gaps, a panel that opens appears with a short fade and the unread dot; every nav
+  dot (unread, pad ready, No cargo) sits fully inside its own tile, at its right edge centered
+  on the label (111, 112), side by side there when a tile shows more than one; and the
   utility tiles (Stats, Story, Achievements, Options, the file's last rows) follow directly
   after the last open play tile, moving down as panels unlock. Painted icons, no chip glyphs.
 - **Quest mechanics text (Matt, 2026-11-25; locked).** Mechanics never live in narrative
@@ -68,10 +69,10 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   a "How:" line, no handholding until playtests say what's needed. A one-off's Effect states
   only the actual change, tersely ("Boredom starts growing: +0.2/day."), never explaining it
   or telegraphing what comes later; the narrative carries the meaning (Matt, 2026-11-26). The
-  story modal (reward on the last payoff page, the next goal on the last page; the Burnout modal's Effect),
-  Story cards, the side-quest banner and the Events list use it; an Events entry's Effect
-  line is always shown. The main-quest box at the upper right is the exception (amendment #3203):
-  its title, its goal as one plain line in the UI font, and its progress. A content test
+  popups (reward on the last payoff page, the next goal on the last page; a one-off's Effect)
+  and Story cards use it. The right panel is the exception: the main-quest box (amendment
+  #3203: its title, its goal as one plain line in the UI font, and its progress), the
+  side-quest lines and the Events lines carry no mechanics text. A content test
   keeps digits, `{rate}` and UI instructions out of narrative; new quests are written so.
 - **Story cards (Matt, 2026-11-25; 108).** Every card in Story, main or side, starts
   collapsed: its picture, title (a ✓ once finished) and its story's first line with "…";
@@ -79,6 +80,22 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   and Reward lines (the active beat's How lines too); a finished main beat's expanded card
   offers *Replay its story* (its modals). The spine is one unbroken line behind every dot,
   the active beat's included, with side quests branching off it.
+- **Right panel (Matt, 2026-11-26; 112).** Top to bottom: the main-quest box; **Side
+  quests**, the open ones only (title and progress bar; a click opens its popup: story, goal,
+  reward), hidden when none is open; the program; **Events**, one line per one-off event
+  fired this run (title and its one-line summary, no body or Effect), newest first, a click
+  reopening its popup; Recent Activity. Burnout and the boredom phases supersede each other
+  in Events: only the latest fired this run shows (the engine view's `superseded`; Burnout
+  stands for the day it fires with phase 2); Recent Activity still logs each. No
+  "Completed" section and no side-quest banner: Story is the quest archive.
+- **Popups (Matt, 2026-11-26; 112).** Every one-off event (Propellant discovery, Political
+  Currents, Burnout, each boredom phase) and every main and side quest completion opens a
+  popup when it fires (the story modal, the clock held until its last button). A side quest's
+  completion popup shows its reward, then it leaves the right panel. **"Hide popups for
+  events you've already seen"**, a checkbox in Events, on by default, remembered per browser
+  (`localStorage`): when on, an event whose popup this career has shown before (any earlier
+  run; the set is kept in the save) doesn't pop up again but still lands in Events and Recent
+  Activity. Quest completions pop up once a career anyway.
 - **Recent Activity filter (2026-11-25).** Checkboxes under the list show or hide each kind
   of line (shipments, quests, story, research, projects, achievements, adversaries, other),
   one only for a kind already in the feed. *Default (096):* remembered per browser
@@ -111,7 +128,7 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   one), and as a thumbnail beside a beat's title in Story. Layouts must look right without
   one. Act 1's are Matt's picks from `quest_pictures_act1_r1` (080), 1.1's `earthrise`; a
   picture's stem is a word, never a quest number (099). A
-  side quest, which has no modal, shows its picture in its completion banner (Matt, 2026-11-23).
+  side quest shows its picture in its popups (112; the completion banner is gone).
 - **Cortex mock (2026-11-22).** Contrast first: inside the wheel's rim a plain solid ground per
   theme; decoration (bezel, corona, neurons) only outside the rim. It follows the app's
   theme. The Grand Theorems sit left of the wheel in a framed brass case, clear of the nav,

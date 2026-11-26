@@ -167,9 +167,18 @@ fn story_lists_only_the_latest_boredom_phase() {
         g.run.events.insert(id.to_string(), 0);
     }
     let v = r.view(&g);
-    let ids: Vec<&str> = v.event_texts.iter().map(|s| s.id).collect();
-    // The one-off beat stays; phase 3 supersedes phase 2 (still fired in the state).
-    assert_eq!(ids, ["propellant_discovery", "boredom_phase_3"]);
+    let shown = |v: &crate::view::View| v.event_texts.iter().filter(|s| !s.superseded).map(|s| s.id).collect::<Vec<_>>();
+    // Every fired one-off is in the view (the UI's popups see each fire); the list shows
+    // the one-off beat and phase 3, which supersedes phase 2.
+    assert_eq!(v.event_texts.len(), 3);
+    assert_eq!(shown(&v), ["propellant_discovery", "boredom_phase_3"]);
+    // Burnout fires with phase 2 and stands for that day; a later phase supersedes it.
+    let mut g = r.new_game(1);
+    g.run.events.insert("boredom_bites".into(), 5);
+    g.run.events.insert("boredom_phase_2".into(), 5);
+    assert_eq!(shown(&r.view(&g)), ["boredom_bites"]);
+    g.run.events.insert("boredom_phase_3".into(), 9);
+    assert_eq!(shown(&r.view(&g)), ["boredom_phase_3"]);
 }
 
 #[test]

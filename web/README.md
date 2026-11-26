@@ -52,16 +52,14 @@ Three columns and a status bar:
   its breakdown in place: last day's sources and sinks, who went short), each ideology
   axis's rank once Ideologies is unlocked (folded at first in a window under 800 px),
   and at the foot the active main quest's picture, else the lunar horizon.
-- **Middle:** a starry sky, a completed side quest's text and picture (the story banner),
-  then the active panel. Buildings: the Land bar (green and click-to-buy like a card
+- **Middle:** a starry sky, then the active panel. Buildings: the Land bar (green and click-to-buy like a card
   when affordable), a collapsible section per category, cards (`Buildings.tsx`). A click on an affordable card (outlined in green, its name row tinted), off its
   controls, builds one (Shift: up to ten; ignored for 0.5 s after the summary or a story
   text closes); any other card says why it can't. Research cards work the same way.
   Commands: a card per verb (Buy, Promote, ...), a target dropdown. Pad
   cards tint their head: green Ready, yellow Paused, red full but short of fuel. Stats ends
-  on every breakdown. Story (`Story.tsx`): a spine of main-story beats under painted act
-  bands, each with its quest picture's thumbnail, finished ones lit, one line each (a click replays), the active one ringed, one
-  "???", side quests off it; Achievements: badges by category. Acts 2 and 3 (`Saga.tsx`, DRAFT; `docs/arc.md`): Timeline,
+  on every breakdown. Story (`Story.tsx`): the quest archive, a spine of main-story beats under
+  painted act bands, side quests off it (ui.md, *Story cards*); Achievements: badges by category. Acts 2 and 3 (`Saga.tsx`, DRAFT; `docs/arc.md`): Timeline,
   Earth Lab, Meta-Controller, Vault, Dyson; the ending covers the screen once.
 - **Right:** the main quest in its own slot at the top, which nothing else takes; program
   tabs 1 to 5 with processors −/+, Reset, Save / Load (`Library.tsx`, the loadout library); a line per instruction, dragged to reorder
@@ -74,9 +72,9 @@ Three columns and a status bar:
   Above 10x a redraw covers several days: each line shows its outcome over them
   (`advance_run`'s `lines`), no frame. A note line (`#`) is muted text, an unparsed one a
   red-tinted disabled row with its reason, a locked one dimmed with "locked this run" (the
-  view's `errors` and `locked`). Below, Events: Story (side story and the latest
-  boredom phase), completed quests, and Recent Activity (green good, red bad, blue news;
-  a checkbox per kind, kept per browser), each with an unread count.
+  view's `errors` and `locked`). Open side quests sit under the main quest; Events (a line
+  per one-off this run, a click reopening its popup) and Recent Activity (a checkbox per
+  kind) below the program, each with an unread count (rulings: docs/rulings/ui.md).
 - **Bottom:** day and run, Boredom and Energy bars with their rates
   (capped as in Resources; "cap tomorrow" the day before a forced retirement).
 - **Takeover views** (`Takeover.tsx`): a large view that covers the middle and right

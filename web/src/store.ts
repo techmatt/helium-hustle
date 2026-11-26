@@ -16,6 +16,7 @@ import {
   type LinesRun,
   type ParsedText,
   type Scenario,
+  type SideQuestView,
   type Stamped,
   type StoryView,
   type View,
@@ -32,6 +33,8 @@ const ANOTHER_TAB = 'This game is playing in another tab. Reload this tab to pla
 /** Autosave at most this often while ticking (and always on an action or leaving). */
 const SAVE_EVERY_MS = 1000;
 const CHEATS_KEY = 'hh.cheats';
+/** Events' "Hide popups for events you've already seen" ('0': off; on by default). */
+const HIDE_SEEN_POPUPS_KEY = 'hh-hide-seen-popups';
 
 interface Game {
   state: string;
@@ -66,11 +69,11 @@ export interface Store {
   summaryBase: SummaryBase | null;
   /** Keys (`kind:id`) revealed during this run and not yet looked at. */
   fresh: Set<string>;
-  /** Side-quest texts waiting to be read in the story banner, oldest first. */
-  stories: StoryView[];
-  /** The main-story modal's pages still to read, the open one first (the clock is
-   * paused while any are left). */
+  /** The popup's pages still to read (a main-story transition, a side quest's completion,
+   * a one-off event), the open one first (the clock is paused while any are left). */
   storyPages: StoryPage[];
+  /** "Hide popups for events you've already seen" (Events' checkbox; per browser). */
+  hideSeenPopups: boolean;
   cheatsEnabled: boolean;
   seed: string;
   scenario: Scenario | null;
@@ -114,8 +117,8 @@ export const store: Store = {
   backdrop: null,
   summaryBase: null,
   fresh: new Set(),
-  stories: [],
   storyPages: [],
+  hideSeenPopups: storageGet(HIDE_SEEN_POPUPS_KEY) !== '0',
   cheatsEnabled: storageGet(CHEATS_KEY) === '1',
   seed: '0',
   scenario: null,
@@ -201,11 +204,19 @@ export interface StoryPage {
   effect?: string;
   /** Its quest's picture's file stem (above the paragraph), null when it has none. */
   picture: string | null;
+  /** The last page's button ("Begin" when absent: a main-story transition). */
+  close?: string;
 }
 
-/** Completed quests already told (or found completed at a load) this page session, so
- * each is told once. */
+/** Completed quests (by id) and this run's one-off events (`run:id`) already told (or
+ * found at a load) this page session, so each is told once. */
 const toldStories = new Set<string>();
+/** One-off events whose popup this career has shown (by id), saved with the game: with
+ * `hideSeenPopups` on, one already here doesn't pop up again. */
+const seenPopups = new Set<string>();
+/** Set while a save from before `seenPopups` was kept loads: the run's events listed then
+ * count as seen. */
+let seedSeenAtLoad = false;
 /** Active quests whose opening was told (or found active at a load). */
 const openedQuests = new Set<string>();
 /** The main-story quest active at the last redraw (a change is a transition). */
@@ -223,15 +234,31 @@ function payoffPages(q: StoryView, pages: StoryPage[]): void {
   if (pages.length > at && q.reward) pages[pages.length - 1].reward = q.reward;
 }
 
+/** A completed side quest's popup: its payoff (its body when it has none), its reward. */
+function sideDonePages(q: StoryView): StoryPage[] {
+  const texts = q.payoff && q.payoff.length > 0 ? q.payoff : [q.body];
+  const pages: StoryPage[] = texts.map((text) => ({ quest: q.id, title: q.title, kind: 'payoff', text, picture: q.picture ?? null, close: 'OK' }));
+  if (q.reward) pages[pages.length - 1].reward = q.reward;
+  return pages;
+}
+
+/** A one-off event's popup: its story (its body when it has none), its effect. */
+function eventPages(e: StoryView): StoryPage[] {
+  const texts = e.story && e.story.length > 0 ? e.story : [e.body || e.summary];
+  const pages: StoryPage[] = texts.map((text) => ({ quest: e.id, title: e.title, kind: 'story', text, picture: e.picture ?? null, close: 'OK' }));
+  if (e.effect) pages[pages.length - 1].effect = fillRate(e.effect, e.rate);
+  return pages;
+}
+
 /** Tells the story. A main-story transition (the active quest changed from X to Y)
  * queues the modal's pages: each chain quest completed since, in chain order (one that
  * was never shown active first gets its opening), its payoff, then Y's opening with its
  * task on the last page. On load nothing is queued; a brand-new game (run 1, day 0,
  * nothing completed) queues only its first quest's opening (`intro`). A completed side
- * quest goes to the story banner as before. A once-a-career one-off with a `story`
- * (Burnout, the first time boredom bites) queues its pages too. Other events (boredom
- * beats, side story) are never queued here: they land in the right column's Events
- * sections as unread items (`eventItems`). */
+ * quest pops up its payoff and reward. Every one-off event fired (Propellant discovery,
+ * Burnout, each boredom phase) pops up too, unless `hideSeenPopups` is on and this
+ * career has shown its popup before; either way it lands in the right column's Events
+ * list (`eventItems`). */
 function tell(v: View, mode: 'load' | 'intro' | 'play'): void {
   const pages: StoryPage[] = [];
   const quest = v.quest;
@@ -240,19 +267,27 @@ function tell(v: View, mode: 'load' | 'intro' | 'play'): void {
     toldStories.add(q.id);
     if (mode !== 'play') continue;
     if (!q.chain) {
-      store.stories.push(q);
+      pages.push(...sideDonePages(q));
       continue;
     }
     if (q.id !== lastQuest) for (const t of openingOf(q)) pages.push({ quest: q.id, title: q.title, kind: 'story', text: t, picture: q.picture ?? null });
     payoffPages(q, pages);
   }
-  // A once-a-career one-off with a story (the first time boredom bites) is a modal too.
   for (const e of v.event_texts) {
-    if (e.chain || !e.story || e.story.length === 0 || toldStories.has(e.id)) continue;
-    toldStories.add(e.id);
-    if (mode !== 'play') continue;
-    for (const t of e.story) pages.push({ quest: e.id, title: e.title, kind: 'story', text: t, picture: null });
-    if (e.effect) pages[pages.length - 1].effect = fillRate(e.effect, e.rate);
+    const key = `${v.run}:${e.id}`;
+    if (toldStories.has(key)) continue;
+    toldStories.add(key);
+    // Seen: popped up now, or listed when a save from before the set was kept loads. Not
+    // what the autopilot played past or a scenario started with: the player saw no popup.
+    if (mode !== 'play') {
+      if (seedSeenAtLoad) seenPopups.add(e.id);
+      continue;
+    }
+    if (pilot) continue;
+    const seenBefore = seenPopups.has(e.id);
+    seenPopups.add(e.id);
+    if (seenBefore && store.hideSeenPopups) continue;
+    pages.push(...eventPages(e));
   }
   const fresh = mode === 'intro' && v.run === 1 && v.day === 0 && v.completed_quests.length === 0;
   if (quest && quest.id !== lastQuest && !openedQuests.has(quest.id)) {
@@ -291,13 +326,39 @@ function holdClock(): Speed {
  * payoff), the clock stopped as for a transition. Nothing while another modal or the
  * autopilot holds the screen. */
 export function replayStory(q: StoryView): void {
-  if (stoodDown || store.summary || store.storyPages.length > 0 || pilotBusy()) return;
-  movedAt = performance.now();
   const pages: StoryPage[] = openingOf(q).map((text) => ({ quest: q.id, title: q.title, kind: 'story' as const, text, picture: q.picture ?? null }));
   if (pages.length > 0 && q.goal) pages[pages.length - 1].task = q.goal;
   payoffPages(q, pages);
-  if (pages.length === 0) return;
+  showPages(pages);
+}
+
+/** Opens `pages` as a popup on the player's click, the clock stopped as for a transition.
+ * Nothing while another modal or the autopilot holds the screen. */
+function showPages(pages: StoryPage[]): void {
+  if (stoodDown || store.summary || store.storyPages.length > 0 || pilotBusy() || pages.length === 0) return;
+  movedAt = performance.now();
   openStory(pages);
+  emit();
+}
+
+/** An Events entry's click: that one-off event's popup again. */
+export function replayEvent(e: StoryView): void {
+  showPages(eventPages(e));
+}
+
+/** An open side quest's click (the right column): its popup, its story with its goal and
+ * reward. */
+export function showSideQuest(q: SideQuestView): void {
+  const pages: StoryPage[] = [{ quest: q.id, title: q.title, kind: 'story', text: q.body, picture: q.picture ?? null, close: 'OK' }];
+  if (q.goal) pages[0].task = q.goal;
+  if (q.reward) pages[0].reward = q.reward;
+  showPages(pages);
+}
+
+/** Events' "Hide popups for events you've already seen" (remembered per browser). */
+export function setHideSeenPopups(on: boolean): void {
+  store.hideSeenPopups = on;
+  storageSet(HIDE_SEEN_POPUPS_KEY, on ? '1' : '0');
   emit();
 }
 
@@ -317,17 +378,21 @@ export function nextStoryPage(): void {
 
 // ---- unread events -------------------------------------------------------------------
 
-/** The right column's Events sections that count unread items. */
-export type EventSection = 'story' | 'completed' | 'activity';
+/** The right column's sections that count unread items. */
+export type EventSection = 'events' | 'activity';
 
-/** Each Events section's items now, as keys stable while the item stays listed: this
- * run's event texts, the completed quests, this run's activity feed (a repeated line
- * numbered by its occurrence). */
+/** This run's one-off events the Events list shows (a superseded boredom event drops
+ * out), oldest first. */
+export function listedEvents(v: View): StoryView[] {
+  return v.event_texts.filter((e) => !e.superseded);
+}
+
+/** Each section's items now, as keys stable while the item stays listed: this run's
+ * listed events, this run's activity feed (a repeated line numbered by its occurrence). */
 export function eventItems(v: View): Record<EventSection, string[]> {
   const n = new Map<string, number>();
   return {
-    story: v.event_texts.map((e) => `${v.run}:${e.id}`),
-    completed: v.story.map((e) => e.id),
+    events: listedEvents(v).map((e) => `${v.run}:${e.id}`),
     activity: v.activity.map((a) => {
       const base = `${v.run}:${a.day}:${a.kind}:${a.id}`;
       const i = n.get(base) ?? 0;
@@ -378,13 +443,6 @@ export function justMoved(): boolean {
   return performance.now() - movedAt < MOVED_MS;
 }
 
-export function dismissStory(): void {
-  movedAt = performance.now();
-  const s = store.stories.shift();
-  if (s) playlog.log('story_read', { id: s.id });
-  emit();
-}
-
 /** The player opened a panel or a program tab (the play log keeps where attention went). */
 export function noteOpened(kind: 'panel' | 'program_tab', id: string | number): void {
   playlog.log(kind, kind === 'panel' ? { panel: id } : { program: id });
@@ -424,11 +482,13 @@ function refresh(reset = false, story: 'load' | 'intro' | 'play' = reset ? 'load
   store.seed = game.seed;
   store.scenario = game.scenario;
   store.actionCount = game.actions.length;
+  let justEnded: View | null = null;
   if (before !== undefined && v.run > before && v.last_run && !reset) {
     // A run just ended: show its summary with the clock stopped; Continue restores the
     // speed it had (paused included).
     store.summary = v.last_run;
     store.backdrop = endedState ? engine.view(endedState) : null;
+    justEnded = store.backdrop;
     const c = store.backdrop?.career;
     store.summaryBase = c
       ? { starting_credits: c.starting_credits, boredom_resilience: c.boredom_resilience, buy_power_mult: c.buy_power_mult }
@@ -440,9 +500,13 @@ function refresh(reset = false, story: 'load' | 'intro' | 'play' = reset ? 'load
     checkpoint();
     save();
   }
+  // The ended run's last day first: an event that fired in the wake that retired the run
+  // is in its view, not the new run's, and still pops up (behind the summary).
+  const ended = justEnded;
   endedState = null;
   track(v, reset);
   if (reset) baselineRead(v);
+  if (ended) tell(ended, story);
   tell(v, story);
   emit();
 }
@@ -548,8 +612,8 @@ function save(): void {
     speedBeforeSummary,
     summaryBase: store.summaryBase,
     resumeSpeed,
-    stories: store.stories,
     storyPages: store.storyPages,
+    seenPopups: [...seenPopups],
     speedBeforeStory,
     page: playlog.pageId,
   });
@@ -627,9 +691,9 @@ export function newGame(seed: string, scenario: Scenario | null, why = 'new game
   store.summary = null;
   store.backdrop = null;
   store.summaryBase = null;
-  store.stories = [];
   store.storyPages = [];
   toldStories.clear();
+  seenPopups.clear();
   openedQuests.clear();
   lastQuest = null;
   save();
@@ -967,15 +1031,22 @@ export function start(): void {
         clock.speed = 0;
         store.speed = 0;
       }
+      // The events whose popup this career has shown (an older save's: those of the run
+      // in play, which the load adds).
+      seenPopups.clear();
+      if (Array.isArray(s.seenPopups)) for (const id of s.seenPopups) if (typeof id === 'string') seenPopups.add(id);
+      seedSeenAtLoad = !Array.isArray(s.seenPopups);
       refresh(true);
-      // A run summary left open is still open, and unread story texts still wait.
+      seedSeenAtLoad = false;
+      // A run summary left open is still open.
       store.summary = s.summary ?? null;
       store.summaryBase = (store.summary && s.summaryBase) || null;
-      // A banner saved before quests had mechanics fields (105) is retold from the view,
-      // so no old "Reward:" summary shows as narrative.
-      store.stories = (Array.isArray(s.stories) ? s.stories : []).map(
-        (x: StoryView) => (x.goal ? x : (store.view.story.find((q) => q.id === x.id) ?? x)),
-      );
+      // An older save's unread side-quest banners come up as their completion popups.
+      const banners = (Array.isArray(s.stories) ? s.stories : []).flatMap((x: StoryView) => {
+        const q = store.view.story.find((y) => y.id === x.id);
+        return q && !q.chain ? sideDonePages(q) : [];
+      });
+      if (banners.length > 0) openStory(banners);
     } catch (e) {
       clearSave();
       // `offline`: written at a later visit, so it has no place in the career's time.

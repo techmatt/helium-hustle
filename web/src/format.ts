@@ -1,6 +1,6 @@
 // Number display. Every number shown is an engine value; these only format it.
 
-import type { Fx } from './engine';
+import type { CommandView, Fx } from './engine';
 
 const SUFFIXES: [number, string][] = [
   [1e12, 'T'],
@@ -66,6 +66,28 @@ export function delta(now: Fx | number, was: Fx | number | undefined, places: nu
   if (was === undefined) return null;
   const r = Number((Number(now) - Number(was)).toFixed(places));
   return r === 0 ? null : r;
+}
+
+/** A command's "−2 Energy" lines: costs, then produces, then boredom (the Commands card's order). */
+function flowLines(c: CommandView, names: Record<string, string>, times: number): string[] {
+  const nm = (id: string) => names[id] ?? id;
+  const out: string[] = [];
+  for (const [res, amt] of Object.entries(c.costs)) out.push(`−${num(Number(amt) * times)} ${nm(res)}`);
+  for (const [res, amt] of Object.entries(c.produces)) out.push(`+${num(Number(amt) * times)} ${nm(res)}`);
+  if (Number(c.boredom) > 0) out.push(`+${num(Number(c.boredom) * times, 2)} ${nm('boredom')}`);
+  return out;
+}
+
+/** A command's expenses and incomes as tooltip text, one per line ("−2 Energy", "+5 Credits",
+ * "+0.1 Boredom"): "Each run:", then for a repeat count over 1 "N runs:" and the totals. The
+ * one builder for every hover that names a command. The figures are the view's; the total
+ * only multiplies them for display. Empty when the command costs and makes nothing. */
+export function commandTip(c: CommandView, names: Record<string, string>, count = 1): string {
+  const each = flowLines(c, names, 1);
+  if (each.length === 0) return '';
+  const parts = [`Each run:\n${each.join('\n')}`];
+  if (count > 1) parts.push(`${count} runs:\n${flowLines(c, names, count).join('\n')}`);
+  return parts.join('\n\n');
 }
 
 export function capitalize(s: string): string {

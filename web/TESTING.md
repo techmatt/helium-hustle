@@ -79,7 +79,8 @@ up directly). Its sections (`HH_ONLY`'s numbers) run in the order 1, 2, 3, 6 to 
    "???" after it and no achievements; a lit beat's click expands it (1.2 grants nothing: no Reward line; the UI
    font) and its Replay replays its modal; the
    Achievements tile shows every badge by category, each with its reward; then scenario
-   `late_unlocks` with *Complete all research*: 1.b's completion banner shows its picture.
+   `late_unlocks` with *Complete all research*: 1.b's completion popup shows its picture and
+   it leaves the right panel's side quests.
 
 Any uncaught page error fails the run. Run it against `vite preview` (CLAUDE.md).
 `panel()` closes the debug menu: call `debugMenu()` again before a `grant()` after one.

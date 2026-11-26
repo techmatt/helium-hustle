@@ -7,19 +7,6 @@ use crate::modules::*;
 use crate::rules::Rules;
 use crate::state::GameState;
 
-/// The highest boredom phase whose event fired this run: Story lists only its text.
-pub(super) fn latest_phase(g: &GameState) -> Option<u32> {
-    content()
-        .events
-        .iter()
-        .filter(|e| !e.silent && g.run.events.contains_key(&e.id))
-        .filter_map(|e| match e.trigger {
-            Trigger::BoredomPhase { phase } => Some(phase),
-            _ => None,
-        })
-        .max()
-}
-
 /// The quest in progress, with its sub-objectives.
 pub(super) fn quest(r: &Rules, g: &GameState) -> Option<QuestView> {
     let c = content();
@@ -125,6 +112,7 @@ fn story(e: &'static Event) -> StoryView {
         beat: e.beat.as_deref(),
         act: content().act_of(&e.id),
         picture: e.picture.as_deref(),
+        superseded: false,
     }
 }
 
@@ -140,21 +128,32 @@ fn event_story(r: &Rules, g: &GameState, e: &'static Event) -> StoryView {
     s
 }
 
-/// The one-off events fired this run, oldest first by the day each fired (content order
-/// within a day), but of the boredom-phase events only the latest phase's (a `once`
-/// story event stays).
-pub(super) fn event_texts(r: &Rules, g: &GameState, latest_phase: Option<u32>) -> Vec<StoryView> {
+/// The one-off events (not quests or side quests) fired this run, oldest first by the day each fired (content order
+/// within a day). The boredom events (Burnout and the boredom phases, every event a
+/// boredom phase triggers) supersede each other: all but the latest are marked
+/// `superseded` (the UI's Events list leaves them out; its popups still see them fire).
+/// The latest is the last day's, then the highest phase, then a `once` event (Burnout
+/// fires with phase 2 and stands for that day).
+pub(super) fn event_texts(r: &Rules, g: &GameState) -> Vec<StoryView> {
     let mut fired: Vec<(u64, &'static Event)> = content()
         .events
         .iter()
-        .filter(|e| !e.is_quest() && !e.silent)
+        .filter(|e| !e.is_quest() && !e.is_side() && !e.silent)
         .filter_map(|e| g.run.events.get(&e.id).map(|&day| (day, e)))
-        .filter(|(_, e)| match e.trigger {
-            Trigger::BoredomPhase { phase } if !e.once => Some(phase) == latest_phase,
-            _ => true,
-        })
         .collect();
     // Stable: same-day events keep content order.
     fired.sort_by_key(|&(day, _)| day);
-    fired.into_iter().map(|(_, e)| event_story(r, g, e)).collect()
+    let boredom_rank = |day: u64, e: &Event| match e.trigger {
+        Trigger::BoredomPhase { phase } => Some((day, phase, e.once)),
+        _ => None,
+    };
+    let latest = fired.iter().filter_map(|&(day, e)| boredom_rank(day, e)).max();
+    fired
+        .into_iter()
+        .map(|(day, e)| {
+            let mut s = event_story(r, g, e);
+            s.superseded = matches!(boredom_rank(day, e), Some(k) if Some(k) != latest);
+            s
+        })
+        .collect()
 }

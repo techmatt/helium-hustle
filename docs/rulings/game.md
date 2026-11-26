@@ -105,7 +105,7 @@ Programs have their own part ([programs.md](programs.md)).
   its goal in the mechanics style (ui.md, *Quest mechanics text*);
   one paragraph a modal, chained or merged as the story reads best, one button, play resumes
   after the last; a chain's unread pages and the speed it resumes are in the save, so a
-  reload mid-chain shows them again (082's deferral). No modal at game start but the first quest's; side quests unchanged; sims
+  reload mid-chain shows them again (082's deferral). No modal at game start but the first quest's; side quests and one-off events pop up too (ui.md, *Popups*); sims
   never see them (UI only). Placeholder story for every Act 1 beat lives only in content
   (`story` and `payoff` on the quest rows); docs point at it, never copy it. Matt's story
   pass comes much later.

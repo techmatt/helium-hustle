@@ -48,9 +48,8 @@ export function questPicture(stem: string | null | undefined): string | undefine
 }
 
 /** A quest's picture where it shows: the story modal (`modal`), the left column's foot
- * (`left`), a finished beat's thumbnail (`thumb`) or a side quest's completion banner
- * (`banner`, its modal's stand-in); nothing when it has none. */
-export function QuestPicture({ stem, at }: { stem: string | null | undefined; at: 'modal' | 'left' | 'thumb' | 'banner' }) {
+ * (`left`) or a finished beat's thumbnail (`thumb`); nothing when it has none. */
+export function QuestPicture({ stem, at }: { stem: string | null | undefined; at: 'modal' | 'left' | 'thumb' }) {
   const src = questPicture(stem);
   if (!src) return null;
   return <img class={`quest-pic quest-pic-${at}`} data-testid={`quest-pic-${at}`} data-picture={stem} src={src} alt="" draggable={false} />;

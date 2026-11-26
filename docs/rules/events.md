@@ -111,15 +111,19 @@ one-off's `effect` (ui.md, *Quest mechanics text*; checked at load).
 The view hands a boredom phase its `rate`, the phase's boredom per day, and the UI fills its
 effect's `{rate}` with it as Stats shows boredom growth. The run records the day
 each one-off fired (`Run.events`, display only); the view lists them by that day, content
-order within a day, and the right column's Events Story section shows them newest first.
+order within a day (side quests aside), marking all but the latest of Burnout and the
+boredom phases `superseded`; the right column's Events list leaves those out and shows the
+rest newest first (ui.md, *Right panel*).
 
 **Story modals** (UI only: no rule reads them, sims never see them). A chain quest's `story`
 (shown as it becomes active) and `payoff` (shown as it completes) are paragraphs, one modal
 each, in `content/events.json`. When the active
 quest moves on, the web UI pauses and shows the finished quests' payoffs with their rewards (and the story of any
 quest passed through the same day), then the new quest's story with its goal, resuming after
-the last; a new game shows only 1.1's. A quest with no `story` shows its `body`. A `once` one-off with a `story` (Burnout, `boredom_bites`) is a
-modal too, the first time it fires (its pages, no payoff); the view carries it in `event_texts`. The view
+the last; a new game shows only 1.1's. A quest with no `story` shows its `body`. Every one-off in `event_texts` is a
+modal (a popup) as it fires: its `story` pages (Burnout's), else its `body`, with its effect; a
+completed side quest's is its payoff (else body) and reward. Events' "Hide popups for events
+you've already seen" skips one this career has shown before (ui.md, *Popups*). The view
 carries them (`quest.story`; each completed quest's `chain`, `story` and `payoff`). A quest
 (chain or side) may name a `picture`, the stem of a web asset (`[a-z0-9_]`; the view carries
 it on `quest`, `story` and `side_quests`; where it shows: ui.md, *Quest pictures*).

@@ -25,7 +25,10 @@ export interface Save {
   /** What the summarized run started with (the summary's deltas). */
   summaryBase?: SummaryBase | null;
   resumeSpeed?: Speed;
-  /** Story texts not yet read. */
+  /** The one-off events whose popup this career has shown (Events' "Hide popups for
+   * events you've already seen"). */
+  seenPopups?: string[];
+  /** An older save's unread side-quest banner texts: shown as their popups at load. */
   stories?: StoryView[];
   /** A story modal chain's unread pages (the open one first) and the speed its last
    * page resumes: a reload mid-chain shows them again, the clock held. */

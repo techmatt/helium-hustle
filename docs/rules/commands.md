@@ -52,7 +52,8 @@ view fills a description's `{days}` with those days at the current rank ("4 days
 1 energy for 1 science, the only science before a Research Lab) opens with quest 1.1
 Online's completion, and Launch Full Pads with 1.3 Full Load's (`quest_completed`); before
 then pads launch by hand ([shipments.md](shipments.md)). Run Simulations (3 energy and 1 ice
-for 6 credits, no boredom) needs research Liquid Cooling; Buy Ice is 5 credits and 1 energy. Disrupt Speculators needs research
+for 6 credits, no boredom) needs research Liquid Cooling. The Buy commands for goods cost 1 energy and credits: Ice 5,
+Regolith and Propellant 10, Science 10, Titanium 20. Disrupt Speculators needs research
 Speculator Analysis; Contest Claims, Act 2's, the career flag `contest_claims` (set by the
 silent `rivals_arrive`, [attention.md](attention.md)).
 

@@ -108,7 +108,7 @@ export function TakeoverView({ s, t, close, banners }: { s: Store; t: Takeover; 
           ✕ Close
         </button>
       </div>
-      {/* The notice and story banner, which the hidden middle column would hold. */}
+      {/* The notice, which the hidden middle column would hold. */}
       <div class="takeover-banners">{banners}</div>
       <div class={`takeover-body${t.bleed ? ' takeover-bleed' : ''}`}>{t.render(s)}</div>
     </section>

@@ -336,11 +336,11 @@ fn the_days_rate_reads_demand_all_through_a_brownout() {
     economy::refresh(&mut g);
     let rate = |g: &GameState| g.run.day_net.get("energy").copied().unwrap_or(Fx::ZERO);
     r.advance(&mut g, 1);
-    assert_eq!(rate(&g), f("-7"), "one panel's 5 against six Data Centers' 12");
+    assert_eq!(rate(&g), f("-18"), "one panel's 6 against six Data Centers' 24");
     let mut brownout_days = 0;
     for _ in 0..60 {
         r.advance(&mut g, 1);
-        assert_eq!(rate(&g), f("-7"), "the demand stays, met or not (day {})", g.run.day);
+        assert_eq!(rate(&g), f("-18"), "the demand stays, met or not (day {})", g.run.day);
         if g.amount("energy") < f("0.01") {
             brownout_days += 1;
         }
@@ -348,8 +348,8 @@ fn the_days_rate_reads_demand_all_through_a_brownout() {
     assert!(brownout_days > 30, "a steady brownout: {brownout_days} days at 0");
     // The panel shows the same quantity for the next day, with the stock's change beside it.
     let e = r.view(&g).resources.into_iter().find(|x| x.id == "energy").unwrap();
-    assert_eq!(e.per_day, f("-7"));
-    assert!(e.unmet > f("6.99") && e.change_per_day < f("0.01") && e.change_per_day > f("-0.01"), "{e:?}");
+    assert_eq!(e.per_day, f("-18"));
+    assert!(e.unmet > f("17.99") && e.change_per_day < f("0.01") && e.change_per_day > f("-0.01"), "{e:?}");
 }
 
 #[test]
@@ -380,7 +380,7 @@ fn a_failed_command_and_a_short_project_count_as_demand() {
     put(&r, &mut g, vec![Entry::command("cloud_compute", 1)]).unwrap();
     r.advance(&mut g, 1);
     assert_eq!(outcomes(&g)[0], Some(O::Failed));
-    assert_eq!(g.run.today.unmet["energy"], f("4"), "Cloud Compute's 2 and the Data Center's 2");
+    assert_eq!(g.run.today.unmet["energy"], f("6"), "Cloud Compute's 2 and the Data Center's 4");
 }
 
 #[test]

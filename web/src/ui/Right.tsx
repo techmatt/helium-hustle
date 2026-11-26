@@ -1,13 +1,25 @@
-// Right column: program tabs (processors, command lines) and Events (Story, Completed,
-// Recent Activity).
+// Right column: the main quest, the open side quests, program tabs (processors, command
+// lines), Events (this run's one-off events) and Recent Activity.
 
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import type { Activity, View } from '../engine';
-import { fillRate, num } from '../format';
-import { act, eventItems, markRead, store, unreadIn, type EventSection, type Store } from '../store';
+import { num } from '../format';
+import {
+  act,
+  eventItems,
+  listedEvents,
+  markRead,
+  replayEvent,
+  setHideSeenPopups,
+  showSideQuest,
+  store,
+  unreadIn,
+  type EventSection,
+  type Store,
+} from '../store';
 import { daysPerWake } from '../clock';
-import { Mechanics, Quest, ResChip, Section, name } from './common';
+import { Bar, Quest, ResChip, Section, name } from './common';
 import { Chip } from './icons';
 import { AddLogic } from './ProgramLogic';
 import { Library, type LibraryMode } from './Library';
@@ -33,10 +45,29 @@ export function Right({
           <Quest v={s.view} />
         </div>
       )}
+      <SideQuests v={s.view} />
       {/* The program, from day 1: Programming opens only the full editor (the Programs view). */}
       <Programs s={s} program={program} setProgram={setProgram} />
-      <Events v={s.view} />
+      <Events s={s} />
     </aside>
+  );
+}
+
+/** The open side quests (started, not done), each its title and progress; a click opens
+ * its popup. Nothing when none is open: a finished one lives only in the Story view. */
+function SideQuests({ v }: { v: View }) {
+  const open = v.side_quests.filter((q) => !q.done);
+  if (open.length === 0) return null;
+  return (
+    <div class="side-pin" data-testid="side-quests">
+      <div class="quest-pin-label">Side quests</div>
+      {open.map((q) => (
+        <button type="button" key={q.id} class="side-pin-item" data-side-quest={q.id} title="Show this side quest" onClick={() => showSideQuest(q)}>
+          <span class="side-pin-title">{q.title}</span>
+          {q.progress && <Bar frac={Number(q.progress.now) / Number(q.progress.target)} label={`${num(q.progress.now)} / ${num(q.progress.target)}`} />}
+        </button>
+      ))}
+    </div>
   );
 }
 
@@ -172,8 +203,9 @@ function savedHidden(): string[] {
   }
 }
 
-/** Events other than the main quest, each section with its unread count. */
-function Events({ v }: { v: View }) {
+/** Events (this run's one-off events) and Recent Activity, each with its unread count. */
+function Events({ s }: { s: Store }) {
+  const v = s.view;
   const [hidden, setHidden] = useState<string[]>(savedHidden);
   const toggle = (group: string) => {
     const next = hidden.includes(group) ? hidden.filter((g) => g !== group) : [...hidden, group];
@@ -186,10 +218,9 @@ function Events({ v }: { v: View }) {
   };
   const keys = eventItems(v);
   const unread = (sec: EventSection) => unreadIn(v, sec);
-  const story = unread('story');
-  const completed = unread('completed');
+  const events = unread('events');
   // Newest first; a hidden group's lines are left out of the list and its counts.
-  const texts = v.event_texts.map((e, i) => ({ e, key: keys.story[i] })).reverse();
+  const texts = listedEvents(v).map((e, i) => ({ e, key: keys.events[i] })).reverse();
   const all = v.activity.map((a, i) => ({ a, key: keys.activity[i], group: activityGroup(a.kind) })).reverse();
   const recent = all.filter((x) => !hidden.includes(x.group));
   const shownKeys = new Set(recent.map((x) => x.key));
@@ -203,40 +234,37 @@ function Events({ v }: { v: View }) {
   const groups = labels.filter(([id]) => present.has(id));
   return (
     <div class="events" data-testid="events">
-      <h2>Events</h2>
       <Section
-        title={`Story (${texts.length})`}
+        title={`Events (${texts.length})`}
         dark
-        testid="events-story"
-        unread={story.length}
-        onRead={() => markRead(story)}
+        testid="events-list"
+        unread={events.length}
+        onRead={() => markRead(events)}
       >
         {texts.length === 0 && <p class="muted hint">No events this run yet.</p>}
+        {/* One line each, newest first: a click opens its popup again. */}
         {texts.map(({ e, key }) => (
-          <div key={key} class={`event-item${story.includes(key) ? ' is-unread' : ''}`} data-event={e.id}>
-            <div class="event-title">{e.title}</div>
-            {e.summary && <div class="muted">{e.summary}</div>}
-            <div class="event-body">{e.body}</div>
-            {/* A side quest is listed here too: its goal and reward; a one-off its effect, always shown. */}
-            <Mechanics goal={e.goal} reward={e.reward} effect={fillRate(e.effect ?? '', e.rate)} />
-          </div>
+          <button
+            type="button"
+            key={key}
+            class={`event-item${events.includes(key) ? ' is-unread' : ''}`}
+            data-event={e.id}
+            title="Show this event"
+            onClick={() => replayEvent(e)}
+          >
+            <span class="event-title">{e.title}</span>
+            {e.summary && <span class="muted"> {e.summary}</span>}
+          </button>
         ))}
-      </Section>
-      <Section
-        title={`Completed (${v.story.length})`}
-        dark
-        open={false}
-        testid="events-completed"
-        unread={completed.length}
-        onRead={() => markRead(completed)}
-      >
-        <ul class="plain">
-          {v.story.map((e) => (
-            <li key={e.id} data-quest={e.id} class={completed.includes(e.id) ? 'is-unread' : ''}>
-              ✓ {e.title}
-            </li>
-          ))}
-        </ul>
+        <label class="events-hide-seen">
+          <input
+            type="checkbox"
+            data-testid="hide-seen-popups"
+            checked={s.hideSeenPopups}
+            onChange={(ev) => setHideSeenPopups((ev.target as HTMLInputElement).checked)}
+          />{' '}
+          Hide popups for events you've already seen
+        </label>
       </Section>
       <Section
         title={`Recent Activity (${recent.length})`}

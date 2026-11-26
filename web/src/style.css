@@ -744,29 +744,35 @@ ul.plain {
 .nav-tile.active:hover:not(:disabled) {
   background: var(--sel-hover);
 }
-/* The ready dot sits on the tile's bottom right corner as a badge, the No-cargo dot bottom
-   left; the new (unread) dot inside its own tile, below. */
+/* Every nav dot (unread, pad ready, No cargo; their colors at .dot-ready) sits fully inside
+   its own tile, at the right edge with padding from the border, centered on the label row,
+   so it never reads as the next tile's. Dots on one tile sit side by side there, the last
+   rightmost, and the name stops short of them. They stay the tile's direct children (qa's
+   dot-over-name check reads the tile from a dot). */
 .nav-tile .dot {
   position: absolute;
-  top: -4px;
-  right: -4px;
-  box-shadow: 0 0 0 2px var(--panel);
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
   width: 9px;
   height: 9px;
   border-radius: 50%;
   background: var(--accent);
 }
-/* The new (unread) dot: fully inside its tile, at the right edge with padding from the
-   border, centered on the label row, so it never reads as the next tile's; the name stops
-   short of it. */
-.nav-tile .dot.dot-new {
-  top: 50%;
-  right: 6px;
-  transform: translateY(-50%);
-  box-shadow: none;
+.nav-tile .dot:has(+ .dot) {
+  right: 18px;
 }
-.nav-tile:has(.dot-new) {
+.nav-tile .dot:has(+ .dot + .dot) {
+  right: 30px;
+}
+.nav-tile:has(.dot) {
   padding-right: 18px;
+}
+.nav-tile:has(.dot + .dot) {
+  padding-right: 30px;
+}
+.nav-tile:has(.dot + .dot + .dot) {
+  padding-right: 42px;
 }
 /* A chip icon (icons.tsx): true colors in both themes; its own faint edge keeps pale ones
    (Energy, Ice) visible on white. */
@@ -924,38 +930,6 @@ ul.plain {
   padding: 6px 10px;
   border-radius: 4px;
   margin: 0 0 10px;
-}
-.story-banner {
-  background: var(--banner);
-  border: 1px solid var(--line);
-  border-left: 4px solid var(--accent);
-  border-radius: 4px;
-  padding: 8px 12px;
-  margin: 0 0 10px;
-}
-.story-head {
-  display: flex;
-  gap: 10px;
-  align-items: baseline;
-}
-/* A side quest's picture (art.tsx `QuestPicture`, `banner`) left of its text. */
-.story-banner-body {
-  display: flex;
-  gap: 12px;
-  align-items: flex-start;
-}
-.story-banner-body > blockquote {
-  flex: 1;
-  min-width: 0;
-}
-.quest-pic-banner {
-  flex: none;
-  width: 120px;
-  height: 80px;
-  object-fit: cover;
-  margin-top: 8px;
-  border-radius: 4px;
-  border: 1px solid var(--line);
 }
 .land-bar {
   display: flex;
@@ -1891,10 +1865,6 @@ tr.is-new td:first-child {
   color: var(--text);
   text-align: left;
 }
-/* On the side-quest banner's own warm ground, a shade deeper so the tint still reads. */
-.story-banner .mechanics {
-  background: color-mix(in srgb, var(--accent) 8%, var(--banner));
-}
 .mech-line {
   display: block;
 }
@@ -1991,9 +1961,55 @@ tr.is-new td:first-child {
   line-height: 16px;
   text-align: center;
 }
+/* An Events line (a button: a click opens its popup again). */
 .event-item {
-  padding: 4px 6px;
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 3px 6px;
   border-left: 3px solid transparent;
+  cursor: pointer;
+}
+.event-item:hover {
+  background: var(--card);
+}
+.events-hide-seen {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  padding: 4px 6px 0;
+}
+/* The open side quests under the main quest: a line each, a click opens its popup. */
+.side-pin {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  margin-bottom: 8px;
+  padding-bottom: 2px;
+}
+.side-pin-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  border-radius: 0;
+  padding: 2px 6px;
+  cursor: pointer;
+}
+.side-pin-item:hover {
+  background: var(--card);
+}
+.side-pin-title {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
 }
 .event-item + .event-item {
   border-top: 1px solid var(--line);
@@ -2010,9 +2026,6 @@ tr.is-new td:first-child {
 }
 .event-title {
   font-weight: 600;
-}
-.event-body {
-  font-size: 13px;
 }
 /* Launch readiness. */
 .pad-fuel {
@@ -2058,17 +2071,12 @@ button.go:hover:not(:disabled) {
   color: var(--text);
   font-weight: 600;
 }
-/* The ready dot bottom right, the No-cargo dot bottom left (corner badges: .nav-tile .dot). */
+/* The Launch Pads tile's dots: ready green, No cargo red (placed with every nav dot,
+   .nav-tile .dot). */
 .nav-tile .dot.dot-ready {
-  top: auto;
-  bottom: -4px;
   background: var(--pos);
 }
 .nav-tile .dot.dot-cargo {
-  top: auto;
-  right: auto;
-  bottom: -4px;
-  left: -4px;
   background: var(--neg);
 }
 /* An affordable building's name row is tinted (every card's head has the same box, so a

@@ -102,7 +102,7 @@ fn buildings_resolve_in_passes_with_partial_production() {
 
 #[test]
 fn unpaid_upkeep_withholds_effects_from_the_next_day() {
-    // Three Data Centers want 6 energy; with none to spare they run at 0 and grant no
+    // Three Data Centers want 12 energy; with none to spare they run at 0 and grant no
     // processors once the day is done; paid again, they grant all three.
     let r = rules();
     let mut g = r.new_game(1);
@@ -115,15 +115,15 @@ fn unpaid_upkeep_withholds_effects_from_the_next_day() {
     assert_eq!(programs_processors(&g), 0);
     // Unpaid, not gone: the program keeps its processor assigned, idle until paid.
     assert_eq!((g.run.programs[0].processors, crate::modules::programs::running(&g)[0]), (1, 0));
-    // Half paid (3 of 6): floor(3 × 0.5) = 1 works.
-    set(&mut g, "energy", "3");
+    // Half paid (6 of 12): floor(3 × 0.5) = 1 works.
+    set(&mut g, "energy", "6");
     r.advance(&mut g, 1);
     assert_eq!((g.run.buildings["data_center"].unpaid, programs_processors(&g)), (2, 1));
     // Switching one off takes an unpaid copy: the paid one keeps its processor.
     r.apply(&mut g, &Action::SetActive { building: "data_center".into(), active: 2 }).unwrap();
     assert_eq!((g.run.buildings["data_center"].unpaid, programs_processors(&g)), (1, 1));
     r.apply(&mut g, &Action::SetActive { building: "data_center".into(), active: 3 }).unwrap();
-    set(&mut g, "energy", "6");
+    set(&mut g, "energy", "12");
     r.advance(&mut g, 1);
     assert_eq!((g.run.buildings["data_center"].unpaid, programs_processors(&g)), (0, 3));
 }
@@ -177,13 +177,14 @@ fn programs_are_paid_before_upkeep_and_the_breakdown_shows_who_went_short() {
     assert!(!starved.is_empty() && starved.iter().all(|s| s.ran < Fx::ONE && s.resource == "energy"));
     let energy = v.breakdown.iter().find(|b| b.resource == "energy").unwrap();
     let row = |src: &str| energy.rows.iter().find(|x| x.source == src).unwrap();
-    assert_eq!(row("building:solar_panel").produced, f("30"));
+    assert_eq!(row("building:solar_panel").produced, f("36"));
     assert_eq!(row("program:0").consumed, f("2"));
     assert_eq!(energy.shorts.len(), starved.len());
     // Every unit made is accounted for: sources less sinks is the change in stock (none:
-    // a short day spends it all), but for the clamp lifting a rounding dip below zero.
+    // a short day spends it all), but for the clamp lifting a rounding dip below zero (a
+    // unit or two: each short consumer rounds its partial pay).
     let net: Fx = energy.rows.iter().map(|x| x.produced - x.consumed).sum();
-    assert!(net.max(-net) <= Fx::EPSILON, "{net}");
+    assert!(net.max(-net) <= f("0.000002"), "{net}");
     assert!(g.run.flow_average["energy"]["building:solar_panel"].produced > Fx::ZERO);
 }
 
@@ -229,7 +230,9 @@ fn breakdown_adds_up(seed: u64, scenario: Option<&str>) {
                 let change = g.amount(&res.id) - before.amount(&res.id);
                 let off = net - change;
                 assert!(
-                    off.max(-off) <= f("0.000004"),
+                    // A stock drained to zero by several partly paid consumers can dip
+                    // a few rounding units per consumer (seed 6's regolith: 10, rev 38).
+                    off.max(-off) <= f("0.00002"),
                     "seed {seed} {scenario:?} day {}: {} flows net {net} but changed {change} ({:?})",
                     g.run.day,
                     res.id,
@@ -250,10 +253,10 @@ fn scenario_by(id: &str) -> &'static Scenario {
 fn caps_bind_at_the_end_of_the_day_and_overflow_is_counted() {
     let r = rules();
     let mut g = r.new_game(1);
-    // Energy starts at its cap; the panel's 5 less the data center's 2 overflows.
+    // Energy starts at its cap; the panel's 6 less the data center's 4 overflows.
     r.advance(&mut g, 1);
     assert_eq!(g.amount("energy"), f("100"));
-    assert_eq!(g.run.today.overflow["energy"], f("3"));
+    assert_eq!(g.run.today.overflow["energy"], f("2"));
     // A battery raises the energy cap; a depot raises the others'.
     own(&mut g, "battery", 1);
     own(&mut g, "storage_depot", 1);
@@ -298,9 +301,9 @@ fn processors_share_a_pointer_and_failed_lines_advance() {
     assert_eq!(g.amount("credits"), f("1"));
     assert_eq!((g.run.programs[0].entry, g.run.programs[0].step), (1, 1));
     r.advance(&mut g, 1);
-    // Idle once more, then Buy Regolith runs at the quarter its 2 credits allow.
+    // Idle once more, then Buy Regolith runs at the fifth its 2 credits allow.
     assert_eq!(g.amount("credits"), Fx::ZERO);
-    assert_eq!(g.amount("regolith"), f("0.25"));
+    assert_eq!(g.amount("regolith"), f("0.2"));
     assert!(r.apply(&mut g, &Action::SetProcessors { program: 1, processors: 1 }).is_err());
     // A lost data center takes its processor off the program.
     r.apply(&mut g, &Action::SetActive { building: "data_center".into(), active: 1 }).unwrap();
@@ -319,6 +322,8 @@ fn programs_run_and_show_their_lines_in_queue_order_day_after_day() {
         let r = rules();
         let mut g = r.new_game(1);
         own(&mut g, "data_center", procs);
+        // Power for the Data Centers' upkeep over the 20 days (no brownout idles a line).
+        own(&mut g, "solar_panel", 2);
         r.apply(&mut g, &Action::SetProcessors { program: 0, processors: procs }).unwrap();
         program(&r, &mut g, &queue);
         let names: Vec<_> = queue.iter().map(|&(c, n)| Entry::command(c, n)).collect();

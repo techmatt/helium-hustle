@@ -6,7 +6,7 @@
 import type { ComponentChildren, LiHTMLAttributes } from 'preact';
 import { useState } from 'preact/hooks';
 import type { Amount, Clause, Cmp, Condition, ConditionView, Entry, LineOutcome, Reading, ShortView, Verb, View } from '../engine';
-import { num } from '../format';
+import { commandTip, num } from '../format';
 import { Bar, ResChip, ShortNote, name, ranPercent, shortText } from './common';
 import { otherUnit, sameEntry } from './programEdit';
 
@@ -324,6 +324,8 @@ export function ProgramLine(props: {
   const lockedWhy = props.locked;
   const locked = lockedWhy !== null || (outcome === 'failed' && !why && command?.unlocked === false);
   if (why || locked) noted.add(i);
+  // The command's expenses and incomes, each run and for the line's repeat count.
+  const flows = command ? commandTip(command, v.names, e.count) : '';
   return (
     <li
       class={rowClass}
@@ -331,7 +333,7 @@ export function ProgramLine(props: {
       data-command={e.command}
       {...drag}
       // The name can be cut short at narrow widths: the tooltip carries it whole.
-      title={`${lineText(v, e)}: ${ranText}${why ? `. ${shortText(v, why)}` : locked ? `. Locked this run${lockedWhy ? `: ${lockedWhy}` : ''}.` : ''}`}
+      title={`${lineText(v, e)}: ${ranText}${why ? `. ${shortText(v, why)}` : locked ? `. Locked this run${lockedWhy ? `: ${lockedWhy}` : ''}.` : ''}${flows ? `\n\n${flows}` : ''}`}
     >
       {gutter}
       <span class="grip" aria-hidden>
@@ -353,8 +355,9 @@ export function ProgramLine(props: {
       )}
       {/* The current line is marked by its frame (style.css `.line.current`), never by
           text in the name, so no line's text moves as the pointer walks. */}
-      {/* Cut short in a narrow right column ("Sell Cloud Compute (x…"): the tooltip has it. */}
-      <span class="line-name" title={setCount ? name(v, e.command) : `${name(v, e.command)} (x${e.count})`}>
+      {/* Cut short in a narrow right column ("Sell Cloud Compute (x…"): the tooltip has it
+          whole, with the command's flows (as the row's). */}
+      <span class="line-name" title={`${setCount ? name(v, e.command) : `${name(v, e.command)} (x${e.count})`}${flows ? `\n\n${flows}` : ''}`}>
         {Object.keys(command?.produces ?? {}).map((res) => (
           <ResChip key={res} v={v} id={res} />
         ))}{' '}

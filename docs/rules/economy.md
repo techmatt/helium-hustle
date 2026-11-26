@@ -150,7 +150,8 @@ quest 1.2 First Shipment needs the first, and its completion shows the second). 
 Dome requires research Recreation Dome Blueprints, shown from the first retirement
 ([research.md](research.md)). The Regolith Excavator makes 2 regolith a day
 (`excavator_output_mult`, 1.5 with research Regolith Processing). The Refinery's upkeep is
-5 regolith and 2 energy a day.
+5 regolith and 2 energy a day. A Solar Panel makes 6 energy a day; a Data Center's upkeep is
+4 energy a day. A Launch Pad costs 150 credits and 20 titanium.
 
 Six resource ids are fixed in code (`economy.rs` constants), named by content rows:
 `energy` (its cap skips `storage_cap_mult`; its output counts toward peak power),

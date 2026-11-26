@@ -1092,12 +1092,17 @@ async function storyView() {
   await debugMenu();
   await click('#cheat-complete-research');
   await speed(1);
-  await waitFor(`document.querySelector('[data-testid="story-banner"]')?.dataset.story === 'qfull_cluster'`, "1.b's completion banner", 20000);
-  await speed(0);
-  const banner = await evaluate(`(() => { const i = document.querySelector('[data-testid="story-banner"] [data-testid="quest-pic-banner"]'); return { pic: i?.dataset.picture ?? null, loaded: !!i && i.complete && i.naturalWidth > 0 }; })()`);
+  // Any popup before it (events, other quests) is read on the way.
+  await waitFor(
+    `(() => { const m = document.querySelector('[data-testid="story-modal"]'); if (m && m.dataset.quest !== 'qfull_cluster') document.querySelector('[data-testid="story-next"]').click(); return m?.dataset.quest === 'qfull_cluster'; })()`,
+    "1.b's completion popup",
+    20000,
+  );
+  const popup = await evaluate(`(() => { const i = document.querySelector('[data-testid="story-modal"] [data-testid="quest-pic-modal"]'); return { pic: i?.dataset.picture ?? null, loaded: !!i && i.complete && i.naturalWidth > 0, listed: !!document.querySelector('[data-side-quest="qfull_cluster"]') }; })()`);
   const sidePic = content('events.json').find((e) => e.id === 'qfull_cluster').picture;
-  check(!!sidePic && banner.pic === sidePic && banner.loaded, `a side quest's completion banner shows its picture: ${JSON.stringify(banner)}`);
-  await shot('side-quest-banner');
+  check(!!sidePic && popup.pic === sidePic && popup.loaded && !popup.listed, `a side quest's completion popup shows its picture; the quest left the right panel: ${JSON.stringify(popup)}`);
+  await shot('side-quest-popup');
+  await click('[data-testid="story-next"]');
 }
 
 async function programsBlocks() {
@@ -1240,8 +1245,8 @@ async function readability(grant) {
   await click('#start-scenario');
   const quest = await evaluate(`document.querySelector('[data-testid="quest-pin"] [data-testid="quest"]')?.dataset.quest ?? null`);
   check(!!quest, `the main quest has its pinned slot: ${quest}`);
-  // Fold Story: a folded section keeps its count.
-  await click('[data-testid="events-story"] .fold-head');
+  // Fold Events: a folded section keeps its count.
+  await click('[data-testid="events-list"] .fold-head');
   // The scenario's pad starts with No cargo: idle, red nav dot; picking He-3 clears both.
   await panel('launch_pads');
   const none = await evaluate(`(() => {
@@ -1266,6 +1271,8 @@ async function readability(grant) {
     await setValue('#cheat-days', '4');
     await click('#cheat-jump');
     await sleep(100);
+    // A boredom beat on the way pops up (it holds the clock: the next jump would play nothing).
+    await readStory();
   }
   await panel('launch_pads');
   await waitFor(`Number(document.querySelector('[data-pad="0"]')?.dataset.cargo ?? 0) >= 100`, 'the pad full', 3000);
@@ -1282,20 +1289,18 @@ async function readability(grant) {
   // The pads are the panel's last section: scroll only the middle column to them.
   const toPads = `document.querySelector('.col-mid').scrollTop = 1e6`;
   await evaluate(toPads);
-  // The boredom beat: in Story, unread; the quest still pinned and no banner over it.
+  // The boredom beat: in Events, unread; the quest still pinned.
   const beat = await evaluate(`(() => ({
     pin: document.querySelector('[data-testid="quest-pin"] [data-testid="quest"]')?.dataset.quest ?? null,
-    banner: document.querySelector('[data-testid="story-banner"]')?.dataset.story ?? null,
-    unread: Number(document.querySelector('[data-testid="events-story"]').dataset.unread),
-    head: document.querySelector('[data-testid="events-story"] .fold-head').textContent,
-    // Story is folded: the beat's line in Recent Activity says it fired.
+    unread: Number(document.querySelector('[data-testid="events-list"]').dataset.unread),
+    head: document.querySelector('[data-testid="events-list"] .fold-head').textContent,
+    // Events is folded: the beat's line in Recent Activity says it fired.
     beat: [...document.querySelectorAll('[data-testid="events-activity"] li[data-kind="event"]')].some((e) => /Boredom Rising/.test(e.textContent)),
     slot: [...document.querySelectorAll('[data-testid="quest-pin"] [data-quest]')].map((e) => e.dataset.quest),
   }))()`);
-  // Q1 completes on the way (Q2 opens): the slot holds the active quest and nothing else;
-  // a banner may still hold the scenario's quest texts (quests only, never the beat).
-  check(/^q/.test(beat.pin ?? '') && beat.slot.length === 1 && beat.beat && !(beat.banner ?? '').startsWith('boredom') && beat.unread >= 1,
-    `a boredom beat fired: the quest stays pinned, Story counts it unread: ${JSON.stringify(beat)}`);
+  // Q1 completes on the way (Q2 opens): the slot holds the active quest and nothing else.
+  check(/^q/.test(beat.pin ?? '') && beat.slot.length === 1 && beat.beat && beat.unread >= 1,
+    `a boredom beat fired: the quest stays pinned, Events counts it unread: ${JSON.stringify(beat)}`);
   await shot('read-pad-short-story-unread');
   await debugMenu();
   await grant('propellant', '0.6');
@@ -1310,34 +1315,34 @@ async function readability(grant) {
   })()`);
   check(ready.fuel.endsWith('Fuel 20 / 20 Propellant') &&ready.fueled === 'true' && ready.status === 'Ready' && ready.ready && ready.go && ready.dot,
     `fuel enough: Ready, green Launch, green border, nav dot: ${JSON.stringify(ready)}`);
-  // Unfold Story: its count clears after about a second on screen, with no click on an item.
-  await click('[data-testid="events-story"] .fold-head');
+  // Unfold Events: its count clears after about a second on screen, with no click on an item.
+  await click('[data-testid="events-list"] .fold-head');
   await sleep(300);
-  const early = Number(await evaluate(`document.querySelector('[data-testid="events-story"]').dataset.unread`));
+  const early = Number(await evaluate(`document.querySelector('[data-testid="events-list"]').dataset.unread`));
   await shot('read-pad-ready-story-open');
-  await waitFor(`document.querySelector('[data-testid="events-story"]').dataset.unread === '0'`, 'Story read', 4000);
-  check(early >= 1, `Story's count holds for a moment once open (${early}), then clears`);
+  await waitFor(`document.querySelector('[data-testid="events-list"]').dataset.unread === '0'`, 'Events read', 4000);
+  check(early >= 1, `Events' count holds for a moment once open (${early}), then clears`);
   check(
     (await evaluate(`document.querySelector('[data-testid="quest-pin"] [data-testid="quest"]')?.dataset.quest ?? null`)) === beat.pin,
-    'the quest is still pinned after Story is read',
+    'the quest is still pinned after Events is read',
   );
   await shot('read-story-read');
-  // Past day 500 boredom phase 3 supersedes phase 2 in Story; Recent Activity keeps both.
+  // Past day 500 boredom phase 3 supersedes phase 2 in Events; Recent Activity keeps both.
   await debugMenu();
   await setValue('#cheat-days', '320');
   await click('#cheat-jump');
   await sleep(300);
   await panel('launch_pads');
   const phases = await evaluate(`(() => ({
-    story: [...document.querySelectorAll('[data-testid="events-story"] [data-event]')].map((e) => e.dataset.event),
+    story: [...document.querySelectorAll('[data-testid="events-list"] [data-event]')].map((e) => e.dataset.event),
     activity: [...document.querySelectorAll('[data-testid="events-activity"] li[data-kind="event"]')].map((e) => e.textContent),
   }))()`);
   const boredom = phases.story.filter((id) => id.startsWith('boredom_phase_'));
   check(boredom.length === 1 && boredom[0] === 'boredom_phase_3' && phases.activity.some((t) => /Boredom Rising/.test(t)) && phases.activity.some((t) => /Boredom Accelerating/.test(t)),
-    `Story lists only the latest boredom phase, Recent Activity both: ${JSON.stringify(phases)}`);
+    `Events lists only the latest boredom phase, Recent Activity both: ${JSON.stringify(phases)}`);
   await shot('parked-story-latest-phase');
   // Read it now, so no count clears under section 4's layout comparison.
-  await waitFor(`document.querySelector('[data-testid="events-story"]').dataset.unread === '0'`, 'phase 3 read', 4000);
+  await waitFor(`document.querySelector('[data-testid="events-list"]').dataset.unread === '0'`, 'phase 3 read', 4000);
   await debugMenu();
   await click('#check-replay');
   check(/^Replay ok/.test(await noticeText()), `replay check after the readability steps: ${await noticeText()}`);
@@ -1409,8 +1414,10 @@ async function freshGame() {
   // ---- 1. a fresh game to the first shipment, a forced retirement and run 2, through the normal UI ----
   const reached = await playOpening();
   check(reached.at(-1) === OPENING_END, `played 1.1 to 1.3 by day ${await day()}: ${reached.join(' -> ')}`);
-  await click('[data-testid="events-completed"] .fold-head'); // it starts folded
-  const done = await evaluate(`[...document.querySelectorAll('[data-testid="events-completed"] [data-quest]')].map((li) => li.dataset.quest)`);
+  // Finished quests live in the Story view (the right panel has no Completed section).
+  await panel('story');
+  const done = await evaluate(`[...document.querySelectorAll('[data-testid="story-beat-done"]')].map((b) => b.dataset.beat)`);
+  check(!(await exists('[data-testid="events-completed"]')), 'no Completed section in the right panel');
   check(
     ['qpower_boot_sequence', 'qfirst_shipment', 'qfull_load'].every((x) => done.includes(x)),
     `1.1 Online, 1.2 First Shipment and 1.3 Full Load complete: ${done.join(', ')}`,

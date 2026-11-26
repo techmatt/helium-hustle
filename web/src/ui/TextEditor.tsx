@@ -9,6 +9,7 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { engine, type Entry, type ParsedText, type ProgramView, type View } from '../engine';
+import { commandTip } from '../format';
 import { act, parseProgramText, setNotice, store, type Store } from '../store';
 import { DOT_TITLE, ELSE_TITLE, GutterMark, entryStatus, flaggedStatus, noteStatus, type LineStatus } from './Gutter';
 import { InstructionPanel } from './Instructions';
@@ -319,8 +320,13 @@ function ProgramDraft({ s, program, setProgram, bar }: { s: Store; program: numb
           <div class="te-col">
             {textLines.map((_, k) => {
               const st = statuses[k];
+              // A command line's note row adds the command's flows (each run, and its repeat count).
+              const at = result?.lines[k]?.entry;
+              const e = at != null ? result?.entries[at] : undefined;
+              const c = e?.op === 'command' ? v.commands.find((x) => x.id === e.command) : undefined;
+              const flows = e?.op === 'command' && c ? commandTip(c, v.names, e.count) : '';
               return (
-                <div key={k} class={`te-row te-note te-note-${st?.dot ?? 'blank'}`} title={st?.note ?? undefined}>
+                <div key={k} class={`te-row te-note te-note-${st?.dot ?? 'blank'}`} title={[st?.note, flows].filter(Boolean).join('\n\n') || undefined}>
                   {st?.note}
                   {st?.fired && (
                     <span class="te-fired" data-fired={`${st.fired.fired}/${st.fired.of}`}>
