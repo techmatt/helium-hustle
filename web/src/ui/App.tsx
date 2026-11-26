@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { SPEEDS, type Speed } from '../clock';
-import { capitalize, mult, num, perDay } from '../format';
+import { capitalize, delta, mult, num, perDay } from '../format';
 import {
   continueAfterRetirement,
   dismissStory,
@@ -282,18 +282,13 @@ function StoryModal({ s }: { s: Store }) {
   );
 }
 
-/** A difference to three places, trailing zeros dropped ("0.05"). */
-function trimFixed(d: number, places: number): string {
-  return String(Number(d.toFixed(places)));
-}
-
 /** A next-run value's change from what the ended run started with: " (+10)", green when
- * better, red when worse; nothing when unchanged or not known. */
-function Delta({ now, was, show, lowerIsBetter = false }: { now: string; was: string | undefined; show: (d: number) => string; lowerIsBetter?: boolean }) {
-  if (was === undefined) return null;
-  const d = Number(now) - Number(was);
+ * better, red when worse. The change is rounded to the row's `places` first (credits 0,
+ * multipliers 2), and one that rounds to zero shows nothing, as does an unknown start. */
+function Delta({ now, was, places, show = String, lowerIsBetter = false }: { now: string; was: string | undefined; places: number; show?: (d: number) => string; lowerIsBetter?: boolean }) {
+  const d = delta(now, was, places);
+  if (d === null) return null;
   const text = show(Math.abs(d));
-  if (d === 0 || Number(text.replace(/[^0-9.]/g, '')) === 0) return null;
   const better = lowerIsBetter ? d < 0 : d > 0;
   return (
     <span class={`summary-delta ${better ? 'pos' : 'neg'}`} data-testid="summary-delta">
@@ -348,14 +343,14 @@ function Summary({ s }: { s: Store }) {
                 <td>Starting credits</td>
                 <td class="num">
                   {num(v.career.starting_credits)}
-                  <Delta now={v.career.starting_credits} was={base?.starting_credits} show={(d) => num(d)} />
+                  <Delta now={v.career.starting_credits} was={base?.starting_credits} places={0} show={(d) => num(d)} />
                 </td>
               </tr>
               <tr>
                 <td>Boredom growth (resilience)</td>
                 <td class="num">
                   {mult(v.career.boredom_resilience)}
-                  <Delta now={v.career.boredom_resilience} was={base?.boredom_resilience} show={(d) => trimFixed(d, 3)} lowerIsBetter />
+                  <Delta now={v.career.boredom_resilience} was={base?.boredom_resilience} places={2} lowerIsBetter />
                 </td>
               </tr>
               {Number(v.career.buy_power_mult) !== 1 && (
@@ -363,7 +358,7 @@ function Summary({ s }: { s: Store }) {
                   <td>Buy Power scaling</td>
                   <td class="num">
                     {mult(v.career.buy_power_mult)}
-                    <Delta now={v.career.buy_power_mult} was={base?.buy_power_mult} show={(d) => trimFixed(d, 3)} />
+                    <Delta now={v.career.buy_power_mult} was={base?.buy_power_mult} places={2} />
                   </td>
                 </tr>
               )}

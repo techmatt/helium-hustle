@@ -2,7 +2,7 @@
 // the active main quest's picture (the lunar-base horizon when it has none).
 
 import { Fragment, type ComponentChildren } from 'preact';
-import { DEBUG_SPEEDS, SPEEDS } from '../clock';
+import { SPEEDS } from '../clock';
 import { capitalize, num, perDay } from '../format';
 import { navHasNews, seen, setSpeed, type Store } from '../store';
 import { useEffect, useState } from 'preact/hooks';
@@ -88,16 +88,16 @@ export function Left({
       <div class="speed">
         <div class="label">Game Speed</div>
         <div class="speeds" id="speeds" role="group" aria-label="Speed">
-          {[...SPEEDS, ...(s.cheatsEnabled ? DEBUG_SPEEDS : [])].map((sp) => (
+          {SPEEDS.map((sp) => (
             <button
               type="button"
               key={sp}
               data-speed={sp}
               aria-pressed={s.speed === sp}
-              title={sp === 0 ? 'Pause (space)' : `${sp} days per second${sp > 200 ? ' (debug)' : ''}`}
+              title={sp === 0 ? 'Pause (space)' : `${sp} days per second`}
               onClick={() => setSpeed(sp)}
             >
-              {sp === 0 ? '❚❚' : sp >= 1000 ? `${sp / 1000}k` : `${sp}x`}
+              {sp === 0 ? '❚❚' : `${sp}x`}
             </button>
           ))}
         </div>

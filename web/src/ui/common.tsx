@@ -113,34 +113,50 @@ export function Mechanics({
 }
 
 /** The main-story quest: title, then its goal, progress or sub-objectives, how-to steps
- * and reward in the mechanics style. */
-export function Quest({ v }: { v: View }) {
+ * and reward in the mechanics style. `plain` (the main-quest box at the upper right) shows
+ * only the title, the goal as one plain line in the UI font, and the progress: no reward,
+ * no how-to steps (Matt, docs/rulings/ui.md, *Quest mechanics text*). */
+export function Quest({ v, plain = false }: { v: View; plain?: boolean }) {
   const q = v.quest;
   if (!q) return null;
   const subs = q.sub_objectives;
   const done = subs.filter((x) => x.done).length;
+  const progress = (
+    <>
+      {q.progress && subs.length === 0 && (
+        <Bar frac={Number(q.progress.now) / Number(q.progress.target)} label={`${num(q.progress.now)} / ${num(q.progress.target)}`} />
+      )}
+      {subs.map((x) => (
+        <div key={x.id} class={`sub ${x.done ? 'done' : ''}`}>
+          {x.done ? '✓' : '○'} {x.label}
+          {!x.done && x.progress && (
+            <span class="muted">
+              {' '}
+              {num(x.progress.now)} / {num(x.progress.target)}
+            </span>
+          )}
+        </div>
+      ))}
+    </>
+  );
   return (
     <div class="quest" data-testid="quest" data-quest={q.id}>
       <div class="quest-title">
         {q.title}
         {subs.length > 0 && ` [${done}/${subs.length}]`}
       </div>
-      <Mechanics goal={q.goal} reward={q.reward} hints={q.hints}>
-        {q.progress && subs.length === 0 && (
-          <Bar frac={Number(q.progress.now) / Number(q.progress.target)} label={`${num(q.progress.now)} / ${num(q.progress.target)}`} />
-        )}
-        {subs.map((x) => (
-          <div key={x.id} class={`sub ${x.done ? 'done' : ''}`}>
-            {x.done ? '✓' : '○'} {x.label}
-            {!x.done && x.progress && (
-              <span class="muted">
-                {' '}
-                {num(x.progress.now)} / {num(x.progress.target)}
-              </span>
-            )}
+      {plain ? (
+        <>
+          <div class="quest-goal" data-testid="quest-goal">
+            {q.goal}
           </div>
-        ))}
-      </Mechanics>
+          {progress}
+        </>
+      ) : (
+        <Mechanics goal={q.goal} reward={q.reward} hints={q.hints}>
+          {progress}
+        </Mechanics>
+      )}
     </div>
   );
 }

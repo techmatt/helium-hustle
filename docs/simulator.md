@@ -79,12 +79,12 @@ bought nothing), with each side's next five purchases. `--json`: one line, every
 
 ### Accelerators
 
-Debug only. The debug menu's cheats add 2k and 10k speeds and the **autopilot**
+Debug only. The debug menu's cheats add the **autopilot**
 (`autopilot.rs`, with its default boost, [rules](rules/README.md#cheats)): a sim player
 plays on honestly toward the **next milestone**, the **next main-quest step** (an `all_of`
 sub-objective counts) or **everything**. Steps: `configs/sim/milestones.json` and the
 `story` events not `never`. Its drivers (`DEFAULT_AGENT`) switch after a long stall. A boost or autopilot marks the career
-`accelerated`, a debug speed its log: `playlog` says so, `vs-human` refuses it
+`accelerated`, a speed past 200x (the debug speeds older pages offered) its log: `playlog` says so, `vs-human` refuses it
 (`--include-accelerated`), the autopilot's days count as jumped. `accelerate` plays a
 fresh career so natively. The draft later acts: the author's `agents/arc.rs`
 ([042](../experiments/results/042_draft_whole_arc/README.md)).

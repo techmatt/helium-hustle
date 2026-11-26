@@ -30,7 +30,7 @@ export function Right({
       {s.view.quest && (
         <div class="quest-pin" data-testid="quest-pin">
           <div class="quest-pin-label">Main quest</div>
-          <Quest v={s.view} />
+          <Quest v={s.view} plain />
         </div>
       )}
       {/* The program, from day 1: Programming opens only the full editor (the Programs view). */}

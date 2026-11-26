@@ -4,12 +4,9 @@
 // a throttled background tab catches up on its next wake. Nothing runs while the page
 // is closed: there is no offline progress.
 
+/** The speeds the player picks from; 200x is the fastest (Matt, docs/rulings/ui.md). */
 export const SPEEDS = [0, 1, 3, 10, 50, 200] as const;
-/** Debug speeds (an accelerator), offered only while cheats are shown. Speed alone
- * changes nothing in the game, so the state isn't marked; the play log's `speed` line
- * is, and `hh-sim playlog` counts a log with one as accelerated. */
-export const DEBUG_SPEEDS = [2000, 10000] as const;
-export type Speed = (typeof SPEEDS)[number] | (typeof DEBUG_SPEEDS)[number];
+export type Speed = (typeof SPEEDS)[number];
 
 /** Ticks per second at 1x. */
 const TICKS_PER_SECOND = 1;
@@ -58,9 +55,6 @@ export class Clock {
     const seconds = Math.max(0, now - this.last) / 1000;
     this.last = now;
     this.carry += seconds * this.speed * TICKS_PER_SECOND;
-    // At a debug speed a late wake drops its backlog rather than catching up: a wake
-    // slower than its 100 ms would owe more each time, and the page would lock up.
-    if (this.speed > SPEEDS[SPEEDS.length - 1]) this.carry = Math.min(this.carry, 2 * daysPerWake(this.speed));
     const ticks = Math.floor(this.carry);
     if (ticks > 0) {
       this.carry -= ticks;

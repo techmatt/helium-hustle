@@ -155,7 +155,7 @@ base view: replace what it draws, keep its box.
   default, remembered in `hh.cheats`): grant a resource, set boredom, complete all
   research, jump ahead N days, the **cheat building** (a hazard-striped *Cheat Fountain*
   card at the foot of the Buildings panel, only while Cheats are on: 1 credit, +1000 credits
-  a day, +10 to every other income, −10 boredom); the **accelerators**: 2k and 10k speeds and the
+  a day, +10 to every other income, −10 boredom); the **accelerators**: the
   autopilot with its default player and boost
   ([simulator.md](../docs/simulator.md#accelerators)). Engine actions, so replay stays
   exact; any cheat marks the game cheated in its save (shown in the debug info, not the bottom bar),

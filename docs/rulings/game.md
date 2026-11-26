@@ -11,7 +11,8 @@ Programs have their own part ([programs.md](programs.md)).
   boring" (idling, waiting it out, repeating the last run) must never work well. Every gate and
   quest condition states which boring strategies it rules out.
 - **Speed.** Decisions happen at 1-3x with brief bursts to 5-20x. 200x comes later, once
-  programs can automate more, behind tech not yet in the game.
+  programs can automate more, behind tech not yet in the game. 200x is the player's fastest
+  speed (2026-11-25): the Game Speed row ends there, cheats on or off.
 - **Run-1 real time.** 1x stays 1 tick a second; the 25-35 real-minute target for run 1 is what
   moves ([principles.md](../principles.md)).
 - **Tuning.** Every number is open. Matt plays the UI build and decides where fine-tuning

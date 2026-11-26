@@ -949,8 +949,8 @@ export function start(): void {
       if (!game.careerId) game.careerId = openLog(game.actions);
       else playlog.open(game.careerId, null);
       how = 'save';
-      // A debug speed (clock.ts DEBUG_SPEEDS) reloads as 1x.
-      const normal = (x: number) => (SPEEDS as readonly number[]).includes(x);
+      // A speed no longer offered (an older save's 2000x or 10000x debug speed) reloads as 1x.
+      const normal = (x: number): x is Speed => (SPEEDS as readonly number[]).includes(x);
       const speed = normal(s.speed) ? s.speed : 1;
       clock.speed = speed;
       store.speed = speed;

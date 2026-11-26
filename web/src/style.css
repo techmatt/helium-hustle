@@ -1841,6 +1841,11 @@ button.beat-node.is-done:focus-visible .beat-card {
 .quest-title {
   font-weight: 600;
 }
+/* The main-quest box's goal (common.tsx Quest `plain`): one plain line in the UI font. */
+.quest-goal {
+  color: var(--muted);
+  margin-bottom: 4px;
+}
 /* A quest's mechanics text (common.tsx Mechanics; ui.md, *Quest mechanics text*): a
    tinted strip in small monospace, never the narrative's look. */
 .mechanics {

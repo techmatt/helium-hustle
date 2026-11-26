@@ -40,7 +40,8 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   no value changing width moves the row, and Energy never reads "capped" there. Behind the run
   summary the ended run's last day stays on screen until Continue; the summary's sections read
   "Run N" and "Run N+1 starts with", each start value with its change from the ended run's
-  start (green better, red worse; lower boredom growth is better). A panel a purchase opens
+  start (green better, red worse; lower boredom growth is better), rounded to the row's
+  precision (credits whole, multipliers 2 places): a change that rounds to zero shows nothing. A panel a purchase opens
   (Geopolitical Intelligence's Ideologies) shows at once, paused too.
 - **Quest mechanics text (Matt, 2026-11-25; locked).** Mechanics never live in narrative
   text. A quest's `body`, `story` and `payoff` (and a one-off event's `summary`, `body` and
@@ -50,8 +51,10 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   mechanics style: a tinted strip in small monospace (`Mechanics` in common.tsx), so a player
   can always tell mechanics from story. Every quest card, main or side, active or completed,
   shows its goal and reward that way (a quest with no reward of its own says so: "None."),
-  as do the main-quest box, the story modal (reward on the last payoff page, where a quest has one, the next goal
-  and hints on the last page), the side-quest banner and the Events list. A content test
+  as do the story modal (reward on the last payoff page, where a quest has one, the next goal
+  and hints on the last page), the side-quest banner and the Events list. The main-quest box
+  at the upper right is the exception (amendment #3203): its title, its goal as one plain
+  line in the UI font, and its progress; no reward or hints there. A content test
   keeps digits, `{rate}` and UI instructions out of narrative; new quests are written so.
 - **Story cards (2026-11-25).** Each finished quest card in Story shows one line, its first
   sentence with "…" (a click shows the whole text: a main beat replays its modals, a side

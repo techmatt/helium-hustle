@@ -59,6 +59,15 @@ export function mult(x: Fx | number): string {
   return `×${trim(n.toFixed(3))}`;
 }
 
+/** A value's change from an earlier one, rounded to `places` (the row's display precision:
+ * credits 0, multipliers 2); null when unknown or when it rounds to zero, so a change too
+ * small to read is neither shown nor colored. */
+export function delta(now: Fx | number, was: Fx | number | undefined, places: number): number | null {
+  if (was === undefined) return null;
+  const r = Number((Number(now) - Number(was)).toFixed(places));
+  return r === 0 ? null : r;
+}
+
 export function capitalize(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }

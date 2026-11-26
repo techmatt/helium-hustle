@@ -2,7 +2,7 @@
 //   node scripts/unit.mjs   (npm run unit)
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
-import { fillRate, num, perDay } from '../src/format.ts';
+import { delta, fillRate, num, perDay } from '../src/format.ts';
 import { blockEnd, blockLen, canAddElse, canIndent, insertLine, moveLines, otherUnit, removeLine, sameEntry, setIndent, tidy } from '../src/ui/programEdit.ts';
 
 const cases = [
@@ -37,6 +37,14 @@ assert.equal(perDay(1500.4), '+1,500/day');
 // An event effect's `{rate}` reads as Stats shows boredom growth: 0.199 is +0.2, not a floored 0.19.
 assert.equal(fillRate('Current rate: {rate}.', '0.199'), 'Current rate: +0.2/day.');
 assert.equal(fillRate('No {rate} here.', null), 'No {rate} here.');
+// The retirement summary's deltas round to the row's precision first: boredom growth moving
+// by 0.001 (×0.98 to ×0.979) shows no delta; credits round to whole numbers.
+assert.equal(delta('0.979', '0.98', 2), null);
+assert.equal(delta('0.95', '0.98', 2), -0.03);
+assert.equal(delta('1.07', '1.05', 2), 0.02);
+assert.equal(delta('150.4', '150', 0), null);
+assert.equal(delta('175', '150', 0), 25);
+assert.equal(delta('175', undefined, 0), null);
 
 // Program line edits. A line is written 'if X' (an `if`), 'x' (a command) or '  x'
 // (indented into a body); only `op` and `indented` matter to these edits.
