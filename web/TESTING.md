@@ -76,7 +76,8 @@ up directly). Its sections (`HH_ONLY`'s numbers) run in the order 1, 2, 3, 6 to 
    is active (1.5 Trade done); Story shows the Act 1 band alone,
    painted, the finished beats lit (each with its picture's thumbnail; the active
    beat's thumbnail and the left column's foot on the active quest's picture), the active one ringed (in view) with its task, one
-   "???" after it and no achievements; a lit beat's click replays its modal; the
+   "???" after it and no achievements; a lit beat's click expands it (1.2: "Reward: Advanced
+   Blueprints." in the UI font) and its Replay replays its modal; the
    Achievements tile shows every badge by category, each with its reward; then scenario
    `late_unlocks` with *Complete all research*: 1.b's completion banner shows its picture.
 

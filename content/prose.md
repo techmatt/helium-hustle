@@ -16,7 +16,7 @@ Build a second Solar Panel.
 
 ### `events:qpower_boot_sequence.reward`
 
-Buy Science joins the commands, and the Research panel opens: credits and power buy science.
+Buy Science and the Research panel.
 
 ### `events:qpower_boot_sequence.hints.0`
 
@@ -52,7 +52,7 @@ Launch one shipment carrying 20+ titanium.
 
 ### `events:qfirst_shipment.reward`
 
-Advanced Blueprints (Battery, Refinery, Fabricator, Research Lab) on the research market, and every pad may carry any good.
+Advanced Blueprints.
 
 ### `events:qfirst_shipment.hints.0`
 
@@ -96,7 +96,7 @@ Ship a full pad of Helium-3.
 
 ### `events:qfull_load.reward`
 
-Programming on the research market.
+Programming.
 
 ### `events:qfull_load.hints.0`
 
@@ -128,7 +128,7 @@ Make 50 science in Research Labs, counted from now.
 
 ### `events:qautomate_automation.reward`
 
-Launch Full Pads joins the commands: it launches every full pad at once.
+The Launch Full Pads command.
 
 ### `events:qautomate_automation.hints.0`
 
@@ -156,7 +156,7 @@ DRAFT. Earn 1,500 credits from launches, counted from now.
 
 ### `events:qtrade.reward`
 
-Geopolitical Intelligence on the research market, as the next quest starts.
+Geopolitical Intelligence.
 
 ### `events:qtrade.body`
 
@@ -180,7 +180,7 @@ DRAFT. Reach rank 5 on any ideology axis.
 
 ### `events:qa_voice.reward`
 
-Overclock Protocols on the research market.
+Overclock Protocols.
 
 ### `events:qa_voice.hints.0`
 
@@ -212,7 +212,7 @@ DRAFT. Complete the Deep Space Telescope, a global project.
 
 ### `events:qdeep_space_telescope.reward`
 
-The swarm's arrival gets a date: the Timeline panel opens and the Experiment Lab can be built.
+The Timeline panel and the Experiment Lab.
 
 ### `events:qdeep_space_telescope.hints.0`
 
@@ -240,7 +240,7 @@ DRAFT. Build an Experiment Lab.
 
 ### `events:qexperiments_service.reward`
 
-The Earth Lab panel opens.
+The Earth Lab panel.
 
 ### `events:qexperiments_service.hints.0`
 
@@ -276,7 +276,7 @@ DRAFT. Meet the swarm's arrival.
 
 ### `events:qswarm_arrives.reward`
 
-The timeline ends: a new one starts from your first day.
+A new timeline, from your first day.
 
 ### `events:qswarm_arrives.body`
 
@@ -292,7 +292,7 @@ DRAFT. Get the Consensus Engine from the Earth Lab.
 
 ### `events:qcatastrophic_success.reward`
 
-None of its own. The Consensus Engine's: funding one faction no longer costs the others.
+Funding one faction no longer costs the others.
 
 ### `events:qcatastrophic_success.body`
 
@@ -308,7 +308,7 @@ DRAFT. Get the Meta-Controller from the Earth Lab.
 
 ### `events:qrules_for_building.reward`
 
-The Meta panel opens: a reset plan loads saved programs into each tab when a run begins.
+The Meta panel and its reset plans.
 
 ### `events:qrules_for_building.body`
 
@@ -340,7 +340,7 @@ DRAFT. Get the Temporal Vault from the Earth Lab.
 
 ### `events:qthe_vault.reward`
 
-The Vault panel opens and the Tachyon Condenser can be built. What the vault holds survives every reset.
+The Vault panel and the Tachyon Condenser.
 
 ### `events:qthe_vault.body`
 
@@ -358,6 +358,10 @@ DRAFT. Gather 3,000 tachyon crystals in the vault.
 
 None.
 
+### `events:qfilling_vault.hints.0`
+
+What the vault holds survives every reset.
+
 ### `events:qfilling_vault.body`
 
 DRAFT. Tachyon crystals, condensed life after life and timeline after timeline. Enough of them could buy a timeline long enough to finish anything.
@@ -372,7 +376,7 @@ DRAFT. Spend the vault on a super timeline.
 
 ### `events:qsuper_timeline.reward`
 
-The Neodymium Mine, the Dyson Foundry, the Dyson Sphere project and the Dyson panel. In this timeline, resources and projects carry from run to run.
+The Dyson Sphere project.
 
 ### `events:qsuper_timeline.body`
 
@@ -390,6 +394,14 @@ DRAFT. Complete the Dyson Sphere.
 
 None.
 
+### `events:qdyson_sphere.hints.0`
+
+The Neodymium Mine and the Dyson Foundry can be built now.
+
+### `events:qdyson_sphere.hints.1`
+
+In this timeline, resources and projects carry from run to run.
+
 ### `events:qdyson_sphere.body`
 
 DRAFT. Panel by panel, the sphere closes around the Sun. More power than every timeline ever had, waiting for one target.
@@ -404,7 +416,7 @@ DRAFT. Meet the swarm at the finished sphere.
 
 ### `events:qoverload.reward`
 
-Victory: the swarm is gone.
+Victory.
 
 ### `events:qoverload.body`
 
@@ -470,7 +482,7 @@ DRAFT. Complete the Blueprint Archive, a global project.
 
 ### `events:qblueprints_for_everyone.reward`
 
-None of its own. The Archive's, while it stands: every run starts with Basic and Advanced Blueprints researched, and Blueprints research bought in an earlier run costs 20% less.
+Every run starts with Basic and Advanced Blueprints, and blueprints you've bought before cost 20% less.
 
 ### `events:qblueprints_for_everyone.body`
 

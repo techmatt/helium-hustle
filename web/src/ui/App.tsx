@@ -101,7 +101,7 @@ export function App() {
             <QuestPicture stem={s.stories[0].picture} at="banner" />
             <blockquote>{s.stories[0].body}</blockquote>
           </div>
-          <Mechanics goal={s.stories[0].goal} reward={s.stories[0].reward} done />
+          <Mechanics goal={s.stories[0].goal} reward={s.stories[0].reward} />
           <button type="button" onClick={dismissStory}>
             {s.stories.length > 1 ? `Next (${s.stories.length - 1} more)` : 'OK'}
           </button>

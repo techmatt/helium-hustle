@@ -49,7 +49,7 @@
 //      programs-dots.png.
 //  11. (Run before 5.) Story and Achievements: a new game played through 1.5 by the debug
 //      autopilot (its step stops at 1.6 A Voice; it never buys Programming: the program shows, the Programs tile doesn't); Story shows the Act 1 band, every finished beat
-//      lit, the active one glowing with its task, one "???" below and no achievements; a lit beat's click replays its modal; the
+//      lit, the active one glowing with its task, one "???" below and no achievements; a lit beat's click expands it (Reward line) and its Replay replays its modal; the
 //      Achievements tile shows every badge grouped by category. Shots story-1.6.png,
 //      achievements.png.
 // Any uncaught page error fails the run.
@@ -967,7 +967,8 @@ async function numberBox(rows) {
 /** Section 11: Story and Achievements. A new game played on by the debug autopilot's
  * "Next quest step" through 1.5, to 1.6 A Voice; Story then shows the Act 1 band, every finished beat
  * lit with its picture's thumbnail, the active beat glowing with its task, one "???" below
- * it and no achievements or event texts; a finished beat's click replays its story modal.
+ * it and no achievements or event texts; a finished beat's click expands it to its story
+ * and its Reward line, and its Replay button replays its story modal.
  * The Achievements tile shows badges grouped by category. Then scenario late_unlocks: 1.b's
  * completion banner shows its picture. Shots story-1.6.png, achievements.png,
  * side-quest-banner.png. */
@@ -1012,7 +1013,7 @@ async function storyView() {
       done: ids('[data-testid="story-beat-done"]'),
       // 096: one line a card, its first sentence and "…".
       lines: [...p.querySelectorAll('[data-testid="story-beat-done"]')].map((b) => {
-        const l = b.querySelector('[data-testid="story-beat-line"]');
+        const l = b.querySelector('[data-testid="story-card-line"]');
         return l && l.getBoundingClientRect().height < parseFloat(getComputedStyle(l).lineHeight) * 1.3 ? l.textContent : '';
       }),
       active: a ? a.dataset.beat : null,
@@ -1044,11 +1045,19 @@ async function storyView() {
   check(st.inView, 'the active beat is in view on opening');
   check(st.badges === 0 && !/Achievements|Events this run/.test(st.text), 'Story shows no achievements and no Events this run');
   await shot('story-1.6');
-  // A finished beat's click replays its story modal (pages read by hand, not auto-clicked).
+  // A finished beat's click expands it (108: whole story, Goal and Reward lines in the UI
+  // font); its Replay button replays its story modal (pages read by hand, not auto-clicked).
   await evaluate(`window.__autoStory?.disconnect(); window.__autoStory = undefined`);
-  await click('[data-testid="story-beat-done"][data-beat="qfirst_shipment"]', 'replay 1.2');
+  await click('[data-testid="story-beat-done"][data-beat="qfirst_shipment"] [data-testid="story-beat-toggle"]', 'expand 1.2');
+  const open12 = await evaluate(`(() => {
+    const c = document.querySelector('[data-testid="story-beat-done"][data-beat="qfirst_shipment"]');
+    const m = c.querySelector('[data-testid="story-card-body"] .mechanics');
+    return { reward: m?.querySelector('.mech-reward')?.textContent ?? '', font: m ? getComputedStyle(m).fontFamily : '' };
+  })()`);
+  check(open12.reward === 'Reward: Advanced Blueprints.' && !/Mono|monospace/i.test(open12.font), `expanded 1.2 shows "${open12.reward}" in ${open12.font.slice(0, 20)}`);
+  await click('[data-testid="story-beat-done"][data-beat="qfirst_shipment"] [data-testid="story-replay"]', 'replay 1.2');
   const pages = await readStory();
-  check(pages.length > 0 && pages.every((p) => p.quest === 'qfirst_shipment'), `a finished beat's click replays its modal chain: ${pages.map((p) => `${p.quest}/${p.kind}`).join(' ')}`);
+  check(pages.length > 0 && pages.every((p) => p.quest === 'qfirst_shipment'), `a finished beat's Replay replays its modal chain: ${pages.map((p) => `${p.quest}/${p.kind}`).join(' ')}`);
   await autoStory();
   // Achievements: its own tile, badges grouped by category.
   check(await navVisible('achievements'), 'an Achievements nav tile');

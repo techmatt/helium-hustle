@@ -34,8 +34,8 @@
   --fill-gray: #c4beb4;
   --fill-blue: #93bce9;
   --ok-tint: #eaf5ee;
-  /* The mechanics strip (quest goals, rewards, event effects): --info at 10% on the card. */
-  --mech-tint: #e9eff6;
+  /* The mechanics lines' ground (quest goals, rewards, event effects): a faint warm tan. */
+  --mech-tint: #f7efe2;
   --ok-head: #d3ecdb;
   --warn-head: #f5e6c3;
   --bad-tint: #fbecea;
@@ -79,7 +79,7 @@
   --fill-gray: #4f4c55;
   --fill-blue: #2d5a92;
   --ok-tint: #1e2c24;
-  --mech-tint: #2d313e;
+  --mech-tint: #2c2821;
   --ok-head: #213a2b;
   --warn-head: #3a311c;
   --bad-tint: #2f2120;
@@ -1233,10 +1233,12 @@ tr.is-new td:first-child {
 }
 /* ---- Story: the quest timeline (Story.tsx) ---- */
 .story-timeline {
+  --spine: color-mix(in srgb, var(--accent) 80%, var(--line));
   position: relative;
   padding: 4px 0 24px;
 }
-/* The spine, under the beat dots. */
+/* The spine, under the beat dots: one solid line from top to the last dot (108: a fade
+   toward the bottom read as a break around the active beat, where side branches join). */
 .story-timeline::before {
   content: '';
   position: absolute;
@@ -1245,7 +1247,7 @@ tr.is-new td:first-child {
   bottom: 12px;
   width: 4px;
   border-radius: 2px;
-  background: linear-gradient(var(--accent), color-mix(in srgb, var(--accent) 25%, transparent));
+  background: var(--spine);
 }
 /* An act's chapter header: its painting (.has-art below), or this plain styled band for an
    act without one. The same night-sky ground in both themes, so the title is light. */
@@ -1305,14 +1307,6 @@ tr.is-new td:first-child {
   align-items: center;
   gap: 10px;
 }
-/* The active beat's: its thumbnail at the top beside the task, bar and sub-objectives. */
-.beat-head:has(> .quest) {
-  align-items: flex-start;
-}
-.beat-head > .quest {
-  flex: 1;
-  min-width: 0;
-}
 .beat-row {
   position: relative;
   margin: 8px 0;
@@ -1330,9 +1324,6 @@ tr.is-new td:first-child {
   color: inherit;
   font: inherit;
   text-align: left;
-}
-button.beat-node {
-  cursor: pointer;
 }
 .beat-dot {
   flex: none;
@@ -1359,7 +1350,7 @@ button.beat-node {
 .beat-title {
   font-weight: 600;
 }
-/* A finished beat's one line (its first sentence); a click replays the whole story. */
+/* A collapsed card's one line (its story's first sentence); a click expands the card. */
 .beat-text {
   line-height: 1.45;
   white-space: nowrap;
@@ -1372,11 +1363,6 @@ button.beat-node {
 }
 .beat-node.is-done .beat-card {
   border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
-}
-button.beat-node.is-done:hover .beat-card,
-button.beat-node.is-done:focus-visible .beat-card {
-  background: var(--hover);
-  border-color: var(--accent);
 }
 /* The current beat (096): a bright dot with a thin ring pulsing out of it, never a filled
    glow, so the spine stays drawn right up to the dot above and below. */
@@ -1450,11 +1436,13 @@ button.beat-node.is-done:focus-visible .beat-card {
 .side-node::before {
   content: '';
   position: absolute;
-  left: -27px;
+  /* From inside the spine (15-19px from the timeline's left; .side-branches sits at 44px)
+     to the side dot, in the spine's color so it reads as a branch off it. */
+  left: -28px;
   top: 12px;
-  width: 45px;
+  width: 46px;
   height: 2px;
-  background: color-mix(in srgb, var(--accent) 60%, var(--line));
+  background: var(--spine);
 }
 .side-dot {
   flex: none;
@@ -1506,30 +1494,51 @@ button.beat-node.is-done:focus-visible .beat-card {
   float: right;
   margin-left: 6px;
 }
-/* A finished side quest's one line; a click shows the whole text in place (no modal). */
-.side-text {
-  display: block;
+/* A Story card's head (Story.tsx Card): its picture, title and first line; a click
+   expands the card to the whole story and its mechanics lines. */
+.card-toggle {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   width: 100%;
-  margin: 2px 0 0;
+  margin: 0;
   padding: 0;
   border: 0;
   background: none;
-  color: var(--muted);
-  /* The family only: the size is .small's. */
-  font-family: inherit;
+  color: inherit;
+  font: inherit;
   text-align: left;
   cursor: pointer;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
-.side-text.is-open {
-  white-space: normal;
-  color: inherit;
-}
-.side-text:hover,
-.side-text:focus-visible {
+.card-toggle:hover .beat-title,
+.card-toggle:hover .side-title,
+.card-toggle:focus-visible .beat-title,
+.card-toggle:focus-visible .side-title {
   color: var(--accent-text);
+}
+.side-card .beat-text {
+  margin-top: -4px;
+}
+/* An open side quest's progress, collapsed: as wide as its card. */
+.side-card > .bar {
+  width: 100%;
+  margin: 4px 0 2px;
+}
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.card-para {
+  margin: 0;
+  line-height: 1.5;
+}
+.card-body .mechanics {
+  margin: 2px 0 0;
+}
+.card-body .replay {
+  align-self: flex-start;
+  font-size: 12px;
 }
 /* ---- Achievements: badges by category ---- */
 .badges {
@@ -1841,38 +1850,38 @@ button.beat-node.is-done:focus-visible .beat-card {
 .quest-title {
   font-weight: 600;
 }
-/* The main-quest box's goal (common.tsx Quest `plain`): one plain line in the UI font. */
+/* The main-quest box's goal (common.tsx Quest): one plain line in the UI font. */
 .quest-goal {
   color: var(--muted);
   margin-bottom: 4px;
 }
-/* A quest's mechanics text (common.tsx Mechanics; ui.md, *Quest mechanics text*): a
-   tinted strip in small monospace, never the narrative's look. */
+/* A quest's mechanics text (common.tsx Mechanics; ui.md, *Quest mechanics text*): the UI
+   font one size smaller on a faint warm tint, no border, each line led by its small muted
+   label inline ("Reward: …"), never the narrative's look. */
 .mechanics {
   display: block;
   margin: 4px 0;
-  padding: 3px 6px;
-  border-left: 3px solid var(--info);
-  border-radius: 3px;
+  padding: 4px 8px;
+  border-radius: 4px;
   background: var(--mech-tint);
-  font-family: var(--font-mono);
-  font-size: 11.5px;
+  font-family: var(--font-body);
+  font-size: calc(1em - 1px);
+  font-weight: normal;
   line-height: 1.4;
   color: var(--text);
   text-align: left;
 }
+/* On the side-quest banner's own warm ground, a shade deeper so the tint still reads. */
+.story-banner .mechanics {
+  background: color-mix(in srgb, var(--accent) 8%, var(--banner));
+}
 .mech-line {
-  display: flex;
-  gap: 6px;
+  display: block;
 }
 .mech-key {
-  flex: none;
-  width: 4.5em;
-  color: var(--info);
+  color: var(--muted);
+  font-size: 0.9em;
   font-weight: 600;
-  text-transform: uppercase;
-  font-size: 10px;
-  padding-top: 1px;
 }
 .mechanics .bar {
   width: 100%;
@@ -1880,6 +1889,11 @@ button.beat-node.is-done:focus-visible .beat-card {
 }
 .mechanics .sub {
   font-size: inherit;
+}
+/* No monospace in mechanics text, a progress bar's figures included. */
+.mechanics .bar-label {
+  font-family: var(--font-body);
+  font-variant-numeric: tabular-nums;
 }
 .quest .bar {
   width: 100%;
@@ -2346,7 +2360,6 @@ button.go:hover:not(:disabled) {
 }
 .story-modal .mechanics {
   margin: 12px 0 16px;
-  font-size: 13px;
 }
 .modal.ending {
   border-top: 4px solid var(--accent);

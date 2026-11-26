@@ -48,18 +48,24 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   `story`, amendment #3171) are narrative only: no instructions, no numbers. Goals, rewards,
   unlocks and how-to hints are their own content fields (a quest's `goal`, `reward` and
   `hints`; a one-off's `effect`, where `{rate}` now lives) and always show apart, in the
-  mechanics style: a tinted strip in small monospace (`Mechanics` in common.tsx), so a player
-  can always tell mechanics from story. Every quest card, main or side, active or completed,
-  shows its goal and reward that way (a quest with no reward of its own says so: "None."),
-  as do the story modal (reward on the last payoff page, where a quest has one, the next goal
-  and hints on the last page), the side-quest banner and the Events list. The main-quest box
-  at the upper right is the exception (amendment #3203): its title, its goal as one plain
-  line in the UI font, and its progress; no reward or hints there. A content test
+  mechanics style (`Mechanics` in common.tsx; 108): the normal UI font one size smaller, each
+  line led by a small muted label inline ("Goal:", "How:", "Reward:", "Effect:"), on a faint
+  warm tan tint with no border. No monospace and no blue strip, anywhere. "Goal: …" reads the
+  same done or not (no "Done" label: a ✓ on the card's title says it). A reward is a
+  headline, not an inventory: the one or two things the player should go use next (1.2:
+  "Advanced Blueprints."); secondary effects go unlisted, or become a How hint where they
+  matter; a quest with no reward of its own says "None.". The story modal (reward on the
+  last payoff page, the next goal and hints on the last page; the Burnout modal's Effect),
+  Story cards, the side-quest banner and the Events list use it; an Events entry's Effect
+  line is always shown. The main-quest box at the upper right is the exception (amendment #3203):
+  its title, its goal as one plain line in the UI font, and its progress. A content test
   keeps digits, `{rate}` and UI instructions out of narrative; new quests are written so.
-- **Story cards (2026-11-25).** Each finished quest card in Story shows one line, its first
-  sentence with "…" (a click shows the whole text: a main beat replays its modals, a side
-  quest opens in place), over its goal and reward in the mechanics style. The current
-  quest's highlight never covers the spine.
+- **Story cards (Matt, 2026-11-25; 108).** Every card in Story, main or side, starts
+  collapsed: its picture, title (a ✓ once finished) and its story's first line with "…";
+  an unfinished one also its progress. A click expands it to the whole story and its Goal
+  and Reward lines (the active beat's How lines too); a finished main beat's expanded card
+  offers *Replay its story* (its modals). The spine is one unbroken line behind every dot,
+  the active beat's included, with side quests branching off it.
 - **Recent Activity filter (2026-11-25).** Checkboxes under the list show or hide each kind
   of line (shipments, quests, story, research, projects, achievements, adversaries, other),
   one only for a kind already in the feed. *Default (096):* remembered per browser

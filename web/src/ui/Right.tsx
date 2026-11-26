@@ -30,7 +30,7 @@ export function Right({
       {s.view.quest && (
         <div class="quest-pin" data-testid="quest-pin">
           <div class="quest-pin-label">Main quest</div>
-          <Quest v={s.view} plain />
+          <Quest v={s.view} />
         </div>
       )}
       {/* The program, from day 1: Programming opens only the full editor (the Programs view). */}
@@ -217,8 +217,8 @@ function Events({ v }: { v: View }) {
             <div class="event-title">{e.title}</div>
             {e.summary && <div class="muted">{e.summary}</div>}
             <div class="event-body">{e.body}</div>
-            {/* A side quest is listed here too: its goal (done) and reward; a one-off its effect. */}
-            <Mechanics goal={e.goal} reward={e.reward} effect={fillRate(e.effect ?? '', e.rate)} done />
+            {/* A side quest is listed here too: its goal and reward; a one-off its effect, always shown. */}
+            <Mechanics goal={e.goal} reward={e.reward} effect={fillRate(e.effect ?? '', e.rate)} />
           </div>
         ))}
       </Section>

@@ -2,7 +2,7 @@
 
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import type { Amounts, FlowRow, Fx, ResourceView, ShortView, View } from '../engine';
+import type { Amounts, FlowRow, Fx, QuestView, ResourceView, ShortView, View } from '../engine';
 import { num, perDay } from '../format';
 import { justMoved } from '../store';
 import { Chip } from './icons';
@@ -57,16 +57,16 @@ export function risingIsBad(id: string): boolean {
   return id === 'boredom';
 }
 
-/** A quest's mechanics text, apart from its narrative in the mechanics style (a tinted
- * strip in small monospace; docs/rulings/ui.md, *Quest mechanics text*): its goal (✓ once
- * done), what completing it does, and how-to steps; or a one-off event's effect. `children` (a progress bar,
- * sub-objectives) sit under the goal. */
+/** A quest's mechanics text, apart from its narrative in the mechanics style (the UI font
+ * one size smaller on a faint warm tint, each line led by a small muted label, "Reward: …";
+ * docs/rulings/ui.md, *Quest mechanics text*): its goal (the same "Goal:" done or not: a ✓
+ * on the card's title says it), how-to steps and what completing it does; or a one-off
+ * event's effect. `children` (a progress bar, sub-objectives) sit under the goal. */
 export function Mechanics({
   goal,
   reward,
   effect,
   hints = [],
-  done = false,
   children,
 }: {
   goal?: string;
@@ -74,54 +74,59 @@ export function Mechanics({
   /** A one-off event's: what it does. */
   effect?: string;
   hints?: string[];
-  done?: boolean;
   children?: ComponentChildren;
 }) {
   if (!goal && !reward && !effect && hints.length === 0) return null;
+  const line = (cls: string, key: string, text: string, k?: number) => (
+    <span key={k} class={`mech-line ${cls}`}>
+      <span class="mech-key">{key}:</span> {text}
+    </span>
+  );
   return (
     <span class="mechanics" data-testid="mechanics">
-      {goal && (
-        <span class="mech-line mech-goal">
-          <span class="mech-key">{done ? 'Done' : 'Goal'}</span>
-          <span>
-            {goal}
-            {done && <span class="ok"> ✓</span>}
-          </span>
-        </span>
-      )}
+      {goal && line('mech-goal', 'Goal', goal)}
       {children}
-      {hints.map((h, i) => (
-        <span key={i} class="mech-line mech-hint">
-          <span class="mech-key">How</span>
-          <span>{h}</span>
-        </span>
-      ))}
-      {reward && (
-        <span class="mech-line mech-reward">
-          <span class="mech-key">Reward</span>
-          <span>{reward}</span>
-        </span>
-      )}
-      {effect && (
-        <span class="mech-line mech-effect">
-          <span class="mech-key">Effect</span>
-          <span>{effect}</span>
-        </span>
-      )}
+      {hints.map((h, i) => line('mech-hint', 'How', h, i))}
+      {reward && line('mech-reward', 'Reward', reward)}
+      {effect && line('mech-effect', 'Effect', effect)}
     </span>
   );
 }
 
-/** The main-story quest: title, then its goal, progress or sub-objectives, how-to steps
- * and reward in the mechanics style. `plain` (the main-quest box at the upper right) shows
- * only the title, the goal as one plain line in the UI font, and the progress: no reward,
- * no how-to steps (Matt, docs/rulings/ui.md, *Quest mechanics text*). */
-export function Quest({ v, plain = false }: { v: View; plain?: boolean }) {
+/** The main-quest box at the upper right: the quest's title, its goal as one plain line in
+ * the UI font, and its progress; no reward, no how-to steps (Matt, docs/rulings/ui.md,
+ * *Quest mechanics text*). */
+export function Quest({ v }: { v: View }) {
   const q = v.quest;
   if (!q) return null;
+  return (
+    <div class="quest" data-testid="quest" data-quest={q.id}>
+      <div class="quest-title">
+        <QuestTitle q={q} />
+      </div>
+      <div class="quest-goal" data-testid="quest-goal">
+        {q.goal}
+      </div>
+      <QuestProgress q={q} />
+    </div>
+  );
+}
+
+/** The main-story quest's title, with its sub-objective count when it has some. */
+export function QuestTitle({ q }: { q: QuestView }) {
   const subs = q.sub_objectives;
-  const done = subs.filter((x) => x.done).length;
-  const progress = (
+  return (
+    <>
+      {q.title}
+      {subs.length > 0 && ` [${subs.filter((x) => x.done).length}/${subs.length}]`}
+    </>
+  );
+}
+
+/** The main-story quest's progress: its bar, or its sub-objectives. */
+export function QuestProgress({ q }: { q: QuestView }) {
+  const subs = q.sub_objectives;
+  return (
     <>
       {q.progress && subs.length === 0 && (
         <Bar frac={Number(q.progress.now) / Number(q.progress.target)} label={`${num(q.progress.now)} / ${num(q.progress.target)}`} />
@@ -138,26 +143,6 @@ export function Quest({ v, plain = false }: { v: View; plain?: boolean }) {
         </div>
       ))}
     </>
-  );
-  return (
-    <div class="quest" data-testid="quest" data-quest={q.id}>
-      <div class="quest-title">
-        {q.title}
-        {subs.length > 0 && ` [${done}/${subs.length}]`}
-      </div>
-      {plain ? (
-        <>
-          <div class="quest-goal" data-testid="quest-goal">
-            {q.goal}
-          </div>
-          {progress}
-        </>
-      ) : (
-        <Mechanics goal={q.goal} reward={q.reward} hints={q.hints}>
-          {progress}
-        </Mechanics>
-      )}
-    </div>
   );
 }
 
