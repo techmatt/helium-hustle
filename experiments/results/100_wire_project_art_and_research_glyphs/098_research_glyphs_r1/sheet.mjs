@@ -1,4 +1,5 @@
-// `node art/research_glyphs/sheet.mjs [prefix]` from the repo root: a working contact sheet of
+// `node experiments/results/100_wire_project_art_and_research_glyphs/098_research_glyphs_r1/sheet.mjs [prefix]`
+// from the repo root (also as `art/research_glyphs/sheet.mjs`, the shared copy): a working contact sheet of
 // every research glyph (chip at 96, 32 and 22 px, the bare glyph at 32) into
 // out/098_research_glyphs_r1/sheet.png, for checking shapes while drawing. Needs
 // playwright-core in PW_DIR (default out/098_research_glyphs_r1/tools/) and system Chrome.

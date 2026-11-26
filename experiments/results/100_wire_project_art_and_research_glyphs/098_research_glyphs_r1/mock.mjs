@@ -1,4 +1,5 @@
-// `node art/research_glyphs/mock.mjs` from the repo root: picker research_glyphs_r1's images
+// `node experiments/results/100_wire_project_art_and_research_glyphs/098_research_glyphs_r1/mock.mjs`
+// from the repo root (also as `art/research_glyphs/mock.mjs`, the shared copy): picker research_glyphs_r1's images
 // and manifest, into art/pickers/research_glyphs_r1/. Each candidate: the chip enlarged
 // (64 px), then a research card in the light and dark themes with the chip at 22 px before
 // its title (the card head's h3 is 18 px), under the real web/src/style.css and fonts (026's

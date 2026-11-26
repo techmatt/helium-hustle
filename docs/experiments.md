@@ -5,6 +5,11 @@ the output, what each measure means, what a read costs, and recipes for reads ag
 revision. The commands themselves and the seed ledger: [simulator.md](simulator.md); the
 players: [agents.md](agents.md); the targets: [principles.md](principles.md).
 
+**Kept outputs.** An item's `out/keep/<name>/` leaves the worktree when it ends: conductor
+moves it to `C:\Code\helium-hustle-control\.conductor\kept\helium-hustle\<name>\`, and no
+worktree or the main checkout has it afterwards. A write-up citing `out/keep/<name>/` means
+that folder; a script a later item must rerun belongs under `experiments/results/`, committed.
+
 ## Grids and specs
 
 Grid options (`ladder`, `experiment`, `compare`, `balance`, `trace`) override the spec:
