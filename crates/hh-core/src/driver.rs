@@ -251,7 +251,7 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
         }
     }
     let pick = choose_command(&v, goal.map(|(id, _)| *id), allowed);
-    // Before `if` opens (a global project offered from the first retirement), the guards' bodies
+    // Before `if` opens (a global project offered from A Voice or the first retirement), the guards' bodies
     // run bare: the verbs and `build` still pin the interpreter.
     let mut want = if v.if_open {
         guard_lines(allowed)

@@ -116,7 +116,7 @@ Dome, through those buildings' `requires` ([economy.md](economy.md)). The rest o
 
 | When | Shows |
 |---|---|
-| First Research Lab (flag `research_lab`, the silent `research_lab_built`) | Regolith Processing, Liquid Cooling (100 science, *Self-Maintenance*; no effect of its own: Run Simulations `requires` it, [commands.md](commands.md)) |
+| First Research Lab (flag `research_lab`, the silent `research_lab_built`) | Regolith Processing, Liquid Cooling (200 science, *Self-Maintenance*; no effect of its own: Run Simulations `requires` it, [commands.md](commands.md)) |
 | First retirement (flag `retired`) | Daydreaming (Dream Protocols); Stress Tolerance and Efficient Dreaming once it is bought |
 | Speculators' arrival (flag `speculators_seen`) | Market Awareness; Speculator Analysis and Trade Promotion once it is bought; Shipping Efficiency at 10 shipments |
 | Quest 1.5 A Voice starts | Geopolitical Intelligence, Programming |

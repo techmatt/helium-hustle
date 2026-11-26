@@ -1,0 +1,14 @@
+step 1 from: Main quest1.1 — OnlineBuild a second Solar Panel.1 / 2
+step 2 from: Main quest1.2 — First ShipmentLaunch one shipment carrying 20+ titanium.0 / 20
+step 3 from: Main quest1.3 — Full LoadShip a full pad of Helium-3.0 / 100
+projects tile: true; quest: Main quest1.5 — A VoiceDRAFT. Reach rank 5 on any ideology axis.0 / 5
+run: Day 157
+card: Blueprint Archive◆DRAFT. Archive the company's blueprints beyond a retirement's reach: every run starts with Basic and Advanced Blueprints, and any blueprints b
+card: Foundation Grant◆Endow future AI instances with basic infrastructure.Reward: Every run starts with 1 Regolith Excavator and 1 Solar Panel freeCredits Credits0 /
+card: Lunar Cartography◆Map optimal expansion corridors for reduced land acquisition costs.Reward: Land cost ×0.85Credits Credits0 / 1,5000/day−+MaxScience Science0 /
+card: Conditional Logic◆DRAFT. A global project: teach programs to branch. Opens if, kept across retirements.Reward: Opens if lines in programsCredits Credits0 / 5000
+tab: {"text":"1 ⚙1","light":"green","title":"1 processor · 1 of 1 steps ran in full","cls":"running"}
+tab: {"text":"2","light":null,"title":"Program 2: no processors","cls":"idle"}
+tab: {"text":"3","light":null,"title":"Program 3: no processors","cls":"idle"}
+tab: {"text":"4","light":null,"title":"Program 4: no processors","cls":"idle"}
+tab: {"text":"5","light":null,"title":"Program 5: no processors","cls":"idle"}

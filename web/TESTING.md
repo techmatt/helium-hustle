@@ -128,7 +128,7 @@ Activity's unread count (counts while folded, clears once read); in `everything`
 takeovers (a program in every form the text grammar writes, pasted in Programs' Text mode:
 each line reads, Blocks holds every line, the text reads back unchanged; the
 Cortex mock by its toggle, closed with Esc) and every open project's Max then − steps,
-each taken. A career without the Projects tile (it opens at the first retirement) is played on by the debug autopilot's
+each taken. A career without the Projects tile (it opens at A Voice's start or the first retirement) is played on by the debug autopilot's
 *Next quest step*, each step timed and checked to move the quest; after the scenarios its
 *Everything* plays to the ending (~15 s) and every later-act panel is audited. Building cards with no
 picture drawn yet (placeholder art) are not findings. The late panels again in

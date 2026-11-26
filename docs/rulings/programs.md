@@ -38,7 +38,8 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   building, research item or project) is kept (loaded, pasted or set) and skipped for free,
   like a note; a locked `if` skips its body free too. The amber status stays (both modes).
 - **Program logic unlocks (2026-11-21).** `if` is not available from the start: a cheap
-  global project offered from the first retirement unlocks it. Its effect lives on the project's
+  global project offered from A Voice's start (2026-11-26; or a first retirement before it)
+  unlocks it. Its effect lives on the project's
   completion (2026-11-24): a timeline's end locks `if` again until Conditional Logic is
   re-funded, and saved loadouts' `if` lines stay locked (passed free) meanwhile; no upgrade
   that keeps it is planned.
@@ -116,3 +117,17 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   `golden_start` scenario with `if` open (049_1). *Defaults (040):* `free processors` is
   granted by active buildings less assigned (what `assign processors ... all` would add);
   `idle pads` is pads with no cargo (a cooling pad counts, and a No-cargo pad, 069).
+- **Program tabs at a glance (Matt, 2026-11-26).** Each of the right column's five tabs
+  shows its processor count beside its number (`1 ⚙2`); a tab with none shows just its
+  number, dimmed. A tab with processors has a status light left of the number, judged on
+  the last day played: green, every step ran in full; yellow, some steps were short, failed
+  or skipped; red, nothing useful ran (empty, no step taken, every step failed, or a line
+  that doesn't read). Its hover says why ("2 processors · 6 of 8 steps ran in full · Load
+  Launch Pads: short on energy"). The engine judges it (the view's `status`, from a per-day
+  step tally); the open tab's "N assigned (M free)" line stays. *Defaults (114):* skipped
+  is outputs full or `load`/`launch pads` with no pad ready (another verb with its goal
+  met is done, in full); a
+  partial run is short; a locked line or a processor not running (Data Centers unpaid)
+  makes it yellow too; no step taken (also before the first day with processors) is red; an
+  edit keeps the day's tally; the hover names the first line in trouble, in line order. A
+  command line (Load Launch Pads) that runs with nothing to load counts as run.

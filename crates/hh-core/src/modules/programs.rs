@@ -873,6 +873,12 @@ fn jump_body(g: &mut GameState, i: usize, line: usize) -> usize {
     to
 }
 
+/// A `load pads` or `launch pads` line: its `Done` is a pad not ready, a
+/// skip (display: the tab's light), not a goal met.
+pub fn pads_verb(op: &Op) -> bool {
+    matches!(op, Op::Act { verb: Verb::LoadPads | Verb::LaunchPads, .. })
+}
+
 /// Whether program `i`'s line `line` is an `else`.
 fn is_else(g: &GameState, i: usize, line: usize) -> bool {
     matches!(g.run.programs[i].entries.get(line).map(|e| &e.op), Some(Op::Else {}))
@@ -893,7 +899,22 @@ fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
         let short = format!("{src}:{line}");
         // The line's note is today's last run's.
         g.run.today.shorts.remove(&short);
+        // A step's outcome, and the tab's tally of steps (display: its light):
+        // a failure; a skip (outputs full, or `load`/`launch pads` with no pad
+        // ready) or a short run, neither; anything else in full (a verb with its
+        // goal already met is done, like `build ... up to N`).
+        let verb = pads_verb(&op);
         let mark = |g: &mut GameState, l: usize, o: LineOutcome| {
+            let short_of = g.run.today.shorts.contains_key(&short);
+            let t = g.run.today.steps.entry(i as u32).or_default();
+            t.taken += 1;
+            match o {
+                LineOutcome::Failed => t.failed += 1,
+                LineOutcome::Skipped => {}
+                LineOutcome::Done if verb => {}
+                _ if !short_of => t.full += 1,
+                _ => {}
+            }
             g.run.today.lines.entry(i as u32).or_default().insert(l as u32, o);
         };
         let next = (line + 1) % n;
@@ -937,6 +958,9 @@ fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
                 // (their first runs at the next step).
                 if let Some(at) = loadout_named(g, target.as_deref()) {
                     if load_loadout(r, g, at, *t).is_ok() {
+                        let tally = g.run.today.steps.entry(i as u32).or_default();
+                        tally.taken += 1;
+                        tally.full += 1;
                         return;
                     }
                 }

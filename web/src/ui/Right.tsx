@@ -101,11 +101,14 @@ function Programs({
             key={i}
             data-program={i}
             aria-selected={i === program}
-            class={q.processors > 0 ? 'running' : ''}
+            class={q.processors > 0 ? 'running' : 'idle'}
+            title={q.status?.tip ?? `Program ${i + 1}: no processors`}
             onClick={() => setProgram(i)}
           >
-            {q.processors > 0 ? '● ' : ''}
+            {/* The light: how yesterday's steps went (the engine's judgment and hover). */}
+            {q.status && <span class={`prog-light ${q.status.light}`} data-light={q.status.light} />}
             {i + 1}
+            {q.processors > 0 && <span class="prog-count"> ⚙{q.processors}</span>}
           </button>
         ))}
       </div>

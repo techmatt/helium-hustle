@@ -53,7 +53,7 @@
     "id": "liquid_cooling",
     "name": "Liquid Cooling",
     "category": "Self-Maintenance",
-    "cost": "100",
+    "cost": "200",
     "requires": null,
     "effect": null,
     "visible_when": {"type": "flag", "flag": "research_lab"},

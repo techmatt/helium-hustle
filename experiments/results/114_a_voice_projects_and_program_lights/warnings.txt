@@ -1,0 +1,25 @@
+balance: M2 First Shipment on run-1 day 234 (target 250-700), author, 2 seeds
+balance: M5 Positive Credit Flow in run 3 (target runs 2-4), reached by 1/2 seeds, author, 2 seeds
+balance: M6 Speed Becomes Useful not reached in 20 runs (target runs 3-5), author, 2 seeds
+balance: M7 Boredom Management in run 2 (target runs 4-8), reached by 1/2 seeds, author, 2 seeds
+balance: M8 Diversified Trade not reached in 20 runs (target runs 5-8), author, 2 seeds
+balance: M9 Credit Surplus not reached in 20 runs (target runs 5-10), author, 2 seeds
+balance: M10 Market Manipulation not reached in 20 runs (target runs 6-10), author, 2 seeds
+balance: M11 First Major Project in run 3 (target runs 8-15), reached by 1/2 seeds, author, 2 seeds
+balance: M12 Adversary Subverted not reached in 20 runs (target runs 8-15), author, 2 seeds
+balance: M13 Ideology Influence not reached in 20 runs (target runs 10-18), author, 2 seeds
+balance: M14 Timeline Unlocked not reached in 20 runs (target runs 15-20), author, 2 seeds
+balance: run 1 lasts 1588 ticks (target 800-1100), author, 2 seeds
+balance: run 1 takes 23.6 real minutes as mixed (target 25-35), author, 2 seeds
+balance: M2 First Shipment on run-1 day 840 (target 250-700), casual, 2 seeds
+balance: M3 Program Awakening in run 4 (target runs 1-2), casual, 2 seeds
+balance: M5 Positive Credit Flow not reached in 20 runs (target runs 2-4), casual, 2 seeds
+balance: M6 Speed Becomes Useful not reached in 20 runs (target runs 3-5), casual, 2 seeds
+balance: M7 Boredom Management in run 5 (target runs 4-8), reached by 1/2 seeds, casual, 2 seeds
+balance: M8 Diversified Trade not reached in 20 runs (target runs 5-8), casual, 2 seeds
+balance: M9 Credit Surplus not reached in 20 runs (target runs 5-10), casual, 2 seeds
+balance: M10 Market Manipulation not reached in 20 runs (target runs 6-10), casual, 2 seeds
+balance: M11 First Major Project in run 2 (target runs 8-15), casual, 2 seeds
+balance: M12 Adversary Subverted not reached in 20 runs (target runs 8-15), casual, 2 seeds
+balance: M13 Ideology Influence not reached in 20 runs (target runs 10-18), casual, 2 seeds
+balance: M14 Timeline Unlocked not reached in 20 runs (target runs 15-20), casual, 2 seeds

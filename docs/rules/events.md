@@ -92,7 +92,7 @@ completed earlier in the same check can fire that same day.
 | Unlock | Effect |
 |---|---|
 | `enable_building` | the building may be bought this run. A building named by any event's `enable_building` is locked until one enables it ([economy.md](economy.md)). |
-| `enable_nav_panel` | the panel is shown this run. Two gate a rule: `retirement` (the Retire action, [career.md](career.md)) and `research` (buying research, [research.md](research.md)); others (`adversaries` once speculators first arrive, `projects` from the first retirement, `ideologies`, ...) are display, and the view shows such a tile at once when its event would fire at the tick's end (`events::pending_panels`: a purchase while paused). |
+| `enable_nav_panel` | the panel is shown this run. Two gate a rule: `retirement` (the Retire action, [career.md](career.md)) and `research` (buying research, [research.md](research.md)); others (`adversaries` once speculators first arrive, `projects` from A Voice's start, `ideologies`, ...) are display, and the view shows such a tile at once when its event would fire at the tick's end (`events::pending_panels`: a purchase while paused). |
 | `enable_project` | a project whose unlock is `project_enabled` may be funded this run ([projects.md](projects.md)) |
 | `set_flag` | sets a career flag |
 | `grant` (`resource`, `amount`) | adds the amount to this run's stock; re-applied at each run start (below), a starting bonus from then on |
@@ -164,19 +164,21 @@ Triggers, conditions and unlocks are content (`content/events.json`).
 
 ## Content
 
-`content/events.json`: 33 rows. Eighteen `story`: Act 1's beats 1.1 Online to 1.6 Deep
+`content/events.json`: 34 rows. Eighteen `story`: Act 1's beats 1.1 Online to 1.6 Deep
 Space Telescope (the swarm's reveal; [../arc.md](../arc.md)), then the draft 2.1 to 4.2 and the
 Epilogue (4.3). 1.3 Full Load opens Launch Full Pads; 1.4 Trade counts this run's launch pay and
 unlocks nothing; 1.5 A Voice is rank 5 on any axis this run. Four `side`, each with a permanent reward: 1.a Big Launch (the
 `speculators_seen` flag beside 1.4; `modifier` `shipment_credit_mult` ×1.1), 1.b Full Cluster
 (the `research_lab` flag beside 1.3; 5 research items in one run; a `grant` of 50 Science, so
-every later run starts with it), 1.c Blueprints for Everyone (the `retired` flag beside 1.2;
+every later run starts with it), 1.c Blueprints for Everyone (the `a_voice` flag beside 1.5;
 completes with the Blueprint Archive; no unlock: the rewards are the project's,
 [projects.md](projects.md)) and 1.d Three Voices (1.5's completion; career-best rank 5 on each
-axis; `modifier` `ideology_half_life_mult` ×2). Eleven `ongoing`, four silent:
+axis; `modifier` `ideology_half_life_mult` ×2). Twelve `ongoing`, five silent:
 `research_lab_built` (a Research Lab owned: sets the `research_lab` flag), `first_retirement`
 (a retirement in the career: sets the `retired` flag, opens the `retirement` and `projects`
-panels and Foundation Grant), `speculators_arrive` (speculators present: sets the `speculators_seen` flag, opens the `adversaries` panel), `rivals_arrive` (rivals
+panels, Foundation Grant, Blueprint Archive and Conditional Logic), `a_voice_projects` (1.5
+A Voice active or done: sets the `a_voice` flag, opens the `projects` panel and those three
+projects and Lunar Cartography), `speculators_arrive` (speculators present: sets the `speculators_seen` flag, opens the `adversaries` panel), `rivals_arrive` (rivals
 present, Act 2: sets the `contest_claims` flag); then `boredom_bites` (Burnout: boredom phase
 2, `once`, a story modal; sets the `burnout` flag that starts boredom, [boredom.md](boredom.md)), Political Currents, propellant discovery and boredom phases 2 to 5
 (phase 2 skips Burnout's run: `event_not_fired`).
@@ -185,15 +187,11 @@ re-apply from each run's day 0 (*Run start*).
 
 ## Port notes
 
-- Conflict: Dream's falling effectiveness. The boredom phase 3 to 5 events' text says Dream
-  drops to 20/15/10%; the ruling is a flat Dream ([dream.md](dream.md)), so these events
-  unlock nothing and their text stays as placeholder.
-- Conflict: Lunar Cartography and Deep Core Survey are unreachable ([projects.md](projects.md#port-notes)).
+- Conflict: boredom phases 3 to 5 say Dream drops to 20/15/10%; Dream is flat
+  ([dream.md](dream.md)), so they unlock nothing (placeholder text).
 - Conflict: Godot's milestones (`game_config.milestones`) were removed per the handoffs;
   not ported.
 - Candidate: quests ignore a `game_start` run filter, so the chain picks up where the
   career left it (1.1's `run_number` 1 would otherwise strand the chain after run 1).
-- Candidate: a `quest_active` gate (projects, building `requires`) holds while the quest is
-  active or after it completes.
 - Candidate: one-off events fire once per run; `shipment_completed` counts this run's
   shipments.

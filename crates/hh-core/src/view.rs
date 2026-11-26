@@ -47,7 +47,7 @@ pub use self::projects::{condition_text, ProjectView};
 pub use saga::{SagaView, TechView};
 
 pub use breakdown::{BreakdownView, FlowRow, ShortView};
-pub use programs::{Choice, ClauseView, ConditionView, LinesRun, ProgramView, ReadingView, VerbView};
+pub use programs::{Choice, ClauseView, ConditionView, Light, LinesRun, ProgramStatus, ProgramView, ReadingView, VerbView};
 
 /// Text borrowed from the embedded content.
 pub type Text = &'static str;

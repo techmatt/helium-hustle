@@ -108,29 +108,32 @@ The `drain` variant has no params (`"params": {}`).
 `content/projects.json`: 15 rows, ten `timeline` (the Dyson Sphere among them: draft,
 [timeline.md](timeline.md)) and five `run`, each with `scope`, `unlock`, `costs`,
 `min_days` and `rewards` (none repeats yet); names and descriptions are the Godot
-placeholders but for the draft rows (049): Conditional Logic (offered from the first
-retirement, the career flag `retired`; its reward the `logic_if` flag that opens `if`, [programs.md](programs.md)) and the
+placeholders but for the draft rows (049): Conditional Logic (500 credits and 100 science;
+its reward the `logic_if` flag that opens `if`, [programs.md](programs.md)) and the
 Deep Space Telescope (offered once quest 1.6 is active; its first completion completes 1.6,
 so it spans several runs: `min_days` 3,000; rebuilt each timeline, at the same cost, for
 its placeholder passive, `science_output_mult` and `nationalist_growth_mult` ×1.1, and only
 that: the swarm's countdown runs without it, and what 1.6 opened stays:
 [timeline.md](timeline.md)). Chemical Energy Initiative is offered from the first
-retirement. Blueprint Archive (draft, offered from the first retirement: 500 credits and 200 science,
-`min_days` 17) completes side quest 1.c Blueprints for Everyone; its `starting_research`
+retirement (the career flag `retired`). Blueprint Archive (draft: 2,000 credits and 300 science,
+`min_days` 67) completes side quest 1.c Blueprints for Everyone; its `starting_research`
 reward has Basic and Advanced Blueprints bought from the start of every run of the timeline,
 and its `research_discount` (0.8, category Blueprints) makes every Blueprints item bought in
 an earlier run cost 20% less while it counts as completed ([research.md](research.md)). Every other row's `min_days` is its largest cost over 30, rounded up: the days the old
-flat cap of 30 a day took. The Projects panel, where a player sees them, opens at the first
-retirement (the silent `first_retirement` event, [events.md](events.md)).
+flat cap of 30 a day took (Lunar Cartography 1,500 credits and 200 science; Foundation Grant
+10,000 and 2,000). **Where they open.** The Projects panel, where a player sees them, opens
+at A Voice's start (quest 1.5; the silent `a_voice_projects` event, a `quest_active`
+condition) with Blueprint Archive, Conditional Logic, Lunar Cartography and Foundation
+Grant (each `project_enabled`); a first retirement before it (the silent `first_retirement`
+event, [events.md](events.md)) opens the panel with all of those but Lunar Cartography.
 
 ## Port notes
 
 - Conflict: Microwave Receiver gate: see [economy.md](economy.md#port-notes).
-- Changed: the first retirement enables Foundation Grant and the Projects panel (the Godot
-  data had Market Awareness, a quest no longer in the line).
-- Conflict: Lunar Cartography and Deep Core Survey unlock by `project_enabled`, but no
-  event enables them. Kept as data, so both are unreachable (candidate: give each an
-  enabling event or another unlock).
+- Changed: A Voice's start (and the first retirement) enables Foundation Grant and the
+  Projects panel (the Godot data had Market Awareness, a quest no longer in the line).
+- Conflict: Deep Core Survey unlocks by `project_enabled`, but no event enables it. Kept
+  as data, so it is unreachable (candidate: give it an enabling event or another unlock).
 - Candidate: a `quest_active` gate holds while the quest is active or after it is
   completed (the Deep Space Telescope stays fundable after 1.6 completes).
 - Candidate: AI Consciousness Act's `command_boredom` values replace the commands' own

@@ -1492,8 +1492,8 @@ async function freshGame() {
 // ---- 2. every panel, reaching the gated ones from scenario late_unlocks ----
 /** Section 2. Opens the cheats (toggled off and on again) and leaves the debug menu open. */
 async function everyPanel() {
-  // Projects open with the first retirement and Ideologies with Geopolitical Intelligence
-  // (1.5 A Voice): the scenario opens them (and Retirement) instead of playing that far.
+  // Projects open with 1.5 A Voice's start and Ideologies with Geopolitical Intelligence
+  // (A Voice too): the scenario opens them (and Retirement) instead of playing that far.
   await speed(0);
   await debugMenu();
   await click('#cheats-toggle');

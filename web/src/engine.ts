@@ -222,6 +222,17 @@ export interface ProgramView {
   errors: (string | null)[];
   /** Per repeated command line, its current or last pass (the run gutter's dots). */
   repeats: (Repeat | null)[];
+  /** The tab's status light, judged on the last day played; null with no processors. */
+  status: ProgramStatus | null;
+}
+
+/** A program tab's light: green every step ran in full, yellow some were short or
+ * skipped, red nothing useful ran. `tip` is the hover, written by the engine. */
+export interface ProgramStatus {
+  light: 'green' | 'yellow' | 'red';
+  steps: number;
+  full: number;
+  tip: string;
 }
 
 /** A repeated line's pass: runs done, failed, and bit k set when run k (of the first 8) failed. */

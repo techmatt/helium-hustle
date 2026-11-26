@@ -310,6 +310,62 @@ fn processors_share_a_pointer_and_failed_lines_advance() {
     assert_eq!(g.run.programs[0].processors, 1);
 }
 
+/// A program tab's light (the view's `status`), judged on the day just
+/// played: none without processors; red when nothing useful ran; yellow when
+/// some steps were short or failed; green when every step ran in full.
+#[test]
+fn program_tabs_light_by_how_the_last_day_went() {
+    use crate::view::Light;
+    let r = rules();
+    let mut g = r.new_game(1);
+    own(&mut g, "data_center", 2);
+    own(&mut g, "solar_panel", 2);
+    let status = |g: &GameState| r.view(g).programs[0].status.clone();
+    assert!(r.view(&g).programs[1].status.is_none(), "no processors, no light");
+    r.apply(&mut g, &Action::SetProcessors { program: 0, processors: 2 }).unwrap();
+    program(&r, &mut g, &[]);
+    let s = status(&g).unwrap();
+    assert_eq!((s.light, s.tip.as_str()), (Light::Red, "2 processors · the program is empty"));
+    // Idle twice: both steps in full.
+    program(&r, &mut g, &[("idle", 1)]);
+    r.advance(&mut g, 1);
+    let s = status(&g).unwrap();
+    assert_eq!((s.light, s.steps, s.full), (Light::Green, 2, 2), "{}", s.tip);
+    assert_eq!(s.tip, "2 processors · 2 of 2 steps ran in full");
+    // Buy Regolith with no credits fails; idle runs: some short.
+    set(&mut g, "credits", "0");
+    program(&r, &mut g, &[("buy_regolith", 1), ("idle", 1)]);
+    r.advance(&mut g, 1);
+    let s = status(&g).unwrap();
+    assert_eq!((s.light, s.steps, s.full), (Light::Yellow, 2, 1), "{}", s.tip);
+    assert!(s.tip.starts_with("2 processors · 1 of 2 steps ran in full · Buy Regolith: short on credits"), "{}", s.tip);
+    // Every step fails: red.
+    set(&mut g, "credits", "0");
+    program(&r, &mut g, &[("buy_regolith", 1)]);
+    r.advance(&mut g, 1);
+    let s = status(&g).unwrap();
+    assert_eq!((s.light, s.steps, s.full), (Light::Red, 2, 0), "{}", s.tip);
+    // A locked line is skipped free: every step ran in full, but yellow, named.
+    let load = crate::state::Entry::new(crate::state::Op::Act { verb: crate::state::Verb::LoadPads, target: None, tab: None, amount: None });
+    r.apply(&mut g, &Action::SetProgram { program: 0, entries: vec![load, Entry::command("idle", 1)] }).unwrap();
+    r.advance(&mut g, 1);
+    let s = status(&g).unwrap();
+    assert_eq!((s.light, s.steps, s.full), (Light::Yellow, 2, 2), "{}", s.tip);
+    assert!(s.tip.ends_with("Load pads all: locked (Load Launch Pads isn't unlocked this run)"), "{}", s.tip);
+    // Unlocked, with no pad ready (a new pad carries No cargo): a skip, yellow, named.
+    own(&mut g, "launch_pad", 1);
+    r.advance(&mut g, 1);
+    let s = status(&g).unwrap();
+    assert_eq!((s.light, s.steps, s.full), (Light::Yellow, 2, 1), "{}", s.tip);
+    assert!(s.tip.ends_with("Load pads all: no pad ready"), "{}", s.tip);
+    // A paused Data Center takes its processor off the tab: one processor, green again.
+    program(&r, &mut g, &[("idle", 1)]);
+    r.apply(&mut g, &Action::SetActive { building: "data_center".into(), active: 1 }).unwrap();
+    r.advance(&mut g, 1);
+    let s = status(&g).unwrap();
+    assert_eq!((s.light, s.tip.as_str()), (Light::Green, "1 processor · 1 of 1 steps ran in full"));
+}
+
 #[test]
 fn programs_run_and_show_their_lines_in_queue_order_day_after_day() {
     use crate::view::LinesRun;

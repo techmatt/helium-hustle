@@ -62,7 +62,7 @@ Three columns and a status bar:
   painted act bands, side quests off it (ui.md, *Story cards*); Achievements: badges by category. Acts 2 and 3 (`Saga.tsx`, DRAFT; `docs/arc.md`): Timeline,
   Earth Lab, Meta-Controller, Vault, Dyson; the ending covers the screen once.
 - **Right:** the main quest in its own slot at the top, which nothing else takes; program
-  tabs 1 to 5 with processors −/+, Reset, Save / Load (`Library.tsx`, the loadout library); a line per instruction, dragged to reorder
+  tabs 1 to 5 (each its ⚙ count and the engine's status light, `status`) with processors −/+, Reset, Save / Load (`Library.tsx`, the loadout library); a line per instruction, dragged to reorder
   (an `if` takes its body and `else`), tinted by today's outcome (a failed line says why),
   the next line in an accent frame. Once unlocked, Add: If, Else, Build, Buy Land,
   Verb (`ProgramLogic.tsx`): a condition is

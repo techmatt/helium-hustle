@@ -72,24 +72,28 @@ Programs have their own part ([programs.md](programs.md)).
 - **Side quests give permanent rewards (2026-11-25, placeholders).** They outlive every reset,
   as completions do. 1.a Big Launch: one launch pays 1,000+; +10% launch pay. 1.b Full
   Cluster: research 5 items in one run; every run starts with 50 science. 1.c Blueprints for
-  Everyone: the Blueprint Archive global project (placeholder 500 credits + 200
+  Everyone: the Blueprint Archive global project (placeholder 2,000 credits + 300
   science) makes both Blueprints bought at every run's start while it counts as completed
   (lost at a timeline's end, back when re-funded; 1.c stays completed), and (2026-11-25) every
   blueprint research ever bought in the career 20% cheaper. 1.d Three Voices:
   career-best rank 5 on each axis, across runs; ideology decays half as fast in the
   retirement gap. *Defaults (095):* 1.b counts every item bought this run, the Archive's
-  Blueprints too; 1.b hangs beside 1.3 (once a Research Lab is built), 1.c beside 1.2 (as soon as the
-  Archive is offered), 1.d follows 1.5.
+  Blueprints too; 1.b hangs beside 1.3 (once a Research Lab is built), 1.c beside 1.5 A Voice
+  (Matt, 2026-11-26: from A Voice's start, as the Archive is offered), 1.d follows 1.5.
 - **Staggered unlocks (2026-11-26).** The first Research Lab opens only Regolith Processing
-  (100 science, +50% excavator output) and Liquid Cooling (100 science; opens Run
+  (100 science, +50% excavator output) and Liquid Cooling (200 science; opens Run
   Simulations, 3 energy + 1 ice → 6 credits, no boredom: Earth's labs rent ice-cooled racks,
   meant to pair with the Ice Extractor; Buy Ice is 5 credits). Process Telemetry is out of
   Act 1: kept in the engine, shown nowhere until Act 2 places it. The first
-  retirement opens Projects (and Foundation Grant), Daydreaming and the boredom research, and
-  the Retirement panel. Speculators' arrival opens the Market Analysis research category and Disrupt
+  retirement opens Daydreaming and the boredom research, the Retirement panel, and Chemical
+  Energy. Speculators' arrival opens the Market Analysis research category and Disrupt
   Speculators (through Speculator Analysis, its research). A Voice's start opens Geopolitical
-  Intelligence, its completion Overclock Protocols. *Defaults (095):* the first global projects
-  (Blueprint Archive, Chemical Energy, Conditional Logic) also open at the first retirement.
+  Intelligence, its completion Overclock Protocols. **Global projects open at A Voice (Matt,
+  2026-11-26):** A Voice's start opens the Projects panel and Blueprint Archive, Conditional
+  Logic, Lunar Cartography and Foundation Grant (placeholders: 2,000 credits + 300 science;
+  500 + 100; 1,500 + 200; 10,000 + 2,000: credits are plentiful by then). A first retirement
+  before A Voice still opens Projects with Blueprint Archive, Conditional Logic and Foundation
+  Grant, as before.
   The Recreation Dome is never ungated (Matt, 2026-11-25): it needs its own Blueprints research,
   Recreation Dome Blueprints (300 science, placeholder), shown from the first retirement; Programming shows from
   A Voice's start on, every later run too (Matt, 2026-11-26, question 111_1); Propellant Synthesis shows with the propellant discovery (4 shipments) alone. The main quest

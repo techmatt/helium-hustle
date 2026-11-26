@@ -1665,6 +1665,34 @@ tr.is-new td:first-child {
   font-size: 17px;
   font-weight: 700;
   padding: 6px 0;
+  white-space: nowrap;
+}
+/* A tab with no processors: just its number, dimmed. */
+.prog-tabs button.idle {
+  color: var(--muted);
+  font-weight: 400;
+}
+.prog-tabs .prog-count {
+  font-size: 13px;
+}
+/* Yesterday's run, left of the number (Right.tsx). */
+.prog-light {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  margin-right: 4px;
+  vertical-align: middle;
+  border: 1px solid var(--shadow);
+}
+.prog-light.green {
+  background: var(--pos);
+}
+.prog-light.yellow {
+  background: #e3b505;
+}
+.prog-light.red {
+  background: var(--neg);
 }
 .prog-procs {
   display: flex;

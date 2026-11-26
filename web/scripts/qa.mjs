@@ -1217,7 +1217,7 @@ async function pass(seed, width, theme) {
     const n = await evaluate(`document.getElementById('notice')?.textContent ?? ''`);
     if (!/^Replay ok/.test(n)) note('console', `replay check: ${n}`);
     await capture('replay-check');
-    // With cheats, on this career (retired once, so Projects is open): the late panels
+    // With cheats, on this career (retired once, so Retirement is open): the late panels
     // with science to spend.
     await panel('options');
     if (!(await exists('#cheats-toggle'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
@@ -1248,7 +1248,7 @@ async function pass(seed, width, theme) {
       if (await exists(`[data-testid="buy-${id}"].can-buy`)) await click(`[data-testid="buy-${id}"]`, `buy ${id}`);
       await grant();
     }
-    // A career without the Projects tile yet (it opens at the first retirement): the debug autopilot's
+    // A career without the Projects tile yet (it opens at A Voice's start): the debug autopilot's
     // "Next quest step" plays it on, a step at a time; each step must finish and move the quest.
     for (let step = 0; step < 10 && !(await exists('.nav-tile[data-nav="projects"]')); step++) {
       await panel('options');

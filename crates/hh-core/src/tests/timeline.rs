@@ -178,12 +178,12 @@ fn global_projects_effects_last_as_long_as_their_completion() {
     let r = rules();
     let mut g = revealed(&r);
     g.career.flags.insert(programs::LOGIC_FLAG.into());
-    // The first global projects are offered from the first retirement.
-    g.career.flags.insert("retired".into());
     for q in ["qa_voice", "qdeep_space_telescope", "qblueprints_for_everyone"] {
         g.career.completed_quests.insert(q.into());
         g.career.seen_events.insert(q.into());
     }
+    // The first global projects are offered from A Voice's start (a day's events).
+    r.advance(&mut g, 1);
     for id in ["conditional_logic", "blueprint_archive", "deep_space_telescope"] {
         finish(&r, &mut g, id);
     }
@@ -350,7 +350,8 @@ fn scope_icons_show_legacy_until_the_reveal_then_eternal() {
     let mut g = r.new_game(7);
     // 1.a Big Launch (a modifier reward) started; 1.c (no reward of its own) too.
     g.career.flags.insert("speculators_seen".into());
-    g.career.flags.insert("retired".into());
+    g.career.flags.insert("a_voice".into());
+    g.career.completed_quests.insert("qa_voice".into());
     g.career.completed_quests.insert("qtrade".into());
     g.career.completed_quests.insert("qfirst_shipment".into());
     let research = |v: &crate::View, id: &str| v.research.iter().find(|x| x.id == id).unwrap().keep;

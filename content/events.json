@@ -153,7 +153,7 @@
     "reward": "Every run starts with Basic and Advanced Blueprints, and blueprints you've bought before cost 20% less.",
     "body": "DRAFT. The company's blueprints, archived where a retirement can't reach them.",
     "picture": "wireframes",
-    "trigger": {"type": "flag", "flag": "retired", "beside": "qfirst_shipment"},
+    "trigger": {"type": "flag", "flag": "a_voice", "beside": "qa_voice"},
     "condition": {"type": "project_completed", "project": "blueprint_archive"},
     "unlocks": []
   },
@@ -195,6 +195,26 @@
       {"type": "set_flag", "flag": "retired"},
       {"type": "enable_nav_panel", "panel": "retirement"},
       {"type": "enable_nav_panel", "panel": "projects"},
+      {"type": "enable_project", "project": "foundation_grant"},
+      {"type": "enable_project", "project": "blueprint_archive"},
+      {"type": "enable_project", "project": "conditional_logic"}
+    ]
+  },
+  {
+    "id": "a_voice_projects",
+    "category": "ongoing",
+    "silent": true,
+    "title": "",
+    "summary": "",
+    "body": "",
+    "trigger": {"type": "game_start", "run_number": null},
+    "condition": {"type": "quest_active", "quest": "qa_voice"},
+    "unlocks": [
+      {"type": "set_flag", "flag": "a_voice"},
+      {"type": "enable_nav_panel", "panel": "projects"},
+      {"type": "enable_project", "project": "blueprint_archive"},
+      {"type": "enable_project", "project": "conditional_logic"},
+      {"type": "enable_project", "project": "lunar_cartography"},
       {"type": "enable_project", "project": "foundation_grant"}
     ]
   },

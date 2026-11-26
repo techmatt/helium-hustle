@@ -35,6 +35,119 @@ pub struct ProgramView {
     pub errors: Vec<Option<String>>,
     /// Per repeated command line, its current or last pass (the gutter's dots).
     pub repeats: Vec<Option<Repeat>>,
+    /// The tab's light, judged on the last day played; `None` with no
+    /// processors assigned.
+    pub status: Option<ProgramStatus>,
+}
+
+/// A program tab's status light: how its steps went the last day played.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub enum Light {
+    /// Every step ran in full.
+    Green,
+    /// Some steps were short, skipped (outputs full, nothing to act on) or
+    /// failed, a line is locked, or a processor didn't run (Data Centers unpaid).
+    Yellow,
+    /// Nothing useful ran: no lines, no step taken, every step failed, or a
+    /// line that doesn't read.
+    Red,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct ProgramStatus {
+    pub light: Light,
+    /// Steps taken, and of those run in full.
+    pub steps: u32,
+    pub full: u32,
+    /// The hover: processors, steps, and the first line in trouble.
+    pub tip: String,
+}
+
+/// A line for the light's hover: a command or building by its display name,
+/// else its text with the first letter capitalized.
+fn line_name(e: &Entry) -> String {
+    let names = super::names();
+    let name = |id: &str| names.get(id).copied().unwrap_or(id).to_string();
+    let t = match &e.op {
+        Op::Command { command, .. } => return name(command),
+        Op::Build { building, .. } => return format!("Build {}", name(building)),
+        op => crate::program_text::op_text(op),
+    };
+    let mut c = t.chars();
+    c.next().map(|f| f.to_uppercase().chain(c).collect()).unwrap_or_default()
+}
+
+/// Program `i`'s light from the day just played (`state::StepTally`, each
+/// line's last outcome and shortfall); `None` without processors.
+fn status(r: &Rules, g: &GameState, i: usize, running: u32) -> Option<ProgramStatus> {
+    let p = &g.run.programs[i];
+    if p.processors == 0 {
+        return None;
+    }
+    let tally = g.run.today.steps.get(&(i as u32)).copied().unwrap_or_default();
+    let names = super::names();
+    let mut head = match p.processors {
+        1 => "1 processor".to_string(),
+        n => format!("{n} processors"),
+    };
+    if running < p.processors {
+        head += &format!(" ({running} running)");
+    }
+    let today = g.run.today.lines.get(&(i as u32));
+    // The first line in trouble, in line order: a line that doesn't read,
+    // then one short of an input, failed or skipped.
+    let mut problem = None;
+    for ((l, e), block) in p.entries.iter().enumerate().zip(programs::blocks(&p.entries)) {
+        if let Op::Unparsed { text } = &e.op {
+            let why = crate::program_text::unparsed_reason(r, g, text, e.indented, block);
+            problem = Some(format!("line {} doesn't read: {why}", l + 1));
+            break;
+        }
+    }
+    let errored = problem.is_some();
+    if problem.is_none() {
+        for (l, e) in p.entries.iter().enumerate() {
+            let short = g.run.today.shorts.get(&format!("program:{i}:{l}"));
+            let why = match (today.and_then(|t| t.get(&(l as u32))), short) {
+                (_, Some(s)) => format!("short on {}", names.get(s.resource.as_str()).copied().unwrap_or(&s.resource).to_lowercase()),
+                (Some(LineOutcome::Failed), None) => "couldn't run".to_string(),
+                (Some(LineOutcome::Skipped), None) => "outputs full".to_string(),
+                (Some(LineOutcome::Done), None) if programs::pads_verb(&e.op) => "no pad ready".to_string(),
+                _ => continue,
+            };
+            problem = Some(format!("{}: {why}", line_name(e)));
+            break;
+        }
+    }
+    // A line this run hasn't unlocked is skipped (programs.md, *Locked lines*).
+    let locked = p.entries.iter().find_map(|e| programs::locked(r, g, e).map(|why| format!("{}: locked ({why})", line_name(e))));
+    let skipped = locked.is_some() || running < p.processors;
+    if problem.is_none() {
+        problem = locked;
+    }
+    let runnable = p.entries.iter().any(|e| !e.op.is_text());
+    let light = if errored || !runnable || tally.taken == 0 || tally.failed == tally.taken {
+        Light::Red
+    } else if tally.full < tally.taken || skipped {
+        Light::Yellow
+    } else {
+        Light::Green
+    };
+    let mut parts = vec![head];
+    if p.entries.is_empty() {
+        parts.push("the program is empty".to_string());
+    } else if !runnable {
+        parts.push("no lines to run".to_string());
+    } else if tally.taken == 0 {
+        parts.push("no steps ran".to_string());
+    } else {
+        parts.push(format!("{} of {} steps ran in full", tally.full, tally.taken));
+    }
+    if let Some(why) = problem {
+        parts.push(why);
+    }
+    Some(ProgramStatus { light, steps: tally.taken, full: tally.full, tip: parts.join(" · ") })
 }
 
 /// A condition now: whether it holds, and each clause's reading (`None`:
@@ -109,6 +222,7 @@ pub(super) fn programs(r: &Rules, g: &GameState, running: &[u32]) -> Vec<Program
                 })
                 .collect(),
             repeats: (0..p.entries.len() as u32).map(|l| p.repeats.get(&l).copied()).collect(),
+            status: status(r, g, i, running[i]),
         })
         .collect()
 }

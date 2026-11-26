@@ -538,6 +538,10 @@ pub struct Today {
     /// What each program line did the last time a processor ran it today:
     /// program -> line -> outcome.
     pub lines: BTreeMap<u32, BTreeMap<u32, LineOutcome>>,
+    /// Display only (a program tab's light): per program, the steps its
+    /// processors took today and how they went.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub steps: BTreeMap<u32, StepTally>,
     /// Every flow by resource, then by source (display: the resource
     /// breakdown). Sources: `building:<id>`, `program:<n>` (0-based), `pads`
     /// (loading and switch returns), `launch`, `buy`, `sell`, `land`,
@@ -547,6 +551,17 @@ pub struct Today {
     /// Who ran short, by source (`building:<id>`, `program:<n>:<line>`): the
     /// input that limited it, the last time it ran today.
     pub shorts: BTreeMap<String, Short>,
+}
+
+/// A program's steps one day: taken, run in full (ran, done, or an `if`
+/// read, not short of anything; a verb with nothing to act on is not), and
+/// failed outright.
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(deny_unknown_fields)]
+pub struct StepTally {
+    pub taken: u32,
+    pub full: u32,
+    pub failed: u32,
 }
 
 /// One source's share of a resource's flow.
