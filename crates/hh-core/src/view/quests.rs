@@ -31,7 +31,7 @@ pub(super) fn quest(r: &Rules, g: &GameState) -> Option<QuestView> {
         reward: &q.reward,
         body: &q.body,
         story: &q.story,
-        progress: progress(events::progress(r, g, &q.id, &q.condition)),
+        progress: progress(events::progress(r, g, &q.condition)),
         sub_objectives: match &q.condition {
             Condition::AllOf { sub_objectives } => sub_objectives
                 .iter()
@@ -39,7 +39,7 @@ pub(super) fn quest(r: &Rules, g: &GameState) -> Option<QuestView> {
                     id: &s.id,
                     label: &s.label,
                     done: g.career.completed_sub_objectives.contains(&events::sub_key(&q.id, &s.id)),
-                    progress: progress(events::progress(r, g, &q.id, &s.condition)),
+                    progress: progress(events::progress(r, g, &s.condition)),
                 })
                 .collect(),
             _ => Vec::new(),
@@ -72,7 +72,7 @@ pub(super) fn side_quests(r: &Rules, g: &GameState) -> Vec<SideQuestView> {
                     _ => None,
                 },
                 done,
-                progress: if done { None } else { progress(events::progress(r, g, &e.id, &e.condition)) },
+                progress: if done { None } else { progress(events::progress(r, g, &e.condition)) },
                 picture: e.picture.as_deref(),
                 keep: keep::side_quest(g, e),
             }

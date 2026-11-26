@@ -47,10 +47,10 @@
 //      number fields only, Text shows the same lines (the count first), and at 1x the 4x
 //      line's run dots fill day by day. Shots programs-blocks.png, programs-text.png,
 //      programs-dots.png.
-//  11. (Run before 5.) Story and Achievements: a new game played through 1.5 by the debug
-//      autopilot (its step stops at 1.6 A Voice; it never buys Programming: the program shows, the Programs tile doesn't); Story shows the Act 1 band, every finished beat
+//  11. (Run before 5.) Story and Achievements: a new game played through 1.4 by the debug
+//      autopilot (its step stops at 1.5 A Voice; it never buys Programming: the program shows, the Programs tile doesn't); Story shows the Act 1 band, every finished beat
 //      lit, the active one glowing with its task, one "???" below and no achievements; a lit beat's click expands it (Reward line) and its Replay replays its modal; the
-//      Achievements tile shows every badge grouped by category. Shots story-1.6.png,
+//      Achievements tile shows every badge grouped by category. Shots story-1.5.png,
 //      achievements.png.
 // Any uncaught page error fails the run.
 //   HH_URL      the page, required: a `vite preview` of a static build (TESTING.md)
@@ -215,7 +215,7 @@ const ORDER = [
   ['refinery', 1], ['solar_panel', 6], ['refinery', 2], ['solar_panel', 7],
 ];
 /** Where play stops: 1.3 Full Load done. */
-const OPENING_END = 'qautomate_automation';
+const OPENING_END = 'qtrade';
 
 /** Plays the opening from the screen, reading each story modal as it opens. Returns the
  * quests reached and the transitions seen; checks as it goes that every quest change came
@@ -347,11 +347,10 @@ async function playOpening() {
       } else if (pad.good === good && (s.res.propellant ?? 0) < 20 && credits >= 12) cmd = 'buy_propellant';
     } else if (goal) cmd = shortCommand(b[goal[0]].short, credits) ?? cmd;
     await runOnly(cmd, s.lines);
-    if (await exists('[data-panel="commands"] [data-id="launch_pads"], [data-testid="add-launch_pads"], [data-panel="commands"] option[value="launch_pads"]')) fullPads = true;
     await sleep(60);
   }
   check(pausedAll, 'every story modal held the clock (paused, no day passed)');
-  check(!fullPads, 'Launch Full Pads stays hidden through the opening (it opens when 1.4 Science completes)');
+  check(!fullPads, 'Launch Full Pads stays hidden through the opening (it opens when 1.3 Full Load completes)');
   return reached;
 }
 
@@ -418,16 +417,11 @@ async function programLogic(grant) {
   await sleep(60);
   const asPercent = await evaluate(`document.querySelector(${q(line(1))}).title.split(':')[0]`);
   check(asPercent === 'If Energy < 50%', `and back to a percent: ${asPercent}`);
-  // Process Telemetry opens two readings in the reading list.
+  // Process Telemetry's two readings are not offered: the research is out of Act 1 (111),
+  // its readings checked in hh-core's tests.
   const readingOptions = () => evaluate(`[...document.querySelectorAll(${q(`${clause(1, 1)} select[aria-label="Reading"] option`)})].map((o) => o.textContent.trim())`);
-  const offeredBefore = await readingOptions();
-  check(!offeredBefore.includes('Energy per day') && !offeredBefore.includes('Days since a purchase') && offeredBefore.length <= 13, `before Process Telemetry, ${offeredBefore.length} readings`);
-  await grant('science', '50');
-  await panel('research');
-  await click('[data-testid="research-process_telemetry"]');
-  await sleep(100);
-  const offeredAfter = await readingOptions();
-  check(offeredAfter.slice(-2).join(', ') === 'Energy per day, Days since a purchase', `after it, two more: ${offeredAfter.slice(-2).join(', ')}`);
+  const offered = await readingOptions();
+  check(!offered.includes('Energy per day') && !offered.includes('Days since a purchase') && offered.length <= 13, `without Process Telemetry, ${offered.length} readings`);
   await debugMenu();
   await add('Build');
   await pick(`${line(2)} select[aria-label="Building"]`, 'Solar Panel');
@@ -965,12 +959,12 @@ async function numberBox(rows) {
 }
 
 /** Section 11: Story and Achievements. A new game played on by the debug autopilot's
- * "Next quest step" through 1.5, to 1.6 A Voice; Story then shows the Act 1 band, every finished beat
+ * "Next quest step" through 1.4, to 1.5 A Voice; Story then shows the Act 1 band, every finished beat
  * lit with its picture's thumbnail, the active beat glowing with its task, one "???" below
  * it and no achievements or event texts; a finished beat's click expands it to its story
  * and its Reward line, and its Replay button replays its story modal.
  * The Achievements tile shows badges grouped by category. Then scenario late_unlocks: 1.b's
- * completion banner shows its picture. Shots story-1.6.png, achievements.png,
+ * completion banner shows its picture. Shots story-1.5.png, achievements.png,
  * side-quest-banner.png. */
 async function storyView() {
   await debugMenu();
@@ -980,16 +974,16 @@ async function storyView() {
   await autoStory();
   const content = (f) => JSON.parse(readFileSync(resolve(here, `../../content/${f}`), 'utf8'));
   const beat = () => evaluate(`document.querySelector('[data-testid="quest"]')?.textContent.match(/^1\\.(\\d+)/)?.[1] ?? '0'`).then(Number);
-  // Step until 1.6 A Voice is active. 1.5 Trade's credits count from its start, and 1.6
-  // can't finish in the step that opens it (Geopolitical Intelligence opens with it).
-  for (let step = 0; step < 8 && (await beat()) < 6; step++) {
+  // Step until 1.5 A Voice is active; it can't finish in the step that opens it
+  // (Geopolitical Intelligence opens with it).
+  for (let step = 0; step < 8 && (await beat()) < 5; step++) {
     await cheats();
     await click('#accel-quest', 'autopilot: next quest step');
     await waitFor(`document.getElementById('accel-status')?.dataset.running === '0'`, 'the autopilot step', 90000);
     if (await exists('[data-testid="continue"]')) await click('[data-testid="continue"]', 'continue');
   }
   const at = await beat();
-  check(at === 6, `the autopilot reaches 1.6 A Voice (stops at 1.${at})`);
+  check(at === 5, `the autopilot reaches 1.5 A Voice (stops at 1.${at})`);
   // The autopilot never buys Programming (091): the program shows, the Programs tile doesn't.
   check(
     !(await exists('.nav-tile[data-nav="programs"]')) && (await exists('[data-testid="programs"]')),
@@ -1044,7 +1038,7 @@ async function storyView() {
   check(st.unknown.length === 1 && st.unknown[0].trim() === '???' && st.unknownAfter, `one "???" node below it: ${JSON.stringify(st.unknown)}`);
   check(st.inView, 'the active beat is in view on opening');
   check(st.badges === 0 && !/Achievements|Events this run/.test(st.text), 'Story shows no achievements and no Events this run');
-  await shot('story-1.6');
+  await shot('story-1.5');
   // A finished beat's click expands it (108: whole story, Goal and Reward lines in the UI
   // font); its Replay button replays its story modal (pages read by hand, not auto-clicked).
   await evaluate(`window.__autoStory?.disconnect(); window.__autoStory = undefined`);
@@ -1054,7 +1048,8 @@ async function storyView() {
     const m = c.querySelector('[data-testid="story-card-body"] .mechanics');
     return { reward: m?.querySelector('.mech-reward')?.textContent ?? '', font: m ? getComputedStyle(m).fontFamily : '' };
   })()`);
-  check(open12.reward === 'Reward: Advanced Blueprints.' && !/Mono|monospace/i.test(open12.font), `expanded 1.2 shows "${open12.reward}" in ${open12.font.slice(0, 20)}`);
+  // 1.2 grants nothing, so it has no Reward line (111: rewards list only real grants).
+  check(open12.reward === '' && !!open12.font && !/Mono|monospace/i.test(open12.font), `expanded 1.2 shows no reward line ("${open12.reward}") in ${open12.font.slice(0, 20)}`);
   await click('[data-testid="story-beat-done"][data-beat="qfirst_shipment"] [data-testid="story-replay"]', 'replay 1.2');
   const pages = await readStory();
   check(pages.length > 0 && pages.every((p) => p.quest === 'qfirst_shipment'), `a finished beat's Replay replays its modal chain: ${pages.map((p) => `${p.quest}/${p.kind}`).join(' ')}`);
@@ -1490,7 +1485,7 @@ async function freshGame() {
 /** Section 2. Opens the cheats (toggled off and on again) and leaves the debug menu open. */
 async function everyPanel() {
   // Projects open with the first retirement and Ideologies with Geopolitical Intelligence
-  // (1.6 A Voice): the scenario opens them (and Retirement) instead of playing that far.
+  // (1.5 A Voice): the scenario opens them (and Retirement) instead of playing that far.
   await speed(0);
   await debugMenu();
   await click('#cheats-toggle');
@@ -1734,7 +1729,7 @@ const SECTIONS = [
   [9, instructionPanel],
   // ---- 10. the Programs view's Blocks mode (before 5) ----
   [10, programsBlocks],
-  // ---- 11. Story's quest timeline at 1.6 and the Achievements tile (before 5) ----
+  // ---- 11. Story's quest timeline at 1.5 and the Achievements tile (before 5) ----
   [11, storyView],
   [5, readabilitySection],
   [4, themeSection],

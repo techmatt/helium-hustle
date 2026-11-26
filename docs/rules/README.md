@@ -1,6 +1,6 @@
 # Rules
 
-The rules as implemented, rules revision **36** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **37** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
 The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
@@ -77,12 +77,12 @@ the page of the module that takes them (`crates/hh-core/src/action.rs` has them 
 
 ## Content
 
-`content/*.json`, embedded in `hh-core`: resources (16), buildings (20), commands (23),
-research (19), events (34: nineteen the quest chain, four side quests), projects (15),
+`content/*.json`, embedded in `hh-core`: resources (16), buildings (20), commands (24),
+research (20), events (33: eighteen the quest chain, four side quests), projects (15),
 achievements (6), rivals (4), Earth techs (6, `earth_tech.json`), and two display-only
 files: the UI's nav tiles (`nav.json`, 18: when each panel's tile shows) and the acts
 (`acts.json`, 4: each act's name and the chain quest it opens with, [events.md](events.md)). Act 1's beats are draft from
-1.5 on (1.1 to 1.4 open one mechanic at a time from a base of Solar Panels and Data Centers), Acts 2 to 4 unaligned scaffolding ([../arc.md](../arc.md)). Ids are unique across all files but `nav.json`, whose ids are panel names.
+1.4 on (1.1 to 1.3 open one mechanic at a time from a base of Solar Panels and Data Centers), Acts 2 to 4 unaligned scaffolding ([../arc.md](../arc.md)). Ids are unique across all files but `nav.json`, whose ids are panel names.
 `messages.json` holds UI prose the view carries (display only; its ids are fixed in code,
 `content::MESSAGES`): the run summary's line, `forced_retirement` or `retired`.
 Buildings resolve in file order; quests chain in file order. `content/prose.md` is not

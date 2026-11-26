@@ -57,7 +57,7 @@ Every player (random, greedy, the author and those built on it) has one fixed ha
 a pad with No cargo, or an empty first pad on another good, carries the first good a pad may
 carry now (the view's `pad_goods`: Titanium during 1.2, then He-3 at baseline;
 `agents::pick_cargo`, each look; the golden script re-points every empty pad likewise). Until
-Launch Full Pads opens (1.4), every player hand-launches a full pad or one holding a
+Launch Full Pads opens (1.3's completion), every player hand-launches a full pad or one holding a
 `launch_cargo` quest's amount (`agents::hand_launch`). The hands-off loadout's
 Program 2 opens with `set pads he3 up to 1`.
 
@@ -134,16 +134,15 @@ filler, never over one that reaches the next look: about 90 decisions a run.
 
 **The hands-off player** (`handsoff.rs`) loads the best known loadout at every reset; its only
 hand move is a stale-run retirement (061). Its programs are data, not strategy code:
-`configs/sim/handsoff_loadout.txt` (the form: `agents/loadout.rs`; built in, so native and
-wasm match), replaced when the rules or the best loadout change (then re-pin `HANDSOFF_PIN` in `tests/cli.rs`; a refused tab panics). It is
+`configs/sim/handsoff_loadout.txt` (the form: `agents/loadout.rs`), replaced when the rules or the best loadout change (then re-pin `HANDSOFF_PIN` in `tests/cli.rs`; a refused tab panics). It is
 the author until the run `if` opens in (049: the loadout guards with `if`), counted as its
 first; from the next run, at each reset it puts each of the file's tabs in its program through
 the library (written and saved as `hands-off N` once, loaded after) and seats processors by
 the file's `seat` line. A tab reading a researched reading can't be written before that
 research: the first time, it goes in without those `if` blocks and is rewritten whole once
 the research is done (once a career). Then nothing by hand but a backstop retirement once the
-run has bought nothing (buildings, research, land) for `stale_days` days; the file's own
-`if days since a purchase > 299` / `retire` usually comes first (062).
+run has bought nothing (buildings, research, land) for `stale_days` days (the file's own
+`retire` line reads Process Telemetry's reading, out of Act 1 since 111).
 What its tabs do: the file's header.
 
 ## The oracle (`oracle/`)

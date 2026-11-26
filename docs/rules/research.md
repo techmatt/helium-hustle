@@ -15,6 +15,7 @@ Otherwise an item is shown, and so buyable, if it was bought in any run of the c
 | `visible_when` | Holds when |
 |---|---|
 | `always` | always |
+| `never` | never: a row kept in the engine, not placed in the game yet |
 | `event_completed` | that event fired this run ([events.md](events.md)) |
 | `boredom_above` | boredom is strictly above `threshold` (no content row uses it yet) |
 | `research_purchased` | that item was bought this run |
@@ -62,20 +63,19 @@ count as bought from day 0 of every run while the project counts as completed ([
   the shared modifier framework ([README.md](README.md), *Modifiers*). Regolith Processing
   (100 science, category *Extraction*, visible once a Research Lab is built): `excavator_output_mult`
   1.5, so Regolith Excavators make 50% more ([economy.md](economy.md)).
-- `program_readings` (Process Telemetry, 50 science, visible once a Research Lab is built, its own category
+- `program_readings` (Process Telemetry, 50 science, `never` visible: out of Act 1 until Act 2 places it, its own category
   *Program Analysis*): programs' `energy per day` and `days since a purchase` readings
   open ([programs.md](programs.md)).
 
-- `career_flag` (Programming, 200 science, visible once quest 1.3 Full Load is done or a
-  Research Lab is built, category
+- `career_flag` (Programming, 200 science, visible once quest 1.5 A Voice starts, from then on, category
   *Programs*): buying it sets the career flag `flag` for good (`programming`); retirements
   and a timeline's end keep it, and the item never shows again. The `programming` flag shows
   the Programs nav tile (`nav.json`, a `flag` condition) and with it the Programs view (the
   text and block editors, the all-instructions panel); no rule reads it, and the right
   column's program, Add to Program and loadouts are open without it. A state
   saved before revision 29 that loads with Programming visible gets the flag (`Career.flag_research`).
-  Accelerated Scheduling (30 science, placeholder, category *Self-Maintenance*, visible once
-  quest 1.2 First Shipment is done) sets `fast_speeds`: the view's `fast_speeds` opens the
+  Accelerated Scheduling (30 science, placeholder, category *Self-Maintenance*, `never`
+  visible: out of Act 1 until Act 2 places it) sets `fast_speeds`: the view's `fast_speeds` opens the
   50x and 200x game speeds in the UI (display only; no rule reads it).
 
 A purchase of research (as of a building or land) sets the run's `last_purchase`.
@@ -105,7 +105,7 @@ Every number is on the content rows: costs, visibility thresholds and effect val
 
 ## Content
 
-`content/research.json`: 19 rows, each with `cost`, optional `requires`, optional `effect`,
+`content/research.json`: 20 rows, each with `cost`, optional `requires`, optional `effect`,
 `visible_when`, a `category` and a placeholder `description`. The *Blueprints* category comes
 first: Basic Blueprints (10 science, always visible; no quest asks for it) unlocks the Regolith
 Excavator, Smelter, Launch Pad and Storage Depot, Advanced Blueprints (20, visible once
@@ -116,13 +116,12 @@ Dome, through those buildings' `requires` ([economy.md](economy.md)). The rest o
 
 | When | Shows |
 |---|---|
-| Quest 1.2 First Shipment completes | Accelerated Scheduling (beside Advanced Blueprints) |
-| First Research Lab (flag `research_lab`, the silent `research_lab_built`) | Regolith Processing, Process Telemetry, Programming (also once 1.3 Full Load is done) |
+| First Research Lab (flag `research_lab`, the silent `research_lab_built`) | Regolith Processing, Liquid Cooling (100 science, *Self-Maintenance*; no effect of its own: Run Simulations `requires` it, [commands.md](commands.md)) |
 | First retirement (flag `retired`) | Daydreaming (Dream Protocols); Stress Tolerance and Efficient Dreaming once it is bought |
 | Speculators' arrival (flag `speculators_seen`) | Market Awareness; Speculator Analysis and Trade Promotion once it is bought; Shipping Efficiency at 10 shipments |
-| Quest 1.6 A Voice starts | Geopolitical Intelligence |
-| 1.6 completes | Overclock Protocols; Overclock Boost once it is bought |
-| 1.7 Deep Space Telescope completes | Novelty Simulation (draft, [timeline.md](timeline.md)) |
+| Quest 1.5 A Voice starts | Geopolitical Intelligence, Programming |
+| 1.5 completes | Overclock Protocols; Overclock Boost once it is bought |
+| 1.6 Deep Space Telescope completes | Novelty Simulation (draft, [timeline.md](timeline.md)) |
 
 Propellant Synthesis shows with the propellant discovery event (4 shipments). Side quest 1.b
 Full Cluster's `research_count` counts the items bought this run (Archive-granted Blueprints
@@ -138,7 +137,7 @@ id is fixed in code (`research::RESEARCH_PANEL`). Unlocks live on the unlocked r
 - Conflict: Overclock cap. The Godot command text said "+200%" (rewritten to the engine's caps); Overclock Boost's data says the
   cap goes from 150% to 200%. The engine has a base cap of 1.5 in config
   (`programs.overclock_base_cap`) and Overclock Boost's `overclock_cap` 2.
-- Changed: Geopolitical Intelligence shows once quest 1.6 A Voice starts (the handoffs had
+- Changed: Geopolitical Intelligence shows once quest 1.5 A Voice starts (the handoffs had
   QAutomate, the data QMarket, a quest no longer in the line).
 - Conflict: the data's research `unlocks_commands` lists duplicate each command's own
   `requires`. Dropped: the command's `requires` is the one home.

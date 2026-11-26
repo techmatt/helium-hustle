@@ -24,8 +24,7 @@ asked for that day (programs.md); the Retire action retires between days.
   flags (the program instructions' unlocks and Programming among them), the program loadout library
   ([programs.md](programs.md)), ids ever researched, owned and used, events seen, quests
   (side quests too) and sub-objectives completed, chain quests started (`started_quests`:
-  an `on_start` grant, 1.2's 20 propellant, comes once a career), each `trade_credits`
-  quest's mark (`quest_marks`: the career's launch pay when it started, [events.md](events.md)), `timeline` (global) and `forever` project
+  an `on_start` grant, 1.2's 20 propellant, comes once a career), `timeline` (global) and `forever` project
   progress and completions, achievements, the log, and the last finished run's summary
   (display: its number, length, whether forced, stats and final ranks, for the UI's run
   summary).

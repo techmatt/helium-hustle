@@ -140,9 +140,6 @@ pub fn condition_text(c: &Condition) -> String {
     match c {
         Condition::BuildingOwned { building, count } => format!("Own {count} {}", name(building)),
         Condition::ResourceCumulative { resource, amount } => format!("Make {} {} this run", n(*amount), name(resource)),
-        Condition::BuildingProduced { building, resource, amount } => {
-            format!("Make {} {} with {}", n(*amount), name(resource), name(building))
-        }
         Condition::ShipmentCompleted { count } => format!("Ship {count} times this run"),
         Condition::ResearchCompleted { research } => format!("Research {}", name(research)),
         Condition::Immediate => "Open from the start".to_string(),

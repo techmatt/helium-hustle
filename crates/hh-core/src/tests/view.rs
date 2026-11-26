@@ -93,8 +93,8 @@ fn story_timeline_view_has_acts_beats_and_started_side_quests() {
     let q = v.quest.as_ref().unwrap();
     assert_eq!((q.id, q.beat, q.act, q.more), ("qpower_boot_sequence", Some("1.1"), Some(1), true));
     assert!(v.side_quests.is_empty());
-    // Through 1.5: no side quest yet; once speculators have come, Big Launch
-    // (1.a) has started beside 1.5, not done, with its progress.
+    // Through 1.4: no side quest yet; once speculators have come, Big Launch
+    // (1.a) has started beside 1.4, not done, with its progress.
     let chain: Vec<_> = crate::content::content().events.iter().filter(|e| e.is_quest()).collect();
     let at = chain.iter().position(|e| e.id == "qtrade").unwrap();
     for e in &chain[..=at] {

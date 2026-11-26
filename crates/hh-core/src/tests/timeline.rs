@@ -58,7 +58,7 @@ fn nothing_counts_toward_the_swarm_before_the_first_discovery() {
     g.run.enabled_panels.insert("retirement".into());
     r.apply(&mut g, &Action::Retire).unwrap();
     r.advance(&mut g, 10);
-    assert!(g.saga.is_default(), "neither days nor retirements count before 1.7");
+    assert!(g.saga.is_default(), "neither days nor retirements count before 1.6");
     let v = r.view(&g);
     assert!(!v.saga.revealed && v.saga.days_left.is_none(), "no calendar shows");
     // The discovery starts the countdown that day, with no Telescope standing.
@@ -269,7 +269,7 @@ fn techs_need_science_and_their_quest_and_scopes_expire() {
     let r = rules();
     let mut g = revealed(&r);
     g.saga.science = f("5000");
-    assert!(r.apply(&mut g, &Action::BuyEarthTech { tech: "compressed_blocks".into() }).is_err(), "needs Q9");
+    assert!(r.apply(&mut g, &Action::BuyEarthTech { tech: "compressed_blocks".into() }).is_err(), "needs 2.2 Earth Science");
     g.career.completed_quests.insert("qearth_science".into());
     r.apply(&mut g, &Action::BuyEarthTech { tech: "compressed_blocks".into() }).unwrap();
     assert_eq!(g.saga.science, f("4400"));
@@ -300,7 +300,7 @@ fn the_vault_buys_a_super_timeline_and_a_finished_sphere_wins() {
     g.saga.techs.insert("temporal_vault".into(), u32::MAX);
     set(&mut g, "tachyon", "3000");
     r.apply(&mut g, &Action::Deposit { resource: "tachyon".into() }).unwrap();
-    assert!(r.apply(&mut g, &Action::BeginSuperTimeline).is_err(), "Q15 first");
+    assert!(r.apply(&mut g, &Action::BeginSuperTimeline).is_err(), "3.2 Filling the Vault first");
     g.career.completed_quests.insert("qfilling_vault".into());
     g.career.projects.completions.insert("foundation_grant".into(), 1);
     r.apply(&mut g, &Action::BeginSuperTimeline).unwrap();
@@ -378,6 +378,6 @@ fn a_rank_on_one_axis_shows_its_progress() {
     let mut g = r.new_game(7);
     let c = crate::content::Condition::IdeologyRank { axis: "humanist".into(), rank: 5 };
     g.career.max_ideology_ranks.insert("humanist".into(), 3);
-    assert_eq!(crate::modules::events::progress(&r, &g, "", &c), Some((f("3"), f("5"))));
+    assert_eq!(crate::modules::events::progress(&r, &g, &c), Some((f("3"), f("5"))));
     assert!(!crate::modules::events::holds(&r, &g, "", &c));
 }

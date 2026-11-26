@@ -56,7 +56,7 @@ pub fn strategy_index(label: &str) -> Option<usize> {
     strategies().iter().position(|s| s.label == label)
 }
 
-/// The A Voice campaign (the quests profile, 1.6): one run held long by
+/// The A Voice campaign (the quests profile, 1.5): one run held long by
 /// Dream, funding Humanist toward rank 5 (cheaper boredom,
 /// stronger Dream) and then its AI Consciousness project, trading meanwhile.
 pub fn campaign() -> (String, Directives) {
@@ -81,11 +81,11 @@ fn trade() -> Directives {
     }
 }
 
-/// The Trade quest (1.5): its completion starts A Voice, which opens
+/// The Trade quest (1.4): its completion starts A Voice, which opens
 /// Geopolitical Intelligence (Fund's research).
 const TRADE: &str = "qtrade";
 
-/// The A Voice quest (1.6, rank 5 on any axis): the quests profile's ideology stretch.
+/// The A Voice quest (1.5, rank 5 on any axis): the quests profile's ideology stretch.
 const A_VOICE: &str = "qa_voice";
 
 /// Whether the A Voice quest is the one under way.
@@ -96,7 +96,7 @@ fn a_voice_open(g: &GameState) -> bool {
 impl Oracle {
     /// Plays each strategy for `long` ticks and keeps the best: the pinned
     /// one only, while it is available (else every available one); the
-    /// quests profile's campaign alone while A Voice (1.6) is open.
+    /// quests profile's campaign alone while A Voice (1.5) is open.
     pub(super) fn choose_strategy(&mut self, p: &mut Player) {
         let mut best: Option<(i64, String, Directives)> = None;
         let all: Vec<(String, Directives)> = if self.profile == Profile::Quests && a_voice_open(p.state()) {

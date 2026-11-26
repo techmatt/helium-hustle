@@ -74,9 +74,6 @@ pub fn holds(r: &Rules, g: &GameState, quest: &str, c: &Condition) -> bool {
         Condition::ResourceCumulative { resource, amount } => {
             g.run.stats.produced.get(resource).is_some_and(|v| v >= amount)
         }
-        Condition::BuildingProduced { building, resource, amount } => {
-            made_since_start(g, quest, building, resource) >= *amount
-        }
         Condition::ShipmentCompleted { count } => g.run.stats.shipments >= *count,
         Condition::ResearchCompleted { research } => g.run.research.contains(research),
         Condition::Immediate => true,
@@ -101,7 +98,7 @@ pub fn holds(r: &Rules, g: &GameState, quest: &str, c: &Condition) -> bool {
         Condition::Retirements { count } => g.career.retirements >= *count,
         Condition::AdversaryPresent { adversary } => super::attention::present(r, g, adversary),
         Condition::LaunchCredits { amount } => g.run.stats.best_launch >= *amount,
-        Condition::TradeCredits { amount } => trade_since_start(g, quest) >= *amount,
+        Condition::TradeCredits { amount } => g.run.stats.trade_credits >= *amount,
         Condition::LaunchCargo { resource, amount } => best_cargo(g, resource) >= *amount,
         Condition::LaunchFull { resource } => best_cargo(g, resource) >= r.p.shipments.pad_cargo_capacity,
         Condition::ResearchCount { count } => g.run.research.len() >= *count as usize,
@@ -124,15 +121,12 @@ pub fn holds(r: &Rules, g: &GameState, quest: &str, c: &Condition) -> bool {
 
 /// How far along a countable condition is: `(now, target)` (display only;
 /// `None` for one with nothing to count).
-pub fn progress(r: &Rules, g: &GameState, quest: &str, c: &Condition) -> Option<(Fx, Fx)> {
+pub fn progress(r: &Rules, g: &GameState, c: &Condition) -> Option<(Fx, Fx)> {
     let n = |v: u64| Fx::from_int(i64::try_from(v).unwrap_or(i64::MAX));
     match c {
         Condition::BuildingOwned { building, count } => Some((n(g.owned(building).into()), n((*count).into()))),
         Condition::ResourceCumulative { resource, amount } => {
             Some((g.run.stats.produced.get(resource).copied().unwrap_or(Fx::ZERO), *amount))
-        }
-        Condition::BuildingProduced { building, resource, amount } => {
-            Some((made_since_start(g, quest, building, resource), *amount))
         }
         Condition::ShipmentCompleted { count } => Some((n(g.run.stats.shipments.into()), n((*count).into()))),
         Condition::IdeologyRankAny { rank } => {
@@ -150,7 +144,7 @@ pub fn progress(r: &Rules, g: &GameState, quest: &str, c: &Condition) -> Option<
             Some((super::attention::attention(g, adversary), super::attention::threshold_of(r, adversary)))
         }
         Condition::LaunchCredits { amount } => Some((g.run.stats.best_launch, *amount)),
-        Condition::TradeCredits { amount } => Some((trade_since_start(g, quest), *amount)),
+        Condition::TradeCredits { amount } => Some((g.run.stats.trade_credits, *amount)),
         Condition::ResearchCount { count } => Some((n(g.run.research.len() as u64), n((*count).into()))),
         Condition::IdeologyRankEach { rank } => Some((Fx::from_int(each_axis_best(g)), Fx::from_int(*rank))),
         Condition::LaunchCargo { resource, amount } => Some((best_cargo(g, resource), *amount)),
@@ -172,7 +166,6 @@ pub fn kind(c: &Condition) -> &'static str {
     match c {
         Condition::BuildingOwned { .. } => "building_owned",
         Condition::ResourceCumulative { .. } => "resource_cumulative",
-        Condition::BuildingProduced { .. } => "building_produced",
         Condition::ShipmentCompleted { .. } => "shipment_completed",
         Condition::ResearchCompleted { .. } => "research_completed",
         Condition::Immediate => "immediate",
@@ -209,33 +202,6 @@ pub fn kind(c: &Condition) -> &'static str {
 /// The most of `good` one launch carried this run.
 fn best_cargo(g: &GameState, good: &str) -> Fx {
     g.run.stats.best_cargo.get(good).copied().unwrap_or(Fx::ZERO)
-}
-
-/// Launch pay over the career, this run included.
-pub fn career_trade(g: &GameState) -> Fx {
-    g.career.lifetime.trade_credits.saturating_add(g.run.stats.trade_credits)
-}
-
-/// Launch pay since `quest` first became active (its mark; zero for a row
-/// with none, which counts from the career's start).
-fn trade_since_start(g: &GameState, quest: &str) -> Fx {
-    let mark = g.career.quest_marks.get(quest).copied().unwrap_or(Fx::ZERO);
-    // The career total only grows, so it never falls below a mark taken from it.
-    (career_trade(g) - mark).max(Fx::ZERO)
-}
-
-/// What `building`s made of `resource` this run, in all.
-fn building_made(g: &GameState, building: &str, resource: &str) -> Fx {
-    g.run.stats.building_produced.get(building).and_then(|m| m.get(resource)).copied().unwrap_or(Fx::ZERO)
-}
-
-/// What `building`s made of `resource` this run since `quest` became active
-/// (the whole run when it became active in an earlier run: no mark this run).
-fn made_since_start(g: &GameState, quest: &str, building: &str, resource: &str) -> Fx {
-    let made = building_made(g, building, resource);
-    let mark = g.run.stats.quest_marks.get(quest).copied().unwrap_or(Fx::ZERO);
-    // This run's total only grows, so it never falls below a mark taken from it.
-    (made - mark).max(Fx::ZERO)
 }
 
 /// The lowest of the career's best ranks over the axes.
@@ -285,19 +251,9 @@ pub fn apply_unlocks(g: &mut GameState, e: &Event) {
 }
 
 /// A chain quest becoming active for the first time in the career applies
-/// its `on_start` grants (once: a retirement doesn't repeat them) and, for a
-/// `trade_credits` condition, marks the career's launch pay so far (for a
-/// `building_produced` one, what its building type made of its resource this run).
+/// its `on_start` grants (once: a retirement doesn't repeat them).
 fn start(g: &mut GameState, q: &Event) {
     if g.career.started_quests.insert(q.id.clone()) {
-        if matches!(q.condition, Condition::TradeCredits { .. }) {
-            let mark = career_trade(g);
-            g.career.quest_marks.insert(q.id.clone(), mark);
-        }
-        if let Condition::BuildingProduced { building, resource, .. } = &q.condition {
-            let mark = building_made(g, building, resource);
-            g.run.stats.quest_marks.insert(q.id.clone(), mark);
-        }
         for u in &q.on_start {
             if let Unlock::Grant { resource, amount } = u {
                 g.add(resource, *amount);

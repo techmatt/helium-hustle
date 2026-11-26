@@ -43,8 +43,8 @@ pub fn flag_held(g: &GameState, item: &Research) -> bool {
 
 /// A state saved before career-flag research existed (`Career::flag_research`
 /// false): each career-flag item whose `visible_when` already holds counts as
-/// bought, its flag set (Programming for a career past 1.3 or with a Research
-/// Lab). Called on load only.
+/// bought, its flag set (Programming for a career past A Voice's start). Called
+/// on load only.
 pub fn grant_past_flags(g: &mut GameState) {
     if g.career.flag_research.0 {
         return;
@@ -68,6 +68,7 @@ pub fn grant_flags_due(g: &mut GameState) {
 fn shows(g: &GameState, v: &Visibility) -> bool {
     match v {
         Visibility::Always => true,
+        Visibility::Never => false,
         Visibility::EventCompleted { event } => g.run.events.contains_key(event),
         Visibility::BoredomAbove { threshold } => g.amount(BOREDOM) > *threshold,
         Visibility::ResearchPurchased { research } => g.run.research.contains(research),

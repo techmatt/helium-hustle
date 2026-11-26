@@ -143,10 +143,14 @@ edits += 8;
 const pictures = JSON.parse(readFileSync(new URL('../../content/events.json', import.meta.url), 'utf8')).filter((e) => e.picture);
 const pictureFiles = new Set(readdirSync(new URL('../src/assets/quests/', import.meta.url)).filter((f) => f.endsWith('.webp')).map((f) => f.slice(0, -5)));
 for (const e of pictures) assert.ok(pictureFiles.has(e.picture), `${e.id}: picture ${e.picture} has no src/assets/quests/${e.picture}.webp`);
-// Every Act 1 quest (1.1-1.7, 1.a-1.d) carries one.
-const act1 = JSON.parse(readFileSync(new URL('../../content/events.json', import.meta.url), 'utf8')).filter((e) => /^1\./.test(e.beat ?? ''));
-assert.equal(act1.length, 11, 'Act 1 has 11 quests');
-for (const e of act1) assert.ok(e.picture, `${e.beat} ${e.id} carries a picture`);
+// Every Act 1 quest (1.1-1.6: the chain before Act 2's opener, numbered by the engine; 1.a-1.d)
+// carries one.
+const events = JSON.parse(readFileSync(new URL('../../content/events.json', import.meta.url), 'utf8'));
+const act2 = JSON.parse(readFileSync(new URL('../../content/acts.json', import.meta.url), 'utf8')).find((a) => a.act === 2).opens_with;
+const chain = events.filter((e) => e.category === 'story');
+const act1 = [...chain.slice(0, chain.findIndex((e) => e.id === act2)), ...events.filter((e) => /^1\./.test(e.beat ?? ''))];
+assert.equal(act1.length, 10, 'Act 1 has 10 quests');
+for (const e of act1) assert.ok(e.picture, `${e.beat ?? e.title} ${e.id} carries a picture`);
 
 // The nav grid's tiles (Matt, 2026-11-26): the open ones packed in content order, no blank
 // cells; the utility tiles are nav.json's last rows, so they follow the last open play tile.

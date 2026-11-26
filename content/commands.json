@@ -24,6 +24,18 @@
     "description": "Energy to credits. Key early income. Small boredom cost per execution."
   },
   {
+    "id": "run_simulations",
+    "name": "Run Simulations",
+    "requires": {"type": "research", "research": "liquid_cooling"},
+    "costs": {"energy": "3", "ice": "1"},
+    "produces": {"credits": "6"},
+    "boredom": "0",
+    "effect": null,
+    "scale_modifier": null,
+    "sets_flag": null,
+    "description": "Heavy simulation jobs for Earth's labs, on racks cooled with lunar ice. Hard work that doesn't wear on you."
+  },
+  {
     "id": "buy_regolith",
     "name": "Buy Regolith",
     "requires": {"type": "none"},
@@ -39,7 +51,7 @@
     "id": "buy_ice",
     "name": "Buy Ice",
     "requires": {"type": "none"},
-    "costs": {"credits": "10", "energy": "1"},
+    "costs": {"credits": "5", "energy": "1"},
     "produces": {"ice": "1"},
     "boredom": "0",
     "effect": null,
@@ -98,7 +110,7 @@
   {
     "id": "launch_pads",
     "name": "Launch Full Pads",
-    "requires": {"type": "quest_completed", "quest": "qautomate_automation"},
+    "requires": {"type": "quest_completed", "quest": "qfull_load"},
     "costs": {},
     "produces": {},
     "boredom": "0",

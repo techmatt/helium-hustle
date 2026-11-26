@@ -10,8 +10,8 @@ use crate::{Action, Fx, Rules};
 fn game(r: &Rules) -> GameState {
     let mut g = logic_open(r);
     g.run.enabled_panels.insert(crate::modules::research::RESEARCH_PANEL.into());
-    // Launch Full Pads opens with 1.4 Science.
-    g.career.completed_quests.insert("qautomate_automation".into());
+    // Launch Full Pads opens with 1.3 Full Load.
+    g.career.completed_quests.insert("qfull_load".into());
     g
 }
 
@@ -84,8 +84,8 @@ fn pad_verbs_with_nothing_to_do_cost_the_step_only() {
     let r = rules();
     let mut g = game(&r);
     let mut early = g.clone();
-    early.career.completed_quests.remove("qautomate_automation");
-    assert_eq!(run_line(&r, &mut early, act(Verb::LaunchPads, None, None, None)), None, "locked (before 1.4): skipped free");
+    early.career.completed_quests.remove("qfull_load");
+    assert_eq!(run_line(&r, &mut early, act(Verb::LaunchPads, None, None, None)), None, "locked (before 1.3 is done): skipped free");
     own(&r, &mut g, "launch_pad", 1);
     own(&r, &mut g, "solar_panel", 10);
     set(&mut g, "he3", "0");

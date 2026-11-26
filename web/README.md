@@ -42,7 +42,7 @@ npm run preview                              # serve web/dist/
 
 Three columns and a status bar:
 
-- **Left:** the title, the calendar strip once the swarm is revealed, the nav grid (tiles from `content/nav.json`; a dot marks a tile new
+- **Left:** the title, the calendar strip once the swarm is revealed, the nav grid (tiles from `content/nav.json`; a dot inside the tile's right edge marks a tile new
   this run or whose panel holds something new; two columns of icon and name, open tiles
   packed, utility tiles last (`navSlots.ts`); a green dot on Launch Pads while a pad is
   ready), the speed buttons, Resources

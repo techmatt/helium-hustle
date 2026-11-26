@@ -50,7 +50,7 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   column's program alone (add, drag to reorder, remove, −/+ counts; logic lines from its
   own add row once they open).
 - **Programming (2026-11-25, replacing 2026-11-24's).** **Programming** is a research-view
-  item (placeholder 200 science), on sale once quest 1.3 Full Load completes or a Research Lab is built; not a quest
+  item (placeholder 200 science), on sale from quest 1.5 A Voice's start on (Matt, 2026-11-26); not a quest
   task. Buying it is permanent: a career flag (`programming`) that survives retirement and
   a timeline's end, like `swarm_revealed`; once bought it never shows again. It hides only
   the Programs nav tile and its view (Text | Blocks, the all-instructions panel); the

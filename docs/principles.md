@@ -44,7 +44,7 @@ credits, a building count) is not seen.
 | M11 | First Major Project (persistent) | a global (`timeline`) project completed | event | runs 8–15 |
 | M12 | Adversary Subverted: speculators managed | an Arbitrage Engine owned | capability | runs 8–15 |
 | M13 | Ideology Influence: rank 3+ in an axis | the career's best rank on any axis ≥ 3 | counter | runs 10–18 |
-| M14 | Timeline Unlocked: Arc 1 → Arc 2 | quest 1.7 Deep Space Telescope completed (the swarm's reveal) | event | runs 15–20 |
+| M14 | Timeline Unlocked: Arc 1 → Arc 2 | quest 1.6 Deep Space Telescope completed (the swarm's reveal) | event | runs 15–20 |
 
 **Judgment calls** (candidates; the data may move them):
 

@@ -87,7 +87,7 @@ export function Left({
           >
             <NavIcon id={t.id} />
             <span>{t.name}</span>
-            {navHasNews(t.id) && <span class="dot" title="Something new" />}
+            {navHasNews(t.id) && <span class="dot dot-new" title="Something new" />}
             {t.id === 'launch_pads' && padReady && <span class="dot dot-ready" data-testid="pads-ready" title="A pad is ready to launch" />}
             {t.id === 'launch_pads' && padNoCargo && <span class="dot dot-cargo" data-testid="pads-no-cargo" title="A pad has No cargo: pick one" />}
           </button>

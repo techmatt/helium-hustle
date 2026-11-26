@@ -14,7 +14,7 @@ retirement gap ([career.md](career.md)). A timeline's end clears it (draft,
 | Adversary | Driver | Rises by |
 |---|---|---|
 | speculators | units sold | each launch's cargo × `speculator_per_unit` |
-| rivals | land claimed | each Buy Land's land (`land_per_purchase`) × `rival_per_land`, by hand or program, once the career flag `swarm_revealed` is set (Act 2, quest 1.7 done; `attention::RIVALS_FROM_FLAG`); none before |
+| rivals | land claimed | each Buy Land's land (`land_per_purchase`) × `rival_per_land`, by hand or program, once the career flag `swarm_revealed` is set (Act 2, quest 1.6 done; `attention::RIVALS_FROM_FLAG`); none before |
 
 **Decay.** Each day, before demand is set ([the day](README.md#the-day), step 4, inside
 demand's update), each adversary loses its `*_decay` (linear), floored at 0. Each day of the

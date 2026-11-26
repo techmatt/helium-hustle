@@ -744,8 +744,8 @@ ul.plain {
 .nav-tile.active:hover:not(:disabled) {
   background: var(--sel-hover);
 }
-/* A tile's name can run to its right edge: its dots sit on the tile's corners as badges, the
-   new dot top right, the ready dot bottom right and the No-cargo dot bottom left. */
+/* The ready dot sits on the tile's bottom right corner as a badge, the No-cargo dot bottom
+   left; the new (unread) dot inside its own tile, below. */
 .nav-tile .dot {
   position: absolute;
   top: -4px;
@@ -755,6 +755,18 @@ ul.plain {
   height: 9px;
   border-radius: 50%;
   background: var(--accent);
+}
+/* The new (unread) dot: fully inside its tile, at the right edge with padding from the
+   border, centered on the label row, so it never reads as the next tile's; the name stops
+   short of it. */
+.nav-tile .dot.dot-new {
+  top: 50%;
+  right: 6px;
+  transform: translateY(-50%);
+  box-shadow: none;
+}
+.nav-tile:has(.dot-new) {
+  padding-right: 18px;
 }
 /* A chip icon (icons.tsx): true colors in both themes; its own faint edge keeps pale ones
    (Energy, Ice) visible on white. */

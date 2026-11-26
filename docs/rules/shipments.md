@@ -92,8 +92,8 @@ unpaused, cooled down) and the default loading priority.
 
 Pad indices are 0-based. The commands Load Launch Pads and Launch Full Pads run through
 programs; they need their full cost to run (Load costs energy; Launch Full Pads has no cost of
-its own, the propellant is the launch's). Launch Full Pads is locked until quest 1.4
-Processors is completed (`requires: quest_completed`, [commands.md](commands.md)); before
+its own, the propellant is the launch's). Launch Full Pads is locked until quest 1.3
+Full Load is completed (`requires: quest_completed`, [commands.md](commands.md)); before
 then a pad launches by hand (`launch`, from its card), which 1.2 First Shipment (one launch
 carrying 20 titanium) and 1.3 Full Load (a full pad of He-3) teach.
 

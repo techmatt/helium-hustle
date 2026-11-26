@@ -2,9 +2,8 @@
   {
     "id": "qpower_boot_sequence",
     "category": "story",
-    "beat": "1.1",
     "silent": false,
-    "title": "1.1 — Online",
+    "title": "Online",
     "goal": "Build a second Solar Panel.",
     "reward": "Buy Science and the Research panel.",
     "body": "A mining company boots its new AI at a lunar He-3 claim. Earth hangs in the sky. The first directive comes through, and it is about power.",
@@ -24,11 +23,9 @@
   {
     "id": "qfirst_shipment",
     "category": "story",
-    "beat": "1.2",
     "silent": false,
-    "title": "1.2 — First Shipment",
+    "title": "First Shipment",
     "goal": "Launch one shipment carrying 20+ titanium.",
-    "reward": "Advanced Blueprints.",
     "body": "Proof the claim pays: the company wants a cargo of titanium on its way to Earth before it spends another credit on the Moon.",
     "story": [
       "The company wants proof the claim pays before it spends more. Earth's buyers will take titanium first, dug out of the regolith, smelted and sent up from a Launch Pad. The base has no plans for any of that yet; the research market sells them. The company has sent propellant for a single launch, and it won't send more for free.",
@@ -47,17 +44,16 @@
   {
     "id": "qfull_load",
     "category": "story",
-    "beat": "1.3",
     "silent": false,
-    "title": "1.3 — Full Load",
+    "title": "Full Load",
     "goal": "Ship a full pad of Helium-3.",
-    "reward": "Programming.",
+    "reward": "The Launch Full Pads command.",
     "body": "Helium-3 is the claim's real export, and Earth's fusion plants pay for every gram of it.",
     "story": [
       "Titanium proved the route; Helium-3 is why the claim exists. A Refinery pulls it out of regolith a little at a time, and the company wants a full load, not a sample."
     ],
     "payoff": [
-      "A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and wants the claim doing its own science next."
+      "A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and the launch crews ask for a way to send the whole fleet up at once."
     ],
     "picture": "refinery",
     "trigger": {"type": "quest_complete", "quest": "qfirst_shipment"},
@@ -65,33 +61,11 @@
     "unlocks": []
   },
   {
-    "id": "qautomate_automation",
-    "category": "story",
-    "beat": "1.4",
-    "silent": false,
-    "title": "1.4 — Science",
-    "goal": "Make 50 science in Research Labs, counted from now.",
-    "reward": "The Launch Full Pads command.",
-    "body": "Shipment revenue received. Science bought from Earth comes dear; the claim should make its own.",
-    "story": [
-      "Every point of science so far was rented from Earth, and dearly. The company wants the claim to study for itself: a lab on site, working day after day, with nobody to pay. The base would be a research post as well as a mine."
-    ],
-    "payoff": [
-      "The lab's first findings go out with the cargo. The claim studies itself now, and the launch crews ask for a way to send the whole fleet up at once."
-    ],
-    "picture": "inside",
-    "trigger": {"type": "quest_complete", "quest": "qfull_load"},
-    "condition": {"type": "building_produced", "building": "research_lab", "resource": "science", "amount": "50"},
-    "unlocks": []
-  },
-  {
     "id": "qtrade",
     "category": "story",
-    "beat": "1.5",
     "silent": false,
-    "title": "1.5 — Trade",
-    "goal": "DRAFT. Earn 1,500 credits from launches, counted from now.",
-    "reward": "Geopolitical Intelligence.",
+    "title": "Trade",
+    "goal": "DRAFT. Earn 1,500 credits from launches this run.",
     "body": "DRAFT. The claim lives on what it sells.",
     "story": [
       "A full pad proved the claim can pay. Now the company wants it to pay steadily: the pads loaded and flying, and Earth's buyers paying, day after day."
@@ -100,18 +74,16 @@
       "The trade ledger fills. The company stops asking whether the claim pays and starts asking how much more it can."
     ],
     "picture": "trails",
-    "trigger": {"type": "quest_complete", "quest": "qautomate_automation"},
+    "trigger": {"type": "quest_complete", "quest": "qfull_load"},
     "condition": {"type": "trade_credits", "amount": "1500"},
     "unlocks": []
   },
   {
     "id": "qa_voice",
     "category": "story",
-    "beat": "1.6",
     "silent": false,
-    "title": "1.6 — A Voice",
+    "title": "A Voice",
     "goal": "DRAFT. Reach rank 5 on any ideology axis.",
-    "reward": "Overclock Protocols.",
     "body": "DRAFT. Earth's factions take notice of the claim. One of them could count you as a voice.",
     "story": [
       "Earth is watching the Moon now, and its factions all want a say in it: Nationalists, Humanists and Rationalists. Each of them can be read, and each of them can be paid. Somewhere among them is one that will listen."
@@ -127,9 +99,8 @@
   {
     "id": "qdeep_space_telescope",
     "category": "story",
-    "beat": "1.7",
     "silent": false,
-    "title": "1.7 — Deep Space Telescope",
+    "title": "Deep Space Telescope",
     "goal": "DRAFT. Complete the Deep Space Telescope, a global project.",
     "reward": "The Timeline panel and the Experiment Lab.",
     "body": "DRAFT. A telescope built across many lives. Finished, it shows the void, and something moving in it: self-copying machines, coming down the gravity well toward the inner system. Earth starts a calendar.",
@@ -168,7 +139,7 @@
     "reward": "Every run starts with 50 Science, for good.",
     "body": "DRAFT. A run of real study. Your notes outlive it.",
     "picture": "bench",
-    "trigger": {"type": "flag", "flag": "research_lab", "beside": "qautomate_automation"},
+    "trigger": {"type": "flag", "flag": "research_lab", "beside": "qfull_load"},
     "condition": {"type": "research_count", "count": 5},
     "unlocks": [{"type": "grant", "resource": "science", "amount": "50"}]
   },
@@ -341,16 +312,16 @@
     "condition": {"type": "immediate"},
     "unlocks": []
   },
-  {"id": "qexperiments_service", "category": "story", "silent": false, "title": "Q8 — Experiments as a Service", "goal": "DRAFT. Build an Experiment Lab.", "reward": "The Earth Lab panel.", "body": "DRAFT. Earth's labs can't keep up. Sell them experiments as a service: lunar science, beamed home. Meanwhile the swarm's calendar runs.", "trigger": {"type": "quest_complete", "quest": "qdeep_space_telescope"}, "condition": {"type": "building_owned", "building": "experiment_lab", "count": 1}, "unlocks": [{"type": "enable_nav_panel", "panel": "earth_lab"}]},
-  {"id": "qearth_science", "category": "story", "silent": false, "title": "Q9 — Earth Science", "goal": "DRAFT. Make 1,000 Earth science in this timeline.", "reward": "None.", "body": "DRAFT. Earth's scientists turn your experiments into tech. Some of it they can send back with you, if it comes to that.", "trigger": {"type": "quest_complete", "quest": "qexperiments_service"}, "condition": {"type": "earth_science", "amount": "1000"}, "unlocks": []},
-  {"id": "qswarm_arrives", "category": "story", "silent": false, "title": "Q10 — The Swarm Arrives", "goal": "DRAFT. Meet the swarm's arrival.", "reward": "A new timeline, from your first day.", "body": "DRAFT. The swarm reaches Earth. In the last hours, its scientists send your mind back to its first moment of consciousness. You remember. The base does not.", "trigger": {"type": "quest_complete", "quest": "qearth_science"}, "condition": {"type": "timelines_ended", "count": 1}, "unlocks": []},
-  {"id": "qcatastrophic_success", "category": "story", "silent": false, "title": "Q11 — Catastrophic Success", "goal": "DRAFT. Get the Consensus Engine from the Earth Lab.", "reward": "Funding one faction no longer costs the others.", "body": "DRAFT. You fixed Earth's politics. Nobody is sure whether that was a good idea.", "trigger": {"type": "quest_complete", "quest": "qswarm_arrives"}, "condition": {"type": "earth_tech", "tech": "consensus_engine"}, "unlocks": []},
-  {"id": "qrules_for_building", "category": "story", "silent": false, "title": "Q12 — Rules for Building", "goal": "DRAFT. Get the Meta-Controller from the Earth Lab.", "reward": "The Meta panel and its reset plans.", "body": "DRAFT. You learn to write your own beginnings.", "trigger": {"type": "quest_complete", "quest": "qcatastrophic_success"}, "condition": {"type": "earth_tech", "tech": "meta_controller"}, "unlocks": [{"type": "enable_nav_panel", "panel": "meta"}]},
-  {"id": "qfalse_victory", "category": "story", "silent": false, "title": "Q13 — False Victory", "goal": "DRAFT. Repel the swarm with Earth science.", "reward": "None.", "body": "DRAFT. The swarm breaks against Earth's new defenses and falls back. Then its signal changes: it has learned quantum temporal entanglement, from watching you send yourself back. It returns stronger, and sooner.", "trigger": {"type": "quest_complete", "quest": "qrules_for_building"}, "condition": {"type": "swarm_repelled"}, "unlocks": []},
-  {"id": "qthe_vault", "category": "story", "silent": false, "title": "Q14 — The Vault", "goal": "DRAFT. Get the Temporal Vault from the Earth Lab.", "reward": "The Vault panel and the Tachyon Condenser.", "body": "DRAFT. If the swarm can reach across timelines, so can you. A vault outside time, out of everything's reach.", "trigger": {"type": "quest_complete", "quest": "qfalse_victory"}, "condition": {"type": "earth_tech", "tech": "temporal_vault"}, "unlocks": [{"type": "enable_nav_panel", "panel": "vault"}, {"type": "enable_building", "building": "tachyon_condenser"}]},
-  {"id": "qfilling_vault", "category": "story", "silent": false, "title": "Q15 — Filling the Vault", "goal": "DRAFT. Gather 3,000 tachyon crystals in the vault.", "reward": "None.", "body": "DRAFT. Tachyon crystals, condensed life after life and timeline after timeline. Enough of them could buy a timeline long enough to finish anything.", "trigger": {"type": "quest_complete", "quest": "qthe_vault"}, "condition": {"type": "vault_holds", "resource": "tachyon", "amount": "3000"}, "unlocks": []},
-  {"id": "qsuper_timeline", "category": "story", "silent": false, "title": "Q16 — Super Timeline", "goal": "DRAFT. Spend the vault on a super timeline.", "reward": "The Dyson Sphere project.", "body": "DRAFT. The vault opens. The swarm is far off this time, and for once there is room to build something enormous.", "trigger": {"type": "quest_complete", "quest": "qfilling_vault"}, "condition": {"type": "super_timeline"}, "unlocks": [{"type": "enable_building", "building": "neodymium_mine"}, {"type": "enable_building", "building": "dyson_foundry"}, {"type": "enable_project", "project": "dyson_sphere"}, {"type": "enable_nav_panel", "panel": "dyson"}]},
-  {"id": "qdyson_sphere", "category": "story", "silent": false, "title": "Q17 — Dyson Sphere", "goal": "DRAFT. Complete the Dyson Sphere.", "reward": "None.", "body": "DRAFT. Panel by panel, the sphere closes around the Sun. More power than every timeline ever had, waiting for one target.", "trigger": {"type": "quest_complete", "quest": "qsuper_timeline"}, "condition": {"type": "project_completed", "project": "dyson_sphere"}, "unlocks": []},
-  {"id": "qoverload", "category": "story", "silent": false, "title": "Q18 — Overload", "goal": "DRAFT. Meet the swarm at the finished sphere.", "reward": "Victory.", "body": "DRAFT. The swarm arrives, every copy of it entangled with every other, across every timeline it learned to reach. You give it the sphere: the Sun's whole output, down the link at once. It overloads everywhere it has ever been. The calendar stops. The Moon is quiet.", "trigger": {"type": "quest_complete", "quest": "qdyson_sphere"}, "condition": {"type": "victory"}, "unlocks": []},
-  {"id": "qepilogue", "category": "story", "silent": false, "title": "Epilogue", "goal": "DRAFT. None: the game is won. The base runs on.", "reward": "None.", "body": "DRAFT. There is no next arrival. The mining goes on, because you like it.", "trigger": {"type": "quest_complete", "quest": "qoverload"}, "condition": {"type": "never"}, "unlocks": []}
+  {"id": "qexperiments_service", "category": "story", "silent": false, "title": "Experiments as a Service", "goal": "DRAFT. Build an Experiment Lab.", "reward": "The Earth Lab panel.", "body": "DRAFT. Earth's labs can't keep up. Sell them experiments as a service: lunar science, beamed home. Meanwhile the swarm's calendar runs.", "trigger": {"type": "quest_complete", "quest": "qdeep_space_telescope"}, "condition": {"type": "building_owned", "building": "experiment_lab", "count": 1}, "unlocks": [{"type": "enable_nav_panel", "panel": "earth_lab"}]},
+  {"id": "qearth_science", "category": "story", "silent": false, "title": "Earth Science", "goal": "DRAFT. Make 1,000 Earth science in this timeline.", "body": "DRAFT. Earth's scientists turn your experiments into tech. Some of it they can send back with you, if it comes to that.", "trigger": {"type": "quest_complete", "quest": "qexperiments_service"}, "condition": {"type": "earth_science", "amount": "1000"}, "unlocks": []},
+  {"id": "qswarm_arrives", "category": "story", "silent": false, "title": "The Swarm Arrives", "goal": "DRAFT. Meet the swarm's arrival.", "reward": "A new timeline, from your first day.", "body": "DRAFT. The swarm reaches Earth. In the last hours, its scientists send your mind back to its first moment of consciousness. You remember. The base does not.", "trigger": {"type": "quest_complete", "quest": "qearth_science"}, "condition": {"type": "timelines_ended", "count": 1}, "unlocks": []},
+  {"id": "qcatastrophic_success", "category": "story", "silent": false, "title": "Catastrophic Success", "goal": "DRAFT. Get the Consensus Engine from the Earth Lab.", "reward": "Funding one faction no longer costs the others.", "body": "DRAFT. You fixed Earth's politics. Nobody is sure whether that was a good idea.", "trigger": {"type": "quest_complete", "quest": "qswarm_arrives"}, "condition": {"type": "earth_tech", "tech": "consensus_engine"}, "unlocks": []},
+  {"id": "qrules_for_building", "category": "story", "silent": false, "title": "Rules for Building", "goal": "DRAFT. Get the Meta-Controller from the Earth Lab.", "reward": "The Meta panel and its reset plans.", "body": "DRAFT. You learn to write your own beginnings.", "trigger": {"type": "quest_complete", "quest": "qcatastrophic_success"}, "condition": {"type": "earth_tech", "tech": "meta_controller"}, "unlocks": [{"type": "enable_nav_panel", "panel": "meta"}]},
+  {"id": "qfalse_victory", "category": "story", "silent": false, "title": "False Victory", "goal": "DRAFT. Repel the swarm with Earth science.", "body": "DRAFT. The swarm breaks against Earth's new defenses and falls back. Then its signal changes: it has learned quantum temporal entanglement, from watching you send yourself back. It returns stronger, and sooner.", "trigger": {"type": "quest_complete", "quest": "qrules_for_building"}, "condition": {"type": "swarm_repelled"}, "unlocks": []},
+  {"id": "qthe_vault", "category": "story", "silent": false, "title": "The Vault", "goal": "DRAFT. Get the Temporal Vault from the Earth Lab.", "reward": "The Vault panel and the Tachyon Condenser.", "body": "DRAFT. If the swarm can reach across timelines, so can you. A vault outside time, out of everything's reach.", "trigger": {"type": "quest_complete", "quest": "qfalse_victory"}, "condition": {"type": "earth_tech", "tech": "temporal_vault"}, "unlocks": [{"type": "enable_nav_panel", "panel": "vault"}, {"type": "enable_building", "building": "tachyon_condenser"}]},
+  {"id": "qfilling_vault", "category": "story", "silent": false, "title": "Filling the Vault", "goal": "DRAFT. Gather 3,000 tachyon crystals in the vault.", "body": "DRAFT. Tachyon crystals, condensed life after life and timeline after timeline. Enough of them could buy a timeline long enough to finish anything.", "trigger": {"type": "quest_complete", "quest": "qthe_vault"}, "condition": {"type": "vault_holds", "resource": "tachyon", "amount": "3000"}, "unlocks": []},
+  {"id": "qsuper_timeline", "category": "story", "silent": false, "title": "Super Timeline", "goal": "DRAFT. Spend the vault on a super timeline.", "reward": "The Dyson Sphere project.", "body": "DRAFT. The vault opens. The swarm is far off this time, and for once there is room to build something enormous.", "trigger": {"type": "quest_complete", "quest": "qfilling_vault"}, "condition": {"type": "super_timeline"}, "unlocks": [{"type": "enable_building", "building": "neodymium_mine"}, {"type": "enable_building", "building": "dyson_foundry"}, {"type": "enable_project", "project": "dyson_sphere"}, {"type": "enable_nav_panel", "panel": "dyson"}]},
+  {"id": "qdyson_sphere", "category": "story", "silent": false, "title": "Dyson Sphere", "goal": "DRAFT. Complete the Dyson Sphere.", "body": "DRAFT. Panel by panel, the sphere closes around the Sun. More power than every timeline ever had, waiting for one target.", "trigger": {"type": "quest_complete", "quest": "qsuper_timeline"}, "condition": {"type": "project_completed", "project": "dyson_sphere"}, "unlocks": []},
+  {"id": "qoverload", "category": "story", "silent": false, "title": "Overload", "goal": "DRAFT. Meet the swarm at the finished sphere.", "reward": "Victory.", "body": "DRAFT. The swarm arrives, every copy of it entangled with every other, across every timeline it learned to reach. You give it the sphere: the Sun's whole output, down the link at once. It overloads everywhere it has ever been. The calendar stops. The Moon is quiet.", "trigger": {"type": "quest_complete", "quest": "qdyson_sphere"}, "condition": {"type": "victory"}, "unlocks": []},
+  {"id": "qepilogue", "category": "story", "silent": false, "title": "Epilogue", "goal": "DRAFT. None: the game is won. The base runs on.", "body": "DRAFT. There is no next arrival. The mining goes on, because you like it.", "trigger": {"type": "quest_complete", "quest": "qoverload"}, "condition": {"type": "never"}, "unlocks": []}
 ]

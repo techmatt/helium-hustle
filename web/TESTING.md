@@ -49,7 +49,7 @@ up directly). Its sections (`HH_ONLY`'s numbers) run in the order 1, 2, 3, 6 to 
    Ready, Story.
 6. **Program instructions** (before 5, `programLogic`): in `late_unlocks`, an `if` /
    `build` program written through the editor (`>` / `<` / `>=` / `<=`, a fill's % / amt toggle, and
-   Energy per day and Days since a purchase offered once Process Telemetry is researched;
+   Energy per day and Days since a purchase not offered: Process Telemetry is out of Act 1;
    `programLogic`), whose guarded build waits for its `if`; saved, then loaded after a retirement, it runs in run 2;
    pause/resume verb lines under `if`s run.
 7. **Programs, Text mode** (before 5), from `everything`: 060's L4 Program 1
@@ -72,12 +72,12 @@ up directly). Its sections (`HH_ONLY`'s numbers) run in the order 1, 2, 3, 6 to 
    and Esc while typing in it keeps the number (`numberBox`), Text shows the same lines, and at 1x the
    `4x` line's four dots fill 1/4 to 4/4; set to 12, it shows a bar titled `k/12`. Sections open Text through the nav tile
    (`openText`); the mode is remembered.
-11. **Story and Achievements** (before 5, `storyView`): a new game played by the autopilot's *Next quest step* until 1.6 A Voice
-   is active (1.5 Trade done); Story shows the Act 1 band alone,
+11. **Story and Achievements** (before 5, `storyView`): a new game played by the autopilot's *Next quest step* until 1.5 A Voice
+   is active (1.4 Trade done); Story shows the Act 1 band alone,
    painted, the finished beats lit (each with its picture's thumbnail; the active
    beat's thumbnail and the left column's foot on the active quest's picture), the active one ringed (in view) with its task, one
-   "???" after it and no achievements; a lit beat's click expands it (1.2: "Reward: Advanced
-   Blueprints." in the UI font) and its Replay replays its modal; the
+   "???" after it and no achievements; a lit beat's click expands it (1.2 grants nothing: no Reward line; the UI
+   font) and its Replay replays its modal; the
    Achievements tile shows every badge by category, each with its reward; then scenario
    `late_unlocks` with *Complete all research*: 1.b's completion banner shows its picture.
 
@@ -116,8 +116,8 @@ game has none until Programming, so this probe is skipped there), a double-click
 one page), run 1 at 3x then 50x, its commands from the right column's program, with every panel (each chain's
 modal at most a day past its "Quest complete" line; on the first, a held Enter turns
 one page), retirement and the summary (keys must not start the
-clock), Programming (bought in run 1 after 1.3 with Buy Science; if run 1 fell
-short, in run 2 with the debug grant's science) and the Programs view, the right column's
+clock), Programming (on sale from 1.5 A Voice's start: bought in run 1 with Buy Science if run 1 gets
+there, else in run 2 with the debug grant's science once it does) and the Programs view, the right column's
 program edited (processors moved, lines added, −/+, removed, dragged), run 2 at 200x, a reload, the replay check, the play log replayed by `hh-sim
 playlog` (a release build, or `HH_SIM`: a fresh worktree has none, so build it first), a second tab and site data blocked (first pass only). At run 1's end and in every
 debug scenario (each played, its pads given Helium-3 first, or Titanium while 1.2 allows only that, its panels audited): every Resources row's breakdown opened

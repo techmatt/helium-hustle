@@ -92,7 +92,7 @@ fn condition(r: &Rules, g: &hh_core::GameState, quest: &str, c: &Condition) -> F
             sum.mul_ratio(1, hh_core::content::AXES.len() as i64)
         }
         // The rest: the engine's own countable progress, where it has one.
-        _ => events::progress(r, g, quest, c).map_or(Fx::ZERO, |(now, target)| frac(now, target)),
+        _ => events::progress(r, g, c).map_or(Fx::ZERO, |(now, target)| frac(now, target)),
     }
 }
 

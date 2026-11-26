@@ -7,7 +7,7 @@
     "buildings": { "solar_panel": 6, "data_center": 2, "excavator": 3, "refinery": 1, "smelter": 1, "fabricator": 1, "launch_pad": 2, "research_lab": 2 },
     "panels": ["projects", "ideologies", "retirement", "research", "adversaries"],
     "projects": ["blueprint_archive", "conditional_logic"],
-    "events": ["qpower_boot_sequence", "qfirst_shipment", "qfull_load", "qautomate_automation", "qtrade", "qblueprints_for_everyone", "research_lab_built", "first_retirement", "speculators_arrive"],
+    "events": ["qpower_boot_sequence", "qfirst_shipment", "qfull_load", "qtrade", "qblueprints_for_everyone", "research_lab_built", "first_retirement", "speculators_arrive"],
     "programs": [[{ "op": "command", "command": "load_pads", "count": 1 }, { "op": "command", "command": "buy_titanium", "count": 1 }]]
   }
 }

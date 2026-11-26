@@ -1,5 +1,5 @@
-//! Programming (089, 091): a research-view item on sale once 1.3 Full Load is
-//! done, bought once for the career (a career flag), opening the Programs nav
+//! Programming (089, 091): a research-view item on sale once 1.5 A Voice starts
+//! (111), bought once for the career (a career flag), opening the Programs nav
 //! tile (the editors) and nothing else: programs run from day 1.
 
 use super::{f, rules, set};
@@ -18,26 +18,33 @@ fn research_shown(r: &crate::Rules, g: &GameState, id: &str) -> bool {
     r.view(g).research.iter().any(|x| x.id == id && x.visible)
 }
 
-/// A game with the research panel open and 1.3 done, science to spare.
-fn past_full_load(r: &crate::Rules) -> GameState {
+/// The chain quests before 1.5 A Voice.
+const BEFORE_A_VOICE: [&str; 4] = ["qpower_boot_sequence", "qfirst_shipment", "qfull_load", "qtrade"];
+
+/// A game with the research panel open and A Voice started, science to spare.
+fn past_a_voice(r: &crate::Rules) -> GameState {
     let mut g = r.new_game(7);
     g.run.enabled_panels.insert(research::RESEARCH_PANEL.into());
     set(&mut g, "science", "500");
-    g.career.completed_quests.insert("qfull_load".into());
+    g.career.completed_quests.extend(BEFORE_A_VOICE.map(String::from));
     g
 }
 
 #[test]
-fn programming_is_sold_after_full_load_and_bought_once_for_the_career() {
+fn programming_is_sold_from_a_voice_and_bought_once_for_the_career() {
     let r = rules();
     let mut g = r.new_game(7);
     g.run.enabled_panels.insert(research::RESEARCH_PANEL.into());
     set(&mut g, "science", "500");
     assert!(!nav_shown(&r, &g, "programs"), "a new game has no Programs tile");
-    assert!(!research_shown(&r, &g, FLAG), "not on sale before 1.3");
+    g.career.completed_quests.extend(BEFORE_A_VOICE[..3].iter().map(|q| q.to_string()));
+    super::support::own(&mut g, "research_lab", 1);
+    r.advance(&mut g, 1);
+    assert!(!research_shown(&r, &g, FLAG), "not on sale after 1.3 or with the first lab");
     assert!(r.apply(&mut g, &Action::Research { research: FLAG.into() }).is_err());
-    g.career.completed_quests.insert("qfull_load".into());
-    assert!(research_shown(&r, &g, FLAG), "on sale once 1.3 is done");
+    g.career.completed_quests.insert("qtrade".into());
+    assert_eq!(r.view(&g).quest.unwrap().id, "qa_voice");
+    assert!(research_shown(&r, &g, FLAG), "on sale once A Voice starts");
     r.apply(&mut g, &Action::Research { research: FLAG.into() }).unwrap();
     assert_eq!(g.amount("science"), f("300"), "200 science");
     assert!(career::flag_set(&g, FLAG));
@@ -54,7 +61,7 @@ fn programming_is_sold_after_full_load_and_bought_once_for_the_career() {
 #[test]
 fn programming_survives_a_timeline_end() {
     let r = rules();
-    let mut g = past_full_load(&r);
+    let mut g = past_a_voice(&r);
     r.apply(&mut g, &Action::Research { research: FLAG.into() }).unwrap();
     g.career.flags.insert(timeline::REVEAL_FLAG.into());
     r.advance(&mut g, 1);
@@ -67,20 +74,20 @@ fn programming_survives_a_timeline_end() {
 }
 
 #[test]
-fn a_state_from_before_programming_gets_it_on_load_when_past_full_load() {
+fn a_state_from_before_programming_gets_it_on_load_when_past_a_voice() {
     let r = rules();
-    // A save from before the field: past 1.3 gets the flag, a new career doesn't.
+    // A save from before the field: past A Voice's start gets the flag, a new career doesn't.
     let strip = |g: &GameState| {
         let mut v: serde_json::Value = serde_json::from_str(&g.to_json()).unwrap();
         v["career"].as_object_mut().unwrap().remove("flag_research").expect("serialized");
         v.to_string()
     };
-    let old = past_full_load(&r);
+    let old = past_a_voice(&r);
     let loaded = GameState::from_json(&strip(&old)).unwrap();
-    assert!(career::flag_set(&loaded, FLAG), "a career past 1.3 gets Programming");
+    assert!(career::flag_set(&loaded, FLAG), "a career past A Voice's start gets Programming");
     let fresh = GameState::from_json(&strip(&r.new_game(7))).unwrap();
     assert!(!career::flag_set(&fresh, FLAG));
-    // A current state round-trips as it is: past 1.3, not bought, stays not bought.
+    // A current state round-trips as it is: past A Voice's start, not bought, stays not bought.
     let now = GameState::from_json(&old.to_json()).unwrap();
     assert!(!career::flag_set(&now, FLAG), "loading never buys it for a current state");
     assert_eq!(now, old);

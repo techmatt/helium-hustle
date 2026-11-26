@@ -2,9 +2,11 @@
 
 Events are the quest chain ("Breadcrumbs", the `story` rows, in file order), side quests
 (the `side` rows) and one-off events (the `ongoing` rows). Each has a trigger, a condition
-and unlock effects that open buildings, panels, projects or flags. A quest may carry the
-design doc's `beat` id (`1.1` to `1.7`, `1.a` to `1.d`; [../arc.md](../arc.md) maps beats to
-quests); no rule reads it. Events are checked at step 12 of
+and unlock effects that open buildings, panels, projects or flags. A chain quest's number
+is derived at load from its place in the chain (`act.k`: the `k`th quest of an act, `acts.json`),
+its `beat` and the head of its title (`1.2 — First Shipment`), never written in the data; a side
+quest carries its own `beat` (`1.a` to `1.d`; [../arc.md](../arc.md) maps beats to quests). No
+rule reads them. Events are checked at step 12 of
 [the day](README.md#the-day), after the clamp; their unlocks are re-applied at the start
 of every run.
 
@@ -25,7 +27,6 @@ of every run.
 |---|---|
 | `building_owned` | at least `count` owned this run (bonus buildings included) |
 | `resource_cumulative` | this run's production of the resource, before caps, reaches `amount` (starting resources don't count) (no content row uses it yet) |
-| `building_produced` | what the `building` type made of `resource` this run (before caps), counted from the quest's start (its mark, *Quest start*; the whole run in a later run). 1.4: 50 science by Research Labs |
 | `shipment_completed` | this run's shipments reach `count` |
 | `research_completed` | the item is bought this run |
 | `immediate` | always |
@@ -41,7 +42,7 @@ of every run.
 | `credits_earned` | credits produced this run reach `amount` (no content row uses it yet) |
 | `retirements` | the career's retirements, forced or chosen, reach `count` |
 | `adversary_present` | the adversary is present now ([attention.md](attention.md)) |
-| `trade_credits` | launches paid at least `amount` credits in all since the quest first became active: the career's launch pay (finished runs' `lifetime.trade_credits` plus this run's `trade_credits`, [shipments.md](shipments.md)) less its mark (*Quest start*); a row with no mark counts from the career's start |
+| `trade_credits` | this run's launches paid at least `amount` credits in all (`stats.trade_credits`, [shipments.md](shipments.md)), from before the quest's start too |
 | `launch_credits` | one launch this run paid at least `amount` credits ([shipments.md](shipments.md)) |
 | `launch_cargo` | one launch this run carried at least `amount` of `resource` |
 | `launch_full` | one launch this run carried a full pad (`pad_cargo_capacity`) of `resource` |
@@ -67,10 +68,7 @@ latched (cumulative He-3, shipments, science made) starts over after a retiremen
 
 **Quest start.** The first time a chain quest becomes active in the career (as the check
 reaches it), its `on_start` grants are added to the run's stock, once: a retirement doesn't
-repeat them (career `started_quests`). 1.2 First Shipment's 20 Propellant is the one. A quest
-whose condition is `trade_credits` also records the career's launch pay then, its mark (career
-`quest_marks`); a `building_produced` one, its building's output so far this run (`stats.quest_marks`; a
-later run has none and counts from day 0).
+repeat them (career `started_quests`). 1.2 First Shipment's 20 Propellant is the one.
 While a chain quest naming `pad_goods` is active, a pad may be set only to those goods (1.2:
 Titanium; [shipments.md](shipments.md)).
 
@@ -107,7 +105,8 @@ trigger and condition hold.
 `category` decides chain quest, side quest or one-off. `silent` keeps a one-off event out of the activity
 feed and the view's event list (display only). Text no rule reads: `title`, a one-off's
 `summary` (its headline), `body`, `story` and `payoff` (narrative only), and the mechanics
-fields, a quest's `goal` and `reward` (no `hints`: ui.md), a
+fields, a quest's `goal` and `reward` (no `hints`: ui.md; the reward lists only real grants and
+is absent, never "None.", on a quest that grants nothing), a
 one-off's `effect` (ui.md, *Quest mechanics text*; checked at load).
 The view hands a boredom phase its `rate`, the phase's boredom per day, and the UI fills its
 effect's `{rate}` with it as Stats shows boredom growth. The run records the day
@@ -160,15 +159,15 @@ Triggers, conditions and unlocks are content (`content/events.json`).
 
 ## Content
 
-`content/events.json`: 34 rows. Nineteen `story`: Act 1's beats 1.1 Online to 1.7 Deep
-Space Telescope (the swarm's reveal; [../arc.md](../arc.md)), then the draft Q8 to Q18 and the
-Epilogue. 1.5 Trade counts launch pay from its start and unlocks nothing; 1.6 A Voice is rank 5
-on any axis this run. Four `side`, each with a permanent reward: 1.a Big Launch (the
-`speculators_seen` flag beside 1.5; `modifier` `shipment_credit_mult` ×1.1), 1.b Full Cluster
-(the `research_lab` flag beside 1.4; 5 research items in one run; a `grant` of 50 Science, so
+`content/events.json`: 33 rows. Eighteen `story`: Act 1's beats 1.1 Online to 1.6 Deep
+Space Telescope (the swarm's reveal; [../arc.md](../arc.md)), then the draft 2.1 to 4.2 and the
+Epilogue (4.3). 1.3 Full Load opens Launch Full Pads; 1.4 Trade counts this run's launch pay and
+unlocks nothing; 1.5 A Voice is rank 5 on any axis this run. Four `side`, each with a permanent reward: 1.a Big Launch (the
+`speculators_seen` flag beside 1.4; `modifier` `shipment_credit_mult` ×1.1), 1.b Full Cluster
+(the `research_lab` flag beside 1.3; 5 research items in one run; a `grant` of 50 Science, so
 every later run starts with it), 1.c Blueprints for Everyone (the `retired` flag beside 1.2;
 completes with the Blueprint Archive; no unlock: the rewards are the project's,
-[projects.md](projects.md)) and 1.d Three Voices (1.6's completion; career-best rank 5 on each
+[projects.md](projects.md)) and 1.d Three Voices (1.5's completion; career-best rank 5 on each
 axis; `modifier` `ideology_half_life_mult` ×2). Eleven `ongoing`, four silent:
 `research_lab_built` (a Research Lab owned: sets the `research_lab` flag), `first_retirement`
 (a retirement in the career: sets the `retired` flag, opens the `retirement` and `projects`

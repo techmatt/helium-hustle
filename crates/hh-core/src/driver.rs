@@ -231,7 +231,7 @@ pub fn script_step(s: &mut Session, allowed: &Allowed) {
         }
         v = s.rules.view(&s.state);
     }
-    // Before Launch Full Pads opens (1.4), a pad launches by hand: when full,
+    // Before Launch Full Pads opens (1.3's completion), a pad launches by hand: when full,
     // or with 20 titanium aboard (1.2's shipment; the script's own threshold).
     if !v.commands.iter().any(|c| c.id == "launch_pads" && c.unlocked) {
         let hand: Vec<u32> = (0..v.pads.len())

@@ -8,7 +8,7 @@ heading: it is the string's id. A heading deleted leaves its string as it is.
 
 ### `events:qpower_boot_sequence.title`
 
-1.1 — Online
+Online
 
 ### `events:qpower_boot_sequence.goal`
 
@@ -40,15 +40,11 @@ The new panel comes online and the grid steadies. The company opens a line to Ea
 
 ### `events:qfirst_shipment.title`
 
-1.2 — First Shipment
+First Shipment
 
 ### `events:qfirst_shipment.goal`
 
 Launch one shipment carrying 20+ titanium.
-
-### `events:qfirst_shipment.reward`
-
-Advanced Blueprints.
 
 ### `events:qfirst_shipment.body`
 
@@ -68,7 +64,7 @@ The canister lands and Earth's buyers pay. Credits flow back, and the company, p
 
 ### `events:qfull_load.title`
 
-1.3 — Full Load
+Full Load
 
 ### `events:qfull_load.goal`
 
@@ -76,7 +72,7 @@ Ship a full pad of Helium-3.
 
 ### `events:qfull_load.reward`
 
-Programming.
+The Launch Full Pads command.
 
 ### `events:qfull_load.body`
 
@@ -88,43 +84,15 @@ Titanium proved the route; Helium-3 is why the claim exists. A Refinery pulls it
 
 ### `events:qfull_load.payoff.0`
 
-A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and wants the claim doing its own science next.
-
-### `events:qautomate_automation.title`
-
-1.4 — Science
-
-### `events:qautomate_automation.goal`
-
-Make 50 science in Research Labs, counted from now.
-
-### `events:qautomate_automation.reward`
-
-The Launch Full Pads command.
-
-### `events:qautomate_automation.body`
-
-Shipment revenue received. Science bought from Earth comes dear; the claim should make its own.
-
-### `events:qautomate_automation.story.0`
-
-Every point of science so far was rented from Earth, and dearly. The company wants the claim to study for itself: a lab on site, working day after day, with nobody to pay. The base would be a research post as well as a mine.
-
-### `events:qautomate_automation.payoff.0`
-
-The lab's first findings go out with the cargo. The claim studies itself now, and the launch crews ask for a way to send the whole fleet up at once.
+A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and the launch crews ask for a way to send the whole fleet up at once.
 
 ### `events:qtrade.title`
 
-1.5 — Trade
+Trade
 
 ### `events:qtrade.goal`
 
-DRAFT. Earn 1,500 credits from launches, counted from now.
-
-### `events:qtrade.reward`
-
-Geopolitical Intelligence.
+DRAFT. Earn 1,500 credits from launches this run.
 
 ### `events:qtrade.body`
 
@@ -140,15 +108,11 @@ The trade ledger fills. The company stops asking whether the claim pays and star
 
 ### `events:qa_voice.title`
 
-1.6 — A Voice
+A Voice
 
 ### `events:qa_voice.goal`
 
 DRAFT. Reach rank 5 on any ideology axis.
-
-### `events:qa_voice.reward`
-
-Overclock Protocols.
 
 ### `events:qa_voice.body`
 
@@ -164,7 +128,7 @@ A faction counts you as a voice now, and it starts acting like it. The company, 
 
 ### `events:qdeep_space_telescope.title`
 
-1.7 — Deep Space Telescope
+Deep Space Telescope
 
 ### `events:qdeep_space_telescope.goal`
 
@@ -188,7 +152,7 @@ The telescope opens on the void, and something moves in it: self-copying machine
 
 ### `events:qexperiments_service.title`
 
-Q8 — Experiments as a Service
+Experiments as a Service
 
 ### `events:qexperiments_service.goal`
 
@@ -204,15 +168,11 @@ DRAFT. Earth's labs can't keep up. Sell them experiments as a service: lunar sci
 
 ### `events:qearth_science.title`
 
-Q9 — Earth Science
+Earth Science
 
 ### `events:qearth_science.goal`
 
 DRAFT. Make 1,000 Earth science in this timeline.
-
-### `events:qearth_science.reward`
-
-None.
 
 ### `events:qearth_science.body`
 
@@ -220,7 +180,7 @@ DRAFT. Earth's scientists turn your experiments into tech. Some of it they can s
 
 ### `events:qswarm_arrives.title`
 
-Q10 — The Swarm Arrives
+The Swarm Arrives
 
 ### `events:qswarm_arrives.goal`
 
@@ -236,7 +196,7 @@ DRAFT. The swarm reaches Earth. In the last hours, its scientists send your mind
 
 ### `events:qcatastrophic_success.title`
 
-Q11 — Catastrophic Success
+Catastrophic Success
 
 ### `events:qcatastrophic_success.goal`
 
@@ -252,7 +212,7 @@ DRAFT. You fixed Earth's politics. Nobody is sure whether that was a good idea.
 
 ### `events:qrules_for_building.title`
 
-Q12 — Rules for Building
+Rules for Building
 
 ### `events:qrules_for_building.goal`
 
@@ -268,15 +228,11 @@ DRAFT. You learn to write your own beginnings.
 
 ### `events:qfalse_victory.title`
 
-Q13 — False Victory
+False Victory
 
 ### `events:qfalse_victory.goal`
 
 DRAFT. Repel the swarm with Earth science.
-
-### `events:qfalse_victory.reward`
-
-None.
 
 ### `events:qfalse_victory.body`
 
@@ -284,7 +240,7 @@ DRAFT. The swarm breaks against Earth's new defenses and falls back. Then its si
 
 ### `events:qthe_vault.title`
 
-Q14 — The Vault
+The Vault
 
 ### `events:qthe_vault.goal`
 
@@ -300,15 +256,11 @@ DRAFT. If the swarm can reach across timelines, so can you. A vault outside time
 
 ### `events:qfilling_vault.title`
 
-Q15 — Filling the Vault
+Filling the Vault
 
 ### `events:qfilling_vault.goal`
 
 DRAFT. Gather 3,000 tachyon crystals in the vault.
-
-### `events:qfilling_vault.reward`
-
-None.
 
 ### `events:qfilling_vault.body`
 
@@ -316,7 +268,7 @@ DRAFT. Tachyon crystals, condensed life after life and timeline after timeline. 
 
 ### `events:qsuper_timeline.title`
 
-Q16 — Super Timeline
+Super Timeline
 
 ### `events:qsuper_timeline.goal`
 
@@ -332,15 +284,11 @@ DRAFT. The vault opens. The swarm is far off this time, and for once there is ro
 
 ### `events:qdyson_sphere.title`
 
-Q17 — Dyson Sphere
+Dyson Sphere
 
 ### `events:qdyson_sphere.goal`
 
 DRAFT. Complete the Dyson Sphere.
-
-### `events:qdyson_sphere.reward`
-
-None.
 
 ### `events:qdyson_sphere.body`
 
@@ -348,7 +296,7 @@ DRAFT. Panel by panel, the sphere closes around the Sun. More power than every t
 
 ### `events:qoverload.title`
 
-Q18 — Overload
+Overload
 
 ### `events:qoverload.goal`
 
@@ -369,10 +317,6 @@ Epilogue
 ### `events:qepilogue.goal`
 
 DRAFT. None: the game is won. The base runs on.
-
-### `events:qepilogue.reward`
-
-None.
 
 ### `events:qepilogue.body`
 
@@ -746,6 +690,14 @@ Sell Cloud Compute
 
 Energy to credits. Key early income. Small boredom cost per execution.
 
+### `commands:run_simulations.name`
+
+Run Simulations
+
+### `commands:run_simulations.description`
+
+Heavy simulation jobs for Earth's labs, on racks cooled with lunar ice. Hard work that doesn't wear on you.
+
 ### `commands:buy_regolith.name`
 
 Buy Regolith
@@ -955,6 +907,14 @@ Regolith Processing
 ### `research:regolith_processing.description`
 
 Regolith Excavators dig 50% more.
+
+### `research:liquid_cooling.name`
+
+Liquid Cooling
+
+### `research:liquid_cooling.description`
+
+Racks cooled with lunar ice. Unlocks Run Simulations: Earth's labs pay for heavy simulation jobs.
 
 ### `research:propellant_synthesis.name`
 

@@ -461,7 +461,7 @@ mod tests {
         let (c, ms, g) = fresh(2);
         let boost = Some(parse_boost(DEFAULT_BOOST).unwrap());
         let mut ap = Autopilot::new(g, ms, DEFAULT_AGENT, Target::End, boost, 200_000, &[]).unwrap();
-        // The swarm's clock, tick by tick (085, 086): nothing before 1.7; then
+        // The swarm's clock, tick by tick (085, 086): nothing before 1.6; then
         // a 100-year countdown that each retirement moves by the 5-year gap;
         // every later timeline's runs from its first day, Telescope or not.
         use hh_core::modules::projects::completed;
@@ -473,7 +473,7 @@ mod tests {
             let st = ap.step(1);
             let g = ap.state();
             if !g.career.completed_quests.contains("qdeep_space_telescope") && g.saga.ended == 0 {
-                assert!(g.saga.timeline.is_none(), "no calendar before 1.7");
+                assert!(g.saga.timeline.is_none(), "no calendar before 1.6");
             }
             if let Some(b) = &g.saga.timeline {
                 if was.is_none() {
@@ -510,7 +510,7 @@ mod tests {
         assert!(retire_moves > 0, "retirements moved the countdown");
         println!("clock: {unbuilt_days} later-timeline ticks counted with no Telescope standing");
         assert!(unbuilt_days > 0, "a later timeline counts before its Telescope is rebuilt");
-        // Every milestone and every main-quest step through the ending (Q18)
+        // Every milestone and every main-quest step through the ending (4.2)
         // is met (Matt's ruling on question 042_1).
         assert!(st.reached, "{st:?}");
         assert!(st.left.is_empty(), "steps left: {:?}", st.left);

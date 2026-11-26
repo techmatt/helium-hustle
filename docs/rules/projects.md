@@ -110,10 +110,10 @@ The `drain` variant has no params (`"params": {}`).
 `min_days` and `rewards` (none repeats yet); names and descriptions are the Godot
 placeholders but for the draft rows (049): Conditional Logic (offered from the first
 retirement, the career flag `retired`; its reward the `logic_if` flag that opens `if`, [programs.md](programs.md)) and the
-Deep Space Telescope (offered once quest 1.7 is active; its first completion completes 1.7,
+Deep Space Telescope (offered once quest 1.6 is active; its first completion completes 1.6,
 so it spans several runs: `min_days` 3,000; rebuilt each timeline, at the same cost, for
 its placeholder passive, `science_output_mult` and `nationalist_growth_mult` ×1.1, and only
-that: the swarm's countdown runs without it, and what 1.7 opened stays:
+that: the swarm's countdown runs without it, and what 1.6 opened stays:
 [timeline.md](timeline.md)). Chemical Energy Initiative is offered from the first
 retirement. Blueprint Archive (draft, offered from the first retirement: 500 credits and 200 science,
 `min_days` 17) completes side quest 1.c Blueprints for Everyone; its `starting_research`
@@ -132,6 +132,6 @@ retirement (the silent `first_retirement` event, [events.md](events.md)).
   event enables them. Kept as data, so both are unreachable (candidate: give each an
   enabling event or another unlock).
 - Candidate: a `quest_active` gate holds while the quest is active or after it is
-  completed (the Deep Space Telescope stays fundable after 1.7 completes).
+  completed (the Deep Space Telescope stays fundable after 1.6 completes).
 - Candidate: AI Consciousness Act's `command_boredom` values replace the commands' own
   boredom per execution rather than adding to it.

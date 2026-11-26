@@ -26,11 +26,11 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   hidden until it appears. The speculator column (Launch Pads' Markets) and the Adversaries
   panel's Speculators section wait for speculators' first arrival in the run (093 default:
   per run), the Adversaries panel, Speculator Analysis and the Arbitrage Engine for their first
-  arrival in the career, and side quest 1.a, which names them, starts then too (once 1.5 is
+  arrival in the career, and side quest 1.a, which names them, starts then too (once 1.4 is
   reached). The Adversaries panel's Rival AIs section and Attention row wait for the rivals'
   first arrival in the career (096 default: the view's `seen`, present now or their arrival
   event seen). Projects never shows a locked card. No player-facing text names timelines before
-  the swarm's reveal (1.7): the global projects' section reads "Global" until then.
+  the swarm's reveal (1.6): the global projects' section reads "Global" until then.
 - **Hide completed (Matt, 2026-11-25).** Research and Projects each have a "Hide completed"
   checkbox at the top (bought research; finished one-off projects), remembered per browser
   (`localStorage`, like the Programs mode), not in the save. Something completed while the
@@ -47,7 +47,8 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   columns of tiles, each a medium icon (24 px) beside its label, in fixed-height rows; Act 1's
   full set fits about the old 3×3 large grid's height. No reserved blank cells (Matt,
   2026-11-26, over 109's default): the open tiles pack from the top in `content/nav.json`'s
-  order with no gaps, a panel that opens appears with a short fade and the unread dot, and the
+  order with no gaps, a panel that opens appears with a short fade and the unread dot (fully
+  inside its own tile, at its right edge centered on the label, 111), and the
   utility tiles (Stats, Story, Achievements, Options, the file's last rows) follow directly
   after the last open play tile, moving down as panels unlock. Painted icons, no chip glyphs.
 - **Quest mechanics text (Matt, 2026-11-25; locked).** Mechanics never live in narrative
@@ -59,9 +60,11 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   line led by a small muted label inline ("Goal:", "Reward:", "Effect:"), on a faint
   warm tan tint with no border. No monospace and no blue strip, anywhere. "Goal: …" reads the
   same done or not (no "Done" label: a ✓ on the card's title says it). A reward is a
-  headline, not an inventory: the one or two things the player should go use next (1.2:
-  "Advanced Blueprints."); secondary effects go unlisted; a quest with no reward of its own
-  says "None.". No how-to hints (Matt, 2026-11-26): quests carry no `hints` and nothing shows
+  headline, not an inventory: only what the player actually gets (a granted command, panel,
+  building, resource or lasting bonus; 1.3: "The Launch Full Pads command."), never research
+  merely appearing on the market (players find it by the unread dots; Matt, 2026-11-26);
+  secondary effects go unlisted; a quest that grants nothing shows no reward line at all (no
+  "None."). No how-to hints (Matt, 2026-11-26): quests carry no `hints` and nothing shows
   a "How:" line, no handholding until playtests say what's needed. A one-off's Effect states
   only the actual change, tersely ("Boredom starts growing: +0.2/day."), never explaining it
   or telegraphing what comes later; the narrative carries the meaning (Matt, 2026-11-26). The

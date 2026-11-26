@@ -21,7 +21,7 @@ often, so a rollout of the current goals is what will happen.
 - **Strategy** (each run's start, every `replan` ticks): standing bundles, a fixed table
   (`strategies`, its rows documented there; `strategy=k` pins row k): the author's own,
   *trade* variants, trade + sustain, research or Foundation Grant, and trade + each axis
-  funded. Each is played `long` ticks through retirements. The quests profile, while 1.6 A Voice is
+  funded. Each is played `long` ticks through retirements. The quests profile, while 1.5 A Voice is
   under way, has one: its campaign (trade, Dream held, Humanist funded, then AI Consciousness).
 - **Tactics** (every `every` ticks, and once its target is bought): one change each to the
   target (every unlocked building), the research (once the strategy's is done), the project

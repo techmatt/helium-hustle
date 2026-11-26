@@ -26,7 +26,7 @@
     "cost": "30",
     "requires": null,
     "effect": {"type": "career_flag", "flag": "fast_speeds"},
-    "visible_when": {"type": "quest_completed", "quest": "qfirst_shipment"},
+    "visible_when": {"type": "never"},
     "description": "PLACEHOLDER. Adds the 50x and 200x game speeds. Bought once for the whole career."
   },
   {
@@ -48,6 +48,16 @@
     "effect": {"type": "modifier", "key": "excavator_output_mult", "value": "1.5"},
     "visible_when": {"type": "flag", "flag": "research_lab"},
     "description": "Regolith Excavators dig 50% more."
+  },
+  {
+    "id": "liquid_cooling",
+    "name": "Liquid Cooling",
+    "category": "Self-Maintenance",
+    "cost": "100",
+    "requires": null,
+    "effect": null,
+    "visible_when": {"type": "flag", "flag": "research_lab"},
+    "description": "Racks cooled with lunar ice. Unlocks Run Simulations: Earth's labs pay for heavy simulation jobs."
   },
   {
     "id": "propellant_synthesis",
@@ -167,7 +177,7 @@
     "cost": "50",
     "requires": null,
     "effect": {"type": "program_readings"},
-    "visible_when": {"type": "flag", "flag": "research_lab"},
+    "visible_when": {"type": "never"},
     "description": "Programs read two more gauges: Energy per day (yesterday's net energy) and Days since a purchase (a building, land or research)."
   },
   {
@@ -177,7 +187,7 @@
     "cost": "200",
     "requires": null,
     "effect": {"type": "career_flag", "flag": "programming"},
-    "visible_when": {"type": "any_of", "any": [{"type": "quest_completed", "quest": "qfull_load"}, {"type": "flag", "flag": "research_lab"}]},
+    "visible_when": {"type": "quest_active", "quest": "qa_voice"},
     "description": "The Programs view: a full editor for your programs (text and blocks) with every instruction listed. Bought once for the whole career."
   }
 ]

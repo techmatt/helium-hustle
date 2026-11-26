@@ -37,7 +37,7 @@ fn the_opening_unlocks_one_mechanic_at_a_time() {
     own(&mut g, "launch_pad", 1);
     assert!(r.apply(&mut g, &Action::SetPadGood { pad: 0, good: Some("he3".into()) }).is_err());
     r.apply(&mut g, &Action::SetPadGood { pad: 0, good: Some("titanium".into()) }).unwrap();
-    assert!(!r.view(&g).commands.iter().any(|c| c.id == "launch_pads" && c.unlocked), "Launch Full Pads waits for 1.4");
+    assert!(!r.view(&g).commands.iter().any(|c| c.id == "launch_pads" && c.unlocked), "Launch Full Pads waits for 1.3");
     g.run.pads[0].cargo = f("20");
     r.apply(&mut g, &Action::Launch { pad: 0 }).unwrap();
     r.advance(&mut g, 1);
@@ -46,15 +46,15 @@ fn the_opening_unlocks_one_mechanic_at_a_time() {
     assert!(r.view(&g).research.iter().any(|x| x.id == "advanced_blueprints" && x.visible));
 }
 
-/// The quest list a new game reads: 1.1-1.7 in Matt's order (2026-11-25), and
-/// the side quests 1.a-1.d.
+/// The quest list a new game reads: 1.1-1.6 in Matt's order (1.4 Science deleted,
+/// 2026-11-26), numbered from the chain, and the side quests 1.a-1.d.
 #[test]
-fn act_1_reads_1_1_to_1_7() {
+fn act_1_reads_1_1_to_1_6() {
     let c = crate::content::content();
     let act1: Vec<(&str, &str)> = c
         .events
         .iter()
-        .filter(|e| e.is_quest() && e.beat.is_some())
+        .filter(|e| e.is_quest() && c.act_of(&e.id) == Some(1))
         .map(|e| (e.beat.as_deref().unwrap(), e.title.as_str()))
         .collect();
     assert_eq!(
@@ -63,20 +63,28 @@ fn act_1_reads_1_1_to_1_7() {
             ("1.1", "1.1 — Online"),
             ("1.2", "1.2 — First Shipment"),
             ("1.3", "1.3 — Full Load"),
-            ("1.4", "1.4 — Science"),
-            ("1.5", "1.5 — Trade"),
-            ("1.6", "1.6 — A Voice"),
-            ("1.7", "1.7 — Deep Space Telescope"),
+            ("1.4", "1.4 — Trade"),
+            ("1.5", "1.5 — A Voice"),
+            ("1.6", "1.6 — Deep Space Telescope"),
         ]
     );
+    // Each act numbers from 1: Act 2 opens with 2.1.
+    let q = c.event("qexperiments_service").unwrap();
+    assert_eq!((q.beat.as_deref(), q.title.as_str()), (Some("2.1"), "2.1 — Experiments as a Service"));
+    // A reward line lists only real grants: none for a quest that grants nothing.
+    let reward = |id: &str| c.event(id).unwrap().reward.as_str();
+    assert_eq!(reward("qfull_load"), "The Launch Full Pads command.");
+    for id in ["qfirst_shipment", "qtrade", "qa_voice"] {
+        assert_eq!(reward(id), "", "{id} grants nothing");
+    }
     let side: Vec<&str> = c.events.iter().filter(|e| e.is_side()).filter_map(|e| e.beat.as_deref()).collect();
     assert_eq!(side, ["1.a", "1.b", "1.c", "1.d"]);
 }
 
-/// Staggered unlocks: the first Research Lab opens only its three research
-/// items; the first retirement Projects, Daydreaming and the Retirement panel;
-/// speculators' arrival Market Analysis; A Voice Geopolitical Intelligence on
-/// start and Overclock Protocols on completion.
+/// Staggered unlocks: the first Research Lab opens only Regolith Processing and
+/// Liquid Cooling; the first retirement Projects, Daydreaming and the Retirement
+/// panel; speculators' arrival Market Analysis; A Voice Geopolitical Intelligence
+/// and Programming on start (shown from then on) and Overclock Protocols on completion.
 #[test]
 fn unlocks_are_staggered() {
     let r = rules();
@@ -91,7 +99,7 @@ fn unlocks_are_staggered() {
     assert!(g.career.flags.contains("research_lab"));
     let after = shown(&r, &g);
     let opened: Vec<&str> = after.iter().copied().filter(|x| !before.contains(x)).collect();
-    assert_eq!(opened, ["regolith_processing", "process_telemetry", "programming"]);
+    assert_eq!(opened, ["regolith_processing", "liquid_cooling"]);
     assert!(!g.run.enabled_panels.contains("projects"));
     // The first retirement: Projects, Daydreaming, the Retirement panel.
     g.career.retirements = 1;
@@ -102,16 +110,19 @@ fn unlocks_are_staggered() {
     assert!(!shown(&r, &g).contains(&"market_awareness"));
     g.career.flags.insert("speculators_seen".into());
     assert!(shown(&r, &g).contains(&"market_awareness"));
-    // A Voice: Geopolitical Intelligence as it starts, Overclock Protocols once done.
-    assert!(!shown(&r, &g).contains(&"geopolitical_intelligence"));
-    for q in ["qpower_boot_sequence", "qfirst_shipment", "qfull_load", "qautomate_automation", "qtrade"] {
+    // A Voice: Geopolitical Intelligence and Programming as it starts, Overclock Protocols once done.
+    for q in ["qpower_boot_sequence", "qfirst_shipment", "qfull_load"] {
         g.career.completed_quests.insert(q.into());
     }
+    assert!(!shown(&r, &g).contains(&"geopolitical_intelligence") && !shown(&r, &g).contains(&"programming"));
+    g.career.completed_quests.insert("qtrade".into());
     assert_eq!(r.view(&g).quest.unwrap().id, "qa_voice");
-    assert!(shown(&r, &g).contains(&"geopolitical_intelligence"));
+    assert!(shown(&r, &g).contains(&"geopolitical_intelligence") && shown(&r, &g).contains(&"programming"));
     assert!(!shown(&r, &g).contains(&"overclock_protocols"));
     g.career.completed_quests.insert("qa_voice".into());
-    assert!(shown(&r, &g).contains(&"overclock_protocols"));
+    assert!(shown(&r, &g).contains(&"overclock_protocols") && shown(&r, &g).contains(&"programming"));
+    // Process Telemetry and Accelerated Scheduling wait for Act 2 to place them.
+    assert!(!shown(&r, &g).contains(&"process_telemetry") && !shown(&r, &g).contains(&"accelerated_scheduling"));
 }
 
 /// Burnout is a story event, once a career: boredom's phase 2 fires it in the
@@ -165,26 +176,59 @@ fn boredom_waits_for_burnout() {
     assert!(g.amount("boredom") > Fx::ZERO);
 }
 
-/// Accelerated Scheduling shows once 1.2 is done and opens the fast speeds for
-/// the career (amendment #3261).
+/// Accelerated Scheduling is out of Act 1 (never shown until Act 2 places it);
+/// its `fast_speeds` flag still opens the fast speeds for the career.
 #[test]
-fn accelerated_scheduling_opens_the_fast_speeds() {
+fn accelerated_scheduling_waits_for_act_2() {
     let r = rules();
     let mut g = r.new_game(1);
     let listed = |g: &GameState| r.view(g).research.iter().any(|x| x.id == "accelerated_scheduling" && x.visible);
     assert!(!listed(&g) && !r.view(&g).fast_speeds);
-    for q in ["qpower_boot_sequence", "qfirst_shipment"] {
+    for q in ["qpower_boot_sequence", "qfirst_shipment", "qfull_load"] {
         g.career.completed_quests.insert(q.into());
     }
     g.run.enabled_panels.insert(crate::modules::research::RESEARCH_PANEL.into());
-    assert!(listed(&g));
     set(&mut g, "science", "30");
-    r.apply(&mut g, &Action::Research { research: "accelerated_scheduling".into() }).unwrap();
+    assert!(!listed(&g));
+    assert!(r.apply(&mut g, &Action::Research { research: "accelerated_scheduling".into() }).is_err());
+    g.career.flags.insert(crate::view::FAST_SPEEDS_FLAG.into());
     assert!(r.view(&g).fast_speeds);
-    set(&mut g, "boredom", "1000");
-    r.advance(&mut g, 1);
-    assert_eq!(g.career.run_number, 2);
-    assert!(r.view(&g).fast_speeds && !listed(&g), "kept through retirement, never shown again");
+}
+
+/// Liquid Cooling opens Run Simulations: 3 energy and 1 ice into 6 credits, no
+/// boredom (Matt, 2026-11-26).
+#[test]
+fn run_simulations_turns_ice_and_energy_into_credits() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    let open = |g: &GameState| r.view(g).commands.iter().any(|c| c.id == "run_simulations" && c.unlocked);
+    assert!(!open(&g));
+    g.run.research.insert("liquid_cooling".into());
+    assert!(open(&g));
+    let cmd = crate::content::content().command("run_simulations").unwrap();
+    assert_eq!(cmd.costs.get("energy"), Some(&f("3")));
+    assert_eq!(cmd.costs.get("ice"), Some(&f("1")));
+    assert_eq!(cmd.produces.get("credits"), Some(&f("6")));
+    assert_eq!(cmd.boredom, Fx::ZERO);
+    assert_eq!(crate::content::content().command("buy_ice").unwrap().costs.get("credits"), Some(&f("5")));
+    // Run once a day by a program: 1 ice and 3 energy become 6 credits, and boredom grows
+    // only by the day's own rate (past Burnout), as with an Idle line.
+    let day = |cmd: &str| {
+        let mut g = r.new_game(1);
+        g.career.flags.insert(crate::modules::boredom::BURNOUT_FLAG.into());
+        g.run.research.insert("liquid_cooling".into());
+        set(&mut g, "ice", "5");
+        set(&mut g, "energy", "20");
+        super::support::program(&r, &mut g, &[(cmd, 1)]);
+        let before = (g.amount("credits"), g.amount("ice"), g.amount("energy"));
+        r.advance(&mut g, 1);
+        (g.amount("credits") - before.0, g.amount("ice") - before.1, g.amount("energy") - before.2, g.amount("boredom"))
+    };
+    let (sim, idle) = (day("run_simulations"), day("idle"));
+    assert_eq!(sim.0 - idle.0, f("6") - f("1"), "6 credits (Idle's 1 for comparison)");
+    assert_eq!((sim.1, idle.1), (f("-1"), Fx::ZERO));
+    assert_eq!(sim.2 - idle.2, f("-3"));
+    assert_eq!(sim.3, idle.3, "no boredom of its own");
 }
 
 /// The Research Lab opens with Advanced Blueprints, one Data Center owned
@@ -210,70 +254,40 @@ fn the_lab_opens_with_advanced_blueprints() {
     assert_eq!((g.owned("research_lab"), g.owned("data_center")), (1, 1));
 }
 
-/// 1.4 Science: 50 science made by Research Labs this run from the quest's
-/// start (Matt, message 3113: bought science doesn't count); what Labs made
-/// before it doesn't count, and a later run counts from its day 0.
+/// 1.3 Full Load's completion opens Launch Full Pads (1.4 Science deleted).
 #[test]
-fn lab_science_counts_from_the_quests_start() {
-    const LAB: &str = "building:research_lab";
+fn full_load_opens_launch_full_pads() {
     let r = rules();
     let mut g = r.new_game(1);
+    let open = |g: &GameState| r.view(g).commands.iter().any(|c| c.id == "launch_pads" && c.unlocked);
     for q in ["qpower_boot_sequence", "qfirst_shipment"] {
         g.career.completed_quests.insert(q.into());
     }
-    g.produce(LAB, "science", f("40"));
+    assert!(!open(&g));
     g.career.completed_quests.insert("qfull_load".into());
+    assert!(open(&g));
     r.advance(&mut g, 1);
-    assert_eq!(r.view(&g).quest.unwrap().id, "qautomate_automation");
-    assert_eq!(g.run.stats.quest_marks.get("qautomate_automation"), Some(&f("40")));
-    g.produce("command:buy_science", "science", f("100"));
-    g.produce(LAB, "science", f("49"));
-    r.advance(&mut g, 1);
-    let q = r.view(&g).quest.unwrap();
-    assert_eq!((q.id, q.progress.map(|p| p.now)), ("qautomate_automation", Some(f("49"))), "bought science doesn't count");
-    g.produce(LAB, "science", f("1"));
-    r.advance(&mut g, 1);
-    assert!(g.career.completed_quests.contains("qautomate_automation"));
-    assert_eq!(r.view(&g).quest.unwrap().id, "qtrade");
-    // A later run (no mark) counts the whole run.
-    g.career.completed_quests.remove("qautomate_automation");
-    g.run.stats = Default::default();
-    g.produce(LAB, "science", f("50"));
-    r.advance(&mut g, 1);
-    assert!(g.career.completed_quests.contains("qautomate_automation"));
+    assert_eq!(r.view(&g).quest.unwrap().id, "qtrade", "Trade follows 1.3");
 }
 
-/// A working Research Lab's science reaches its count through the economy.
+/// 1.4 Trade counts all of this run's launch pay, from before the quest's start
+/// too (Matt, 2026-11-26); a retirement starts the count over.
 #[test]
-fn a_working_lab_counts_toward_1_4() {
+fn trade_counts_the_whole_run() {
     let r = rules();
     let mut g = r.new_game(1);
-    own(&mut g, "research_lab", 1);
-    set(&mut g, "circuits", "10");
-    r.advance(&mut g, 1);
-    assert_eq!(g.run.stats.building_produced["research_lab"]["science"], g.run.stats.produced["science"]);
-    assert!(g.run.stats.produced["science"] > Fx::ZERO);
-}
-
-/// 1.5 Trade counts launch pay from the quest's start, across a retirement.
-#[test]
-fn trade_counts_from_the_quests_start() {
-    let r = rules();
-    let mut g = r.new_game(1);
-    for q in ["qpower_boot_sequence", "qfirst_shipment", "qfull_load", "qautomate_automation"] {
+    for q in ["qpower_boot_sequence", "qfirst_shipment", "qfull_load"] {
         g.career.completed_quests.insert(q.into());
     }
     g.run.stats.trade_credits = f("1400");
     r.advance(&mut g, 1);
-    // 1.5 starts with 1,400 already paid, which doesn't count.
-    assert_eq!(r.view(&g).quest.unwrap().id, "qtrade");
-    assert_eq!(g.career.quest_marks.get("qtrade"), Some(&f("1400")));
-    g.run.stats.trade_credits = f("2000");
+    let q = r.view(&g).quest.unwrap();
+    assert_eq!((q.id, q.progress.map(|p| p.now)), ("qtrade", Some(f("1400"))), "pay before its start counts");
+    // An earlier run's pay doesn't.
+    g.career.lifetime.trade_credits = f("5000");
     r.advance(&mut g, 1);
-    assert_eq!(r.view(&g).quest.unwrap().id, "qtrade", "600 since the start");
-    // A retirement keeps the count: the career's launch pay carries.
-    g.career.lifetime.trade_credits = f("2000");
-    g.run.stats.trade_credits = f("900");
+    assert_eq!(r.view(&g).quest.unwrap().id, "qtrade");
+    g.run.stats.trade_credits = f("1500");
     r.advance(&mut g, 1);
     assert!(g.career.completed_quests.contains("qtrade"));
 }
@@ -293,10 +307,10 @@ fn side_quest_rewards_are_permanent_modifiers() {
     assert!(crate::modules::ideology::gap_decay_factor(&r, &g) > plain, "decays slower");
 }
 
-/// Playtest batch 1 (093): 1.5 is trade credits with no speculator data in the
+/// Playtest batch 1 (093): 1.4 is trade credits with no speculator data in the
 /// view before speculators come; the Blueprints cost 10 and 20; building cards
 /// carry a line only for a mechanic their stats don't show; the first Research
-/// Lab opens its three research items silently; Regolith Processing digs 50% more.
+/// Lab opens its research items silently; Regolith Processing digs 50% more.
 #[test]
 fn playtest_batch_1_reads_as_ruled() {
     let r = rules();
@@ -306,18 +320,18 @@ fn playtest_batch_1_reads_as_ruled() {
     assert_eq!((cost("basic_blueprints"), cost("advanced_blueprints")), (f("10"), f("20")));
     let lines: Vec<_> = v.buildings.iter().filter(|b| !b.description.is_empty()).map(|b| b.id).collect();
     assert_eq!(lines, ["arbitrage_engine", "microwave_receiver"]);
-    // Through 1.4: 1.5 asks for trade credits, and no market has speculator data.
+    // Through 1.3: 1.4 asks for trade credits, and no market has speculator data.
     let chain: Vec<_> = crate::content::content().events.iter().filter(|e| e.is_quest()).collect();
     for e in chain.iter().take_while(|e| e.id != "qtrade") {
         g.career.completed_quests.insert(e.id.clone());
     }
     let v = r.view(&g);
     let q = v.quest.as_ref().unwrap();
-    assert_eq!((q.id, q.kind, q.beat), ("qtrade", "trade_credits", Some("1.5")));
+    assert_eq!((q.id, q.kind, q.beat), ("qtrade", "trade_credits", Some("1.4")));
     assert!(!q.title.contains("peculator") && !q.goal.contains("peculator") && q.story.iter().all(|s| !s.contains("peculator")));
     assert!(v.markets.iter().all(|m| m.speculators.is_none()));
     assert!(!g.run.enabled_panels.contains("adversaries"));
-    // 1.5 counts launch pay only, from its start (the next check).
+    // 1.4 counts this run's launch pay only (trade_counts_the_whole_run).
     r.advance(&mut g, 1);
     g.run.stats.trade_credits = f("1500");
     r.advance(&mut g, 1);
@@ -328,13 +342,13 @@ fn playtest_batch_1_reads_as_ruled() {
     assert!(g.career.flags.contains("research_lab") && !g.run.enabled_panels.contains("projects"));
     let v = r.view(&g);
     let sides: Vec<_> = v.side_quests.iter().map(|s| (s.id, s.parent)).collect();
-    assert_eq!(sides, [("qfull_cluster", Some("qautomate_automation"))]);
+    assert_eq!(sides, [("qfull_cluster", Some("qfull_load"))]);
     // The first retirement opens Projects and offers the Archive: 1.c starts at once, beside 1.2.
     g.career.retirements = 1;
     r.advance(&mut g, 1);
     assert!(g.run.enabled_projects.contains("foundation_grant"));
     let sides: Vec<_> = r.view(&g).side_quests.iter().map(|s| (s.id, s.parent)).collect();
-    assert_eq!(sides, [("qfull_cluster", Some("qautomate_automation")), ("qblueprints_for_everyone", Some("qfirst_shipment"))]);
+    assert_eq!(sides, [("qfull_cluster", Some("qfull_load")), ("qblueprints_for_everyone", Some("qfirst_shipment"))]);
     // Regolith Processing: +50% excavator output (2 a day -> 3).
     let mut g = r.new_game(1);
     own(&mut g, "excavator", 1);
@@ -403,14 +417,14 @@ fn a_panel_a_purchase_opens_shows_at_once() {
 }
 
 /// Mechanics never live in narrative (docs/rulings/ui.md, *Quest mechanics text*): every
-/// quest has a goal and a reward, and every event's narrative (a one-off's summary, body,
+/// quest has a goal and a reward only if it grants something (never "None."), and every event's narrative (a one-off's summary, body,
 /// story and payoff) carries no numbers (the He-3 in a name excepted), no `{rate}` and no
 /// UI instructions.
 #[test]
 fn narrative_carries_no_mechanics() {
     for e in crate::content::content().events.iter().filter(|e| !e.silent) {
         let quest = e.is_quest() || e.is_side();
-        assert!(!quest || !e.goal.is_empty() && !e.reward.is_empty(), "{}: goal and reward", e.id);
+        assert!(!quest || !e.goal.is_empty() && e.reward != "None.", "{}: a goal, and no empty reward line", e.id);
         for t in [&e.summary, &e.body].into_iter().chain(&e.story).chain(&e.payoff) {
             let t = t.replace("Helium-3", "").replace("He-3", "");
             assert!(!t.contains("{rate}"), "{}: a rate in its narrative: {t}", e.id);

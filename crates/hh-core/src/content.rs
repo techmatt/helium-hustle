@@ -194,6 +194,8 @@ pub enum ResearchEffect {
 #[serde(tag = "type", rename_all = "snake_case", deny_unknown_fields)]
 pub enum Visibility {
     Always,
+    /// Never: a row kept in the engine but not placed in the game yet.
+    Never,
     /// The event fired this run.
     EventCompleted { event: String },
     BoredomAbove { threshold: Fx },
@@ -218,6 +220,7 @@ impl Visibility {
     fn ids_ok(&self, c: &Content) -> bool {
         match self {
             Visibility::Always
+            | Visibility::Never
             | Visibility::BoredomAbove { .. }
             | Visibility::ShipmentsCompleted { .. }
             | Visibility::Flag { .. } => true,
@@ -274,10 +277,6 @@ pub enum Condition {
     BuildingOwned { building: String, count: u32 },
     /// Produced this run (before caps).
     ResourceCumulative { resource: String, amount: Fx },
-    /// Made by the building type this run since the quest became active
-    /// (before caps): the whole run when it became active in an earlier run
-    /// (`RunStats::quest_marks`).
-    BuildingProduced { building: String, resource: String, amount: Fx },
     /// Shipments this run.
     ShipmentCompleted { count: u32 },
     ResearchCompleted { research: String },
@@ -303,9 +302,7 @@ pub enum Condition {
     Retirements { count: u32 },
     /// The adversary is present now (its Attention at its threshold, attention.md).
     AdversaryPresent { adversary: String },
-    /// Launches paid at least `amount` credits in all since the quest first
-    /// became active (career `quest_marks`; from the career's start for a row
-    /// that isn't a chain quest).
+    /// Launches paid at least `amount` credits in all this run.
     TradeCredits { amount: Fx },
     /// One launch this run paid at least `amount` credits.
     LaunchCredits { amount: Fx },
@@ -398,8 +395,8 @@ pub struct Event {
     /// `story` events are the quest chain, in file order; `side` quests
     /// complete once a career beside it; `ongoing` fire once a run.
     pub category: String,
-    /// The design doc's beat id (`1.1` ... `1.7`, `1.a` ... `1.d`), on quests that
-    /// carry one (docs/arc.md).
+    /// A side quest's beat id (`1.a` ... `1.d`); a chain quest's is derived from the
+    /// chain at load (`1.1` ..., `Content::number_chain`), never in the data.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub beat: Option<String>,
     pub silent: bool,
@@ -639,7 +636,7 @@ fn parse<T: for<'de> Deserialize<'de>>(name: &str) -> Result<Vec<T>, String> {
 
 impl Content {
     fn load() -> Result<Content, String> {
-        let c = Content {
+        let mut c = Content {
             resources: parse("resources.json")?,
             buildings: parse("buildings.json")?,
             commands: parse("commands.json")?,
@@ -653,8 +650,33 @@ impl Content {
             acts: parse("acts.json")?,
             messages: parse("messages.json")?,
         };
+        c.number_chain()?;
         c.check()?;
         Ok(c)
+    }
+
+    /// Numbers the chain quests from their order: the `k`th quest of act `a` is `a.k`, its
+    /// `beat` and the head of its displayed title (`1.2 — First Shipment`), so a reorder or a
+    /// deletion touches only the chain. The data carries neither (a side quest keeps its own
+    /// `beat`, `1.a`, and title).
+    fn number_chain(&mut self) -> Result<(), String> {
+        let mut numbers = Vec::new();
+        let (mut act, mut k) = (0, 0);
+        for e in self.events.iter().filter(|e| e.is_quest()) {
+            if e.beat.is_some() || e.title.starts_with(|ch: char| ch.is_ascii_digit()) {
+                return Err(format!("event {:?}: a chain quest's number comes from the chain, not the data", e.id));
+            }
+            if let Some(a) = self.acts.iter().find(|a| a.opens_with == e.id) {
+                (act, k) = (a.act, 0);
+            }
+            k += 1;
+            numbers.push(format!("{act}.{k}"));
+        }
+        for (e, n) in self.events.iter_mut().filter(|e| e.is_quest()).zip(numbers) {
+            e.title = format!("{n} — {}", e.title);
+            e.beat = Some(n);
+        }
+        Ok(())
     }
 
     /// The act a chain quest belongs to: the last act opened at or before it in
@@ -677,9 +699,6 @@ impl Content {
         match c {
             Condition::BuildingOwned { building, .. } => self.building(building).is_some(),
             Condition::ResourceCumulative { resource, .. } => self.resource(resource).is_some(),
-            Condition::BuildingProduced { building, resource, .. } => {
-                self.building(building).is_some() && self.resource(resource).is_some()
-            }
             Condition::ResearchCompleted { research } => self.research_item(research).is_some(),
             Condition::AllOf { sub_objectives } => sub_objectives.iter().all(|s| self.condition_ok(&s.condition)),
             Condition::ShipmentCompleted { .. }
@@ -816,15 +835,16 @@ impl Content {
             for u in &e.unlocks {
                 need(u.ids_ok(self), format!("{w}: bad unlock"));
             }
+            // A quest's reward line lists only what completing it grants, so it may have none.
             let mechanics_ok = if e.is_quest() || e.is_side() {
                 !e.goal.is_empty()
-                    && !e.reward.is_empty()
+                    && e.reward != "None."
                     && e.summary.is_empty()
                     && e.effect.is_empty()
             } else {
                 e.goal.is_empty() && e.reward.is_empty() && (e.silent || !e.summary.is_empty())
             };
-            need(mechanics_ok, format!("{w}: a quest has a goal and a reward (no summary or effect); a one-off event a summary"));
+            need(mechanics_ok, format!("{w}: a quest has a goal and maybe a reward, never \"None.\" (no summary or effect); a one-off event a summary"));
             let story_ok = e.payoff.is_empty() && (e.story.is_empty() || e.once) || e.is_quest();
             need(story_ok, format!("{w}: story and payoff are for chain quests (a story also for a once one-off)"));
             need(!e.once || (!e.is_quest() && !e.is_side()), format!("{w}: once is for one-off events"));

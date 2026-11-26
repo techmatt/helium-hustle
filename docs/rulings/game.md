@@ -12,11 +12,10 @@ Programs have their own part ([programs.md](programs.md)).
   quest condition states which boring strategies it rules out.
 - **Speed.** Decisions happen at 1-3x with brief bursts to 5-20x. 200x comes later, once
   programs can automate more, behind tech not yet in the game. 200x is the player's fastest
-  speed (2026-11-25): the Game Speed row ends there, cheats on or off. 50x and 200x wait for
-  an early research, Accelerated Scheduling (Matt, 2026-11-26, amendment #3261; placeholder
-  name and 30 science, shown once 1.2 is done beside Advanced Blueprints, a career flag bought
-  once like Programming): a game starts with ❚❚ 1x 3x 10x; a save at 50x or 200x without it
-  reloads at 10x.
+  speed (2026-11-25): the Game Speed row ends there, cheats on or off. Act 1's speeds are
+  ❚❚ 1x 3x 10x (Matt, 2026-11-26): 50x and 200x wait for Accelerated Scheduling (placeholder,
+  30 science, a career flag bought once like Programming), kept in the engine but shown
+  nowhere until Act 2 places it; a save at 50x or 200x without it reloads at 10x.
 - **Run-1 real time.** 1x stays 1 tick a second; the 25-35 real-minute target for run 1 is what
   moves ([principles.md](../principles.md)).
 - **Tuning.** Every number is open. Matt plays the UI build and decides where fine-tuning
@@ -35,7 +34,7 @@ Programs have their own part ([programs.md](programs.md)).
   timeline's end takes them, the project is offered again and re-funding brings them back.
   The Deep Space Telescope is rebuilt each timeline for a passive while completed
   (placeholder +10% science, +10% nationalist ideology growth); what it revealed (the swarm,
-  the calendar, what 1.7 opened) stays for the career, and completing it again replays no
+  the calendar, what 1.6 opened) stays for the career, and completing it again replays no
   story. *Default (084):* the science bonus multiplies Research Lab output, not Buy Science. *Defaults (046):* a
   repeatable row keeps its rates across completions; every row's `min_days` is its largest
   cost over 30 rounded up (the old flat cap's fastest finish).
@@ -49,23 +48,20 @@ Programs have their own part ([programs.md](programs.md)).
 - **No legacy numbers (2026-11-25, standing).** When things are renumbered, nothing keeps the
   old numbers: no mapping column, alias or "was" note in content, code or docs. Content ids
   may stay as they are.
-- **Act 1's main quest line (2026-11-25, numbers placeholders).** 1.1 Online (2 Solar Panels),
-  1.2 First Shipment (one launch of 20+ titanium), 1.3 Full Load (a full He-3 pad; Programming
-  goes on sale), 1.4 Science (gain 50 science, placeholder, made by Research Labs from the
-  quest's start, not bought: the point is building and running a Lab; it replaced a second
-  Data Center, which players built only to switch off, 2026-11-25), 1.5 Trade (1,500 credits from launches,
-  counted from the quest's start), 1.6 A Voice (rank 5 on any axis; Geopolitical Intelligence
-  opens as it starts), 1.7 Deep Space Telescope. Blueprints is no quest: players work it out
+- **Act 1's main quest line (2026-11-26, numbers placeholders).** 1.1 Online (2 Solar Panels),
+  1.2 First Shipment (one launch of 20+ titanium), 1.3 Full Load (a full He-3 pad; Launch
+  Full Pads opens), 1.4 Trade (1,500 credits from launches this run), 1.5 A Voice (rank 5 on
+  any axis; Geopolitical Intelligence and Programming open as it starts), 1.6 Deep Space
+  Telescope. A quest's number comes from its place in the chain, never the data. No Science
+  quest (deleted 2026-11-26): players find Research Labs useful on their own. Blueprints is no quest: players work it out
   (Basic Blueprints, 10 science, shows from 1.1 and unlocks the Excavator, Smelter, Launch Pad
   and Storage Depot; Advanced Blueprints, 20, on sale once 1.2 is done: Battery, Refinery,
   Fabricator and, from 2026-11-25, the Research Lab, no longer gated on 2 Data Centers). A new game builds only Solar Panels and Data Centers; 1.1 opens Buy Science
   (placeholder 10 credits + 1 energy → 1 science) and the research view. 1.2's start grants
   20 propellant once; pads carry Titanium only while it is active; a partial pad launches by
-  hand from its card. Launch Full Pads opens when 1.4 completes; Load Launch Pads with the
-  first pad. 1.5 never mentions speculators, who arrive on their own (playtest batch 1,
-  2026-11-25). *Defaults (095):* 1.5 counts launch pay across retirements (the career's launch
-  pay since its start); 1.6 reads this run's rank. *Default (103):* 1.4 counts this run only
-  (a retirement starts the count over).
+  hand from its card. Load Launch Pads opens with the first pad. 1.4 never mentions
+  speculators, who arrive on their own (playtest batch 1, 2026-11-25). *Default (095):* 1.5
+  reads this run's rank.
 - **Burnout and rivals leave the line (2026-11-25).** Burnout: the first time boredom bites is
   a modal story event (*default (095):* boredom's phase 2, once a career, `boredom_bites`);
   every forced retirement is a modal saying why the AI retired and that years passed, in words:
@@ -82,18 +78,21 @@ Programs have their own part ([programs.md](programs.md)).
   blueprint research ever bought in the career 20% cheaper. 1.d Three Voices:
   career-best rank 5 on each axis, across runs; ideology decays half as fast in the
   retirement gap. *Defaults (095):* 1.b counts every item bought this run, the Archive's
-  Blueprints too; 1.b hangs beside 1.4 (once a Research Lab is built), 1.c beside 1.2 (as soon as the
-  Archive is offered), 1.d follows 1.6.
-- **Staggered unlocks (2026-11-25).** The first Research Lab opens only Regolith Processing
-  (100 science, +50% excavator output), Programming and Process Telemetry. The first
+  Blueprints too; 1.b hangs beside 1.3 (once a Research Lab is built), 1.c beside 1.2 (as soon as the
+  Archive is offered), 1.d follows 1.5.
+- **Staggered unlocks (2026-11-26).** The first Research Lab opens only Regolith Processing
+  (100 science, +50% excavator output) and Liquid Cooling (100 science; opens Run
+  Simulations, 3 energy + 1 ice → 6 credits, no boredom: Earth's labs rent ice-cooled racks,
+  meant to pair with the Ice Extractor; Buy Ice is 5 credits). Process Telemetry is out of
+  Act 1: kept in the engine, shown nowhere until Act 2 places it. The first
   retirement opens Projects (and Foundation Grant), Daydreaming and the boredom research, and
   the Retirement panel. Speculators' arrival opens the Market Analysis research category and Disrupt
   Speculators (through Speculator Analysis, its research). A Voice's start opens Geopolitical
   Intelligence, its completion Overclock Protocols. *Defaults (095):* the first global projects
   (Blueprint Archive, Chemical Energy, Conditional Logic) also open at the first retirement.
   The Recreation Dome is never ungated (Matt, 2026-11-25): it needs its own Blueprints research,
-  Recreation Dome Blueprints (300 science, placeholder), shown from the first retirement; Programming shows from 1.3 or the first lab, whichever is first;
-  Propellant Synthesis shows with the propellant discovery (4 shipments) alone. The main quest
+  Recreation Dome Blueprints (300 science, placeholder), shown from the first retirement; Programming shows from
+  A Voice's start on, every later run too (Matt, 2026-11-26, question 111_1); Propellant Synthesis shows with the propellant discovery (4 shipments) alone. The main quest
   line marks only significant things: never "research this"; a beat may be an untelegraphed
   expectation. Refinery upkeep is 5 regolith + 2 energy; the excavator makes 2 regolith a day.
 - **Prose round-trip (2026-11-25).** Every player-facing string in `content/` exports to one
@@ -132,7 +131,7 @@ Programs have their own part ([programs.md](programs.md)).
   Every retirement, in any act, simulates this same gap (2026-11-24): one parameter
   (`career.gap_days`), which in Acts 2 and up also moves the swarm's countdown; no year
   counter or calendar in Act 1.
-- **The swarm's clock (2026-11-24).** The countdown starts when 1.7's Deep Space Telescope
+- **The swarm's clock (2026-11-24).** The countdown starts when 1.6's Deep Space Telescope
   completes; before that nothing counts toward the swarm, so a player who hasn't finished it
   never reaches a timeline's end. The discovery is career-long (2026-11-24, 086): from then on
   every timeline's countdown, super timelines too, runs from that timeline's first day and

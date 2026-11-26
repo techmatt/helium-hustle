@@ -58,7 +58,7 @@ Only the first major rank is built; the ranks between scale as above.
 are raised to the current ones (they start at 0, so a negative axis leaves them at 0).
 Three `timeline` (global) projects unlock on the best rank (rank 5 on an axis opens its
 project, [projects.md](projects.md)), and side quest 1.d Three Voices needs a best rank of 5
-on each axis, so separate runs can reach it ([events.md](events.md)). Quest 1.6 A Voice reads
+on each axis, so separate runs can reach it ([events.md](events.md)). Quest 1.5 A Voice reads
 this run's rank instead: 5 on any axis.
 
 **Carried scores and the gap.** A retirement keeps the run's scores in the career. Through
@@ -98,7 +98,7 @@ Geopolitical Intelligence research.
 The three axes are fixed ids in code (`content::AXES`), named by content rows:
 `content/commands.json` `fund` effects; `content/buildings.json` `ideology` (aligned
 buildings); `content/projects.json` `ideology_rank` unlocks; `content/events.json`
-`ideology_rank_any` (1.6) and `ideology_rank_each` (1.d) conditions and the `ideologies`
+`ideology_rank_any` (1.5) and `ideology_rank_each` (1.d) conditions and the `ideologies`
 panel (Political Currents event).
 The major effects are code, each at its rule's one home.
 

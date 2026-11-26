@@ -92,7 +92,7 @@ impl Saga {
 pub struct Timeline {
     /// 1-based.
     pub number: u32,
-    /// Countdown days this timeline: from the swarm's discovery (1.7) in
+    /// Countdown days this timeline: from the swarm's discovery (1.6) in
     /// timeline 1, from the first day in each later one; each retirement's
     /// gap counts too.
     pub day: u64,
@@ -515,14 +515,6 @@ pub struct RunStats {
     pub best_cargo: BTreeMap<String, Fx>,
     /// Everything produced this run, by resource (before caps).
     pub produced: BTreeMap<String, Fx>,
-    /// What each building type made this run, by building id then resource
-    /// (before caps; a `building:<id>` source in [`GameState::produce`]).
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub building_produced: BTreeMap<String, BTreeMap<String, Fx>>,
-    /// Each `building_produced` quest that became active this run: its
-    /// building's `building_produced` of its resource at that moment.
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub quest_marks: BTreeMap<String, Fx>,
 }
 
 /// The current day's flows, cleared at the start of each tick.
@@ -755,10 +747,6 @@ pub struct Career {
     /// Chain quests that have become active (their `on_start` applied once).
     #[serde(default, skip_serializing_if = "BTreeSet::is_empty")]
     pub started_quests: BTreeSet<String>,
-    /// A `trade_credits` chain quest's mark: the career's launch pay when it
-    /// first became active (events.md).
-    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
-    pub quest_marks: BTreeMap<String, Fx>,
     /// `quest:sub_objective`, latched.
     pub completed_sub_objectives: BTreeSet<String>,
     /// `timeline`-scoped projects' progress and completions (a timeline's end
@@ -915,20 +903,6 @@ impl GameState {
         *t = t.saturating_add(v);
         let s = self.run.stats.produced.entry(resource.to_string()).or_insert(Fx::ZERO);
         *s = s.saturating_add(v);
-        if let Some(building) = source.strip_prefix("building:") {
-            // No key allocation once the pair is known: this runs for every building, every tick.
-            let all = &mut self.run.stats.building_produced;
-            if !all.contains_key(building) {
-                all.insert(building.to_string(), BTreeMap::new());
-            }
-            let by = all.get_mut(building).expect("inserted");
-            match by.get_mut(resource) {
-                Some(s) => *s = s.saturating_add(v),
-                None => {
-                    by.insert(resource.to_string(), v);
-                }
-            }
-        }
         if resource == crate::modules::economy::CREDITS {
             self.run.stats.credits_earned = self.run.stats.credits_earned.saturating_add(v);
         }

@@ -230,7 +230,7 @@ pub struct QuestView {
     pub story: &'static [String],
     pub progress: Option<ProgressView>,
     pub sub_objectives: Vec<SubObjectiveView>,
-    /// The design doc's beat id (`1.6`), if it carries one.
+    /// Its number (`1.5`, from the chain), if it carries one.
     pub beat: Option<Text>,
     /// The act it belongs to (`content/acts.json`).
     pub act: Option<u32>,
