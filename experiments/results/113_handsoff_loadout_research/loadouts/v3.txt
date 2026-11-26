@@ -1,0 +1,48 @@
+seat: 1=all
+[1]
+if free processors > 0
+  assign processors 1 all
+if titanium < 6 and credits > 40
+  2x buy_titanium
+if credits > 20
+  build solar_panel
+if credits > 50
+  build excavator up to 4
+  build smelter up to 1
+if credits > 150 and titanium > 19
+  build launch_pad up to 1
+  build refinery up to 1
+if titanium > 90% and credits > 100
+  build storage_depot
+if regolith < 20% and credits > 100
+  5x buy_regolith
+set pads he3 up to 1
+if he3 > 10%
+  5x load_pads
+launch pads all
+if propellant < 20 and credits > 100
+  10x buy_propellant
+if energy > 30%
+  30x cloud_compute
+if free land < 5 and credits > 200
+  buy land
+if ice < 10 and credits > 300
+  10x buy_ice
+if credits > 250 and titanium > 19
+  build fabricator up to 1
+if circuits > 11 and credits > 225
+  build data_center up to 6
+  build research_lab up to 2
+if science < 50 and credits > 60
+  buy_science
+if science > 19
+  research basic_blueprints
+if science > 49
+  research advanced_blueprints
+  research process_telemetry
+if days since a purchase > 299
+  retire
+if science > 300
+  research dream_protocols
+if boredom > 50%
+  5x dream

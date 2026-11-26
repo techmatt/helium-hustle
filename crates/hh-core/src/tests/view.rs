@@ -172,10 +172,10 @@ fn story_lists_only_the_latest_boredom_phase() {
     // the one-off beat and phase 3, which supersedes phase 2.
     assert_eq!(v.event_texts.len(), 3);
     assert_eq!(shown(&v), ["propellant_discovery", "boredom_phase_3"]);
-    // Burnout fires with phase 2 and stands for that day; a later phase supersedes it.
+    // Burnout fires at phase 2 (Boredom Rising skips that run) and stands; a later phase
+    // supersedes it.
     let mut g = r.new_game(1);
     g.run.events.insert("boredom_bites".into(), 5);
-    g.run.events.insert("boredom_phase_2".into(), 5);
     assert_eq!(shown(&r.view(&g)), ["boredom_bites"]);
     g.run.events.insert("boredom_phase_3".into(), 9);
     assert_eq!(shown(&r.view(&g)), ["boredom_phase_3"]);

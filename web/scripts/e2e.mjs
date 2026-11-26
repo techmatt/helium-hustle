@@ -1338,7 +1338,8 @@ async function readability(grant) {
     activity: [...document.querySelectorAll('[data-testid="events-activity"] li[data-kind="event"]')].map((e) => e.textContent),
   }))()`);
   const boredom = phases.story.filter((id) => id.startsWith('boredom_phase_'));
-  check(boredom.length === 1 && boredom[0] === 'boredom_phase_3' && phases.activity.some((t) => /Boredom Rising/.test(t)) && phases.activity.some((t) => /Boredom Accelerating/.test(t)),
+  // Phase 2's notice is Burnout in the run Burnout fires in, Boredom Rising after it.
+  check(boredom.length === 1 && boredom[0] === 'boredom_phase_3' && phases.activity.some((t) => /Boredom Rising|Burnout/.test(t)) && phases.activity.some((t) => /Boredom Accelerating/.test(t)),
     `Events lists only the latest boredom phase, Recent Activity both: ${JSON.stringify(phases)}`);
   await shot('parked-story-latest-phase');
   // Read it now, so no count clears under section 4's layout comparison.

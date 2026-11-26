@@ -126,7 +126,8 @@ fn unlocks_are_staggered() {
 }
 
 /// Burnout is a story event, once a career: boredom's phase 2 fires it in the
-/// first run it is reached, never again; rivals draw no Attention in Act 1.
+/// first run it is reached, never again, and Boredom Rising (phase 2 too) skips
+/// that run, firing in later ones; rivals draw no Attention in Act 1.
 #[test]
 fn burnout_fires_once_a_career_and_rivals_wait_for_act_2() {
     let r = rules();
@@ -137,10 +138,13 @@ fn burnout_fires_once_a_career_and_rivals_wait_for_act_2() {
     assert!(g.run.events.contains_key("boredom_bites"));
     let bites = r.view(&g).event_texts.iter().find(|e| e.id == "boredom_bites").map(|e| e.story.len());
     assert_eq!(bites, Some(2), "its story pages reach the view");
+    r.advance(&mut g, 5);
+    assert!(!g.run.events.contains_key("boredom_phase_2"), "Burnout's run skips Boredom Rising");
     g.run.events.clear();
     g.run.day = phase2;
     r.advance(&mut g, 1);
     assert!(!g.run.events.contains_key("boredom_bites"), "once a career");
+    assert!(g.run.events.contains_key("boredom_phase_2"), "a later run's phase-2 notice");
     crate::modules::attention::on_land(&r, &mut g, f("1000"));
     assert_eq!(crate::modules::attention::attention(&g, "rivals"), Fx::ZERO);
     g.career.flags.insert("swarm_revealed".into());

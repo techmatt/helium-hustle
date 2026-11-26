@@ -92,6 +92,7 @@ pub fn holds(r: &Rules, g: &GameState, quest: &str, c: &Condition) -> bool {
         Condition::ProjectEnabled { project } => g.run.enabled_projects.contains(project),
         Condition::QuestActive { quest } => quest_open_or_done(g, quest),
         Condition::FlagSet { flag } => super::career::flag_set(g, flag),
+        Condition::EventNotFired { event } => !g.run.events.contains_key(event),
         // Checked before the day count rises: today counts as survived.
         Condition::DaysSurvived { days } => g.run.day + 1 >= *days,
         Condition::CreditsEarned { amount } => g.run.stats.credits_earned >= *amount,
@@ -177,6 +178,7 @@ pub fn kind(c: &Condition) -> &'static str {
         Condition::ProjectEnabled { .. } => "project_enabled",
         Condition::QuestActive { .. } => "quest_active",
         Condition::FlagSet { .. } => "flag_set",
+        Condition::EventNotFired { .. } => "event_not_fired",
         Condition::DaysSurvived { .. } => "days_survived",
         Condition::CreditsEarned { .. } => "credits_earned",
         Condition::Retirements { .. } => "retirements",

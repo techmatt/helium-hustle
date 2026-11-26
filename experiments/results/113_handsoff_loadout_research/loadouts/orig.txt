@@ -1,0 +1,62 @@
+# The hands-off player's loadout: the best known one, loaded at every reset from
+# the run after `if` opens (docs/agents.md, handsoff). Player strategy, not rules:
+# when the rules or the best loadout change, replace this file and re-pin
+# HANDSOFF_PIN (crates/hh-sim/tests/cli.rs). Form: crates/hh-sim/src/agents/loadout.rs.
+#
+# Its origin is 060's L5 (experiments/results/060_loadout_exploration/loadouts/), picked on
+# the ladder's hands-off measure; how it changed since is in git and the items' write-ups.
+#
+# Program 1 builds (and seats processors as Data Centers add them); its compute runs 100x a
+# pass, so each guarding `if` (a step) costs a few steps in a hundred. Program 2 picks its
+# pads' cargo and ships: keep its `set pads he3 up to` N at least Program 1's
+# `build launch_pad up to` N, or the extra pads (a new pad carries nothing) idle all run.
+# Program 3 buys Science (up to 50 while credits allow), researches the Blueprints (done at
+# once in a run where the Blueprint Archive project already granted them) and Process
+# Telemetry, retires a run that has bought nothing for 300 days (before the player's hand
+# backstop), researches Daydreaming (`dream_protocols`) and dreams when bored.
+seat: 1=all
+[1]
+if free processors > 0
+  assign processors 2 1
+  assign processors 3 1
+  assign processors 1 all
+if energy < 60% and credits > 20
+  build solar_panel
+if energy > 20%
+  100x cloud_compute
+if titanium > 99% or regolith > 99%
+  build storage_depot
+if free land < 5 and credits > 200
+  buy land
+if circuits > 79% and credits > 150
+  build data_center up to 6
+  build research_lab up to 2
+if ice < 30% and credits > 200
+  10x buy_ice
+if credits > 150 and energy > 70%
+  build excavator up to 2
+  build smelter up to 1
+  build refinery up to 1
+  build launch_pad up to 1
+  build fabricator up to 1
+[2]
+set pads he3 up to 1
+if he3 > 10%
+  5x load_pads
+launch pads all
+if propellant < 67% and energy > 30%
+  5x buy_propellant
+[3]
+if science < 50 and credits > 60
+  buy_science
+if science > 19
+  research basic_blueprints
+if science > 49
+  research advanced_blueprints
+  research process_telemetry
+if days since a purchase > 299
+  retire
+if science > 300
+  research dream_protocols
+if boredom > 50%
+  5x dream

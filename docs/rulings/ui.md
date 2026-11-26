@@ -85,8 +85,9 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   reward), hidden when none is open; the program; **Events**, one line per one-off event
   fired this run (title and its one-line summary, no body or Effect), newest first, a click
   reopening its popup; Recent Activity. Burnout and the boredom phases supersede each other
-  in Events: only the latest fired this run shows (the engine view's `superseded`; Burnout
-  stands for the day it fires with phase 2); Recent Activity still logs each. No
+  in Events: only the latest fired this run shows (the engine view's `superseded`); Recent
+  Activity still logs each. In the run Burnout fires in, Boredom Rising is skipped (no popup,
+  no Events line; Matt, 2026-11-26, 113): it is the phase-2 notice from later runs. No
   "Completed" section and no side-quest banner: Story is the quest archive.
 - **Popups (Matt, 2026-11-26; 112).** Every one-off event (Propellant discovery, Political
   Currents, Burnout, each boredom phase) and every main and side quest completion opens a

@@ -296,6 +296,9 @@ pub enum Condition {
     QuestActive { quest: String },
     /// The career flag is set.
     FlagSet { flag: String },
+    /// The one-off event has not fired this run (one earlier in file order
+    /// firing the same day counts: it fires first).
+    EventNotFired { event: String },
     DaysSurvived { days: u64 },
     CreditsEarned { amount: Fx },
     /// The career's retirements (forced or chosen) reach `count`.
@@ -728,6 +731,7 @@ impl Content {
                 self.project(project).is_some()
             }
             Condition::IdeologyRank { axis, .. } => AXES.contains(&axis.as_str()),
+            Condition::EventNotFired { event } => self.event(event).is_some(),
             Condition::AdversaryPresent { adversary } => {
                 crate::modules::attention::ADVERSARIES.contains(&adversary.as_str())
             }

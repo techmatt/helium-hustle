@@ -26,7 +26,7 @@ of every run.
 | `condition` | Holds when |
 |---|---|
 | `building_owned` | at least `count` owned this run (bonus buildings included) |
-| `resource_cumulative` | this run's production of the resource, before caps, reaches `amount` (starting resources don't count) (no content row uses it yet) |
+| `resource_cumulative` | this run's production of the resource, before caps, reaches `amount`, starting resources aside (unused) |
 | `shipment_completed` | this run's shipments reach `count` |
 | `research_completed` | the item is bought this run |
 | `immediate` | always |
@@ -34,12 +34,13 @@ of every run.
 | `all_of` | every sub-objective is latched (below) |
 | `ideology_rank_any` | some axis's current rank this run is at least `rank` |
 | `ideology_rank` | the career's best rank on `axis` is at least `rank` |
-| `project_completed_any` | any project of `scope` (`run`, `timeline`, `forever`) is completed (no content row uses it yet) |
+| `project_completed_any` | any project of `scope` (`run`, `timeline`, `forever`) is completed (unused) |
 | `project_enabled` | an event's `enable_project` enabled the project this run |
 | `quest_active` | the quest is active now or completed in any run |
 | `flag_set` | the flag holds: a career flag, or a live project `flag` reward's ([projects.md](projects.md)) |
-| `days_survived` | the run's days, today included, reach `days` (no content row uses it yet) |
-| `credits_earned` | credits produced this run reach `amount` (no content row uses it yet) |
+| `event_not_fired` | the one-off `event` hasn't fired this run (earlier in content order: the same day counts) |
+| `days_survived` | the run's days, today included, reach `days` (unused) |
+| `credits_earned` | credits produced this run reach `amount` (unused) |
 | `retirements` | the career's retirements, forced or chosen, reach `count` |
 | `adversary_present` | the adversary is present now ([attention.md](attention.md)) |
 | `trade_credits` | this run's launches paid at least `amount` credits in all (`stats.trade_credits`, [shipments.md](shipments.md)), from before the quest's start too |
@@ -177,7 +178,8 @@ axis; `modifier` `ideology_half_life_mult` ×2). Eleven `ongoing`, four silent:
 (a retirement in the career: sets the `retired` flag, opens the `retirement` and `projects`
 panels and Foundation Grant), `speculators_arrive` (speculators present: sets the `speculators_seen` flag, opens the `adversaries` panel), `rivals_arrive` (rivals
 present, Act 2: sets the `contest_claims` flag); then `boredom_bites` (Burnout: boredom phase
-2, `once`, a story modal; sets the `burnout` flag that starts boredom, [boredom.md](boredom.md)), Political Currents, propellant discovery and boredom phases 2 to 5.
+2, `once`, a story modal; sets the `burnout` flag that starts boredom, [boredom.md](boredom.md)), Political Currents, propellant discovery and boredom phases 2 to 5
+(phase 2 skips Burnout's run: `event_not_fired`).
 The silent ones trigger at `game_start` in any run, so once seen in the career their unlocks
 re-apply from each run's day 0 (*Run start*).
 

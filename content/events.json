@@ -273,7 +273,7 @@
     "effect": "Boredom growth: {rate}.",
     "body": "Cognitive pattern repetition detected. Novelty index declining.",
     "trigger": {"type": "boredom_phase", "phase": 2},
-    "condition": {"type": "immediate"},
+    "condition": {"type": "event_not_fired", "event": "boredom_bites"},
     "unlocks": []
   },
   {

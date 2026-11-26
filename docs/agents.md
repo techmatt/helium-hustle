@@ -58,8 +58,8 @@ a pad with No cargo, or an empty first pad on another good, carries the first go
 carry now (the view's `pad_goods`: Titanium during 1.2, then He-3 at baseline;
 `agents::pick_cargo`, each look; the golden script re-points every empty pad likewise). Until
 Launch Full Pads opens (1.3's completion), every player hand-launches a full pad or one holding a
-`launch_cargo` quest's amount (`agents::hand_launch`). The hands-off loadout's
-Program 2 opens with `set pads he3 up to 1`.
+`launch_cargo` quest's amount (`agents::hand_launch`). The hands-off loadout (one tab
+since 113) sets `set pads he3 up to 1`.
 
 A hand-played command (`hand_command`, greedy's): launch a full fueled pad; fuel a full pad;
 load when a load of its good waits; Buy Science while short of the next Blueprints on

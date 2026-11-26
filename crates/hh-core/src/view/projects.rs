@@ -166,6 +166,10 @@ pub fn condition_text(c: &Condition) -> String {
             Some(cmd) => format!("Use {} once", cmd.name),
             None => format!("Needs {flag}"),
         },
+        Condition::EventNotFired { event } => {
+            let t = content().events.iter().find(|e| &e.id == event).map_or(event.as_str(), |e| e.title.as_str());
+            format!("Not in a run where {t} happened")
+        }
         Condition::DaysSurvived { days } => format!("Last {days} days in a run"),
         Condition::CreditsEarned { amount } => format!("Earn {} credits this run", n(*amount)),
         Condition::Retirements { count } => format!("Retire {count} times"),
