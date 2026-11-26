@@ -17,7 +17,7 @@
     "requires": null,
     "effect": null,
     "visible_when": {"type": "quest_completed", "quest": "qfirst_shipment"},
-    "description": "The company's plans for the Battery, Refinery and Fabricator."
+    "description": "The company's plans for the Battery, Refinery, Fabricator and Research Lab."
   },
   {
     "id": "regolith_processing",

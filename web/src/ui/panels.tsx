@@ -178,7 +178,7 @@ export function LaunchPads({ s }: { s: Store }) {
                     : full && p.cooldown > 0
                       ? 'cooling'
                       : 'loading';
-            const label = { idle: p.unpaid ? 'idle: upkeep unpaid' : 'inactive', paused: 'Paused', nocargo: 'No cargo: pick one', ready: 'Ready', blocked: 'Full: no fuel', cooling: `Full: ready in ${p.cooldown} day${p.cooldown === 1 ? '' : 's'}`, loading: 'loading' }[state];
+            const label = { idle: p.unpaid ? 'idle: upkeep unpaid' : 'inactive', paused: 'Paused', nocargo: 'No cargo: pick one', ready: 'Ready', blocked: Number(propellant) > 0 ? 'Full: insufficient fuel' : 'Full: no fuel', cooling: `Full: ready in ${p.cooldown} day${p.cooldown === 1 ? '' : 's'}`, loading: 'loading' }[state];
             return (
             <div
               class={`card pad pad-${state}${p.active ? '' : ' idle'}${ready ? ' ready' : ''}`}

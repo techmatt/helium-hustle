@@ -63,7 +63,7 @@ fn act_1_reads_1_1_to_1_7() {
             ("1.1", "1.1 — Online"),
             ("1.2", "1.2 — First Shipment"),
             ("1.3", "1.3 — Full Load"),
-            ("1.4", "1.4 — Processors"),
+            ("1.4", "1.4 — Science"),
             ("1.5", "1.5 — Trade"),
             ("1.6", "1.6 — A Voice"),
             ("1.7", "1.7 — Deep Space Telescope"),
@@ -137,18 +137,85 @@ fn burnout_fires_once_a_career_and_rivals_wait_for_act_2() {
     assert!(crate::modules::attention::attention(&g, "rivals") > Fx::ZERO);
 }
 
+/// The Research Lab opens with Advanced Blueprints, one Data Center owned
+/// (Matt, 2026-11-25).
+#[test]
+fn the_lab_opens_with_advanced_blueprints() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    for q in ["qpower_boot_sequence", "qfirst_shipment"] {
+        g.career.completed_quests.insert(q.into());
+    }
+    g.run.enabled_panels.insert(crate::modules::research::RESEARCH_PANEL.into());
+    r.advance(&mut g, 1);
+    assert_eq!(g.owned("data_center"), 1);
+    let lab = |g: &GameState| r.view(g).buildings.iter().any(|b| b.id == "research_lab" && b.unlocked);
+    assert!(!lab(&g), "the lab waits for Advanced Blueprints");
+    set(&mut g, "science", "20");
+    r.apply(&mut g, &Action::Research { research: "advanced_blueprints".into() }).unwrap();
+    assert!(lab(&g));
+    set(&mut g, "credits", "500");
+    set(&mut g, "circuits", "10");
+    r.apply(&mut g, &buy("research_lab")).unwrap();
+    assert_eq!((g.owned("research_lab"), g.owned("data_center")), (1, 1));
+}
+
+/// 1.4 Science: 50 science made by Research Labs this run from the quest's
+/// start (Matt, message 3113: bought science doesn't count); what Labs made
+/// before it doesn't count, and a later run counts from its day 0.
+#[test]
+fn lab_science_counts_from_the_quests_start() {
+    const LAB: &str = "building:research_lab";
+    let r = rules();
+    let mut g = r.new_game(1);
+    for q in ["qpower_boot_sequence", "qfirst_shipment"] {
+        g.career.completed_quests.insert(q.into());
+    }
+    g.produce(LAB, "science", f("40"));
+    g.career.completed_quests.insert("qfull_load".into());
+    r.advance(&mut g, 1);
+    assert_eq!(r.view(&g).quest.unwrap().id, "qautomate_automation");
+    assert_eq!(g.run.stats.quest_marks.get("qautomate_automation"), Some(&f("40")));
+    g.produce("command:buy_science", "science", f("100"));
+    g.produce(LAB, "science", f("49"));
+    r.advance(&mut g, 1);
+    let q = r.view(&g).quest.unwrap();
+    assert_eq!((q.id, q.progress.map(|p| p.now)), ("qautomate_automation", Some(f("49"))), "bought science doesn't count");
+    g.produce(LAB, "science", f("1"));
+    r.advance(&mut g, 1);
+    assert!(g.career.completed_quests.contains("qautomate_automation"));
+    assert_eq!(r.view(&g).quest.unwrap().id, "qtrade");
+    // A later run (no mark) counts the whole run.
+    g.career.completed_quests.remove("qautomate_automation");
+    g.run.stats = Default::default();
+    g.produce(LAB, "science", f("50"));
+    r.advance(&mut g, 1);
+    assert!(g.career.completed_quests.contains("qautomate_automation"));
+}
+
+/// A working Research Lab's science reaches its count through the economy.
+#[test]
+fn a_working_lab_counts_toward_1_4() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    own(&mut g, "research_lab", 1);
+    set(&mut g, "circuits", "10");
+    r.advance(&mut g, 1);
+    assert_eq!(g.run.stats.building_produced["research_lab"]["science"], g.run.stats.produced["science"]);
+    assert!(g.run.stats.produced["science"] > Fx::ZERO);
+}
+
 /// 1.5 Trade counts launch pay from the quest's start, across a retirement.
 #[test]
 fn trade_counts_from_the_quests_start() {
     let r = rules();
     let mut g = r.new_game(1);
-    for q in ["qpower_boot_sequence", "qfirst_shipment", "qfull_load"] {
+    for q in ["qpower_boot_sequence", "qfirst_shipment", "qfull_load", "qautomate_automation"] {
         g.career.completed_quests.insert(q.into());
     }
     g.run.stats.trade_credits = f("1400");
-    own(&mut g, "data_center", 2);
     r.advance(&mut g, 1);
-    // 1.4 done the same day: 1.5 starts with 1,400 already paid, which doesn't count.
+    // 1.5 starts with 1,400 already paid, which doesn't count.
     assert_eq!(r.view(&g).quest.unwrap().id, "qtrade");
     assert_eq!(g.career.quest_marks.get("qtrade"), Some(&f("1400")));
     g.run.stats.trade_credits = f("2000");

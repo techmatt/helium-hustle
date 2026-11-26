@@ -1003,7 +1003,7 @@ async function pass(seed, width, theme) {
     const ORDER = [
       ['solar_panel', 2], ['excavator', 1], ['smelter', 1], ['solar_panel', 3], ['excavator', 2],
       ['storage_depot', 1], ['solar_panel', 4], ['launch_pad', 1], ['solar_panel', 5], ['refinery', 1],
-      ['excavator', 3], ['refinery', 2], ['solar_panel', 7], ['data_center', 2], ['research_lab', 1],
+      ['excavator', 3], ['refinery', 2], ['solar_panel', 7], ['fabricator', 1], ['research_lab', 1], ['data_center', 2],
     ];
     const look = () =>
       evaluate(`(() => {
@@ -1249,7 +1249,12 @@ async function pass(seed, width, theme) {
       }
     };
     await grant();
-    for (const id of ['storage_depot', 'storage_depot', 'data_center', 'data_center', 'research_lab']) {
+    // The Lab needs Advanced Blueprints (research is wiped at a retirement).
+    for (const id of ['basic_blueprints', 'advanced_blueprints']) {
+      await panel('research');
+      if (await exists(`[data-testid="research-${id}"].can-buy`)) await click(`[data-testid="research-${id}"]`, `research ${id}`);
+    }
+    for (const id of ['storage_depot', 'storage_depot', 'data_center', 'research_lab']) {
       await panel('buildings');
       if (await exists(`[data-testid="buy-${id}"].can-buy`)) await click(`[data-testid="buy-${id}"]`, `buy ${id}`);
       await grant();

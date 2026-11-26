@@ -105,7 +105,7 @@ Every number is on the content rows: costs, visibility thresholds and effect val
 `visible_when`, a `category` and a placeholder `description`. The *Blueprints* category comes
 first: Basic Blueprints (10 science, always visible; no quest asks for it) unlocks the Regolith
 Excavator, Smelter, Launch Pad and Storage Depot, and Advanced Blueprints (20, visible once
-quest 1.2 First Shipment is completed) the Battery, Refinery and Fabricator, through those
+quest 1.2 First Shipment is completed) the Battery, Refinery, Fabricator and Research Lab, through those
 buildings' `requires` ([economy.md](economy.md)). The rest open in stages
 ([events.md](events.md)):
 

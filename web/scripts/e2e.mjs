@@ -351,7 +351,7 @@ async function playOpening() {
     await sleep(60);
   }
   check(pausedAll, 'every story modal held the clock (paused, no day passed)');
-  check(!fullPads, 'Launch Full Pads stays hidden through the opening (it opens when 1.4 Processors completes)');
+  check(!fullPads, 'Launch Full Pads stays hidden through the opening (it opens when 1.4 Science completes)');
   return reached;
 }
 

@@ -25,6 +25,7 @@ of every run.
 |---|---|
 | `building_owned` | at least `count` owned this run (bonus buildings included) |
 | `resource_cumulative` | this run's production of the resource, before caps, reaches `amount` (starting resources don't count) (no content row uses it yet) |
+| `building_produced` | what the `building` type made of `resource` this run (before caps), counted from the quest's start (its mark, *Quest start*; the whole run in a later run). 1.4: 50 science by Research Labs |
 | `shipment_completed` | this run's shipments reach `count` |
 | `research_completed` | the item is bought this run |
 | `immediate` | always |
@@ -62,13 +63,14 @@ the chain starts there is always one. Each check:
 3. The chain stops at the first active quest whose condition doesn't hold.
 
 Quests complete once per career. Their conditions read this run, so progress that isn't
-latched (cumulative He-3, shipments, Data Centers) starts over after a retirement.
+latched (cumulative He-3, shipments, science made) starts over after a retirement.
 
 **Quest start.** The first time a chain quest becomes active in the career (as the check
 reaches it), its `on_start` grants are added to the run's stock, once: a retirement doesn't
 repeat them (career `started_quests`). 1.2 First Shipment's 20 Propellant is the one. A quest
 whose condition is `trade_credits` also records the career's launch pay then, its mark (career
-`quest_marks`).
+`quest_marks`); a `building_produced` one, its building's output so far this run (`stats.quest_marks`; a
+later run has none and counts from day 0).
 While a chain quest naming `pad_goods` is active, a pad may be set only to those goods (1.2:
 Titanium; [shipments.md](shipments.md)).
 

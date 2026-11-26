@@ -270,7 +270,7 @@ pub fn pick_cargo(p: &mut Player) {
     }
 }
 
-/// Before Launch Full Pads opens (1.4 Processors), a player launches pads by
+/// Before Launch Full Pads opens (1.4 Science), a player launches pads by
 /// hand from their cards: a full one, or one carrying what the active
 /// `launch_cargo` quest asks for (1.2's 20 titanium). Player strategy.
 pub fn hand_launch(p: &mut Player) {

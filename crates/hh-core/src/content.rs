@@ -274,6 +274,10 @@ pub enum Condition {
     BuildingOwned { building: String, count: u32 },
     /// Produced this run (before caps).
     ResourceCumulative { resource: String, amount: Fx },
+    /// Made by the building type this run since the quest became active
+    /// (before caps): the whole run when it became active in an earlier run
+    /// (`RunStats::quest_marks`).
+    BuildingProduced { building: String, resource: String, amount: Fx },
     /// Shipments this run.
     ShipmentCompleted { count: u32 },
     ResearchCompleted { research: String },
@@ -659,6 +663,9 @@ impl Content {
         match c {
             Condition::BuildingOwned { building, .. } => self.building(building).is_some(),
             Condition::ResourceCumulative { resource, .. } => self.resource(resource).is_some(),
+            Condition::BuildingProduced { building, resource, .. } => {
+                self.building(building).is_some() && self.resource(resource).is_some()
+            }
             Condition::ResearchCompleted { research } => self.research_item(research).is_some(),
             Condition::AllOf { sub_objectives } => sub_objectives.iter().all(|s| self.condition_ok(&s.condition)),
             Condition::ShipmentCompleted { .. }

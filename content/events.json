@@ -54,7 +54,7 @@
       "Titanium proved the route; Helium-3 is why the claim exists. A Refinery pulls it out of regolith a little at a time. Set a pad to Helium-3 and fill it to the top before it flies: the company wants a full load."
     ],
     "payoff": [
-      "A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and approves more processors for you. It also puts Programming on the research market."
+      "A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and wants the claim doing its own science next. It also puts Programming on the research market."
     ],
     "picture": "refinery",
     "trigger": {"type": "quest_complete", "quest": "qfirst_shipment"},
@@ -66,18 +66,18 @@
     "category": "story",
     "beat": "1.4",
     "silent": false,
-    "title": "1.4 — Processors",
-    "summary": "Build a second Data Center.",
-    "body": "Shipment revenue received. The company adds processors so the AI can run its own commands. Write programs; save them as loadouts, which every reset keeps.",
+    "title": "1.4 — Science",
+    "summary": "Make 50 science in Research Labs.",
+    "body": "Shipment revenue received. Science bought from Earth comes dear; a Research Lab makes it here, from circuits. Make 50 science in your Labs, counted from now.",
     "story": [
-      "Every order so far has come from you, one at a time. A second Data Center gives you room to hand the routine to programs that run on your processors: loading, launching, selling compute while you think about something else. Programs saved as loadouts survive anything the company does to you."
+      "Every point of science so far was rented from Earth, ten credits at a time. The company wants the claim to study for itself: a Research Lab turns circuits into science on site, day after day, with nobody to pay. Make 50 science in your own Labs, and the base becomes a research post as well as a mine."
     ],
     "payoff": [
-      "The second rack hums. Programs can run the base's routine without you now, and Launch Full Pads joins the commands: it sends every full pad at once."
+      "The lab's first findings go out with the cargo. The claim studies itself now, and Launch Full Pads joins the commands: it sends every full pad at once."
     ],
-    "picture": "tworacks",
+    "picture": "inside",
     "trigger": {"type": "quest_complete", "quest": "qfull_load"},
-    "condition": {"type": "building_owned", "building": "data_center", "count": 2},
+    "condition": {"type": "building_produced", "building": "research_lab", "resource": "science", "amount": "50"},
     "unlocks": []
   },
   {

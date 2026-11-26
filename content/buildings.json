@@ -148,7 +148,7 @@
     "name": "Research Lab",
     "category": "science",
     "ideology": "rationalist",
-    "requires": {"type": "building", "building": "data_center", "count": 2},
+    "requires": {"type": "research", "research": "advanced_blueprints"},
     "land": 2,
     "cost_scaling": "1.5",
     "max_count": null,

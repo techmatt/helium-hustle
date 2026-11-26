@@ -145,8 +145,8 @@ A refused action changes nothing.
 the building has a mechanic its stat lines don't show (now the Arbitrage Engine and the
 Microwave Receiver). A run opens with only the Solar Panel and Data Center buildable: the
 Regolith Excavator, Smelter, Launch Pad and Storage Depot require research Basic Blueprints,
-and the Battery, Refinery and Fabricator Advanced Blueprints ([research.md](research.md);
-quest 1.2 First Shipment needs the first, and its completion shows the second). The Research Lab requires 2 Data Centers. The Recreation
+and the Battery, Refinery, Fabricator and Research Lab Advanced Blueprints ([research.md](research.md);
+quest 1.2 First Shipment needs the first, and its completion shows the second). The Recreation
 Dome requires nothing but its event: the silent `first_retirement` event enables it from the
 first retirement ([events.md](events.md)). The Regolith Excavator makes 2 regolith a day
 (`excavator_output_mult`, 1.5 with research Regolith Processing). The Refinery's upkeep is

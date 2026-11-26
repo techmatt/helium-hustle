@@ -46,18 +46,21 @@ Programs have their own part ([programs.md](programs.md)).
   may stay as they are.
 - **Act 1's main quest line (2026-11-25, numbers placeholders).** 1.1 Online (2 Solar Panels),
   1.2 First Shipment (one launch of 20+ titanium), 1.3 Full Load (a full He-3 pad; Programming
-  goes on sale), 1.4 Processors (2 Data Centers), 1.5 Trade (1,500 credits from launches,
+  goes on sale), 1.4 Science (gain 50 science, placeholder, made by Research Labs from the
+  quest's start, not bought: the point is building and running a Lab; it replaced a second
+  Data Center, which players built only to switch off, 2026-11-25), 1.5 Trade (1,500 credits from launches,
   counted from the quest's start), 1.6 A Voice (rank 5 on any axis; Geopolitical Intelligence
   opens as it starts), 1.7 Deep Space Telescope. Blueprints is no quest: players work it out
   (Basic Blueprints, 10 science, shows from 1.1 and unlocks the Excavator, Smelter, Launch Pad
   and Storage Depot; Advanced Blueprints, 20, on sale once 1.2 is done: Battery, Refinery,
-  Fabricator). A new game builds only Solar Panels and Data Centers; 1.1 opens Buy Science
+  Fabricator and, from 2026-11-25, the Research Lab, no longer gated on 2 Data Centers). A new game builds only Solar Panels and Data Centers; 1.1 opens Buy Science
   (placeholder 10 credits + 1 energy → 1 science) and the research view. 1.2's start grants
   20 propellant once; pads carry Titanium only while it is active; a partial pad launches by
   hand from its card. Launch Full Pads opens when 1.4 completes; Load Launch Pads with the
   first pad. 1.5 never mentions speculators, who arrive on their own (playtest batch 1,
   2026-11-25). *Defaults (095):* 1.5 counts launch pay across retirements (the career's launch
-  pay since its start); 1.6 reads this run's rank.
+  pay since its start); 1.6 reads this run's rank. *Default (103):* 1.4 counts this run only
+  (a retirement starts the count over).
 - **Burnout and rivals leave the line (2026-11-25).** Burnout: the first time boredom bites is
   a modal story event (*default (095):* boredom's phase 2, once a career, `boredom_bites`);
   every forced retirement is a modal saying why the AI retired and that years passed, in words:

@@ -33,7 +33,7 @@ credits, a building count) is not seen.
 |---|---|---|---|---|
 | M1 | First Light: self-sustaining energy | 2 Solar Panels owned (quest 1.1 Online) | capability | run 1, day 0–350 |
 | M2 | First Shipment: full pipeline working | first shipment launched | event | run 1, day 250–700 |
-| M3 | Program Awakening: first meaningful automation | 2 Data Centers owned: a second processor (quest 1.4 Processors) | capability | runs 1–2 |
+| M3 | Program Awakening: first meaningful automation | 2 Data Centers owned: a second processor (no quest asks for it) | capability | runs 1–2 |
 | M4 | First Retirement | first retirement, forced or chosen | event | end of run 1 (its day: run 1's length bands, below) |
 | M5 | Positive Credit Flow | credits earned in the run over the last 100 days ≥ 25 a day | rate | runs 2–4 |
 | M6 | Speed Becomes Useful: automation + speed synergy | 3 Data Centers owned and credits earned ≥ 100 a day over 100 days | capability + rate | runs 3–5 |
@@ -50,7 +50,7 @@ credits, a building count) is not seen.
 
 - **M1** reads "self-sustaining" as quest 1.1 Online's two panels, not an energy-rate
   threshold: at two panels a run's energy runs positive with the opening buildings.
-- **M3** reads "meaningful automation" as the second processor (quest 1.4 Processors), not as a
+- **M3** reads "meaningful automation" as the second processor, not as a
   program of a given shape: a program is the agent's choice, a processor is the game's.
 - **M5** and **M6**'s thresholds (25 and 100 credits a day over 100 days) are guesses at
   "positive" and "useful": one Cloud Compute processor earns 5 a day, so 25 needs shipping or

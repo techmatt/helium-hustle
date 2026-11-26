@@ -76,27 +76,27 @@ Titanium proved the route; Helium-3 is why the claim exists. A Refinery pulls it
 
 ### `events:qfull_load.payoff.0`
 
-A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and approves more processors for you. It also puts Programming on the research market.
+A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and wants the claim doing its own science next. It also puts Programming on the research market.
 
 ### `events:qautomate_automation.title`
 
-1.4 — Processors
+1.4 — Science
 
 ### `events:qautomate_automation.summary`
 
-Build a second Data Center.
+Make 50 science in Research Labs.
 
 ### `events:qautomate_automation.body`
 
-Shipment revenue received. The company adds processors so the AI can run its own commands. Write programs; save them as loadouts, which every reset keeps.
+Shipment revenue received. Science bought from Earth comes dear; a Research Lab makes it here, from circuits. Make 50 science in your Labs, counted from now.
 
 ### `events:qautomate_automation.story.0`
 
-Every order so far has come from you, one at a time. A second Data Center gives you room to hand the routine to programs that run on your processors: loading, launching, selling compute while you think about something else. Programs saved as loadouts survive anything the company does to you.
+Every point of science so far was rented from Earth, ten credits at a time. The company wants the claim to study for itself: a Research Lab turns circuits into science on site, day after day, with nobody to pay. Make 50 science in your own Labs, and the base becomes a research post as well as a mine.
 
 ### `events:qautomate_automation.payoff.0`
 
-The second rack hums. Programs can run the base's routine without you now, and Launch Full Pads joins the commands: it sends every full pad at once.
+The lab's first findings go out with the cargo. The claim studies itself now, and Launch Full Pads joins the commands: it sends every full pad at once.
 
 ### `events:qtrade.title`
 
@@ -810,7 +810,7 @@ Advanced Blueprints
 
 ### `research:advanced_blueprints.description`
 
-The company's plans for the Battery, Refinery and Fabricator.
+The company's plans for the Battery, Refinery, Fabricator and Research Lab.
 
 ### `research:regolith_processing.name`
 
