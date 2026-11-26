@@ -5,10 +5,11 @@ import { Fragment, type ComponentChildren } from 'preact';
 import { SPEEDS } from '../clock';
 import { capitalize, num, perDay } from '../format';
 import { navHasNews, seen, setSpeed, type Store } from '../store';
-import { useEffect, useState } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import { Breakdown, RateCell, Section, isCapped, navShown, risingIsBad } from './common';
 import { QuestPicture, questPicture } from './art';
 import { Chip, Horizon, NavIcon } from './icons';
+import { navSlots } from './navSlots';
 import { CalendarStrip } from './Saga';
 import { TakeoverButtons, type Takeover } from './Takeover';
 
@@ -43,10 +44,18 @@ export function Left({
   toggleTakeover: (id: string) => void;
 }) {
   const v = s.view;
-  const tiles = v.nav.filter((t) => t.visible);
-  // Past nine tiles they turn compact (icon beside the name), so a late career's column
-  // still fits a 1280 px window without scrolling.
-  const compact = tiles.length > 9;
+  // One layout all game (109): two columns, a cell per tile in content order, a hidden one's
+  // cell held empty, so a panel that opens fills its own cell and nothing else moves.
+  const slots = navSlots(v.nav);
+  // A tile that turns visible while the column is up (an unlock, a later run reopening a
+  // per-run panel) fades in; the tiles shown when it first draws don't. `fading` keeps the
+  // class until the tile hides again, so a later render never cuts the fade short.
+  const lastShown = useRef<Set<string> | null>(null);
+  const fading = useRef(new Set<string>());
+  const shown = new Set(v.nav.filter((t) => t.visible).map((t) => t.id));
+  if (lastShown.current !== null) for (const id of shown) if (!lastShown.current.has(id)) fading.current.add(id);
+  for (const id of fading.current) if (!shown.has(id)) fading.current.delete(id);
+  lastShown.current = shown;
   const padReady = v.pads.some((p) => p.ready && !p.paused);
   // A working pad with No cargo loads nothing until the player picks one.
   const padNoCargo = v.pads.some((p) => p.active && p.good === null);
@@ -64,25 +73,29 @@ export function Left({
         <span class="lt-a">Helium</span> <span class="lt-b">Hustle</span>
       </h1>
       <CalendarStrip v={v} />
-      <nav class={`nav-grid${compact ? ' compact' : ''}`} aria-label="Panels">
-        {tiles.map((t) => (
+      <nav class="nav-grid" aria-label="Panels">
+        {slots.map((t, i) =>
+          t === null ? (
+            <span key={`slot:${v.nav[i].id}`} class="nav-slot" aria-hidden="true" />
+          ) : (
           <button
             type="button"
             key={t.id}
-            class={`nav-tile${panel === t.id ? ' active' : ''}`}
+            class={`nav-tile${panel === t.id ? ' active' : ''}${fading.current.has(t.id) ? ' fresh' : ''}`}
             data-nav={t.id}
             onClick={() => {
               seen(`nav:${t.id}`);
               open(t.id);
             }}
           >
-            <NavIcon id={t.id} compact={compact} />
+            <NavIcon id={t.id} />
             <span>{t.name}</span>
             {navHasNews(t.id) && <span class="dot" title="Something new" />}
             {t.id === 'launch_pads' && padReady && <span class="dot dot-ready" data-testid="pads-ready" title="A pad is ready to launch" />}
             {t.id === 'launch_pads' && padNoCargo && <span class="dot dot-cargo" data-testid="pads-no-cargo" title="A pad has No cargo: pick one" />}
           </button>
-        ))}
+          ),
+        )}
       </nav>
       <TakeoverButtons s={s} list={takeovers} open={takeover} toggle={toggleTakeover} />
       <div class="speed">

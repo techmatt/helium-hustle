@@ -41,13 +41,13 @@ npm run preview                              # serve web/dist/
 Three columns and a status bar:
 
 - **Left:** the title, the calendar strip once the swarm is revealed, the nav grid (tiles from `content/nav.json`; a dot marks a tile new
-  this run or whose panel holds something new; past nine tiles they go compact, icon beside
-  name; a green dot on Launch Pads while a pad is ready), the speed buttons, Resources
+  this run or whose panel holds something new; two columns of icon and name all game, an
+  unopened tile's cell blank (`navSlots.ts`); a green dot on Launch Pads while a pad is ready), the speed buttons, Resources
   (Energy, Credits, Land, Boredom, Processors, then a second group of the rest; amount /
   cap, the engine's rate per day; at its cap the surplus thrown away, muted (Energy's
   green): "+9 CAP"; short of demand, red: "−7 SHORT"; a click on a row opens
   its breakdown in place: last day's sources and sinks, who went short), each ideology
-  axis's rank once Ideologies is unlocked (folded at first in a window under 800 px high),
+  axis's rank once Ideologies is unlocked (folded at first in a window under 800 px),
   and at the foot the active main quest's picture, else the lunar horizon.
 - **Middle:** a starry sky, a completed side quest's text and picture (the story banner),
   then the active panel. Buildings: the Land bar (green and click-to-buy like a card

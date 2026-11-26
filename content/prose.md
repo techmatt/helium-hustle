@@ -1468,29 +1468,37 @@ Buildings
 
 Commands
 
-### `nav:programs.name`
+### `nav:research.name`
 
-Programs
+Research
 
 ### `nav:launch_pads.name`
 
 Launch Pads
 
-### `nav:research.name`
+### `nav:programs.name`
 
-Research
+Programs
 
-### `nav:projects.name`
+### `nav:adversaries.name`
 
-Projects
+Adversaries
 
 ### `nav:ideologies.name`
 
 Ideologies
 
-### `nav:adversaries.name`
+### `nav:retirement.name`
 
-Adversaries
+Retirement
+
+### `nav:projects.name`
+
+Projects
+
+### `nav:timeline.name`
+
+Timeline
 
 ### `nav:stats.name`
 
@@ -1504,9 +1512,9 @@ Story
 
 Achievements
 
-### `nav:timeline.name`
+### `nav:options.name`
 
-Timeline
+Options
 
 ### `nav:earth_lab.name`
 
@@ -1523,14 +1531,6 @@ Vault
 ### `nav:dyson.name`
 
 Dyson
-
-### `nav:retirement.name`
-
-Retirement
-
-### `nav:options.name`
-
-Options
 
 ## Messages (the run summary)
 

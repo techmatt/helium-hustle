@@ -119,15 +119,14 @@ export function ScopeIcon({ keep }: { keep: Keep }) {
 
 /** Painted tiles (`<id>.webp`); a placeholder `<id>.svg` stands in until one is painted. */
 const NAV_NORMAL = {
-  ...byName(import.meta.glob<string>(['../assets/nav/*.svg', '!../assets/nav/*-compact.svg'], { eager: true, query: '?url', import: 'default' }), '.svg'),
+  ...byName(import.meta.glob<string>('../assets/nav/*.svg', { eager: true, query: '?url', import: 'default' }), '.svg'),
   ...byName(import.meta.glob<string>('../assets/nav/*.webp', { eager: true, query: '?url', import: 'default' }), '.webp'),
 };
-const NAV_COMPACT = byName(import.meta.glob<string>('../assets/nav/*-compact.svg', { eager: true, query: '?url', import: 'default' }), '-compact.svg');
 
-/** A nav tile's icon: the painted one at normal size, the compact chip at 18 px. */
-export function NavIcon({ id, compact }: { id: string; compact: boolean }) {
-  const src = (compact ? NAV_COMPACT : NAV_NORMAL)[id];
-  const size = compact ? 18 : 34;
+/** A nav tile's icon, beside its name: the painted one at 24 px. */
+export function NavIcon({ id }: { id: string }) {
+  const src = NAV_NORMAL[id];
+  const size = 24;
   return src ? <img class="nav-icon" src={src} alt="" width={size} height={size} draggable={false} /> : <span class="nav-icon" style={{ width: size, height: size }} />;
 }
 

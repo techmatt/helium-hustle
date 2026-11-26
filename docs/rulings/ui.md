@@ -43,6 +43,16 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   start (green better, red worse; lower boredom growth is better), rounded to the row's
   precision (credits whole, multipliers 2 places): a change that rounds to zero shows nothing. A panel a purchase opens
   (Geopolitical Intelligence's Ideologies) shows at once, paused too.
+- **Nav: one layout (Matt, 2026-11-25; 109).** The top-left nav never switches layout: two
+  columns of tiles, each a medium icon (24 px) beside its label, in fixed-height rows; Act 1's
+  full set fits about the old 3×3 large grid's height. Tiles keep `content/nav.json`'s fixed
+  order and a panel appears in place, with a short fade and the unread dot, so no tile resizes or
+  moves. Utility tiles (Stats, Story, Achievements, Options) stay in the grid. *Defaults (109):*
+  a tile not open yet holds its cell blank (no outline, no name) up to the last tile shown, so
+  Act 1's 14 cells, seven rows, are there from a new game on; the gated panels come first in
+  their usual unlock order, the utility tiles fill the last two Act 1 rows, and the later
+  acts' panels (Earth Lab, Meta-Controller, Vault, Dyson) add rows below them; painted icons,
+  no chip glyphs.
 - **Quest mechanics text (Matt, 2026-11-25; locked).** Mechanics never live in narrative
   text. A quest's `body`, `story` and `payoff` (and a one-off event's `summary`, `body` and
   `story`, amendment #3171) are narrative only: no instructions, no numbers. Goals, rewards,
@@ -71,8 +81,8 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   one only for a kind already in the feed. *Default (096):* remembered per browser
   (`localStorage`), not in the save.
 - **Icons (025-027).** One icon module, `web/src/ui/icons.tsx`, over
-  `web/src/assets/{chips,nav,horizon}/`, so a new style swaps files only. Painterly nav icons at
-  normal size (compact tiles use chips or glyphs); the earthlight horizon; chip icons (color
+  `web/src/assets/{chips,nav,horizon}/`, so a new style swaps files only. Painterly nav icons
+  (24 px beside the label, one nav layout above); the earthlight horizon; chip icons (color
   square, knocked-out glyph, name as tooltip) for every resource, ideology axis and rival,
   everywhere they appear. Rival colors are fixed (`icons.tsx`).
 - **Scope icons (2026-11-25).** A small corner icon on any card whose effect survives a

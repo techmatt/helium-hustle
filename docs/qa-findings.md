@@ -21,9 +21,9 @@ before 090). A new fixed row continues the table below, and a later prune folds 
   content texts and rules pages rewritten to what the game does (no play change); Open Horizons says "in
   one run"; 1-based program numbers in errors.
 - **Layout and overflow** (#16, 19, 24, 27, 28, 30, 33, 34, 38, 39, 57, 73, 75): tooltips on cut
-  names; one value column; the left column fits at 1280 (horizon shrinks, compact nav past nine
-  tiles); the right column keeps the scrollbar's room and is 30 px wider; bundled 600 bold;
-  dots on compact tile corners; note rows and unread edges keep their room.
+  names; one value column; the left column fits at 1280 (horizon shrinks, a two-column icon-and-name
+  nav, 109); the right column keeps the scrollbar's room and is 30 px wider; bundled 600 bold;
+  dots on nav tile corners; note rows and unread edges keep their room.
 - **Input and clock** (#2, 4, 5, 8, 26, 31, 37, 61, 63): a confirm belongs to its run; key
   repeat and modifiers ignored; `setSpeed` settles first; a jump's compute time is forgotten;
   cards don't take focus, ignore clicks 0.5 s after Continue or OK, and are the research button;

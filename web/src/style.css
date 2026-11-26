@@ -270,6 +270,9 @@ ul.plain {
 }
 .col-left {
   overflow-x: hidden;
+  /* The scrollbar's room is kept even when nothing scrolls, so the column turning
+     scrollable (a late run's resources) narrows no nav tile (109). */
+  scrollbar-gutter: stable;
   background: var(--panel);
   border-right: 1px solid var(--line);
   padding: 10px 8px 0;
@@ -700,37 +703,36 @@ ul.plain {
   background: linear-gradient(90deg, transparent, var(--accent) 30% 70%, transparent);
   box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 70%, transparent);
 }
+/* One layout all game (109, Left.tsx): two columns of fixed-height rows, a medium icon
+   beside each name; a hidden tile's cell (.nav-slot) stays empty, so Act 1's 14 cells (seven
+   rows, about the old 3x3 grid's height) are there from a new game on and nothing moves. */
 .nav-grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: 30px;
   gap: 4px;
 }
-/* The longest name ("Adversaries", ~69 px) fits a tile's text box at 1280 px even with
-   the column's scrollbar showing (a 768 px high window): narrow side padding and gaps. */
 .nav-tile {
   min-width: 0;
   font-size: 13px;
-  overflow-wrap: anywhere;
+  line-height: 1.1;
   position: relative;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  padding: 8px 1px;
-}
-/* Past nine tiles (Left.tsx): compact, icon beside the name, as many columns of at least
-   124 px as fit (two in the 270 px column at 1280 px, even beside its scrollbar, and at
-   1920): "Achievements", one word, ran past a 110 px tile's edge in three columns. */
-.nav-grid.compact {
-  grid-template-columns: repeat(auto-fill, minmax(124px, 1fr));
-}
-.nav-grid.compact .nav-tile {
   flex-direction: row;
+  align-items: center;
   justify-content: flex-start;
-  gap: 6px;
-  padding: 4px 6px;
-  overflow-wrap: normal;
+  gap: 5px;
+  padding: 0 5px;
   text-align: left;
+}
+/* A tile that opens while the game is on fades in (the unread dot marks it too). */
+.nav-tile.fresh {
+  animation: nav-in 0.5s ease-out;
+}
+@keyframes nav-in {
+  from {
+    opacity: 0;
+  }
 }
 /* Every tile state names its own text color: normal, hover, selected, selected + hover. */
 .nav-tile.active,
@@ -742,10 +744,13 @@ ul.plain {
 .nav-tile.active:hover:not(:disabled) {
   background: var(--sel-hover);
 }
+/* A tile's name can run to its right edge: its dots sit on the tile's corners as badges, the
+   new dot top right, the ready dot bottom right and the No-cargo dot bottom left. */
 .nav-tile .dot {
   position: absolute;
-  top: 5px;
-  right: 5px;
+  top: -4px;
+  right: -4px;
+  box-shadow: 0 0 0 2px var(--panel);
   width: 9px;
   height: 9px;
   border-radius: 50%;
@@ -1399,6 +1404,9 @@ tr.is-new td:first-child {
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .nav-tile.fresh {
+    animation: none;
+  }
   .beat-node.is-active .beat-dot::after {
     animation: none;
     opacity: 0.6;
@@ -2038,33 +2046,18 @@ button.go:hover:not(:disabled) {
   color: var(--text);
   font-weight: 600;
 }
-/* Beside the "new" dot, clear of the icon in both tile layouts. */
+/* The ready dot bottom right, the No-cargo dot bottom left (corner badges: .nav-tile .dot). */
 .nav-tile .dot.dot-ready {
-  right: 17px;
-  background: var(--pos);
-}
-/* A pad with No cargo: left of the ready dot. */
-.nav-tile .dot.dot-cargo {
-  right: 29px;
-  background: var(--neg);
-}
-/* A compact tile's name can run to its right edge: its dots sit on the tile's corners as
-   badges, the new dot top right, the ready dot bottom right and the No-cargo dot bottom
-   left, clear of the name. */
-.nav-grid.compact .nav-tile .dot {
-  top: -4px;
-  right: -4px;
-  box-shadow: 0 0 0 2px var(--panel);
-}
-.nav-grid.compact .nav-tile .dot.dot-ready {
   top: auto;
   bottom: -4px;
+  background: var(--pos);
 }
-.nav-grid.compact .nav-tile .dot.dot-cargo {
+.nav-tile .dot.dot-cargo {
   top: auto;
   right: auto;
   bottom: -4px;
   left: -4px;
+  background: var(--neg);
 }
 /* An affordable building's name row is tinted (every card's head has the same box, so a
    card turning affordable moves nothing). */
