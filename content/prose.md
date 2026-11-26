@@ -940,7 +940,7 @@ Blueprint Archive
 
 ### `projects:blueprint_archive.description`
 
-DRAFT. Archive the company's blueprints beyond a retirement's reach, for the rest of the timeline (completes 1.c Blueprints for Everyone).
+DRAFT. Archive the company's blueprints beyond a retirement's reach, kept across retirements (completes 1.c Blueprints for Everyone).
 
 ### `projects:foundation_grant.name`
 
@@ -1036,7 +1036,7 @@ Conditional Logic
 
 ### `projects:conditional_logic.description`
 
-DRAFT. A global project: teach programs to branch. Opens if for the rest of the timeline.
+DRAFT. A global project: teach programs to branch. Opens if, kept across retirements.
 
 ### `projects:conditional_logic.rewards.0.text`
 
@@ -1048,7 +1048,7 @@ Deep Space Telescope
 
 ### `projects:deep_space_telescope.description`
 
-DRAFT. A global project built across several runs: a telescope that looks past the inner system. Rebuilt each timeline for its passive; what it revealed stays known.
+DRAFT. A global project built across several runs: a telescope that looks past the inner system. What it reveals stays known.
 
 ### `projects:dyson_sphere.name`
 

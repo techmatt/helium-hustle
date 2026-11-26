@@ -131,7 +131,8 @@ quest exists (`quest.more`), and `side_quests`: each side quest started (its tri
 happened) or completed, with the chain quest it branches off (`parent`, its trigger's quest, or a `flag` trigger's
 `beside`) and its progress (a side quest's trigger must be a chain quest's completion or a
 `flag` beside one: a load error otherwise). The Story panel draws the finished beats, the active one and a "???" from
-these; a finished beat's click replays its modals.
+these, each finished card one line (its first sentence and "…"); a finished beat's click
+replays its modals, a finished side quest's opens its text in place.
 
 **Activity feed** (display: no rule reads it). The run keeps a feed of what happened, by
 day: each completed quest, earned achievement, completed project and bought research (the

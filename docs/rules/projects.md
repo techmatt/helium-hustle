@@ -79,7 +79,9 @@ are gated so; their projects' rewards lists are empty.
 
 **What the player sees.** Each project's view carries its unlock and its rewards as text,
 written by the engine from the row (a gated building shows as "Opens ..."); the Projects
-panel shows locked projects greyed with that condition. A funded one shows its days to
+panel shows only projects that can be funded now (no locked or finished one-off cards,
+docs/rulings/ui.md), and names no timeline before the swarm's reveal (its global section
+reads "Global" until then). A funded one shows its days to
 done: the most, over its costs still owed, of owed / rate rounded up (stock aside), none
 while an owed cost has no rate. The Stats panel lists every live project reward.
 

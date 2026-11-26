@@ -299,6 +299,19 @@ pub struct AdversaryView {
     pub attention: Fx,
     pub threshold: Fx,
     pub present: bool,
+    /// It has arrived at some point in the career: present now, or an event
+    /// waiting on its presence has happened (display only: the UI hides what
+    /// hasn't come yet).
+    pub seen: bool,
+}
+
+/// Present now, or a seen event's condition was its presence.
+fn adversary_seen(r: &Rules, g: &GameState, id: &str) -> bool {
+    crate::modules::attention::present(r, g, id)
+        || content().events.iter().any(|e| {
+            matches!(&e.condition, Condition::AdversaryPresent { adversary } if adversary == id)
+                && (g.career.seen_events.contains(&e.id) || g.career.completed_quests.contains(&e.id))
+        })
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -904,6 +917,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
                 attention: crate::modules::attention::attention(g, id),
                 threshold: crate::modules::attention::threshold_of(r, id),
                 present: crate::modules::attention::present(r, g, id),
+                seen: adversary_seen(r, g, id),
             })
             .collect(),
         // Only those the next day still applies: one whose last day has passed lingers in

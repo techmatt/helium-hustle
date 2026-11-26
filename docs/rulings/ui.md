@@ -22,7 +22,18 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   panel's Speculators section wait for speculators' first arrival in the run (093 default:
   per run), the Adversaries panel, Speculator Analysis and the Arbitrage Engine for their first
   arrival in the career, and side quest 1.a, which names them, starts then too (once 1.5 is
-  reached).
+  reached). The Adversaries panel's Rival AIs section and Attention row wait for the rivals'
+  first arrival in the career (096 default: the view's `seen`, present now or their arrival
+  event seen). Projects shows only projects that can be funded now: no locked cards, and
+  (096 default) no finished one-off ones. No player-facing text names timelines before the
+  swarm's reveal (1.11): the global projects' section reads "Global" until then.
+- **Story cards (2026-11-25).** Each finished quest card in Story shows one line, its first
+  sentence with "…"; a click shows the whole text (a main beat replays its modals, a side
+  quest opens in place). The current quest's highlight never covers the spine.
+- **Recent Activity filter (2026-11-25).** Checkboxes under the list show or hide each kind
+  of line (shipments, quests, story, research, projects, achievements, adversaries, other),
+  one only for a kind already in the feed. *Default (096):* remembered per browser
+  (`localStorage`), not in the save.
 - **Icons (025-027).** One icon module, `web/src/ui/icons.tsx`, over
   `web/src/assets/{chips,nav,horizon}/`, so a new style swaps files only. Painterly nav icons at
   normal size (compact tiles use chips or glyphs); the earthlight horizon; chip icons (color

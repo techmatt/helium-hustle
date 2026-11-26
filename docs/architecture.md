@@ -156,7 +156,7 @@ ready: full and can launch) and the goods a pad may be set to now (`pad_goods`),
 once Market Awareness is researched, else a tier), research, ideology (with the scores of
 this rank and the next), projects, the active quest (with countable progress and its story), quest and
 event texts (of the boredom phases, only the latest; a chain quest's with its story and payoff
-for the UI's story modals), achievements, rivals, adversaries (Attention, threshold, present), whether `if` is open, live overclocks and modifiers, boredom (cap, rate,
+for the UI's story modals), achievements, rivals, adversaries (Attention, threshold, present, seen), whether `if` is open, live overclocks and modifiers, boredom (cap, rate,
 phase), the nav tiles (`content/nav.json`), the career's bests, the next run's bonuses if
 the run retired now (`career::retire` on a copy), the last finished run's summary, the
 run's activity feed, each resource's flow breakdown, display names by id and the cheat

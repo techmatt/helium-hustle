@@ -1323,3 +1323,17 @@ fn attention_decays_its_days_at_once() {
         }
     }
 }
+
+#[test]
+fn an_adversary_stays_seen_once_it_has_arrived() {
+    let r = rules();
+    let seen = |g: &crate::state::GameState, who: &str| r.view(g).adversaries.iter().find(|a| a.id == who).unwrap().seen;
+    let mut g = r.new_game(1);
+    assert!(!seen(&g, "rivals"));
+    g.career.attention.insert("rivals".into(), f("100000"));
+    assert!(seen(&g, "rivals"));
+    // A day on, their arrival event has happened: it keeps them seen after they leave.
+    r.advance(&mut g, 1);
+    g.career.attention.remove("rivals");
+    assert!(seen(&g, "rivals") && !seen(&g, "speculators"));
+}

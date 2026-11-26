@@ -1,12 +1,12 @@
 // Story and Achievements. Story is a vertical quest timeline: one node per main-story
 // beat on a spine, oldest at the top, each act opening with its painted chapter band;
-// finished beats lit (a click replays their story modals), the active beat glowing with
-// its task, each beat with its quest picture's thumbnail when it has one,
+// finished beats lit, one line each (a click replays their story modals), the active beat
+// ringed with its task, each beat with its quest picture's thumbnail when it has one,
 // and progress, one dim "???" below it, and side quests branching off the beat that
 // started them. Achievements are badges grouped by category. Every text, act and
 // progress comes from the engine's view (the same quest rows the story modals read).
 
-import { useEffect, useRef } from 'preact/hooks';
+import { useEffect, useRef, useState } from 'preact/hooks';
 import type { SideQuestView, StoryView, View } from '../engine';
 import { capitalize, num } from '../format';
 import { justMoved, replayStory, type Store } from '../store';
@@ -17,6 +17,19 @@ import { Bar, Quest } from './common';
 function paragraphs(q: StoryView): string[] {
   const opening = q.story && q.story.length > 0 ? q.story : q.body ? [q.body] : [];
   return [...opening, ...(q.payoff ?? [])];
+}
+
+/** A card's one line: the text's first sentence, with "…" when more follows (ui.md). */
+export function firstLine(texts: string[]): string {
+  const whole = (texts[0] ?? '').trim();
+  // A draft's "DRAFT." marker stays, with the sentence after it.
+  const mark = /^DRAFT\.\s+/.exec(whole)?.[0] ?? '';
+  const t = whole.slice(mark.length);
+  const m = /^.*?[.!?](?=\s|$)/s.exec(t);
+  const first = m ? m[0] : t;
+  const more = first.length < t.length || texts.length > 1;
+  // A period gives way to the "…"; a ? or ! stays.
+  return mark + (more ? `${first.replace(/\.+$/, '')}…` : first);
 }
 
 /** The side quests branching off one beat. */
@@ -33,6 +46,8 @@ function Sides({ v, parent }: { v: View; parent: string }) {
 }
 
 function Side({ x }: { x: SideQuestView }) {
+  // A side quest has no story modal: a click on its line shows the whole text in place.
+  const [open, setOpen] = useState(false);
   return (
     <div class={`side-node ${x.done ? 'is-done' : 'is-open'}`} data-side={x.id} data-testid="story-side">
       <span class="side-dot" aria-hidden="true" />
@@ -43,7 +58,16 @@ function Side({ x }: { x: SideQuestView }) {
           {x.done && <span class="ok"> ✓</span>}
         </div>
         {x.done ? (
-          <p class="small">{x.body}</p>
+          <button
+            type="button"
+            class={`side-text small${open ? ' is-open' : ''}`}
+            data-testid="story-side-text"
+            aria-expanded={open}
+            title={open ? 'Show one line' : 'Show the whole text'}
+            onClick={() => setOpen(!open)}
+          >
+            {open ? x.body : firstLine([x.body])}
+          </button>
         ) : (
           <>
             <div class="small">{x.summary}</div>
@@ -105,11 +129,9 @@ export function Story({ s }: { s: Store }) {
                         <QuestPicture stem={q.picture} at="thumb" />
                         <span class="beat-title">{q.title}</span>
                       </span>
-                      {paragraphs(q).map((t, i) => (
-                        <span key={i} class="beat-text">
-                          {t}
-                        </span>
-                      ))}
+                      <span class="beat-text" data-testid="story-beat-line">
+                        {firstLine(paragraphs(q))}
+                      </span>
                     </span>
                   </button>
                   <Sides v={v} parent={q.id} />

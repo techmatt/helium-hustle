@@ -593,8 +593,8 @@ export interface View {
   event_texts: StoryView[];
   achievement_list: AchievementView[];
   rivals: { id: string; name: string; good: string; dumps_seen: number }[];
-  /** Each adversary's Attention, threshold and presence (docs/rules/attention.md). */
-  adversaries: { id: string; attention: Fx; threshold: Fx; present: boolean }[];
+  /** Each adversary's Attention, threshold and presence (docs/rules/attention.md); `seen`: it has arrived at some point in the career. */
+  adversaries: { id: string; attention: Fx; threshold: Fx; present: boolean; seen: boolean }[];
   overclocks: { target: string; bonus: Fx; until_day: number }[];
   modifiers: Record<string, Fx>;
   /** Every live project reward, as `Project: what it gives`. */

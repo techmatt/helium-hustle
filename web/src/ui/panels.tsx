@@ -350,17 +350,24 @@ export function ResearchCard({ v, r, fresh }: { v: View; r: ResearchView; fresh:
 
 export function Projects({ s }: { s: Store }) {
   const v = s.view;
+  // Timelines go unnamed until the swarm's reveal (1.11 starts the calendar): nothing
+  // upcoming is telegraphed (ui.md).
+  const revealed = v.saga.timeline !== null;
   const scopes: [ProjectView['scope'], string, string][] = [
     ['run', 'Strategic (this run)', 'This run only: progress resets on retirement.'],
-    ['timeline', 'Global (this timeline)', 'Progress and completion carry across retirements until the timeline ends; funding rates reset, so set them again each run.'],
+    revealed
+      ? ['timeline', 'Global (this timeline)', 'Progress and completion carry across retirements until the timeline ends; funding rates reset, so set them again each run.']
+      : ['timeline', 'Global', 'Progress and completion carry across retirements; funding rates reset, so set them again each run.'],
     ['forever', 'Forever', 'Progress and completion are kept for good.'],
   ];
   return (
     <div class="panel" data-panel="projects">
       <h2>Projects</h2>
       <p class="muted">Fund a project by setting a daily rate per resource; it drains that much each day until done.</p>
+      {!v.projects.some((p) => p.unlocked) && <p class="muted hint">No project to fund right now.</p>}
       {scopes.map(([scope, title, note]) => {
-        const items = v.projects.filter((p) => p.scope === scope);
+        // Only what can be funded now: no locked cards, no finished one-offs (ui.md).
+        const items = v.projects.filter((p) => p.scope === scope && p.unlocked);
         if (items.length === 0) return null;
         return (
           <Section key={scope} title={`${title} (${items.length})`} dark>
@@ -489,14 +496,20 @@ function speculatorsSeen(v: View): boolean {
 
 export function Adversaries({ s }: { s: Store }) {
   const v = s.view;
+  // Only those that have arrived in the career: nothing upcoming is telegraphed (ui.md).
+  const seen = v.adversaries.filter((a) => a.seen);
+  const rivals = seen.some((a) => a.id === 'rivals');
   return (
     <div class="panel" data-panel="adversaries">
       <h2>Adversaries</h2>
       <Section title="Attention">
-        <p class="muted">Selling draws speculators; claiming land draws the rival AIs. Each comes in once its Attention reaches its threshold, and Attention fades day by day.</p>
+        <p class="muted">
+          {rivals ? 'Selling draws speculators; claiming land draws the rival AIs. Each comes' : 'Selling draws speculators. They come'} in once
+          {rivals ? ' its' : ' their'} Attention reaches its threshold, and Attention fades day by day.
+        </p>
         <table class="grid-table">
           <tbody>
-            {v.adversaries.map((a) => (
+            {seen.map((a) => (
               <tr key={a.id} data-testid={`attention-${a.id}`}>
                 <td>{a.id === 'rivals' ? 'Rival AIs' : 'Speculators'}</td>
                 <td>
@@ -508,31 +521,33 @@ export function Adversaries({ s }: { s: Store }) {
           </tbody>
         </table>
       </Section>
-      <Section title="Rival AIs">
-        <p class="muted">Rivals dump goods on Earth's markets from time to time, pushing that good's demand down.</p>
-        <table class="grid-table">
-          <thead>
-            <tr>
-              <th>Rival</th>
-              <th>Market</th>
-              <th title="Among the recent activity kept (the last lines of Recent Activity)">Recent dumps</th>
-            </tr>
-          </thead>
-          <tbody>
-            {v.rivals.map((r) => (
-              <tr key={r.id}>
-                <td>
-                  <Chip id={r.id} title={r.name} /> {r.name}
-                </td>
-                <td>
-                  <ResChip v={v} id={r.good} /> {name(v, r.good)}
-                </td>
-                <td>{r.dumps_seen}</td>
+      {rivals && (
+        <Section title="Rival AIs">
+          <p class="muted">Rivals dump goods on Earth's markets from time to time, pushing that good's demand down.</p>
+          <table class="grid-table">
+            <thead>
+              <tr>
+                <th>Rival</th>
+                <th>Market</th>
+                <th title="Among the recent activity kept (the last lines of Recent Activity)">Recent dumps</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </Section>
+            </thead>
+            <tbody>
+              {v.rivals.map((r) => (
+                <tr key={r.id}>
+                  <td>
+                    <Chip id={r.id} title={r.name} /> {r.name}
+                  </td>
+                  <td>
+                    <ResChip v={v} id={r.good} /> {name(v, r.good)}
+                  </td>
+                  <td>{r.dumps_seen}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </Section>
+      )}
       {speculatorsSeen(v) && (
         <Section title="Speculators">
           <p class="muted">Speculators gather on goods that earn; they suppress demand until they drift away or are disrupted.</p>

@@ -36,7 +36,7 @@ up directly). It plays, in order:
    open, not cheated). Its double-click-on-Continue check failed once (058: a buy hint under
    it, nothing bought) and passed on a rerun: a timing flake, not yet fixed.
 2. **Every panel**: scenario `late_unlocks` opens Research, Projects and Ideologies (by its
-   panel list, a Research Lab built); a locked project's condition, a funded one's days to done; every
+   panel list, a Research Lab built); no locked project card, a funded one's days to done; every
    nav tile shown opens, and every Act 1 tile is shown (all of `content/nav.json` but panels
    only a DRAFT quest opens); no CHEATED tag in the bottom bar (the mark in the debug info), a jump ahead, the cheat building (+1000 credits a day, 1 credit,
    no card with Cheats off) and Complete all research, and the replay check.
@@ -70,7 +70,7 @@ up directly). It plays, in order:
    Then `storyView`: a new game played by the autopilot's *Next quest step* until 1.6 A Voice
    is active (1.5 Trade done); Story shows the Act 1 band alone,
    painted, the finished beats lit (each with its picture's thumbnail; the active
-   beat's thumbnail and the left column's foot on the active quest's picture), the active one glowing (in view) with its task, one
+   beat's thumbnail and the left column's foot on the active quest's picture), the active one ringed (in view) with its task, one
    "???" after it and no achievements; a lit beat's click replays its modal; the
    Achievements tile shows every badge by category, each with its reward; then scenario
    `late_unlocks` with *Complete all research*: 1.b's completion banner shows its picture.
@@ -86,7 +86,10 @@ A story modal refuses every action and speed until read: `readStory()` reads one
 - **Under load it flakes:** section 3's 10x pointer walk fails beside a cargo build, and
   so does its "guarded line built" outcome check (066: beside `cargo test-all`; 067: once with
   nothing beside it, then passed on a rerun). Its "if held" check reads only the if's check
-  mark since 070 (qa-findings #94).
+  mark since 070 (qa-findings #94). Since 095 its "Storage Depot once the if holds" check
+  (`HH_ONLY=6`) fails every run, and so do `HH_ONLY=5`'s "a full pad short on fuel" and
+  "fuel enough" (`pad_loading`'s pad reads Fuel 30 / 20, Ready at once), on main as well
+  (096 found both; not fixed).
 - **The late UI for screenshots:** `experiments/results/027_art_in_game/shots.mjs`
   (`pad_loading`, cheats, ~20 s); grants don't count toward `resource_cumulative`.
 - Edge needs an **absolute** `--user-data-dir` (the script resolves it).

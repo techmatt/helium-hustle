@@ -142,16 +142,65 @@ function Programs({
   );
 }
 
+// ---- Recent Activity's filter --------------------------------------------------------
+
+/** Recent Activity's kinds of line, each a checkbox under the list: [id, label, kinds]. */
+const ACTIVITY_GROUPS: [string, string, string[]][] = [
+  ['shipments', 'Shipments', ['shipment', 'cargo_lost']],
+  ['quests', 'Quests', ['quest']],
+  ['story', 'Story', ['event']],
+  ['research', 'Research', ['research']],
+  ['projects', 'Projects', ['project']],
+  ['achievements', 'Achievements', ['achievement']],
+  ['adversaries', 'Adversaries', ['speculator_burst', 'rival_dump']],
+];
+const OTHER_GROUP = 'other';
+
+function activityGroup(kind: string): string {
+  return ACTIVITY_GROUPS.find(([, , kinds]) => kinds.includes(kind))?.[0] ?? OTHER_GROUP;
+}
+
+/** Where the hidden groups are kept: per browser, a UI preference, not game state. */
+const HIDDEN_KEY = 'hh-activity-hidden';
+
+function savedHidden(): string[] {
+  try {
+    const raw = JSON.parse(localStorage.getItem(HIDDEN_KEY) ?? '[]');
+    return Array.isArray(raw) ? raw.filter((x): x is string => typeof x === 'string') : [];
+  } catch {
+    return [];
+  }
+}
+
 /** Events other than the main quest, each section with its unread count. */
 function Events({ v }: { v: View }) {
+  const [hidden, setHidden] = useState<string[]>(savedHidden);
+  const toggle = (group: string) => {
+    const next = hidden.includes(group) ? hidden.filter((g) => g !== group) : [...hidden, group];
+    setHidden(next);
+    try {
+      localStorage.setItem(HIDDEN_KEY, JSON.stringify(next));
+    } catch {
+      // A private window may refuse storage: the filter still applies until reload.
+    }
+  };
   const keys = eventItems(v);
   const unread = (sec: EventSection) => unreadIn(v, sec);
   const story = unread('story');
   const completed = unread('completed');
-  const activity = unread('activity');
-  // Newest first.
+  // Newest first; a hidden group's lines are left out of the list and its counts.
   const texts = v.event_texts.map((e, i) => ({ e, key: keys.story[i] })).reverse();
-  const recent = v.activity.map((a, i) => ({ a, key: keys.activity[i] })).reverse();
+  const all = v.activity.map((a, i) => ({ a, key: keys.activity[i], group: activityGroup(a.kind) })).reverse();
+  const recent = all.filter((x) => !hidden.includes(x.group));
+  const shownKeys = new Set(recent.map((x) => x.key));
+  const activity = unread('activity').filter((k) => shownKeys.has(k));
+  // A checkbox only for a kind already in this run's feed, hidden or not (a kind hidden in
+  // another career shows no box until it happens here): nothing upcoming is telegraphed
+  // (ui.md).
+  const present = new Set(all.map((x) => x.group));
+  const labels: [string, string][] = ACTIVITY_GROUPS.map(([id, label]) => [id, label]);
+  labels.push([OTHER_GROUP, 'Other']);
+  const groups = labels.filter(([id]) => present.has(id));
   return (
     <div class="events" data-testid="events">
       <h2>Events</h2>
@@ -201,6 +250,15 @@ function Events({ v }: { v: View }) {
             </li>
           ))}
         </ul>
+        {groups.length > 0 && (
+          <div class="activity-filter" data-testid="activity-filter">
+            {groups.map(([id, label]) => (
+              <label key={id}>
+                <input type="checkbox" data-group={id} checked={!hidden.includes(id)} onChange={() => toggle(id)} /> {label}
+              </label>
+            ))}
+          </div>
+        )}
       </Section>
     </div>
   );

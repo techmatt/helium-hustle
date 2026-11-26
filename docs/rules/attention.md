@@ -40,10 +40,12 @@ are present, sets `contest_claims`; `speculators_arrive`, the first time specula
 present, sets the career flag `speculators_seen` (side quest 1.a's trigger, the Market
 Analysis research's visibility) and opens the `adversaries` panel.
 
-**Display.** The view's `adversaries` gives each adversary's Attention, threshold and
-presence (the Adversaries panel). Nothing upcoming is telegraphed (UI only): the Speculators
-column of Launch Pads' Markets table and the Adversaries panel's Speculators section stay
-hidden until some market has had speculators this run.
+**Display.** The view's `adversaries` gives each adversary's Attention, threshold,
+presence and `seen` (present now, or an event waiting on its presence seen in the career).
+Nothing upcoming is telegraphed (UI only): the Speculators column of Launch Pads' Markets
+table and the Adversaries panel's Speculators section stay hidden until some market has had
+speculators this run; the panel's Attention row for an adversary and its Rival AIs section
+until it is `seen`.
 
 ## Actions
 

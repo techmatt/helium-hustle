@@ -11,7 +11,7 @@
 //      nothing under it), run 2 (known tiles and resources still shown, not cheated), the
 //      career's play log on disk as a bot's.
 //   2. Every panel: scenario late_unlocks opens Research, Projects and Ideologies (its
-//      Research Lab built, past a second run); a locked and a funded project; every nav tile opens; the
+//      Research Lab built, past a second run); no locked project shown, a funded one; every nav tile opens; the
 //      cheated mark, a jump ahead, the cheat building and Complete all research, and the
 //      replay check.
 //   3. A program's current-line frame at 10x and 50x, each speed's days per second,
@@ -1010,8 +1010,14 @@ async function storyView() {
       activeThumb: a?.querySelector('[data-testid="quest-pic-thumb"]')?.dataset.picture ?? null,
       thumbsLoaded: [...p.querySelectorAll('[data-testid="quest-pic-thumb"]')].every((i) => i.complete && i.naturalWidth > 0),
       done: ids('[data-testid="story-beat-done"]'),
+      // 096: one line a card, its first sentence and "…".
+      lines: [...p.querySelectorAll('[data-testid="story-beat-done"]')].map((b) => {
+        const l = b.querySelector('[data-testid="story-beat-line"]');
+        return l && l.getBoundingClientRect().height < parseFloat(getComputedStyle(l).lineHeight) * 1.3 ? l.textContent : '';
+      }),
       active: a ? a.dataset.beat : null,
-      glow: a ? getComputedStyle(a.querySelector('.beat-dot')).boxShadow !== 'none' : false,
+      // 096: a ring pulses out of the dot (no filled glow over the spine).
+      glow: a ? getComputedStyle(a.querySelector('.beat-dot'), '::after').animationName === 'beat-ring' && getComputedStyle(a.querySelector('.beat-dot')).boxShadow === 'none' : false,
       task: a ? a.textContent : '',
       bar: !!a?.querySelector('.bar, [role="progressbar"]'),
       unknown: [...p.querySelectorAll('[data-testid="story-unknown"]')].map((e) => e.textContent),
@@ -1031,6 +1037,7 @@ async function storyView() {
   check(want.every(Boolean) && st.thumbs.join() === want.join() && st.thumbsLoaded, `each finished beat shows its picture's thumbnail (loaded ${st.thumbsLoaded}): ${JSON.stringify(st.thumbs)}`);
   check(!!pictureOf[chain[at - 1]] && st.activeThumb === pictureOf[chain[at - 1]] && st.leftPic === st.activeThumb, `the active beat's thumbnail and the left column's foot show 1.${at}'s picture: ${st.activeThumb} / ${st.leftPic}`);
   check(st.done.join() === chain.slice(0, at - 1).join(), `the ${at - 1} finished beats lit, in order: ${st.done.join(', ')}`);
+  check(st.lines.length > 0 && st.lines.every((t) => t.endsWith('…')), `each finished beat shows one line ending "…": ${JSON.stringify(st.lines.slice(0, 2))}`);
   check(st.active === chain[at - 1] && st.glow, `1.${at} is the glowing active beat: ${st.active} glow ${st.glow}`);
   check(st.task.trim().startsWith(`1.${at}`) && st.task.length > 20 && st.bar, `the active beat shows its task and progress bar (${st.bar}): ${st.task.slice(0, 80)}`);
   check(st.unknown.length === 1 && st.unknown[0].trim() === '???' && st.unknownAfter, `one "???" node below it: ${JSON.stringify(st.unknown)}`);
@@ -1405,6 +1412,13 @@ async function freshGame() {
     `1.1 Online, 1.2 First Shipment and 1.3 Full Load complete: ${done.join(', ')}`,
   );
   check(await evaluate(`!!document.querySelector('.activity li[data-kind="shipment"]')`), 'the shipment is in Recent Activity');
+  // 096: its Shipments checkbox hides shipments and shows them again.
+  const shipBox = '[data-testid="activity-filter"] input[data-group="shipments"]';
+  const shipLines = () => evaluate(`document.querySelectorAll('.activity li[data-kind="shipment"]').length`);
+  await click(shipBox);
+  const hiddenShips = await shipLines();
+  await click(shipBox);
+  check(hiddenShips === 0 && (await shipLines()) > 0, `unchecking Shipments hides them from Recent Activity, checking shows them (${hiddenShips} while unchecked)`);
   check(await exists('tr[data-res="propellant"]'), 'Propellant shows in Resources once granted');
   check(await navVisible('launch_pads'), 'the Launch Pads tile shows');
   // Voluntary retirement opens only with the first retirement: run 1 ends at the
@@ -1485,14 +1499,17 @@ async function everyPanel() {
   await panel('projects');
   await waitFor(`!!document.querySelector('.card.project[data-id="market_cornering"]:not(.locked)')`, 'Market Cornering unlocked by Market Awareness', 5000);
   await speed(0);
-  // A locked project shows its condition; a funded one its days to done (both the engine's text).
-  const lockedText = await evaluate(`document.querySelector('.card.project.locked[data-id="predictive_maintenance"]')?.textContent ?? ''`);
-  check(lockedText.includes('Locked: Research Daydreaming'), `a locked project shows its condition: ${lockedText.slice(0, 160)}`);
+  // Only fundable projects show (096: no locked cards); a funded one shows its days to done
+  // (the engine's text).
+  const shownProjects = await evaluate(`[...document.querySelectorAll('[data-panel="projects"] .card.project')].map((c) => (c.classList.contains('locked') || /Locked:/.test(c.textContent) ? '!' : '') + c.dataset.id)`);
+  check(!shownProjects.includes('predictive_maintenance') && shownProjects.every((id) => !id.startsWith('!')), `Projects shows no locked card: ${shownProjects.join(', ')}`);
+  // Before the swarm's reveal no player-facing text names a timeline (096).
+  check(!/timeline/i.test(await evaluate(`document.body.innerText`)), 'nothing on the page names a timeline before the reveal');
   await evaluate(`[...document.querySelectorAll('.card.project[data-id="market_cornering"] button[title^="Fund at the most"]')].forEach((b) => b.click())`);
   await waitFor(`/Done in \\d+ days/.test(document.querySelector('.card.project[data-id="market_cornering"]')?.textContent ?? '')`, 'days to done', 5000);
   const fundedText = await evaluate(`document.querySelector('.card.project[data-id="market_cornering"]').textContent`);
   check(/Done in 17 days/.test(fundedText), `a funded project shows its days to done: ${(fundedText.match(/Done in \d+ days?/) ?? ['none'])[0]}`);
-  await shot('projects-locked-and-funded');
+  await shot('projects-funded');
   const tiles = await evaluate(`[...document.querySelectorAll('.nav-tile')].map((t) => t.dataset.nav)`);
   // The Programs tile opens a takeover (section 10), not a panel.
   for (const id of tiles.filter((t) => t !== 'programs')) {

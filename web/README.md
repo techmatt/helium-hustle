@@ -57,12 +57,11 @@ Three columns and a status bar:
   Commands: a card per verb (Buy, Promote, ...), a target dropdown. Pad
   cards tint their head: green Ready, yellow Paused, red full but short of fuel. Stats ends
   on every breakdown. Story (`Story.tsx`): a spine of main-story beats under painted act
-  bands, each with its quest picture's thumbnail, finished ones lit (a click replays), the active one glowing, one
+  bands, each with its quest picture's thumbnail, finished ones lit, one line each (a click replays), the active one ringed, one
   "???", side quests off it; Achievements: badges by category. Acts 2 and 3 (`Saga.tsx`, DRAFT; `docs/arc.md`): Timeline,
   Earth Lab, Meta-Controller, Vault, Dyson; the ending covers the screen once.
 - **Right:** the main quest in its own slot at the top, which nothing else takes; program
-  tabs 1 to 5 with processors −/+, Reset, Save / Load (`Library.tsx`: the loadout library;
-  save new or over a slot, load, rename, delete); a line per instruction, dragged to reorder
+  tabs 1 to 5 with processors −/+, Reset, Save / Load (`Library.tsx`, the loadout library); a line per instruction, dragged to reorder
   (an `if` takes its body and `else`), tinted by today's outcome (a failed line says why),
   the next line in an accent frame. Once unlocked, Add: If, Else, Build, Buy Land,
   Verb (`ProgramLogic.tsx`): a condition is
@@ -73,8 +72,8 @@ Three columns and a status bar:
   (`advance_run`'s `lines`), no frame. A note line (`#`) is muted text, an unparsed one a
   red-tinted disabled row with its reason, a locked one dimmed with "locked this run" (the
   view's `errors` and `locked`). Below, Events: Story (side story and the latest
-  boredom phase), completed quests, and Recent Activity (green good, red bad, blue news),
-  each with an unread count.
+  boredom phase), completed quests, and Recent Activity (green good, red bad, blue news;
+  a checkbox per kind, kept per browser), each with an unread count.
 - **Bottom:** day and run, Boredom and Energy bars with their rates
   (capped as in Resources; "cap tomorrow" the day before a forced retirement).
 - **Takeover views** (`Takeover.tsx`): a large view that covers the middle and right
@@ -89,8 +88,7 @@ Three columns and a status bar:
   `BlockEditor`) is the right column's line list (`ProgramLines.tsx`, each row's editors
   `ProgramLogic.tsx`'s) with a run gutter first in each row, a row selected by a
   click, a repeat-count number field first on command rows and a note's text field; edits
-  apply at once. A number field (`NumberField`, a text input, its comment says why) selects its text on a click or Tab, and its row is undraggable while the
-  button is down in it, so a drag there selects text. **Text** (`TextEditor.tsx`): program tabs, Apply, and a textarea between
+  apply at once (`NumberField`'s comment: why a text input). **Text** (`TextEditor.tsx`): program tabs, Apply, and a textarea between
   the gutter and a notes column (reasons, "fired k/10" on `if`s, from the store's history
   of `advance_run`'s `if_true` bits). The engine parses (`parse_program_text`) and writes
   (`program_text`) the text (docs/rules/programs.md, *Text form*); a changed draft is
