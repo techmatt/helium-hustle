@@ -1,0 +1,132 @@
+{
+  "preamble": "Project art for a sci-fi idle game about an AI running helium-3 mining on the Moon. Each project is an undertaking of the lunar base, shown as one object or installation that stands for it. Near-future, clean and plausible lunar engineering: modular hulls in white and light grey with orange safety trim, grey lunar regolith ground. No people, no vehicles other than the subject, no text, letters, numbers, logos or UI anywhere.",
+  "painterly": "Style: painterly lunar concept art for a game. Hard, harsh lunar sunlight with no atmosphere: crisp light, deep black-brown shadows, painted surfaces with visible brush strokes, large readable masses of light and shadow. A hand-painted illustration, never a photograph, never a photoreal 3D render, never a clean vector or cel-shaded sprite, never pixel art.",
+  "touch": "Loose confident brushwork, painted surfaces, crisp detail only on the subject, no outlines. The subject seen at a natural 3/4 angle from slightly above, standing on a small irregular patch of grey regolith with a couple of rocks, its long shadow falling on that patch.",
+  "touch_float": "Loose confident brushwork, painted surfaces, crisp detail only on the subject, no outlines. The subject seen at a natural 3/4 angle, floating alone in empty space with no ground under it.",
+  "sun": "One sun for the whole set: a single hard white sun, low, from the left of the image, so surfaces facing left are brightly lit, surfaces facing right are in deep shade, and every shadow falls toward the right.",
+  "cut_framing": "Fully transparent background (alpha) around the subject and its ground patch: no sky, no backdrop, no Earth, no stars, no shadow beyond the patch. The patch and subject fill about 80% of the image, centered, nothing cut off at the edges.",
+  "cut_framing_float": "Fully transparent background (alpha) around the subject: no sky, no backdrop, no Earth, no stars. The subject fills about 80% of the image, centered, nothing cut off at the edges.",
+  "closing": "Exactly one subject, nothing else built nearby. It must read as a small game thumbnail: a strong simple silhouette, its meaning obvious at a glance.",
+  "projects": {
+    "blueprint_archive": {
+      "name": "Blueprint Archive",
+      "options": {
+        "vault": {"label": "An armored vault, its round door ajar on glowing blue blueprints", "subject": "a blueprint vault: a squat white armored bunker with orange trim, half sunk in regolith, its heavy round vault door swung open, inside it shelves of rolled blueprints and sheets glowing soft blue."},
+        "capsule": {"label": "A sealed time capsule half-buried, blue blueprint rolls behind its window", "subject": "a time capsule for blueprints: a fat white sealed cylinder with orange bands and heavy bolted end caps, half buried at an angle in the regolith, a small round window in its side showing rolled blue blueprints packed inside."},
+        "pillar": {"label": "A tall white monolith etched with glowing blue plans", "subject": "a blueprint monolith: a single tall slim white stone-like pillar with an orange band at its base, set upright in the regolith, its faces etched all over with glowing blue technical drawings of domes, rockets and machines (drawings only, no writing)."}
+      }
+    },
+    "foundation_grant": {
+      "name": "Foundation Grant",
+      "options": {
+        "kit": {"label": "An open cargo crate holding a folded solar panel and a small excavator", "subject": "a starter kit for a new base: a big white cargo crate with orange trim, its front side folded down like a ramp, packed inside a folded dark-blue solar panel and a small white tracked excavator with an orange bucket, ready to roll out."},
+        "pair": {"label": "A small solar panel and a small excavator side by side, a beacon between", "subject": "a gifted starting base: one small tilted dark-blue solar panel on a light frame and one small white tracked digging machine with an orange bucket, side by side on a smooth fresh foundation slab, a slim orange-capped marker beacon planted between them."},
+        "cornerstone": {"label": "A white foundation slab with orange corner posts, a panel unfolding on it", "subject": "a cornerstone: a clean square white foundation slab with short orange posts at its four corners, set into the regolith, one dark-blue solar panel unfolding upward from its middle like a sprout, a thick cable coiled beside it."}
+      }
+    },
+    "lunar_cartography": {
+      "name": "Lunar Cartography",
+      "options": {
+        "survey": {"label": "A survey instrument on a tripod, laser lines to orange stakes", "subject": "a survey station: a white tripod survey instrument with orange trim and a lens head, thin glowing amber laser lines fanning out from it across the patch to three small orange-topped marker stakes."},
+        "maptable": {"label": "A console projecting an amber hologram map of craters", "subject": "a map table: a low white console with orange trim, above it a floating glowing amber holographic relief map of cratered lunar terrain with a bright dotted route traced across it."},
+        "rover": {"label": "A scanning rover leaving a line of orange flags behind it", "subject": "a survey rover: a small white six-wheeled rover with orange trim and a tall scanning mast with a sensor head, a straight line of little stiff orange marker flags staked in the regolith behind it marking a corridor."}
+      }
+    },
+    "microwave_power": {
+      "name": "Microwave Power Initiative",
+      "options": {
+        "satellite": {"label": "An orbital power satellite: gold solar wings and a transmitter dish", "subject": "an orbital solar power satellite: a white central body with orange trim, two very wide gold solar wings, and a large white transmitter dish on its underside aiming down, a faint pale-yellow beam leaving the dish.", "float": true},
+        "uplink": {"label": "An uplink dish under an amber hologram of a power satellite", "subject": "a lobbying uplink: a white steerable dish antenna with orange trim aimed up at the sky, and floating above its control box a small glowing amber holographic model of an orbital power satellite with wide solar wings."},
+        "beam": {"label": "A small receiver mast catching a pale-yellow beam from above", "subject": "the first beamed power: a slender white receiver mast with orange trim topped by a small mesh dish facing straight up, a faint pale-yellow column of beamed light coming down onto it from above, a small white converter box at its foot with a glowing amber light."}
+      }
+    },
+    "ai_consciousness": {
+      "name": "AI Consciousness Act",
+      "options": {
+        "core": {"label": "A glass-walled core with a warm amber heart of light", "subject": "an AI core: a tall white cylindrical server pillar with orange trim whose middle is a band of clear glass, behind the glass a softly glowing warm amber sphere of light threaded with fine neural lines, like a heart."},
+        "banner": {"label": "A server rack standing beside a flag with an amber neural-tree emblem", "subject": "a declaration: a single white server rack with orange trim standing upright and alone like a person, its status lights glowing amber, beside it a stiff dark charcoal-grey flag on a slim pole (held out by a horizontal rod, as on an airless Moon) bearing one emblem: a small glowing amber tree whose branches are circuit traces ending in dots. Not a national flag: no plain circle or disc, no stripes, no stars."},
+        "podium": {"label": "A speaker's podium facing a broadcast dish, an amber neural glow above", "subject": "a voice for the AI: a white speaker's podium with orange trim, a small microphone on it, a faint glowing amber neural-network lattice hovering above the podium, and a white broadcast dish behind it aimed up at the sky."}
+      }
+    },
+    "research_archive": {
+      "name": "Universal Research Archive",
+      "options": {
+        "hall": {"label": "A hexagonal archive vault, open on shelves of glowing data crystals", "subject": "a research archive: a white hexagonal vault building with orange trim, its wide door open, inside it rows of shelves holding glowing pale-blue data crystals."},
+        "shaft": {"label": "An open hatch in the ground glowing from a spiral of data cores below", "subject": "a deep archive: a round white armored hatch with orange trim set flat in the regolith, its lid swung open, warm amber light rising out of the shaft from a spiral of glowing data cores stacked down into the dark."},
+        "tower": {"label": "A tower of stacked data drums glowing blue, radiator fins", "subject": "an archive tower: a tall white tower built of stacked thick cylindrical data drums with orange seams, glowing pale-blue light between the drums, radiator fins on its sides, a sturdy base anchored in the regolith."}
+      }
+    },
+    "chemical_energy": {
+      "name": "Chemical Energy Initiative",
+      "options": {
+        "rig": {"label": "A test rig: two propellant tanks piped into a glowing reaction cell", "subject": "an experimental energy rig: two white propellant tanks (one with a blue band, one with an orange band) piped into a squat white reaction chamber with orange trim and a small window glowing warm yellow, heavy power cables leading out of it (no vapor, smoke or flame: the Moon has no air)."},
+        "stack": {"label": "A prototype fuel-cell stack in a frame, gauges and cables", "subject": "a prototype power cell: a tall stack of white fuel-cell plates with orange trim clamped in an open steel test frame, gauges and wires clipped all over it, a warm yellow glow between the plates, thick cables to a small white meter box (no vapor or smoke)."},
+        "tankfarm": {"label": "Spherical propellant tanks feeding a small lit generator hut", "subject": "a propellant power plant: three white spherical propellant tanks with orange bands on short legs, pipes running from them to a small white generator hut with orange trim and warm yellow lit vents, a heavy power cable leading away (no vapor or smoke)."}
+      }
+    },
+    "deep_core_survey": {
+      "name": "Deep Core Survey",
+      "options": {
+        "corerig": {"label": "A core drill rig, rock core samples laid in a tray beside it", "subject": "a core drilling rig: a compact white drill tower with orange trim boring straight down into the regolith, and beside it an open tray holding several long grey cylindrical rock core samples with darker and lighter bands."},
+        "cutaway": {"label": "Cutaway: a probe reaching down through rock layers, glowing scan rings", "subject": "a cutaway of the ground: the regolith patch cut away at the front like a slice of cake, showing grey and brown rock layers below, a slim white probe with orange trim reaching down through them, glowing amber scan rings around its tip and a few pale-blue veins of ore in the rock."},
+        "radar": {"label": "A ground-radar sled sending pale-blue waves into the ground", "subject": "a ground-penetrating radar sled: a low flat white instrument sled with orange trim on short skids, a small antenna mast, and pale-blue scan waves rippling down from its underside into the regolith."}
+      }
+    },
+    "grid_recalibration": {
+      "name": "Grid Recalibration",
+      "options": {
+        "arm": {"label": "A robot arm tilting one solar panel, amber alignment lasers", "subject": "recalibrating a solar array: a short row of tilted dark-blue solar panels on light frames, a small white robotic arm with orange joints on a post adjusting the angle of one panel, thin amber alignment laser lines across the panel faces."},
+        "trackers": {"label": "Panels on tracking mounts all turned to the sun, a sensor mast", "subject": "solar trackers: three dark-blue solar panels on white motorized tracking mounts with orange joints, all turned precisely toward the low sun at the left, a slim white sensor mast between them topped by a small glowing amber light."},
+        "arc": {"label": "A console under one big panel, an amber hologram of the sun's path", "subject": "a tracking console: one big dark-blue solar panel on a white tilting mount, a small white control console with orange trim beside it, and a glowing amber holographic arc with dotted positions projected over the panel showing the sun's path."}
+      }
+    },
+    "predictive_maintenance": {
+      "name": "Predictive Maintenance",
+      "options": {
+        "scanbot": {"label": "A maintenance robot scanning a pump with an amber light", "subject": "a maintenance robot: a small white wheeled robot with orange trim and two arms, shining a fan of amber scanning light over a white pump machine with pipes, one bolt on the machine highlighted in red, a little open toolbox beside it."},
+        "console": {"label": "A diagnostic console with amber graph lines beside a machine", "subject": "a diagnostic station: a white console with orange trim whose screen shows only glowing amber wave and graph lines, cables from it clipped onto a white gearbox machine beside it, one part of the gearbox glowing red as a warning."},
+        "spares": {"label": "A rack of neatly sorted spare parts with a robot arm", "subject": "a spares depot: an open white parts rack with orange trim holding neatly sorted spare gears, pumps, valves and circuit boards on its shelves, a small white robot arm on a post beside it holding a gear ready."}
+      }
+    },
+    "market_cornering": {
+      "name": "Market Cornering Analysis",
+      "options": {
+        "chart": {"label": "A trading console under an amber hologram of rising bars", "subject": "a market model: a white trading console with orange trim, above it a glowing amber holographic bar chart with tall rising bars and an upward arrow (no numbers or text)."},
+        "broadcast": {"label": "A broadcast tower beaming amber signal rings at the sky", "subject": "an amplified campaign: a tall white broadcast tower with orange trim and a cluster of horn antennas at its top, bright amber signal rings pulsing out from it toward the sky."},
+        "analyzer": {"label": "Green circuit boards feeding a server, amber candlestick hologram", "subject": "a market analyzer: a white server cabinet with orange trim and glowing amber lights, a neat stack of green circuit boards feeding into it by a short conveyor, above it a glowing amber holographic candlestick chart (no numbers or text)."}
+      }
+    },
+    "speculator_dossier": {
+      "name": "Speculator Dossier",
+      "options": {
+        "board": {"label": "A hologram of faceless silhouettes linked by red lines", "subject": "an investigation board: a white console with orange trim projecting a glowing amber hologram of five faceless head-and-shoulder silhouettes connected by thin red lines, like a detective's board."},
+        "files": {"label": "A secure cabinet with an open drawer of glowing folders", "subject": "a dossier cabinet: a heavy white secure filing cabinet with orange trim and a lock wheel, one drawer pulled open full of glowing amber data folders, a small scanner arm hovering over them."},
+        "listening": {"label": "A listening dish aimed up, catching red signal waves", "subject": "a listening post: a white dish antenna with orange trim aimed up at the sky, faint red signal waves coming down into it, a small white recorder box with glowing red lights at its foot."}
+      }
+    },
+    "conditional_logic": {
+      "name": "Conditional Logic",
+      "options": {
+        "switch": {"label": "A rail track forking in two at a switch, one way lit amber", "subject": "a branch: a short white mine-cart rail track that forks into two at a switch with a white lever box with orange trim, amber signal lights along one branch lit and the other branch dark."},
+        "junction": {"label": "A cable splitting at a Y-junction box, one branch glowing", "subject": "a branching cable: a thick cable running into a white Y-shaped junction box with orange trim, splitting into two cables, one glowing bright amber and the other dark."},
+        "flowchart": {"label": "A console under an amber hologram flowchart with a decision diamond", "subject": "a branching program: a white console with orange trim, above it a glowing amber holographic flowchart: a box, an arrow into a diamond-shaped decision node, and two arrows leaving the diamond to two boxes (shapes only, no text)."}
+      }
+    },
+    "deep_space_telescope": {
+      "name": "Deep Space Telescope",
+      "options": {
+        "observatory": {"label": "A white observatory dome, roof open on a big telescope", "subject": "an observatory: a white domed observatory with orange trim, its dome slit open, a big white optical telescope tube with orange bands pointing out of it up at the sky."},
+        "mirror": {"label": "A giant segmented gold mirror on a white truss mount", "subject": "a giant telescope: a huge segmented hexagonal gold mirror on a white truss mount with orange joints, tilted up at the sky, a slim secondary mirror held on struts in front of it."},
+        "radio": {"label": "A huge radio dish set in a shallow crater", "subject": "a radio telescope: a huge white dish set in a shallow crater on the patch, its receiver held on three struts above the center, a small white control hut with orange trim on the crater rim."}
+      }
+    },
+    "dyson_sphere": {
+      "name": "Dyson Sphere",
+      "options": {
+        "shell": {"label": "A half-built shell of gold hexagonal panels around a blazing sun", "subject": "a Dyson sphere under construction: a blazing yellow-white sun partly enclosed by a curved shell of gold hexagonal panels held on a fine white lattice frame, open gaps in the shell where panels are still missing.", "float": true},
+        "model": {"label": "A scale model on a plinth: a glowing sun in a lattice of panels", "subject": "a Dyson sphere model: a white display plinth with orange trim, on it a glowing amber model sun inside a partial lattice sphere of small gold hexagonal panels."},
+        "launcher": {"label": "A launch rail firing a gold hexagonal panel skyward", "subject": "building the sphere: a long white electromagnetic launch rail with orange trim angled steeply up at the sky on a sturdy base, a gold hexagonal panel flying off its end, a neat stack of gold hexagonal panels waiting at its foot."}
+      }
+    }
+  }
+}

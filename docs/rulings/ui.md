@@ -7,6 +7,11 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   Earth lives in the paintings, with no globe over the middle column. Resource colors are
   never hidden. A **light theme** for debugging stays, 1:1 with dark: same layout, markup and art, only color tokens swap. "Flash"/3D (a live
   view of the base growing) comes later; plan a home for it, build later.
+- **Project and research art (2026-11-25, project_art_r1, research_glyphs_r1).** Project cards
+  carry a picture in the building cards' style and place (96 px, under the title beside the
+  text; the funding rows run full width below). Research cards lead their title with a 22 px
+  chip, its square in the item's category color (`ResearchChip` in `icons.tsx`). The picks
+  are listed in `experiments/results/100_wire_project_art_and_research_glyphs/`.
 - **Building art (2026-11-16).** Cards use painterly cut-outs at each building's natural 3/4
   view (019's `cut34`: no fixed camera, a small irregular regolith patch, transparent
   background), as a 96 px thumbnail cropped tight on the building, under the title beside the

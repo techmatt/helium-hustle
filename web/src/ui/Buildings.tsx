@@ -3,7 +3,7 @@
 import type { BuildingView, View } from '../engine';
 import { capitalize, num } from '../format';
 import { act, actAll, seen, store, type Store } from '../store';
-import { buildingArt } from './buildingArt';
+import { buildingArt } from './cardArt';
 import { CostRows, FlowLines, ResChip, Section, cardButton, freshClass, name, navShown, ranPercent, shortText, useHint } from './common';
 import { Chip } from './icons';
 

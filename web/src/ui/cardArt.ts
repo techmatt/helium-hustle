@@ -1,0 +1,21 @@
+// Card art: one painted cut-out per building (`src/assets/buildings/<id>.webp`, made by
+// experiments/results/020_building_card_art/) and per project (`src/assets/projects/<id>.webp`,
+// experiments/results/100_wire_project_art_and_research_glyphs/), each 192 px square, 2x the
+// card's 96 px box, transparent around the subject. Originals are in the shared art/ folder.
+// Presentation only: a card with no file simply shows no picture.
+
+const stems = (files: Record<string, string>): Record<string, string> =>
+  Object.fromEntries(Object.entries(files).map(([f, url]) => [f.slice(f.lastIndexOf('/') + 1, -'.webp'.length), url]));
+
+const BUILDINGS = stems(import.meta.glob<string>('../assets/buildings/*.webp', { eager: true, query: '?url', import: 'default' }));
+const PROJECTS = stems(import.meta.glob<string>('../assets/projects/*.webp', { eager: true, query: '?url', import: 'default' }));
+
+/** The URL of a building's card picture, if it has one. */
+export function buildingArt(id: string): string | undefined {
+  return BUILDINGS[id];
+}
+
+/** The URL of a project's card picture, if it has one. */
+export function projectArt(id: string): string | undefined {
+  return PROJECTS[id];
+}

@@ -975,7 +975,8 @@ tr.is-new td:first-child {
   margin: 0;
   color: var(--muted);
 }
-/* A building card's picture: a 96 px cut-out on the card color, beside its text. */
+/* A building or project card's picture (cardArt.ts): a 96 px cut-out on the card color,
+   beside its text. */
 .card-body {
   display: flex;
   gap: 10px;

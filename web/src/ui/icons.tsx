@@ -1,7 +1,8 @@
 // The game's small art: chip icons (a color square with a glyph knocked out of it) for
-// resources, ideology axes and rival AIs, the nav tile icons, and the horizon strip.
-// Files in src/assets/ (chips/, nav/, horizon/), written by
-// experiments/results/027_art_in_game/ from the picked art; a later style only swaps them.
+// resources, ideology axes, rival AIs and research items, the nav tile icons, and the horizon
+// strip. Files in src/assets/ (chips/, nav/, horizon/), written by
+// experiments/results/027_art_in_game/ from the picked art, and research/ by
+// experiments/results/100_wire_project_art_and_research_glyphs/; a later style only swaps them.
 
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Keep, View } from '../engine';
@@ -59,18 +60,53 @@ function lum(hex: string): number {
   return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
 }
 
-/** A chip: the id's color square with its glyph knocked out in white, or near-black where
- * white falls under 2.5:1. `title` (the thing's name) is its tooltip. */
-export function Chip({ id, title, size = 14 }: { id: string; title: string; size?: number }) {
-  const fill = RESOURCE_COLORS[id] ?? AXIS_COLORS[id] ?? RIVAL_COLORS[id] ?? '#999999';
+/** A chip square in `fill` with `glyph` knocked out in white, or near-black where white
+ * falls under 2.5:1; a `"BG"` fill in the glyph takes the square's color. `title` (the
+ * thing's name) is its tooltip. */
+function ChipSvg({ id, fill, glyph, title, size }: { id: string; fill: string; glyph: string; title: string; size: number }) {
   const ink = 1.05 / (lum(fill) + 0.05) >= 2.5 ? '#fff' : '#1c1c21';
   return (
     <svg class="chip" data-chip={id} viewBox="0 0 24 24" width={size} height={size} role="img" aria-label={title} style={{ color: ink }}>
       <title>{title}</title>
       <rect x="0.5" y="0.5" width="23" height="23" rx="3" fill={fill} stroke="rgb(0 0 0 / 18%)" stroke-width="1" />
-      <g fill={ink} transform="translate(3.6 3.6) scale(0.7)" dangerouslySetInnerHTML={{ __html: GLYPHS[id] ?? '' }} />
+      <g fill={ink} transform="translate(3.6 3.6) scale(0.7)" dangerouslySetInnerHTML={{ __html: glyph.replaceAll('"BG"', `"${fill}"`) }} />
     </svg>
   );
+}
+
+/** A chip for a resource, ideology axis or rival AI: its color square and glyph. */
+export function Chip({ id, title, size = 14 }: { id: string; title: string; size?: number }) {
+  const fill = RESOURCE_COLORS[id] ?? AXIS_COLORS[id] ?? RIVAL_COLORS[id] ?? '#999999';
+  return <ChipSvg id={id} fill={fill} glyph={GLYPHS[id] ?? ''} title={title} size={size} />;
+}
+
+/** Research chip colors, one hue per research category (Matt's pick, research_glyphs_r1). */
+const CATEGORY_COLORS: Record<string, string> = {
+  Blueprints: '#2f6fc0',
+  Extraction: '#a8743c',
+  'Self-Maintenance': '#c0569a',
+  'Overclock Algorithms': '#e0582a',
+  'Market Analysis': '#2e9e62',
+  'Political Influence': '#b8323a',
+  'Program Analysis': '#2a96a6',
+  Programs: '#6a58d0',
+};
+
+/** Each research item's glyph (`src/assets/research/<id>.svg`, written by
+ * experiments/results/100_wire_project_art_and_research_glyphs/research.mjs); a `"BG"`
+ * fill in it is a knock-out drawn over a solid part, filled with the chip's own color. */
+const RESEARCH_GLYPHS = Object.fromEntries(
+  Object.entries(byName(import.meta.glob<string>('../assets/research/*.svg', { eager: true, query: '?raw', import: 'default' }), '.svg')).map(
+    ([id, svg]) => [id, svg.slice(svg.indexOf('>') + 1, svg.lastIndexOf('</svg>'))],
+  ),
+);
+
+/** A research card's chip: its glyph knocked out of a square in its category's color.
+ * Nothing for an item without a glyph. */
+export function ResearchChip({ id, category, title, size = 22 }: { id: string; category: string; title: string; size?: number }) {
+  const glyph = RESEARCH_GLYPHS[id];
+  if (!glyph) return null;
+  return <ChipSvg id={id} fill={CATEGORY_COLORS[category] ?? '#999999'} glyph={glyph} title={title} size={size} />;
 }
 
 /** Scope icons (placeholder glyphs): what a card's `keep` says survives. The engine

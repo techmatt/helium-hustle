@@ -8,7 +8,8 @@ import type { CommandView, Fx, ProjectView, ResearchView, View } from '../engine
 import { capitalize, mult, num, perDay } from '../format';
 import { act, justMoved, seen, store, type Store } from '../store';
 import { Bar, Breakdown, FlowLines, ResChip, Section, cardButton, freshClass, name, navShown, numBelow, useHint } from './common';
-import { Chip, ScopeIcon } from './icons';
+import { projectArt } from './cardArt';
+import { Chip, ResearchChip, ScopeIcon } from './icons';
 import { editProgram } from './programStore';
 
 // ---- Commands ------------------------------------------------------------------
@@ -329,6 +330,7 @@ export function ResearchCard({ v, r, fresh }: { v: View; r: ResearchView; fresh:
       {...(r.done ? {} : cardButton(research))}
     >
       <div class="card-head">
+        <ResearchChip id={r.id} category={r.category} title={r.category} />
         <h3>{r.name}</h3>
         {r.done && <span class="ok">✓ Done</span>}
         <ScopeIcon keep={r.keep} />
@@ -399,6 +401,7 @@ export function Project({ v, p, fresh }: { v: View; p: ProjectView; fresh: Set<s
   const locked = !p.unlocked && !p.completed;
   const funded = p.unlocked && Object.values(p.rates).some((r) => Number(r) > 0);
   const state = p.completed && !p.unlocked ? ' done' : locked ? ' locked' : '';
+  const art = projectArt(p.id);
   return (
     <div class={`card project${state}${freshClass(fresh, key)}`} data-id={p.id} onMouseEnter={() => seen(key)}>
       <div class="card-head">
@@ -406,25 +409,32 @@ export function Project({ v, p, fresh }: { v: View; p: ProjectView; fresh: Set<s
         {p.completed && !p.repeatable && <span class="ok">✓ Complete</span>}
         <ScopeIcon keep={p.keep} />
       </div>
-      <p class="desc">{p.description}</p>
-      {locked && <p class="muted small">Locked: {p.unlock_text}</p>}
-      {p.reward_text.map((t, i) => (
-        <p class="small" key={i}>
-          Reward: {t}
-        </p>
-      ))}
-      {p.repeatable && p.completions > 0 && (
-        <p class="ok small">
-          Completed {p.completions} {p.completions === 1 ? 'time' : 'times'}
-        </p>
-      )}
-      {funded && (
-        <p class="muted small">
-          {p.days_to_done !== null
-            ? `Done in ${p.days_to_done} ${p.days_to_done === 1 ? 'day' : 'days'}`
-            : 'Not every cost is funded'}
-        </p>
-      )}
+      {/* The picture sits under the title beside the text, as on a building card; the
+          funding rows run the card's full width below. */}
+      <div class="card-body">
+        {art && <img class="card-art" src={art} alt="" width={96} height={96} draggable={false} />}
+        <div class="card-text">
+          <p class="desc">{p.description}</p>
+          {locked && <p class="muted small">Locked: {p.unlock_text}</p>}
+          {p.reward_text.map((t, i) => (
+            <p class="small" key={i}>
+              Reward: {t}
+            </p>
+          ))}
+          {p.repeatable && p.completions > 0 && (
+            <p class="ok small">
+              Completed {p.completions} {p.completions === 1 ? 'time' : 'times'}
+            </p>
+          )}
+          {funded && (
+            <p class="muted small">
+              {p.days_to_done !== null
+                ? `Done in ${p.days_to_done} ${p.days_to_done === 1 ? 'day' : 'days'}`
+                : 'Not every cost is funded'}
+            </p>
+          )}
+        </div>
+      </div>
       {p.unlocked &&
         Object.entries(p.costs).map(([res, cost]) => {
           const got = p.progress[res] ?? '0';
