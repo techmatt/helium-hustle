@@ -217,10 +217,13 @@ pub struct QuestView {
     /// The condition's type (`building_owned`, `quiet_days`, ...).
     pub kind: &'static str,
     pub title: Text,
-    pub summary: Text,
+    /// Its mechanics text: the task line, what completing it does, how-to steps.
+    pub goal: Text,
+    pub reward: Text,
+    pub hints: &'static [String],
     pub body: Text,
     /// Its story, one paragraph per modal, shown as it becomes active (empty:
-    /// the UI shows `body`). `summary` is the task line.
+    /// the UI shows `body`).
     pub story: &'static [String],
     pub progress: Option<ProgressView>,
     pub sub_objectives: Vec<SubObjectiveView>,
@@ -240,8 +243,9 @@ pub struct SideQuestView {
     pub id: Text,
     pub beat: Option<Text>,
     pub title: Text,
-    /// The one-line task.
-    pub summary: Text,
+    /// Its mechanics text: the task line and what completing it does.
+    pub goal: Text,
+    pub reward: Text,
     pub body: Text,
     /// The chain quest whose completion started it (it branches off that beat).
     pub parent: Option<Text>,
@@ -266,10 +270,16 @@ pub struct ActView {
 pub struct StoryView {
     pub id: Text,
     pub title: Text,
+    /// A one-off event's one line (empty on a quest).
     pub summary: Text,
+    /// A quest's mechanics text (empty on a one-off event).
+    pub goal: Text,
+    pub reward: Text,
+    /// A one-off event's mechanics text (may hold `{rate}`, as `body`; empty on a quest).
+    pub effect: Text,
     pub body: Text,
     /// A boredom-phase event's boredom per day, for the UI to fill `{rate}` in
-    /// `body` with (the Stats panel's formatting); `None` for the rest.
+    /// `effect` with (the Stats panel's formatting); `None` for the rest.
     pub rate: Option<Fx>,
     /// A chain quest (not a side quest or one-off event): its transition is
     /// a story modal in the UI.

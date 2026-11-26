@@ -45,8 +45,8 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
 - **Commands run only as program lines (2026-11-25).** No command is runnable by clicking:
   there is no Run button and no by-hand action. From day 1 the right column's program, every
   "Add to Program" button and the loadout Save/Load buttons are there, as are processors
-  (the Processors row). 1.1's story page names Add to Program on Sell Cloud Compute as the
-  way to earn credits (story prose, no hint line). A player can play Act 1 up to the first Research Lab with the right
+  (the Processors row). 1.1's hint (mechanics text, never its story: ui.md, *Quest
+  mechanics text*) names Add to Program on Sell Cloud Compute as the way to earn credits. A player can play Act 1 up to the first Research Lab with the right
   column's program alone (add, drag to reorder, remove, −/+ counts; logic lines from its
   own add row once they open).
 - **Programming (2026-11-25, replacing 2026-11-24's).** **Programming** is a research-view

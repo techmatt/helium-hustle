@@ -47,9 +47,10 @@ export function perDay(x: Fx | number, digits = 1): string {
   return `${n < 0 ? '−' : '+'}${shown}/day`;
 }
 
-/** A story text's body with its `{rate}` filled as the Stats panel shows boredom growth. */
-export function storyBody(s: { body: string; rate?: Fx | null }): string {
-  return s.rate == null ? s.body : s.body.replaceAll('{rate}', perDay(s.rate, 2));
+/** An event's mechanics text (`effect`) with its `{rate}` filled as the Stats panel shows
+ * boredom growth. */
+export function fillRate(text: string, rate?: Fx | null): string {
+  return rate == null ? text : text.replaceAll('{rate}', perDay(rate, 2));
 }
 
 /** A multiplier: "×1.05". */

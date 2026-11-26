@@ -99,7 +99,7 @@ A story modal refuses every action and speed until read: `readStory()` reads one
   test editing the save does it after both.
 
 `npm run unit` (Node, no page) checks the number formatting (`src/format.ts`) and
-`storyBody`, `programEdit.ts`'s line edits, that every quest `picture` has a file, then `scripts/contrast.mjs`
+`fillRate` (an event effect's `{rate}`), `programEdit.ts`'s line edits, that every quest `picture` has a file, then `scripts/contrast.mjs`
 the text-on-background pairs in its hand-kept `PAIRS` list, in both themes, at
 4.5:1 (7:1 for `pos-text`, the Resources rates' green): a new token needs its pairs there.
 

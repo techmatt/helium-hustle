@@ -404,7 +404,21 @@ pub struct Event {
     pub beat: Option<String>,
     pub silent: bool,
     pub title: String,
+    /// A one-off event's one line (a quest has `goal` instead).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub summary: String,
+    /// A quest's mechanics text (docs/rulings/ui.md, *Quest mechanics text*): what to do,
+    /// what completing it does, and how-to steps. Display only, never read by a rule; the
+    /// narrative (`body`, `story`, `payoff`) carries no instructions or numbers.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub goal: String,
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub reward: String,
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub hints: Vec<String>,
+    /// A one-off event's mechanics text: what it does (may hold `{rate}`, as `body` did).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub effect: String,
     pub body: String,
     /// A chain quest's story, one paragraph per modal, shown when it becomes
     /// active; a `once` one-off's, shown when it fires (UI only;
@@ -802,6 +816,18 @@ impl Content {
             for u in &e.unlocks {
                 need(u.ids_ok(self), format!("{w}: bad unlock"));
             }
+            let mechanics_ok = if e.is_quest() || e.is_side() {
+                !e.goal.is_empty()
+                    && !e.reward.is_empty()
+                    && e.summary.is_empty()
+                    && e.effect.is_empty()
+                    && e.hints.iter().all(|h| !h.is_empty())
+                    // The side-quest view carries no hints.
+                    && (e.hints.is_empty() || e.is_quest())
+            } else {
+                e.goal.is_empty() && e.reward.is_empty() && e.hints.is_empty() && (e.silent || !e.summary.is_empty())
+            };
+            need(mechanics_ok, format!("{w}: a quest has a goal and a reward (no summary or effect); a one-off event a summary"));
             let story_ok = e.payoff.is_empty() && (e.story.is_empty() || e.once) || e.is_quest();
             need(story_ok, format!("{w}: story and payoff are for chain quests (a story also for a once one-off)"));
             need(!e.once || (!e.is_quest() && !e.is_side()), format!("{w}: once is for one-off events"));

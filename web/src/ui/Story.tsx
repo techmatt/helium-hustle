@@ -1,7 +1,7 @@
 // Story and Achievements. Story is a vertical quest timeline: one node per main-story
 // beat on a spine, oldest at the top, each act opening with its painted chapter band;
-// finished beats lit, one line each (a click replays their story modals), the active beat
-// ringed with its task, each beat with its quest picture's thumbnail when it has one,
+// finished beats lit, one line each (a click replays their story modals) over their goal
+// and reward in the mechanics style, the active beat ringed with its task, each beat with its quest picture's thumbnail when it has one,
 // and progress, one dim "???" below it, and side quests branching off the beat that
 // started them. Achievements are badges grouped by category. Every text, act and
 // progress comes from the engine's view (the same quest rows the story modals read).
@@ -12,7 +12,7 @@ import { capitalize, num } from '../format';
 import { justMoved, replayStory, type Store } from '../store';
 import { QuestPicture, actBand } from './art';
 import { ScopeIcon } from './icons';
-import { Bar, Quest } from './common';
+import { Bar, Mechanics, Quest } from './common';
 
 /** A finished quest's paragraphs: its opening (its body when it has none), then its payoff. */
 function paragraphs(q: StoryView): string[] {
@@ -70,12 +70,12 @@ function Side({ x }: { x: SideQuestView }) {
           >
             {open ? x.body : firstLine([x.body])}
           </button>
-        ) : (
-          <>
-            <div class="small">{x.summary}</div>
-            {x.progress && <Bar frac={Number(x.progress.now) / Number(x.progress.target)} label={`${num(x.progress.now)} / ${num(x.progress.target)}`} />}
-          </>
-        )}
+        ) : null}
+        <Mechanics goal={x.goal} reward={x.reward} done={x.done}>
+          {!x.done && x.progress && (
+            <Bar frac={Number(x.progress.now) / Number(x.progress.target)} label={`${num(x.progress.now)} / ${num(x.progress.target)}`} />
+          )}
+        </Mechanics>
       </div>
     </div>
   );
@@ -134,6 +134,7 @@ export function Story({ s }: { s: Store }) {
                       <span class="beat-text" data-testid="story-beat-line">
                         {firstLine(paragraphs(q))}
                       </span>
+                      <Mechanics goal={q.goal} reward={q.reward} done />
                     </span>
                   </button>
                   <Sides v={v} parent={q.id} />

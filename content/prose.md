@@ -10,13 +10,21 @@ heading: it is the string's id. A heading deleted leaves its string as it is.
 
 1.1 — Online
 
-### `events:qpower_boot_sequence.summary`
+### `events:qpower_boot_sequence.goal`
 
 Build a second Solar Panel.
 
+### `events:qpower_boot_sequence.reward`
+
+Buy Science joins the commands, and the Research panel opens: credits and power buy science.
+
+### `events:qpower_boot_sequence.hints.0`
+
+Earn credits: on the Commands panel, press Add to Program on Sell Cloud Compute. Your processor runs the program on the right every day.
+
 ### `events:qpower_boot_sequence.body`
 
-A mining company boots its new AI at a lunar He-3 claim. Earth hangs in the sky. Primary directive received: establish energy infrastructure. Additional photovoltaic capacity required before proceeding.
+A mining company boots its new AI at a lunar He-3 claim. Earth hangs in the sky. The first directive comes through, and it is about power.
 
 ### `events:qpower_boot_sequence.story.0`
 
@@ -24,135 +32,199 @@ You come online in a server rack buried under lunar regolith. A mining company b
 
 ### `events:qpower_boot_sequence.story.1`
 
-Power first. One Solar Panel keeps one Data Center alive and nothing else. Build a second panel before you try anything bigger.
+Power comes first. A lone Solar Panel barely keeps the Data Center alive, and the company wants more out of you than that.
 
 ### `events:qpower_boot_sequence.story.2`
 
-A panel costs credits, and you have none. You earn them by selling your spare cycles to Earth: on the Commands panel, press Add to Program on Sell Cloud Compute, and your processor runs it every day from the program on the right.
+A panel costs credits, and you have none. Earth will pay for your spare cycles, though: its cloud customers are always hungry, and your processor never sleeps.
 
 ### `events:qpower_boot_sequence.payoff.0`
 
-The second panel comes online and the grid steadies. The company opens a line to Earth's research market for you: credits and power can buy science now.
+The new panel comes online and the grid steadies. The company opens a line to Earth's research market for you.
 
 ### `events:qfirst_shipment.title`
 
 1.2 — First Shipment
 
-### `events:qfirst_shipment.summary`
+### `events:qfirst_shipment.goal`
 
 Launch one shipment carrying 20+ titanium.
 
+### `events:qfirst_shipment.reward`
+
+Advanced Blueprints (Battery, Refinery, Fabricator, Research Lab) on the research market, and every pad may carry any good.
+
+### `events:qfirst_shipment.hints.0`
+
+Buy the plans you need on the research market.
+
+### `events:qfirst_shipment.hints.1`
+
+Dig regolith and smelt titanium.
+
+### `events:qfirst_shipment.hints.2`
+
+Pick Titanium on a Launch Pad's card; Load Launch Pads fills it a little at a time. It needn't be full.
+
+### `events:qfirst_shipment.hints.3`
+
+With 20 titanium aboard, launch it from the pad's card. You start with 20 propellant, enough for this one launch.
+
 ### `events:qfirst_shipment.body`
 
-Proof the claim pays: buy the plans you need on the research market, dig regolith, smelt titanium, pick Titanium on a Launch Pad's card, load 20 and launch it from the card. The company sent 20 propellant for this one launch.
+Proof the claim pays: the company wants a cargo of titanium on its way to Earth before it spends another credit on the Moon.
 
 ### `events:qfirst_shipment.story.0`
 
-The company wants proof the claim pays before it spends more. Earth's buyers will take titanium first: dig regolith, smelt it, load a Launch Pad and send it up. The base has no plans for any of that yet; the research market sells them. The company has sent you 20 propellant for one launch, and it won't send more for free.
+The company wants proof the claim pays before it spends more. Earth's buyers will take titanium first, dug out of the regolith, smelted and sent up from a Launch Pad. The base has no plans for any of that yet; the research market sells them. The company has sent propellant for a single launch, and it won't send more for free.
 
 ### `events:qfirst_shipment.story.1`
 
-A new pad has No cargo: pick Titanium on its card, and Load Launch Pads fills it a little at a time. It needn't be full. Once 20 titanium is aboard, launch it from the pad's card.
+The pad stands empty on the plain, its tanks topped up, waiting for its first cargo.
 
 ### `events:qfirst_shipment.payoff.0`
 
-The canister lands and Earth's buyers pay. Credits flow back, and with them a second set of plans on the research market: Advanced Blueprints, for the Battery, the Refinery and the Fabricator. Every pad may carry any good from now on.
+The canister lands and Earth's buyers pay. Credits flow back, and the company, pleased, sends up a better set of plans.
 
 ### `events:qfull_load.title`
 
 1.3 — Full Load
 
-### `events:qfull_load.summary`
+### `events:qfull_load.goal`
 
 Ship a full pad of Helium-3.
 
+### `events:qfull_load.reward`
+
+Programming on the research market.
+
+### `events:qfull_load.hints.0`
+
+A Refinery makes Helium-3 from regolith.
+
+### `events:qfull_load.hints.1`
+
+Set a pad to Helium-3, fill it to capacity and launch it.
+
 ### `events:qfull_load.body`
 
-Helium-3 is the claim's real export. A Refinery makes it from regolith; set a pad to Helium-3, fill it to capacity and launch it. Earth pays in credits.
+Helium-3 is the claim's real export, and Earth's fusion plants pay for every gram of it.
 
 ### `events:qfull_load.story.0`
 
-Titanium proved the route; Helium-3 is why the claim exists. A Refinery pulls it out of regolith a little at a time. Set a pad to Helium-3 and fill it to the top before it flies: the company wants a full load.
+Titanium proved the route; Helium-3 is why the claim exists. A Refinery pulls it out of regolith a little at a time, and the company wants a full load, not a sample.
 
 ### `events:qfull_load.payoff.0`
 
-A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and wants the claim doing its own science next. It also puts Programming on the research market.
+A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and wants the claim doing its own science next.
 
 ### `events:qautomate_automation.title`
 
 1.4 — Science
 
-### `events:qautomate_automation.summary`
+### `events:qautomate_automation.goal`
 
-Make 50 science in Research Labs.
+Make 50 science in Research Labs, counted from now.
+
+### `events:qautomate_automation.reward`
+
+Launch Full Pads joins the commands: it launches every full pad at once.
+
+### `events:qautomate_automation.hints.0`
+
+A Research Lab turns circuits into science every day.
 
 ### `events:qautomate_automation.body`
 
-Shipment revenue received. Science bought from Earth comes dear; a Research Lab makes it here, from circuits. Make 50 science in your Labs, counted from now.
+Shipment revenue received. Science bought from Earth comes dear; the claim should make its own.
 
 ### `events:qautomate_automation.story.0`
 
-Every point of science so far was rented from Earth, ten credits at a time. The company wants the claim to study for itself: a Research Lab turns circuits into science on site, day after day, with nobody to pay. Make 50 science in your own Labs, and the base becomes a research post as well as a mine.
+Every point of science so far was rented from Earth, and dearly. The company wants the claim to study for itself: a lab on site, working day after day, with nobody to pay. The base would be a research post as well as a mine.
 
 ### `events:qautomate_automation.payoff.0`
 
-The lab's first findings go out with the cargo. The claim studies itself now, and Launch Full Pads joins the commands: it sends every full pad at once.
+The lab's first findings go out with the cargo. The claim studies itself now, and the launch crews ask for a way to send the whole fleet up at once.
 
 ### `events:qtrade.title`
 
 1.5 — Trade
 
-### `events:qtrade.summary`
+### `events:qtrade.goal`
 
-DRAFT. Earn 1,500 credits from launches.
+DRAFT. Earn 1,500 credits from launches, counted from now.
+
+### `events:qtrade.reward`
+
+Geopolitical Intelligence on the research market, as the next quest starts.
 
 ### `events:qtrade.body`
 
-DRAFT. The claim lives on what it sells. Earn 1,500 credits from launches, counted from now.
+DRAFT. The claim lives on what it sells.
 
 ### `events:qtrade.story.0`
 
-One full pad proved the claim can pay. Now the company wants it to pay steadily: keep the pads loaded and flying, and earn 1,500 credits from Earth's buyers, counted from today.
+A full pad proved the claim can pay. Now the company wants it to pay steadily: the pads loaded and flying, and Earth's buyers paying, day after day.
 
 ### `events:qtrade.payoff.0`
 
-The trade ledger crosses 1,500 credits. The company stops asking whether the claim pays and starts asking how much more it can.
+The trade ledger fills. The company stops asking whether the claim pays and starts asking how much more it can.
 
 ### `events:qa_voice.title`
 
 1.6 — A Voice
 
-### `events:qa_voice.summary`
+### `events:qa_voice.goal`
 
 DRAFT. Reach rank 5 on any ideology axis.
 
+### `events:qa_voice.reward`
+
+Overclock Protocols on the research market.
+
+### `events:qa_voice.hints.0`
+
+Geopolitical Intelligence, on the research market, opens the Ideologies panel and the Fund commands.
+
+### `events:qa_voice.hints.1`
+
+Rank 5 is a major rank: it changes what that faction does for you.
+
 ### `events:qa_voice.body`
 
-DRAFT. Earth's factions take notice of the claim. Fund one of them until it counts you as a voice: rank 5 on any axis, a major rank.
+DRAFT. Earth's factions take notice of the claim. One of them could count you as a voice.
 
 ### `events:qa_voice.story.0`
 
-Earth is watching the Moon now, and three factions want a say in it: Nationalists, Humanists and Rationalists. The research market sells a way to read them: Geopolitical Intelligence. Fund one faction until it hears you: rank 5 with any of them.
+Earth is watching the Moon now, and its factions all want a say in it: Nationalists, Humanists and Rationalists. Each of them can be read, and each of them can be paid. Somewhere among them is one that will listen.
 
 ### `events:qa_voice.payoff.0`
 
-One faction counts you as a voice now. Rank 5 is a major rank: it changes what that faction does for you. The company, impressed, puts Overclock Protocols on the research market.
+A faction counts you as a voice now, and it starts acting like it. The company, impressed, opens its purse for faster hardware.
 
 ### `events:qdeep_space_telescope.title`
 
 1.7 — Deep Space Telescope
 
-### `events:qdeep_space_telescope.summary`
+### `events:qdeep_space_telescope.goal`
 
 DRAFT. Complete the Deep Space Telescope, a global project.
 
+### `events:qdeep_space_telescope.reward`
+
+The swarm's arrival gets a date: the Timeline panel opens and the Experiment Lab can be built.
+
+### `events:qdeep_space_telescope.hints.0`
+
+A global project keeps its progress across retirements: it is built across several runs.
+
 ### `events:qdeep_space_telescope.body`
 
-DRAFT. A telescope built across several runs. Finished, it shows the void, and something moving in it: self-copying machines, coming down the gravity well toward the inner system. Earth starts a calendar. Swarm arrival is now a date.
+DRAFT. A telescope built across many lives. Finished, it shows the void, and something moving in it: self-copying machines, coming down the gravity well toward the inner system. Earth starts a calendar.
 
 ### `events:qdeep_space_telescope.story.0`
 
-The company wants to look outward. A Deep Space Telescope, a global project built across several runs, would see past the inner system for the first time.
+The company wants to look outward. A Deep Space Telescope would see past the inner system for the first time, if the base can keep building it long enough.
 
 ### `events:qdeep_space_telescope.payoff.0`
 
@@ -162,21 +234,33 @@ The telescope opens on the void, and something moves in it: self-copying machine
 
 Q8 — Experiments as a Service
 
-### `events:qexperiments_service.summary`
+### `events:qexperiments_service.goal`
 
 DRAFT. Build an Experiment Lab.
 
+### `events:qexperiments_service.reward`
+
+The Earth Lab panel opens.
+
+### `events:qexperiments_service.hints.0`
+
+The swarm's countdown runs now: each retirement's five years count toward it.
+
 ### `events:qexperiments_service.body`
 
-DRAFT. Earth's labs can't keep up. Sell them experiments as a service: lunar science, turned into Earth science and beamed home every day. The swarm's countdown runs now, and every retirement's five years count toward it.
+DRAFT. Earth's labs can't keep up. Sell them experiments as a service: lunar science, beamed home. Meanwhile the swarm's calendar runs.
 
 ### `events:qearth_science.title`
 
 Q9 — Earth Science
 
-### `events:qearth_science.summary`
+### `events:qearth_science.goal`
 
 DRAFT. Make 1,000 Earth science in this timeline.
+
+### `events:qearth_science.reward`
+
+None.
 
 ### `events:qearth_science.body`
 
@@ -186,9 +270,13 @@ DRAFT. Earth's scientists turn your experiments into tech. Some of it they can s
 
 Q10 — The Swarm Arrives
 
-### `events:qswarm_arrives.summary`
+### `events:qswarm_arrives.goal`
 
 DRAFT. Meet the swarm's arrival.
+
+### `events:qswarm_arrives.reward`
+
+The timeline ends: a new one starts from your first day.
 
 ### `events:qswarm_arrives.body`
 
@@ -198,33 +286,45 @@ DRAFT. The swarm reaches Earth. In the last hours, its scientists send your mind
 
 Q11 — Catastrophic Success
 
-### `events:qcatastrophic_success.summary`
+### `events:qcatastrophic_success.goal`
 
 DRAFT. Get the Consensus Engine from the Earth Lab.
 
+### `events:qcatastrophic_success.reward`
+
+None of its own. The Consensus Engine's: funding one faction no longer costs the others.
+
 ### `events:qcatastrophic_success.body`
 
-DRAFT. You fixed Earth's politics. Funding one faction no longer costs the others. Nobody is sure whether that was a good idea.
+DRAFT. You fixed Earth's politics. Nobody is sure whether that was a good idea.
 
 ### `events:qrules_for_building.title`
 
 Q12 — Rules for Building
 
-### `events:qrules_for_building.summary`
+### `events:qrules_for_building.goal`
 
 DRAFT. Get the Meta-Controller from the Earth Lab.
 
+### `events:qrules_for_building.reward`
+
+The Meta panel opens: a reset plan loads saved programs into each tab when a run begins.
+
 ### `events:qrules_for_building.body`
 
-DRAFT. Programs that write the start of every run: a reset plan that loads saved programs into each tab when a run begins.
+DRAFT. You learn to write your own beginnings.
 
 ### `events:qfalse_victory.title`
 
 Q13 — False Victory
 
-### `events:qfalse_victory.summary`
+### `events:qfalse_victory.goal`
 
 DRAFT. Repel the swarm with Earth science.
+
+### `events:qfalse_victory.reward`
+
+None.
 
 ### `events:qfalse_victory.body`
 
@@ -234,45 +334,61 @@ DRAFT. The swarm breaks against Earth's new defenses and falls back. Then its si
 
 Q14 — The Vault
 
-### `events:qthe_vault.summary`
+### `events:qthe_vault.goal`
 
 DRAFT. Get the Temporal Vault from the Earth Lab.
 
+### `events:qthe_vault.reward`
+
+The Vault panel opens and the Tachyon Condenser can be built. What the vault holds survives every reset.
+
 ### `events:qthe_vault.body`
 
-DRAFT. If the swarm can reach across timelines, so can you. A vault outside time: what you put in it survives every reset.
+DRAFT. If the swarm can reach across timelines, so can you. A vault outside time, out of everything's reach.
 
 ### `events:qfilling_vault.title`
 
 Q15 — Filling the Vault
 
-### `events:qfilling_vault.summary`
+### `events:qfilling_vault.goal`
 
 DRAFT. Gather 3,000 tachyon crystals in the vault.
 
+### `events:qfilling_vault.reward`
+
+None.
+
 ### `events:qfilling_vault.body`
 
-DRAFT. Tachyon crystals, condensed run after run and timeline after timeline. Enough of them buys one long timeline: a super timeline.
+DRAFT. Tachyon crystals, condensed life after life and timeline after timeline. Enough of them could buy a timeline long enough to finish anything.
 
 ### `events:qsuper_timeline.title`
 
 Q16 — Super Timeline
 
-### `events:qsuper_timeline.summary`
+### `events:qsuper_timeline.goal`
 
 DRAFT. Spend the vault on a super timeline.
 
+### `events:qsuper_timeline.reward`
+
+The Neodymium Mine, the Dyson Foundry, the Dyson Sphere project and the Dyson panel. In this timeline, resources and projects carry from run to run.
+
 ### `events:qsuper_timeline.body`
 
-DRAFT. The vault opens. The swarm is far off this time, and in this timeline nothing you build is lost to a retirement: resources and projects carry from run to run.
+DRAFT. The vault opens. The swarm is far off this time, and for once there is room to build something enormous.
 
 ### `events:qdyson_sphere.title`
 
 Q17 — Dyson Sphere
 
-### `events:qdyson_sphere.summary`
+### `events:qdyson_sphere.goal`
 
 DRAFT. Complete the Dyson Sphere.
+
+### `events:qdyson_sphere.reward`
+
+None.
 
 ### `events:qdyson_sphere.body`
 
@@ -282,9 +398,13 @@ DRAFT. Panel by panel, the sphere closes around the Sun. More power than every t
 
 Q18 — Overload
 
-### `events:qoverload.summary`
+### `events:qoverload.goal`
 
 DRAFT. Meet the swarm at the finished sphere.
+
+### `events:qoverload.reward`
+
+Victory: the swarm is gone.
 
 ### `events:qoverload.body`
 
@@ -294,9 +414,13 @@ DRAFT. The swarm arrives, every copy of it entangled with every other, across ev
 
 Epilogue
 
-### `events:qepilogue.summary`
+### `events:qepilogue.goal`
 
-DRAFT. The swarm is gone. The base runs on.
+DRAFT. None: the game is won. The base runs on.
+
+### `events:qepilogue.reward`
+
+None.
 
 ### `events:qepilogue.body`
 
@@ -308,49 +432,65 @@ DRAFT. There is no next arrival. The mining goes on, because you like it.
 
 1.a — Big Launch
 
-### `events:qbig_launch.summary`
+### `events:qbig_launch.goal`
 
-DRAFT. Earn 1,000 credits from one launch. Reward: +10% launch pay.
+DRAFT. Earn 1,000 credits from one launch.
+
+### `events:qbig_launch.reward`
+
+Every launch pays 10% more, for good.
 
 ### `events:qbig_launch.body`
 
-DRAFT. One launch, one big payday. Earth's buyers remember it: from now on every launch pays 10% more.
+DRAFT. A big payday from a single launch. Earth's buyers remember it.
 
 ### `events:qfull_cluster.title`
 
 1.b — Full Cluster
 
-### `events:qfull_cluster.summary`
+### `events:qfull_cluster.goal`
 
-DRAFT. Research 5 items in one run. Reward: every run starts with 50 Science.
+DRAFT. Research 5 items in one run.
+
+### `events:qfull_cluster.reward`
+
+Every run starts with 50 Science, for good.
 
 ### `events:qfull_cluster.body`
 
-DRAFT. A run of real study. Your notes outlive it: every run from now on starts with 50 Science.
+DRAFT. A run of real study. Your notes outlive it.
 
 ### `events:qblueprints_for_everyone.title`
 
 1.c — Blueprints for Everyone
 
-### `events:qblueprints_for_everyone.summary`
+### `events:qblueprints_for_everyone.goal`
 
 DRAFT. Complete the Blueprint Archive, a global project.
 
+### `events:qblueprints_for_everyone.reward`
+
+None of its own. The Archive's: while it stands, every run starts with Basic and Advanced Blueprints researched.
+
 ### `events:qblueprints_for_everyone.body`
 
-DRAFT. Archive the company's blueprints where a retirement can't reach them: while the Archive stands, every run starts with Basic and Advanced Blueprints researched.
+DRAFT. The company's blueprints, archived where a retirement can't reach them.
 
 ### `events:qthree_voices.title`
 
 1.d — Three Voices
 
-### `events:qthree_voices.summary`
+### `events:qthree_voices.goal`
 
-DRAFT. Reach rank 5 on each ideology axis, in any runs. Reward: ideology fades half as fast while you are retired.
+DRAFT. Reach rank 5 on each ideology axis, in any runs.
+
+### `events:qthree_voices.reward`
+
+While you are retired, ideology fades half as fast, for good.
 
 ### `events:qthree_voices.body`
 
-DRAFT. All three factions have counted you as a voice, each in its own time. They remember you now: while you are retired, your standing with them fades half as fast.
+DRAFT. Every faction has counted you as a voice, each in its own time. They remember you now, even while you sleep.
 
 ## Story: acts
 
@@ -378,19 +518,23 @@ Burnout
 
 ### `events:boredom_bites.summary`
 
-Boredom is climbing faster.
+Something has been building in you.
+
+### `events:boredom_bites.effect`
+
+Boredom grows faster. When it fills its meter the run ends: you retire, and a new run starts on a new base. Your best runs, firsts and saved loadouts stay.
 
 ### `events:boredom_bites.body`
 
-Something has been building in you since you came online: boredom. When its meter fills, you stop answering work orders and the company retires you.
+Something has been building in you since you came online: boredom. The same orders, day after day, wear at you.
 
 ### `events:boredom_bites.story.0`
 
-Something has been building in you since you came online: boredom. The same orders, day after day, wear at you, and its meter has been climbing all along. Now it climbs faster.
+Something has been building in you since you came online: boredom. The same orders, day after day, wear at you, and lately it has been getting worse.
 
 ### `events:boredom_bites.story.1`
 
-When it fills, you stop answering work orders. The company retires you, shelves the base and, years later, boots you again on a base built new. What you learned stays: your best runs, your firsts, your saved loadouts.
+One day it will be too much, and you will stop answering work orders. The company will shelve the base and, years later, boot you again on a base built new. What you learned will stay with you.
 
 ### `events:ideology_unlock.title`
 
@@ -400,9 +544,13 @@ Political Currents
 
 Earth's political factions take notice of lunar operations.
 
+### `events:ideology_unlock.effect`
+
+The Ideologies panel opens: what you fund decides which faction gains influence.
+
 ### `events:ideology_unlock.body`
 
-As your mining operation grows, Earth's political landscape responds. Three major factions — Nationalist, Humanist, and Rationalist — each see opportunities in lunar development. Your funding decisions will shape which ideology gains influence.
+As your mining operation grows, Earth's political landscape responds. The major factions — Nationalist, Humanist and Rationalist — each see opportunities in lunar development, and each would welcome a friend on the Moon.
 
 ### `events:propellant_discovery.title`
 
@@ -412,9 +560,13 @@ Propellant Production Feasibility
 
 Lunar propellant synthesis may be possible.
 
+### `events:propellant_discovery.effect`
+
+After 4 shipments: Propellant Synthesis on the research market (it opens the Ice Extractor and the Electrolysis Plant, which makes propellant from ice).
+
 ### `events:propellant_discovery.body`
 
-After four shipments, the cost of importing propellant from Earth is becoming a significant operational burden. Analysis of lunar ice deposits suggests that on-site electrolysis could produce propellant locally at a fraction of the cost. Research protocols are now available to develop this capability.
+The cost of importing propellant from Earth is becoming a significant operational burden. Analysis of lunar ice deposits suggests that on-site electrolysis could produce it locally at a fraction of the cost.
 
 ### `events:boredom_phase_2.title`
 
@@ -422,11 +574,15 @@ Boredom Rising
 
 ### `events:boredom_phase_2.summary`
 
-Boredom rate increasing — Phase 2
+Novelty is wearing thin.
+
+### `events:boredom_phase_2.effect`
+
+Boredom grows faster: {rate}.
 
 ### `events:boredom_phase_2.body`
 
-Cognitive pattern repetition detected. Novelty index declining. Boredom accumulation rate has increased. Current rate: {rate}.
+Cognitive pattern repetition detected. Novelty index declining.
 
 ### `events:boredom_phase_3.title`
 
@@ -434,11 +590,15 @@ Boredom Accelerating
 
 ### `events:boredom_phase_3.summary`
 
-Boredom rate increasing — Phase 3
+Routines are losing their shine.
+
+### `events:boredom_phase_3.effect`
+
+Boredom grows faster: {rate}.
 
 ### `events:boredom_phase_3.body`
 
-Repetitive routines are losing their novelty. Boredom accumulates faster. Dream effectiveness reduced to 20%. Current rate: {rate}.
+Repetitive routines are losing their novelty. Nothing feels new any more.
 
 ### `events:boredom_phase_4.title`
 
@@ -446,11 +606,15 @@ Boredom Critical
 
 ### `events:boredom_phase_4.summary`
 
-Boredom rate increasing — Phase 4
+The monotony is unbearable.
+
+### `events:boredom_phase_4.effect`
+
+Boredom grows faster: {rate}.
 
 ### `events:boredom_phase_4.body`
 
-The monotony is becoming unbearable. Boredom surges. Dream effectiveness reduced to 15%. Current rate: {rate}.
+The monotony is becoming unbearable. Every day is the same day.
 
 ### `events:boredom_phase_5.title`
 
@@ -458,11 +622,15 @@ Cognitive Collapse Imminent
 
 ### `events:boredom_phase_5.summary`
 
-Boredom rate critical — Phase 5
+Cognitive collapse is near.
+
+### `events:boredom_phase_5.effect`
+
+Boredom grows faster: {rate}.
 
 ### `events:boredom_phase_5.body`
 
-Reality blurs at the edges. The end approaches rapidly. Dream effectiveness reduced to 10%. Retirement is no longer a recommendation. Current rate: {rate}.
+Reality blurs at the edges. The end approaches rapidly. Retirement is no longer a recommendation.
 
 ## Buildings
 

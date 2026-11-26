@@ -105,25 +105,25 @@ after a retirement from day 0. One-off events still fire again during the run on
 trigger and condition hold.
 
 `category` decides chain quest, side quest or one-off. `silent` keeps a one-off event out of the activity
-feed and the view's event list (display only). `title`, `summary` and `body` are text no
-rule reads (the view hands a boredom phase's body its `rate`, the phase's boredom per day,
-and the UI fills `{rate}` with it as Stats shows boredom growth). The run records the day
+feed and the view's event list (display only). Text no rule reads: `title`, a one-off's
+`summary` (its headline), `body`, `story` and `payoff` (narrative only), and the mechanics
+fields, a chain quest's `goal`, `reward` and `hints`, a side quest's `goal` and `reward`, a
+one-off's `effect` (ui.md, *Quest mechanics text*; checked at load).
+The view hands a boredom phase its `rate`, the phase's boredom per day, and the UI fills its
+effect's `{rate}` with it as Stats shows boredom growth. The run records the day
 each one-off fired (`Run.events`, display only); the view lists them by that day, content
 order within a day, and the right column's Events Story section shows them newest first.
 
 **Story modals** (UI only: no rule reads them, sims never see them). A chain quest's `story`
 (shown as it becomes active) and `payoff` (shown as it completes) are paragraphs, one modal
-each, in `content/events.json`; the quest's `summary` is its one-line task. When the active
-quest moves on, the web UI pauses and shows the finished quests' payoffs (and the story of any
-quest passed through the same day), then the new quest's story with its task, resuming after
+each, in `content/events.json`. When the active
+quest moves on, the web UI pauses and shows the finished quests' payoffs with their rewards (and the story of any
+quest passed through the same day), then the new quest's story with its goal and hints, resuming after
 the last; a new game shows only 1.1's. A quest with no `story` shows its `body`. A `once` one-off with a `story` (Burnout, `boredom_bites`) is a
 modal too, the first time it fires (its pages, no payoff); the view carries it in `event_texts`. The view
 carries them (`quest.story`; each completed quest's `chain`, `story` and `payoff`). A quest
 (chain or side) may name a `picture`, the stem of a web asset (`[a-z0-9_]`; the view carries
-it on `quest`, `story` and `side_quests`): shown above the modal's paragraph (a side
-quest's beside its completion banner's text), at the left
-column's foot while it is the active main quest (the lunar horizon otherwise), and as a
-thumbnail beside its beat's title on Story. Every Act 1 quest has one (1.1-1.7 and 1.a-1.d); later quests have none yet.
+it on `quest`, `story` and `side_quests`; where it shows: ui.md, *Quest pictures*).
 
 **Story's timeline** (display only). Each chain quest belongs to an act: `content/acts.json`
 names the acts (placeholder names) and the chain quest each opens with; a quest is in the
@@ -132,9 +132,8 @@ reached (`acts`: an act whose first quest is active or completed), whether a lat
 quest exists (`quest.more`), and `side_quests`: each side quest started (its trigger
 happened) or completed, with the chain quest it branches off (`parent`, its trigger's quest, or a `flag` trigger's
 `beside`) and its progress (a side quest's trigger must be a chain quest's completion or a
-`flag` beside one: a load error otherwise). The Story panel draws the finished beats, the active one and a "???" from
-these, each finished card one line (its first sentence and "…"); a finished beat's click
-replays its modals, a finished side quest's opens its text in place.
+`flag` beside one: a load error otherwise). The Story panel draws the finished beats, the
+active one and a "???" from these (cards: ui.md, *Story cards*).
 
 **Activity feed** (display: no rule reads it). The run keeps a feed of what happened, by
 day: each completed quest, earned achievement, completed project and bought research (the

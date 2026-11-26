@@ -30,7 +30,9 @@ const PAIRS = [
   ['accent-text', ['panel', 'card', 'banner', 'hover', 'warn-head']],
   ['pos', ['page', 'panel', 'card', 'ok-tint', 'skip-tint', 'hover']],
   ['neg', ['page', 'panel', 'card', 'bad-tint', 'hover', 'ok-tint', 'disabled']],
-  ['info', ['panel', 'card', 'banner']],
+  ['info', ['panel', 'card', 'banner', 'mech-tint']],
+  // The mechanics strip's text (quest goals, rewards, event effects).
+  ['text', ['mech-tint']],
   ['sel-text', ['sel-bg', 'sel-hover']],
   // An earned achievement's star on its medal.
   ['panel', ['accent-text']],

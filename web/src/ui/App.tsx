@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { SPEEDS, type Speed } from '../clock';
-import { capitalize, mult, num, perDay, storyBody } from '../format';
+import { capitalize, mult, num, perDay } from '../format';
 import {
   continueAfterRetirement,
   dismissStory,
@@ -18,7 +18,7 @@ import {
 } from '../store';
 import { QuestPicture, Sky } from './art';
 import { Buildings } from './Buildings';
-import { Bar, BoredomBar, RateCell, Section, isCapped, navShown } from './common';
+import { Bar, BoredomBar, Mechanics, RateCell, Section, isCapped, navShown } from './common';
 import { Chip } from './icons';
 import { Left } from './Left';
 import { Options } from './Options';
@@ -95,12 +95,13 @@ export function App() {
         <div class="story-banner" data-testid="story-banner" data-story={s.stories[0].id}>
           <div class="story-head">
             <strong>{s.stories[0].title}</strong>
-            <span class="muted">{s.stories[0].summary}</span>
+            {s.stories[0].summary && <span class="muted">{s.stories[0].summary}</span>}
           </div>
           <div class="story-banner-body">
             <QuestPicture stem={s.stories[0].picture} at="banner" />
-            <blockquote>{storyBody(s.stories[0])}</blockquote>
+            <blockquote>{s.stories[0].body}</blockquote>
           </div>
+          <Mechanics goal={s.stories[0].goal} reward={s.stories[0].reward} done />
           <button type="button" onClick={dismissStory}>
             {s.stories.length > 1 ? `Next (${s.stories.length - 1} more)` : 'OK'}
           </button>
@@ -254,10 +255,11 @@ function StoryModal({ s }: { s: Store }) {
         </h2>
         <QuestPicture stem={p.picture} at="modal" />
         <p class="story-text">{p.text}</p>
+        {(p.reward || p.effect) && <Mechanics reward={p.reward} effect={p.effect} />}
         {p.task && (
-          <p class="story-task">
-            <strong>Next: {p.task}</strong>
-          </p>
+          <div class="story-task">
+            <Mechanics goal={p.task} hints={p.hints} />
+          </div>
         )}
         <button
           type="button"

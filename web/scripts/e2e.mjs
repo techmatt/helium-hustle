@@ -1522,7 +1522,7 @@ async function everyPanel() {
   const content = (f) => JSON.parse(readFileSync(resolve(here, `../../content/${f}`), 'utf8'));
   const draftPanels = new Set(
     content('events.json')
-      .filter((e) => (e.summary ?? '').startsWith('DRAFT'))
+      .filter((e) => (e.goal ?? '').startsWith('DRAFT'))
       .flatMap((e) => (e.unlocks ?? []).filter((u) => u.type === 'enable_nav_panel').map((u) => u.panel)),
   );
   const act1 = content('nav.json').map((n) => n.id).filter((id) => !draftPanels.has(id));

@@ -95,7 +95,8 @@ Programs have their own part ([programs.md](programs.md)).
   prose the engine's view carries (the run summary's line on why the run ended) is content
   too, in `content/messages.json`.
 - **Story modals (2026-11-23).** Each chain quest's transition is a modal that pauses the
-  game: the finished quest's payoff, then the next quest's story, then its task in one line;
+  game: the finished quest's payoff (its reward under it), then the next quest's story, then
+  its goal and hints in the mechanics style (ui.md, *Quest mechanics text*);
   one paragraph a modal, chained or merged as the story reads best, one button, play resumes
   after the last; a chain's unread pages and the speed it resumes are in the save, so a
   reload mid-chain shows them again (082's deferral). No modal at game start but the first quest's; side quests unchanged; sims

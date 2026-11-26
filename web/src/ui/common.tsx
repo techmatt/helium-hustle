@@ -57,7 +57,63 @@ export function risingIsBad(id: string): boolean {
   return id === 'boredom';
 }
 
-/** The main-story quest: title, summary, and its progress or sub-objectives. */
+/** A quest's mechanics text, apart from its narrative in the mechanics style (a tinted
+ * strip in small monospace; docs/rulings/ui.md, *Quest mechanics text*): its goal (✓ once
+ * done), what completing it does, and how-to steps; or a one-off event's effect. `children` (a progress bar,
+ * sub-objectives) sit under the goal. */
+export function Mechanics({
+  goal,
+  reward,
+  effect,
+  hints = [],
+  done = false,
+  children,
+}: {
+  goal?: string;
+  reward?: string;
+  /** A one-off event's: what it does. */
+  effect?: string;
+  hints?: string[];
+  done?: boolean;
+  children?: ComponentChildren;
+}) {
+  if (!goal && !reward && !effect && hints.length === 0) return null;
+  return (
+    <span class="mechanics" data-testid="mechanics">
+      {goal && (
+        <span class="mech-line mech-goal">
+          <span class="mech-key">{done ? 'Done' : 'Goal'}</span>
+          <span>
+            {goal}
+            {done && <span class="ok"> ✓</span>}
+          </span>
+        </span>
+      )}
+      {children}
+      {hints.map((h, i) => (
+        <span key={i} class="mech-line mech-hint">
+          <span class="mech-key">How</span>
+          <span>{h}</span>
+        </span>
+      ))}
+      {reward && (
+        <span class="mech-line mech-reward">
+          <span class="mech-key">Reward</span>
+          <span>{reward}</span>
+        </span>
+      )}
+      {effect && (
+        <span class="mech-line mech-effect">
+          <span class="mech-key">Effect</span>
+          <span>{effect}</span>
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** The main-story quest: title, then its goal, progress or sub-objectives, how-to steps
+ * and reward in the mechanics style. */
 export function Quest({ v }: { v: View }) {
   const q = v.quest;
   if (!q) return null;
@@ -69,21 +125,22 @@ export function Quest({ v }: { v: View }) {
         {q.title}
         {subs.length > 0 && ` [${done}/${subs.length}]`}
       </div>
-      <div class="quest-summary">{q.summary}</div>
-      {q.progress && subs.length === 0 && (
-        <Bar frac={Number(q.progress.now) / Number(q.progress.target)} label={`${num(q.progress.now)} / ${num(q.progress.target)}`} />
-      )}
-      {subs.map((x) => (
-        <div key={x.id} class={`sub ${x.done ? 'done' : ''}`}>
-          {x.done ? '✓' : '○'} {x.label}
-          {!x.done && x.progress && (
-            <span class="muted">
-              {' '}
-              {num(x.progress.now)} / {num(x.progress.target)}
-            </span>
-          )}
-        </div>
-      ))}
+      <Mechanics goal={q.goal} reward={q.reward} hints={q.hints}>
+        {q.progress && subs.length === 0 && (
+          <Bar frac={Number(q.progress.now) / Number(q.progress.target)} label={`${num(q.progress.now)} / ${num(q.progress.target)}`} />
+        )}
+        {subs.map((x) => (
+          <div key={x.id} class={`sub ${x.done ? 'done' : ''}`}>
+            {x.done ? '✓' : '○'} {x.label}
+            {!x.done && x.progress && (
+              <span class="muted">
+                {' '}
+                {num(x.progress.now)} / {num(x.progress.target)}
+              </span>
+            )}
+          </div>
+        ))}
+      </Mechanics>
     </div>
   );
 }

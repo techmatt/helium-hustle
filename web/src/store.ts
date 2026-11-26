@@ -20,6 +20,7 @@ import {
   type StoryView,
   type View,
 } from './engine';
+import { fillRate } from './format';
 import type { Autopilot } from './wasm/hh_wasm.js';
 import * as playlog from './playlog';
 import { clearSave, loadSave, SAVE_KEY, storageGet, storageSet, writeSave } from './save';
@@ -191,8 +192,14 @@ export interface StoryPage {
   /** `story`: the quest's opening text; `payoff`: its completion text. */
   kind: 'story' | 'payoff';
   text: string;
-  /** The next quest's one-line task, on a transition's last page. */
+  /** The next quest's one-line task (its goal) and how-to steps, on a transition's last
+   * page (mechanics text, shown apart from the paragraph). */
   task?: string;
+  hints?: string[];
+  /** The finished quest's reward, on its last payoff page (mechanics text). */
+  reward?: string;
+  /** A one-off event's effect, on its last page (mechanics text). */
+  effect?: string;
   /** Its quest's picture's file stem (above the paragraph), null when it has none. */
   picture: string | null;
 }
@@ -208,6 +215,13 @@ let lastQuest: string | null = null;
 /** A quest's opening paragraphs, its body when it has none. */
 function openingOf(q: { story?: string[]; body: string }): string[] {
   return q.story && q.story.length > 0 ? q.story : q.body ? [q.body] : [];
+}
+
+/** A finished chain quest's payoff pages, its reward on the last. */
+function payoffPages(q: StoryView, pages: StoryPage[]): void {
+  const at = pages.length;
+  for (const t of q.payoff ?? []) pages.push({ quest: q.id, title: q.title, kind: 'payoff', text: t, picture: q.picture ?? null });
+  if (pages.length > at && q.reward) pages[pages.length - 1].reward = q.reward;
 }
 
 /** Tells the story. A main-story transition (the active quest changed from X to Y)
@@ -231,7 +245,7 @@ function tell(v: View, mode: 'load' | 'intro' | 'play'): void {
       continue;
     }
     if (q.id !== lastQuest) for (const t of openingOf(q)) pages.push({ quest: q.id, title: q.title, kind: 'story', text: t, picture: q.picture ?? null });
-    for (const t of q.payoff ?? []) pages.push({ quest: q.id, title: q.title, kind: 'payoff', text: t, picture: q.picture ?? null });
+    payoffPages(q, pages);
   }
   // A once-a-career one-off with a story (the first time boredom bites) is a modal too.
   for (const e of v.event_texts) {
@@ -239,13 +253,14 @@ function tell(v: View, mode: 'load' | 'intro' | 'play'): void {
     toldStories.add(e.id);
     if (mode !== 'play') continue;
     for (const t of e.story) pages.push({ quest: e.id, title: e.title, kind: 'story', text: t, picture: null });
+    if (e.effect) pages[pages.length - 1].effect = fillRate(e.effect, e.rate);
   }
   const fresh = mode === 'intro' && v.run === 1 && v.day === 0 && v.completed_quests.length === 0;
   if (quest && quest.id !== lastQuest && !openedQuests.has(quest.id)) {
     openedQuests.add(quest.id);
     if (mode === 'play' || fresh) {
       for (const t of openingOf(quest)) pages.push({ quest: quest.id, title: quest.title, kind: 'story', text: t, picture: quest.picture });
-      if (pages.length > 0) pages[pages.length - 1].task = quest.summary;
+      if (pages.length > 0) Object.assign(pages[pages.length - 1], { task: quest.goal, hints: quest.hints });
     }
   }
   lastQuest = quest?.id ?? null;
@@ -279,10 +294,9 @@ function holdClock(): Speed {
 export function replayStory(q: StoryView): void {
   if (stoodDown || store.summary || store.storyPages.length > 0 || pilotBusy()) return;
   movedAt = performance.now();
-  const pages: StoryPage[] = [
-    ...openingOf(q).map((text) => ({ quest: q.id, title: q.title, kind: 'story' as const, text, picture: q.picture ?? null })),
-    ...(q.payoff ?? []).map((text) => ({ quest: q.id, title: q.title, kind: 'payoff' as const, text, picture: q.picture ?? null })),
-  ];
+  const pages: StoryPage[] = openingOf(q).map((text) => ({ quest: q.id, title: q.title, kind: 'story' as const, text, picture: q.picture ?? null }));
+  if (pages.length > 0 && q.goal) pages[pages.length - 1].task = q.goal;
+  payoffPages(q, pages);
   if (pages.length === 0) return;
   openStory(pages);
   emit();
@@ -954,7 +968,11 @@ export function start(): void {
       // A run summary left open is still open, and unread story texts still wait.
       store.summary = s.summary ?? null;
       store.summaryBase = (store.summary && s.summaryBase) || null;
-      store.stories = Array.isArray(s.stories) ? s.stories : [];
+      // A banner saved before quests had mechanics fields (105) is retold from the view,
+      // so no old "Reward:" summary shows as narrative.
+      store.stories = (Array.isArray(s.stories) ? s.stories : []).map(
+        (x: StoryView) => (x.goal ? x : (store.view.story.find((q) => q.id === x.id) ?? x)),
+      );
     } catch (e) {
       clearSave();
       // `offline`: written at a later visit, so it has no place in the career's time.

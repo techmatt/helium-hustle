@@ -42,9 +42,21 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   "Run N" and "Run N+1 starts with", each start value with its change from the ended run's
   start (green better, red worse; lower boredom growth is better). A panel a purchase opens
   (Geopolitical Intelligence's Ideologies) shows at once, paused too.
+- **Quest mechanics text (Matt, 2026-11-25; locked).** Mechanics never live in narrative
+  text. A quest's `body`, `story` and `payoff` (and a one-off event's `summary`, `body` and
+  `story`, amendment #3171) are narrative only: no instructions, no numbers. Goals, rewards,
+  unlocks and how-to hints are their own content fields (a quest's `goal`, `reward` and
+  `hints`; a one-off's `effect`, where `{rate}` now lives) and always show apart, in the
+  mechanics style: a tinted strip in small monospace (`Mechanics` in common.tsx), so a player
+  can always tell mechanics from story. Every quest card, main or side, active or completed,
+  shows its goal and reward that way (a quest with no reward of its own says so: "None."),
+  as do the main-quest box, the story modal (reward on the last payoff page, where a quest has one, the next goal
+  and hints on the last page), the side-quest banner and the Events list. A content test
+  keeps digits, `{rate}` and UI instructions out of narrative; new quests are written so.
 - **Story cards (2026-11-25).** Each finished quest card in Story shows one line, its first
-  sentence with "…"; a click shows the whole text (a main beat replays its modals, a side
-  quest opens in place). The current quest's highlight never covers the spine.
+  sentence with "…" (a click shows the whole text: a main beat replays its modals, a side
+  quest opens in place), over its goal and reward in the mechanics style. The current
+  quest's highlight never covers the spine.
 - **Recent Activity filter (2026-11-25).** Checkboxes under the list show or hide each kind
   of line (shipments, quests, story, research, projects, achievements, adversaries, other),
   one only for a kind already in the feed. *Default (096):* remembered per browser

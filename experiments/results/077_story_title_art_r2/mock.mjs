@@ -43,7 +43,7 @@ for (const e of story) {
   const a = ACTS.find((x) => x.opens_with === e.id);
   if (a) cur = a.act;
   if (!cur) throw new Error(`mock: ${e.id} comes before any act opens`);
-  BEATS[cur].push({ id: e.id, title: e.title, text: e.summary.replace(/^DRAFT\. /, '') });
+  BEATS[cur].push({ id: e.id, title: e.title, text: (e.goal ?? e.summary).replace(/^DRAFT\. /, '') });
 }
 
 // ---- art: every processed draw as a CSS custom property ----

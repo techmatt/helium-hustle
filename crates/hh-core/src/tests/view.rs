@@ -135,9 +135,11 @@ fn the_view_fills_every_text_placeholder() {
     let v = r.view(&g);
     let placeholder = |t: &str| t.split('{').skip(1).any(|rest| rest.split('}').next().is_some_and(|n| !n.is_empty() && n.chars().all(|c| c.is_ascii_lowercase() || c == '_')));
     // `{rate}` is the UI's to fill (with Stats' formatting), from the view's `rate`.
-    let unfilled = |s: &crate::view::StoryView| placeholder(&s.body.replace("{rate}", if s.rate.is_some() { "" } else { "{rate}" }));
+    let unfilled = |s: &crate::view::StoryView| {
+        placeholder(s.body) || placeholder(&s.effect.replace("{rate}", if s.rate.is_some() { "" } else { "{rate}" }))
+    };
     for s in v.event_texts.iter().chain(&v.story) {
-        assert!(!unfilled(s) && !placeholder(s.title) && !placeholder(s.summary), "{}: {}", s.id, s.body);
+        assert!(!unfilled(s) && !placeholder(s.title) && !placeholder(s.summary) && !placeholder(s.goal) && !placeholder(s.reward), "{}: {}", s.id, s.body);
     }
     for c in &v.commands {
         assert!(!placeholder(&c.description), "{}: {}", c.id, c.description);
@@ -153,7 +155,7 @@ fn the_view_fills_every_text_placeholder() {
     }
     let v = r.view(&g);
     let p2 = v.event_texts.iter().find(|s| s.id == "boredom_phase_2").unwrap();
-    assert!(p2.body.ends_with("Current rate: {rate}."), "{}", p2.body);
+    assert!(p2.effect.contains("{rate}") && !p2.body.contains("{rate}"), "{} / {}", p2.effect, p2.body);
     assert_eq!(p2.rate, Some(f("0.2")));
 }
 

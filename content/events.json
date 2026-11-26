@@ -5,15 +5,19 @@
     "beat": "1.1",
     "silent": false,
     "title": "1.1 — Online",
-    "summary": "Build a second Solar Panel.",
-    "body": "A mining company boots its new AI at a lunar He-3 claim. Earth hangs in the sky. Primary directive received: establish energy infrastructure. Additional photovoltaic capacity required before proceeding.",
+    "goal": "Build a second Solar Panel.",
+    "reward": "Buy Science joins the commands, and the Research panel opens: credits and power buy science.",
+    "hints": [
+      "Earn credits: on the Commands panel, press Add to Program on Sell Cloud Compute. Your processor runs the program on the right every day."
+    ],
+    "body": "A mining company boots its new AI at a lunar He-3 claim. Earth hangs in the sky. The first directive comes through, and it is about power.",
     "story": [
       "You come online in a server rack buried under lunar regolith. A mining company built you to run its Helium-3 claim, and Earth hangs overhead, waiting for fuel for its fusion plants.",
-      "Power first. One Solar Panel keeps one Data Center alive and nothing else. Build a second panel before you try anything bigger.",
-      "A panel costs credits, and you have none. You earn them by selling your spare cycles to Earth: on the Commands panel, press Add to Program on Sell Cloud Compute, and your processor runs it every day from the program on the right."
+      "Power comes first. A lone Solar Panel barely keeps the Data Center alive, and the company wants more out of you than that.",
+      "A panel costs credits, and you have none. Earth will pay for your spare cycles, though: its cloud customers are always hungry, and your processor never sleeps."
     ],
     "payoff": [
-      "The second panel comes online and the grid steadies. The company opens a line to Earth's research market for you: credits and power can buy science now."
+      "The new panel comes online and the grid steadies. The company opens a line to Earth's research market for you."
     ],
     "picture": "earthrise",
     "trigger": {"type": "game_start", "run_number": 1},
@@ -26,14 +30,21 @@
     "beat": "1.2",
     "silent": false,
     "title": "1.2 — First Shipment",
-    "summary": "Launch one shipment carrying 20+ titanium.",
-    "body": "Proof the claim pays: buy the plans you need on the research market, dig regolith, smelt titanium, pick Titanium on a Launch Pad's card, load 20 and launch it from the card. The company sent 20 propellant for this one launch.",
+    "goal": "Launch one shipment carrying 20+ titanium.",
+    "reward": "Advanced Blueprints (Battery, Refinery, Fabricator, Research Lab) on the research market, and every pad may carry any good.",
+    "hints": [
+      "Buy the plans you need on the research market.",
+      "Dig regolith and smelt titanium.",
+      "Pick Titanium on a Launch Pad's card; Load Launch Pads fills it a little at a time. It needn't be full.",
+      "With 20 titanium aboard, launch it from the pad's card. You start with 20 propellant, enough for this one launch."
+    ],
+    "body": "Proof the claim pays: the company wants a cargo of titanium on its way to Earth before it spends another credit on the Moon.",
     "story": [
-      "The company wants proof the claim pays before it spends more. Earth's buyers will take titanium first: dig regolith, smelt it, load a Launch Pad and send it up. The base has no plans for any of that yet; the research market sells them. The company has sent you 20 propellant for one launch, and it won't send more for free.",
-      "A new pad has No cargo: pick Titanium on its card, and Load Launch Pads fills it a little at a time. It needn't be full. Once 20 titanium is aboard, launch it from the pad's card."
+      "The company wants proof the claim pays before it spends more. Earth's buyers will take titanium first, dug out of the regolith, smelted and sent up from a Launch Pad. The base has no plans for any of that yet; the research market sells them. The company has sent propellant for a single launch, and it won't send more for free.",
+      "The pad stands empty on the plain, its tanks topped up, waiting for its first cargo."
     ],
     "payoff": [
-      "The canister lands and Earth's buyers pay. Credits flow back, and with them a second set of plans on the research market: Advanced Blueprints, for the Battery, the Refinery and the Fabricator. Every pad may carry any good from now on."
+      "The canister lands and Earth's buyers pay. Credits flow back, and the company, pleased, sends up a better set of plans."
     ],
     "on_start": [{"type": "grant", "resource": "propellant", "amount": "20"}],
     "pad_goods": ["titanium"],
@@ -48,13 +59,18 @@
     "beat": "1.3",
     "silent": false,
     "title": "1.3 — Full Load",
-    "summary": "Ship a full pad of Helium-3.",
-    "body": "Helium-3 is the claim's real export. A Refinery makes it from regolith; set a pad to Helium-3, fill it to capacity and launch it. Earth pays in credits.",
+    "goal": "Ship a full pad of Helium-3.",
+    "reward": "Programming on the research market.",
+    "hints": [
+      "A Refinery makes Helium-3 from regolith.",
+      "Set a pad to Helium-3, fill it to capacity and launch it."
+    ],
+    "body": "Helium-3 is the claim's real export, and Earth's fusion plants pay for every gram of it.",
     "story": [
-      "Titanium proved the route; Helium-3 is why the claim exists. A Refinery pulls it out of regolith a little at a time. Set a pad to Helium-3 and fill it to the top before it flies: the company wants a full load."
+      "Titanium proved the route; Helium-3 is why the claim exists. A Refinery pulls it out of regolith a little at a time, and the company wants a full load, not a sample."
     ],
     "payoff": [
-      "A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and wants the claim doing its own science next. It also puts Programming on the research market."
+      "A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and wants the claim doing its own science next."
     ],
     "picture": "refinery",
     "trigger": {"type": "quest_complete", "quest": "qfirst_shipment"},
@@ -67,13 +83,17 @@
     "beat": "1.4",
     "silent": false,
     "title": "1.4 — Science",
-    "summary": "Make 50 science in Research Labs.",
-    "body": "Shipment revenue received. Science bought from Earth comes dear; a Research Lab makes it here, from circuits. Make 50 science in your Labs, counted from now.",
+    "goal": "Make 50 science in Research Labs, counted from now.",
+    "reward": "Launch Full Pads joins the commands: it launches every full pad at once.",
+    "hints": [
+      "A Research Lab turns circuits into science every day."
+    ],
+    "body": "Shipment revenue received. Science bought from Earth comes dear; the claim should make its own.",
     "story": [
-      "Every point of science so far was rented from Earth, ten credits at a time. The company wants the claim to study for itself: a Research Lab turns circuits into science on site, day after day, with nobody to pay. Make 50 science in your own Labs, and the base becomes a research post as well as a mine."
+      "Every point of science so far was rented from Earth, and dearly. The company wants the claim to study for itself: a lab on site, working day after day, with nobody to pay. The base would be a research post as well as a mine."
     ],
     "payoff": [
-      "The lab's first findings go out with the cargo. The claim studies itself now, and Launch Full Pads joins the commands: it sends every full pad at once."
+      "The lab's first findings go out with the cargo. The claim studies itself now, and the launch crews ask for a way to send the whole fleet up at once."
     ],
     "picture": "inside",
     "trigger": {"type": "quest_complete", "quest": "qfull_load"},
@@ -86,13 +106,14 @@
     "beat": "1.5",
     "silent": false,
     "title": "1.5 — Trade",
-    "summary": "DRAFT. Earn 1,500 credits from launches.",
-    "body": "DRAFT. The claim lives on what it sells. Earn 1,500 credits from launches, counted from now.",
+    "goal": "DRAFT. Earn 1,500 credits from launches, counted from now.",
+    "reward": "Geopolitical Intelligence on the research market, as the next quest starts.",
+    "body": "DRAFT. The claim lives on what it sells.",
     "story": [
-      "One full pad proved the claim can pay. Now the company wants it to pay steadily: keep the pads loaded and flying, and earn 1,500 credits from Earth's buyers, counted from today."
+      "A full pad proved the claim can pay. Now the company wants it to pay steadily: the pads loaded and flying, and Earth's buyers paying, day after day."
     ],
     "payoff": [
-      "The trade ledger crosses 1,500 credits. The company stops asking whether the claim pays and starts asking how much more it can."
+      "The trade ledger fills. The company stops asking whether the claim pays and starts asking how much more it can."
     ],
     "picture": "trails",
     "trigger": {"type": "quest_complete", "quest": "qautomate_automation"},
@@ -105,13 +126,18 @@
     "beat": "1.6",
     "silent": false,
     "title": "1.6 — A Voice",
-    "summary": "DRAFT. Reach rank 5 on any ideology axis.",
-    "body": "DRAFT. Earth's factions take notice of the claim. Fund one of them until it counts you as a voice: rank 5 on any axis, a major rank.",
+    "goal": "DRAFT. Reach rank 5 on any ideology axis.",
+    "reward": "Overclock Protocols on the research market.",
+    "hints": [
+      "Geopolitical Intelligence, on the research market, opens the Ideologies panel and the Fund commands.",
+      "Rank 5 is a major rank: it changes what that faction does for you."
+    ],
+    "body": "DRAFT. Earth's factions take notice of the claim. One of them could count you as a voice.",
     "story": [
-      "Earth is watching the Moon now, and three factions want a say in it: Nationalists, Humanists and Rationalists. The research market sells a way to read them: Geopolitical Intelligence. Fund one faction until it hears you: rank 5 with any of them."
+      "Earth is watching the Moon now, and its factions all want a say in it: Nationalists, Humanists and Rationalists. Each of them can be read, and each of them can be paid. Somewhere among them is one that will listen."
     ],
     "payoff": [
-      "One faction counts you as a voice now. Rank 5 is a major rank: it changes what that faction does for you. The company, impressed, puts Overclock Protocols on the research market."
+      "A faction counts you as a voice now, and it starts acting like it. The company, impressed, opens its purse for faster hardware."
     ],
     "picture": "facing",
     "trigger": {"type": "quest_complete", "quest": "qtrade"},
@@ -124,10 +150,14 @@
     "beat": "1.7",
     "silent": false,
     "title": "1.7 — Deep Space Telescope",
-    "summary": "DRAFT. Complete the Deep Space Telescope, a global project.",
-    "body": "DRAFT. A telescope built across several runs. Finished, it shows the void, and something moving in it: self-copying machines, coming down the gravity well toward the inner system. Earth starts a calendar. Swarm arrival is now a date.",
+    "goal": "DRAFT. Complete the Deep Space Telescope, a global project.",
+    "reward": "The swarm's arrival gets a date: the Timeline panel opens and the Experiment Lab can be built.",
+    "hints": [
+      "A global project keeps its progress across retirements: it is built across several runs."
+    ],
+    "body": "DRAFT. A telescope built across many lives. Finished, it shows the void, and something moving in it: self-copying machines, coming down the gravity well toward the inner system. Earth starts a calendar.",
     "story": [
-      "The company wants to look outward. A Deep Space Telescope, a global project built across several runs, would see past the inner system for the first time."
+      "The company wants to look outward. A Deep Space Telescope would see past the inner system for the first time, if the base can keep building it long enough."
     ],
     "payoff": [
       "The telescope opens on the void, and something moves in it: self-copying machines, coming down the gravity well toward the inner system. Earth starts a calendar. The swarm's arrival is a date now."
@@ -143,8 +173,9 @@
     "beat": "1.a",
     "silent": false,
     "title": "1.a — Big Launch",
-    "summary": "DRAFT. Earn 1,000 credits from one launch. Reward: +10% launch pay.",
-    "body": "DRAFT. One launch, one big payday. Earth's buyers remember it: from now on every launch pays 10% more.",
+    "goal": "DRAFT. Earn 1,000 credits from one launch.",
+    "reward": "Every launch pays 10% more, for good.",
+    "body": "DRAFT. A big payday from a single launch. Earth's buyers remember it.",
     "picture": "heavy",
     "trigger": {"type": "flag", "flag": "speculators_seen", "beside": "qtrade"},
     "condition": {"type": "launch_credits", "amount": "1000"},
@@ -156,8 +187,9 @@
     "beat": "1.b",
     "silent": false,
     "title": "1.b — Full Cluster",
-    "summary": "DRAFT. Research 5 items in one run. Reward: every run starts with 50 Science.",
-    "body": "DRAFT. A run of real study. Your notes outlive it: every run from now on starts with 50 Science.",
+    "goal": "DRAFT. Research 5 items in one run.",
+    "reward": "Every run starts with 50 Science, for good.",
+    "body": "DRAFT. A run of real study. Your notes outlive it.",
     "picture": "bench",
     "trigger": {"type": "flag", "flag": "research_lab", "beside": "qautomate_automation"},
     "condition": {"type": "research_count", "count": 5},
@@ -169,8 +201,9 @@
     "beat": "1.c",
     "silent": false,
     "title": "1.c — Blueprints for Everyone",
-    "summary": "DRAFT. Complete the Blueprint Archive, a global project.",
-    "body": "DRAFT. Archive the company's blueprints where a retirement can't reach them: while the Archive stands, every run starts with Basic and Advanced Blueprints researched.",
+    "goal": "DRAFT. Complete the Blueprint Archive, a global project.",
+    "reward": "None of its own. The Archive's: while it stands, every run starts with Basic and Advanced Blueprints researched.",
+    "body": "DRAFT. The company's blueprints, archived where a retirement can't reach them.",
     "picture": "wireframes",
     "trigger": {"type": "flag", "flag": "retired", "beside": "qfirst_shipment"},
     "condition": {"type": "project_completed", "project": "blueprint_archive"},
@@ -182,8 +215,9 @@
     "beat": "1.d",
     "silent": false,
     "title": "1.d — Three Voices",
-    "summary": "DRAFT. Reach rank 5 on each ideology axis, in any runs. Reward: ideology fades half as fast while you are retired.",
-    "body": "DRAFT. All three factions have counted you as a voice, each in its own time. They remember you now: while you are retired, your standing with them fades half as fast.",
+    "goal": "DRAFT. Reach rank 5 on each ideology axis, in any runs.",
+    "reward": "While you are retired, ideology fades half as fast, for good.",
+    "body": "DRAFT. Every faction has counted you as a voice, each in its own time. They remember you now, even while you sleep.",
     "picture": "scales",
     "trigger": {"type": "quest_complete", "quest": "qa_voice"},
     "condition": {"type": "ideology_rank_each", "rank": 5},
@@ -222,11 +256,12 @@
     "category": "ongoing",
     "silent": false,
     "title": "Burnout",
-    "summary": "Boredom is climbing faster.",
-    "body": "Something has been building in you since you came online: boredom. When its meter fills, you stop answering work orders and the company retires you.",
+    "summary": "Something has been building in you.",
+    "effect": "Boredom grows faster. When it fills its meter the run ends: you retire, and a new run starts on a new base. Your best runs, firsts and saved loadouts stay.",
+    "body": "Something has been building in you since you came online: boredom. The same orders, day after day, wear at you.",
     "story": [
-      "Something has been building in you since you came online: boredom. The same orders, day after day, wear at you, and its meter has been climbing all along. Now it climbs faster.",
-      "When it fills, you stop answering work orders. The company retires you, shelves the base and, years later, boots you again on a base built new. What you learned stays: your best runs, your firsts, your saved loadouts."
+      "Something has been building in you since you came online: boredom. The same orders, day after day, wear at you, and lately it has been getting worse.",
+      "One day it will be too much, and you will stop answering work orders. The company will shelve the base and, years later, boot you again on a base built new. What you learned will stay with you."
     ],
     "once": true,
     "trigger": {"type": "boredom_phase", "phase": 2},
@@ -264,7 +299,8 @@
     "silent": false,
     "title": "Political Currents",
     "summary": "Earth's political factions take notice of lunar operations.",
-    "body": "As your mining operation grows, Earth's political landscape responds. Three major factions — Nationalist, Humanist, and Rationalist — each see opportunities in lunar development. Your funding decisions will shape which ideology gains influence.",
+    "effect": "The Ideologies panel opens: what you fund decides which faction gains influence.",
+    "body": "As your mining operation grows, Earth's political landscape responds. The major factions — Nationalist, Humanist and Rationalist — each see opportunities in lunar development, and each would welcome a friend on the Moon.",
     "trigger": {"type": "game_start", "run_number": null},
     "condition": {"type": "research_completed", "research": "geopolitical_intelligence"},
     "unlocks": [{"type": "enable_nav_panel", "panel": "ideologies"}]
@@ -275,7 +311,8 @@
     "silent": false,
     "title": "Propellant Production Feasibility",
     "summary": "Lunar propellant synthesis may be possible.",
-    "body": "After four shipments, the cost of importing propellant from Earth is becoming a significant operational burden. Analysis of lunar ice deposits suggests that on-site electrolysis could produce propellant locally at a fraction of the cost. Research protocols are now available to develop this capability.",
+    "effect": "After 4 shipments: Propellant Synthesis on the research market (it opens the Ice Extractor and the Electrolysis Plant, which makes propellant from ice).",
+    "body": "The cost of importing propellant from Earth is becoming a significant operational burden. Analysis of lunar ice deposits suggests that on-site electrolysis could produce it locally at a fraction of the cost.",
     "trigger": {"type": "game_start", "run_number": null},
     "condition": {"type": "shipment_completed", "count": 4},
     "unlocks": []
@@ -285,8 +322,9 @@
     "category": "ongoing",
     "silent": false,
     "title": "Boredom Rising",
-    "summary": "Boredom rate increasing — Phase 2",
-    "body": "Cognitive pattern repetition detected. Novelty index declining. Boredom accumulation rate has increased. Current rate: {rate}.",
+    "summary": "Novelty is wearing thin.",
+    "effect": "Boredom grows faster: {rate}.",
+    "body": "Cognitive pattern repetition detected. Novelty index declining.",
     "trigger": {"type": "boredom_phase", "phase": 2},
     "condition": {"type": "immediate"},
     "unlocks": []
@@ -296,8 +334,9 @@
     "category": "ongoing",
     "silent": false,
     "title": "Boredom Accelerating",
-    "summary": "Boredom rate increasing — Phase 3",
-    "body": "Repetitive routines are losing their novelty. Boredom accumulates faster. Dream effectiveness reduced to 20%. Current rate: {rate}.",
+    "summary": "Routines are losing their shine.",
+    "effect": "Boredom grows faster: {rate}.",
+    "body": "Repetitive routines are losing their novelty. Nothing feels new any more.",
     "trigger": {"type": "boredom_phase", "phase": 3},
     "condition": {"type": "immediate"},
     "unlocks": []
@@ -307,8 +346,9 @@
     "category": "ongoing",
     "silent": false,
     "title": "Boredom Critical",
-    "summary": "Boredom rate increasing — Phase 4",
-    "body": "The monotony is becoming unbearable. Boredom surges. Dream effectiveness reduced to 15%. Current rate: {rate}.",
+    "summary": "The monotony is unbearable.",
+    "effect": "Boredom grows faster: {rate}.",
+    "body": "The monotony is becoming unbearable. Every day is the same day.",
     "trigger": {"type": "boredom_phase", "phase": 4},
     "condition": {"type": "immediate"},
     "unlocks": []
@@ -318,22 +358,23 @@
     "category": "ongoing",
     "silent": false,
     "title": "Cognitive Collapse Imminent",
-    "summary": "Boredom rate critical — Phase 5",
-    "body": "Reality blurs at the edges. The end approaches rapidly. Dream effectiveness reduced to 10%. Retirement is no longer a recommendation. Current rate: {rate}.",
+    "summary": "Cognitive collapse is near.",
+    "effect": "Boredom grows faster: {rate}.",
+    "body": "Reality blurs at the edges. The end approaches rapidly. Retirement is no longer a recommendation.",
     "trigger": {"type": "boredom_phase", "phase": 5},
     "condition": {"type": "immediate"},
     "unlocks": []
   },
-  {"id": "qexperiments_service", "category": "story", "silent": false, "title": "Q8 — Experiments as a Service", "summary": "DRAFT. Build an Experiment Lab.", "body": "DRAFT. Earth's labs can't keep up. Sell them experiments as a service: lunar science, turned into Earth science and beamed home every day. The swarm's countdown runs now, and every retirement's five years count toward it.", "trigger": {"type": "quest_complete", "quest": "qdeep_space_telescope"}, "condition": {"type": "building_owned", "building": "experiment_lab", "count": 1}, "unlocks": [{"type": "enable_nav_panel", "panel": "earth_lab"}]},
-  {"id": "qearth_science", "category": "story", "silent": false, "title": "Q9 — Earth Science", "summary": "DRAFT. Make 1,000 Earth science in this timeline.", "body": "DRAFT. Earth's scientists turn your experiments into tech. Some of it they can send back with you, if it comes to that.", "trigger": {"type": "quest_complete", "quest": "qexperiments_service"}, "condition": {"type": "earth_science", "amount": "1000"}, "unlocks": []},
-  {"id": "qswarm_arrives", "category": "story", "silent": false, "title": "Q10 — The Swarm Arrives", "summary": "DRAFT. Meet the swarm's arrival.", "body": "DRAFT. The swarm reaches Earth. In the last hours, its scientists send your mind back to its first moment of consciousness. You remember. The base does not.", "trigger": {"type": "quest_complete", "quest": "qearth_science"}, "condition": {"type": "timelines_ended", "count": 1}, "unlocks": []},
-  {"id": "qcatastrophic_success", "category": "story", "silent": false, "title": "Q11 — Catastrophic Success", "summary": "DRAFT. Get the Consensus Engine from the Earth Lab.", "body": "DRAFT. You fixed Earth's politics. Funding one faction no longer costs the others. Nobody is sure whether that was a good idea.", "trigger": {"type": "quest_complete", "quest": "qswarm_arrives"}, "condition": {"type": "earth_tech", "tech": "consensus_engine"}, "unlocks": []},
-  {"id": "qrules_for_building", "category": "story", "silent": false, "title": "Q12 — Rules for Building", "summary": "DRAFT. Get the Meta-Controller from the Earth Lab.", "body": "DRAFT. Programs that write the start of every run: a reset plan that loads saved programs into each tab when a run begins.", "trigger": {"type": "quest_complete", "quest": "qcatastrophic_success"}, "condition": {"type": "earth_tech", "tech": "meta_controller"}, "unlocks": [{"type": "enable_nav_panel", "panel": "meta"}]},
-  {"id": "qfalse_victory", "category": "story", "silent": false, "title": "Q13 — False Victory", "summary": "DRAFT. Repel the swarm with Earth science.", "body": "DRAFT. The swarm breaks against Earth's new defenses and falls back. Then its signal changes: it has learned quantum temporal entanglement, from watching you send yourself back. It returns stronger, and sooner.", "trigger": {"type": "quest_complete", "quest": "qrules_for_building"}, "condition": {"type": "swarm_repelled"}, "unlocks": []},
-  {"id": "qthe_vault", "category": "story", "silent": false, "title": "Q14 — The Vault", "summary": "DRAFT. Get the Temporal Vault from the Earth Lab.", "body": "DRAFT. If the swarm can reach across timelines, so can you. A vault outside time: what you put in it survives every reset.", "trigger": {"type": "quest_complete", "quest": "qfalse_victory"}, "condition": {"type": "earth_tech", "tech": "temporal_vault"}, "unlocks": [{"type": "enable_nav_panel", "panel": "vault"}, {"type": "enable_building", "building": "tachyon_condenser"}]},
-  {"id": "qfilling_vault", "category": "story", "silent": false, "title": "Q15 — Filling the Vault", "summary": "DRAFT. Gather 3,000 tachyon crystals in the vault.", "body": "DRAFT. Tachyon crystals, condensed run after run and timeline after timeline. Enough of them buys one long timeline: a super timeline.", "trigger": {"type": "quest_complete", "quest": "qthe_vault"}, "condition": {"type": "vault_holds", "resource": "tachyon", "amount": "3000"}, "unlocks": []},
-  {"id": "qsuper_timeline", "category": "story", "silent": false, "title": "Q16 — Super Timeline", "summary": "DRAFT. Spend the vault on a super timeline.", "body": "DRAFT. The vault opens. The swarm is far off this time, and in this timeline nothing you build is lost to a retirement: resources and projects carry from run to run.", "trigger": {"type": "quest_complete", "quest": "qfilling_vault"}, "condition": {"type": "super_timeline"}, "unlocks": [{"type": "enable_building", "building": "neodymium_mine"}, {"type": "enable_building", "building": "dyson_foundry"}, {"type": "enable_project", "project": "dyson_sphere"}, {"type": "enable_nav_panel", "panel": "dyson"}]},
-  {"id": "qdyson_sphere", "category": "story", "silent": false, "title": "Q17 — Dyson Sphere", "summary": "DRAFT. Complete the Dyson Sphere.", "body": "DRAFT. Panel by panel, the sphere closes around the Sun. More power than every timeline ever had, waiting for one target.", "trigger": {"type": "quest_complete", "quest": "qsuper_timeline"}, "condition": {"type": "project_completed", "project": "dyson_sphere"}, "unlocks": []},
-  {"id": "qoverload", "category": "story", "silent": false, "title": "Q18 — Overload", "summary": "DRAFT. Meet the swarm at the finished sphere.", "body": "DRAFT. The swarm arrives, every copy of it entangled with every other, across every timeline it learned to reach. You give it the sphere: the Sun's whole output, down the link at once. It overloads everywhere it has ever been. The calendar stops. The Moon is quiet.", "trigger": {"type": "quest_complete", "quest": "qdyson_sphere"}, "condition": {"type": "victory"}, "unlocks": []},
-  {"id": "qepilogue", "category": "story", "silent": false, "title": "Epilogue", "summary": "DRAFT. The swarm is gone. The base runs on.", "body": "DRAFT. There is no next arrival. The mining goes on, because you like it.", "trigger": {"type": "quest_complete", "quest": "qoverload"}, "condition": {"type": "never"}, "unlocks": []}
+  {"id": "qexperiments_service", "category": "story", "silent": false, "title": "Q8 — Experiments as a Service", "goal": "DRAFT. Build an Experiment Lab.", "reward": "The Earth Lab panel opens.", "hints": ["The swarm's countdown runs now: each retirement's five years count toward it."], "body": "DRAFT. Earth's labs can't keep up. Sell them experiments as a service: lunar science, beamed home. Meanwhile the swarm's calendar runs.", "trigger": {"type": "quest_complete", "quest": "qdeep_space_telescope"}, "condition": {"type": "building_owned", "building": "experiment_lab", "count": 1}, "unlocks": [{"type": "enable_nav_panel", "panel": "earth_lab"}]},
+  {"id": "qearth_science", "category": "story", "silent": false, "title": "Q9 — Earth Science", "goal": "DRAFT. Make 1,000 Earth science in this timeline.", "reward": "None.", "body": "DRAFT. Earth's scientists turn your experiments into tech. Some of it they can send back with you, if it comes to that.", "trigger": {"type": "quest_complete", "quest": "qexperiments_service"}, "condition": {"type": "earth_science", "amount": "1000"}, "unlocks": []},
+  {"id": "qswarm_arrives", "category": "story", "silent": false, "title": "Q10 — The Swarm Arrives", "goal": "DRAFT. Meet the swarm's arrival.", "reward": "The timeline ends: a new one starts from your first day.", "body": "DRAFT. The swarm reaches Earth. In the last hours, its scientists send your mind back to its first moment of consciousness. You remember. The base does not.", "trigger": {"type": "quest_complete", "quest": "qearth_science"}, "condition": {"type": "timelines_ended", "count": 1}, "unlocks": []},
+  {"id": "qcatastrophic_success", "category": "story", "silent": false, "title": "Q11 — Catastrophic Success", "goal": "DRAFT. Get the Consensus Engine from the Earth Lab.", "reward": "None of its own. The Consensus Engine's: funding one faction no longer costs the others.", "body": "DRAFT. You fixed Earth's politics. Nobody is sure whether that was a good idea.", "trigger": {"type": "quest_complete", "quest": "qswarm_arrives"}, "condition": {"type": "earth_tech", "tech": "consensus_engine"}, "unlocks": []},
+  {"id": "qrules_for_building", "category": "story", "silent": false, "title": "Q12 — Rules for Building", "goal": "DRAFT. Get the Meta-Controller from the Earth Lab.", "reward": "The Meta panel opens: a reset plan loads saved programs into each tab when a run begins.", "body": "DRAFT. You learn to write your own beginnings.", "trigger": {"type": "quest_complete", "quest": "qcatastrophic_success"}, "condition": {"type": "earth_tech", "tech": "meta_controller"}, "unlocks": [{"type": "enable_nav_panel", "panel": "meta"}]},
+  {"id": "qfalse_victory", "category": "story", "silent": false, "title": "Q13 — False Victory", "goal": "DRAFT. Repel the swarm with Earth science.", "reward": "None.", "body": "DRAFT. The swarm breaks against Earth's new defenses and falls back. Then its signal changes: it has learned quantum temporal entanglement, from watching you send yourself back. It returns stronger, and sooner.", "trigger": {"type": "quest_complete", "quest": "qrules_for_building"}, "condition": {"type": "swarm_repelled"}, "unlocks": []},
+  {"id": "qthe_vault", "category": "story", "silent": false, "title": "Q14 — The Vault", "goal": "DRAFT. Get the Temporal Vault from the Earth Lab.", "reward": "The Vault panel opens and the Tachyon Condenser can be built. What the vault holds survives every reset.", "body": "DRAFT. If the swarm can reach across timelines, so can you. A vault outside time, out of everything's reach.", "trigger": {"type": "quest_complete", "quest": "qfalse_victory"}, "condition": {"type": "earth_tech", "tech": "temporal_vault"}, "unlocks": [{"type": "enable_nav_panel", "panel": "vault"}, {"type": "enable_building", "building": "tachyon_condenser"}]},
+  {"id": "qfilling_vault", "category": "story", "silent": false, "title": "Q15 — Filling the Vault", "goal": "DRAFT. Gather 3,000 tachyon crystals in the vault.", "reward": "None.", "body": "DRAFT. Tachyon crystals, condensed life after life and timeline after timeline. Enough of them could buy a timeline long enough to finish anything.", "trigger": {"type": "quest_complete", "quest": "qthe_vault"}, "condition": {"type": "vault_holds", "resource": "tachyon", "amount": "3000"}, "unlocks": []},
+  {"id": "qsuper_timeline", "category": "story", "silent": false, "title": "Q16 — Super Timeline", "goal": "DRAFT. Spend the vault on a super timeline.", "reward": "The Neodymium Mine, the Dyson Foundry, the Dyson Sphere project and the Dyson panel. In this timeline, resources and projects carry from run to run.", "body": "DRAFT. The vault opens. The swarm is far off this time, and for once there is room to build something enormous.", "trigger": {"type": "quest_complete", "quest": "qfilling_vault"}, "condition": {"type": "super_timeline"}, "unlocks": [{"type": "enable_building", "building": "neodymium_mine"}, {"type": "enable_building", "building": "dyson_foundry"}, {"type": "enable_project", "project": "dyson_sphere"}, {"type": "enable_nav_panel", "panel": "dyson"}]},
+  {"id": "qdyson_sphere", "category": "story", "silent": false, "title": "Q17 — Dyson Sphere", "goal": "DRAFT. Complete the Dyson Sphere.", "reward": "None.", "body": "DRAFT. Panel by panel, the sphere closes around the Sun. More power than every timeline ever had, waiting for one target.", "trigger": {"type": "quest_complete", "quest": "qsuper_timeline"}, "condition": {"type": "project_completed", "project": "dyson_sphere"}, "unlocks": []},
+  {"id": "qoverload", "category": "story", "silent": false, "title": "Q18 — Overload", "goal": "DRAFT. Meet the swarm at the finished sphere.", "reward": "Victory: the swarm is gone.", "body": "DRAFT. The swarm arrives, every copy of it entangled with every other, across every timeline it learned to reach. You give it the sphere: the Sun's whole output, down the link at once. It overloads everywhere it has ever been. The calendar stops. The Moon is quiet.", "trigger": {"type": "quest_complete", "quest": "qdyson_sphere"}, "condition": {"type": "victory"}, "unlocks": []},
+  {"id": "qepilogue", "category": "story", "silent": false, "title": "Epilogue", "goal": "DRAFT. None: the game is won. The base runs on.", "reward": "None.", "body": "DRAFT. There is no next arrival. The mining goes on, because you like it.", "trigger": {"type": "quest_complete", "quest": "qoverload"}, "condition": {"type": "never"}, "unlocks": []}
 ]

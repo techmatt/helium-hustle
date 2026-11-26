@@ -4,10 +4,10 @@
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import type { Activity, View } from '../engine';
-import { num, storyBody } from '../format';
+import { fillRate, num } from '../format';
 import { act, eventItems, markRead, store, unreadIn, type EventSection, type Store } from '../store';
 import { daysPerWake } from '../clock';
-import { Quest, ResChip, Section, name } from './common';
+import { Mechanics, Quest, ResChip, Section, name } from './common';
 import { Chip } from './icons';
 import { AddLogic } from './ProgramLogic';
 import { Library, type LibraryMode } from './Library';
@@ -215,8 +215,10 @@ function Events({ v }: { v: View }) {
         {texts.map(({ e, key }) => (
           <div key={key} class={`event-item${story.includes(key) ? ' is-unread' : ''}`} data-event={e.id}>
             <div class="event-title">{e.title}</div>
-            <div class="muted">{e.summary}</div>
-            <div class="event-body">{storyBody(e)}</div>
+            {e.summary && <div class="muted">{e.summary}</div>}
+            <div class="event-body">{e.body}</div>
+            {/* A side quest is listed here too: its goal (done) and reward; a one-off its effect. */}
+            <Mechanics goal={e.goal} reward={e.reward} effect={fillRate(e.effect ?? '', e.rate)} done />
           </div>
         ))}
       </Section>

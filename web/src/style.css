@@ -34,6 +34,8 @@
   --fill-gray: #c4beb4;
   --fill-blue: #93bce9;
   --ok-tint: #eaf5ee;
+  /* The mechanics strip (quest goals, rewards, event effects): --info at 10% on the card. */
+  --mech-tint: #e9eff6;
   --ok-head: #d3ecdb;
   --warn-head: #f5e6c3;
   --bad-tint: #fbecea;
@@ -77,6 +79,7 @@
   --fill-gray: #4f4c55;
   --fill-blue: #2d5a92;
   --ok-tint: #1e2c24;
+  --mech-tint: #2d313e;
   --ok-head: #213a2b;
   --warn-head: #3a311c;
   --bad-tint: #2f2120;
@@ -1838,9 +1841,40 @@ button.beat-node.is-done:focus-visible .beat-card {
 .quest-title {
   font-weight: 600;
 }
-.quest-summary {
-  color: var(--muted);
-  margin-bottom: 4px;
+/* A quest's mechanics text (common.tsx Mechanics; ui.md, *Quest mechanics text*): a
+   tinted strip in small monospace, never the narrative's look. */
+.mechanics {
+  display: block;
+  margin: 4px 0;
+  padding: 3px 6px;
+  border-left: 3px solid var(--info);
+  border-radius: 3px;
+  background: var(--mech-tint);
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--text);
+  text-align: left;
+}
+.mech-line {
+  display: flex;
+  gap: 6px;
+}
+.mech-key {
+  flex: none;
+  width: 4.5em;
+  color: var(--info);
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 10px;
+  padding-top: 1px;
+}
+.mechanics .bar {
+  width: 100%;
+  margin: 2px 0;
+}
+.mechanics .sub {
+  font-size: inherit;
 }
 .quest .bar {
   width: 100%;
@@ -2305,8 +2339,9 @@ button.go:hover:not(:disabled) {
   height: 30px;
   margin-right: 6px;
 }
-.story-task {
+.story-modal .mechanics {
   margin: 12px 0 16px;
+  font-size: 13px;
 }
 .modal.ending {
   border-top: 4px solid var(--accent);

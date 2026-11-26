@@ -356,8 +356,11 @@ export interface QuestView {
   /** The condition's type (`building_owned`, `quiet_days`, ...). */
   kind: string;
   title: string;
-  /** The one-line task. */
-  summary: string;
+  /** Mechanics text (shown in the mechanics style, never in the narrative): the one-line
+   * task, what completing it does, and how-to steps. */
+  goal: string;
+  reward: string;
+  hints: string[];
   body: string;
   /** Paragraphs shown when this quest begins (may be empty: show `[body]`). */
   story: string[];
@@ -376,8 +379,14 @@ export interface QuestView {
 export interface StoryView {
   id: string;
   title: string;
+  /** A one-off event's one line (empty on a quest). */
   summary: string;
-  /** May hold `{rate}`: fill it with `storyBody` (format.ts). */
+  /** A quest's mechanics text: its task and what completing it did (empty on an event). */
+  goal: string;
+  reward: string;
+  /** A one-off event's mechanics text: what it does (empty on a quest). May hold `{rate}`:
+   * fill it with `fillRate` (format.ts). */
+  effect: string;
   body: string;
   /** A boredom-phase event's boredom per day, for `{rate}`; null for the rest (absent on
    * a quest told through the story banner). */
@@ -401,8 +410,9 @@ export interface SideQuestView {
   id: string;
   beat: string | null;
   title: string;
-  /** The one-line task. */
-  summary: string;
+  /** Mechanics text: the one-line task and what completing it does. */
+  goal: string;
+  reward: string;
   body: string;
   /** The chain quest it branches off (its completion started it). */
   parent: string | null;

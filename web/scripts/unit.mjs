@@ -2,7 +2,7 @@
 //   node scripts/unit.mjs   (npm run unit)
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
-import { num, perDay, storyBody } from '../src/format.ts';
+import { fillRate, num, perDay } from '../src/format.ts';
 import { blockEnd, blockLen, canAddElse, canIndent, insertLine, moveLines, otherUnit, removeLine, sameEntry, setIndent, tidy } from '../src/ui/programEdit.ts';
 
 const cases = [
@@ -34,9 +34,9 @@ for (const n of [-0, -9999, -150, 0, 7, 100, 1000, 9999, 3.25e3]) assert.equal(n
 assert.equal(perDay(-2.5), '−2.5/day');
 assert.equal(perDay(0.001), '0/day');
 assert.equal(perDay(1500.4), '+1,500/day');
-// A story's `{rate}` reads as Stats shows boredom growth: 0.199 is +0.2, not a floored 0.19.
-assert.equal(storyBody({ body: 'Current rate: {rate}.', rate: '0.199' }), 'Current rate: +0.2/day.');
-assert.equal(storyBody({ body: 'No {rate} here.', rate: null }), 'No {rate} here.');
+// An event effect's `{rate}` reads as Stats shows boredom growth: 0.199 is +0.2, not a floored 0.19.
+assert.equal(fillRate('Current rate: {rate}.', '0.199'), 'Current rate: +0.2/day.');
+assert.equal(fillRate('No {rate} here.', null), 'No {rate} here.');
 
 // Program line edits. A line is written 'if X' (an `if`), 'x' (a command) or '  x'
 // (indented into a body); only `op` and `indented` matter to these edits.
