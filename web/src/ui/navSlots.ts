@@ -1,10 +1,9 @@
-// The nav grid's cells (Left.tsx): one per tile of `content/nav.json`, in its order, up to the
-// last tile shown. A tile not shown yet holds its cell empty, so a panel that opens fills its own
-// cell and no other tile moves (109). Tiles past the last shown one take no cell.
+// The nav grid's tiles (Left.tsx): the open ones, packed from the top in `content/nav.json`'s
+// order with no reserved cells (Matt, 2026-11-26). The utility tiles (Stats, Story,
+// Achievements, Options) are that file's last rows, so they follow the last open play tile and
+// move down as panels open.
 
-/** Each cell's tile, or null for a cell held empty. */
-export function navSlots<T extends { visible: boolean }>(tiles: readonly T[]): (T | null)[] {
-  let end = tiles.length;
-  while (end > 0 && !tiles[end - 1].visible) end--;
-  return tiles.slice(0, end).map((t) => (t.visible ? t : null));
+/** The tiles shown, in order. */
+export function navSlots<T extends { visible: boolean }>(tiles: readonly T[]): T[] {
+  return tiles.filter((t) => t.visible);
 }

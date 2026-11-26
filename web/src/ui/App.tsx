@@ -258,7 +258,7 @@ function StoryModal({ s }: { s: Store }) {
         {(p.reward || p.effect) && <Mechanics reward={p.reward} effect={p.effect} />}
         {p.task && (
           <div class="story-task">
-            <Mechanics goal={p.task} hints={p.hints} />
+            <Mechanics goal={p.task} />
           </div>
         )}
         <button

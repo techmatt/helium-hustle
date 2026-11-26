@@ -74,6 +74,9 @@ count as bought from day 0 of every run while the project counts as completed ([
   text and block editors, the all-instructions panel); no rule reads it, and the right
   column's program, Add to Program and loadouts are open without it. A state
   saved before revision 29 that loads with Programming visible gets the flag (`Career.flag_research`).
+  Accelerated Scheduling (30 science, placeholder, category *Self-Maintenance*, visible once
+  quest 1.2 First Shipment is done) sets `fast_speeds`: the view's `fast_speeds` opens the
+  50x and 200x game speeds in the UI (display only; no rule reads it).
 
 A purchase of research (as of a building or land) sets the run's `last_purchase`.
 
@@ -102,7 +105,7 @@ Every number is on the content rows: costs, visibility thresholds and effect val
 
 ## Content
 
-`content/research.json`: 18 rows, each with `cost`, optional `requires`, optional `effect`,
+`content/research.json`: 19 rows, each with `cost`, optional `requires`, optional `effect`,
 `visible_when`, a `category` and a placeholder `description`. The *Blueprints* category comes
 first: Basic Blueprints (10 science, always visible; no quest asks for it) unlocks the Regolith
 Excavator, Smelter, Launch Pad and Storage Depot, Advanced Blueprints (20, visible once
@@ -113,6 +116,7 @@ Dome, through those buildings' `requires` ([economy.md](economy.md)). The rest o
 
 | When | Shows |
 |---|---|
+| Quest 1.2 First Shipment completes | Accelerated Scheduling (beside Advanced Blueprints) |
 | First Research Lab (flag `research_lab`, the silent `research_lab_built`) | Regolith Processing, Process Telemetry, Programming (also once 1.3 Full Load is done) |
 | First retirement (flag `retired`) | Daydreaming (Dream Protocols); Stress Tolerance and Efficient Dreaming once it is bought |
 | Speculators' arrival (flag `speculators_seen`) | Market Awareness; Speculator Analysis and Trade Promotion once it is bought; Shipping Efficiency at 10 shipments |

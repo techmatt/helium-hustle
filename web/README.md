@@ -20,6 +20,8 @@ npm run build                                # wasm + typecheck + static site in
 npm run preview                              # serve web/dist/
 ```
 
+- **On the LAN:** the dev server and preview listen on every interface (`host: true` in
+  `vite.config.ts`) and print a Network URL, so another PC on the local network can play.
 - **Under a launcher that kills by pid** (conductor's `start`): `npm`/`npx` leave the server
   as a grandchild a tree kill can miss: start `node node_modules/vite/bin/vite.js
   [preview] --port <p> --strictPort`, or kill by port (`netstat -ano`, `taskkill //F //PID`).
@@ -41,8 +43,9 @@ npm run preview                              # serve web/dist/
 Three columns and a status bar:
 
 - **Left:** the title, the calendar strip once the swarm is revealed, the nav grid (tiles from `content/nav.json`; a dot marks a tile new
-  this run or whose panel holds something new; two columns of icon and name all game, an
-  unopened tile's cell blank (`navSlots.ts`); a green dot on Launch Pads while a pad is ready), the speed buttons, Resources
+  this run or whose panel holds something new; two columns of icon and name, open tiles
+  packed, utility tiles last (`navSlots.ts`); a green dot on Launch Pads while a pad is
+  ready), the speed buttons, Resources
   (Energy, Credits, Land, Boredom, Processors, then a second group of the rest; amount /
   cap, the engine's rate per day; at its cap the surplus thrown away, muted (Energy's
   green): "+9 CAP"; short of demand, red: "−7 SHORT"; a click on a row opens
@@ -80,8 +83,7 @@ Three columns and a status bar:
   columns while the left stays, opened and closed by its button under the nav grid, or
   closed with Esc or a nav tile. A slim strip on top shows the day, Boredom, Energy,
   Credits, He-3 and Science, and pause. The game runs on behind it: the covered columns
-  stay mounted, only hidden. A view is a `Takeover` (its options in `Takeover.tsx`; the
-  list `TAKEOVERS` in `ui/App.tsx`, plus Programs'). Users: the Cortex mock (below) and
+  stay mounted, only hidden (`TAKEOVERS` in `ui/App.tsx`). Users: the Cortex mock (below) and
   **Programs** (`Programs.tsx`, `noButton`), opened by its nav tile, with a
   **Text | Blocks** toggle on the same program; the last mode is kept in localStorage
   (`hh-programs-mode`), Blocks for a new player. **Blocks** (the block editor,
@@ -133,9 +135,10 @@ base view: replace what it draws, keep its box.
 
 ## Using it
 
-- **Speed:** Pause, 1x to 200x; at 1x a day a second. Each timer wake (100 ms) runs the
-  ticks owed since the last, so a throttled tab catches up (stopping at a forced
-  retirement); a closed page is paused. Keys: space
+- **Speed:** Pause, 1x to 10x, and 50x and 200x once Accelerated Scheduling is bought
+  (`speeds.ts`; a faster pick or save drops to 10x until then); at 1x a day a
+  second. Each timer wake (100 ms) runs the ticks owed since the last, so a throttled tab
+  catches up (stopping at a forced retirement); a closed page is paused. Keys: space
   pauses or resumes, 1 to 5 pick 1x to 200x; a card reached with Tab buys on Enter.
 - **Actions** apply between ticks, stamped with the current tick; an illegal one shows the
   engine's reason in the notice line.
@@ -149,9 +152,7 @@ base view: replace what it draws, keep its box.
 - **Debug menu** (Options → Debug): the theme, a scenario (`scenarios/`) or a new game from
   a seed; *Check replay* replays the record in wasm and compares fingerprints; a line with
   engine, revision, config hash, seed, action count and fingerprint; *Cortex mock in the left
-  column*, which shows the button of a UI-only radial mock of the talent tree, a takeover
-  view (`src/ui/CortexMock.tsx`: placeholders, no effect, in memory; its tooltips give
-  the controls). **Cheats** (off by
+  column* (a UI-only talent-tree mock, `src/ui/CortexMock.tsx`). **Cheats** (off by
   default, remembered in `hh.cheats`): grant a resource, set boredom, complete all
   research, jump ahead N days, the **cheat building** (a hazard-striped *Cheat Fountain*
   card at the foot of the Buildings panel, only while Cheats are on: 1 credit, +1000 credits
@@ -177,14 +178,11 @@ be replayed exactly and set against the sim players (`hh-sim playlog`, `hh-sim v
   retries, and Options says it is NOT recording; a malformed batch (400) is dropped.
 - **One file per career:** `<local start time>_<random tag>_seed-<seed>.jsonl`. A new game
   or a discarded save closes the old file with a `career_end` line and starts a new one.
-- **Lines** (`src/playlog.ts` has the format): a header (format `hh-playlog/1`, career,
-  revision, config hash and config, seed, scenario, `prior_actions`, and `commit`, HEAD
-  with `+dirty`, stamped by the server), then one line per happening, each with a unique
-  `id` (a resent line is read once) and a `kind`: `action` (the game's record),
-  `checkpoint` (the fingerprint, every 10 s while playing, at retirements, when hidden or
-  closed), `session_start`/`_end`, `hidden`, `visible`, `speed`, `rejected`, `refused`,
-  `panel`, `program_tab`, `retirement`, `continue`, `story_read`, `new_game`, `debug`,
-  `jump_end`, `career_end` (`reason`; `offline` when written at a later visit).
+- **Lines** (`src/playlog.ts` has the format; `grep "log('"` lists the kinds): a header (format
+  `hh-playlog/1`, career, revision, config, seed, scenario, `prior_actions`, and `commit`,
+  stamped by the server), then one line per happening, each with a unique `id` (a resent
+  line is read once) and a `kind`: `action` (the game's record), `checkpoint` (the
+  fingerprint, every 10 s while playing, at retirements, when hidden or closed), and the rest.
 
 `hh-sim playlog <file>` replays the header's config, seed and scenario with the logged
 actions to the last tick and checks the fingerprint logged there. An autopilot's actions

@@ -25,7 +25,8 @@ The module's params, `overclock_base_cap` among them, are in [programs.md](progr
    day's clamp.
 6. It adds its flat `boredom` (whole, not scaled by `frac`); a completed project with
    `boredom_modifiers` replaces a command's boredom with its own value. A negative one (the
-   draft Distract) takes that much off, never below zero.
+   draft Distract) takes that much off, never below zero. Before Burnout a positive one is
+   0 (boredom.md, *Burnout starts it*).
 7. The command is marked used in the career (it stays visible in later runs), and its effect
    applies: Load (shipments.md), Launch full pads (shipments.md), Dream (dream.md), Promote and
    Disrupt (demand.md), Fund (ideology.md), Neutralize (Contest Claims: the named

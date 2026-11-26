@@ -219,7 +219,7 @@ export function Story({ s }: { s: Store }) {
                         </span>
                       }
                     >
-                      <Mechanics goal={active.goal} reward={active.reward} hints={active.hints}>
+                      <Mechanics goal={active.goal} reward={active.reward}>
                         <QuestProgress q={active} />
                       </Mechanics>
                     </Card>

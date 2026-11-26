@@ -23,6 +23,10 @@ use crate::state::{Activity, GameState, LastRun, Loadout, Overclock, RunStats, S
 use crate::modules::programs as program_rules;
 use breakdown::breakdown;
 
+/// The career flag that opens the 50x and 200x game speeds (Accelerated Scheduling's
+/// `career_flag`, `content/research.json`).
+pub const FAST_SPEEDS_FLAG: &str = "fast_speeds";
+
 mod breakdown;
 mod commands;
 mod keep;
@@ -217,10 +221,9 @@ pub struct QuestView {
     /// The condition's type (`building_owned`, `quiet_days`, ...).
     pub kind: &'static str,
     pub title: Text,
-    /// Its mechanics text: the task line, what completing it does, how-to steps.
+    /// Its mechanics text: the task line and what completing it does.
     pub goal: Text,
     pub reward: Text,
-    pub hints: &'static [String],
     pub body: Text,
     /// Its story, one paragraph per modal, shown as it becomes active (empty:
     /// the UI shows `body`).
@@ -506,6 +509,9 @@ pub struct View {
     pub boredom: BoredomView,
     /// The nav grid's tiles (`content/nav.json`), in order, each shown or not.
     pub nav: Vec<NavView>,
+    /// The 50x and 200x game speeds are open: the career flag Accelerated Scheduling
+    /// sets (display only; no rule reads it).
+    pub fast_speeds: bool,
     pub can_retire: bool,
     /// The next day ends this run (boredom reaches its cap): the per-day rates,
     /// read from that day, are 0 and say nothing.
@@ -645,6 +651,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             phases: r.p.boredom.phase_days.len() as u32,
         },
         nav: nav::nav(r, g),
+        fast_speeds: g.career.flags.contains(FAST_SPEEDS_FLAG),
         can_retire: career::retire_blocker(g).is_none(),
         retires_next: !same_run,
         activity: g.run.activity.clone(),

@@ -60,25 +60,23 @@ export function risingIsBad(id: string): boolean {
 /** A quest's mechanics text, apart from its narrative in the mechanics style (the UI font
  * one size smaller on a faint warm tint, each line led by a small muted label, "Reward: …";
  * docs/rulings/ui.md, *Quest mechanics text*): its goal (the same "Goal:" done or not: a ✓
- * on the card's title says it), how-to steps and what completing it does; or a one-off
- * event's effect. `children` (a progress bar, sub-objectives) sit under the goal. */
+ * on the card's title says it) and what completing it does; or a one-off event's effect.
+ * `children` (a progress bar, sub-objectives) sit under the goal. */
 export function Mechanics({
   goal,
   reward,
   effect,
-  hints = [],
   children,
 }: {
   goal?: string;
   reward?: string;
   /** A one-off event's: what it does. */
   effect?: string;
-  hints?: string[];
   children?: ComponentChildren;
 }) {
-  if (!goal && !reward && !effect && hints.length === 0) return null;
-  const line = (cls: string, key: string, text: string, k?: number) => (
-    <span key={k} class={`mech-line ${cls}`}>
+  if (!goal && !reward && !effect) return null;
+  const line = (cls: string, key: string, text: string) => (
+    <span class={`mech-line ${cls}`}>
       <span class="mech-key">{key}:</span> {text}
     </span>
   );
@@ -86,7 +84,6 @@ export function Mechanics({
     <span class="mechanics" data-testid="mechanics">
       {goal && line('mech-goal', 'Goal', goal)}
       {children}
-      {hints.map((h, i) => line('mech-hint', 'How', h, i))}
       {reward && line('mech-reward', 'Reward', reward)}
       {effect && line('mech-effect', 'Effect', effect)}
     </span>

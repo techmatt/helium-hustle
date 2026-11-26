@@ -29,7 +29,6 @@ pub(super) fn quest(r: &Rules, g: &GameState) -> Option<QuestView> {
         title: &q.title,
         goal: &q.goal,
         reward: &q.reward,
-        hints: &q.hints,
         body: &q.body,
         story: &q.story,
         progress: progress(events::progress(r, g, &q.id, &q.condition)),

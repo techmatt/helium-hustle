@@ -18,10 +18,6 @@ Build a second Solar Panel.
 
 Buy Science and the Research panel.
 
-### `events:qpower_boot_sequence.hints.0`
-
-Earn credits: on the Commands panel, press Add to Program on Sell Cloud Compute. Your processor runs the program on the right every day.
-
 ### `events:qpower_boot_sequence.body`
 
 A mining company boots its new AI at a lunar He-3 claim. Earth hangs in the sky. The first directive comes through, and it is about power.
@@ -54,22 +50,6 @@ Launch one shipment carrying 20+ titanium.
 
 Advanced Blueprints.
 
-### `events:qfirst_shipment.hints.0`
-
-Buy the plans you need on the research market.
-
-### `events:qfirst_shipment.hints.1`
-
-Dig regolith and smelt titanium.
-
-### `events:qfirst_shipment.hints.2`
-
-Pick Titanium on a Launch Pad's card; Load Launch Pads fills it a little at a time. It needn't be full.
-
-### `events:qfirst_shipment.hints.3`
-
-With 20 titanium aboard, launch it from the pad's card. You start with 20 propellant, enough for this one launch.
-
 ### `events:qfirst_shipment.body`
 
 Proof the claim pays: the company wants a cargo of titanium on its way to Earth before it spends another credit on the Moon.
@@ -98,14 +78,6 @@ Ship a full pad of Helium-3.
 
 Programming.
 
-### `events:qfull_load.hints.0`
-
-A Refinery makes Helium-3 from regolith.
-
-### `events:qfull_load.hints.1`
-
-Set a pad to Helium-3, fill it to capacity and launch it.
-
 ### `events:qfull_load.body`
 
 Helium-3 is the claim's real export, and Earth's fusion plants pay for every gram of it.
@@ -129,10 +101,6 @@ Make 50 science in Research Labs, counted from now.
 ### `events:qautomate_automation.reward`
 
 The Launch Full Pads command.
-
-### `events:qautomate_automation.hints.0`
-
-A Research Lab turns circuits into science every day.
 
 ### `events:qautomate_automation.body`
 
@@ -182,14 +150,6 @@ DRAFT. Reach rank 5 on any ideology axis.
 
 Overclock Protocols.
 
-### `events:qa_voice.hints.0`
-
-Geopolitical Intelligence, on the research market, opens the Ideologies panel and the Fund commands.
-
-### `events:qa_voice.hints.1`
-
-Rank 5 is a major rank: it changes what that faction does for you.
-
 ### `events:qa_voice.body`
 
 DRAFT. Earth's factions take notice of the claim. One of them could count you as a voice.
@@ -214,10 +174,6 @@ DRAFT. Complete the Deep Space Telescope, a global project.
 
 The Timeline panel and the Experiment Lab.
 
-### `events:qdeep_space_telescope.hints.0`
-
-A global project keeps its progress across retirements: it is built across several runs.
-
 ### `events:qdeep_space_telescope.body`
 
 DRAFT. A telescope built across many lives. Finished, it shows the void, and something moving in it: self-copying machines, coming down the gravity well toward the inner system. Earth starts a calendar.
@@ -241,10 +197,6 @@ DRAFT. Build an Experiment Lab.
 ### `events:qexperiments_service.reward`
 
 The Earth Lab panel.
-
-### `events:qexperiments_service.hints.0`
-
-The swarm's countdown runs now: each retirement's five years count toward it.
 
 ### `events:qexperiments_service.body`
 
@@ -358,10 +310,6 @@ DRAFT. Gather 3,000 tachyon crystals in the vault.
 
 None.
 
-### `events:qfilling_vault.hints.0`
-
-What the vault holds survives every reset.
-
 ### `events:qfilling_vault.body`
 
 DRAFT. Tachyon crystals, condensed life after life and timeline after timeline. Enough of them could buy a timeline long enough to finish anything.
@@ -393,14 +341,6 @@ DRAFT. Complete the Dyson Sphere.
 ### `events:qdyson_sphere.reward`
 
 None.
-
-### `events:qdyson_sphere.hints.0`
-
-The Neodymium Mine and the Dyson Foundry can be built now.
-
-### `events:qdyson_sphere.hints.1`
-
-In this timeline, resources and projects carry from run to run.
 
 ### `events:qdyson_sphere.body`
 
@@ -534,7 +474,7 @@ Something has been building in you.
 
 ### `events:boredom_bites.effect`
 
-Boredom grows faster. When it fills its meter the run ends: you retire, and a new run starts on a new base. Your best runs, firsts and saved loadouts stay.
+Boredom starts growing: {rate}.
 
 ### `events:boredom_bites.body`
 
@@ -558,7 +498,7 @@ Earth's political factions take notice of lunar operations.
 
 ### `events:ideology_unlock.effect`
 
-The Ideologies panel opens: what you fund decides which faction gains influence.
+The Ideologies panel opens.
 
 ### `events:ideology_unlock.body`
 
@@ -574,7 +514,7 @@ Lunar propellant synthesis may be possible.
 
 ### `events:propellant_discovery.effect`
 
-After 4 shipments: Propellant Synthesis on the research market (it opens the Ice Extractor and the Electrolysis Plant, which makes propellant from ice).
+Propellant Synthesis joins the research market.
 
 ### `events:propellant_discovery.body`
 
@@ -590,7 +530,7 @@ Novelty is wearing thin.
 
 ### `events:boredom_phase_2.effect`
 
-Boredom grows faster: {rate}.
+Boredom growth: {rate}.
 
 ### `events:boredom_phase_2.body`
 
@@ -606,7 +546,7 @@ Routines are losing their shine.
 
 ### `events:boredom_phase_3.effect`
 
-Boredom grows faster: {rate}.
+Boredom growth: {rate}.
 
 ### `events:boredom_phase_3.body`
 
@@ -622,7 +562,7 @@ The monotony is unbearable.
 
 ### `events:boredom_phase_4.effect`
 
-Boredom grows faster: {rate}.
+Boredom growth: {rate}.
 
 ### `events:boredom_phase_4.body`
 
@@ -638,7 +578,7 @@ Cognitive collapse is near.
 
 ### `events:boredom_phase_5.effect`
 
-Boredom grows faster: {rate}.
+Boredom growth: {rate}.
 
 ### `events:boredom_phase_5.body`
 
@@ -991,6 +931,14 @@ Advanced Blueprints
 ### `research:advanced_blueprints.description`
 
 The company's plans for the Battery, Refinery, Fabricator and Research Lab.
+
+### `research:accelerated_scheduling.name`
+
+Accelerated Scheduling
+
+### `research:accelerated_scheduling.description`
+
+PLACEHOLDER. Adds the 50x and 200x game speeds. Bought once for the whole career.
 
 ### `research:recreation_dome_blueprints.name`
 
@@ -1500,22 +1448,6 @@ Projects
 
 Timeline
 
-### `nav:stats.name`
-
-Stats
-
-### `nav:story.name`
-
-Story
-
-### `nav:achievements.name`
-
-Achievements
-
-### `nav:options.name`
-
-Options
-
 ### `nav:earth_lab.name`
 
 Earth Lab
@@ -1531,6 +1463,22 @@ Vault
 ### `nav:dyson.name`
 
 Dyson
+
+### `nav:stats.name`
+
+Stats
+
+### `nav:story.name`
+
+Story
+
+### `nav:achievements.name`
+
+Achievements
+
+### `nav:options.name`
+
+Options
 
 ## Messages (the run summary)
 

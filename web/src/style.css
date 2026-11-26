@@ -704,8 +704,8 @@ ul.plain {
   box-shadow: 0 0 8px color-mix(in srgb, var(--accent) 70%, transparent);
 }
 /* One layout all game (109, Left.tsx): two columns of fixed-height rows, a medium icon
-   beside each name; a hidden tile's cell (.nav-slot) stays empty, so Act 1's 14 cells (seven
-   rows, about the old 3x3 grid's height) are there from a new game on and nothing moves. */
+   beside each name; the open tiles pack from the top with no blank cells (Act 1's full set,
+   14 tiles in seven rows, is about the old 3x3 grid's height). */
 .nav-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

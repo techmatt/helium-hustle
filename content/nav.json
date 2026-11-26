@@ -9,12 +9,12 @@
   {"id": "retirement", "name": "Retirement", "visible": {"type": "panel", "panel": "retirement"}},
   {"id": "projects", "name": "Projects", "visible": {"type": "panel", "panel": "projects"}},
   {"id": "timeline", "name": "Timeline", "visible": {"type": "panel", "panel": "timeline"}},
-  {"id": "stats", "name": "Stats", "visible": {"type": "always"}},
-  {"id": "story", "name": "Story", "visible": {"type": "always"}},
-  {"id": "achievements", "name": "Achievements", "visible": {"type": "always"}},
-  {"id": "options", "name": "Options", "visible": {"type": "always"}},
   {"id": "earth_lab", "name": "Earth Lab", "visible": {"type": "panel", "panel": "earth_lab"}},
   {"id": "meta", "name": "Meta-Controller", "visible": {"type": "panel", "panel": "meta"}},
   {"id": "vault", "name": "Vault", "visible": {"type": "panel", "panel": "vault"}},
-  {"id": "dyson", "name": "Dyson", "visible": {"type": "panel", "panel": "dyson"}}
+  {"id": "dyson", "name": "Dyson", "visible": {"type": "panel", "panel": "dyson"}},
+  {"id": "stats", "name": "Stats", "visible": {"type": "always"}},
+  {"id": "story", "name": "Story", "visible": {"type": "always"}},
+  {"id": "achievements", "name": "Achievements", "visible": {"type": "always"}},
+  {"id": "options", "name": "Options", "visible": {"type": "always"}}
 ]

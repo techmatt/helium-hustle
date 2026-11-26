@@ -492,7 +492,8 @@ pub fn flows(r: &Rules, g: &GameState, c: &Command) -> (BTreeMap<String, Fx>, BT
 }
 
 /// The flat boredom one execution adds: the content's, unless a completed
-/// project's boredom modifiers replace it.
+/// project's boredom modifiers replace it. Zero before Burnout starts boredom
+/// (`boredom::started`); a relief (negative) stands.
 pub fn boredom_cost(g: &GameState, c: &Command) -> Fx {
     let mut b = c.boredom;
     for reward in super::projects::live_rewards(g) {
@@ -501,6 +502,9 @@ pub fn boredom_cost(g: &GameState, c: &Command) -> Fx {
                 b = *v;
             }
         }
+    }
+    if b > Fx::ZERO && !super::boredom::started(g) {
+        return Fx::ZERO;
     }
     b
 }

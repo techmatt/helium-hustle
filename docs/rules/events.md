@@ -107,7 +107,7 @@ trigger and condition hold.
 `category` decides chain quest, side quest or one-off. `silent` keeps a one-off event out of the activity
 feed and the view's event list (display only). Text no rule reads: `title`, a one-off's
 `summary` (its headline), `body`, `story` and `payoff` (narrative only), and the mechanics
-fields, a chain quest's `goal`, `reward` and `hints`, a side quest's `goal` and `reward`, a
+fields, a quest's `goal` and `reward` (no `hints`: ui.md), a
 one-off's `effect` (ui.md, *Quest mechanics text*; checked at load).
 The view hands a boredom phase its `rate`, the phase's boredom per day, and the UI fills its
 effect's `{rate}` with it as Stats shows boredom growth. The run records the day
@@ -118,7 +118,7 @@ order within a day, and the right column's Events Story section shows them newes
 (shown as it becomes active) and `payoff` (shown as it completes) are paragraphs, one modal
 each, in `content/events.json`. When the active
 quest moves on, the web UI pauses and shows the finished quests' payoffs with their rewards (and the story of any
-quest passed through the same day), then the new quest's story with its goal and hints, resuming after
+quest passed through the same day), then the new quest's story with its goal, resuming after
 the last; a new game shows only 1.1's. A quest with no `story` shows its `body`. A `once` one-off with a `story` (Burnout, `boredom_bites`) is a
 modal too, the first time it fires (its pages, no payoff); the view carries it in `event_texts`. The view
 carries them (`quest.story`; each completed quest's `chain`, `story` and `payoff`). A quest
@@ -174,7 +174,7 @@ axis; `modifier` `ideology_half_life_mult` ×2). Eleven `ongoing`, four silent:
 (a retirement in the career: sets the `retired` flag, opens the `retirement` and `projects`
 panels and Foundation Grant), `speculators_arrive` (speculators present: sets the `speculators_seen` flag, opens the `adversaries` panel), `rivals_arrive` (rivals
 present, Act 2: sets the `contest_claims` flag); then `boredom_bites` (Burnout: boredom phase
-2, `once`, a story modal), Political Currents, propellant discovery and boredom phases 2 to 5.
+2, `once`, a story modal; sets the `burnout` flag that starts boredom, [boredom.md](boredom.md)), Political Currents, propellant discovery and boredom phases 2 to 5.
 The silent ones trigger at `game_start` in any run, so once seen in the career their unlocks
 re-apply from each run's day 0 (*Run start*).
 

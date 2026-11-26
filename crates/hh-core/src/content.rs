@@ -408,14 +408,13 @@ pub struct Event {
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub summary: String,
     /// A quest's mechanics text (docs/rulings/ui.md, *Quest mechanics text*): what to do,
-    /// what completing it does, and how-to steps. Display only, never read by a rule; the
-    /// narrative (`body`, `story`, `payoff`) carries no instructions or numbers.
+    /// and what completing it does (no how-to steps: Matt, 2026-11-26). Display only, never
+    /// read by a rule; the narrative (`body`, `story`, `payoff`) carries no instructions or
+    /// numbers.
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub goal: String,
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub reward: String,
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub hints: Vec<String>,
     /// A one-off event's mechanics text: what it does (may hold `{rate}`, as `body` did).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub effect: String,
@@ -822,11 +821,8 @@ impl Content {
                     && !e.reward.is_empty()
                     && e.summary.is_empty()
                     && e.effect.is_empty()
-                    && e.hints.iter().all(|h| !h.is_empty())
-                    // The side-quest view carries no hints.
-                    && (e.hints.is_empty() || e.is_quest())
             } else {
-                e.goal.is_empty() && e.reward.is_empty() && e.hints.is_empty() && (e.silent || !e.summary.is_empty())
+                e.goal.is_empty() && e.reward.is_empty() && (e.silent || !e.summary.is_empty())
             };
             need(mechanics_ok, format!("{w}: a quest has a goal and a reward (no summary or effect); a one-off event a summary"));
             let story_ok = e.payoff.is_empty() && (e.story.is_empty() || e.once) || e.is_quest();

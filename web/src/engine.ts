@@ -357,10 +357,9 @@ export interface QuestView {
   kind: string;
   title: string;
   /** Mechanics text (shown in the mechanics style, never in the narrative): the one-line
-   * task, what completing it does, and how-to steps. */
+   * task and what completing it does. */
   goal: string;
   reward: string;
-  hints: string[];
   body: string;
   /** Paragraphs shown when this quest begins (may be empty: show `[body]`). */
   story: string[];
@@ -625,6 +624,8 @@ export interface View {
   run_stats: RunStats;
   boredom: { amount: Fx; cap: Fx; rate: Fx; phase: number; phases: number };
   nav: { id: string; name: string; visible: boolean }[];
+  /** The 50x and 200x speeds are open (Accelerated Scheduling, bought once a career). */
+  fast_speeds: boolean;
   can_retire: boolean;
   /** The next day ends this run (boredom at its cap): the per-day rates read 0. */
   retires_next: boolean;

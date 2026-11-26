@@ -151,8 +151,12 @@ export default defineConfig({
   plugins: [engineWatch(), playlogServer()],
   // TSX renders through Preact's automatic JSX runtime.
   oxc: { jsx: { runtime: 'automatic', importSource: 'preact' } },
+  // `host: true`: listen on the LAN too (Vite prints a Network URL), so the game plays from
+  // another PC on the local network.
   server: {
+    host: true,
     // configs/ lives beside web/.
     fs: { allow: [repo] },
   },
+  preview: { host: true },
 });

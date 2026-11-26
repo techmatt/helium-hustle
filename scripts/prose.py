@@ -6,12 +6,12 @@
                                             # content/prose.md matches the content
 
 The file is grouped by screen; each string is a `### \\`<file>:<id>.<field>\\`` heading with
-its text under it (a `story`, `payoff` or `hints` paragraph adds its index). Import matches strings by
+its text under it (a `story` or `payoff` paragraph adds its index). Import matches strings by
 that id only: an id missing from the file leaves its string alone, an id the content no longer
 has is reported and skipped, and only strings whose text changed are rewritten, in place in
 the JSON text, so every other byte (layout, escapes) stays as it was. Ids are never edited.
 
-Covered: names, titles, summaries, quest goals, rewards and hints, one-off events' effects,
+Covered: names, titles, summaries, quest goals and rewards, one-off events' effects,
 bodies, quest story and
 payoff paragraphs, descriptions,
 reward descriptions, sub-objective labels, project reward texts and the messages the view
@@ -47,7 +47,7 @@ SCREENS = [
 # The content files read and written: SCREENS' stems, each once, in its order.
 FILES = list(dict.fromkeys(stem.split(':')[0] for stem, _ in SCREENS))
 TEXT = {'name', 'title', 'summary', 'goal', 'reward', 'effect', 'body', 'description', 'reward_description', 'label', 'text'}
-PARAGRAPHS = {'story', 'payoff', 'hints'}
+PARAGRAPHS = {'story', 'payoff'}
 
 
 class Scanner:

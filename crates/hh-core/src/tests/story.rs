@@ -137,6 +137,56 @@ fn burnout_fires_once_a_career_and_rivals_wait_for_act_2() {
     assert!(crate::modules::attention::attention(&g, "rivals") > Fx::ZERO);
 }
 
+/// Boredom stays at 0 until Burnout fires, the day's growth and command boredom
+/// alike; Burnout starts it, and it grows from day 0 of every later run (Matt,
+/// 2026-11-26).
+#[test]
+fn boredom_waits_for_burnout() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    let cloud = crate::content::content().commands.iter().find(|c| c.id == "cloud_compute").unwrap();
+    let command_boredom = |g: &GameState| crate::modules::programs::boredom_cost(g, cloud);
+    assert!(cloud.boredom > Fx::ZERO);
+    let phase2 = r.p.boredom.phase_days[1];
+    r.advance(&mut g, phase2);
+    assert_eq!(g.amount("boredom"), Fx::ZERO, "no boredom before Burnout");
+    assert_eq!((r.view(&g).boredom.rate, command_boredom(&g)), (Fx::ZERO, Fx::ZERO));
+    r.advance(&mut g, 1);
+    assert!(g.career.seen_events.contains("boredom_bites"));
+    r.advance(&mut g, 1);
+    assert!(g.amount("boredom") > Fx::ZERO, "Burnout starts it");
+    assert!(r.view(&g).boredom.rate > Fx::ZERO);
+    assert_eq!(command_boredom(&g), cloud.boredom);
+    // A later run grows from its day 0.
+    set(&mut g, "boredom", "1000");
+    r.advance(&mut g, 1);
+    assert_eq!((g.career.run_number, g.run.day), (2, 0));
+    r.advance(&mut g, 1);
+    assert!(g.amount("boredom") > Fx::ZERO);
+}
+
+/// Accelerated Scheduling shows once 1.2 is done and opens the fast speeds for
+/// the career (amendment #3261).
+#[test]
+fn accelerated_scheduling_opens_the_fast_speeds() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    let listed = |g: &GameState| r.view(g).research.iter().any(|x| x.id == "accelerated_scheduling" && x.visible);
+    assert!(!listed(&g) && !r.view(&g).fast_speeds);
+    for q in ["qpower_boot_sequence", "qfirst_shipment"] {
+        g.career.completed_quests.insert(q.into());
+    }
+    g.run.enabled_panels.insert(crate::modules::research::RESEARCH_PANEL.into());
+    assert!(listed(&g));
+    set(&mut g, "science", "30");
+    r.apply(&mut g, &Action::Research { research: "accelerated_scheduling".into() }).unwrap();
+    assert!(r.view(&g).fast_speeds);
+    set(&mut g, "boredom", "1000");
+    r.advance(&mut g, 1);
+    assert_eq!(g.career.run_number, 2);
+    assert!(r.view(&g).fast_speeds && !listed(&g), "kept through retirement, never shown again");
+}
+
 /// The Research Lab opens with Advanced Blueprints, one Data Center owned
 /// (Matt, 2026-11-25).
 #[test]
@@ -264,7 +314,7 @@ fn playtest_batch_1_reads_as_ruled() {
     let v = r.view(&g);
     let q = v.quest.as_ref().unwrap();
     assert_eq!((q.id, q.kind, q.beat), ("qtrade", "trade_credits", Some("1.5")));
-    assert!(!q.title.contains("peculator") && !q.goal.contains("peculator") && q.hints.iter().all(|s| !s.contains("peculator")) && q.story.iter().all(|s| !s.contains("peculator")));
+    assert!(!q.title.contains("peculator") && !q.goal.contains("peculator") && q.story.iter().all(|s| !s.contains("peculator")));
     assert!(v.markets.iter().all(|m| m.speculators.is_none()));
     assert!(!g.run.enabled_panels.contains("adversaries"));
     // 1.5 counts launch pay only, from its start (the next check).
@@ -300,6 +350,7 @@ fn playtest_batch_1_reads_as_ruled() {
 fn forced_retirement_starts_the_next_run_with_career_bonuses() {
     let r = rules();
     let mut g = r.new_game(1);
+    g.career.flags.insert(crate::modules::boredom::BURNOUT_FLAG.into());
     g.run.stats.credits_earned = f("5000");
     own(&mut g, "excavator", 1);
     set(&mut g, "boredom", "999.95");

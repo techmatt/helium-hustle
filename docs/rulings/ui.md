@@ -45,27 +45,27 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   (Geopolitical Intelligence's Ideologies) shows at once, paused too.
 - **Nav: one layout (Matt, 2026-11-25; 109).** The top-left nav never switches layout: two
   columns of tiles, each a medium icon (24 px) beside its label, in fixed-height rows; Act 1's
-  full set fits about the old 3×3 large grid's height. Tiles keep `content/nav.json`'s fixed
-  order and a panel appears in place, with a short fade and the unread dot, so no tile resizes or
-  moves. Utility tiles (Stats, Story, Achievements, Options) stay in the grid. *Defaults (109):*
-  a tile not open yet holds its cell blank (no outline, no name) up to the last tile shown, so
-  Act 1's 14 cells, seven rows, are there from a new game on; the gated panels come first in
-  their usual unlock order, the utility tiles fill the last two Act 1 rows, and the later
-  acts' panels (Earth Lab, Meta-Controller, Vault, Dyson) add rows below them; painted icons,
-  no chip glyphs.
+  full set fits about the old 3×3 large grid's height. No reserved blank cells (Matt,
+  2026-11-26, over 109's default): the open tiles pack from the top in `content/nav.json`'s
+  order with no gaps, a panel that opens appears with a short fade and the unread dot, and the
+  utility tiles (Stats, Story, Achievements, Options, the file's last rows) follow directly
+  after the last open play tile, moving down as panels unlock. Painted icons, no chip glyphs.
 - **Quest mechanics text (Matt, 2026-11-25; locked).** Mechanics never live in narrative
   text. A quest's `body`, `story` and `payoff` (and a one-off event's `summary`, `body` and
-  `story`, amendment #3171) are narrative only: no instructions, no numbers. Goals, rewards,
-  unlocks and how-to hints are their own content fields (a quest's `goal`, `reward` and
-  `hints`; a one-off's `effect`, where `{rate}` now lives) and always show apart, in the
+  `story`, amendment #3171) are narrative only: no instructions, no numbers. Goals, rewards
+  and unlocks are their own content fields (a quest's `goal` and `reward`; a one-off's
+  `effect`, where `{rate}` now lives) and always show apart, in the
   mechanics style (`Mechanics` in common.tsx; 108): the normal UI font one size smaller, each
-  line led by a small muted label inline ("Goal:", "How:", "Reward:", "Effect:"), on a faint
+  line led by a small muted label inline ("Goal:", "Reward:", "Effect:"), on a faint
   warm tan tint with no border. No monospace and no blue strip, anywhere. "Goal: …" reads the
   same done or not (no "Done" label: a ✓ on the card's title says it). A reward is a
   headline, not an inventory: the one or two things the player should go use next (1.2:
-  "Advanced Blueprints."); secondary effects go unlisted, or become a How hint where they
-  matter; a quest with no reward of its own says "None.". The story modal (reward on the
-  last payoff page, the next goal and hints on the last page; the Burnout modal's Effect),
+  "Advanced Blueprints."); secondary effects go unlisted; a quest with no reward of its own
+  says "None.". No how-to hints (Matt, 2026-11-26): quests carry no `hints` and nothing shows
+  a "How:" line, no handholding until playtests say what's needed. A one-off's Effect states
+  only the actual change, tersely ("Boredom starts growing: +0.2/day."), never explaining it
+  or telegraphing what comes later; the narrative carries the meaning (Matt, 2026-11-26). The
+  story modal (reward on the last payoff page, the next goal on the last page; the Burnout modal's Effect),
   Story cards, the side-quest banner and the Events list use it; an Events entry's Effect
   line is always shown. The main-quest box at the upper right is the exception (amendment #3203):
   its title, its goal as one plain line in the UI font, and its progress. A content test

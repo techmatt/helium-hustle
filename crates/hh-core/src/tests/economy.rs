@@ -268,6 +268,7 @@ fn caps_bind_at_the_end_of_the_day_and_overflow_is_counted() {
 fn commands_convert_skip_at_cap_and_scale_down_when_short() {
     let r = rules();
     let mut g = r.new_game(1);
+    g.career.flags.insert(crate::modules::boredom::BURNOUT_FLAG.into());
     program(&r, &mut g, &[("cloud_compute", 1)]);
     r.advance(&mut g, 1);
     assert_eq!(g.amount("credits"), f("5"));

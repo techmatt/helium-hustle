@@ -1,5 +1,5 @@
-//! **boredom**: boredom grows each day by the phase of the run's day count,
-//! times the stacked rate modifiers; its cap is a base plus Recreation Domes;
+//! **boredom**: once Burnout has fired in the career, boredom grows each day by
+//! the phase of the run's day count, times the stacked rate modifiers; its cap is a base plus Recreation Domes;
 //! reaching the cap forces retirement (`career`) (docs/rules/boredom.md).
 
 use super::{param, ModuleDef, ParamKind as K, VariantDef};
@@ -76,8 +76,20 @@ pub fn multiplier(r: &Rules, g: &GameState) -> Fx {
     m * super::career::boredom_resilience(r, g) * g.boost.map_or(Fx::ONE, |b| b.boredom)
 }
 
-/// Today's growth rate (per day, after modifiers).
+/// The career flag Burnout's event sets (`content/events.json`, `boredom_bites`).
+pub const BURNOUT_FLAG: &str = "burnout";
+
+/// Whether boredom grows yet: not until Burnout fires, once a career (Matt,
+/// 2026-11-26). Before it, the day's growth and command boredom are zero.
+pub fn started(g: &GameState) -> bool {
+    g.career.flags.contains(BURNOUT_FLAG)
+}
+
+/// Today's growth rate (per day, after modifiers); zero before Burnout.
 pub fn rate(r: &Rules, g: &GameState) -> Fx {
+    if !started(g) {
+        return Fx::ZERO;
+    }
     let i = phase(r, g.run.day) as usize - 1;
     r.p.boredom.phase_rates[i] * multiplier(r, g)
 }

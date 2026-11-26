@@ -4,9 +4,8 @@
 // a throttled background tab catches up on its next wake. Nothing runs while the page
 // is closed: there is no offline progress.
 
-/** The speeds the player picks from; 200x is the fastest (Matt, docs/rulings/ui.md). */
-export const SPEEDS = [0, 1, 3, 10, 50, 200] as const;
-export type Speed = (typeof SPEEDS)[number];
+import type { Speed } from './speeds';
+export { SPEEDS, offeredSpeed, speedsOffered, type Speed } from './speeds';
 
 /** Ticks per second at 1x. */
 const TICKS_PER_SECOND = 1;

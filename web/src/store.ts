@@ -5,7 +5,7 @@
 
 import { useEffect, useState } from 'preact/hooks';
 import baselineConfig from '../../configs/baseline.json?raw';
-import { Clock, SPEEDS, type Speed } from './clock';
+import { Clock, SPEEDS, offeredSpeed, type Speed } from './clock';
 import {
   engine,
   type Action,
@@ -192,10 +192,9 @@ export interface StoryPage {
   /** `story`: the quest's opening text; `payoff`: its completion text. */
   kind: 'story' | 'payoff';
   text: string;
-  /** The next quest's one-line task (its goal) and how-to steps, on a transition's last
-   * page (mechanics text, shown apart from the paragraph). */
+  /** The next quest's one-line task (its goal), on a transition's last page (mechanics
+   * text, shown apart from the paragraph). */
   task?: string;
-  hints?: string[];
   /** The finished quest's reward, on its last payoff page (mechanics text). */
   reward?: string;
   /** A one-off event's effect, on its last page (mechanics text). */
@@ -260,7 +259,7 @@ function tell(v: View, mode: 'load' | 'intro' | 'play'): void {
     openedQuests.add(quest.id);
     if (mode === 'play' || fresh) {
       for (const t of openingOf(quest)) pages.push({ quest: quest.id, title: quest.title, kind: 'story', text: t, picture: quest.picture });
-      if (pages.length > 0) Object.assign(pages[pages.length - 1], { task: quest.goal, hints: quest.hints });
+      if (pages.length > 0) Object.assign(pages[pages.length - 1], { task: quest.goal });
     }
   }
   lastQuest = quest?.id ?? null;
@@ -691,7 +690,9 @@ export function actAll(actions: Action[]): void {
   for (const a of actions) if (!act(a)) break;
 }
 
-export function setSpeed(s: Speed): void {
+export function setSpeed(want: Speed): void {
+  // 50x and 200x wait for Accelerated Scheduling (the view's `fast_speeds`).
+  const s = offeredSpeed(want, store.view?.fast_speeds ?? false);
   // Settle the ticks owed at the old speed first: they may end the run, and then the
   // summary holds the clock stopped.
   if (stoodDown) return;
@@ -943,24 +944,26 @@ export function start(): void {
   if (loaded && 'save' in loaded) {
     try {
       const s = loaded.save;
-      engine.view(s.state); // throws if the engine can't read it
-      game = { state: s.state, seed: s.seed, scenario: s.scenario, actions: s.actions, careerId: s.careerId ?? '' };
+      const fast = engine.view(s.state).fast_speeds; // throws if the engine can't read it
+      game ={ state: s.state, seed: s.seed, scenario: s.scenario, actions: s.actions, careerId: s.careerId ?? '' };
       // A save from before play logs: its log starts now, carrying the actions so far.
       if (!game.careerId) game.careerId = openLog(game.actions);
       else playlog.open(game.careerId, null);
       how = 'save';
-      // A speed no longer offered (an older save's 2000x or 10000x debug speed) reloads as 1x.
+      // A speed no longer offered (an older save's 2000x or 10000x debug speed) reloads as 1x;
+      // 50x or 200x without Accelerated Scheduling as 10x.
       const normal = (x: number): x is Speed => (SPEEDS as readonly number[]).includes(x);
-      const speed = normal(s.speed) ? s.speed : 1;
+      const offered = (x: Speed) => offeredSpeed(x, fast);
+      const speed = offered(normal(s.speed) ? s.speed : 1);
       clock.speed = speed;
       store.speed = speed;
-      if (s.resumeSpeed && normal(s.resumeSpeed)) resumeSpeed = s.resumeSpeed;
-      if (s.speedBeforeSummary !== undefined && normal(s.speedBeforeSummary)) speedBeforeSummary = s.speedBeforeSummary;
+      if (s.resumeSpeed && normal(s.resumeSpeed)) resumeSpeed = offered(s.resumeSpeed);
+      if (s.speedBeforeSummary !== undefined && normal(s.speedBeforeSummary)) speedBeforeSummary = offered(s.speedBeforeSummary);
       // A story chain left mid-read shows its unread pages again, the clock held; its
       // last page resumes the speed saved with it.
       if (Array.isArray(s.storyPages) && s.storyPages.length > 0) {
         store.storyPages = s.storyPages;
-        speedBeforeStory = s.speedBeforeStory !== undefined && normal(s.speedBeforeStory) ? s.speedBeforeStory : 1;
+        speedBeforeStory = s.speedBeforeStory !== undefined && normal(s.speedBeforeStory) ? offered(s.speedBeforeStory) : 1;
         clock.speed = 0;
         store.speed = 0;
       }

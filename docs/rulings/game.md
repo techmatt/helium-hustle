@@ -12,7 +12,11 @@ Programs have their own part ([programs.md](programs.md)).
   quest condition states which boring strategies it rules out.
 - **Speed.** Decisions happen at 1-3x with brief bursts to 5-20x. 200x comes later, once
   programs can automate more, behind tech not yet in the game. 200x is the player's fastest
-  speed (2026-11-25): the Game Speed row ends there, cheats on or off.
+  speed (2026-11-25): the Game Speed row ends there, cheats on or off. 50x and 200x wait for
+  an early research, Accelerated Scheduling (Matt, 2026-11-26, amendment #3261; placeholder
+  name and 30 science, shown once 1.2 is done beside Advanced Blueprints, a career flag bought
+  once like Programming): a game starts with ❚❚ 1x 3x 10x; a save at 50x or 200x without it
+  reloads at 10x.
 - **Run-1 real time.** 1x stays 1 tick a second; the 25-35 real-minute target for run 1 is what
   moves ([principles.md](../principles.md)).
 - **Tuning.** Every number is open. Matt plays the UI build and decides where fine-tuning
@@ -99,7 +103,7 @@ Programs have their own part ([programs.md](programs.md)).
   too, in `content/messages.json`.
 - **Story modals (2026-11-23).** Each chain quest's transition is a modal that pauses the
   game: the finished quest's payoff (its reward under it), then the next quest's story, then
-  its goal and hints in the mechanics style (ui.md, *Quest mechanics text*);
+  its goal in the mechanics style (ui.md, *Quest mechanics text*);
   one paragraph a modal, chained or merged as the story reads best, one button, play resumes
   after the last; a chain's unread pages and the speed it resumes are in the save, so a
   reload mid-chain shows them again (082's deferral). No modal at game start but the first quest's; side quests unchanged; sims

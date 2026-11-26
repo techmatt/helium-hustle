@@ -20,6 +20,16 @@
     "description": "The company's plans for the Battery, Refinery, Fabricator and Research Lab."
   },
   {
+    "id": "accelerated_scheduling",
+    "name": "Accelerated Scheduling",
+    "category": "Self-Maintenance",
+    "cost": "30",
+    "requires": null,
+    "effect": {"type": "career_flag", "flag": "fast_speeds"},
+    "visible_when": {"type": "quest_completed", "quest": "qfirst_shipment"},
+    "description": "PLACEHOLDER. Adds the 50x and 200x game speeds. Bought once for the whole career."
+  },
+  {
     "id": "recreation_dome_blueprints",
     "name": "Recreation Dome Blueprints",
     "category": "Blueprints",

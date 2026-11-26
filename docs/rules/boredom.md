@@ -6,6 +6,13 @@ Growth is the first step of [the day](README.md#the-day); the retirement check i
 
 ## Rules
 
+**Burnout starts it.** Boredom stays at 0 and does not grow until Burnout (`boredom_bites`,
+[events.md](events.md)) has fired in the career: it fires at phase 2, once a career, and sets
+the career flag `burnout` (`boredom::started`). Before it the day's growth `rate` is 0 and a
+command's positive flat boredom is 0 (a negative one, relief, stands). The phase still moves
+with the day, so the phase events fire on time. From that run's next tick on, and in every
+later run from day 0, boredom grows as below.
+
 **Phase.** A run's phase is the number of `phase_days` entries at or below the run's day
 (1-based: day 0 is phase 1). At the start of each tick the phase is stored on the run
 (`boredom_phase`, which the `boredom_phase` event trigger reads, [events.md](events.md)) and
@@ -64,8 +71,9 @@ None. Boredom moves only through the day and commands.
 <!-- /params -->
 
 `phase_days` must start at 0 and rise, one per rate (a load error otherwise). At baseline
-with no modifiers a run has 20 + 60 + 250 = 330 boredom by day 1000 and reaches 1000 on day
-1670; command boredom brings it sooner.
+with no modifiers, a run after Burnout has 20 + 60 + 250 = 330 boredom by day 1000 and
+reaches 1000 on day 1670; the run Burnout fires in starts at day 200, so 310 by day 1000 and
+1000 on day 1690. Command boredom brings either sooner.
 
 ## Content
 

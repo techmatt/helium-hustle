@@ -120,16 +120,16 @@ fn grid(cmd: &str, agents: &str, extra: &[&str]) -> Vec<String> {
 /// all. Copy them from the failing assertion (or the test's `games.jsonl`).
 /// (The handsoff rows play only the author's runs: [`HANDSOFF_PIN`] pins its loadout.)
 const PINNED: &[(&str, u64, &str)] = &[
-    ("random", 1, "bf93f76346a4ad27"),
-    ("random", 2, "3e8fa2bc598f088f"),
-    ("greedy", 1, "1f38515f63f8bba4"),
-    ("greedy", 2, "c6e326975452dc2a"),
-    ("author", 1, "a22f26d095bc6ff0"),
-    ("author", 2, "8b0c92a473d474bb"),
-    ("casual", 1, "a67180e782a29ece"),
-    ("casual", 2, "424bd9e72fdedd5a"),
-    ("handsoff", 1, "ae67e778ecd2a99a"),
-    ("handsoff", 2, "72a972ecbf01c10e"),
+    ("random", 1, "ed304e972134637a"),
+    ("random", 2, "0cf95d0c67275ec1"),
+    ("greedy", 1, "a83877da32cad991"),
+    ("greedy", 2, "a97941523934b084"),
+    ("author", 1, "a059504ce5243e20"),
+    ("author", 2, "c2b98de9b068d4aa"),
+    ("casual", 1, "5a4884893b54d6f1"),
+    ("casual", 2, "8ff132024de483e0"),
+    ("handsoff", 1, "57d337f324cb044e"),
+    ("handsoff", 2, "b432cc57df7403e8"),
 ];
 
 #[test]
@@ -192,7 +192,7 @@ fn the_ladder_prints_its_tables_and_writes_results() {
 /// handsoff games are the author's), so this one goes to run 3 on seed 1,
 /// where the loadout file plays, and ships and buys. A new loadout file moves
 /// the pin: copy it from the failing assertion.
-const HANDSOFF_PIN: &str = "eda84681712544a8";
+const HANDSOFF_PIN: &str = "2dfc503754d6acc8";
 
 #[test]
 #[ignore = "slow lane: a 3-run career (~4 s)"]
@@ -351,7 +351,7 @@ fn the_oracle_plays_on_copies_and_its_game_replays() {
     let half = fingerprints.len() / 2;
     assert_eq!(fingerprints[..half], fingerprints[half..]);
     // Seeds 1 and 2 of the oracle, then of the pinned one.
-    assert_eq!(fingerprints[..half], ["a45bc20e4f8849b3", "b7c990dd95e56b2a", "30976dac06425fac", "15a13950448e4627"]);
+    assert_eq!(fingerprints[..half], ["7d50bb42e9603b24", "2a7b7c0c58e478e1", "0802026a8d1f58e0", "af4cf4ec7df7d23d"]);
 }
 
 /// `--agents` splits players, not knobs: a knob's value may hold a `:` (a

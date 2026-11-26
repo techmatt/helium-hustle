@@ -2,7 +2,7 @@
 // the active main quest's picture (the lunar-base horizon when it has none).
 
 import { Fragment, type ComponentChildren } from 'preact';
-import { SPEEDS } from '../clock';
+import { speedsOffered } from '../clock';
 import { capitalize, num, perDay } from '../format';
 import { navHasNews, seen, setSpeed, type Store } from '../store';
 import { useEffect, useRef, useState } from 'preact/hooks';
@@ -44,8 +44,8 @@ export function Left({
   toggleTakeover: (id: string) => void;
 }) {
   const v = s.view;
-  // One layout all game (109): two columns, a cell per tile in content order, a hidden one's
-  // cell held empty, so a panel that opens fills its own cell and nothing else moves.
+  // One layout all game (109): two columns, the open tiles packed in content order, no blank
+  // cells; a panel that opens takes its place and the utility tiles after it move down.
   const slots = navSlots(v.nav);
   // A tile that turns visible while the column is up (an unlock, a later run reopening a
   // per-run panel) fades in; the tiles shown when it first draws don't. `fading` keeps the
@@ -74,10 +74,7 @@ export function Left({
       </h1>
       <CalendarStrip v={v} />
       <nav class="nav-grid" aria-label="Panels">
-        {slots.map((t, i) =>
-          t === null ? (
-            <span key={`slot:${v.nav[i].id}`} class="nav-slot" aria-hidden="true" />
-          ) : (
+        {slots.map((t) => (
           <button
             type="button"
             key={t.id}
@@ -94,14 +91,13 @@ export function Left({
             {t.id === 'launch_pads' && padReady && <span class="dot dot-ready" data-testid="pads-ready" title="A pad is ready to launch" />}
             {t.id === 'launch_pads' && padNoCargo && <span class="dot dot-cargo" data-testid="pads-no-cargo" title="A pad has No cargo: pick one" />}
           </button>
-          ),
-        )}
+        ))}
       </nav>
       <TakeoverButtons s={s} list={takeovers} open={takeover} toggle={toggleTakeover} />
       <div class="speed">
         <div class="label">Game Speed</div>
         <div class="speeds" id="speeds" role="group" aria-label="Speed">
-          {SPEEDS.map((sp) => (
+          {speedsOffered(v.fast_speeds).map((sp) => (
             <button
               type="button"
               key={sp}

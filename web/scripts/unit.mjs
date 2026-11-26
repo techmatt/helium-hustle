@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
 import { delta, fillRate, num, perDay } from '../src/format.ts';
 import { navSlots } from '../src/ui/navSlots.ts';
+import { offeredSpeed, speedsOffered } from '../src/speeds.ts';
 import { blockEnd, blockLen, canAddElse, canIndent, insertLine, moveLines, otherUnit, removeLine, sameEntry, setIndent, tidy } from '../src/ui/programEdit.ts';
 
 const cases = [
@@ -147,21 +148,23 @@ const act1 = JSON.parse(readFileSync(new URL('../../content/events.json', import
 assert.equal(act1.length, 11, 'Act 1 has 11 quests');
 for (const e of act1) assert.ok(e.picture, `${e.beat} ${e.id} carries a picture`);
 
-// The nav grid's cells (109): a hidden tile holds its cell empty up to the last shown tile, so
-// a tile turning visible fills its own cell and none other moves; trailing hidden tiles take none.
+// The nav grid's tiles (Matt, 2026-11-26): the open ones packed in content order, no blank
+// cells; the utility tiles are nav.json's last rows, so they follow the last open play tile.
 {
   const t = (id, visible) => ({ id, visible });
-  const ids = (tiles) => navSlots(tiles).map((c) => (c ? c.id : null));
-  assert.deepEqual(ids([t('a', true), t('b', false), t('c', true), t('d', false)]), ['a', null, 'c']);
-  assert.deepEqual(ids([t('a', true), t('b', true), t('c', true), t('d', false)]), ['a', 'b', 'c']);
+  const ids = (tiles) => navSlots(tiles).map((c) => c.id);
+  assert.deepEqual(ids([t('a', true), t('b', false), t('c', true), t('d', false)]), ['a', 'c']);
   assert.deepEqual(ids([t('a', false)]), []);
-  // Every Act 1 tile ends with Options (always shown): the grid's cells never change in Act 1.
   const nav = JSON.parse(readFileSync(new URL('../../content/nav.json', import.meta.url), 'utf8'));
+  const utility = ['stats', 'story', 'achievements', 'options'];
+  assert.deepEqual(nav.slice(-4).map((n) => n.id), utility, 'the utility tiles are the last rows');
   const early = nav.map((n) => t(n.id, n.visible.type === 'always'));
-  const options = nav.findIndex((n) => n.id === 'options');
-  assert.equal(navSlots(early).length, options + 1, 'a new game holds a cell for every tile up to Options');
-  for (const late of ['earth_lab', 'meta', 'vault', 'dyson']) assert.ok(nav.findIndex((n) => n.id === late) > options, `${late} comes after Options`);
+  assert.deepEqual(ids(early), ['buildings', 'commands', ...utility], 'a new game packs its open tiles');
 }
+// 50x and 200x wait for Accelerated Scheduling (amendment #3261); a faster speed drops to 10x.
+assert.deepEqual(speedsOffered(false), [0, 1, 3, 10]);
+assert.deepEqual(speedsOffered(true), [0, 1, 3, 10, 50, 200]);
+assert.deepEqual([offeredSpeed(200, false), offeredSpeed(50, false), offeredSpeed(3, false), offeredSpeed(200, true)], [10, 10, 3, 200]);
 edits += 4;
 
 console.log(`unit ok (${cases.length + 4 + edits + pictures.length + act1.length} checks)`);
