@@ -124,12 +124,12 @@ const PINNED: &[(&str, u64, &str)] = &[
     ("random", 2, "1ae24b2d20817bc0"),
     ("greedy", 1, "e0fe1a489f42eeac"),
     ("greedy", 2, "603e13a782725fc5"),
-    ("author", 1, "46a6318248713331"),
-    ("author", 2, "40a25834446d8961"),
-    ("casual", 1, "f3f7b6925e29c081"),
-    ("casual", 2, "673ad9ac8fd55e15"),
-    ("handsoff", 1, "efa87018bf72e85f"),
-    ("handsoff", 2, "e39555be8bcfedf7"),
+    ("author", 1, "ab12ab580cc7f77d"),
+    ("author", 2, "1b02cc267fa0c97d"),
+    ("casual", 1, "d73f016d8fb6c470"),
+    ("casual", 2, "40ba31f5c5e6317b"),
+    ("handsoff", 1, "1098f6dfc59b0787"),
+    ("handsoff", 2, "f2f5f5f77bc0c2b3"),
 ];
 
 #[test]
@@ -188,26 +188,32 @@ fn the_ladder_prints_its_tables_and_writes_results() {
 }
 
 /// The hands-off player's own play, pinned: the small grid's careers end
-/// before it loads its loadout (`if` opens in run 2 on seeds 1-2, so PINNED's
-/// handsoff games are the author's), so this one goes to run 3 on seed 1,
-/// where the loadout file plays, and ships and buys. A new loadout file moves
-/// the pin: copy it from the failing assertion.
-const HANDSOFF_PIN: &str = "79890c49b1512f12";
+/// before it loads its loadout (`if` opens in run 3 or 4 on seeds 1-2, so
+/// PINNED's handsoff games are the author's), so this one plays 5 runs on
+/// seed 1 and checks the run after Conditional Logic's, where the loadout
+/// file plays, ships and buys. A new loadout file moves the pin: copy it from
+/// the failing assertion.
+const HANDSOFF_PIN: &str = "f1bb3b7c760e0d01";
 
 #[test]
-#[ignore = "slow lane: a 3-run career (~4 s)"]
-fn the_handsoff_loadout_ships_and_buys_in_run_3() {
+#[ignore = "slow lane: a 5-run career (~7 s)"]
+fn the_handsoff_loadout_ships_and_buys_after_if_opens() {
     let dir = root("out/hh-sim-tests/handsoff");
     let mut a = grid("experiment", "handsoff", &["--out", &dir]);
-    for (k, v) in [("--seeds", "1"), ("--retirements", "3")] {
+    for (k, v) in [("--seeds", "1"), ("--retirements", "5")] {
         let i = a.iter().position(|x| x == k).unwrap();
         a[i + 1] = v.into();
     }
     run(&a).unwrap();
     let games = std::fs::read_to_string(format!("{dir}/games.jsonl")).unwrap();
     let v: serde_json::Value = serde_json::from_str(games.lines().next().unwrap()).unwrap();
-    let run3 = v["runs"].as_array().unwrap().iter().find(|r| r["run"] == 3).expect("run 3 finished");
-    assert!(run3["shipments"].as_u64().unwrap() > 0 && run3["buildings_built"].as_u64().unwrap() > 0, "{run3}");
+    let runs = v["runs"].as_array().unwrap();
+    let opened = runs
+        .iter()
+        .position(|r| r["projects"].as_array().unwrap().iter().any(|p| p == "conditional_logic"))
+        .expect("`if` opens within 5 runs");
+    let loaded = runs.get(opened + 1).expect("a run after `if` opens finished");
+    assert!(loaded["shipments"].as_u64().unwrap() > 0 && loaded["buildings_built"].as_u64().unwrap() > 0, "{loaded}");
     assert_eq!(v["replay_ok"], true);
     assert_eq!(v["fingerprint"], HANDSOFF_PIN, "the hands-off player played another game (HANDSOFF_PIN's doc)");
 }
@@ -351,7 +357,7 @@ fn the_oracle_plays_on_copies_and_its_game_replays() {
     let half = fingerprints.len() / 2;
     assert_eq!(fingerprints[..half], fingerprints[half..]);
     // Seeds 1 and 2 of the oracle, then of the pinned one.
-    assert_eq!(fingerprints[..half], ["154861ba8cd9d290", "ff1f461c2c3a180b", "8c358a106610a76c", "fc690ce7754f375d"]);
+    assert_eq!(fingerprints[..half], ["450f3a9032bb2db6", "e9e24a4ffe29def2", "14f91e4180f8c055", "5930589cd74fcf2b"]);
 }
 
 /// `--agents` splits players, not knobs: a knob's value may hold a `:` (a

@@ -38,7 +38,7 @@ pub(super) fn hand_plan(
         if full && pad.can_launch && good_demand {
             lines.push(e("launch_pads", 1));
         }
-        let short = (pad.fuel - amount(v, "propellant")).floor_int();
+        let short = ceil_int(pad.fuel - amount(v, "propellant"));
         let fuel_cost = command_cost(v, "buy_propellant", "credits");
         // Strategy: fuel once the pad is within 25 cargo of full.
         let near = pad.cargo + Fx::from_int(25) >= pad.capacity;
@@ -48,10 +48,11 @@ pub(super) fn hand_plan(
                 lines.push(e("buy_propellant", n as u32));
             }
         }
-        // Loads worth running (a partial load still counts).
+        // Loads worth running (a partial load still counts, and so does a
+        // fraction of stock or room).
         let per = pad.load.floor_int().max(1);
-        let stock = (amount(v, good).floor_int() + per - 1) / per;
-        let room = ((pad.capacity - pad.cargo).floor_int() + per - 1) / per;
+        let stock = (ceil_int(amount(v, good)) + per - 1) / per;
+        let room = (ceil_int(pad.capacity - pad.cargo) + per - 1) / per;
         if !full && stock > 0 && room > 0 {
             lines.push(e("load_pads", stock.min(room).min(i64::from(loads)) as u32));
         }

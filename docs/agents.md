@@ -54,12 +54,12 @@ way to a Solar Panel; a price past a cap gives way to a Storage Depot (a Battery
 Land is bought first when short and credits cover it and the price.
 
 Every player (random, greedy, the author and those built on it) has one fixed hand on pads:
-a pad with No cargo, or an empty first pad on another good, carries the first good a pad may
-carry now (the view's `pad_goods`: Titanium during 1.2, then He-3 at baseline;
-`agents::pick_cargo`, each look; the golden script re-points every empty pad likewise). Until
-Launch Full Pads opens (1.3's completion), every player hand-launches a full pad or one holding a
-`launch_cargo` quest's amount (`agents::hand_launch`). The hands-off loadout (one tab
-since 113) sets `set pads he3 up to 1`.
+a pad with No cargo, or a first pad on another good (empty, or its cargo fits back in the
+stockpile), carries the first good a pad may carry now (`pad_goods`: Titanium during 1.2,
+then He-3; `agents::pick_cargo`, each look; the golden script re-points every empty pad
+likewise). Until Launch Full Pads opens (1.3), every player hand-launches a full pad or one
+holding a `launch_cargo` quest's amount (`agents::hand_launch`). The hands-off loadout
+sets `set pads he3 up to 1`.
 
 A hand-played command (`hand_command`, greedy's): launch a full fueled pad; fuel a full pad;
 load when a load of its good waits; Buy Science while short of the next Blueprints on

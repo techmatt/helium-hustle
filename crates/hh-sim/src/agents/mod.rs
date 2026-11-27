@@ -252,16 +252,20 @@ fn read_loadout(path: &str) -> Result<String, String> {
 /// Every sim player's fixed hand on pads (the golden script, `hh_core::driver`,
 /// keeps its own, deliberately unlike this one; see its comment there): a No-cargo pad carries the first
 /// good a pad may carry now (`pad_goods`: Titanium during 1.2, then the
-/// loading priority's first, He-3 at baseline), and so does an empty first pad
-/// on another good (1.2's Titanium pad turns to He-3 after it), as
-/// `driver.rs`'s script does. Player strategy, not a rule (docs/agents.md).
+/// loading priority's first, He-3 at baseline), and so does a first pad on
+/// another good (1.2's Titanium pad turns to He-3 after it), as `driver.rs`'s
+/// script does: empty, or loaded when its cargo fits back in the stockpile
+/// (a switch returns it; a pad reloaded with Titanium in the look that
+/// launched 1.2's shipment otherwise kept it all run, buying Titanium to ship
+/// it: 121). Player strategy, not a rule (docs/agents.md).
 pub fn pick_cargo(p: &mut Player) {
     let v = p.view();
     let first = v.pad_goods.first().cloned();
     let picks: Vec<Action> = (0..v.pads.len())
         .filter(|&i| {
             let pad = &v.pads[i];
-            pad.good.is_none() || (i == 0 && pad.cargo == Fx::ZERO && pad.good != first)
+            let fits = pad.good.as_deref().is_some_and(|g| cap(v, g).is_none_or(|c| amount(v, g) + pad.cargo <= c));
+            pad.good.is_none() || (i == 0 && pad.good != first && (pad.cargo == Fx::ZERO || fits))
         })
         .map(|i| Action::SetPadGood { pad: i as u32, good: first.clone() })
         .collect();
@@ -308,9 +312,15 @@ pub const BLUEPRINTS: &[&str] = &["basic_blueprints", "advanced_blueprints"];
 pub fn science_short(v: &View) -> Option<u32> {
     let science = amount(v, "science");
     let r = v.research.iter().find(|r| BLUEPRINTS.contains(&r.id) && r.visible && !r.done)?;
-    let d = r.cost - science;
-    let short = d.floor_int() + i64::from(d > Fx::from_int(d.floor_int()));
+    let short = ceil_int(r.cost - science);
     (short > 0 && command_unlocked(v, "buy_science")).then_some(short as u32)
+}
+
+/// The whole part rounded up: a shortfall or room of 0.2 is one unit, not
+/// none (flooring a pad's 0.2 free cargo left it at 99.8/100, never full and
+/// never launched, for whole runs: 121).
+pub fn ceil_int(x: Fx) -> i64 {
+    x.floor_int() + i64::from(x > Fx::from_int(x.floor_int()))
 }
 
 // Shared view readers (`amount` and `command_cost` wrap `View`'s own, shared with

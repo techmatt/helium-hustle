@@ -35,7 +35,8 @@ v4 shipped, as the new `configs/sim/handsoff_loadout.txt`, over seeds 1 to 4 and
 
 On seeds 2 and 3 the author's runs never open `if`, so the loadout never loads (every run
 there is the author's, about 720 days and 0 shipments). That's the author under rules 38,
-not this loadout's, and is left for a later item.
+not this loadout's, and is left for a later item. (121 found and fixed it in the agents:
+[121's write-up](../121_author_agent_small_grid_fix/README.md).)
 
 Rerun: copy `try.py` and `peek.py` (this folder) into `out/113_handsoff_loadout_research/`
 (they find the repo two levels up), build `hh-sim` release, then `python try.py <loadout>

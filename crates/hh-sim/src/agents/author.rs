@@ -58,7 +58,7 @@ use super::builder::{Builder, BRIDGES, INPUT_BRIDGES};
 
 mod templates;
 use templates::*;
-use super::{amount, cap, command_cost, command_unlocked, credits_price, made, Agent, Knobs, Player};
+use super::{amount, cap, ceil_int, command_cost, command_unlocked, credits_price, made, Agent, Knobs, Player};
 
 pub const KNOBS: &[&str] = &[
     "decay", "starved", "reserve", "buys", "compute", "dream_at", "stale_days", "project_rate", "fund", "market",
