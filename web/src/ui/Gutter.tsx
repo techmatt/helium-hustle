@@ -12,7 +12,7 @@ import { shortText } from './common';
 
 /** A status dot: ran (green), skipped by its `if` or at its cap (gray), won't parse (red), not unlocked
  * this run (amber), failed (a hollow red ring), not run (an empty ring), a note (none). */
-export type Dot = 'green' | 'gray' | 'red' | 'amber' | 'failed' | 'none' | 'note' | 'blank';
+type Dot = 'green' | 'gray' | 'red' | 'amber' | 'failed' | 'none' | 'note' | 'blank';
 
 export interface LineStatus {
   dot: Dot;
@@ -26,7 +26,7 @@ export interface LineStatus {
 }
 
 /** A repeated line's pass as the gutter draws it. */
-export interface RepeatState {
+interface RepeatState {
   /** The line's repeat count. */
   of: number;
   done: number;

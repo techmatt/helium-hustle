@@ -14,7 +14,7 @@ import { editProgram } from './programStore';
 
 /** The Blocks mode's extras over the right column's list: a selected row (the instruction
  * panel adds below it), the run gutter and a number field for repeat counts. */
-export interface BlockMode {
+interface BlockMode {
   selected: number;
   select: (i: number) => void;
 }

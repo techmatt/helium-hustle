@@ -186,6 +186,11 @@ pub fn load(
     Ok(Loaded { spec, humans, milestones, objectives })
 }
 
+/// The config at `path` (errors name it).
+fn base_config(path: &str, read: &dyn Fn(&str) -> Result<String, String>) -> Result<Config, String> {
+    Config::from_json(&read(path)?).map_err(|e| format!("{path}: {e}"))
+}
+
 /// The spec's scenario, if any.
 fn scenario_of(spec: &Spec) -> Result<Option<Scenario>, String> {
     spec.scenario.as_deref().map(|n| hh_core::scenario(n).cloned()).transpose()
@@ -195,7 +200,7 @@ fn scenario_of(spec: &Spec) -> Result<Option<Scenario>, String> {
 /// `trace` plays.
 pub fn first_cell(spec: &Spec, read: &dyn Fn(&str) -> Result<String, String>) -> Result<(Config, Option<Scenario>), String> {
     let path = &spec.configs[0];
-    let base = Config::from_json(&read(path)?).map_err(|e| format!("{path}: {e}"))?;
+    let base = base_config(path, read)?;
     Ok((apply_set(&base, &spec.variants[0].set)?, scenario_of(spec)?))
 }
 
@@ -254,7 +259,7 @@ pub fn run(
     let scenario = scenario_of(spec)?;
     let mut configs: Vec<(String, String, Config)> = Vec::new();
     for path in &spec.configs {
-        let base = Config::from_json(&read(path)?).map_err(|e| format!("{path}: {e}"))?;
+        let base = base_config(path, read)?;
         for v in &spec.variants {
             configs.push((path.clone(), v.name.clone(), apply_set(&base, &v.set)?));
         }

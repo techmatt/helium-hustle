@@ -33,7 +33,7 @@ pub(super) fn quest(r: &Rules, g: &GameState) -> Option<QuestView> {
         },
         beat: q.beat.as_deref(),
         act: c.act_of(&q.id),
-        more: c.events.iter().filter(|e| e.is_quest()).skip_while(|e| e.id != q.id).nth(1).is_some(),
+        more: c.events.iter().filter(|e| e.is_chain()).skip_while(|e| e.id != q.id).nth(1).is_some(),
         picture: q.picture.as_deref(),
     })
 }
@@ -106,7 +106,7 @@ fn story(e: &'static Event) -> StoryView {
         effect: &e.effect,
         body: &e.body,
         rate: None,
-        chain: e.is_quest(),
+        chain: e.is_chain(),
         story: &e.story,
         payoff: &e.payoff,
         beat: e.beat.as_deref(),
@@ -138,7 +138,7 @@ pub(super) fn event_texts(r: &Rules, g: &GameState) -> Vec<StoryView> {
     let mut fired: Vec<(u64, &'static Event)> = content()
         .events
         .iter()
-        .filter(|e| !e.is_quest() && !e.is_side() && !e.silent)
+        .filter(|e| e.is_one_off() && !e.silent)
         .filter_map(|e| g.run.events.get(&e.id).map(|&day| (day, e)))
         .collect();
     // Stable: same-day events keep content order.

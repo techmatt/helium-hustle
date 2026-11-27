@@ -1,6 +1,6 @@
 # Timeline (module `timeline`, variant `draft`): DRAFT
 
-**Draft (042).** Acts 2 and 3 as a rough, playable sketch: placeholder mechanics, numbers and
+**Draft.** Acts 2 and 3 as a rough, playable sketch: placeholder mechanics, numbers and
 text, for Matt to keep, cut or rewrite, unaligned with the design doc. The story they serve
 is [../arc.md](../arc.md). Nothing here runs before the swarm's reveal (quest 1.6), so Act 1
 doesn't see it.

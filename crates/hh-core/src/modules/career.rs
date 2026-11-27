@@ -165,7 +165,8 @@ fn close_run(r: &Rules, g: &mut GameState, forced: bool) {
     gap(r, g);
 }
 
-/// The retirement gap (draft): `gap_days` days, simulated one by one, in which
+/// The retirement gap (draft): `gap_days` days (the result of playing them one by
+/// one, taken faster: below), in which
 /// only the slow systems run: every carried ideology score decays
 /// proportionally toward zero (one half-life for all three axes), and every
 /// adversary's Attention decays linearly. Unseen in Act 1 (no calendar).

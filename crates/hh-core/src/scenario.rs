@@ -147,7 +147,7 @@ impl Scenario {
         }
         crate::modules::projects::grant_starting_research(g);
         crate::modules::economy::refresh(g);
-        let free = crate::modules::programs::capacity(g) - crate::modules::programs::assigned(g);
+        let free = crate::modules::programs::free(g);
         if let Some(p) = g.run.programs.first_mut() {
             p.processors += free;
         }
@@ -155,12 +155,10 @@ impl Scenario {
         g.career.flags.extend(self.start.flags.iter().cloned());
         for id in &self.start.events {
             let e = content().event(id).expect("checked");
-            if e.is_quest() || e.is_side() {
+            if !e.is_one_off() {
                 g.career.completed_quests.insert(e.id.clone());
             }
-            g.run.events.insert(e.id.clone(), g.run.day);
-            g.career.seen_events.insert(e.id.clone());
-            crate::modules::events::apply_unlocks(g, e);
+            crate::modules::events::fire(g, e);
         }
         // A scenario past 1.5 A Voice's start starts with Programming bought.
         crate::modules::research::grant_flags_due(g);

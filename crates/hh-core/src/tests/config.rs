@@ -154,7 +154,7 @@ fn content_check_refuses_unknown_ids_in_conditions() {
     use crate::content::{content, Condition};
     let mut c = content().clone();
     assert!(c.check().is_ok());
-    let q = c.events.iter_mut().find(|e| e.is_quest()).unwrap();
+    let q = c.events.iter_mut().find(|e| e.is_chain()).unwrap();
     q.condition = Condition::BuildingOwned { building: "no_such".into(), count: 1 };
     assert!(c.check().is_err_and(|e| e.contains("condition names something unknown")));
 }

@@ -37,7 +37,7 @@ the career, runs the retirement gap (below), moves the swarm's countdown by the 
 the swarm is discovered (draft, [timeline.md](timeline.md)), then starts a new run. The run's day
 count at retirement is its length (a forced retirement counts the tick it happened on).
 
-**The retirement gap** (draft, 049). Between runs `gap_days` days pass, simulated one by
+**The retirement gap** (draft). Between runs `gap_days` days pass, simulated one by
 one, in which only the slow systems run: each carried ideology score is multiplied by
 `0.5^(1 / (half_life_days × ideology_half_life_mult))` each day ([ideology.md](ideology.md);
 with the baseline's 1,825 days and 365-day half-life, about 3% of each score is left, about

@@ -9,7 +9,7 @@ How the engine is put together. The rules are in [rules/](rules/README.md); the 
 - **`hh-sim`**: the native CLI: agents, careers, experiments ([simulator.md](simulator.md),
   [agents.md](agents.md)).
 - **`hh-wasm`**: wasm-bindgen adapter, JSON strings in and out, no rules. It keeps two
-  caches that change no result (094): the rules of the last config seen, and the last state
+  caches that change no result: the rules of the last config seen, and the last state
   it handed out with its JSON, so a call on that same string skips the parse (a page
   wake's `view` after its `advance_run`). It also links
   `hh-sim`'s library for the debug autopilot alone (a sim player driving the page's game:
@@ -102,7 +102,7 @@ config entry (a field of `modules::Params`), and the functions that play its rul
 holds every module's params and `Rules::tick` calls their functions in one order
 ([rules/README.md](rules/README.md#the-day)); `Rules::apply` dispatches each `Action` to
 its module, on a copy of the state that replaces it only on success. Content is serde
-structs in `content.rs` (unknown fields refused); `Content::check` validates ids (unique
+structs in `content.rs` (unknown fields refused); `Content::check` (`content/check.rs`) validates ids (unique
 across all content) and references. `content_hash()` is FNV-1a over the embedded files.
 Shared derived values: `modifiers.rs` (the modifier framework).
 
@@ -182,7 +182,7 @@ the view keeps the digest. Where a page wake's time goes: [094's write-up](../ex
 
 ## State
 
-`GameState` (`state.rs`): the seed, the config, the career-wide `tick`, the RNG streams,
+`GameState` (`state.rs`; a program's line types in `state/program.rs`): the seed, the config, the career-wide `tick`, the RNG streams,
 the `career` (what persists across retirements) and the `run` (what a retirement resets,
 including the run's own `day`). Everything that affects play is in it; derived values
 (caps, modifiers, the active quest, processors' assignment limits) are recomputed from it.

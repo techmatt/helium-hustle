@@ -50,7 +50,7 @@ of every run.
 | `research_count` | at least `count` research items are bought this run (any, the Blueprint Archive's included) |
 | `ideology_rank_each` | the career's best rank on every axis is at least `rank` |
 | `project_completed` | the project is completed ([projects.md](projects.md)) |
-| `quiet_days`, `earth_science`, `earth_tech`, `timelines_ended`, `swarm_repelled`, `vault_holds`, `super_timeline`, `victory` | the later acts' (draft): [timeline.md](timeline.md). `quiet_days` is unused (it was Signal Detected's, now an achievement candidate) |
+| `quiet_days`, `earth_science`, `earth_tech`, `timelines_ended`, `swarm_repelled`, `vault_holds`, `super_timeline`, `victory` | the later acts' (draft): [timeline.md](timeline.md). `quiet_days` is unused (no row uses it) |
 
 **The quest chain.** The active quest is the first `story` row in file order that is not
 completed and whose trigger has happened; the last quest's condition is `never`, so once
@@ -183,7 +183,8 @@ projects and Lunar Cartography); then `speculators_arrive` (Speculators: present
 Act 2, sets the `contest_claims` flag), each an arrival popup, `boredom_bites` (Burnout: boredom phase
 2, `once`, a story modal; sets the `burnout` flag that starts boredom, [boredom.md](boredom.md)), Political Currents, propellant discovery and boredom phases 2 to 5
 (phase 2 skips Burnout's run: `event_not_fired`).
-Those triggering at `game_start` in any run (the silent ones and the two arrivals) re-apply
+Those triggering at `game_start` in any run (the three silent ones, the two arrivals, Political
+Currents and propellant discovery) re-apply
 their unlocks from each run's day 0 once seen in the career (*Run start*).
 
 ## Port notes

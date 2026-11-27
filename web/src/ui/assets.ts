@@ -5,6 +5,9 @@
 export const byName = <T,>(files: Record<string, T>, ext: string): Record<string, T> =>
   Object.fromEntries(Object.entries(files).map(([f, x]) => [f.slice(f.lastIndexOf('/') + 1, -ext.length), x]));
 
+/** A glob map of WebP picture URLs keyed by file stem. */
+export const stems = (files: Record<string, string>): Record<string, string> => byName(files, '.webp');
+
 /** Each SVG file's inside (what lies between its `<svg ...>` and `</svg>`), by stem. */
 export const svgInner = (files: Record<string, string>): Record<string, string> =>
   Object.fromEntries(

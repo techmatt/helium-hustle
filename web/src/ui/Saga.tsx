@@ -7,7 +7,7 @@ import type { TechView, View } from '../engine';
 import { capitalize, num } from '../format';
 import { act, type Store } from '../store';
 import { Bar, ResChip, Section, name } from './common';
-import { Project } from './panels';
+import { Project } from './Projects';
 
 /** The tag on every draft panel's header. */
 function Draft() {

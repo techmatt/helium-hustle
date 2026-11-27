@@ -30,7 +30,7 @@ export const OUTCOME_TEXT: Record<LineOutcome, string> = {
 
 /** A reading's label: the view's while it is on offer, else built from names (a line can
  * hold a reading not shown yet). */
-export function readingLabel(v: View, r: Reading): string {
+function readingLabel(v: View, r: Reading): string {
   const offered = v.readings.find((o) => sameEntry(o.reading, r));
   if (offered) return offered.label;
   switch (r.kind) {
@@ -82,7 +82,7 @@ function shown(r: Reading, value: string | null): string {
 }
 
 /** A condition as text, display names, never ids: "Energy > 50%". */
-export function conditionText(v: View, when: Condition): string {
+function conditionText(v: View, when: Condition): string {
   const one = (c: Clause) => `${readingLabel(v, c.reading)} ${CMPS.find(([k]) => k === c.cmp)?.[1] ?? c.cmp} ${num(c.value, 2)}${unit(c.reading)}`;
   return when.rest ? `${one(when.first)} ${when.rest.join} ${one(when.rest.clause)}` : one(when.first);
 }
@@ -169,7 +169,7 @@ const fieldSelect = {
  * the program. `commit` checks the text and refuses what it can't use, which then reverts.
  * A text input (`inputmode` numeric), not `type="number"`: a number input's selection
  * can't be set, so a press on its selected text would drag the text rather than select. */
-export function NumberField({ value, commit, ...rest }: { value: string; commit: (text: string) => void } & Record<string, unknown>) {
+function NumberField({ value, commit, ...rest }: { value: string; commit: (text: string) => void } & Record<string, unknown>) {
   const [draft, setDraft] = useState<string | null>(null);
   // Redraws after every change, so refused text goes back to the value at once.
   const [, redraw] = useState(0);

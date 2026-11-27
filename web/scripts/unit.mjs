@@ -5,6 +5,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { commandTip, delta, fillRate, num, perDay } from '../src/format.ts';
 import { navSlots } from '../src/ui/navSlots.ts';
 import { offeredSpeed, speedsOffered } from '../src/speeds.ts';
+import { clearTold, newTold, tellPages } from '../src/story.ts';
 import { blockEnd, blockLen, canAddElse, canIndent, insertLine, moveLines, otherUnit, removeLine, sameEntry, setIndent, tidy } from '../src/ui/programEdit.ts';
 
 const cases = [
@@ -178,5 +179,31 @@ assert.deepEqual(speedsOffered(false), [0, 1, 3, 10]);
 assert.deepEqual(speedsOffered(true), [0, 1, 3, 10, 50, 200]);
 assert.deepEqual([offeredSpeed(200, false), offeredSpeed(50, false), offeredSpeed(3, false), offeredSpeed(200, true)], [10, 10, 3, 200]);
 edits += 4;
+
+// The story modal's popups (story.ts `tellPages`): each told once per run, a seen event hidden
+// with "Hide popups" on, nothing marked seen under the autopilot or at a load.
+{
+  const ev = (id) => ({ id, title: id, summary: `${id} line`, goal: '', reward: '', effect: 'Rate {rate}.', body: '', rate: '0.199' });
+  const view = (run, events, quest = null) => ({ run, day: 5, story: [], event_texts: events, quest, completed_quests: ['q0'] });
+  const opts = (o = {}) => ({ pilot: false, hideSeen: true, fill: fillRate, ...o });
+  const t = newTold();
+  const first = tellPages(view(1, [ev('burnout')]), 'play', t, opts());
+  assert.equal(first.length, 1);
+  assert.equal(first[0].text, 'burnout line');
+  assert.equal(first[0].effect, 'Rate +0.2/day.');
+  assert.equal(tellPages(view(1, [ev('burnout')]), 'play', t, opts()).length, 0, 'told once a run');
+  assert.equal(tellPages(view(2, [ev('burnout')]), 'play', t, opts()).length, 0, 'seen: hidden with Hide popups on');
+  assert.equal(tellPages(view(3, [ev('burnout')]), 'play', t, opts({ hideSeen: false })).length, 1, 'seen: shown with it off');
+  const quiet = newTold();
+  assert.equal(tellPages(view(1, [ev('a')]), 'play', quiet, opts({ pilot: true })).length, 0);
+  assert.equal(tellPages(view(1, [ev('b')]), 'load', quiet, opts()).length, 0);
+  assert.deepEqual([...quiet.seenPopups], [], 'the autopilot and a load mark nothing seen');
+  const q = { id: 'q1', title: 'Q1', summary: '', goal: 'Do it.', reward: '', effect: '', body: 'Begin.', picture: null };
+  const opened = tellPages(view(1, [], q), 'play', newTold(), opts());
+  assert.deepEqual(opened.map((p) => [p.text, p.task]), [['Begin.', 'Do it.']], 'a new quest opens with its task last');
+  clearTold(t);
+  assert.equal(t.seenPopups.size + t.stories.size, 0);
+  edits += 11;
+}
 
 console.log(`unit ok (${cases.length + 4 + edits + pictures.length + act1.length} checks)`);

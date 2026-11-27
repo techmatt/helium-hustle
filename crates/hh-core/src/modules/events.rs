@@ -1,4 +1,4 @@
-//! **events**: the quest chain ("Breadcrumbs") and one-off events, their
+//! **events**: the quest chain ("Breadcrumbs"), side quests and one-off events, their
 //! triggers, conditions and unlock effects (docs/rules/events.md).
 
 use super::{param, ModuleDef, ParamKind as K, VariantDef};
@@ -38,7 +38,7 @@ impl Params {
 fn triggered(g: &GameState, e: &Event) -> bool {
     match &e.trigger {
         Trigger::GameStart { run_number } => {
-            e.is_quest() || run_number.is_none_or(|n| n == g.career.run_number)
+            e.is_chain() || run_number.is_none_or(|n| n == g.career.run_number)
         }
         Trigger::QuestComplete { quest } => g.career.completed_quests.contains(quest),
         Trigger::BoredomPhase { phase } => g.run.boredom_phase >= *phase,
@@ -52,7 +52,7 @@ pub fn active_quest(g: &GameState) -> Option<&'static Event> {
     content()
         .events
         .iter()
-        .filter(|e| e.is_quest())
+        .filter(|e| e.is_chain())
         .find(|e| !g.career.completed_quests.contains(&e.id) && triggered(g, e))
 }
 
@@ -84,7 +84,7 @@ pub fn holds(r: &Rules, g: &GameState, quest: &str, c: &Condition) -> bool {
         Condition::IdeologyRankAny { rank } => {
             crate::content::AXES.iter().any(|a| super::ideology::rank(r, g, a) >= *rank)
         }
-        Condition::IdeologyRank { axis, rank } => g.career.max_ideology_ranks.get(axis).copied().unwrap_or(0) >= *rank,
+        Condition::IdeologyRank { axis, rank } => best_rank(g, axis) >= *rank,
         Condition::ProjectCompletedAny { scope } => content()
             .projects
             .iter()
@@ -136,7 +136,7 @@ pub fn progress(r: &Rules, g: &GameState, c: &Condition) -> Option<(Fx, Fx)> {
         }
         // The career's best rank on the axis, as `holds` reads it.
         Condition::IdeologyRank { axis, rank } => {
-            Some((Fx::from_int(g.career.max_ideology_ranks.get(axis).copied().unwrap_or(0)), Fx::from_int(*rank)))
+            Some((Fx::from_int(best_rank(g, axis)), Fx::from_int(*rank)))
         }
         Condition::DaysSurvived { days } => Some((n(g.run.day), n(*days))),
         Condition::CreditsEarned { amount } => Some((g.run.stats.credits_earned, *amount)),
@@ -206,9 +206,25 @@ fn best_cargo(g: &GameState, good: &str) -> Fx {
     g.run.stats.best_cargo.get(good).copied().unwrap_or(Fx::ZERO)
 }
 
+/// The career's best rank on `axis`.
+fn best_rank(g: &GameState, axis: &str) -> i64 {
+    g.career.max_ideology_ranks.get(axis).copied().unwrap_or(0)
+}
+
+/// A one-off event already fired this run, or (`once`) ever in the career.
+fn one_off_done(g: &GameState, e: &Event) -> bool {
+    g.run.events.contains_key(&e.id) || (e.once && g.career.seen_events.contains(&e.id))
+}
+
+/// An event's grant of `amount` of `resource` (its flow tracked as the event's).
+fn grant(g: &mut GameState, resource: &str, amount: Fx) {
+    g.add(resource, amount);
+    g.track("event", resource, amount, Fx::ZERO);
+}
+
 /// The lowest of the career's best ranks over the axes.
 fn each_axis_best(g: &GameState) -> i64 {
-    crate::content::AXES.iter().map(|a| g.career.max_ideology_ranks.get(*a).copied().unwrap_or(0)).min().unwrap_or(0)
+    crate::content::AXES.iter().map(|a| best_rank(g, a)).min().unwrap_or(0)
 }
 
 pub fn sub_key(quest: &str, sub: &str) -> String {
@@ -243,8 +259,7 @@ pub fn apply_unlocks(g: &mut GameState, e: &Event) {
                 g.career.flags.insert(flag.clone());
             }
             Unlock::Grant { resource, amount } => {
-                g.add(resource, *amount);
-                g.track("event", resource, *amount, Fx::ZERO);
+                grant(g, resource, *amount);
             }
             // Read live while the quest is completed (modifiers.rs).
             Unlock::Modifier { .. } => {}
@@ -258,14 +273,15 @@ fn start(g: &mut GameState, q: &Event) {
     if g.career.started_quests.insert(q.id.clone()) {
         for u in &q.on_start {
             if let Unlock::Grant { resource, amount } = u {
-                g.add(resource, *amount);
-                g.track("event", resource, *amount, Fx::ZERO);
+                grant(g, resource, *amount);
             }
         }
     }
 }
 
-fn fire(g: &mut GameState, e: &Event) {
+/// Marks `e` fired this run and seen in the career, and applies its unlocks (a
+/// scenario's starting events too).
+pub(crate) fn fire(g: &mut GameState, e: &Event) {
     g.run.events.insert(e.id.clone(), g.run.day);
     g.career.seen_events.insert(e.id.clone());
     apply_unlocks(g, e);
@@ -288,8 +304,8 @@ pub fn check(r: &Rules, g: &mut GameState) {
     }
     // One-off events before side quests, so a flag one sets starts a side
     // quest the same day.
-    for e in content().events.iter().filter(|e| !e.is_quest() && !e.is_side()) {
-        let done = g.run.events.contains_key(&e.id) || (e.once && g.career.seen_events.contains(&e.id));
+    for e in content().events.iter().filter(|e| e.is_one_off()) {
+        let done = one_off_done(g, e);
         if !done && triggered(g, e) && holds(r, g, &e.id, &e.condition) {
             fire(g, e);
             if !e.silent {
@@ -316,8 +332,8 @@ pub fn check(r: &Rules, g: &mut GameState) {
 pub fn pending_panels(r: &Rules, g: &GameState) -> Vec<&'static str> {
     const GATED: &[&str] = &[super::research::RESEARCH_PANEL, super::career::RETIREMENT_PANEL];
     let mut out = Vec::new();
-    for e in content().events.iter().filter(|e| !e.is_quest() && !e.is_side()) {
-        let done = g.run.events.contains_key(&e.id) || (e.once && g.career.seen_events.contains(&e.id));
+    for e in content().events.iter().filter(|e| e.is_one_off()) {
+        let done = one_off_done(g, e);
         if done || !e.unlocks.iter().any(|u| matches!(u, Unlock::EnableNavPanel { .. })) {
             continue;
         }

@@ -9,10 +9,10 @@ use hh_core::modules::{ModuleDef, REGISTRY};
 use hh_core::{Config, Fx};
 use std::path::Path;
 
-use crate::{read, usage, Fail, BASELINE};
+use crate::{usage, Fail, BASELINE};
 
 /// The command that regenerates the docs tables, named by the test that checks them.
-pub const REGENERATE: &str = "cargo run -q -p hh-sim -- params --write";
+pub const REGENERATE: &str = "cargo run -q --release -p hh-sim -- params --write";
 
 const CLOSE: &str = "<!-- /params -->";
 
@@ -137,7 +137,7 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     if write && config != BASELINE {
         return usage("params: --write writes the baseline's values; drop --config");
     }
-    let c = Config::from_json(&read(&config)?).map_err(|e| Fail::Usage(format!("{config}: {e}")))?;
+    let c = crate::load_config(&config)?;
     if !write {
         return Ok(all(&c));
     }

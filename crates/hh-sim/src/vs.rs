@@ -16,7 +16,7 @@ use serde::Serialize;
 use crate::career::{self, Build, GameResult, RunResult};
 use crate::human::Humans;
 use crate::milestones::{Milestones, VsHuman};
-use crate::playlog::{self, Log};
+use crate::playlog;
 use crate::{list, read, usage, Fail, HUMANS, LADDER, MILESTONES, THREADS};
 
 /// A row: the human or a sim player, by name.
@@ -321,7 +321,7 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
         }
         names.push(name);
     }
-    let log = Log::parse(&read(&path)?).map_err(|e| Fail::Usage(format!("{path}: {e}")))?;
+    let log = crate::load_log(&path)?;
     if log.accelerated && !include_accelerated {
         return usage(format!(
             "vs-human: {path} used an accelerator (boost, autopilot or debug speed): no human's pace (--include-accelerated to compare anyway)"

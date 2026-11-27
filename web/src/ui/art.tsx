@@ -12,7 +12,7 @@
 // renamed them to bare stems, and 095's new line moved beats, so that script no longer
 // matches content: rerun it only after updating its beat-to-stem map).
 
-import { byName } from './assets';
+import { stems } from './assets';
 
 const STARS: [number, number, number][] = [
   [4, 18, 1], [11, 62, 0.8], [17, 30, 1.2], [26, 80, 0.8], [33, 12, 0.9], [41, 50, 1.1],
@@ -31,8 +31,6 @@ export function Sky() {
     </div>
   );
 }
-
-const stems = (files: Record<string, string>) => byName(files, '.webp');
 
 const ACT_BANDS = stems(import.meta.glob<string>('../assets/story/act*.webp', { eager: true, query: '?url', import: 'default' }));
 const QUEST_PICTURES = stems(import.meta.glob<string>('../assets/quests/*.webp', { eager: true, query: '?url', import: 'default' }));

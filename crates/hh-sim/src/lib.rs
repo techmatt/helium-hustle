@@ -38,7 +38,7 @@ pub const USAGE: &str = "usage:
   hh-sim objectives SCENARIO.json [--config F] [--seed S] [--ticks N]
   hh-sim ladder [SPEC.json] [GRID]                 the agent ladder in game time (default experiments/ladder.json)
   hh-sim experiment SPEC.json [GRID]               any spec
-  hh-sim compare --config A [--config-b B] [--set module.key=value]... [GRID]
+  hh-sim compare [--config A] [--config-b B] [--set module.key=value]... [GRID]
   hh-sim balance [GRID]                            balance: lines for the judge's missed targets
   hh-sim trace [GRID] [--lines | --at T]           one career's actions and milestones (--lines: each day's program lines run;
                                                    --at T: the state at career tick T instead, what walls a run in)
@@ -102,7 +102,13 @@ pub(crate) fn load_humans(path: &str) -> Result<human::Humans, Fail> {
     human::Humans::from_json(&read(path)?).map_err(|e| Fail::Usage(format!("{path}: {e}")))
 }
 
-fn load_config(path: &str) -> Result<Config, Fail> {
+/// The play log at `path` (errors name it).
+pub(crate) fn load_log(path: &str) -> Result<playlog::Log, Fail> {
+    playlog::Log::parse(&read(path)?).map_err(|e| Fail::Usage(format!("{path}: {e}")))
+}
+
+/// The config at `path` (errors name it).
+pub(crate) fn load_config(path: &str) -> Result<Config, Fail> {
     Config::from_json(&read(path)?).map_err(|e| Fail::Usage(format!("{path}: {e}")))
 }
 
@@ -328,7 +334,7 @@ fn playlog_cmd(args: &[String]) -> Result<String, Fail> {
     let Some(path) = path else {
         return usage("playlog: give a log file");
     };
-    let log = playlog::Log::parse(&read(&path)?).map_err(|e| Fail::Usage(format!("{path}: {e}")))?;
+    let log = load_log(&path)?;
     let ms = load_milestones(&milestones)?;
     let pf = load_humans(&humans)?;
     let r = playlog::replay(&log, &ms).map_err(|e| Fail::Check(format!("{path}: replay failed: {e}")))?;

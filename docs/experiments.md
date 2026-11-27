@@ -73,7 +73,7 @@ goals.
 | Milestones | Per milestone, medians: career ticks (`t`), retirements before it (`r`; it fell in run r+1) and that run's day (`d`); `k/n` when only k of n seeds reached it. |
 | Run credits, Peak cr/day, Ships/run | Credits earned and shipments a finished run (means); each career's best credit rate over the milestones' longest `credit_rate` window, 100 days (median over seeds). |
 | Real time | With `humans`: per player and model, run 1's real minutes (median), a finished run's (mean), minutes a decision, and each milestone's minutes from the career's start (median). |
-| Hands-off | With a `handsoff` player and an `author` one: how far the best known loadout (`configs/sim/handsoff_loadout.txt`, loaded at each reset once `if` opens) carries a run. Credits a finished run from run 2 on (mean) and milestones first met from run 2 on (summed over seeds), each against the author's on the same seeds and as a share of it (runs until `if` opens, and that one, are the author's in both: run 2 on most seeds, so "from run 2" can hold author runs). Its runs end by the loadout's own `retire` (`days since a purchase`, researched each run, 062), its backstop hand retirement (`stale_days` with nothing bought) or the boredom cap. |
+| Hands-off | With a `handsoff` player and an `author` one: how far the best known loadout (`configs/sim/handsoff_loadout.txt`, loaded at each reset once `if` opens) carries a run. Credits a finished run from run 2 on (mean) and milestones first met from run 2 on (summed over seeds), each against the author's on the same seeds and as a share of it (runs until `if` opens, and that one, are the author's in both: run 2 on most seeds, so "from run 2" can hold author runs). Its runs end by the loadout's own `retire` (`days since a purchase`, researched each run), its backstop hand retirement (`stale_days` with nothing bought) or the boredom cap. |
 | Run-1 objectives | With a spec's `objectives`: each objective's median run-1 day against its Godot window (`in`, `early`, `late`). |
 | Never built, never used | Buildings never owned and commands never run in any seed's career. |
 
@@ -84,12 +84,12 @@ After `ladder`'s and `experiment`'s tables, the engine's speed natively and in w
 This machine, idle: the ladder (5 players × 3 seeds, careers of 20 retirements)
 about 20 s on 6 threads; `ceiling` about 20 minutes, set by the oracle's careers
 ([oracle.md](oracle.md)); `balance`
-(4 careers) about 6.5 s (092, on mimalloc: half the Windows allocator's time); `vs-human` on a 1,600-tick log a second. Other careers play
+(4 careers) about 6.5 s (on mimalloc: half the Windows allocator's time); `vs-human` on a 1,600-tick log a second. Other careers play
 4,000-20,000 ticks a second, slower the more often their
 player looks (random and the author every 5-10 ticks, the casual author every ~130): a view
 (~130-270 µs) costs ten state copies, so a rollout that plays an agent is view-bound.
 
-**The page's own cost** (094): headless Edge's main thread while the game runs, busy
+**The page's own cost**: headless Edge's main thread while the game runs, busy
 milliseconds a wall second, early (a new game) and late (`everything`): under 10 at 1x,
 about 35-70 at 200x. A wake (every 100 ms) costs ~1.2-3 ms of engine calls (wasm), and
 the rest is Preact's redraw. `experiments/results/094_profiling_pass/page_profile.mjs`

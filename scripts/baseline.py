@@ -10,7 +10,8 @@ there), optionally lays <rev2>'s
 and builds its release `hh-sim` into `out/target-baseline` (absolute, its own
 target dir). Prints the copy's root and binary: run the binary from that root,
 since hh-sim reads `configs/`, `experiments/` and `reference/` from the working
-directory. Uncommitted changes are not in the copy: commit or stash them first.
+directory. Uncommitted changes are not in the copy: commit them first (a WIP commit:
+the stash stack is shared by every worktree).
 Builds at below-normal priority on 3 jobs; ~1 minute cold.
 """
 import io

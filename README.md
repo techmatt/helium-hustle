@@ -110,7 +110,11 @@ eight from `hh-sim golden`; never type them. The sim players' pinned games are s
 `PINNED`, `HANDSOFF_PIN` and the oracle's in `crates/hh-sim/tests/cli.rs` (an agent refactor
 keeps them; a rules change moves those whose play it changes): run `cargo test-all -p hh-sim`
 (the oracle's pin is a slow-lane test; failing pins still write their games to
-`out/hh-sim-tests/`), then `python scripts/set_pins.py` copies them into `cli.rs`. A param
+`out/hh-sim-tests/`), then `python scripts/set_pins.py` copies them into `cli.rs`. An energy or price change
+often turns `the_handsoff_loadout_ships_and_buys_after_if_opens` red: its fix is a new
+loadout (a search: `experiments/results/113_handsoff_loadout_research/`, variants by
+`--agents` as in docs/experiments.md), not a patch: run `hh-sim trace --agents handsoff --at T`
+first to see the wall, then report it. A param
 added, removed or re-ranged regenerates the `docs/rules/` param tables:
 `cargo run -q --release -p hh-sim -- params --write` (a test fails while they are stale).
 Content ids are also named outside `content/` (`configs/sim/milestones.json`, the sim agents,

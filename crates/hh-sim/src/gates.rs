@@ -105,14 +105,14 @@ fn quest(c: &Content, q: &str) -> Vec<String> {
 pub fn run() -> String {
     let c = content();
     let mut t = String::new();
-    for e in c.events.iter().filter(|e| e.is_quest() || e.is_side()) {
+    for e in c.events.iter().filter(|e| !e.is_one_off()) {
         let tag = e.beat.clone().unwrap_or_else(|| e.category.clone());
         let _ = writeln!(t, "{} ({tag}) {}", e.id, e.title);
         for l in quest(c, &e.id) {
             let _ = writeln!(t, "{l}");
         }
     }
-    for e in c.events.iter().filter(|e| !e.is_quest() && !e.is_side() && !e.unlocks.is_empty()) {
+    for e in c.events.iter().filter(|e| e.is_one_off() && !e.unlocks.is_empty()) {
         let _ = writeln!(t, "{} (event{})", e.id, if e.silent { ", silent" } else { "" });
         let _ = writeln!(t, "  on firing: {}", e.unlocks.iter().map(unlock).collect::<Vec<_>>().join(", "));
         let revealed: Vec<&str> = c.research.iter().filter(|r| revealed_by(&r.reveal_when, &e.id)).map(|r| r.id.as_str()).collect();

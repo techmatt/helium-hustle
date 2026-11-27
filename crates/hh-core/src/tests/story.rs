@@ -54,7 +54,7 @@ fn act_1_reads_1_1_to_1_6() {
     let act1: Vec<(&str, &str)> = c
         .events
         .iter()
-        .filter(|e| e.is_quest() && c.act_of(&e.id) == Some(1))
+        .filter(|e| e.is_chain() && c.act_of(&e.id) == Some(1))
         .map(|e| (e.beat.as_deref().unwrap(), e.title.as_str()))
         .collect();
     assert_eq!(
@@ -359,7 +359,7 @@ fn playtest_batch_1_reads_as_ruled() {
     let lines: Vec<_> = v.buildings.iter().filter(|b| !b.description.is_empty()).map(|b| b.id).collect();
     assert_eq!(lines, ["arbitrage_engine", "microwave_receiver"]);
     // Through 1.3: 1.4 asks for trade credits, and no market has speculator data.
-    let chain: Vec<_> = crate::content::content().events.iter().filter(|e| e.is_quest()).collect();
+    let chain: Vec<_> = crate::content::content().events.iter().filter(|e| e.is_chain()).collect();
     for e in chain.iter().take_while(|e| e.id != "qtrade") {
         g.career.completed_quests.insert(e.id.clone());
     }
@@ -486,7 +486,7 @@ fn a_panel_a_purchase_opens_shows_at_once() {
 #[test]
 fn narrative_carries_no_mechanics() {
     for e in crate::content::content().events.iter().filter(|e| !e.silent) {
-        let quest = e.is_quest() || e.is_side();
+        let quest = !e.is_one_off();
         assert!(!quest || !e.goal.is_empty() && e.reward != "None.", "{}: a goal, and no empty reward line", e.id);
         for t in [&e.summary, &e.body].into_iter().chain(&e.story).chain(&e.payoff) {
             let t = t.replace("Helium-3", "").replace("He-3", "");

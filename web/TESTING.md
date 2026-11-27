@@ -101,13 +101,22 @@ A story modal refuses every action and speed until read: `readStory()` reads one
 - **Speculators' first arrival:** scenario `speculators_due` (no other scenario has pads that
   load with the speculators unseen; He-3 caps at 20 and propellant at 30 without depots): pick
   He-3 on both pads, launch by hand, grant He-3 and propellant as they run low (116's `check.mjs`).
+- **An item's check script** (`experiments/results/<item>/check.mjs`, 116's and 119's are
+  short) uses `cdp.mjs`'s `launch` and `driver`. Start from a scenario's numbers: cheat
+  grants refuse negative amounts, so nothing can be lowered. The Programs view is an
+  overlay, not a `data-panel`: `.nav-tile[data-nav="programs"]`, wait for
+  `[data-testid="mode-text"]`, Escape closes it. One-offs fire only under real play (the
+  autopilot plays past popups): 112's `check_prop.mjs` takes two autopilot quest steps, then
+  launches by hand with grants and 4-day jumps.
 - Edge needs an **absolute** `--user-data-dir` (the script resolves it).
 - Leaving a page fires `pagehide`, then `visibilitychange`; the page saves on both, so a
   test editing the save does it after both, or edits `localStorage` then sets
   `Storage.prototype.setItem = () => {}` before reloading (104's and 117's `check.mjs`).
 
-`npm run unit` (Node, no page) checks the number formatting (`src/format.ts`) and
-`fillRate` (an event effect's `{rate}`), `programEdit.ts`'s line edits, that every quest `picture` has a file, then `scripts/contrast.mjs`
+`npm run unit` (Node, no page) checks `src/format.ts` (numbers, `delta`, `commandTip`,
+`fillRate`: an event effect's `{rate}`), `programEdit.ts`'s line edits, `story.ts`'s popups
+(told once a run, a seen one hidden, nothing seen under the autopilot or at a load), the
+nav slots, the offered speeds, that every quest `picture` has a file, then `scripts/contrast.mjs`
 the text-on-background pairs in its hand-kept `PAIRS` list, in both themes, at
 4.5:1 (7:1 for `pos-text`, the Resources rates' green): a new token needs its pairs there.
 

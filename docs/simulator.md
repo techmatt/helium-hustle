@@ -33,7 +33,7 @@ $S summarize out/experiments/ladder/games.jsonl      # each game's runs, milesto
 $S compare --config-b configs/other.json      # two configs, paired on the same seeds
 $S compare --set boredom.base_cap=500         # a param (or module.variant=name) against the base
 $S balance                                    # the judge's missed targets, as balance: lines (~5 s)
-$S trace --agents author --retirements 2      # one career: actions, the agent's notes (#), the career log
+$S trace --agents author --retirements 2      # one career (the grid's first agent at --first-seed): actions, the agent's notes (#), the career log
 $S trace --lines                              # ... and each day's program lines run, in queue order
 $S trace --agents oracle --first-seed 2 --at 1500   # the state at a tick: what walls a run in
 $S agents                                     # the ladder's rungs
@@ -134,8 +134,9 @@ Policies live in `hh-core` (`driver.rs`) because the golden game and the wasm pa
 use one; the agents that measure play live here ([agents.md](agents.md)). Both read only the
 view and act only through actions.
 
+- **`idle`** (the default) does nothing.
 - **`greedy`** buys every affordable building in content order (from a new game, nothing:
-  no program runs, so nothing is earned).
+  no program runs, so nothing is earned); `greedy:every=N` tries every N ticks.
 - **`script`** is a fixed Arc 1 opening, one decision a day (`driver.rs`): its build order,
   the Blueprints and Regolith Processing research, pad cargo, Program 1's command and, once
   program logic opens, a condition program. It never funds projects or retires voluntarily.

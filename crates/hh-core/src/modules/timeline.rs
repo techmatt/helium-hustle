@@ -412,7 +412,7 @@ pub fn super_blocker(r: &Rules, g: &GameState) -> Option<String> {
     // A quest waiting on the vault's stock completes first (spending it at
     // once would strand that quest).
     let waiting = content().events.iter().any(|e| {
-        e.is_quest()
+        e.is_chain()
             && matches!(e.condition, crate::content::Condition::VaultHolds { .. })
             && !g.career.completed_quests.contains(&e.id)
     });

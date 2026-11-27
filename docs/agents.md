@@ -21,8 +21,8 @@ against: [principles.md](principles.md); how they're run: [simulator.md](simulat
   (`casual=author:min_gap=120`, the ladder's casual player); an unknown knob is an error.
 - **Agent code is player code** ([rulings/sim.md](rulings/sim.md)).
 - **Pinned games.** An agent edit changes how a player plays, not the game: no
-  `RULES_REVISION` bump. Agent edits are guarded by the pinned games (`PINNED` and the
-  oracle's, in `crates/hh-sim/tests/cli.rs`): a refactor keeps them.
+  `RULES_REVISION` bump. Agent edits are guarded by the pinned games (`PINNED`, `HANDSOFF_PIN` and
+  the oracle's, in `crates/hh-sim/tests/cli.rs`): a refactor keeps them.
 
 | Rung | What it does | Knobs (defaults) |
 |---|---|---|
@@ -33,7 +33,7 @@ against: [principles.md](principles.md); how they're run: [simulator.md](simulat
 | `planner` | **Not built.** A strategic player that plans across retirements without peeking: the hook is `Agent::new_run`, called once a run: at the first look after a forced retirement, before `act`; after a retirement the agent chose, at the end of that look (whatever else `act` did in the new run came first, so a planner should retire last in its look). | |
 | `oracle` | The **ceiling**: the author steered by rollouts on copies of the game, the future included ([oracle.md](oracle.md)). Profiles: `profile` 0 milestones, 1 credits, 2 ideology, 3 builder, 4 quests. | `profile` 0, `every` 50, `horizon` 600, `width` 5, `beam` 1, `margin` 20, `long` 2000, `replan` 500, `strategy` -1 (search), `retire` 1, `min_run` 1000, `retire_margin` 0, `first_margin` 0, `early` and `ideology` (the profile's weights), `tail` 400, `hoard_at` 5000, `stale_days` 300, `max_gap` 10, `roll_gap` = `max_gap` |
 
-Where each picks research: random in `RandomAgent::act` (random.rs), greedy in builder.rs's
+Where each picks research: random in `Random::act` (random.rs), greedy in builder.rs's
 `act` (cheapest affordable), the author in `next_research` over `RESEARCH`/`PLAN_RESEARCH`
 (author.rs; handsoff and the oracle inherit it); every one skips `agents::NEVER_BUY` (mod.rs).
 
@@ -90,7 +90,7 @@ How it writes the main program depends on the gap to its next look (*When it loo
 read the game, not this look's counts, so each is saved once by name; side programs load at
 each reset and keep their lines while unassigned (`author/templates.rs`). Every `if` costs a
 step (rev 19) and a bare line that can't act costs the same one step, so they guard only what
-a bare line would waste (065): `ship` (1, its numbers percents of the caps when written; with
+a bare line would waste: `ship` (1, its numbers percents of the caps when written; with
 no pad, the filler alone; once one stands, fuel while Propellant is under a launch's worth
 and a pad holds cargo, `launch pads all` bare, `load pads all` `ship_loads` times once
 Helium-3 holds that many loads; with two pads or more, `set pads he3 up to 1` bare and the same
@@ -98,7 +98,7 @@ Helium-3 holds that many loads; with two pads or more, `set pads he3 up to 1` ba
 replaces it while the target waits on a bought input), `dream watch` (2: dream past
 `dream_at`, else the filler × `dream_fill`), `fund`, `market`, and `build order` (5: the last run's
 purchases as bare `build X up to N`, one line a building in the order first bought (no count
-reading since 059, so a step can't wait on the one before; short of credits it fails in a
+reading, so a step can't wait on the one before; short of credits it fails in a
 step), a short input bought first under `if` it is short `and` credits cover it, bare
 `research` lines; rewritten when a run bought past it). Done lines (a researched item, a
 finished `build`) cost a step each loop.
@@ -133,16 +133,16 @@ A hand plan is also rewritten to run its due lines again once the pointer passed
 filler, never over one that reaches the next look: about 90 decisions a run.
 
 **The hands-off player** (`handsoff.rs`) loads the best known loadout at every reset; its only
-hand move is a stale-run retirement (061). Its programs are data, not strategy code:
+hand move is a stale-run retirement. Its programs are data, not strategy code:
 `configs/sim/handsoff_loadout.txt` (the form: `agents/loadout.rs`), replaced when the rules or the best loadout change (then re-pin `HANDSOFF_PIN` in `tests/cli.rs`; a refused tab panics). It is
-the author until the run `if` opens in (049: the loadout guards with `if`), counted as its
+the author until the run `if` opens in (the loadout guards with `if`), counted as its
 first; from the next run, at each reset it puts each of the file's tabs in its program through
 the library (written and saved as `hands-off N` once, loaded after) and seats processors by
 the file's `seat` line. A tab reading a researched reading can't be written before that
 research: the first time, it goes in without those `if` blocks and is rewritten whole once
 the research is done (once a career). Then nothing by hand but a backstop retirement once the
 run has bought nothing (buildings, research, land) for `stale_days` days (the file's own
-`retire` line reads Process Telemetry's reading, out of Act 1 since 111).
+`retire` line reads Process Telemetry's reading, not in Act 1).
 What its tabs do: the file's header.
 
 ## The oracle (`oracle/`)

@@ -1,9 +1,10 @@
 // Autosave in localStorage, tagged with the rules revision and config hash. A save
 // from another revision or config is discarded, never migrated.
 
-import type { LastRun, Scenario, Stamped, StoryView } from './engine';
+import type { LastRun, Scenario, Stamped } from './engine';
 import type { Speed } from './clock';
-import type { StoryPage, SummaryBase } from './store';
+import type { StoryPage } from './story';
+import type { SummaryBase } from './store';
 
 export const SAVE_KEY = 'hh.save';
 
@@ -27,8 +28,6 @@ export interface Save {
   /** The one-off events whose popup this career has shown (Events' "Hide popups for
    * events you've already seen"). */
   seenPopups?: string[];
-  /** An older save's unread side-quest banner texts: shown as their popups at load. */
-  stories?: StoryView[];
   /** A story modal chain's unread pages (the open one first) and the speed its last
    * page resumes: a reload mid-chain shows them again, the clock held. */
   storyPages?: StoryPage[];
@@ -61,7 +60,7 @@ function storageRemove(key: string): void {
 }
 
 /** A save, or why one was dropped (with its career's play log id, to close it). */
-export type Loaded = { save: Save } | { discarded: string; careerId?: string } | null;
+type Loaded = { save: Save } | { discarded: string; careerId?: string } | null;
 
 /** The saved game, if it fits this engine and config; otherwise why it was dropped. */
 export function loadSave(revision: number, configHash: string): Loaded {

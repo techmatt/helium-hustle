@@ -95,7 +95,7 @@ fn story_timeline_view_has_acts_beats_and_started_side_quests() {
     assert!(v.side_quests.is_empty());
     // Through 1.4: no side quest yet; once speculators have come, Big Launch
     // (1.a) has started beside 1.4, not done, with its progress.
-    let chain: Vec<_> = crate::content::content().events.iter().filter(|e| e.is_quest()).collect();
+    let chain: Vec<_> = crate::content::content().events.iter().filter(|e| e.is_chain()).collect();
     let at = chain.iter().position(|e| e.id == "qtrade").unwrap();
     for e in &chain[..=at] {
         g.career.completed_quests.insert(e.id.clone());
@@ -126,7 +126,7 @@ fn the_view_fills_every_text_placeholder() {
     let r = rules();
     let mut g = r.new_game(1);
     for e in &crate::content::content().events {
-        if e.is_quest() {
+        if e.is_chain() {
             g.career.completed_quests.insert(e.id.clone());
         } else {
             g.run.events.insert(e.id.clone(), 0);

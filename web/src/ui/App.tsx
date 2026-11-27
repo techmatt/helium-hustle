@@ -26,11 +26,11 @@ import {
   Commands,
   Ideologies,
   LaunchPads,
-  Projects,
   Research,
   Retirement,
   Stats,
 } from './panels';
+import { Projects } from './Projects';
 import { Right } from './Right';
 import { Achievements, Story } from './Story';
 import { Dyson, EarthLab, Ending, MetaController, Timeline, Vault } from './Saga';

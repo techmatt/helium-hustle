@@ -362,10 +362,7 @@ pub fn ticks_to(have: Fx, need: Fx, rate: Fx) -> Option<u64> {
         return None;
     }
     // Whole ticks, rounded up (at least one: it isn't there yet).
-    let q = (need - have) / rate;
-    let whole = q.floor_int().max(0);
-    let up = if Fx::from_int(whole) < q { whole + 1 } else { whole };
-    Some(up.max(1) as u64)
+    Some(ceil_int((need - have) / rate).max(1) as u64)
 }
 
 /// Ticks until every cost of `cost` is on hand: credits at `credit_rate`

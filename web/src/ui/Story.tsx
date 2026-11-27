@@ -29,7 +29,7 @@ function opening(q: QuestView): string[] {
 }
 
 /** A card's one line: the text's first sentence, with "…" when more follows (ui.md). */
-export function firstLine(texts: string[]): string {
+function firstLine(texts: string[]): string {
   const whole = (texts[0] ?? '').trim();
   // A draft's "DRAFT." marker stays, with the sentence after it.
   const mark = /^DRAFT\.\s+/.exec(whole)?.[0] ?? '';

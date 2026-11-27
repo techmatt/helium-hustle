@@ -27,7 +27,7 @@ export interface Where {
   speed: number;
 }
 
-export interface Header {
+interface Header {
   career: string;
   rules_revision: number;
   config_hash: string;

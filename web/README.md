@@ -44,8 +44,8 @@ Three columns and a status bar:
 
 - **Left:** the title, the calendar strip once the swarm is revealed, the nav grid (tiles from `content/nav.json`; a dot inside the tile's right edge marks a tile new
   this run or whose panel holds something new; two columns of icon and name, open tiles
-  packed, utility tiles last (`navSlots.ts`); a green dot on Launch Pads while a pad is
-  ready), the speed buttons, Resources
+  packed, utility tiles last (`navSlots.ts`); on Launch Pads a green dot while a pad is
+  ready, a red one while a pad has No cargo), the speed buttons, Resources
   (Energy, Credits, Land, Boredom, Processors, then a second group of the rest; amount /
   cap, the engine's rate per day; at its cap the surplus thrown away, muted (Energy's
   green): "+9 CAP"; short of demand, red: "−7 SHORT"; a click on a row opens
@@ -103,10 +103,10 @@ Three columns and a status bar:
   `programEdit.ts` `insertLine`) and moves the caret or selection there; a hover shows the
   live card of its command, building, research or project.
 - **Modals**, each holding the clock: the run summary when a run ends (forced: why, and
-  that years passed); the story modal (`store.ts` `tell`) at each main-quest change and
-  for a once-a-career `story` one-off (Burnout), a page per paragraph of the view's
+  that years passed); the story modal (`story.ts` `tellPages`, unit-checked) at each main-quest change and
+  for a side quest's completion and each one-off event, a page per paragraph of the view's
   `story`/`payoff`, the new task last (a new game: the first quest's; the autopilot: none; a
-  load: a saved chain's unread pages, `stories`/`storyPages` in `store.ts` `save()`; after a
+  load: a saved chain's unread pages, `storyPages` (and `seenPopups`) in `store.ts` `save()`; after a
   summary, once closed).
 
 Rates are per day; numbers past 10,000 use K/M/B/T. **"New" markers** are the UI's own, not
@@ -189,6 +189,7 @@ are logged as any others, its days closed by `jump_end` as a jump's.
 ## Source
 
 `src/store.ts` holds the game in play (actions, ticking, saves, "new" markers, the run
-summary), `src/playlog.ts` the play log's client half (the queue, sends to `/__playlog`,
+summary; its header indexes its sections), `src/story.ts` what the story modal tells
+(pure), `src/playlog.ts` the play log's client half (the queue, sends to `/__playlog`,
 career ids), `src/ui/` the panels; each file's header says the rest. The config is
 `configs/baseline.json`, imported at build time.

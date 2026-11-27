@@ -2,6 +2,12 @@
 // UI-only bookkeeping ("new" markers, the retirement summary, notices). Components read
 // it through `useStore` and change it only through the functions here. No rules: every
 // number shown comes from the engine's view, every change is an engine action.
+//
+// Sections (each under a `// ----` marker): the store and `useStore`; "new" markers; the
+// story modal (what it tells is `story.ts`'s, pure); unread events (the right column's
+// Events); the game (`refresh`, the one place a new view lands); `if` history and the text
+// editor's parse; ticking and saves; the play log; actions, speed and retirement; the
+// autopilot; record and replay check; tabs and `start` (load or new game).
 
 import { useEffect, useState } from 'preact/hooks';
 import baselineConfig from '../../configs/baseline.json?raw';
@@ -25,7 +31,7 @@ import { fillRate } from './format';
 import type { Autopilot } from './wasm/hh_wasm.js';
 import * as playlog from './playlog';
 import { clearSave, loadSave, SAVE_KEY, storageGet, storageSet, writeSave } from './save';
-
+import { clearTold, eventPages, newTold, replayPages, sideQuestPages, tellPages, type StoryPage } from './story';
 /** wasm's `advance_run` takes a u32 tick count; larger catch-ups go in chunks. */
 const MAX_CHUNK = 1_000_000;
 /** What a tab that stood down (another tab plays the career) says when used. */
@@ -186,118 +192,17 @@ function track(v: View, reset: boolean): void {
   }
 }
 
-/** One page of the main-story modal: one paragraph. */
-export interface StoryPage {
-  /** The quest it belongs to. */
-  quest: string;
-  title: string;
-  /** `story`: the quest's opening text; `payoff`: its completion text. */
-  kind: 'story' | 'payoff';
-  text: string;
-  /** The next quest's one-line task (its goal), on a transition's last page (mechanics
-   * text, shown apart from the paragraph). */
-  task?: string;
-  /** The finished quest's reward, on its last payoff page (mechanics text). */
-  reward?: string;
-  /** A one-off event's effect, on its last page (mechanics text). */
-  effect?: string;
-  /** Its quest's picture's file stem (above the paragraph), null when it has none. */
-  picture: string | null;
-  /** The last page's button ("Begin" when absent: a main-story transition). */
-  close?: string;
-}
+// ---- the story modal -----------------------------------------------------------------
 
-/** Completed quests (by id) and this run's one-off events (`run:id`) already told (or
- * found at a load) this page session, so each is told once. */
-const toldStories = new Set<string>();
-/** One-off events whose popup this career has shown (by id), saved with the game: with
- * `hideSeenPopups` on, one already here doesn't pop up again. */
-const seenPopups = new Set<string>();
-/** Set while a save from before `seenPopups` was kept loads: the run's events listed then
- * count as seen. */
-let seedSeenAtLoad = false;
-/** Active quests whose opening was told (or found active at a load). */
-const openedQuests = new Set<string>();
-/** The main-story quest active at the last redraw (a change is a transition). */
-let lastQuest: string | null = null;
+/** What this page session has told (`story.ts`). */
+const told = newTold();
 
-/** A quest's opening paragraphs, its body when it has none. */
-function openingOf(q: { story?: string[]; body: string }): string[] {
-  return q.story && q.story.length > 0 ? q.story : q.body ? [q.body] : [];
-}
-
-/** A finished chain quest's payoff pages, its reward on the last. */
-function payoffPages(q: StoryView, pages: StoryPage[]): void {
-  const at = pages.length;
-  for (const t of q.payoff ?? []) pages.push({ quest: q.id, title: q.title, kind: 'payoff', text: t, picture: q.picture ?? null });
-  if (pages.length > at && q.reward) pages[pages.length - 1].reward = q.reward;
-}
-
-/** A completed side quest's popup: its payoff (its body when it has none), its reward. */
-function sideDonePages(q: StoryView): StoryPage[] {
-  const texts = q.payoff && q.payoff.length > 0 ? q.payoff : [q.body];
-  const pages: StoryPage[] = texts.map((text) => ({ quest: q.id, title: q.title, kind: 'payoff', text, picture: q.picture ?? null, close: 'OK' }));
-  if (q.reward) pages[pages.length - 1].reward = q.reward;
-  return pages;
-}
-
-/** A one-off event's popup: its story (its body when it has none), its effect. */
-function eventPages(e: StoryView): StoryPage[] {
-  const texts = e.story && e.story.length > 0 ? e.story : [e.body || e.summary];
-  const pages: StoryPage[] = texts.map((text) => ({ quest: e.id, title: e.title, kind: 'story', text, picture: e.picture ?? null, close: 'OK' }));
-  if (e.effect) pages[pages.length - 1].effect = fillRate(e.effect, e.rate);
-  return pages;
-}
-
-/** Tells the story. A main-story transition (the active quest changed from X to Y)
- * queues the modal's pages: each chain quest completed since, in chain order (one that
- * was never shown active first gets its opening), its payoff, then Y's opening with its
- * task on the last page. On load nothing is queued; a brand-new game (run 1, day 0,
- * nothing completed) queues only its first quest's opening (`intro`). A completed side
- * quest pops up its payoff and reward. Every one-off event fired (Propellant discovery,
- * Burnout, each boredom phase) pops up too, unless `hideSeenPopups` is on and this
- * career has shown its popup before; either way it lands in the right column's Events
- * list (`eventItems`). */
+/** Tells the story (`story.ts` `tellPages`): queues the pages of a main-story transition,
+ * a completed side quest or a one-off event fired. Either way an event lands in the right
+ * column's Events list (`eventItems`). */
 function tell(v: View, mode: 'load' | 'intro' | 'play'): void {
-  const pages: StoryPage[] = [];
-  const quest = v.quest;
-  for (const q of v.story) {
-    if (toldStories.has(q.id)) continue;
-    toldStories.add(q.id);
-    if (mode !== 'play') continue;
-    if (!q.chain) {
-      pages.push(...sideDonePages(q));
-      continue;
-    }
-    if (q.id !== lastQuest) for (const t of openingOf(q)) pages.push({ quest: q.id, title: q.title, kind: 'story', text: t, picture: q.picture ?? null });
-    payoffPages(q, pages);
-  }
-  for (const e of v.event_texts) {
-    const key = `${v.run}:${e.id}`;
-    if (toldStories.has(key)) continue;
-    toldStories.add(key);
-    // Seen: popped up now, or listed when a save from before the set was kept loads. Not
-    // what the autopilot played past or a scenario started with: the player saw no popup.
-    if (mode !== 'play') {
-      if (seedSeenAtLoad) seenPopups.add(e.id);
-      continue;
-    }
-    if (pilot) continue;
-    const seenBefore = seenPopups.has(e.id);
-    seenPopups.add(e.id);
-    if (seenBefore && store.hideSeenPopups) continue;
-    pages.push(...eventPages(e));
-  }
-  const fresh = mode === 'intro' && v.run === 1 && v.day === 0 && v.completed_quests.length === 0;
-  if (quest && quest.id !== lastQuest && !openedQuests.has(quest.id)) {
-    openedQuests.add(quest.id);
-    if (mode === 'play' || fresh) {
-      for (const t of openingOf(quest)) pages.push({ quest: quest.id, title: quest.title, kind: 'story', text: t, picture: quest.picture });
-      if (pages.length > 0) Object.assign(pages[pages.length - 1], { task: quest.goal });
-    }
-  }
-  lastQuest = quest?.id ?? null;
-  if (pages.length > 0 && !pilot) openStory(pages);
+  const pages = tellPages(v, mode, told, { pilot: !!pilot, hideSeen: store.hideSeenPopups, fill: fillRate });
+  if (pages.length > 0) openStory(pages);
 }
 
 /** Queues modal pages, pausing the clock (the run summary, if open, already holds it). */
@@ -325,10 +230,7 @@ function holdClock(): Speed {
  * payoff), the clock stopped as for a transition. Nothing while another modal or the
  * autopilot holds the screen. */
 export function replayStory(q: StoryView): void {
-  const pages: StoryPage[] = openingOf(q).map((text) => ({ quest: q.id, title: q.title, kind: 'story' as const, text, picture: q.picture ?? null }));
-  if (pages.length > 0 && q.goal) pages[pages.length - 1].task = q.goal;
-  payoffPages(q, pages);
-  showPages(pages);
+  showPages(replayPages(q));
 }
 
 /** Opens `pages` as a popup on the player's click, the clock stopped as for a transition.
@@ -342,16 +244,13 @@ function showPages(pages: StoryPage[]): void {
 
 /** An Events entry's click: that one-off event's popup again. */
 export function replayEvent(e: StoryView): void {
-  showPages(eventPages(e));
+  showPages(eventPages(e, fillRate));
 }
 
 /** An open side quest's click (the right column): its popup, its story with its goal and
  * reward. */
 export function showSideQuest(q: SideQuestView): void {
-  const pages: StoryPage[] = [{ quest: q.id, title: q.title, kind: 'story', text: q.body, picture: q.picture ?? null, close: 'OK' }];
-  if (q.goal) pages[0].task = q.goal;
-  if (q.reward) pages[0].reward = q.reward;
-  showPages(pages);
+  showPages(sideQuestPages(q));
 }
 
 /** Options' "Hide popups for events you've already seen" (remembered per browser). */
@@ -567,6 +466,8 @@ export function programInstructions(text: string, cursor: number): InstructionGr
   return engine.programInstructions(game.state, text, cursor);
 }
 
+// ---- ticking and saves ----------------------------------------------------------------
+
 /** Plays `ticks` days, stopping after a forced retirement, and (the clock's wakes, not a
  * jump: `toQuest`) after a quest change, so its story modal holds the clock on the day it
  * came; the wake's other days are not played. */
@@ -610,7 +511,7 @@ function save(): void {
     summaryBase: store.summaryBase,
     resumeSpeed,
     storyPages: store.storyPages,
-    seenPopups: [...seenPopups],
+    seenPopups: [...told.seenPopups],
     speedBeforeStory,
     page: playlog.pageId,
   });
@@ -625,8 +526,8 @@ export function setNotice(text: string | null): void {
   emit();
 }
 
-/** Logs the state's fingerprint at this tick (what `hh-sim playlog` checks its replay
- * against). */
+// ---- the play log ---------------------------------------------------------------------
+
 /** The few fields of the game state the page reads itself (where the state stands, its
  * config). Cheaper than a view, which the engine builds by playing a day on a copy. */
 interface StateHead {
@@ -640,6 +541,8 @@ function head(): StateHead {
   return JSON.parse(game.state) as StateHead;
 }
 
+/** Logs the state's fingerprint at this tick (what `hh-sim playlog` checks its replay
+ * against). */
 function checkpoint(kind = 'checkpoint'): void {
   lastCheckpoint = performance.now();
   // Where the state itself stands (the view may lag a wake's ticks behind).
@@ -662,6 +565,8 @@ function openLog(prior: Stamped[]): string {
   });
   return id;
 }
+
+// ---- actions, speed and retirement -----------------------------------------------------
 
 /** A new career (`why`: what started it). The career before, if any, closes its log. */
 export function newGame(seed: string, scenario: Scenario | null, why = 'new game'): void {
@@ -689,10 +594,7 @@ export function newGame(seed: string, scenario: Scenario | null, why = 'new game
   store.backdrop = null;
   store.summaryBase = null;
   store.storyPages = [];
-  toldStories.clear();
-  seenPopups.clear();
-  openedQuests.clear();
-  lastQuest = null;
+  clearTold(told);
   save();
   refresh(true, 'intro');
 }
@@ -813,6 +715,8 @@ export function jumpAhead(days: number): void {
   checkpoint('jump_end');
   save();
 }
+
+// ---- the autopilot --------------------------------------------------------------------
 
 /** A running autopilot (debug accelerator), if any. */
 let pilot: { ap: Autopilot; stop: boolean } | null = null;
@@ -937,6 +841,8 @@ function pilotBusy(): boolean {
   return true;
 }
 
+// ---- record and replay check ----------------------------------------------------------
+
 export function record() {
   return {
     format: 'hh-record/1',
@@ -966,6 +872,8 @@ export function checkReplay(): void {
 export function fingerprint(): string {
   return engine.fingerprint(game.state);
 }
+
+// ---- tabs and start --------------------------------------------------------------------
 
 /** Another tab claimed the career: stop at once, without playing the ticks owed (the
  * other tab goes on from the save it loaded) or writing anything more but a session end. */
@@ -1028,22 +936,13 @@ export function start(): void {
         clock.speed = 0;
         store.speed = 0;
       }
-      // The events whose popup this career has shown (an older save's: those of the run
-      // in play, which the load adds).
-      seenPopups.clear();
-      if (Array.isArray(s.seenPopups)) for (const id of s.seenPopups) if (typeof id === 'string') seenPopups.add(id);
-      seedSeenAtLoad = !Array.isArray(s.seenPopups);
+      // The events whose popup this career has shown.
+      told.seenPopups.clear();
+      if (Array.isArray(s.seenPopups)) for (const id of s.seenPopups) if (typeof id === 'string') told.seenPopups.add(id);
       refresh(true);
-      seedSeenAtLoad = false;
       // A run summary left open is still open.
       store.summary = s.summary ?? null;
       store.summaryBase = (store.summary && s.summaryBase) || null;
-      // An older save's unread side-quest banners come up as their completion popups.
-      const banners = (Array.isArray(s.stories) ? s.stories : []).flatMap((x: StoryView) => {
-        const q = store.view.story.find((y) => y.id === x.id);
-        return q && !q.chain ? sideDonePages(q) : [];
-      });
-      if (banners.length > 0) openStory(banners);
     } catch (e) {
       clearSave();
       // `offline`: written at a later visit, so it has no place in the career's time.

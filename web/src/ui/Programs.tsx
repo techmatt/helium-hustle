@@ -18,7 +18,7 @@ import { ProgramLines } from './ProgramLines';
 import type { Takeover } from './Takeover';
 import { TextEditor } from './TextEditor';
 
-export type ProgramsMode = 'text' | 'blocks';
+type ProgramsMode = 'text' | 'blocks';
 
 /** Where the last mode is kept (a UI preference, not game state). */
 const MODE_KEY = 'hh-programs-mode';

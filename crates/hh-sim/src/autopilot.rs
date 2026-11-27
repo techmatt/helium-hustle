@@ -54,7 +54,7 @@ pub fn steps(ms: &Milestones) -> Vec<Step> {
         .map(|m| Step { id: format!("milestone:{}", m.id), name: format!("{} {}", m.id, m.name) })
         .collect();
     // Side quests (1.a ... 1.d) are steps too, in file order.
-    for e in content().events.iter().filter(|e| e.is_quest() || e.is_side()) {
+    for e in content().events.iter().filter(|e| !e.is_one_off()) {
         match &e.condition {
             Condition::Never => continue,
             Condition::AllOf { sub_objectives } => {
@@ -336,7 +336,7 @@ pub fn parse_boost(s: &str) -> Result<Boost, String> {
 /// `hh-sim accelerate`: a fresh career on the autopilot, every step's tick
 /// and the wall time.
 pub fn cli(args: &[String]) -> Result<String, crate::Fail> {
-    use crate::{read, usage, Fail};
+    use crate::{usage, Fail};
     let mut config = crate::BASELINE.to_string();
     let mut seed = 0u64;
     let mut agent = DEFAULT_AGENT.to_string();
@@ -359,7 +359,7 @@ pub fn cli(args: &[String]) -> Result<String, crate::Fail> {
             s => return usage(format!("accelerate: unknown argument {s}")),
         }
     }
-    let c = hh_core::Config::from_json(&read(&config)?).map_err(Fail::Usage)?;
+    let c = crate::load_config(&config)?;
     let ms = crate::load_milestones(crate::MILESTONES)?;
     let boost = boost.map(|b| parse_boost(&b)).transpose().map_err(Fail::Usage)?;
     let target = Target::parse(&target).map_err(Fail::Usage)?;

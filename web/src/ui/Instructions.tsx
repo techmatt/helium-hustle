@@ -8,7 +8,8 @@ import { useMemo, useState } from 'preact/hooks';
 import type { InstructionGroup, View } from '../engine';
 import { programInstructions, type Store } from '../store';
 import { Card } from './Buildings';
-import { CommandBody, Project, ResearchCard } from './panels';
+import { CommandBody, ResearchCard } from './panels';
+import { Project } from './Projects';
 
 /** Re-ask the engine at most this often as the game plays (what is revealed changes). */
 const REFRESH_MS = 1000;

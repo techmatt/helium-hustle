@@ -1,6 +1,6 @@
 # Attention (module `attention`, variant `minimal`): DRAFT
 
-**Draft (049).** The minimal Attention model that brings the adversaries in: the
+**Draft.** The minimal Attention model that brings the adversaries in: the
 speculators, Act 1's (who arrive on their own, no quest asks for them), and the rival AIs,
 Act 2's. Thresholds, drivers and decay are placeholders ([../arc.md](../arc.md)).
 

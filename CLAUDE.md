@@ -74,7 +74,7 @@ Locked by Matt: changing any of these is his decision, not an implementation det
 - **Testing is light by default** (Matt, docs/rulings/engine.md). After every change: the fast
   lane, `cargo test --workspace` (seconds), plus the checks for what you touched (`npm run
   check` and `npm run unit` for `web/`). Before the commit: the full run, `cargo test-all`
-  (about a minute), when it touches Rust, `content/` or `configs/`; Markdown or `web/` alone
+  (about 40 s once built), when it touches Rust, `content/` or `configs/`; Markdown or `web/` alone
   skips it. Leave `cargo clippy --workspace --all-targets` clean. **Heavy reads only on
   request:** a full `npm run qa`, e2e, balance reads (`hh-sim balance`, ladders, before/after
   reads) and other sweeps run in a bug hunt or when the prompt asks, never as routine. A
