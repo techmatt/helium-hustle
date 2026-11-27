@@ -156,9 +156,10 @@ where it is, is **red** and kept as an `unparsed` line (an indent it can't hold 
 text); one that reads but is locked is **amber**; blank lines are dropped. A `#` after a
 statement is red (a comment goes on its own line). **Aliases:** an id for a name
 (`solar_panel`); `≥`, `≤` for `>=`, `<=` (comparisons are symbols only); a count as `NX`, `N×`, `N*` or `N x`; `launch` for `launch pads all`;
-`set pads <good> N` for `up to N`; a program tab as `program N`, `tab N`, `pN` or `N`;
-`days since purchase` for `days since a purchase`. Written: `assign processors program N
-<N | all>`, `load <saved program> into program N` (the name keeps its case).
+`set pads <good> N` for `up to N`; a program tab (lettered A to E) as `program b`, `tab b`,
+`b`, or by number `program 2`, `p2`, `2`;
+`days since purchase` for `days since a purchase`. Written: `assign processors program B
+<N | all>`, `load <saved program> into program B` (the name keeps its case).
 
 ## Params
 
@@ -175,7 +176,6 @@ statement is red (a comment goes on its own line). **Aliases:** an id for a name
 | `line_text_max` | 200 | 1 to 10000 | Most characters in a note or unparsed line's text. |
 <!-- /params -->
 
-The overclock duration bonus `overclock_duration_factor` is an ideology param (ideology.md).
 Content fields for commands: [commands.md](commands.md#content).
 
 ## Port notes

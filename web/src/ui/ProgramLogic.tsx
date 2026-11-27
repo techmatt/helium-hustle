@@ -6,7 +6,8 @@
 import type { ComponentChildren, LiHTMLAttributes } from 'preact';
 import { useState } from 'preact/hooks';
 import type { Amount, Clause, Cmp, Condition, ConditionView, Entry, LineOutcome, Reading, ShortView, Verb, View } from '../engine';
-import { commandTip, num } from '../format';
+import { commandTip, num, slotLetter } from '../format';
+import { panelEntries } from './resourceOrder';
 import { Bar, ResChip, ShortNote, name, ranPercent, shortText } from './common';
 import { otherUnit, sameEntry } from './programEdit';
 
@@ -71,7 +72,7 @@ function verbLabel(v: View, verb: Verb): string {
 function actText(v: View, e: Extract<Entry, { op: 'act' }>): string {
   const spec = v.verbs.find((x) => x.verb === e.verb);
   const target = e.target ? spec?.targets?.find((t) => t.value === e.target)?.label ?? name(v, e.target) : spec?.target_all ? 'all' : '';
-  const tab = e.tab != null ? (e.verb === 'load_program' ? `into Program ${e.tab + 1}` : `Program ${e.tab + 1}`) : '';
+  const tab = e.tab != null ? (e.verb === 'load_program' ? `into Program ${slotLetter(e.tab)}` : `Program ${slotLetter(e.tab)}`) : '';
   const amount = e.amount == null ? '' : e.amount === 'all' ? 'all' : e.verb === 'set_pads' ? `up to ${e.amount.n}` : String(e.amount.n);
   return [verbLabel(v, e.verb), target, tab, amount].filter((s) => s !== '').join(' ');
 }
@@ -325,7 +326,7 @@ export function ProgramLine(props: {
   const locked = lockedWhy !== null || (outcome === 'failed' && !why && command?.unlocked === false);
   if (why || locked) noted.add(i);
   // The command's expenses and incomes, each run and for the line's repeat count.
-  const flows = command ? commandTip(command, v.names, e.count) : '';
+  const flows = command ? commandTip(command, v, e.count) : '';
   return (
     <li
       class={rowClass}
@@ -358,7 +359,7 @@ export function ProgramLine(props: {
       {/* Cut short in a narrow right column ("Sell Cloud Compute (x…"): the tooltip has it
           whole, with the command's flows (as the row's). */}
       <span class="line-name" title={`${setCount ? name(v, e.command) : `${name(v, e.command)} (x${e.count})`}${flows ? `\n\n${flows}` : ''}`}>
-        {Object.keys(command?.produces ?? {}).map((res) => (
+        {panelEntries(v.resources, command?.produces ?? {}).map(([res]) => (
           <ResChip key={res} v={v} id={res} />
         ))}{' '}
         {setCount ? name(v, e.command) : `${name(v, e.command)} (x${e.count})`}
@@ -548,7 +549,7 @@ function ActEdit({ v, e, set }: { v: View; e: Extract<Entry, { op: 'act' }>; set
           <select aria-label="Program" value={String(e.tab ?? 0)} onChange={(ev) => set({ ...e, tab: Number(ev.currentTarget.value) })}>
             {v.programs.map((_, i) => (
               <option key={i} value={String(i)}>
-                Program {i + 1}
+                Program {slotLetter(i)}
               </option>
             ))}
           </select>

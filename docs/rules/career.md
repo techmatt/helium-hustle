@@ -63,7 +63,7 @@ move the swarm's countdown.
 7. Each seen event's unlocks are reapplied (panels, buildings, projects, side quest 1.b's 50
    science; [events.md](events.md)).
 8. Derived resources and pads refreshed (processors from Data Centers, a pad per Launch Pad).
-9. Empty programs, every processor on Program 1 ([programs.md](programs.md)).
+9. Empty programs, every processor on Program A ([programs.md](programs.md)).
 10. Fresh markets: new noise, empty speculator pools, the first burst and rival dumps
     scheduled ([demand.md](demand.md)).
 11. Boredom phase 1.
@@ -123,7 +123,7 @@ enabled), and so is the modifier key `buy_power_mult` (`modifiers.rs` adds the c
 - Conflict: milestones. The data has `game_config.milestones`; the handoffs removed them. Not
   ported.
 - Candidate: peak power is the gross energy buildings made in a day.
-- Candidate: a new run puts every processor on Program 1.
+- Candidate: a new run puts every processor on Program A.
 - Candidate: the day. Forced retirement is checked after the day count rises, and the next
   run starts at once, in the same tick.
 - Candidate: quests ignore an event's `game_start` run filter, so the quest chain picks up

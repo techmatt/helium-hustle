@@ -12,7 +12,7 @@ use crate::content::{content, Command, CommandEffect, ProjectReward, ResearchEff
 use crate::fx::Fx;
 use crate::modifiers::modifier;
 use crate::rules::Rules;
-use crate::state::{Amount, Clause, Cmp, Condition, Entry, GameState, Join, Joined, LineOutcome, Loadout, Op, Overclock, Program, Reading, Repeat, Verb};
+use crate::state::{slot_letter, Amount, Clause, Cmp, Condition, Entry, GameState, Join, Joined, LineOutcome, Loadout, Op, Overclock, Program, Reading, Repeat, Verb};
 
 use super::economy::{BOREDOM, PROCESSORS};
 
@@ -123,7 +123,7 @@ fn program_mut(g: &mut GameState, program: u32) -> Result<&mut Program, String> 
     g.run
         .programs
         .get_mut(program as usize)
-        .ok_or_else(|| format!("Program {}: there are {n}", program + 1))
+        .ok_or_else(|| format!("Program {}: there are {n}", slot_letter(program)))
 }
 
 /// Replaces a program's queue; its pointer restarts at the top. What this run
@@ -137,7 +137,7 @@ pub fn set_program(r: &Rules, g: &mut GameState, program: u32, entries: &[Entry]
 /// Whether `entries` may go in a program: on their form only, never on what
 /// this run has unlocked.
 fn check_entries(r: &Rules, g: &GameState, program: u32, entries: &[Entry]) -> Result<(), String> {
-    let n = program + 1;
+    let n = slot_letter(program);
     if entries.len() > r.p.programs.max_entries {
         return Err(format!("Program {n}: at most {} lines", r.p.programs.max_entries));
     }
@@ -348,7 +348,7 @@ fn check_act(r: &Rules, g: &GameState, verb: Verb, target: Option<&str>, tab: Op
     match (wants_tab, tab) {
         (true, None) => return Err(format!("{what} needs a program tab")),
         (true, Some(t)) if t as usize >= g.run.programs.len() => {
-            return Err(format!("{what}: Program {}: there are {}", t + 1, g.run.programs.len()))
+            return Err(format!("{what}: Program {}: there are {}", slot_letter(t), g.run.programs.len()))
         }
         (false, Some(_)) => return Err(format!("{what} takes no program tab")),
         _ => {}
@@ -403,9 +403,9 @@ pub fn save_loadout(r: &Rules, g: &mut GameState, program: u32, slot: Option<u32
         .programs
         .get(program as usize)
         .map(|p| p.entries.clone())
-        .ok_or_else(|| format!("Program {}: there are {}", program + 1, g.run.programs.len()))?;
+        .ok_or_else(|| format!("Program {}: there are {}", slot_letter(program), g.run.programs.len()))?;
     if entries.is_empty() {
-        return Err(format!("Program {}: nothing to save", program + 1));
+        return Err(format!("Program {}: nothing to save", slot_letter(program)));
     }
     let l = Loadout { name, entries };
     match slot {
@@ -450,7 +450,7 @@ pub fn set_processors(g: &mut GameState, program: u32, n: u32) -> Result<(), Str
     let others = assigned(g) - program_mut(g, program)?.processors;
     let free = total.saturating_sub(others);
     if n > free {
-        return Err(format!("Program {}: {n} processors, but only {free} free", program + 1));
+        return Err(format!("Program {}: {n} processors, but only {free} free", slot_letter(program)));
     }
     program_mut(g, program)?.processors = n;
     Ok(())
@@ -491,10 +491,20 @@ pub fn flows(r: &Rules, g: &GameState, c: &Command) -> (BTreeMap<String, Fx>, BT
     (costs, produces)
 }
 
+/// What one execution does to boredom now, signed (negative: it relieves):
+/// the flat [`boredom_cost`], or for Dream its relief (the tooltips' figure).
+pub fn boredom_effect(r: &Rules, g: &GameState, c: &Command) -> Fx {
+    if matches!(c.effect, Some(CommandEffect::Dream)) {
+        return -super::dream::relief(r, g);
+    }
+    boredom_cost(r, g, c)
+}
+
 /// The flat boredom one execution adds: the content's, unless a completed
 /// project's boredom modifiers replace it. Zero before Burnout starts boredom
-/// (`boredom::started`); a relief (negative) stands.
-pub fn boredom_cost(g: &GameState, c: &Command) -> Fx {
+/// (`boredom::started`); a relief (negative) stands, × its tagged axis's
+/// modifier when it has one (Theorize).
+pub fn boredom_cost(r: &Rules, g: &GameState, c: &Command) -> Fx {
     let mut b = c.boredom;
     for reward in super::projects::live_rewards(g) {
         if let ProjectReward::BoredomModifiers { command_boredom, .. } = reward {
@@ -505,6 +515,11 @@ pub fn boredom_cost(g: &GameState, c: &Command) -> Fx {
     }
     if b > Fx::ZERO && !super::boredom::started(g) {
         return Fx::ZERO;
+    }
+    if b < Fx::ZERO {
+        if let Some(axis) = &c.ideology {
+            return b * super::ideology::modifier(r, g, axis);
+        }
     }
     b
 }
@@ -539,15 +554,17 @@ pub fn execute(r: &Rules, g: &mut GameState, c: &Command, src: &str, short: &str
     for (res, &v) in &produces {
         g.produce(src, res, v);
     }
-    let b = boredom_cost(g, c);
+    // Boredom counts by command, not program (the Stats view's Boredom section).
+    let bsrc = format!("command:{}", c.id);
+    let b = boredom_cost(r, g, c);
     if b > Fx::ZERO {
         g.add(BOREDOM, b);
-        g.track(src, BOREDOM, b, Fx::ZERO);
+        g.track(&bsrc, BOREDOM, b, Fx::ZERO);
     } else if b < Fx::ZERO {
-        // A negative flat boredom relieves it (Distract, draft), never below zero.
+        // A negative flat boredom relieves it (Theorize, Distract), never below zero.
         let relief = (-b).min(g.amount(BOREDOM));
         g.add(BOREDOM, -relief);
-        g.track(src, BOREDOM, Fx::ZERO, relief);
+        g.track(&bsrc, BOREDOM, Fx::ZERO, relief);
     }
     g.career.used_commands.insert(c.id.clone());
     if let Some(f) = &c.sets_flag {
@@ -567,6 +584,11 @@ pub fn execute(r: &Rules, g: &mut GameState, c: &Command, src: &str, short: &str
         Some(CommandEffect::DisruptSpeculators) => super::demand::disrupt(r, g),
         Some(CommandEffect::Fund { axis }) => super::ideology::fund(r, g, axis),
         Some(CommandEffect::Neutralize { adversary }) => super::attention::neutralize(g, adversary),
+    }
+    // A boredom tool nudges its axis after its effect, so every tool's relief
+    // reads the rank from before the run (the tooltip's figure).
+    if let (Some(axis), Some(n)) = (&c.ideology, c.nudge) {
+        super::ideology::nudge(g, axis, n);
     }
     LineOutcome::Ran
 }
@@ -1033,11 +1055,9 @@ pub fn overclock_cap(r: &Rules, g: &GameState) -> Fx {
     cap
 }
 
-/// Days an overclock run now lasts: its `duration` times the Rationalist duration
-/// bonus, in whole days (the command cards' `{days}`).
-pub fn overclock_days(r: &Rules, g: &GameState, duration: u32) -> u64 {
-    let days = Fx::from_int(duration as i64) * super::ideology::overclock_duration(r, g);
-    days.floor_int().max(0) as u64
+/// Days an overclock run lasts: its `duration` (the command cards' `{days}`).
+pub fn overclock_days(_r: &Rules, _g: &GameState, duration: u32) -> u64 {
+    duration as u64
 }
 
 /// The output multiplier for buildings of `category` today: each live

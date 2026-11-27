@@ -4,7 +4,8 @@
 
 import { useState } from 'preact/hooks';
 import type { TechView, View } from '../engine';
-import { capitalize, num } from '../format';
+import { capitalize, dateText, num, slotLetter } from '../format';
+import { panelEntries } from './resourceOrder';
 import { act, type Store } from '../store';
 import { Bar, ResChip, Section, name } from './common';
 import { Project } from './Projects';
@@ -28,9 +29,9 @@ function Head({ title }: { title: string }) {
 
 // ---- Calendar strip ------------------------------------------------------------
 
-/** Days as years, one decimal (display only: 365 days a year). */
-function years(days: number): string {
-  return (days / 365).toFixed(1);
+/** Days as years, one decimal (display only; the engine's year length). */
+function years(days: number, perYear: number): string {
+  return (days / perYear).toFixed(1);
 }
 
 /** "Timeline N · day D · swarm in X days", once the swarm is discovered (1.6). */
@@ -41,11 +42,11 @@ export function CalendarStrip({ v }: { v: View }) {
   const left = v.saga.days_left ?? 0;
   return (
     <div class="calendar-strip" data-testid="calendar-strip" title="The countdown: each retirement's gap counts too">
-      {head} · day {num(t.day)} ·{' '}
+      {head} · {dateText(t.day, v.days_per_year)} ·{' '}
       {v.saga.victory ? (
         'the swarm is gone'
       ) : left > 0 ? (
-        `swarm in ${num(left)} days (${years(left)} years)`
+        `swarm in ${num(left)} days (${years(left, v.days_per_year)} years)`
       ) : (
         <span class="neg">swarm here</span>
       )}
@@ -72,13 +73,13 @@ export function Timeline({ s }: { s: Store }) {
       {t ? (
         <Section title={`${t.super_timeline ? 'Super timeline' : 'Timeline'} ${t.number}`}>
           <div class="saga-bar">
-            <Bar frac={t.arrival > 0 ? t.day / t.arrival : 1} tone="red" label={`day ${num(t.day)} / ${num(t.arrival)}`} />
+            <Bar frac={t.arrival > 0 ? t.day / t.arrival : 1} tone="red" label={`${dateText(t.day, v.days_per_year)} / ${dateText(t.arrival, v.days_per_year)}`} />
           </div>
           <table class="grid-table kv">
             <tbody>
               <tr>
                 <td>Swarm arrives</td>
-                <td class="num">{`day ${num(t.arrival)} (in ${num(g.days_left ?? 0)} days, ${years(g.days_left ?? 0)} years)`}</td>
+                <td class="num">{`${dateText(t.arrival, v.days_per_year)} (in ${num(g.days_left ?? 0)} days, ${years(g.days_left ?? 0, v.days_per_year)} years)`}</td>
               </tr>
               <tr>
                 <td>Swarm strength</td>
@@ -201,10 +202,10 @@ export function MetaController({ s }: { s: Store }) {
             const slot = plan[String(i)];
             return (
               <tr key={i}>
-                <td>Program {i + 1}</td>
+                <td>Program {slotLetter(i)}</td>
                 <td>
                   <select
-                    aria-label={`Program ${i + 1} at each new run`}
+                    aria-label={`Program ${slotLetter(i)} at each new run`}
                     disabled={!v.saga.reset_plan_open}
                     value={slot === undefined ? '' : String(slot)}
                     onChange={(e) => {
@@ -248,7 +249,7 @@ export function Vault({ s }: { s: Store }) {
         ) : (
           <table class="grid-table kv">
             <tbody>
-              {Object.entries(g.vault).map(([res, amt]) => (
+              {panelEntries(v.resources, g.vault).map(([res, amt]) => (
                 <tr key={res}>
                   <td>
                     <ResChip v={v} id={res} /> {name(v, res)}

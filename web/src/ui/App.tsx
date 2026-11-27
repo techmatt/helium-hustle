@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { SPEEDS, type Speed } from '../clock';
-import { capitalize, delta, mult, num, perDay } from '../format';
+import { capitalize, dateText, delta, mult, num, perDay } from '../format';
 import {
   continueAfterRetirement,
   justMoved,
@@ -192,8 +192,8 @@ function StatusBar({ s }: { s: Store }) {
   const bored = v.resources.find((r) => r.id === 'boredom');
   return (
     <footer class="status">
-      <span id="day" class="status-day">
-        Day {num(v.day)}
+      <span id="day" class="status-day" data-day={v.day}>
+        {dateText(v.day, v.days_per_year)}
       </span>
       <span id="run" class="status-run">
         Run {v.run}
@@ -329,7 +329,7 @@ function Summary({ s }: { s: Store }) {
     <div class="modal-back">
       <div class="modal" role="dialog" aria-label="Run summary" data-testid="summary">
         <h2>
-          Run {r.run} ended on day {num(r.days)}
+          Run {r.run} ended on {dateText(r.days, v.days_per_year)}
         </h2>
         <p data-testid="summary-why">{v.last_run_why}</p>
         <Section title={`Run ${r.run}`}>

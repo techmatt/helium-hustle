@@ -122,7 +122,7 @@ impl Rules {
         let mut h = g.clone();
         match a {
             Action::Buy { building } => economy::buy(self, &mut h, building),
-            Action::Sell { building } => economy::sell(&mut h, building),
+            Action::Sell { building } => economy::sell(self, &mut h, building),
             Action::SetActive { building, active } => economy::set_active(&mut h, building, *active),
             Action::BuyLand => economy::buy_land(self, &mut h),
             Action::SetProgram { program, entries } => programs::set_program(self, &mut h, *program, entries),

@@ -83,7 +83,7 @@ pub fn op_text(op: &Op) -> String {
         Op::Act { verb, target, tab, amount } => {
             let t = || target.as_deref().map_or("all".to_string(), name_of);
             let n = || amount.map(|a| format!(" {}", amount_text(a))).unwrap_or_default();
-            let p = || tab.map_or(0, |t| t + 1);
+            let p = || crate::state::slot_letter(tab.unwrap_or(0));
             match verb {
                 Verb::LaunchPads => format!("launch pads {}", t()),
                 Verb::LoadPads => format!("load pads {}", t()),
@@ -181,16 +181,23 @@ fn tail_amount(words: &[&str]) -> (Vec<String>, Option<Amount>) {
     }
 }
 
-/// A program tab as written: `program 2`, `tab 2`, `p2` or `2` (1-based).
+/// A program tab as written: `program b`, `tab b` or `b` (its letter, any
+/// case), or by 1-based number: `program 2`, `p2`, `2`.
 fn tab_words(words: &[&str]) -> Result<(u32, usize), String> {
     let (n, used) = match words {
         ["program" | "tab", n, ..] => (*n, 2),
-        [n, ..] => (n.strip_prefix('p').unwrap_or(n), 1),
-        [] => return Err("which program? (program N)".to_string()),
+        [n, ..] => (*n, 1),
+        [] => return Err("which program? (program A to E)".to_string()),
     };
-    match n.parse::<u32>() {
+    let mut chars = n.chars();
+    if let (Some(c), None) = (chars.next(), chars.next()) {
+        if c.is_ascii_alphabetic() {
+            return Ok((c.to_ascii_lowercase() as u32 - 'a' as u32, used));
+        }
+    }
+    match n.strip_prefix('p').unwrap_or(n).parse::<u32>() {
         Ok(t) if t >= 1 => Ok((t - 1, used)),
-        _ => Err(format!("{n:?} isn't a program number")),
+        _ => Err(format!("{n:?} isn't a program letter")),
     }
 }
 
@@ -372,12 +379,12 @@ pub fn parse_op(line: &str) -> Result<Op, String> {
             let item = lookup(content().research.iter().map(|x| (&x.id, &x.name)), &rest.join(" "));
             act(Verb::Research, Some(item.ok_or_else(|| format!("no research {:?}", rest.join(" ")))?), None, None)
         }
-        ["load", ..] => return Err("load <saved program> into program N (or load pads)".to_string()),
+        ["load", ..] => return Err("load <saved program> into program <letter> (or load pads)".to_string()),
         ["assign", "processors", rest @ ..] => {
             let (t, used) = tab_words(rest)?;
             let (left, a) = tail_amount(&rest[used..]);
             if !left.is_empty() || a.is_none() {
-                return Err("assign processors program N <count | all>".to_string());
+                return Err("assign processors program <letter> <count | all>".to_string());
             }
             act(Verb::AssignProcessors, None, Some(t), a)
         }

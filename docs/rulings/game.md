@@ -1,7 +1,8 @@
 # Rulings: the game
 
 Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **default** mean).
-Programs have their own part ([programs.md](programs.md)).
+Programs have their own part ([programs.md](programs.md)); boredom and ideology theirs
+([boredom.md](boredom.md)).
 
 - **Pillars (locked).** Plans beat waiting: the game is solved by clever plans, manual early and
   programs later at high speed ("unlimited speed" is about 200x for now). Programs are the core
@@ -74,15 +75,14 @@ Programs have their own part ([programs.md](programs.md)).
   adversary.
 - **Side quests give permanent rewards (2026-11-25, placeholders).** They outlive every reset,
   as completions do. 1.a Big Launch: one launch pays 1,000+; +10% launch pay. 1.b Full
-  Cluster: research 12 items in one run (Matt, 2026-11-26); every run starts with 50 science. 1.c Blueprints for
-  Everyone: the Blueprint Archive global project (placeholder 2,000 credits + 300
-  science) makes both Blueprints bought at every run's start while it counts as completed
-  (lost at a timeline's end, back when re-funded; 1.c stays completed), and (2026-11-25) every
-  blueprint research ever bought in the career 20% cheaper. 1.d Three Voices:
+  Cluster: research 12 items in one run (Matt, 2026-11-26); every run starts with 50 science. 1.d Three Voices:
   career-best rank 5 on each axis, across runs; ideology decays half as fast in the
-  retirement gap. *Defaults (095):* 1.b counts every item bought this run, the Archive's
-  Blueprints too; 1.b hangs beside 1.3 (once a Research Lab is built), 1.c beside 1.5 A Voice
-  (Matt, 2026-11-26: from A Voice's start, as the Archive is offered), 1.d follows 1.5.
+  retirement gap. 1.c Blueprints for Everyone is cut (Matt, 2026-11-27, 129); its Blueprint
+  Archive stays a global project (placeholder 2,000 credits + 300 science): while it counts
+  as completed both Blueprints are bought at every run's start (lost at a timeline's end,
+  back when re-funded), and every blueprint research ever bought in the career is 20%
+  cheaper. *Defaults (095):* 1.b counts every item bought this run, the Archive's
+  Blueprints too; 1.b hangs beside 1.3 (once a Research Lab is built), 1.d follows 1.5.
 - **Staggered unlocks (2026-11-26).** Research groups reveal by this run's triggers, so every
   run unfolds like run 1 (Matt, 117; research.md). Each run's first Research Lab opens
   Self-Maintenance and Extraction: Regolith Processing (100 science, +50% excavator output)
@@ -150,8 +150,6 @@ Programs have their own part ([programs.md](programs.md)).
   entanglement still shortens later timelines (Matt, question 085_1: the draft's intended
   escalation), and the other draft swarm mechanics stand. *Default (085):* a super
   timeline's `super_arrival_days` is also 100 years (was 6,000 days).
-- **Major ranks (2026-11-21).** Ideology rank 5 is a major rank (probably 10, 15 and 20 too)
-  bringing a discrete major change; the ranks between scale.
 - **The day's rate is production less demand (2026-11-20).** What buildings and programs
   wanted counts, met or not, so Energy reads negative all through a brownout; a capped
   resource's rate is its uncapped rate. It is the Resources panel's per-day number (for the

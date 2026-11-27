@@ -78,7 +78,7 @@ fn act_1_reads_1_1_to_1_6() {
         assert_eq!(reward(id), "", "{id} grants nothing");
     }
     let side: Vec<&str> = c.events.iter().filter(|e| e.is_side()).filter_map(|e| e.beat.as_deref()).collect();
-    assert_eq!(side, ["1.a", "1.b", "1.c", "1.d"]);
+    assert_eq!(side, ["1.a", "1.b", "1.d"], "1.c is gone (P1, 129); the others keep their ids");
 }
 
 /// Staggered unlocks: the first Research Lab opens only Regolith Processing and
@@ -194,7 +194,7 @@ fn boredom_waits_for_burnout() {
     let r = rules();
     let mut g = r.new_game(1);
     let cloud = crate::content::content().commands.iter().find(|c| c.id == "cloud_compute").unwrap();
-    let command_boredom = |g: &GameState| crate::modules::programs::boredom_cost(g, cloud);
+    let command_boredom = |g: &GameState| crate::modules::programs::boredom_cost(&r, g, cloud);
     assert!(cloud.boredom > Fx::ZERO);
     let phase2 = r.p.boredom.phase_days[1];
     r.advance(&mut g, phase2);
@@ -389,13 +389,13 @@ fn playtest_batch_1_reads_as_ruled() {
         ]
     );
     let sides: Vec<_> = v.side_quests.iter().map(|s| (s.id, s.parent)).collect();
-    assert_eq!(sides, [("qblueprints_for_everyone", Some("qa_voice"))]);
+    assert!(sides.is_empty(), "no side quest hangs on a project (P1, 129): {sides:?}");
     // The first Research Lab opens its research silently; 1.b starts with it.
     own(&mut g, "research_lab", 1);
     r.advance(&mut g, 1);
     assert!(g.career.flags.contains("research_lab"));
     let sides: Vec<_> = r.view(&g).side_quests.iter().map(|s| (s.id, s.parent)).collect();
-    assert_eq!(sides, [("qfull_cluster", Some("qfull_load")), ("qblueprints_for_everyone", Some("qa_voice"))]);
+    assert_eq!(sides, [("qfull_cluster", Some("qfull_load"))]);
     // A retirement: in run 2 the four stay open from day 0, and Chemical Energy joins them.
     g.run.enabled_panels.insert("retirement".into());
     r.apply(&mut g, &Action::Retire).unwrap();

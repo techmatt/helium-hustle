@@ -87,11 +87,11 @@ fn shows(g: &GameState, v: &Visibility) -> bool {
     }
 }
 
-/// Its price in science: `cost × discount ^ rationalist rank`, times a
+/// Its price in science: `cost`, times a
 /// live research-discount project reward's multiplier (each whose category, if
 /// it names one, is the item's) if bought in an earlier run.
 pub fn price(r: &Rules, g: &GameState, item: &Research) -> Fx {
-    let mut c = item.cost * super::ideology::discount(r, g, "rationalist");
+    let mut c = item.cost;
     if g.career.researched.contains(&item.id) {
         // The Rationalist major effect: research done in an earlier run is free.
         if super::ideology::major(r, g, "rationalist") {

@@ -87,6 +87,7 @@
     "reveal_when": {"type": "event_completed", "event": "research_lab_built"},
     "description": "Unlocks the Dream command — reduces boredom at the cost of energy and Helium-3."
   },
+  {"id": "thought_experiments", "name": "Thought Experiments", "category": "Self-Maintenance", "cost": "300", "requires": null, "effect": null, "visible_when": {"type": "flag", "flag": "retired"}, "reveal_when": {"type": "event_completed", "event": "research_lab_built"}, "description": "Unlocks the Theorize command: spend science to relieve boredom."},
   {
     "id": "stress_tolerance",
     "name": "Stress Tolerance",
@@ -179,7 +180,7 @@
     "id": "geopolitical_intelligence",
     "name": "Geopolitical Intelligence",
     "category": "Political Influence",
-    "cost": "480",
+    "cost": "400",
     "requires": null,
     "effect": null,
     "visible_when": {"type": "quest_active", "quest": "qa_voice"},

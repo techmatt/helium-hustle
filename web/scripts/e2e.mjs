@@ -144,10 +144,10 @@ const look = () =>
     for (const tr of document.querySelectorAll('tr[data-res]')) res[tr.dataset.res] = Number(tr.dataset.amount);
     const quest = document.querySelector('[data-testid="quest"]')?.dataset.quest ?? null;
     const lines = [...document.querySelectorAll('.lines li')].map((li) => li.dataset.command);
-    return { res, quest, lines, day: Number(document.getElementById('day').textContent.replace(/\\D/g, '')) };
+    return { res, quest, lines, day: Number(document.getElementById('day').dataset.day) };
   })()`);
 
-/** Program 1, one processor, lines of counts 2, 1, 3: at 10x (a day a redraw) the
+/** Program A, one processor, lines of counts 2, 1, 3: at 10x (a day a redraw) the
  * current-line frame walks the queue in order, the lines keep their order and no line's
  * name moves; at 50x (several days a redraw) no frame hops around, and the lines show
  * what ran over the span. Leaves the game paused. */
@@ -601,7 +601,7 @@ async function programLogic(grant) {
     `guarded by a false if: the if takes a day's step and jumps its body, Idle the next (${guarded.join('; ')})`);
 }
 
-/** Section 7, from scenario everything (cheats on): the program text editor. L4's Program 1
+/** Section 7, from scenario everything (cheats on): the program text editor. L4's Program A
  * (experiments/results/063_program_text_editor) pasted with a junk line (red, its reason)
  * and a locked building (amber); Apply; days run (green and gray dots, an if's fired
  * count); the block editor keeps every line, the unparsed and locked ones marked; the
@@ -672,7 +672,7 @@ async function textEditor() {
   await sleep(200);
   // The engine's text ends with a newline; the pasted one didn't.
   check((await area()).trimEnd() === applied.trimEnd(), 'reopened, the text round-trips');
-  // Program 2: pasted, then saved by switching back to Program 1.
+  // Program B: pasted, then saved by switching back to Program A.
   await click('[data-testid="text-editor-tab-1"]');
   await sleep(100);
   await paste(p2);
@@ -685,7 +685,7 @@ async function textEditor() {
   // Esc closes, back on the block editor of the tab open in the editor.
   await evaluate(`document.querySelector(${q(AREA)}).dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`);
   await sleep(100);
-  check(!(await exists('[data-testid="text-editor"]')) && (await block()).length === entries(p2), `Esc closes onto Program 2's ${entries(p2)} lines`);
+  check(!(await exists('[data-testid="text-editor"]')) && (await block()).length === entries(p2), `Esc closes onto Program B's ${entries(p2)} lines`);
   // Too many lines: the ones past the limit are red, Apply refuses, and a leave that
   // couldn't save keeps the draft for the next open.
   const tooMany = Array.from({ length: 130 }, () => 'idle').join('\n');
@@ -1459,8 +1459,8 @@ async function freshGame() {
   await speed(10);
   await waitFor(`!!document.querySelector('[data-testid="summary"]')`, 'the forced retirement at the boredom cap', 300_000);
   const summaryText = await evaluate(`document.querySelector('[data-testid="summary"]').textContent`);
-  const runDays = (summaryText.match(/ended on day ([\d,.]+)/) ?? [, '?'])[1];
-  check(/boredom filled.*Years passed/.test(summaryText), `boredom at its cap retires run 1, the summary saying why and that years passed (day ${runDays})`);
+  const runDays = (summaryText.match(/ended on (Year [\d,]+, day [\d,]+)/) ?? [, '?'])[1];
+  check(/boredom filled.*Years passed/.test(summaryText), `boredom at its cap retires run 1, the summary saying why and that years passed (${runDays})`);
   // The ended run's last day stays behind the summary until Continue (104).
   const paused1 = await day();
   await sleep(600);

@@ -13,7 +13,7 @@ export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 /** A value quoted for an evaluated expression. */
 export const q = (s) => JSON.stringify(s);
 /** "Loading…" until the engine has rendered once. */
-export const READY = `/^Day \\d/.test(document.getElementById('day')?.textContent ?? '') && !!document.querySelector('.nav-tile')`;
+export const READY = `/^Year \\d/.test(document.getElementById('day')?.textContent ?? '') && !!document.querySelector('.nav-tile')`;
 
 /** The page under test: HH_URL, with no default (the dev server's watcher reloads the
  * page on any crates/ edit, so checks run against `vite preview`). */
@@ -285,7 +285,8 @@ export function driver(b, { url, poll = 100, settle = 500, readyMs = 10000, clic
     readStory,
     autoStory,
     buildings,
-    day:() => number('day'),
+    // The day count itself (the bar shows it as a date, "Year 1, day 5").
+    day: async () => Number(await evaluate(`document.getElementById('day').dataset.day`)),
     run: () => number('run'),
     speed,
     panel,

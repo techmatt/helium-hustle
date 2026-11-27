@@ -31,6 +31,8 @@ pub static DEF: ModuleDef = ModuleDef {
             param("land_per_purchase", K::Fx, Some(("0", "1000000")), "land gained per purchase"),
             param("upkeep_epsilon", K::Fx, Some(("0", "1")), "a building pays full upkeep if short by no more than this"),
             param("flow_average_days", K::Int, Some(("1", "1000")), "days in the resource breakdown's rolling average (display only)"),
+            param("sell_refund_share", K::Fx, Some(("0", "1")), "share of a type's average price paid that selling a bought copy refunds"),
+            param("days_per_year", K::Int, Some(("1", "100000")), "days in a player-facing year (dates; boredom's yearly escalation)"),
         ],
         rng: &[],
     }],
@@ -45,6 +47,8 @@ pub struct Params {
     pub land_per_purchase: Fx,
     pub upkeep_epsilon: Fx,
     pub flow_average_days: i64,
+    pub sell_refund_share: Fx,
+    pub days_per_year: i64,
 }
 
 impl Params {
@@ -78,6 +82,8 @@ impl Params {
             land_per_purchase: mc.fx("land_per_purchase"),
             upkeep_epsilon: mc.fx("upkeep_epsilon"),
             flow_average_days: mc.int("flow_average_days"),
+            sell_refund_share: mc.fx("sell_refund_share"),
+            days_per_year: mc.int("days_per_year"),
         })
     }
 }
@@ -209,16 +215,17 @@ pub fn visible(g: &GameState, b: &Building) -> bool {
             && g.career.owned_buildings.contains(&b.id))
 }
 
-/// The next one's price: `cost × cost_scaling ^ (owned − bonus) × discount ^
-/// rank` (its ideology axis), each power exact (`Fx::pow_int`). A price past
-/// `Fx`'s range is `Fx::MAX`: shown, never affordable.
+/// The next one's price: `cost × cost_scaling ^ (owned − bonus) ÷ m` (`m`, its
+/// tagged axis's modifier, ideology.md), the power exact (`Fx::pow_int`). Land
+/// is not a price here, so the modifier never touches it. A price past `Fx`'s
+/// range is `Fx::MAX`: shown, never affordable.
 pub fn price(r: &Rules, g: &GameState, b: &Building) -> BTreeMap<String, Fx> {
     let h = g.run.buildings.get(&b.id).copied().unwrap_or_default();
     let bought = h.owned.saturating_sub(h.bonus) as i64;
     let mut factor = b.cost_scaling.pow_int(bought);
     if let Some(axis) = &b.ideology {
-        let d = super::ideology::discount(r, g, axis);
-        factor = factor.and_then(|f| f.checked_mul(d));
+        let inv = Fx::ONE / super::ideology::modifier(r, g, axis);
+        factor = factor.and_then(|f| f.checked_mul(inv));
     }
     b.cost
         .iter()
@@ -260,6 +267,11 @@ pub fn buy(r: &Rules, g: &mut GameState, id: &str) -> Result<(), String> {
     for (res, c) in price(r, g, b) {
         *g.run.resources.get_mut(&res).expect("content checked") -= c;
         g.track("buy", &res, Fx::ZERO, c);
+        let paid = g.run.paid.entry(b.id.clone()).or_default().entry(res).or_insert(Fx::ZERO);
+        *paid = paid.saturating_add(c);
+    }
+    if let (Some(axis), Some(n)) = (&b.ideology, b.nudge) {
+        super::ideology::nudge(g, axis, n);
     }
     *g.run.resources.get_mut(LAND).expect("content has land") -= Fx::from_int(b.land as i64);
     g.track("buy", LAND, Fx::ZERO, Fx::from_int(b.land as i64));
@@ -273,16 +285,18 @@ pub fn buy(r: &Rules, g: &mut GameState, id: &str) -> Result<(), String> {
     Ok(())
 }
 
-/// Sells one: no credits back. A copy that took land (bought) goes first and
-/// refunds its land; once only free copies (starting, bonus) remain, one goes
-/// with no refund. An idle copy goes before an active one.
-pub fn sell(g: &mut GameState, id: &str) -> Result<(), String> {
+/// Sells one. A copy that took land (bought) goes first and refunds its land
+/// and `sell_refund_share` of the type's average price paid (never today's
+/// price, so a rank swing can't be farmed); once only free copies (starting,
+/// bonus) remain, one goes with no refund. An idle copy goes before an active one.
+pub fn sell(r: &Rules, g: &mut GameState, id: &str) -> Result<(), String> {
     let b = content().building(id).ok_or_else(|| format!("sell: unknown building {id:?}"))?;
     let h = g.run.buildings.get_mut(&b.id).filter(|h| h.owned > 0);
     let Some(h) = h else {
         return Err(format!("sell {}: none owned", b.name));
     };
     let paid = h.owned > h.free;
+    let paid_copies = (h.owned - h.free) as i64;
     h.owned -= 1;
     h.free = h.free.min(h.owned);
     let was = h.active;
@@ -296,6 +310,23 @@ pub fn sell(g: &mut GameState, id: &str) -> Result<(), String> {
     if paid {
         g.add(LAND, Fx::from_int(b.land as i64));
         g.track("sell", LAND, Fx::from_int(b.land as i64), Fx::ZERO);
+        let share = r.p.economy.sell_refund_share;
+        let mut refunds = Vec::new();
+        if let Some(book) = g.run.paid.get_mut(&b.id) {
+            for (res, total) in book.iter_mut() {
+                let avg = *total / Fx::from_int(paid_copies);
+                *total -= avg;
+                refunds.push((res.clone(), avg * share));
+            }
+            book.retain(|_, v| *v > Fx::ZERO);
+            if book.is_empty() {
+                g.run.paid.remove(&b.id);
+            }
+        }
+        for (res, v) in refunds {
+            g.add(&res, v);
+            g.track("sell", &res, v, Fx::ZERO);
+        }
     }
     refresh(g);
     Ok(())
@@ -333,7 +364,6 @@ pub fn land_price(r: &Rules, g: &GameState) -> Fx {
         .land_cost_scaling
         .pow_int(g.run.land_bought as i64)
         .and_then(|f| f.checked_mul(modifier(r, g, "land_cost_mult")))
-        .and_then(|f| f.checked_mul(super::ideology::discount(r, g, "nationalist")))
         .and_then(|f| f.checked_mul(super::attention::land_price_mult(r, g)));
     factor.and_then(|f| p.land_base_cost.checked_mul(f)).unwrap_or(Fx::MAX)
 }
@@ -442,7 +472,6 @@ pub fn resolve(r: &Rules, g: &mut GameState, free_energy: Fx) {
 fn resolve_stage(r: &Rules, g: &mut GameState, free: bool) -> Fx {
     let eps = r.p.economy.upkeep_epsilon;
     let upkeep_mult = modifier(r, g, "building_upkeep_mult");
-    let science = super::ideology::bonus(r, g, "rationalist");
     let mut energy_made = Fx::ZERO;
     // Per running building: (id, production, upkeep) for its active count.
     let mut pending: Vec<(String, Amounts, Amounts)> = Vec::new();
@@ -456,11 +485,7 @@ fn resolve_stage(r: &Rules, g: &mut GameState, free: bool) -> Fx {
             .produces
             .iter()
             .map(|(res, &v)| {
-                let mut amt = v.mul_int(n) * f;
-                if res == SCIENCE {
-                    amt = amt * science;
-                }
-                (res.clone(), amt)
+                (res.clone(), v.mul_int(n) * f)
             })
             .collect::<BTreeMap<_, _>>();
         let upk = b.upkeep.iter().map(|(res, &v)| (res.clone(), v.mul_int(n) * upkeep_mult)).collect();

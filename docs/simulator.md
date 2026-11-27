@@ -138,7 +138,7 @@ view and act only through actions.
 - **`greedy`** buys every affordable building in content order (from a new game, nothing:
   no program runs, so nothing is earned); `greedy:every=N` tries every N ticks.
 - **`script`** is a fixed Arc 1 opening, one decision a day (`driver.rs`): its build order,
-  the Blueprints and Regolith Processing research, pad cargo, Program 1's command and, once
+  the Blueprints and Regolith Processing research, pad cargo, Program A's command and, once
   program logic opens, a condition program. It never funds projects or retires voluntarily.
 
 ## `objectives`

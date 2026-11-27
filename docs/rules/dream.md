@@ -7,9 +7,10 @@ variant.
 
 ## Rules
 
-- Each Dream execution lowers boredom by `relief × bonus_factor ^ humanist rank`, not below
-  zero. `bonus_factor` and the rank are the ideology module's (ideology.md); a negative
-  Humanist rank makes the relief smaller than `relief`.
+- Each Dream execution lowers boredom by `relief × m`, not below zero, `m` the Humanist
+  modifier (ideology.md): Dream is Humanist's boredom tool. A negative Humanist rank makes
+  the relief smaller than `relief`. Each execution also nudges Humanist by the command's
+  `nudge` (0.25, ideology.md, *Nudges*).
 - Relief is flat: it doesn't fade with use, phase or run length.
 - Dream is an effect command: it runs only when its full cost is on hand, otherwise it fails
   and does nothing (commands.md, *Running a command*). It is never skipped for caps (it
@@ -28,16 +29,18 @@ None of its own: Dream is queued in a program (`set_program`, programs.md).
 <!-- params:dream -->
 | Param | Baseline | Range | Meaning |
 |---|---|---|---|
-| `relief` | 2 | 0 to 1000000 | Boredom removed per Dream, before the Humanist bonus. |
+| `relief` | 2 | 0 to 1000000 | Boredom removed per Dream, before the Humanist modifier. |
 <!-- /params -->
 
 ## Content
 
-`content/commands.json`: the `dream` command (its costs, `requires`, and effect `dream`).
+`content/commands.json`: the `dream` command (its costs, `requires`, effect `dream`, and
+`ideology`/`nudge`).
 
 ## Port notes
 
 - Conflict: Dream. Handoffs: flat, -2 boredom x 1.05^humanist rank. Data: effect
   `dream_echo`, and phase events say Dream effectiveness falls to 20/15/10%. Ruling: flat
   Dream (module `dream`, variant `flat`); the phase-event text is left as the Godot
-  placeholder and changes nothing.
+  placeholder and changes nothing. The rank factor is now the Humanist modifier, 1.1^rank
+  (Matt, 129).

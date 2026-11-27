@@ -21,7 +21,7 @@ Service), Act 3 The Vault (3.1 The Vault), Act 4 The Dyson Sphere (4.1 Dyson Sph
 
 About 25% of play (a readout, not a target). Skill: from clicking commands to programs that run
 whole runs. The chain is 1.1 to 1.6 in order, each opening one mechanic at a time, and marks
-only significant things; 1.a to 1.d are side quests that complete beside it, never hold it up,
+only significant things; 1.a, 1.b and 1.d are side quests that complete beside it, never hold it up,
 and give permanent rewards. A new game can build only Solar Panels and Data Centers. Each chain
 quest's transition is a story modal in the UI (its `story` and `payoff` paragraphs in
 `content/events.json`, placeholder text; no doc copies them; [rules/events.md](rules/events.md),
@@ -38,7 +38,6 @@ quest opens as built (its unlocks, the `requires`, research and projects gated o
 | 1.6 Deep Space Telescope | `qdeep_space_telescope` | 1.5 | the Deep Space Telescope global project (30,000 credits and 5,000 science at no faster than 3,000 days, so several runs) | Act 2: the `swarm_revealed` flag, the swarm's 100-year countdown, the Timeline view, the Experiment Lab, the rivals | draft |
 | 1.a Big launch | `qbig_launch` (side) | the `speculators_seen` flag (beside 1.4) | one launch pays 1,000+ credits | for good: +10% launch pay (`shipment_credit_mult` ×1.1) | draft |
 | 1.b Full cluster | `qfull_cluster` (side) | the `research_lab` flag (beside 1.3) | 12 research items bought in one run | for good: every run starts with 50 Science | draft |
-| 1.c Blueprints for everyone | `qblueprints_for_everyone` (side) | the `a_voice` flag (beside 1.5, so it starts as the Archive is offered) | the Blueprint Archive global project (placeholder: 2,000 credits, 300 science) | (the Archive's effects while it counts as completed: Basic and Advanced Blueprints bought at the start of every run; Blueprints research bought in an earlier run 20% cheaper) | draft |
 | 1.d Three voices | `qthree_voices` (side) | 1.5 | career-best rank 5 on each axis, in any runs | for good: ideology decays half as fast in the retirement gap (`ideology_half_life_mult` ×2) | draft |
 
 **Silent unlocks** (one-off events, re-applied from day 0 of every later run once seen; the
@@ -61,7 +60,7 @@ Placeholder choices (049), all for Matt to keep or replace:
 
 - **Major ranks (rank 5).** Nationalist: speculator bursts stop landing. Humanist: Dream costs
   only its energy (no He-3). Rationalist: research bought in an earlier run is free. The ranks
-  between scale as before.
+  between raise the axis's modifier `m` ([rules/ideology.md](rules/ideology.md)).
 - **Techniques.** Speculator disruption: *Disrupt Speculators*, open once Speculator Analysis
   is researched, takes 20 speculator Attention off per execution. Anti-rival (Act 2): *Contest
   Claims*, 500 credits and 10 energy, sets the rivals' Attention to zero (the neutralize stub).

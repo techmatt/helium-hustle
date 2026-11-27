@@ -116,8 +116,8 @@ capped at its resource's most); a project not open (or completed) makes it fail
 
 ## Content
 
-`content/projects.json`: 15 rows, ten `timeline` (the Dyson Sphere among them: draft,
-[timeline.md](timeline.md)) and five `run`, each with `scope`, `unlock`, `costs`,
+`content/projects.json`: 14 rows, ten `timeline` (the Dyson Sphere among them: draft,
+[timeline.md](timeline.md)) and four `run`, each with `scope`, `unlock`, `costs`,
 `rewards` (none repeats yet; `min_days` on the telescope only); names and descriptions are the Godot
 placeholders but for the draft rows (049): Conditional Logic (500 credits and 100 science;
 its reward the `logic_if` flag that opens `if`, [programs.md](programs.md)) and the
@@ -126,8 +126,8 @@ so it spans several runs: `min_days` 3,000; rebuilt each timeline, at the same c
 its placeholder passive, `science_output_mult` and `nationalist_growth_mult` ×1.1, and only
 that: the swarm's countdown runs without it, and what 1.6 opened stays:
 [timeline.md](timeline.md)). Chemical Energy Initiative is offered from the first
-retirement (the career flag `retired`). Blueprint Archive (draft: 2,000 credits and 300 science)
-completes side quest 1.c Blueprints for Everyone; its `starting_research`
+retirement (the career flag `retired`). Blueprint Archive (draft: 2,000 credits and 300 science):
+its `starting_research`
 reward has Basic and Advanced Blueprints bought from the start of every run of the timeline,
 and its `research_discount` (0.8, category Blueprints) makes every Blueprints item bought in
 an earlier run cost 20% less while it counts as completed ([research.md](research.md)). At the cap

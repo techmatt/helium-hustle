@@ -89,6 +89,7 @@ impl Content {
             }
             need(req(&b.requires), format!("{w}: bad requires"));
             need(b.ideology.as_deref().is_none_or(axis), format!("{w}: unknown ideology"));
+            need(b.nudge.is_none() || b.ideology.is_some(), format!("{w}: nudge without ideology"));
             need(b.output_modifiers.iter().all(|k| modifier(k)), format!("{w}: unknown modifier"));
             need(b.cost_scaling >= Fx::ONE, format!("{w}: cost_scaling below 1"));
             for e in &b.effects {
@@ -99,6 +100,8 @@ impl Content {
         }
         for c in &self.commands {
             let w = format!("command {:?}", c.id);
+            need(c.ideology.as_deref().is_none_or(axis), format!("{w}: unknown ideology"));
+            need(c.nudge.is_none() || c.ideology.is_some(), format!("{w}: nudge without ideology"));
             for r in c.costs.keys().chain(c.produces.keys()) {
                 need(res(r), format!("{w} names unknown resource {r:?}"));
             }

@@ -124,12 +124,12 @@ const PINNED: &[(&str, u64, &str)] = &[
     ("random", 2, "1ae24b2d20817bc0"),
     ("greedy", 1, "e0fe1a489f42eeac"),
     ("greedy", 2, "603e13a782725fc5"),
-    ("author", 1, "ab12ab580cc7f77d"),
-    ("author", 2, "1b02cc267fa0c97d"),
+    ("author", 1, "a958368ff4cab92e"),
+    ("author", 2, "33132b80f8c4b022"),
     ("casual", 1, "d73f016d8fb6c470"),
     ("casual", 2, "40ba31f5c5e6317b"),
-    ("handsoff", 1, "1098f6dfc59b0787"),
-    ("handsoff", 2, "f2f5f5f77bc0c2b3"),
+    ("handsoff", 1, "580f2ac9f0f3cdc4"),
+    ("handsoff", 2, "77d3c25a8b2319d0"),
 ];
 
 #[test]
@@ -193,7 +193,7 @@ fn the_ladder_prints_its_tables_and_writes_results() {
 /// seed 1 and checks the run after Conditional Logic's, where the loadout
 /// file plays, ships and buys. A new loadout file moves the pin: copy it from
 /// the failing assertion.
-const HANDSOFF_PIN: &str = "f1bb3b7c760e0d01";
+const HANDSOFF_PIN: &str = "a82d4a3551a27008";
 
 #[test]
 #[ignore = "slow lane: a 5-run career (~7 s)"]
@@ -357,7 +357,7 @@ fn the_oracle_plays_on_copies_and_its_game_replays() {
     let half = fingerprints.len() / 2;
     assert_eq!(fingerprints[..half], fingerprints[half..]);
     // Seeds 1 and 2 of the oracle, then of the pinned one.
-    assert_eq!(fingerprints[..half], ["450f3a9032bb2db6", "e9e24a4ffe29def2", "14f91e4180f8c055", "5930589cd74fcf2b"]);
+    assert_eq!(fingerprints[..half], ["450f3a9032bb2db6", "308b8a2ad73bc5a0", "034cc48852f98d0b", "ba99f22b07fb64bb"]);
 }
 
 /// `--agents` splits players, not knobs: a knob's value may hold a `:` (a

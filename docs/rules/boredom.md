@@ -1,6 +1,6 @@
 # Boredom (module `boredom`, variant `phased`)
 
-Boredom is the clock on a run. It grows every day at a rate set by how long the run has
+Boredom is the clock on a run: a speed governor, not a punishment (Matt, 129). It grows every day at a rate set by how long the run has
 lasted, and when it reaches its cap the run ends in forced retirement ([career.md](career.md)).
 Growth is the first step of [the day](README.md#the-day); the retirement check is the last.
 
@@ -19,31 +19,43 @@ later run from day 0, boredom grows as below.
 boredom grows by
 
 ```
-rate = phase_rates[phase - 1] × multiplier
+rate = phase_rates[phase - 1] × multiplier × escalation_per_year ^ years
 ```
 
 where the run's day is the day before this tick's day count rises (the first tick of a run
-grows at day 0's rate). Growth is added straight to boredom; it is not production and does
-not count in the day's flows.
+grows at day 0's rate), and `years` is the full years (`days_per_year`, the economy's, 365)
+since the last phase started: 0 before it. At baseline the last phase starts on day 2000
+(Year 6, day 176), so from day 2365 the rate is 3 × 1.25, from day 2730 3 × 1.5625, and so
+on: no fixed relief outlasts it. Growth is added straight to boredom; it is not production
+and does not count in the day's flows.
+
+**Recreation Dome relief.** Right after growth, each working building with a
+`boredom_relief` effect takes `amount × m` (its tagged axis's modifier,
+[ideology.md](ideology.md)) off boredom, never below zero: each Recreation Dome takes
+0.5 × m(Nationalist) a day.
 
 **Rate multiplier.** The product of, in this order (each `Fx` product rounded by the one rule
 in [README.md](README.md)):
 
 1. every research bought this run with a `boredom_rate_multiplier` effect (Stress Tolerance, ×0.85);
-2. `discount_factor ^ humanist rank` ([ideology.md](ideology.md); above 1 for a negative rank);
-3. every completed project with a `boredom_modifiers` reward, its `base_rate_mult`
+2. every completed project with a `boredom_modifiers` reward, its `base_rate_mult`
    (AI Consciousness Act, ×0.85; a `timeline` project, so it holds every later run of the timeline);
-4. the `boredom_growth_mult` modifier (Boredom Dampers, a draft Earth tech: [timeline.md](timeline.md));
-5. the career's boredom resilience, `boredom_resilience_base ^ (best_run_days / boredom_resilience_period)`
+3. the `boredom_growth_mult` modifier (Boredom Dampers, a draft Earth tech: [timeline.md](timeline.md));
+4. the career's boredom resilience, `boredom_resilience_base ^ (best_run_days / boredom_resilience_period)`
    ([career.md](career.md)).
 
 **Other sources.** Each command execution adds its flat `boredom` (or the replacement a
-completed AI Consciousness Act gives it), and Dream takes boredom away, never below zero; see
-[commands.md](commands.md) and [dream.md](dream.md). Boredom is never a command product, so
-it never causes the output-cap skip.
+completed AI Consciousness Act gives it), and Dream and Theorize take boredom away, never
+below zero; see [commands.md](commands.md) and [dream.md](dream.md). Boredom is never a
+command product, so it never causes the output-cap skip.
 
-**Cap.** `cap = base_cap + Σ store(boredom)` over *working* buildings (active, upkeep paid): each working Recreation
-Dome adds its content `store` of 100. The `storage_cap_mult` modifier does not apply to
+**Sources.** Every boredom flow is tracked by source, signed, and summed over the run
+(`boredom_sources`, the Stats view's Boredom section): `growth`, `command:<id>` per command
+(Dream's included) and `building:<id>` (the dome's relief).
+
+**Cap.** `cap = base_cap + Σ store(boredom) × m` over *working* buildings (active, upkeep
+paid), `m` each building's tagged axis's modifier (1 untagged): each working Recreation Dome
+adds its content `store` of 100 × m(Nationalist). The `storage_cap_mult` modifier does not apply to
 boredom. The cap is computed on demand, so buying, selling or idling a dome moves it at once.
 
 **Clamp.** Like every capped resource, boredom is cut to its cap in the end-of-tick clamp
@@ -68,6 +80,7 @@ None. Boredom moves only through the day and commands.
 | `phase_days` | 0, 200, 500, 1000, 2000 | 0 to 1000000 | The run day each phase starts (first 0, rising). |
 | `phase_rates` | 0.1, 0.2, 0.5, 1, 3 | 0 to 1000 | Boredom per day in each phase, before modifiers. |
 | `base_cap` | 1000 | 1 to 1000000 | The boredom cap before Recreation Domes. |
+| `escalation_per_year` | 1.25 | 1 to 100 | After the last phase starts, the rate is multiplied by this each full year. |
 <!-- /params -->
 
 `phase_days` must start at 0 and rise, one per rate (a load error otherwise). At baseline
@@ -78,7 +91,7 @@ reaches 1000 on day 1670; the run Burnout fires in starts at day 200, so 310 by 
 ## Content
 
 `content/resources.json` row `boredom` (uncapped there: its cap is this module's);
-`content/buildings.json` `store` effects on boredom (Recreation Dome);
+`content/buildings.json` `store` effects on boredom and `boredom_relief` effects (Recreation Dome);
 `content/research.json` `boredom_rate_multiplier` effects; `content/projects.json`
 `boredom_modifiers` rewards; `content/commands.json` per-command `boredom`;
 `content/events.json` `boredom_phase` triggers (phase 2 to 5 messages).

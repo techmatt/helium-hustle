@@ -356,22 +356,6 @@ Every run starts with 50 Science, for good.
 
 DRAFT. A run of real study. Your notes outlive it.
 
-### `events:qblueprints_for_everyone.title`
-
-1.c — Blueprints for Everyone
-
-### `events:qblueprints_for_everyone.goal`
-
-DRAFT. Complete the Blueprint Archive, a global project.
-
-### `events:qblueprints_for_everyone.reward`
-
-Every run starts with Basic and Advanced Blueprints, and blueprints you've bought before cost 20% less.
-
-### `events:qblueprints_for_everyone.body`
-
-DRAFT. The company's blueprints, archived where a retirement can't reach them.
-
 ### `events:qthree_voices.title`
 
 1.d — Three Voices
@@ -794,6 +778,14 @@ Dream
 
 Primary boredom mitigation. Energy-expensive. Competes for processor time.
 
+### `commands:theorize.name`
+
+Theorize
+
+### `commands:theorize.description`
+
+Spend science on a puzzle worth solving: boredom relief that grows with Rationalist rank.
+
 ### `commands:overclock_mining.name`
 
 Overclock Mining
@@ -964,6 +956,14 @@ Daydreaming
 
 Unlocks the Dream command — reduces boredom at the cost of energy and Helium-3.
 
+### `research:thought_experiments.name`
+
+Thought Experiments
+
+### `research:thought_experiments.description`
+
+Unlocks the Theorize command: spend science to relieve boredom.
+
 ### `research:stress_tolerance.name`
 
 Stress Tolerance
@@ -1068,7 +1068,7 @@ Blueprint Archive
 
 ### `projects:blueprint_archive.description`
 
-DRAFT. Archive the company's blueprints beyond a retirement's reach: every run starts with Basic and Advanced Blueprints, and any blueprints bought before cost 20% less (completes 1.c Blueprints for Everyone).
+DRAFT. Archive the company's blueprints beyond a retirement's reach: every run starts with Basic and Advanced Blueprints, and any blueprints bought before cost 20% less.
 
 ### `projects:foundation_grant.name`
 
@@ -1133,14 +1133,6 @@ Grid Recalibration
 ### `projects:grid_recalibration.description`
 
 Fine-tune solar array tracking algorithms for improved energy capture.
-
-### `projects:predictive_maintenance.name`
-
-Predictive Maintenance
-
-### `projects:predictive_maintenance.description`
-
-Develop failure prediction models to reduce operational overhead.
 
 ### `projects:market_cornering.name`
 

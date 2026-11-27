@@ -5,13 +5,14 @@
 
 import { useState } from 'preact/hooks';
 import type { View } from '../engine';
+import { slotLetter } from '../format';
 import { act } from '../store';
 import { lineText } from './ProgramLogic';
 
 export type LibraryMode = 'save' | 'load';
 
 export function Library({ v, program, mode, close }: { v: View; program: number; mode: LibraryMode; close: () => void }) {
-  const [name, setName] = useState(`Program ${program + 1}, run ${v.run}`);
+  const [name, setName] = useState(`Program ${slotLetter(program)}, run ${v.run}`);
   const [renaming, setRenaming] = useState<number | null>(null);
   const [newName, setNewName] = useState('');
   const lib = v.library;
@@ -77,7 +78,7 @@ export function Library({ v, program, mode, close }: { v: View; program: number;
                     type="button"
                     class="tiny"
                     data-testid={`loadout-load-${i}`}
-                    title={`Replace Program ${program + 1}'s lines with these`}
+                    title={`Replace Program ${slotLetter(program)}'s lines with these`}
                     onClick={() => {
                       act({ type: 'load_loadout', loadout: i, program });
                       close();

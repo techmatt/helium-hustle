@@ -8,6 +8,7 @@
 
 import { useState } from 'preact/hooks';
 import { engine } from '../engine';
+import { slotLetter } from '../format';
 import { parseProgramText, type Store } from '../store';
 import { navShown } from './common';
 import { InstructionPanel } from './Instructions';
@@ -106,7 +107,7 @@ function BlockEditor({ s, program, setProgram, bar }: { s: Store; program: numbe
               class={i === at ? 'active' : ''}
               onClick={() => i !== at && setProgram(i)}
             >
-              {q.processors > 0 ? '● ' : ''}Program {i + 1}
+              {q.processors > 0 ? '● ' : ''}Program {slotLetter(i)}
             </button>
           ))}
         </div>

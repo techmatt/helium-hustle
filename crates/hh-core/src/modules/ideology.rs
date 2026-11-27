@@ -20,9 +20,7 @@ pub static DEF: ModuleDef = ModuleDef {
             param("max_rank", K::Int, Some(("1", "1000")), "highest rank either way"),
             param("fund_push", K::Fx, Some(("0", "1000")), "score a Fund command adds to its axis"),
             param("fund_cross_penalty", K::Fx, Some(("0", "10")), "fraction of the push taken from each other axis"),
-            param("bonus_factor", K::Fx, Some(("0.000001", "10")), "per-rank multiplier on bonuses (demand, Dream, science, speculator decay)"),
-            param("discount_factor", K::Fx, Some(("0.000001", "10")), "per-rank multiplier on costs and boredom growth"),
-            param("overclock_duration_factor", K::Fx, Some(("0.000001", "10")), "per Rationalist rank multiplier on overclock duration"),
+            param("rank_multiplier", K::Fx, Some(("1", "10")), "an axis's modifier m is this to the power of its rank: tagged buildings cost ÷m, its boredom tool works ×m"),
             param("major_rank", K::Int, Some(("1", "1000")), "the first major rank: at or past it an axis's discrete major effect is on"),
             param("half_life_days", K::Fx, Some(("1", "1000000")), "days of the retirement gap that halve every score (proportional decay toward 0)"),
         ],
@@ -37,9 +35,7 @@ pub struct Params {
     pub max_rank: i64,
     pub fund_push: Fx,
     pub fund_cross_penalty: Fx,
-    pub bonus_factor: Fx,
-    pub discount_factor: Fx,
-    pub overclock_duration_factor: Fx,
+    pub rank_multiplier: Fx,
     pub major_rank: i64,
     pub half_life_days: Fx,
 }
@@ -52,9 +48,7 @@ impl Params {
             max_rank: mc.int("max_rank"),
             fund_push: mc.fx("fund_push"),
             fund_cross_penalty: mc.fx("fund_cross_penalty"),
-            bonus_factor: mc.fx("bonus_factor"),
-            discount_factor: mc.fx("discount_factor"),
-            overclock_duration_factor: mc.fx("overclock_duration_factor"),
+            rank_multiplier: mc.fx("rank_multiplier"),
             major_rank: mc.int("major_rank"),
             half_life_days: mc.fx("half_life_days"),
         })
@@ -110,23 +104,22 @@ pub fn rank(r: &Rules, g: &GameState, axis: &str) -> i64 {
     rank_for_score(r, score(g, axis))
 }
 
-fn per_rank(r: &Rules, g: &GameState, axis: &str, factor: Fx) -> Fx {
-    factor.pow_int(rank(r, g, axis)).unwrap_or(Fx::MAX)
+/// The axis's one modifier, `m = rank_multiplier ^ rank` (below 1 for a
+/// negative rank, never zero). It does two things only: the axis's tagged
+/// buildings cost ÷m, and its boredom tool works ×m (docs/rules/ideology.md).
+pub fn modifier(r: &Rules, g: &GameState, axis: &str) -> Fx {
+    modifier_at(r, rank(r, g, axis))
 }
 
-/// `bonus_factor ^ rank` on `axis` (below 1 for a negative rank).
-pub fn bonus(r: &Rules, g: &GameState, axis: &str) -> Fx {
-    per_rank(r, g, axis, r.p.ideology.bonus_factor)
+/// `rank_multiplier ^ rank` for a given rank.
+pub fn modifier_at(r: &Rules, rank: i64) -> Fx {
+    r.p.ideology.rank_multiplier.pow_int(rank).unwrap_or(Fx::MAX).max(Fx::EPSILON)
 }
 
-/// `discount_factor ^ rank` on `axis` (above 1 for a negative rank).
-pub fn discount(r: &Rules, g: &GameState, axis: &str) -> Fx {
-    per_rank(r, g, axis, r.p.ideology.discount_factor)
-}
-
-/// Overclock duration multiplier: `overclock_duration_factor ^ rationalist rank`.
-pub fn overclock_duration(r: &Rules, g: &GameState) -> Fx {
-    per_rank(r, g, "rationalist", r.p.ideology.overclock_duration_factor)
+/// A boredom tool's use nudges its axis's score by `amount` (no cross penalty).
+pub fn nudge(g: &mut GameState, axis: &str, amount: Fx) {
+    let v = g.run.ideology.entry(axis.to_string()).or_insert(Fx::ZERO);
+    *v += amount;
 }
 
 /// The modifier key multiplying an axis's own growth (`None`: none yet).

@@ -32,8 +32,7 @@ holds now. Both take the same conditions:
 Visibility is checked only at purchase: an item that was shown and stops being so (boredom
 falls back) can't be bought until it holds again.
 
-**Price** in science: `cost × discount_factor ^ rationalist rank` (the run's current
-rank, [ideology.md](ideology.md); a negative rank raises the price). If the item was bought
+**Price** in science: `cost` (ideology ranks don't touch it). If the item was bought
 in an earlier run and Rationalist is at its major rank, the price is 0 (the major effect,
 [ideology.md](ideology.md#rules)); else each live `research_discount` project reward whose
 `category` is null or the item's multiplies the price by its `mult`, in content order
@@ -103,11 +102,9 @@ The `arc1` variant has no params (`"params": {}`).
 Every number is on the content rows: costs, visibility thresholds and effect values are in
 `content/research.json`.
 
-`ideology.discount_factor` (0.97) sets the Rationalist discount ([ideology.md](ideology.md)).
-
 ## Content
 
-`content/research.json`: 20 rows, each with `cost`, optional `requires`, optional `effect`,
+`content/research.json`: 21 rows, each with `cost`, optional `requires`, optional `effect`,
 `visible_when`, `reveal_when`, a `category` and a placeholder `description`. A group (a
 category) is revealed by its rows' `reveal_when`, a trigger of this run (the same on each row,
 but for Recreation Dome Blueprints):
@@ -129,7 +126,7 @@ Research Lab is built) the Recreation Dome, through those buildings' `requires`
 | When | Shows |
 |---|---|
 | Its group revealed | Regolith Processing, Liquid Cooling (200 science, *Self-Maintenance*; no effect of its own: Run Simulations `requires` it, [commands.md](commands.md)), Market Awareness |
-| First retirement (flag `retired`) | Daydreaming (Dream Protocols); Stress Tolerance and Efficient Dreaming once it is bought |
+| First retirement (flag `retired`) | Daydreaming (Dream Protocols) and Thought Experiments (300 science, *Self-Maintenance*: Theorize, [commands.md](commands.md)); Stress Tolerance and Efficient Dreaming once it is bought |
 | Market Awareness bought | Speculator Analysis and Trade Promotion; Shipping Efficiency at 10 shipments |
 | Quest 1.5 A Voice starts | Geopolitical Intelligence, Programming |
 | 1.5 completes | Overclock Protocols; Overclock Boost once it is bought |

@@ -61,13 +61,15 @@ Three columns and a status bar:
   (Shift: up to ten; ignored for 0.5 s after the summary or a story text closes); any other
   card says why it can't. Research cards work the same way (affordable: name row tinted, no
   outline). Commands: a card per verb (Buy, Promote, ...), a target dropdown. Pad cards tint
-  their head: green Ready, yellow Paused, red full but short of fuel. Stats ends on every
-  breakdown. Story (`Story.tsx`): the quest archive, a spine of main-story beats under
+  their head: green Ready, yellow Paused, red full but short of fuel. Stats: a Boredom
+  section (this run's boredom by source, totalling it; then per day), then every other
+  resource's breakdown. Story (`Story.tsx`): the quest archive, a spine of main-story beats under
   painted act bands, side quests off it (docs/rulings/story-ui.md, *Story cards*);
   Achievements: badges by category. Acts 2 and 3 (`Saga.tsx`, DRAFT; `docs/arc.md`):
   Timeline, Earth Lab, Meta-Controller, Vault, Dyson; the ending covers the screen once.
 - **Right** (`Right.tsx`): the main quest in its own slot at the top, which nothing else
-  takes; program tabs 1 to 5 (each its ⚙ count and the engine's status light) with
+  takes; program tabs A to E (each the engine's status light, and its ⚙ count when it has
+  processors: "B ⚙1") with
   processors −/+, Reset, Save / Load (`Library.tsx`, the loadout library); a line per
   instruction (`ProgramLines.tsx`, each row's editors `ProgramLogic.tsx`'s), dragged to
   reorder (an `if` takes its body and `else`), tinted by today's outcome (a failed line says
@@ -97,7 +99,9 @@ Three columns and a status bar:
   (a new game: the first quest's; the autopilot: none; a load: a saved chain's unread pages;
   after a summary, once closed).
 
-Rates are per day; numbers past 10,000 use K/M/B/T. **"New" markers** are the UI's own, not
+Rates are per day; dates read "Year 4, day 112" (`format.ts` `dateText`, the view's
+`days_per_year`; durations stay in days); resource lists on cards follow the Resources
+panel's order (`ui/resourceOrder.ts`); numbers past 10,000 use K/M/B/T. **"New" markers** are the UI's own, not
 state: what is visible when a run starts (or the page loads) is the baseline; anything
 revealed later in the run gets an accent edge (cards, rows) or dot (nav tiles) until
 hovered or opened.

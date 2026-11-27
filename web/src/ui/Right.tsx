@@ -4,7 +4,7 @@
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import type { Activity, View } from '../engine';
-import { num } from '../format';
+import { dateText, num, slotLetter } from '../format';
 import {
   act,
   eventItems,
@@ -130,12 +130,13 @@ function Programs({
             data-program={i}
             aria-selected={i === program}
             class={q.processors > 0 ? 'running' : 'idle'}
-            title={q.status?.tip ?? `Program ${i + 1}: no processors`}
+            title={q.status?.tip ?? `Program ${slotLetter(i)}: no processors`}
             onClick={() => setProgram(i)}
           >
-            {/* The light: how yesterday's steps went (the engine's judgment and hover). */}
+            {/* The light: how yesterday's steps went (the engine's judgment and hover). A
+                slot with no processors shows its letter alone, so the active ones stand out. */}
             {q.status && <span class={`prog-light ${q.status.light}`} data-light={q.status.light} />}
-            {i + 1}
+            {slotLetter(i)}
             {q.processors > 0 && <span class="prog-count"> ⚙{q.processors}</span>}
           </button>
         ))}
@@ -313,8 +314,8 @@ function Events({ s }: { s: Store }) {
       >
         <ul class="plain activity">
           {recent.map(({ a, key }) => (
-            <li key={key} class={`act-${tone(a)}${activity.includes(key) ? ' is-unread' : ''}`} data-kind={a.kind}>
-              Day {num(a.day)}: {describe(v, a)}
+            <li key={key} class={`act-${tone(a)}${activity.includes(key) ? ' is-unread' : ''}`} data-kind={a.kind} data-day={a.day}>
+              {dateText(a.day, v.days_per_year)}: {describe(v, a)}
             </li>
           ))}
         </ul>

@@ -3,13 +3,30 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import type { Amounts, FlowRow, Fx, QuestView, ResourceView, ShortView, View } from '../engine';
-import { num, perDay } from '../format';
+import { capitalize, num, perDay } from '../format';
 import { justMoved } from '../store';
 import { Chip } from './icons';
+import { inPanelOrder, panelEntries } from './resourceOrder';
 
 /** A resource's chip, its name as the tooltip. */
 export function ResChip({ v, id, size }: { v: View; id: string; size?: number }) {
   return <Chip id={id} title={name(v, id)} size={size} />;
+}
+
+/** The icon of the ideology axis that scales the figure beside it (its chip), its ×m on
+ * hover. */
+export function AxisMark({ v, axis }: { v: View; axis: string }) {
+  const m = v.ideology.find((a) => a.axis === axis)?.modifier;
+  return (
+    <span class="axis-mark" data-axis-mark={axis}>
+      <Chip id={axis} title={`Scaled by ${capitalize(axis)}${m !== undefined ? ` (${modText(m)})` : ''}`} size={14} />
+    </span>
+  );
+}
+
+/** An axis modifier as "×1.21" (two places). */
+export function modText(m: Fx): string {
+  return `×${Number(m).toFixed(2)}`;
 }
 
 /** A view's "Hide completed" checkbox (Research, Projects): kept per browser under `key`
@@ -289,15 +306,38 @@ export function name(v: View, id: string): string {
   return v.names[id] ?? id;
 }
 
-/** Lines like "+5 Energy/day" (`sign` 1) or "−2 Energy/day" (`sign` −1). */
-export function FlowLines({ v, amounts, sign, suffix = '/day' }: { v: View; amounts: Amounts; sign: 1 | -1; suffix?: string }) {
+/** Lines like "+5 Energy/day" (`sign` 1) or "−2 Energy/day" (`sign` −1), in the Resources
+ * panel's order. `axis(res)`: the ideology axis scaling that line's figure, if any, whose
+ * icon it shows. */
+export function FlowLines({
+  v,
+  amounts,
+  sign,
+  suffix = '/day',
+  axis,
+}: {
+  v: View;
+  amounts: Amounts;
+  sign: 1 | -1;
+  suffix?: string;
+  axis?: (res: string) => string | null;
+}) {
   return (
     <>
-      {Object.entries(amounts).map(([res, amt]) => (
-        <div class={`flow ${sign < 0 ? 'neg' : 'pos'}`} key={res}>
-          <ResChip v={v} id={res} /> {`${sign < 0 ? '−' : '+'}${num(amt)} ${name(v, res)}${suffix}`}
-        </div>
-      ))}
+      {panelEntries(v.resources, amounts).map(([res, amt]) => {
+        const by = axis?.(res) ?? null;
+        return (
+          <div class={`flow ${sign < 0 ? 'neg' : 'pos'}`} key={res}>
+            <ResChip v={v} id={res} /> {`${sign < 0 ? '−' : '+'}${num(amt)} ${name(v, res)}${suffix}`}
+            {by && (
+              <>
+                {' '}
+                <AxisMark v={v} axis={by} />
+              </>
+            )}
+          </div>
+        );
+      })}
     </>
   );
 }
@@ -402,13 +442,14 @@ export function Breakdown({ v, id, avg = false }: { v: View; id: string; avg?: b
 }
 
 /** A cost on one wrapping line: each resource's chip (its name on hover) and amount, red
- * where short; `land`, when given, last (a building's land). */
+ * where short, in the Resources panel's order; `land`, when given (a building's land), in
+ * Land's place there. */
 export function CostLine({ v, cost, short = [], land }: { v: View; cost: Amounts; short?: string[]; land?: number }) {
   const items: [string, string][] = Object.entries(cost).map(([res, amt]) => [res, num(amt)]);
   if (land !== undefined) items.push(['land', String(land)]);
   return (
     <span class="cost-line">
-      {items.map(([res, amt]) => (
+      {inPanelOrder(v.resources, items, ([res]) => res).map(([res, amt]) => (
         <span key={res} class={`cost-item${short.includes(res) ? ' short' : ''}`} data-res={res} title={name(v, res)}>
           <ResChip v={v} id={res} /> {amt}
         </span>

@@ -5,9 +5,9 @@
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import type { CommandView, Fx, ResearchView, View } from '../engine';
-import { capitalize, mult, num, perDay } from '../format';
+import { boredomText, capitalize, commandTip, dateText, mult, num, perDay, slotLetter } from '../format';
 import { act, justMoved, seen, store, type Store } from '../store';
-import { Bar, Breakdown, FlowLines, ResChip, Section, cardButton, freshClass, name, navShown, numBelow, useHideCompleted, useHint } from './common';
+import { AxisMark, Bar, Breakdown, FlowLines, ResChip, Section, cardButton, freshClass, modText, name, navShown, numBelow, useHideCompleted, useHint } from './common';
 import { emblemArt } from './cardArt';
 import { Chip, ResearchChip, ScopeIcon } from './icons';
 import { editProgram } from './programStore';
@@ -26,7 +26,7 @@ export function Commands({ s, program }: { s: Store; program: number }) {
       <h2>Commands</h2>
       <p class="muted">
         Commands run only from programs (right): each assigned processor runs one step a day. Adding goes to
-        Program {program + 1}.
+        Program {slotLetter(program)}.
       </p>
       <div class="cards">
         {cards
@@ -68,6 +68,7 @@ export function Commands({ s, program }: { s: Store; program: number }) {
                     type="button"
                     data-testid={`add-${c.id}`}
                     disabled={!c.unlocked}
+                    title={commandTip(c, v) || undefined}
                     // A double-click's second click on a modal's last button that lands
                     // here is not an add (as a card's buy, #31).
                     onClick={(e) => (e.detail > 0 && justMoved() ? undefined : add(c.id))}
@@ -91,9 +92,17 @@ export function CommandBody({ v, c }: { v: View; c: CommandView }) {
       <div class="effects">
         <FlowLines v={v} amounts={c.costs} sign={-1} suffix="" />
         <FlowLines v={v} amounts={c.produces} sign={1} suffix="" />
-        {Number(c.boredom) > 0 && (
-          <div class="flow neg">
-            <ResChip v={v} id="boredom" /> +{num(c.boredom, 2)} Boredom
+        {/* Signed: a reducer (Dream, Theorize) reads "−2 Boredom", good news, with the icon of
+            the axis that scales it. */}
+        {boredomText(c.boredom) && (
+          <div class={`flow ${Number(c.boredom) > 0 ? 'neg' : 'pos'}`} data-testid="command-boredom">
+            <ResChip v={v} id="boredom" /> {boredomText(c.boredom)} Boredom
+            {c.ideology && (
+              <>
+                {' '}
+                <AxisMark v={v} axis={c.ideology} />
+              </>
+            )}
           </div>
         )}
       </div>
@@ -365,8 +374,9 @@ export function Ideologies({ s }: { s: Store }) {
     <div class="panel" data-panel="ideologies">
       <h2>Ideologies</h2>
       <p class="muted">
-        Fund commands push one axis up and the other two down. Each whole rank multiplies that axis's bonuses and
-        discounts, among them the price of buildings tagged with it; rank 5 is a major rank with its own change.
+        Fund commands push one axis up and the other two down; using an axis's boredom tool nudges it up a little.
+        Each whole rank raises the axis's modifier ×m (1.1 a rank): its tagged buildings cost ÷m and its boredom
+        tool works ×m. Rank 5 is a major rank with its own change.
         Scores carry into the next run, fading over the years away.
       </p>
       {v.ideology.map((a) => {
@@ -393,6 +403,9 @@ export function Ideologies({ s }: { s: Store }) {
               <div class="axis-rank">
                 <span class="axis-rank-label">Rank</span>
                 <span class={`axis-rank-num axis-${a.axis}`}>{a.rank}</span>
+                <span class="axis-mod" data-testid={`axis-mod-${a.axis}`} title="This axis's modifier now: its tagged buildings cost ÷ this, its boredom tool works × this">
+                  {modText(a.modifier)}
+                </span>
               </div>
               <Bar
                 frac={(sc - lo) / (hi - lo)}
@@ -507,6 +520,57 @@ function Rows({ rows }: { rows: [ComponentChildren, string | number][] }) {
   );
 }
 
+/** Stats' Boredom section: this run's boredom by source (the view's, signed, totalling the
+ * current boredom), then the per-day sources, last day and rolling average. */
+function BoredomStats({ v }: { v: View }) {
+  const b = v.boredom;
+  // Boredom rising is bad news: a source adding it reads red, a reducer green.
+  const tone = (x: number) => (x > 0 ? 'neg' : x < 0 ? 'pos' : '');
+  const signed = (x: number) => `${x < 0 ? '−' : x > 0 ? '+' : ''}${num(Math.abs(x), 2)}`;
+  return (
+    <Section title="Boredom" testid="stats-boredom">
+      <p class="muted hint">
+        What drives boredom and by how much: this run's total by source (reducers negative), then per day, the last day and a rolling average
+        over about {v.flow_average_days} days.
+        {Number(b.escalation) !== 1 && ` Past the last phase it escalates each year: growth is now ${mult(b.escalation)}.`}
+      </p>
+      <div class="breakdown-grid">
+        <div class="breakdown-card" data-testid="boredom-run-sources" data-res="boredom">
+          <h4>
+            <ResChip v={v} id="boredom" /> This run
+          </h4>
+          {b.sources.length === 0 ? (
+            <p class="muted breakdown-empty">No boredom yet this run.</p>
+          ) : (
+            <table class="breakdown-table">
+              <tbody>
+                {b.sources.map(([k, label, x]) => (
+                  <tr key={k} data-source={k}>
+                    <td>{label}</td>
+                    <td class={`num ${tone(Number(x))}`}>{signed(Number(x))}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr class="total" data-source="total">
+                  <td>Total (current boredom)</td>
+                  <td class="num">{num(b.amount, 2)}</td>
+                </tr>
+              </tfoot>
+            </table>
+          )}
+        </div>
+        <div class="breakdown-card" data-testid="boredom-per-day">
+          <h4>
+            <ResChip v={v} id="boredom" /> Per day
+          </h4>
+          <Breakdown v={v} id="boredom" avg />
+        </div>
+      </div>
+    </Section>
+  );
+}
+
 export function Stats({ s }: { s: Store }) {
   const v = s.view;
   const c = v.career;
@@ -514,7 +578,7 @@ export function Stats({ s }: { s: Store }) {
   return (
     <div class="panel" data-panel="stats">
       <h2>Stats</h2>
-      <Section title={`This run (run ${v.run}, day ${num(v.day)})`}>
+      <Section title={`This run (run ${v.run}, ${dateText(v.day, v.days_per_year)})`}>
         <Rows
           rows={[
             ['Credits earned', num(v.run_stats.credits_earned)],
@@ -526,13 +590,15 @@ export function Stats({ s }: { s: Store }) {
           ]}
         />
       </Section>
+      <BoredomStats v={v} />
       <Section title="Resource breakdown" testid="stats-breakdown">
         <p class="muted hint">
           Per day, by source (+) and sink (−): the last day, and a rolling average over about {v.flow_average_days} days. Each day
           Solar Panels produce, programs are paid next, and buildings with upkeep share what is left.
         </p>
         <div class="breakdown-grid">
-          {v.breakdown.map((b) => (
+          {/* Boredom's table is in the Boredom section above. */}
+          {v.breakdown.filter((b) => b.resource !== 'boredom').map((b) => (
             <div class="breakdown-card" key={b.resource}>
               <h4>
                 <ResChip v={v} id={b.resource} /> {name(v, b.resource)}
@@ -565,7 +631,7 @@ export function Stats({ s }: { s: Store }) {
           <Rows rows={mods.map(([k, x]) => [k.replace(/_/g, ' '), mult(x)])} />
         )}
         {v.overclocks.length > 0 && (
-          <Rows rows={v.overclocks.map((o, i) => [`Overclock ${i + 1}: ${o.target}`, `+${num(Number(o.bonus) * 100)}% through day ${o.until_day - 1}`])} />
+          <Rows rows={v.overclocks.map((o, i) => [`Overclock ${i + 1}: ${o.target}`, `+${num(Number(o.bonus) * 100)}% through ${dateText(o.until_day - 1, v.days_per_year)}`])} />
         )}
         <h4>Project rewards</h4>
         {v.live_rewards.length === 0 ? (
@@ -622,7 +688,7 @@ export function Retirement({ s }: { s: Store }) {
         bests, achievements, global projects, quests, saved programs, {navShown(v, 'programs') ? 'Programming, ' : ''}ideology (fading through the years away), adversaries and what you have
         seen. Boredom at its cap retires you anyway.
       </p>
-      <Section title={`This run (day ${num(v.day)})`}>
+      <Section title={`This run (${dateText(v.day, v.days_per_year)})`}>
         <Rows
           rows={[
             ['Credits earned', num(v.run_stats.credits_earned)],

@@ -1,6 +1,8 @@
 // Number display. Every number shown is an engine value; these only format it.
 
 import type { CommandView, Fx } from './engine';
+// With its extension: Node runs this file directly in the unit checks.
+import { panelEntries } from './ui/resourceOrder.ts';
 
 const SUFFIXES: [number, string][] = [
   [1e12, 'T'],
@@ -68,26 +70,53 @@ export function delta(now: Fx | number, was: Fx | number | undefined, places: nu
   return r === 0 ? null : r;
 }
 
-/** A command's "−2 Energy" lines: costs, then produces, then boredom (the Commands card's order). */
-function flowLines(c: CommandView, names: Record<string, string>, times: number): string[] {
-  const nm = (id: string) => names[id] ?? id;
+/** What a command tooltip reads from the view: names, and the resources' order. */
+export type TipView = { names: Record<string, string>; resources: readonly { id: string }[] };
+
+/** A command's "−2 Energy" lines: costs, then produces, each in the Resources panel's order,
+ * then boredom (the Commands card's order). */
+function flowLines(c: CommandView, v: TipView, times: number): string[] {
+  const nm = (id: string) => v.names[id] ?? id;
   const out: string[] = [];
-  for (const [res, amt] of Object.entries(c.costs)) out.push(`−${num(Number(amt) * times)} ${nm(res)}`);
-  for (const [res, amt] of Object.entries(c.produces)) out.push(`+${num(Number(amt) * times)} ${nm(res)}`);
-  if (Number(c.boredom) > 0) out.push(`+${num(Number(c.boredom) * times, 2)} ${nm('boredom')}`);
+  for (const [res, amt] of panelEntries(v.resources, c.costs)) out.push(`−${num(Number(amt) * times)} ${nm(res)}`);
+  for (const [res, amt] of panelEntries(v.resources, c.produces)) out.push(`+${num(Number(amt) * times)} ${nm(res)}`);
+  const b = boredomText(Number(c.boredom) * times);
+  if (b) out.push(`${b} ${nm('boredom')}`);
   return out;
 }
 
+/** A command's signed boredom figure ("+0.1", "−2"); empty for none. The view's value
+ * (already × its axis), only formatted. */
+export function boredomText(x: Fx | number): string {
+  const n = Number(x);
+  const shown = num(Math.abs(n), 2);
+  return n === 0 || shown === '0' ? '' : `${n < 0 ? '−' : '+'}${shown}`;
+}
+
+/** A calendar date from a day count (stored as days, 0 the first): "Year 4, day 112". */
+export function dateText(day: number, daysPerYear: number): string {
+  const d = Math.max(0, Math.floor(day));
+  return `Year ${Math.floor(d / daysPerYear) + 1}, day ${(d % daysPerYear) + 1}`;
+}
+
 /** A command's expenses and incomes as tooltip text, one per line ("−2 Energy", "+5 Credits",
- * "+0.1 Boredom"): "Each run:", then for a repeat count over 1 "N runs:" and the totals. The
- * one builder for every hover that names a command. The figures are the view's; the total
- * only multiplies them for display. Empty when the command costs and makes nothing. */
-export function commandTip(c: CommandView, names: Record<string, string>, count = 1): string {
-  const each = flowLines(c, names, 1);
+ * "+0.1 Boredom", or for a reducer such as Dream "−2 Boredom" at its axis's rank now; nothing
+ * about boredom for a command with no effect on it): "Each run:", then for a repeat count over
+ * 1 "N runs:" and the totals. The one builder for every hover that names a command. The
+ * figures are the view's; the total only multiplies them for display. Empty when the command
+ * costs and makes nothing. */
+export function commandTip(c: CommandView, v: TipView, count = 1): string {
+  const each = flowLines(c, v, 1);
   if (each.length === 0) return '';
   const parts = [`Each run:\n${each.join('\n')}`];
-  if (count > 1) parts.push(`${count} runs:\n${flowLines(c, names, count).join('\n')}`);
+  if (count > 1) parts.push(`${count} runs:\n${flowLines(c, v, count).join('\n')}`);
   return parts.join('\n\n');
+}
+
+/** A program slot's name in the UI: its letter, A for the first (index 0). Past Z (a config
+ * with more tabs than letters), its number. */
+export function slotLetter(i: number): string {
+  return i >= 0 && i < 26 ? String.fromCharCode(65 + i) : String(i + 1);
 }
 
 export function capitalize(s: string): string {

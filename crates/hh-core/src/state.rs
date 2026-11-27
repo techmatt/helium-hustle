@@ -248,7 +248,8 @@ pub struct Today {
     /// Every flow by resource, then by source (display: the resource
     /// breakdown). Sources: `building:<id>`, `program:<n>` (0-based), `pads`
     /// (loading and switch returns), `launch`, `buy`, `sell`, `land`,
-    /// `research`, `projects`, `growth` (boredom), `dream`, `cap` (overflow).
+    /// `research`, `projects`, `growth` (boredom), `command:<id>` (a command's
+    /// boredom, Dream's relief included), `cap` (overflow).
     /// Player actions after the day's tick count in it too.
     pub flows: BTreeMap<String, BTreeMap<String, Flow>>,
     /// Who ran short, by source (`building:<id>`, `program:<n>:<line>`): the
@@ -337,6 +338,11 @@ pub struct Run {
     pub resources: BTreeMap<String, Fx>,
     /// By content id; absent is none.
     pub buildings: BTreeMap<String, Holding>,
+    /// Per building type, the total price paid (by resource) for the bought
+    /// copies still owned: selling one refunds a share of the average
+    /// (`economy::sell`). Not shown.
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub paid: BTreeMap<String, BTreeMap<String, Fx>>,
     pub land_bought: u32,
     pub programs: Vec<Program>,
     pub pads: Vec<Pad>,
@@ -369,6 +375,11 @@ pub struct Run {
     pub enabled_projects: BTreeSet<String>,
     /// 1-based boredom phase.
     pub boredom_phase: u32,
+    /// This run's boredom by source (the flow sources, signed: what it added
+    /// less what it took), summing to the run's boredom (display only: the
+    /// Stats view's Boredom section).
+    #[serde(default, skip_serializing_if = "BTreeMap::is_empty")]
+    pub boredom_sources: BTreeMap<String, Fx>,
     pub stats: RunStats,
     pub today: Today,
     /// Each day's `today.flows` folded into a rolling average over the
@@ -604,6 +615,10 @@ impl GameState {
         let f = by.get_mut(source).expect("inserted");
         f.produced = f.produced.saturating_add(produced);
         f.consumed = f.consumed.saturating_add(consumed);
+        if resource == crate::modules::economy::BOREDOM {
+            let t = self.run.boredom_sources.entry(source.to_string()).or_insert(Fx::ZERO);
+            *t = t.saturating_add(produced).saturating_add(-consumed);
+        }
     }
 
     /// Adds production: the resource, today's flow (by source) and the run's total.

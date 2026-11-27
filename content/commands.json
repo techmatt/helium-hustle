@@ -126,10 +126,26 @@
     "costs": {"energy": "8", "he3": "0.5"},
     "produces": {},
     "boredom": "0",
+    "ideology": "humanist",
+    "nudge": "0.25",
     "effect": {"type": "dream"},
     "scale_modifier": null,
     "sets_flag": null,
     "description": "Primary boredom mitigation. Energy-expensive. Competes for processor time."
+  },
+  {
+    "id": "theorize",
+    "name": "Theorize",
+    "requires": {"type": "research", "research": "thought_experiments"},
+    "costs": {"science": "20"},
+    "produces": {},
+    "boredom": "-2",
+    "ideology": "rationalist",
+    "nudge": "0.25",
+    "effect": null,
+    "scale_modifier": null,
+    "sets_flag": null,
+    "description": "Spend science on a puzzle worth solving: boredom relief that grows with Rationalist rank."
   },
   {
     "id": "overclock_mining",

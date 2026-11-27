@@ -44,11 +44,11 @@ pub struct BreakdownView {
 }
 
 /// A breakdown source's display label.
-fn source_label(g: &GameState, source: &str) -> String {
+pub(super) fn source_label(g: &GameState, source: &str) -> String {
     let names = names();
     let mut parts = source.split(':');
     match (parts.next(), parts.next(), parts.next()) {
-        (Some("building"), Some(id), _) => names.get(id).copied().unwrap_or(id).to_string(),
+        (Some("building" | "command"), Some(id), _) => names.get(id).copied().unwrap_or(id).to_string(),
         (Some("program"), Some(n), line) => {
             let n: usize = n.parse().unwrap_or(0);
             match line.and_then(|l| l.parse::<usize>().ok()) {
@@ -61,9 +61,9 @@ fn source_label(g: &GameState, source: &str) -> String {
                         Some(Op::BuyLand {}) => "Buy Land".to_string(),
                         _ => String::new(),
                     };
-                    format!("Program {}, line {}: {}", n + 1, l + 1, what)
+                    format!("Program {}, line {}: {}", crate::state::slot_letter(n as u32), l + 1, what)
                 }
-                None => format!("Program {}", n + 1),
+                None => format!("Program {}", crate::state::slot_letter(n as u32)),
             }
         }
         (Some(k), _, _) => match k {
@@ -75,7 +75,6 @@ fn source_label(g: &GameState, source: &str) -> String {
             "research" => "Research",
             "projects" => "Projects",
             "growth" => "Daily growth",
-            "dream" => "Dream",
             "cap" => "Lost to cap",
             crate::cheat::CHEAT_SOURCE => "Cheat Fountain",
             other => other,

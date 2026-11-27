@@ -7,7 +7,7 @@
 
 import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
-import { num } from '../format';
+import { dateText, num } from '../format';
 import { store, togglePause, type Store } from '../store';
 import { BoredomBar, RateCell } from './common';
 import { Chip } from './icons';
@@ -121,7 +121,7 @@ function StatusStrip({ s }: { s: Store }) {
   const paused = s.speed === 0;
   return (
     <div class="takeover-strip" data-testid="takeover-strip">
-      <span class="takeover-day">Day {num(v.day)}</span>
+      <span class="takeover-day">{dateText(v.day, v.days_per_year)}</span>
       <span class="takeover-bored" title="Boredom">
         <span class="status-label">Boredom</span>
         <BoredomBar v={v} />

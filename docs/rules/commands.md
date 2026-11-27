@@ -26,13 +26,17 @@ The module's params, `overclock_base_cap` among them, are in [programs.md](progr
 5. It pays its costs and adds its products. (Loading still tops pads up partially: Load
    pays its full energy, then each pad takes what cargo there is, shipments.md.)
 6. It adds its flat `boredom`; a completed project with
-   `boredom_modifiers` replaces a command's boredom with its own value. A negative one (the
-   draft Distract) takes that much off, never below zero. Before Burnout a positive one is
+   `boredom_modifiers` replaces a command's boredom with its own value. A negative one
+   (Theorize, the draft Distract) takes that much off, never below zero, × `m` of the
+   command's `ideology` axis when it has one (ideology.md). Before Burnout a positive one is
    0 (boredom.md, *Burnout starts it*).
 7. The command is marked used in the career (it stays visible in later runs), and its effect
    applies: Load (shipments.md), Launch full pads (shipments.md), Dream (dream.md), Promote and
    Disrupt (demand.md), Fund (ideology.md), Neutralize (Contest Claims: the named
    adversary's Attention to 0, [attention.md](attention.md)), Overclock (below).
+8. A command with both `ideology` and `nudge` adds `nudge` to that axis (Dream, Theorize:
+   0.25; ideology.md, *Nudges*): after its effect, so every tool's relief reads the rank
+   from before the run.
 
 **Only as program lines.** No action runs a command directly: a Commands card's Add to
 Program appends it to the active program, open from the start, as are the loadout buttons.
@@ -40,13 +44,13 @@ The Programming research opens only the Programs view, the full editor
 ([research.md](research.md)).
 
 **Overclock.** Each execution adds its own stack on its `target` building category for
-`floor(duration × overclock_duration_factor ^ rationalist rank)` days, live from the same
+its `duration` days, live from the same
 day's pass of the buildings that take upkeep: a stack run on day `d` lasts while the day is
 below `d + days`. A category's overclock factor is the product of `1 + bonus` over its live
 stacks, capped at the overclock cap: `overclock_base_cap`, or the highest `overclock_cap`
 among researched items if higher. The factor multiplies production of every building of that
-category (economy.md). `overclock_duration_factor` is an ideology param (ideology.md). The
-view fills a description's `{days}` with those days at the current rank ("4 days", "1 day").
+category (economy.md). The view fills a description's `{days}` with those days ("4 days",
+"1 day").
 
 **Visible:** a command is shown when unlocked or used in any run.
 
@@ -54,7 +58,8 @@ view fills a description's `{days}` with those days at the current rank ("4 days
 1 energy for 1 science, the only science before a Research Lab) opens with quest 1.1
 Online's completion, and Launch Full Pads with 1.3 Full Load's (`quest_completed`); before
 then pads launch by hand ([shipments.md](shipments.md)). Run Simulations (3 energy and 1 ice
-for 6 credits, no boredom) needs research Liquid Cooling. The Buy commands for goods cost 1 energy and credits: Ice 5,
+for 6 credits, no boredom) needs research Liquid Cooling. Theorize (Rationalist's boredom
+tool: 20 science for −2 boredom × m) needs research Thought Experiments ([research.md](research.md)). The Buy commands for goods cost 1 energy and credits: Ice 5,
 Regolith and Propellant 10, Science 10, Titanium 20. Disrupt Speculators needs research
 Speculator Analysis; Contest Claims, Act 2's, the career flag `contest_claims` (set by the
 silent `rivals_arrive`, [attention.md](attention.md)).
@@ -62,7 +67,8 @@ silent `rivals_arrive`, [attention.md](attention.md)).
 ## Content
 
 `content/commands.json`: `requires`, `costs`, `produces`, `boredom`, `effect` (with an
-overclock's `target`, `bonus`, `duration`) and `scale_modifier`. `content/research.json`:
+overclock's `target`, `bonus`, `duration`), `scale_modifier`, and optional `ideology` (the
+axis whose boredom tool it is) and `nudge`. `content/research.json`:
 `command_cost_override` and `overclock_cap` effects. `content/projects.json`:
 `boredom_modifiers` rewards.
 

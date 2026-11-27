@@ -9,7 +9,7 @@
 import type { ComponentChildren } from 'preact';
 import { useEffect, useLayoutEffect, useRef, useState } from 'preact/hooks';
 import { engine, type Entry, type ParsedText, type ProgramView, type View } from '../engine';
-import { commandTip } from '../format';
+import { commandTip, slotLetter } from '../format';
 import { act, parseProgramText, setNotice, store, type Store } from '../store';
 import { DOT_TITLE, ELSE_TITLE, GutterMark, entryStatus, flaggedStatus, noteStatus, type LineStatus } from './Gutter';
 import { InstructionPanel } from './Instructions';
@@ -149,7 +149,7 @@ function ProgramDraft({ s, program, setProgram, bar }: { s: Store; program: numb
         // Shown in the notice line once the view is gone.
         if ('error' in r) {
           unsaved.set(program, l.draft);
-          setNotice(`Programs: Program ${program + 1} not saved (${r.error}); the text is kept there.`);
+          setNotice(`Programs: Program ${slotLetter(program)} not saved (${r.error}); the text is kept there.`);
         } else latest.current.base = { entries: JSON.stringify(r.entries), text: l.draft };
       }
     };
@@ -234,7 +234,7 @@ function ProgramDraft({ s, program, setProgram, bar }: { s: Store; program: numb
               title={i === program ? undefined : 'Switch program (saves this one first)'}
               onClick={() => i !== program && setProgram(i)}
             >
-              {q.processors > 0 ? '● ' : ''}Program {i + 1}
+              {q.processors > 0 ? '● ' : ''}Program {slotLetter(i)}
             </button>
           ))}
         </div>
@@ -288,7 +288,7 @@ function ProgramDraft({ s, program, setProgram, bar }: { s: Store; program: numb
           ref={area}
           class="te-area"
           data-testid="text-editor-area"
-          aria-label={`Program ${program + 1} as text`}
+          aria-label={`Program ${slotLetter(program)} as text`}
           wrap="off"
           spellcheck={false}
           autocomplete="off"
@@ -324,7 +324,7 @@ function ProgramDraft({ s, program, setProgram, bar }: { s: Store; program: numb
               const at = result?.lines[k]?.entry;
               const e = at != null ? result?.entries[at] : undefined;
               const c = e?.op === 'command' ? v.commands.find((x) => x.id === e.command) : undefined;
-              const flows = e?.op === 'command' && c ? commandTip(c, v.names, e.count) : '';
+              const flows = e?.op === 'command' && c ? commandTip(c, v, e.count) : '';
               return (
                 <div key={k} class={`te-row te-note te-note-${st?.dot ?? 'blank'}`} title={[st?.note, flows].filter(Boolean).join('\n\n') || undefined}>
                   {st?.note}

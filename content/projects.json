@@ -2,7 +2,7 @@
   {
     "id": "blueprint_archive",
     "name": "Blueprint Archive",
-    "description": "DRAFT. Archive the company's blueprints beyond a retirement's reach: every run starts with Basic and Advanced Blueprints, and any blueprints bought before cost 20% less (completes 1.c Blueprints for Everyone).",
+    "description": "DRAFT. Archive the company's blueprints beyond a retirement's reach: every run starts with Basic and Advanced Blueprints, and any blueprints bought before cost 20% less.",
     "scope": "timeline",
     "unlock": {"type": "project_enabled", "project": "blueprint_archive"},
     "costs": {"credits": "2000", "science": "300"},
@@ -89,15 +89,7 @@
     "costs": {"science": "100", "energy": "300"},
     "rewards": [{"type": "modifier", "key": "solar_output_mult", "value": "1.15"}]
   },
-  {
-    "id": "predictive_maintenance",
-    "name": "Predictive Maintenance",
-    "description": "Develop failure prediction models to reduce operational overhead.",
-    "scope": "run",
-    "unlock": {"type": "research_completed", "research": "dream_protocols"},
-    "costs": {"science": "80", "credits": "150"},
-    "rewards": [{"type": "modifier", "key": "building_upkeep_mult", "value": "0.9"}]
-  },
+  
   {
     "id": "market_cornering",
     "name": "Market Cornering Analysis",

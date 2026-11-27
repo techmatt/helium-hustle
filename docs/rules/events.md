@@ -161,15 +161,14 @@ Triggers, conditions and unlocks are content (`content/events.json`).
 
 ## Content
 
-`content/events.json`, 34 rows; the file holds each row's trigger, condition and unlocks.
+`content/events.json`, 33 rows; the file holds each row's trigger, condition and unlocks.
 
 - **Eighteen `story`:** Act 1's beats 1.1 Online to 1.6 Deep Space Telescope (the swarm's
   reveal; [../arc.md](../arc.md)), then the draft 2.1 to 4.2 and the Epilogue (4.3).
-- **Four `side`**, each with a permanent reward: 1.a Big Launch and 1.d Three Voices a
-  `modifier`, 1.b Full Cluster a `grant` (50 Science, so every later run starts with it),
-  1.c Blueprints for Everyone none of its own (it completes with the Blueprint Archive, whose
-  rewards are the project's, [projects.md](projects.md)). 1.a to 1.c hang beside a chain
-  quest on a flag a one-off sets; 1.d follows 1.5's completion.
+- **Three `side`**, each with a permanent reward: 1.a Big Launch and 1.d Three Voices a
+  `modifier`, 1.b Full Cluster a `grant` (50 Science, so every later run starts with it).
+  1.a and 1.b hang beside a chain quest on a flag a one-off sets; 1.d follows 1.5's
+  completion. There is no 1.c (cut in 129; the Blueprint Archive project stays).
 - **Twelve `ongoing`:** three silent ones that set flags and open panels and projects
   (`research_lab_built`, `first_retirement`, `a_voice_projects`); the Speculators and Rival
   AI arrivals (the first sets `speculators_seen`); Burnout (`boredom_bites`: boredom phase 2, `once`, setting the `burnout` flag

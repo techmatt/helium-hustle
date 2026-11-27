@@ -33,8 +33,10 @@ ones' grants, paid or not (programs.md). Launch Pads owned and pads are matched
 (shipments.md).
 
 **Price.** The next building of a type costs, per resource in its `cost`:
-`cost × cost_scaling ^ (owned − bonus) × discount_factor ^ rank`, the last factor only for a
-building with an `ideology` axis (that axis's rank; ideology.md). `bonus` counts free
+`cost × cost_scaling ^ (owned − bonus) ÷ m`, the last factor only for a building tagged
+with an `ideology` axis (`m`, that axis's modifier, ideology.md: Recreation Dome, Launch Pad
+and Arbitrage Engine Nationalist; Data Center and Battery Humanist; Research Lab and
+Fabricator Rationalist). Land is not part of the price, so `m` never touches it. `bonus` counts free
 buildings granted at run start, so they don't raise the price. Whole powers use `Fx::pow_int`
 (see [the rounding rule](README.md#numbers)). A price past `Fx`'s range is shown as the maximum and is
 never affordable.
@@ -42,7 +44,9 @@ never affordable.
 **Buy** checks, in order: unlocked (its `requires` holds and, if an event enables it, that
 event enabled it this run), under `max_count`, enough land (its `land`), and every price
 resource on hand. It then pays the price and the land, and the new building is owned and
-active. Starting buildings and run-start bonus buildings take no land.
+active. The price paid is added to the run's `paid` book for the type (per resource), and a
+building with a `nudge` adds it to its tagged axis (the Recreation Dome: 5 Nationalist,
+ideology.md). Starting buildings and run-start bonus buildings take no land.
 
 A `requires` (on a building or command, [commands.md](commands.md)) is one of: `none`;
 `building` (at least `count` owned); `quest` (the quest active now or completed in any run);
@@ -52,14 +56,16 @@ A `requires` (on a building or command, [commands.md](commands.md)) is one of: `
 **Visible:** unlocked, or (for a building-count requirement only, and not event-gated) owned
 in any run of the career.
 
-**Sell** never refunds the price. A copy that took land (a bought one) goes first and
-refunds its `land`; once only free copies remain (starting and run-start bonus buildings,
+**Sell.** A copy that took land (a bought one) goes first and refunds its `land` plus, per
+resource in the type's `paid` book, `sell_refund_share` (0.5) × the average price paid
+(`total ÷ bought copies owned`), lowering the total by that average: half what the copies
+cost, never today's price, so a rank swing can't be farmed (not shown in the UI). Once only free copies remain (starting and run-start bonus buildings,
 counted as `free`), one goes with no land back. Active is lowered only if it would exceed
 owned (an idle copy goes first); bonus is lowered the same way, so selling a bought copy
 lowers the next price. Starting buildings count toward the price (they are not `bonus`).
 
 **Land.** The next land purchase costs
-`land_base_cost × land_cost_scaling ^ land_bought × land_cost_mult × discount_factor ^ nationalist rank × R`
+`land_base_cost × land_cost_scaling ^ land_bought × land_cost_mult × R`
 credits and gives `land_per_purchase` land, where `R` is `rival_land_price_mult` while the
 rivals are present, else 1 ([attention.md](attention.md)). Each purchase raises the rivals'
 Attention by the land gained × `rival_per_land`, once Act 2 begins (`swarm_revealed`). `land_bought` counts this run's purchases.
@@ -73,8 +79,7 @@ building makes (Fuel Cell) reaches programs the next day, through the stock. Eac
 
 1. Each type's production is `produces × active × output factor`, where the output factor is
    the overclock factor for its `category` (commands.md) times each of its
-   `output_modifiers`; science is further multiplied by `bonus_factor ^ rationalist rank`.
-   Its upkeep is `upkeep × active × building_upkeep_mult`.
+   `output_modifiers`. Its upkeep is `upkeep × active × building_upkeep_mult`.
 2. A type whose every product is at or over its cap is marked `output_capped` for the day; it
    still pays and produces.
 3. **Full passes:** each pending type whose every upkeep resource has at least
@@ -96,7 +101,7 @@ raised to zero.
 cheats, run setup, derived processors or the clamp's lift of a rounding dip) is recorded
 under its source for the day (`today.flows`: each building type, each program, pad
 loading and switch returns, launches, building and land purchases, sales, research,
-projects, boredom growth, Dream, and `cap`, the clamp's cut). Player actions after a
+projects, boredom growth, `command:<id>` boredom, `building:<id>` relief, and `cap`, the clamp's cut). Player actions after a
 tick count in that day. Who ran short is recorded too (`today.shorts`): a building type
 in the partial pass, or a program line short of a cost (it failed, fraction 0): the scarcest
 input, the need, what there was and the fraction run. At each tick's
@@ -134,13 +139,19 @@ A refused action changes nothing.
 | `land_per_purchase` | 15 | 0 to 1000000 | Land gained per purchase. |
 | `upkeep_epsilon` | 0.001 | 0 to 1 | A building pays full upkeep if short by no more than this. |
 | `flow_average_days` | 20 | 1 to 1000 | Days in the resource breakdown's rolling average (display only). |
+| `sell_refund_share` | 0.5 | 0 to 1 | Share of a type's average price paid that selling a bought copy refunds. |
+| `days_per_year` | 365 | 1 to 100000 | Days in a player-facing year (dates; boredom's yearly escalation). |
 <!-- /params -->
+
+Dates show as years and days: day count `d` reads "Year ⌊d / days_per_year⌋ + 1, day
+d mod days_per_year + 1" (day 0 is Year 1, day 1). State stores days.
 
 ## Content
 
 `content/resources.json`: each resource's `cap` (null for none). `content/buildings.json`:
 `category`, `ideology`, `requires`, `land`, `cost`, `cost_scaling`, `max_count`, `produces`,
-`upkeep`, `effects` (`grant`, `store`, `speculator_decay` for demand.md) and
+`upkeep`, `effects` (`grant`, `store`, `speculator_decay` for demand.md, `boredom_relief`
+for boredom.md), `nudge` (ideology.md) and
 `output_modifiers`, and a `description` no rule reads: empty (the card shows no line) unless
 the building has a mechanic its stat lines don't show (now the Arbitrage Engine and the
 Microwave Receiver). A run opens with only the Solar Panel and Data Center buildable: the
@@ -156,7 +167,7 @@ Dome requires research Recreation Dome Blueprints, shown from the first retireme
 Six resource ids are fixed in code (`economy.rs` constants), named by content rows:
 `energy` (its cap skips `storage_cap_mult`; its output counts toward peak power),
 `credits` (prices, payouts, credits earned), `land`, `processors` (assigned, not stocked),
-`boredom` (its cap is the boredom module's) and `science` (Rationalist bonus, research).
+`boredom` (its cap is the boredom module's) and `science` (research).
 
 ## Port notes
 

@@ -1,6 +1,6 @@
 # Rules
 
-The rules as implemented, rules revision **43** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **44** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
 The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
@@ -32,7 +32,7 @@ table is generated from `REGISTRY` and the baseline (`hh-sim params --write`; a 
 | `projects` | `drain` | [projects.md](projects.md) | Projects scoped to a run, a timeline or forever, funded over time. |
 | `shipments` | `arc1` | [shipments.md](shipments.md) | Launch pads, loading, launching, payouts. |
 | `research` | `arc1` | [research.md](research.md) | Science-bought upgrades, gated by visibility. |
-| `ideology` | `geometric` | [ideology.md](ideology.md) | Three axes, Fund commands, ranks and per-rank bonuses. |
+| `ideology` | `geometric` | [ideology.md](ideology.md) | Three axes, Fund commands, ranks and each axis's modifier. |
 | `events` | `arc1` | [events.md](events.md) | The quest chain, side quests and one-off events, with their unlocks. |
 | `achievements` | `arc1` | [achievements.md](achievements.md) | Six achievements with permanent rewards. |
 | `career` | `arc1` | [career.md](career.md) | Runs, retirement and its gap, what persists, career bonuses. |
@@ -44,7 +44,8 @@ One tick is one in-game day. Each tick, in this order (`Rules::tick`, `rules.rs`
 
 1. Yesterday's flows fold into the breakdown's rolling average and the day's record
    clears (economy; display only).
-2. **Boredom** grows by the phase rate (boredom); then the debug **cheat building**, if
+2. **Boredom** grows by the phase rate, escalated past the last phase, and working
+   Recreation Domes relieve it (boredom); then the debug **cheat building**, if
    bought, makes and relieves (*Cheats*).
 3. **Overclocks** past their last day expire (programs).
 4. **Attention** decays (attention), then **demand** decays its forces and is set for the
@@ -77,8 +78,8 @@ the page of the module that takes them (`crates/hh-core/src/action.rs` has them 
 
 ## Content
 
-`content/*.json`, embedded in `hh-core`: resources (16), buildings (20), commands (24),
-research (20), events (34: eighteen the quest chain, four side quests), projects (15),
+`content/*.json`, embedded in `hh-core`: resources (16), buildings (20), commands (25),
+research (21), events (33: eighteen the quest chain, three side quests), projects (14),
 achievements (6), rivals (4), Earth techs (6, `earth_tech.json`), and two display-only
 files: the UI's nav tiles (`nav.json`, 18: when each panel's tile shows) and the acts
 (`acts.json`, 4: each act's name and the chain quest it opens with, [events.md](events.md)). Act 1's beats are draft from
@@ -113,12 +114,12 @@ counts (buildings, days, ticks, ranks, pads) are integers.
 **Whole powers are exact.** `Fx::pow_int` builds `x^n` by repeated multiplication at 10^-18
 in `i128` and floors once to 10^-6, so 1.15^2 is 1.3225, not the float floor 1.322499. It
 serves every whole power in play: building cost curves (x1.5, x1.4), land prices, ideology
-rank scores, per-rank bonuses and discounts (1.05^r, 0.97^r, 1.03^r) and speculator burst
-growth. A negative power is `1 / x^|n|`, floored once. Only fractional powers use floats,
-through `libm` (`crate::math`): boredom resilience (0.995^(days/400)) and the retirement
-gap's daily ideology decay (0.5^(1/365)). This matters: 0.97^r and 1.05^r aren't exact as `f64`, so the
-float floor would land discounts and bonuses a step low, and a cost curve shouldn't hang on
-float rounding.
+rank scores, the ideology modifier (1.1^r), boredom's yearly escalation (1.25^years) and
+speculator burst growth. A negative power is `1 / x^|n|`, floored once. Only fractional
+powers use floats, through `libm` (`crate::math`): boredom resilience (0.995^(days/400)) and
+the retirement gap's daily ideology decay (0.5^(1/365)). This matters: 1.1^r isn't exact as
+`f64`, so the float floor would land the modifier a step low, and a cost curve shouldn't
+hang on float rounding.
 
 ## Modifiers
 
@@ -130,7 +131,7 @@ A modifier key's value is the product of every live source naming it, 1 with non
 | `extractor_output_mult` | Deep Core Survey (Strategic project; unreachable, [projects.md](projects.md#port-notes)) | Regolith Excavator and Ice Extractor output |
 | `excavator_output_mult` | Strip Mining (achievement) | Regolith Excavator output |
 | `solar_output_mult` | Grid Recalibration (Strategic) | Solar Panel output |
-| `building_upkeep_mult` | Predictive Maintenance (Strategic) | every building's upkeep |
+| `building_upkeep_mult` | none now (Predictive Maintenance, its source, was cut in 129) | every building's upkeep |
 | `promote_effectiveness_mult` | Market Cornering (Strategic) | Promote's demand effect |
 | `speculator_burst_interval_mult` | Speculator Dossier (Strategic) | days between speculator bursts |
 | `land_cost_mult` | Lunar Cartography (global, from A Voice) | land price |

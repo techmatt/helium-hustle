@@ -21,7 +21,7 @@ The story side (quest text, Story cards, the right panel, popups, quest pictures
   background), as a 96 px thumbnail cropped tight on the building, under the title beside the
   flows (and a line, when it has one). *Compact cards (Matt, 2026-11-27; 124):* the flows
   and the status row ("Output at cap") sit right of the picture; the cost (chips and amounts,
-  land last) and the sell buttons share one row below, every number still shown; a card with
+  in the Resources panel's order, 129) and the sell buttons share one row below, every number still shown; a card with
   a description keeps its text. A later "base grows" view uses the crisp painterly isometric set
   (019's `crisp`: fixed 2:1 camera and patch guide, one sun). The icon styles of icon_style_r1
   were all rejected.
@@ -48,6 +48,15 @@ The story side (quest text, Story cards, the right panel, popups, quest pictures
   rank numeral and a full-width rank bar. Emblems (Matt's picks, 2026-11-26; 119, picker
   `ideology_emblems_r1`): Nationalist the claim marker, Humanist the garden dome, Rationalist
   the archive (`web/src/assets/ideology/`); an axis with no file shows its chip at 112 px.
+  Each card shows its axis's modifier ×m (Matt, 2026-11-27; 129;
+  [boredom.md](boredom.md)), and an output scaled by an axis shows that axis's icon beside it.
+- **Dates are years and days (Matt, 2026-11-27; 129).** Every player-facing date shows as
+  years + days, 365-day years ("Year 4, day 112"); state stores days. *Default (129):* both
+  are 1-based: day count `d` is Year ⌊d/365⌋ + 1, day d mod 365 + 1.
+- **Program slots are letters (2026-11-27; 129).** Slots are A to E everywhere: tabs, hovers,
+  loadouts and program text (`load X into program B`; the parser still takes the old
+  number); a slot with no processor shows only its letter. Every card lists resources in the
+  left Resources panel's order, land in its panel position (129, parked P2).
 - **Project funding (Matt, 2026-11-26; 116).** Holding a funding − or + keeps stepping: after
   ~0.4 s at ~10 steps a second, held past ~1.5 s 5 steps a repeat, past 3 s 10, stopping at 0
   or the cap. A rate fully met shows green; one the stock can't supply reads actual / set
@@ -84,7 +93,7 @@ The story side (quest text, Story cards, the right panel, popups, quest pictures
   timelines to explain). Hovering gives one line ("Kept when you retire."). The engine's view
   says which (`keep`); `ScopeIcon` in `icons.tsx`. *Default (099):* placeholder glyphs ◆ and ∞
   on the amber accent; the icon shows done or not; an owned Programming (its card gone) shows
-  none; a side quest with no reward of its own (1.c) has none.
+  none; a side quest with no reward of its own would have none (none does today).
 - **Chip colors (028, default).** Resource, axis and rival chip colors stay TS maps in
   `icons.tsx` (the chip needs the hex for its ink-contrast choice, and they are the same in
   both themes); only the axis text colors are CSS tokens.

@@ -49,6 +49,8 @@ export interface BuildingView {
   description: string;
   category: string;
   ideology: string | null;
+  /** Daily boredom relief per working copy now (× its axis's modifier); 0 for none. */
+  boredom_relief: Fx;
   owned: number;
   active: number;
   /** Active copies whose upkeep the last pass paid: the ones giving effects. */
@@ -108,7 +110,10 @@ export interface CommandView {
   visible: boolean;
   costs: Amounts;
   produces: Amounts;
+  /** What one run does to boredom now, signed (negative: it relieves), already × its axis. */
   boredom: Fx;
+  /** The axis whose boredom tool it is, if any. */
+  ideology: string | null;
   /** A per-target command folded into one verb (Buy, Promote, Fund, Overclock) and its target's label. */
   verb: string | null;
   target: string | null;
@@ -331,6 +336,8 @@ export interface AxisView {
   rank: number;
   rank_score: Fx;
   next_rank_score: Fx;
+  /** The axis's modifier m now (1.1^rank). */
+  modifier: Fx;
 }
 
 export interface ProjectView {
@@ -657,7 +664,19 @@ export interface View {
   /** Why it ended, the run summary's line (content/messages.json). */
   last_run_why: string | null;
   run_stats: RunStats;
-  boredom: { amount: Fx; cap: Fx; rate: Fx; phase: number; phases: number };
+  boredom: {
+    amount: Fx;
+    cap: Fx;
+    rate: Fx;
+    phase: number;
+    phases: number;
+    /** Rate multiplier from the yearly escalation after the last phase (1 before it). */
+    escalation: Fx;
+    /** This run's boredom by source (`growth`, `command:<id>`, `building:<id>`, `cap`,
+     * `other`), signed, summing to `amount`; largest first. */
+    /** This run's boredom by source: [source key, label, amount], summing to the amount. */
+    sources: [string, string, Fx][];
+  };
   nav: { id: string; name: string; visible: boolean }[];
   /** The 50x and 200x speeds are open (Accelerated Scheduling, bought once a career). */
   fast_speeds: boolean;
@@ -668,6 +687,8 @@ export interface View {
   breakdown: BreakdownView[];
   /** Days in the breakdown's rolling average. */
   flow_average_days: number;
+  /** Days in a calendar year (dates read "Year 4, day 112"). */
+  days_per_year: number;
   names: Record<string, string>;
 }
 

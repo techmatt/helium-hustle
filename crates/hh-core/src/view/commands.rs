@@ -34,14 +34,15 @@ pub(super) fn commands(r: &Rules, g: &GameState) -> Vec<CommandView> {
                 visible: program_rules::visible(g, cmd),
                 costs,
                 produces,
-                boredom: program_rules::boredom_cost(g, cmd),
+                boredom: program_rules::boredom_effect(r, g, cmd),
+                ideology: cmd.ideology.as_deref(),
             }
         })
         .collect()
 }
 
-/// A command's description with an overclock's `{days}` filled in: the days one run
-/// lasts under this run's Rationalist rank ("4 days", "1 day").
+/// A command's description with an overclock's `{days}` filled in: its fixed
+/// duration ("4 days", "1 day").
 fn command_description(r: &Rules, g: &GameState, cmd: &'static crate::content::Command) -> Cow<'static, str> {
     match &cmd.effect {
         Some(CommandEffect::Overclock { duration, .. }) => {

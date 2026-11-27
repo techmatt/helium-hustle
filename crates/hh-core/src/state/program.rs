@@ -3,6 +3,15 @@
 
 use super::*;
 
+/// A program slot's player-facing name: its letter, A for the first (past Z,
+/// its 1-based number).
+pub fn slot_letter(i: u32) -> String {
+    match ('A' as u32).checked_add(i).and_then(char::from_u32) {
+        Some(c) if c.is_ascii_uppercase() => c.to_string(),
+        _ => (i + 1).to_string(),
+    }
+}
+
 /// One line of a program: an instruction, and whether it sits in the body of
 /// the `if` or `else` above it (one level: a body can't hold another `if`).
 /// JSON: `{"op": "command", "command": "idle", "count": 1}`, with
@@ -63,7 +72,7 @@ impl Entry {
                     t = format!("{t} {x}");
                 }
                 if let Some(p) = tab {
-                    t = format!("{t} program {}", p + 1);
+                    t = format!("{t} program {}", slot_letter(*p));
                 }
                 match amount {
                     Some(Amount::N(n)) => t = format!("{t} {n}"),

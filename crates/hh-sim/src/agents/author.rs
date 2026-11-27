@@ -115,7 +115,6 @@ pub(crate) const PROJECTS: &[&str] = &[
     "microwave_power",
     "chemical_energy",
     "deep_core_survey",
-    "predictive_maintenance",
     "speculator_dossier",
     "market_cornering",
     "grid_recalibration",

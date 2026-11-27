@@ -178,7 +178,7 @@ fn global_projects_effects_last_as_long_as_their_completion() {
     let r = rules();
     let mut g = revealed(&r);
     g.career.flags.insert(programs::LOGIC_FLAG.into());
-    for q in ["qa_voice", "qdeep_space_telescope", "qblueprints_for_everyone"] {
+    for q in ["qa_voice", "qdeep_space_telescope"] {
         g.career.completed_quests.insert(q.into());
         g.career.seen_events.insert(q.into());
     }
@@ -199,7 +199,7 @@ fn global_projects_effects_last_as_long_as_their_completion() {
     let v = r.view(&g);
     assert!(!v.if_open && !programs::if_unlocked(&g), "if is locked");
     assert!(!g.run.research.contains("basic_blueprints") && !g.run.research.contains("advanced_blueprints"));
-    assert!(g.career.completed_quests.contains("qblueprints_for_everyone"), "1.c stays completed");
+    assert!(g.career.completed_quests.contains("qa_voice"), "quests stay completed");
     assert_eq!(crate::modifiers::modifier(&r, &g, "science_output_mult"), f("1"));
     for id in ["conditional_logic", "blueprint_archive", "deep_space_telescope"] {
         let p = v.projects.iter().find(|p| p.id == id).unwrap();
@@ -363,7 +363,6 @@ fn scope_icons_show_legacy_until_the_reveal_then_eternal() {
     assert_eq!(project(&v, "conditional_logic"), Some("legacy"), "a global project");
     assert!(v.projects.iter().filter(|p| p.scope == "run").all(|p| p.keep.is_none()), "Strategic projects");
     assert_eq!(side(&v, "qbig_launch"), Some("legacy"));
-    assert_eq!(side(&v, "qblueprints_for_everyone"), None, "no reward of its own");
     g.career.flags.insert(timeline::REVEAL_FLAG.into());
     let v = r.view(&g);
     assert_eq!(research(&v, "programming"), Some("eternal"), "after the reveal, Eternal");

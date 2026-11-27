@@ -105,44 +105,42 @@ fn a_repeatable_projects_multiplier_stacks_by_adding() {
 fn projects_drain_at_their_rates_and_complete() {
     let r = rules();
     let mut g = r.new_game(1);
-    g.run.research.insert("dream_protocols".into());
-    let rate = |res: &str, v: &str| Action::SetProjectRate {
-        project: "predictive_maintenance".into(),
-        resource: res.into(),
-        rate: f(v),
-    };
+    g.career.flags.insert("used_disrupt_speculators".into());
+    let id = "speculator_dossier";
+    let rate = |res: &str, v: &str| Action::SetProjectRate { project: id.into(), resource: res.into(), rate: f(v) };
     // The funding cap: science at most 10 a day, credits 30.
     assert!(r.apply(&mut g, &rate("science", "11")).is_err(), "over the most a day");
     r.apply(&mut g, &rate("science", "10")).unwrap();
     r.apply(&mut g, &rate("credits", "30")).unwrap();
     assert!(r.apply(&mut g, &rate("credits", "31")).is_err(), "over the most a day");
+    r.apply(&mut g, &rate("credits", "20")).unwrap();
     set(&mut g, "science", "1000");
     set(&mut g, "credits", "1000");
-    assert_eq!(r.view(&g).projects.iter().find(|p| p.id == "predictive_maintenance").unwrap().days_to_done, Some(8));
+    assert_eq!(r.view(&g).projects.iter().find(|p| p.id == id).unwrap().days_to_done, Some(15));
     r.advance(&mut g, 5);
-    assert!(crate::modules::projects::progress(&g, crate::content::content().project("predictive_maintenance").unwrap())
-        .is_some_and(|m| m.get("credits") == Some(&f("150")) && m.get("science") == Some(&f("50"))));
+    assert!(crate::modules::projects::progress(&g, crate::content::content().project(id).unwrap())
+        .is_some_and(|m| m.get("credits") == Some(&f("100")) && m.get("science") == Some(&f("50"))));
     // Science runs dry: the actual rate is what the stock covered.
     set(&mut g, "science", "0");
     r.advance(&mut g, 1);
-    let pv = |g: &crate::GameState| r.view(g).projects.into_iter().find(|p| p.id == "predictive_maintenance").unwrap();
+    let pv = |g: &crate::GameState| r.view(g).projects.into_iter().find(|p| p.id == id).unwrap();
     assert_eq!(pv(&g).actual_rates.get("science"), Some(&f("0")), "nothing in stock: nothing taken");
     assert_eq!(pv(&g).days_to_done, None, "a cost owed that gets nothing");
     set(&mut g, "science", "1000");
-    r.advance(&mut g, 2);
-    assert!(!crate::modules::projects::completed(&g, "predictive_maintenance"), "science: 70 of 80");
+    r.advance(&mut g, 9);
+    assert!(!crate::modules::projects::completed(&g, id), "science: 140 of 150");
     r.advance(&mut g, 1);
-    assert_eq!(g.run.projects.completions.get("predictive_maintenance"), Some(&1));
+    assert_eq!(g.run.projects.completions.get(id), Some(&1));
     assert!(g.run.project_rates.is_empty(), "done for good: its rates clear");
-    assert_eq!(crate::modifiers::modifier(&r, &g, "building_upkeep_mult"), f("0.9"));
+    assert_eq!(crate::modifiers::modifier(&r, &g, "speculator_burst_interval_mult"), f("1.33"));
     let v = r.view(&g);
-    assert!(v.live_rewards.iter().any(|t| t == "Predictive Maintenance: Building upkeep ×0.9"), "{:?}", v.live_rewards);
+    assert!(v.live_rewards.iter().any(|t| t.starts_with("Speculator Dossier: ")), "{:?}", v.live_rewards);
     // Its popup's line: this run's completion, what it gave and what it cost.
     let done = &v.project_done;
     assert_eq!(done.len(), 1);
-    assert_eq!((done[0].id, done[0].completion, done[0].day), ("predictive_maintenance", 1, g.run.day - 1), "the day it played");
-    assert_eq!((done[0].costs["science"], done[0].costs["credits"]), (f("80"), f("150")));
-    assert_eq!(done[0].reward_text, vec!["Building upkeep ×0.9".to_string()]);
+    assert_eq!((done[0].id, done[0].completion, done[0].day), (id, 1, g.run.day - 1), "the day it played");
+    assert_eq!((done[0].costs["science"], done[0].costs["credits"]), (f("150"), f("100")));
+    assert_eq!(done[0].reward_text.len(), 1);
     // A timeline's end starts the next run 1 afresh: nothing from before it lists.
     g.note("timeline_end", "fell");
     assert!(r.view(&g).project_done.is_empty());
@@ -154,11 +152,11 @@ fn a_repeatable_project_grows_its_costs_and_keeps_its_rates() {
     let r = rules();
     let mut g = r.new_game(1);
     // A repeatable copy of a row, driven through the module directly.
-    let base = crate::content::content().project("predictive_maintenance").unwrap();
+    let base = crate::content::content().project("speculator_dossier").unwrap();
     let p = Project { repeat: Some(Repeat { cost_growth: f("2") }), scope: Scope::Forever, ..base.clone() };
-    assert_eq!(crate::modules::projects::cost(&g, &p, "credits"), f("150"));
+    assert_eq!(crate::modules::projects::cost(&g, &p, "credits"), f("100"));
     g.career.forever_projects.completions.insert(p.id.clone(), 2);
-    assert_eq!(crate::modules::projects::cost(&g, &p, "credits"), f("600"), "150 × 2²");
+    assert_eq!(crate::modules::projects::cost(&g, &p, "credits"), f("400"), "100 × 2²");
     assert_eq!(crate::modules::projects::max_rate(&r, &g, &p, "credits"), f("30"), "the cap, whatever the cost");
     // A deliberate minimum (the telescope's 3,000 days) lowers the cap further.
     let t = crate::content::content().project("deep_space_telescope").unwrap();
@@ -172,10 +170,9 @@ fn locked_projects_show_their_condition_and_rewards() {
     let g = r.new_game(1);
     let v = r.view(&g);
     let find = |id: &str| v.projects.iter().find(|p| p.id == id).unwrap();
-    let pm = find("predictive_maintenance");
-    assert!(!pm.unlocked);
-    assert_eq!(pm.unlock_text, "Research Daydreaming");
-    assert_eq!(pm.days_to_done, None, "no rate set");
+    let sd = find("speculator_dossier");
+    assert!(!sd.unlocked);
+    assert_eq!(sd.days_to_done, None, "no rate set");
     assert_eq!(find("microwave_power").reward_text, vec!["Opens Microwave Receiver".to_string()]);
     assert_eq!(find("microwave_power").unlock_text, "Reach rank 5 on the Nationalist axis (best in the career)");
     assert_eq!(find("speculator_dossier").unlock_text, "Use Disrupt Speculators once");
@@ -190,13 +187,13 @@ fn overclock_cards_say_the_days_a_run_lasts() {
         v.commands.iter().find(|c| c.id == "overclock_mining").unwrap().description.to_string()
     };
     assert!(text(&g).contains("for 5 days."), "{}", text(&g));
-    // The first negative Rationalist rank: 5 × 1.03^-1 is 4 whole days, card and effect.
+    // Rank no longer touches it (ruling 3, 129): a negative Rationalist rank keeps 5 days.
     let mut score = Fx::ZERO;
     while crate::modules::ideology::rank(&r, &g, "rationalist") >= 0 {
         score -= Fx::ONE;
         g.run.ideology.insert("rationalist".into(), score);
     }
     assert_eq!(crate::modules::ideology::rank(&r, &g, "rationalist"), -1);
-    assert!(text(&g).contains("for 4 days."), "{}", text(&g));
-    assert_eq!(crate::modules::programs::overclock_days(&r, &g, 5), 4);
+    assert!(text(&g).contains("for 5 days."), "{}", text(&g));
+    assert_eq!(crate::modules::programs::overclock_days(&r, &g, 5), 5);
 }

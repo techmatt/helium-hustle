@@ -971,7 +971,7 @@ async function pass(seed, width, theme, others = []) {
   /** Run 2's Programs probe (the right column): processors moved, lines edited and dragged,
    * each step shown as the engine has it; then frame probes at 3x and 10x (200x: scenario everything). */
   const programsProbe = async () => {
-    // Programs (the right column, from day 1): move the processor to Program 2, build it a
+    // Programs (the right column, from day 1): move the processor to Program B, build it a
     // two-line program, bump, lower and remove lines; each step must show as the engine has it.
     await click('.prog-tabs button[data-program="0"]', 'program 1 tab');
     await click('[data-testid="proc-minus"]', 'processor off program 1');
@@ -1120,7 +1120,7 @@ async function pass(seed, width, theme, others = []) {
    * played on past it before 082). */
   const transitionDayProbe = async () => {
     const r = await evaluate(`(() => {
-      const ds = [...document.querySelectorAll('[data-testid="events-activity"] li')].map((li) => li.textContent.match(/^Day ([\\d,]+): Quest complete/)).filter(Boolean).map((m) => Number(m[1].replace(/,/g, '')));
+      const ds = [...document.querySelectorAll('[data-testid="events-activity"] li')].filter((li) => /: Quest complete/.test(li.textContent)).map((li) => Number(li.dataset.day));
       return ds.length ? Math.max(...ds) : null;
     })()`);
     const now = await day();

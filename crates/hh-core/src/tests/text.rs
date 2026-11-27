@@ -299,8 +299,9 @@ fn the_written_up_loadouts_read_without_a_red_line() {
     ] {
         let p = parse(&r, &g, text);
         assert!(p.lines.iter().all(|l| l.status != "red"), "{:?}", p.lines);
-        // Already canonical: written back, the same text.
-        assert_eq!(to_text(&p.entries), text);
+        // Written back (slots now by letter: `program B`), it reads to the same lines.
+        let back = to_text(&p.entries);
+        assert_eq!(parse(&r, &g, &back).entries, p.entries, "{back}");
     }
 }
 

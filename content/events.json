@@ -143,20 +143,7 @@
     "condition": {"type": "research_count", "count": 12},
     "unlocks": [{"type": "grant", "resource": "science", "amount": "50"}]
   },
-  {
-    "id": "qblueprints_for_everyone",
-    "category": "side",
-    "beat": "1.c",
-    "silent": false,
-    "title": "1.c — Blueprints for Everyone",
-    "goal": "DRAFT. Complete the Blueprint Archive, a global project.",
-    "reward": "Every run starts with Basic and Advanced Blueprints, and blueprints you've bought before cost 20% less.",
-    "body": "DRAFT. The company's blueprints, archived where a retirement can't reach them.",
-    "picture": "wireframes",
-    "trigger": {"type": "flag", "flag": "a_voice", "beside": "qa_voice"},
-    "condition": {"type": "project_completed", "project": "blueprint_archive"},
-    "unlocks": []
-  },
+  
   {
     "id": "qthree_voices",
     "category": "side",

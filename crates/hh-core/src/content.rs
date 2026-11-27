@@ -112,6 +112,9 @@ pub enum BuildingEffect {
     Store { resource: String, amount: Fx },
     /// Each active one speeds speculator decay (demand config).
     SpeculatorDecay,
+    /// Each working one takes `amount` boredom off each day, times its
+    /// tagged axis's modifier (the Recreation Dome, boredom.md).
+    BoredomRelief { amount: Fx },
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -122,8 +125,13 @@ pub struct Building {
     /// `core`, `storage`, `extraction`, `processing`, `trade`, `science`;
     /// overclocks target `extraction` and `processing`.
     pub category: String,
-    /// The ideology axis whose rank discounts its price, if any.
+    /// The ideology axis it is tagged to, if any: its price is ÷ that axis's
+    /// modifier, and a boredom effect it has is × it (ideology.md).
     pub ideology: Option<String>,
+    /// Each purchase adds this to its tagged axis's score (a boredom tool's
+    /// nudge; absent: none).
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nudge: Option<Fx>,
     pub requires: Requirement,
     pub land: u32,
     pub cost_scaling: Fx,
@@ -163,8 +171,16 @@ pub struct Command {
     pub requires: Requirement,
     pub costs: Amounts,
     pub produces: Amounts,
-    /// Flat boredom added per execution.
+    /// Flat boredom added per execution (negative: relief, × its tagged
+    /// axis's modifier when it has one).
     pub boredom: Fx,
+    /// The ideology axis whose boredom tool it is, if any (Dream, Theorize):
+    /// its relief is × that axis's modifier, and each run nudges the axis.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ideology: Option<String>,
+    /// Score each execution adds to its `ideology` axis.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub nudge: Option<Fx>,
     pub effect: Option<CommandEffect>,
     /// A modifier key scaling both its costs and its production.
     pub scale_modifier: Option<String>,

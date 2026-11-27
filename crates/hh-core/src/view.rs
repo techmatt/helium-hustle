@@ -80,8 +80,10 @@ pub struct BuildingView {
     pub name: Text,
     pub description: Text,
     pub category: Text,
-    /// The ideology axis whose rank discounts it, if any.
+    /// The ideology axis it is tagged to (price ÷ its modifier), if any.
     pub ideology: Option<Text>,
+    /// Its daily boredom relief per working copy now (× its axis's modifier); 0 for none.
+    pub boredom_relief: Fx,
     pub owned: u32,
     pub active: u32,
     /// Active copies whose upkeep the last pass paid: the ones giving effects.
@@ -128,7 +130,11 @@ pub struct CommandView {
     pub visible: bool,
     pub costs: BTreeMap<String, Fx>,
     pub produces: BTreeMap<String, Fx>,
+    /// What one run does to boredom now, signed (negative: it relieves),
+    /// Dream's and a tagged relief at the axis's modifier.
     pub boredom: Fx,
+    /// The axis whose boredom tool it is (its relief × that axis), if any.
+    pub ideology: Option<Text>,
     /// A per-target command folded into one verb (docs/rulings/programs.md, the flat
     /// template): its verb (`Buy`, `Promote`, `Fund`, `Overclock`) and its
     /// target's label (the name past the verb). `None` for the rest.
@@ -198,6 +204,8 @@ pub struct AxisView {
     /// Scores (in size) where this rank and the next start, for a progress bar.
     pub rank_score: Fx,
     pub next_rank_score: Fx,
+    /// The axis's modifier `m` now (tagged buildings cost ÷m, its boredom tool ×m).
+    pub modifier: Fx,
 }
 
 /// A countable condition's progress.
@@ -367,6 +375,13 @@ pub struct BoredomView {
     pub phase: u32,
     /// How many phases there are.
     pub phases: u32,
+    /// Rate multiplier from the yearly escalation after the last phase (1 before it).
+    pub escalation: Fx,
+    /// This run's boredom by source: (flow source, its label, amount). Sources:
+    /// `growth`, `command:<id>`, `building:<id>`, `cap`, the cheat's, and `other`
+    /// for what no source tracked (a cheat's set); signed, summing to `amount`;
+    /// largest first.
+    pub sources: Vec<(String, String, Fx)>,
 }
 
 /// The career at a glance: bests and what the next run starts with.
@@ -533,6 +548,8 @@ pub struct View {
     pub breakdown: Vec<BreakdownView>,
     /// Days in the breakdown's rolling average.
     pub flow_average_days: i64,
+    /// Days in a player-facing year: dates show as years and days.
+    pub days_per_year: i64,
     /// Display names by content id (resources, buildings, commands, research,
     /// projects, achievements, rivals, and events by title). Content only, so
     /// built once.
@@ -560,6 +577,25 @@ fn names() -> &'static BTreeMap<Text, Text> {
     })
 }
 
+/// This run's boredom by source, with `other` for any part no source tracked,
+/// largest magnitude first.
+fn boredom_sources(g: &GameState) -> Vec<(String, String, Fx)> {
+    let mut v: Vec<(String, String, Fx)> = g
+        .run
+        .boredom_sources
+        .iter()
+        .filter(|(_, x)| **x != Fx::ZERO)
+        .map(|(k, x)| (k.clone(), breakdown::source_label(g, k), *x))
+        .collect();
+    let tracked: Fx = v.iter().map(|(_, _, x)| *x).sum();
+    let rest = g.amount(economy::BOREDOM) - tracked;
+    if rest != Fx::ZERO {
+        v.push(("other".to_string(), "Other".to_string(), rest));
+    }
+    v.sort_by(|a, b| b.2.max(-b.2).cmp(&a.2.max(-a.2)).then_with(|| a.0.cmp(&b.0)));
+    v
+}
+
 /// Each ideology axis's score and rank, for the given state (this run or the next run's preview).
 fn axes(r: &Rules, g: &GameState) -> Vec<AxisView> {
     AXES.iter()
@@ -571,6 +607,7 @@ fn axes(r: &Rules, g: &GameState) -> Vec<AxisView> {
                 rank,
                 rank_score: ideology::score_for_rank(r, rank.abs()),
                 next_rank_score: ideology::score_for_rank(r, rank.abs() + 1),
+                modifier: ideology::modifier_at(r, rank),
             }
         })
         .collect()
@@ -659,7 +696,10 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             rate: boredom::rate(r, g),
             phase: boredom::phase(r, g.run.day),
             phases: r.p.boredom.phase_days.len() as u32,
+            escalation: boredom::escalation(r, g.run.day),
+            sources: boredom_sources(g),
         },
+        days_per_year: r.p.economy.days_per_year,
         nav: nav::nav(r, g),
         fast_speeds: g.career.flags.contains(FAST_SPEEDS_FLAG),
         can_retire: career::retire_blocker(g).is_none(),

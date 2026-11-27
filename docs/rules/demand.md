@@ -13,11 +13,10 @@ shows in demand tomorrow.
 ```
 raw    = base_demand + noise(d) − suppression(speculators) − rival_pressure
          − saturation + promote + coupling_fraction × (sum of the other goods' promote)
-demand = clamp(raw × N, min_demand, max(ceiling, min_demand))
+demand = clamp(raw, min_demand, max(ceiling, min_demand))
 ```
 
-`N` is the Nationalist bonus, `bonus_factor ^ nationalist rank` (below 1 for a negative rank;
-[ideology.md](ideology.md)). `ceiling = max_demand × demand_ceiling` modifiers (Market Timer
+`ceiling = max_demand × demand_ceiling` modifiers (Market Timer
 raises it to 1.1).
 
 **Noise.** At each run start, each good draws (stream `demand_noise`, in content order) a
@@ -33,7 +32,7 @@ clamped to −1..1, times `noise_amplitude`. All fixed point; no floats.
 **Daily update**, before demand is set. First each adversary's Attention decays
 ([attention.md](attention.md)); then, for every good:
 
-1. Pool decay: `n −= n × speculator_decay × N + arbitrage_decay_per_engine × E × N`, floored
+1. Pool decay: `n −= n × speculator_decay + arbitrage_decay_per_engine × E`, floored
    at 0, where `E` counts working (active, upkeep paid) buildings with the `speculator_decay` effect (Arbitrage Engine).
 2. `promote −= promote_decay`, `rival_pressure −= rival_decay`, `saturation −=
    saturation_decay`, each floored at 0 (linear fades).

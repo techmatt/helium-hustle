@@ -195,7 +195,6 @@ pub fn ceiling(r: &Rules, g: &GameState) -> Fx {
 /// Sets every good's demand for the day from its forces.
 fn compute(r: &Rules, g: &mut GameState) {
     let p = &r.p.demand;
-    let nat = super::ideology::bonus(r, g, "nationalist");
     let ceil = ceiling(r, g);
     let day = g.run.day;
     let promotes: Vec<(String, Fx)> = g.run.markets.iter().map(|(k, m)| (k.clone(), m.promote)).collect();
@@ -207,7 +206,7 @@ fn compute(r: &Rules, g: &mut GameState) {
             - m.saturation
             + m.promote
             + coupling * p.coupling_fraction;
-        let d = (raw * nat).max(p.min_demand).min(ceil.max(p.min_demand));
+        let d = raw.max(p.min_demand).min(ceil.max(p.min_demand));
         g.run.markets.get_mut(&good).expect("listed").demand = d;
     }
 }
@@ -259,16 +258,15 @@ fn burst_interval(r: &Rules, g: &mut GameState) -> u64 {
 pub fn update(r: &Rules, g: &mut GameState) {
     super::attention::decay_day(r, g);
     let p = &r.p.demand;
-    let nat = super::ideology::bonus(r, g, "nationalist");
     let mut engines = 0i64;
     for b in &content().buildings {
         if b.effects.iter().any(|e| matches!(e, BuildingEffect::SpeculatorDecay)) {
             engines += g.working(&b.id) as i64;
         }
     }
-    let flat = p.arbitrage_decay_per_engine.mul_int(engines) * nat;
+    let flat = p.arbitrage_decay_per_engine.mul_int(engines);
     for m in g.run.markets.values_mut() {
-        let decay = m.speculators * p.speculator_decay * nat + flat;
+        let decay = m.speculators * p.speculator_decay + flat;
         m.speculators = (m.speculators - decay).max(Fx::ZERO);
         m.promote = (m.promote - p.promote_decay).max(Fx::ZERO);
         m.rival_pressure = (m.rival_pressure - p.rival_decay).max(Fx::ZERO);

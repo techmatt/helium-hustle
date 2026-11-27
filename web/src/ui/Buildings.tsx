@@ -4,7 +4,7 @@ import type { BuildingView, View } from '../engine';
 import { capitalize, num } from '../format';
 import { act, actAll, seen, store, type Store } from '../store';
 import { buildingArt } from './cardArt';
-import { CostLine, FlowLines, ResChip, Section, cardButton, freshClass, name, navShown, ranPercent, shortText, useHint } from './common';
+import { AxisMark, CostLine, FlowLines, ResChip, Section, cardButton, freshClass, name, navShown, ranPercent, shortText, useHint } from './common';
 import { Chip } from './icons';
 
 /** `?all-cards` in the URL (the QA checker's): every building's card, revealed or not, so
@@ -184,8 +184,20 @@ export function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: bo
           <div class="effects">
             <FlowLines v={v} amounts={b.produces} sign={1} />
             <FlowLines v={v} amounts={b.upkeep} sign={-1} />
-            <FlowLines v={v} amounts={b.stores} sign={1} suffix=" cap" />
+            {/* A tagged building's boredom store and relief are × its axis: its icon beside them. */}
+            <FlowLines v={v} amounts={b.stores} sign={1} suffix=" cap" axis={(res) => (res === 'boredom' ? b.ideology : null)} />
             <FlowLines v={v} amounts={b.grants} sign={1} suffix="" />
+            {Number(b.boredom_relief) > 0 && (
+              <div class="flow pos" data-testid="boredom-relief">
+                <ResChip v={v} id="boredom" /> −{num(b.boredom_relief, 2)} {name(v, 'boredom')}/day
+                {b.ideology && (
+                  <>
+                    {' '}
+                    <AxisMark v={v} axis={b.ideology} />
+                  </>
+                )}
+              </div>
+            )}
           </div>
           {/* The status row's space is always kept, so a card never jumps as a stall comes and goes. */}
           <div class="card-status" data-card-status title={b.starved ? shortText(v, b.starved) : undefined}>

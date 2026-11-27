@@ -13,7 +13,7 @@ pub static DEF: ModuleDef = ModuleDef {
     id: "dream",
     variants: &[VariantDef {
         name: "flat",
-        params: &[param("relief", K::Fx, Some(("0", "1000000")), "boredom removed per Dream, before the Humanist bonus")],
+        params: &[param("relief", K::Fx, Some(("0", "1000000")), "boredom removed per Dream, before the Humanist modifier")],
         rng: &[],
     }],
 };
@@ -29,9 +29,9 @@ impl Params {
     }
 }
 
-/// Boredom removed by one Dream now: `relief × bonus ^ humanist rank`.
+/// Boredom removed by one Dream now: `relief × m`, the Humanist modifier.
 pub fn relief(r: &Rules, g: &GameState) -> Fx {
-    r.p.dream.relief * super::ideology::bonus(r, g, "humanist")
+    r.p.dream.relief * super::ideology::modifier(r, g, "humanist")
 }
 
 /// Flat Dream: boredom falls by [`relief`], not below zero.
@@ -39,5 +39,5 @@ pub fn dream(r: &Rules, g: &mut GameState) {
     let was = g.amount(BOREDOM);
     let v = (was - relief(r, g)).max(Fx::ZERO);
     g.run.resources.insert(BOREDOM.to_string(), v);
-    g.track("dream", BOREDOM, Fx::ZERO, was - v);
+    g.track("command:dream", BOREDOM, Fx::ZERO, was - v);
 }

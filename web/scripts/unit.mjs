@@ -2,7 +2,8 @@
 //   node scripts/unit.mjs   (npm run unit)
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
-import { commandTip, delta, fillRate, num, perDay } from '../src/format.ts';
+import { boredomText, commandTip, dateText, delta, fillRate, num, perDay, slotLetter } from '../src/format.ts';
+import { inPanelOrder, panelEntries } from '../src/ui/resourceOrder.ts';
 import { navSlots } from '../src/ui/navSlots.ts';
 import { offeredSpeed, speedsOffered } from '../src/speeds.ts';
 import { clearTold, newTold, tellPages } from '../src/story.ts';
@@ -42,12 +43,39 @@ assert.equal(fillRate('Current rate: {rate}.', '0.199'), 'Current rate: +0.2/day
 assert.equal(fillRate('No {rate} here.', null), 'No {rate} here.');
 // A command's tooltip: costs, produces, boredom, one per line; each run, then the repeat count's totals.
 {
-  const names = { energy: 'Energy', credits: 'Credits', boredom: 'Boredom' };
+  const names = { energy: 'Energy', credits: 'Credits', boredom: 'Boredom', helium: 'Helium', regolith: 'Regolith' };
+  const v = { names, resources: [{ id: 'regolith' }, { id: 'helium' }, { id: 'boredom' }, { id: 'credits' }, { id: 'energy' }] };
   const c = { costs: { energy: '2' }, produces: { credits: '5' }, boredom: '0.1' };
-  assert.equal(commandTip(c, names), 'Each run:\n−2 Energy\n+5 Credits\n+0.1 Boredom');
-  assert.equal(commandTip(c, names, 3), 'Each run:\n−2 Energy\n+5 Credits\n+0.1 Boredom\n\n3 runs:\n−6 Energy\n+15 Credits\n+0.3 Boredom');
-  assert.equal(commandTip({ costs: {}, produces: {}, boredom: '0' }, names, 4), '');
+  assert.equal(commandTip(c, v), 'Each run:\n−2 Energy\n+5 Credits\n+0.1 Boredom');
+  assert.equal(commandTip(c, v, 3), 'Each run:\n−2 Energy\n+5 Credits\n+0.1 Boredom\n\n3 runs:\n−6 Energy\n+15 Credits\n+0.3 Boredom');
+  assert.equal(commandTip({ costs: {}, produces: {}, boredom: '0' }, v, 4), '');
+  // A reducer (Dream) states what it removes; a command with no boredom says nothing of it.
+  const dream = { costs: { energy: '1' }, produces: {}, boredom: '-2.2' };
+  assert.equal(commandTip(dream, v, 2), 'Each run:\n−1 Energy\n−2.2 Boredom\n\n2 runs:\n−2 Energy\n−4.4 Boredom');
+  assert.equal(commandTip({ costs: { energy: '1' }, produces: {}, boredom: '0' }, v), 'Each run:\n−1 Energy');
+  // Each list in the Resources panel's order: its first group, then the engine's.
+  const mixed = { costs: { helium: '1', regolith: '1', credits: '1' }, produces: {}, boredom: '0' };
+  assert.equal(commandTip(mixed, v), 'Each run:\n−1 Credits\n−1 Regolith\n−1 Helium');
 }
+// The Resources panel's order: energy, credits, land, boredom, processors, then the engine's
+// order; an id not a resource last, as given.
+{
+  const res = [{ id: 'helium' }, { id: 'land' }, { id: 'energy' }, { id: 'regolith' }];
+  assert.deepEqual(
+    inPanelOrder(res, ['zz', 'regolith', 'land', 'helium', 'credits', 'energy'], (x) => x),
+    ['energy', 'credits', 'land', 'helium', 'regolith', 'zz'],
+  );
+  assert.deepEqual(panelEntries(res, { regolith: 1, land: 2 }), [['land', 2], ['regolith', 1]]);
+}
+// Dates: stored as days from 0, shown as 365-day years.
+assert.equal(dateText(0, 365), 'Year 1, day 1');
+assert.equal(dateText(364, 365), 'Year 1, day 365');
+assert.equal(dateText(365, 365), 'Year 2, day 1');
+assert.equal(dateText(3 * 365 + 111, 365), 'Year 4, day 112');
+assert.equal(boredomText('0'), '');
+assert.equal(boredomText('-10'), '−10');
+// Program slots are lettered: A for the first.
+assert.deepEqual([0, 1, 4].map(slotLetter), ['A', 'B', 'E']);
 // The retirement summary's deltas round to the row's precision first: boredom growth moving
 // by 0.001 (×0.98 to ×0.979) shows no delta; credits round to whole numbers.
 assert.equal(delta('0.979', '0.98', 2), null);
@@ -152,13 +180,13 @@ edits += 8;
 const pictures = JSON.parse(readFileSync(new URL('../../content/events.json', import.meta.url), 'utf8')).filter((e) => e.picture);
 const pictureFiles = new Set(readdirSync(new URL('../src/assets/quests/', import.meta.url)).filter((f) => f.endsWith('.webp')).map((f) => f.slice(0, -5)));
 for (const e of pictures) assert.ok(pictureFiles.has(e.picture), `${e.id}: picture ${e.picture} has no src/assets/quests/${e.picture}.webp`);
-// Every Act 1 quest (1.1-1.6: the chain before Act 2's opener, numbered by the engine; 1.a-1.d)
-// carries one.
+// Every Act 1 quest (1.1-1.6: the chain before Act 2's opener, numbered by the engine; the
+// side quests 1.a, 1.b and 1.d: 1.c, Blueprints for Everyone, went in 129) carries one.
 const events = JSON.parse(readFileSync(new URL('../../content/events.json', import.meta.url), 'utf8'));
 const act2 = JSON.parse(readFileSync(new URL('../../content/acts.json', import.meta.url), 'utf8')).find((a) => a.act === 2).opens_with;
 const chain = events.filter((e) => e.category === 'story');
 const act1 = [...chain.slice(0, chain.findIndex((e) => e.id === act2)), ...events.filter((e) => /^1\./.test(e.beat ?? ''))];
-assert.equal(act1.length, 10, 'Act 1 has 10 quests');
+assert.equal(act1.length, 9, 'Act 1 has 9 quests');
 for (const e of act1) assert.ok(e.picture, `${e.beat ?? e.title} ${e.id} carries a picture`);
 
 // The nav grid's tiles (Matt, 2026-11-26): the open ones packed in content order, no blank

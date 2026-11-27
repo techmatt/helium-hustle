@@ -7,6 +7,7 @@ import type { ProjectView, View } from '../engine';
 import { num } from '../format';
 import { act, justMoved, seen, store, type Store } from '../store';
 import { Bar, ResChip, Section, freshClass, name, numBelow, useHideCompleted } from './common';
+import { panelEntries } from './resourceOrder';
 import { projectArt } from './cardArt';
 import { ScopeIcon } from './icons';
 
@@ -159,7 +160,7 @@ export function Project({ v, p, fresh }: { v: View; p: ProjectView; fresh: Set<s
         </div>
       </div>
       {p.unlocked &&
-        Object.entries(p.costs).map(([res, cost]) => {
+        panelEntries(v.resources, p.costs).map(([res, cost]) => {
           const got = p.progress[res] ?? '0';
           const rate = p.rates[res] ?? '0';
           const max = p.max_rates[res] ?? '0';

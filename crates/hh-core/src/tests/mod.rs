@@ -6,6 +6,7 @@
 //! renaming one.
 
 mod attention;
+mod boredom;
 mod cheats;
 mod config;
 mod economy;
@@ -86,10 +87,10 @@ pub(crate) fn outcomes(g: &crate::GameState) -> Vec<Option<crate::state::LineOut
 // The golden constants: update all four together on a `RULES_REVISION` bump
 // with `python scripts/set_golden.py` (it also sets `GOLDEN_*` in
 // scripts/wasm-smoke.mjs); never type them (README, *Rules changes*).
-const GOLDEN_REVISION: u32 = 43;
-const GOLDEN_FINGERPRINT: &str = "e2e48fc08ede4792";
-const GOLDEN_CONTENT_HASH: &str = "cd95a0921bdc413e";
-const GOLDEN_CONFIG_HASH: &str = "ff44e1165d831ee2";
+const GOLDEN_REVISION: u32 = 44;
+const GOLDEN_FINGERPRINT: &str = "46af725014d6467d";
+const GOLDEN_CONTENT_HASH: &str = "28980d8477deadb9";
+const GOLDEN_CONFIG_HASH: &str = "9f8941a877036d55";
 
 pub(crate) fn golden_session() -> Session {
     crate::driver::golden_session(&baseline()).unwrap()

@@ -49,7 +49,14 @@ pub(super) fn buildings(r: &Rules, g: &GameState) -> Vec<BuildingView> {
                 b.effects
                     .iter()
                     .filter_map(|e| match e {
-                        BuildingEffect::Store { resource, amount } if !grant => Some((resource.as_str(), *amount)),
+                        BuildingEffect::Store { resource, amount } if !grant => {
+                            // Boredom stores scale with the tagged axis (the Dome's cap).
+                            let m = match (&b.ideology, resource.as_str()) {
+                                (Some(a), economy::BOREDOM) => ideology::modifier(r, g, a),
+                                _ => Fx::ONE,
+                            };
+                            Some((resource.as_str(), *amount * m))
+                        }
                         BuildingEffect::Grant { resource, amount } if grant => Some((resource.as_str(), *amount)),
                         _ => None,
                     })
@@ -61,6 +68,7 @@ pub(super) fn buildings(r: &Rules, g: &GameState) -> Vec<BuildingView> {
                 description: &b.description,
                 category: &b.category,
                 ideology: b.ideology.as_deref(),
+                boredom_relief: boredom::building_relief(r, g, b),
                 owned: h.owned,
                 active: h.active,
                 working: g.working(&b.id),
