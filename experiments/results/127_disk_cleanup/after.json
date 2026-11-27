@@ -1,0 +1,823 @@
+{
+ "main total": {
+  "bytes": 912859445,
+  "files": 3493,
+  "links": []
+ },
+ "main/.cargo": {
+  "bytes": 721,
+  "files": 1,
+  "links": []
+ },
+ "main/.git": {
+  "bytes": 70737543,
+  "files": 36,
+  "links": []
+ },
+ "main/.gitattributes": {
+  "bytes": 86,
+  "files": 1,
+  "links": []
+ },
+ "main/.gitignore": {
+  "bytes": 294,
+  "files": 1,
+  "links": []
+ },
+ "main/CLAUDE.md": {
+  "bytes": 8622,
+  "files": 1,
+  "links": []
+ },
+ "main/Cargo.lock": {
+  "bytes": 7597,
+  "files": 1,
+  "links": []
+ },
+ "main/Cargo.toml": {
+  "bytes": 1051,
+  "files": 1,
+  "links": []
+ },
+ "main/LICENSE": {
+  "bytes": 1089,
+  "files": 1,
+  "links": []
+ },
+ "main/README.md": {
+  "bytes": 13655,
+  "files": 1,
+  "links": []
+ },
+ "main/art": {
+  "bytes": 495946271,
+  "files": 502,
+  "links": []
+ },
+ "main/configs": {
+  "bytes": 12278,
+  "files": 4,
+  "links": []
+ },
+ "main/content": {
+  "bytes": 95481,
+  "files": 13,
+  "links": []
+ },
+ "main/crates": {
+  "bytes": 1070726,
+  "files": 103,
+  "links": []
+ },
+ "main/docs": {
+  "bytes": 270719,
+  "files": 33,
+  "links": []
+ },
+ "main/experiments": {
+  "bytes": 69586274,
+  "files": 555,
+  "links": []
+ },
+ "main/reference": {
+  "bytes": 144368,
+  "files": 21,
+  "links": []
+ },
+ "main/scenarios": {
+  "bytes": 7208,
+  "files": 8,
+  "links": []
+ },
+ "main/scripts": {
+  "bytes": 43081,
+  "files": 9,
+  "links": []
+ },
+ "main/target": {
+  "bytes": 192894811,
+  "files": 414,
+  "links": []
+ },
+ "main/web": {
+  "bytes": 82017570,
+  "files": 1787,
+  "links": []
+ },
+ "main/web/node_modules": {
+  "bytes": 76347726,
+  "files": 1621,
+  "links": []
+ },
+ "main/web/src/wasm": {
+  "bytes": 2934025,
+  "files": 5,
+  "links": []
+ },
+ "main/web/dist": null,
+ "main/web/test-results": null,
+ "main/web/playwright-report": null,
+ "main/crates/hh-wasm/pkg": null,
+ "main/out": null,
+ "main/art/buildings": {
+  "bytes": 78216528,
+  "files": 96,
+  "links": []
+ },
+ "main/art/buildings/r2": {
+  "bytes": 48796918,
+  "files": 67,
+  "links": []
+ },
+ "main/art/buildings/set": {
+  "bytes": 29419610,
+  "files": 29,
+  "links": []
+ },
+ "main/art/icons": {
+  "bytes": 39270,
+  "files": 56,
+  "links": []
+ },
+ "main/art/icons/r1": {
+  "bytes": 39270,
+  "files": 56,
+  "links": []
+ },
+ "main/art/ideology_emblems_r1": {
+  "bytes": 39850664,
+  "files": 16,
+  "links": []
+ },
+ "main/art/ideology_emblems_r1/raw": {
+  "bytes": 39850664,
+  "files": 16,
+  "links": []
+ },
+ "main/art/nav_horizon": {
+  "bytes": 27011573,
+  "files": 38,
+  "links": []
+ },
+ "main/art/nav_horizon/horizon": {
+  "bytes": 1281300,
+  "files": 5,
+  "links": []
+ },
+ "main/art/nav_horizon/icons": {
+  "bytes": 1145892,
+  "files": 16,
+  "links": []
+ },
+ "main/art/nav_horizon/raw": {
+  "bytes": 24584381,
+  "files": 17,
+  "links": []
+ },
+ "main/art/pickers": {
+  "bytes": 0,
+  "files": 0,
+  "links": []
+ },
+ "main/art/projects_r1": {
+  "bytes": 102552427,
+  "files": 136,
+  "links": []
+ },
+ "main/art/projects_r1/raw": {
+  "bytes": 82722156,
+  "files": 46,
+  "links": []
+ },
+ "main/art/quest_act1_r1": {
+  "bytes": 136270776,
+  "files": 54,
+  "links": []
+ },
+ "main/art/quest_act1_r1/raw": {
+  "bytes": 136270776,
+  "files": 54,
+  "links": []
+ },
+ "main/art/research_glyphs": {
+  "bytes": 174576,
+  "files": 4,
+  "links": []
+ },
+ "main/art/small_icons": {
+  "bytes": 7123612,
+  "files": 10,
+  "links": []
+ },
+ "main/art/small_icons/horizon": {
+  "bytes": 1124913,
+  "files": 5,
+  "links": []
+ },
+ "main/art/small_icons/raw": {
+  "bytes": 5998699,
+  "files": 5,
+  "links": []
+ },
+ "main/art/story_title": {
+  "bytes": 57436860,
+  "files": 39,
+  "links": []
+ },
+ "main/art/story_title/header": {
+  "bytes": 26099193,
+  "files": 16,
+  "links": []
+ },
+ "main/art/story_title/raw": {
+  "bytes": 27436651,
+  "files": 18,
+  "links": []
+ },
+ "main/art/story_title/title": {
+  "bytes": 3901016,
+  "files": 5,
+  "links": []
+ },
+ "main/art/story_title_r2": {
+  "bytes": 47269985,
+  "files": 53,
+  "links": []
+ },
+ "main/art/story_title_r2/raw": {
+  "bytes": 43717739,
+  "files": 25,
+  "links": []
+ },
+ "main/art/story_title_r2/web": {
+  "bytes": 3552246,
+  "files": 28,
+  "links": []
+ },
+ "main/target/release": {
+  "bytes": 81402968,
+  "files": 202,
+  "links": []
+ },
+ "main/target/wasm32-unknown-unknown": {
+  "bytes": 111489058,
+  "files": 210,
+  "links": []
+ },
+ "main/experiments/results/004_rules_revision1": {
+  "bytes": 9863,
+  "files": 2,
+  "links": []
+ },
+ "main/experiments/results/005_simulator_v0": {
+  "bytes": 45983,
+  "files": 3,
+  "links": []
+ },
+ "main/experiments/results/006_playable_ui": {
+  "bytes": 6138,
+  "files": 1,
+  "links": []
+ },
+ "main/experiments/results/007_bug_hunt": {
+  "bytes": 2639,
+  "files": 1,
+  "links": []
+ },
+ "main/experiments/results/008_sim_players_vs_human": {
+  "bytes": 12831,
+  "files": 2,
+  "links": []
+ },
+ "main/experiments/results/009_cleanup": {
+  "bytes": 2651,
+  "files": 1,
+  "links": []
+ },
+ "main/experiments/results/010_program_order_bug": {
+  "bytes": 1820,
+  "files": 1,
+  "links": []
+ },
+ "main/experiments/results/011_oracle_planner": {
+  "bytes": 35508,
+  "files": 4,
+  "links": []
+ },
+ "main/experiments/results/015_click_to_buy": {
+  "bytes": 7786,
+  "files": 1,
+  "links": []
+ },
+ "main/experiments/results/016_earthrise_theme": {
+  "bytes": 623162,
+  "files": 4,
+  "links": []
+ },
+ "main/experiments/results/017_icon_style_picker": {
+  "bytes": 18676,
+  "files": 3,
+  "links": []
+ },
+ "main/experiments/results/018_building_art_round": {
+  "bytes": 38476,
+  "files": 8,
+  "links": []
+ },
+ "main/experiments/results/019_painterly_iso_round": {
+  "bytes": 38961,
+  "files": 8,
+  "links": []
+ },
+ "main/experiments/results/020_building_card_art": {
+  "bytes": 29688,
+  "files": 6,
+  "links": []
+ },
+ "main/experiments/results/023_ui_readability": {
+  "bytes": 566558,
+  "files": 5,
+  "links": []
+ },
+ "main/experiments/results/024_parked_ui": {
+  "bytes": 1259388,
+  "files": 7,
+  "links": []
+ },
+ "main/experiments/results/025_nav_horizon_art_r1": {
+  "bytes": 39835,
+  "files": 7,
+  "links": []
+ },
+ "main/experiments/results/026_icon_art_r1": {
+  "bytes": 52520,
+  "files": 8,
+  "links": []
+ },
+ "main/experiments/results/027_art_in_game": {
+  "bytes": 2424987,
+  "files": 43,
+  "links": []
+ },
+ "main/experiments/results/029_energy_priority_breakdown": {
+  "bytes": 8626437,
+  "files": 28,
+  "links": []
+ },
+ "main/experiments/results/030_bug_hunt": {
+  "bytes": 2530,
+  "files": 1,
+  "links": []
+ },
+ "main/experiments/results/031_program_conditions_and_build": {
+  "bytes": 9045,
+  "files": 3,
+  "links": []
+ },
+ "main/experiments/results/034_disk_cleanup": {
+  "bytes": 11222,
+  "files": 5,
+  "links": []
+ },
+ "main/experiments/results/035_program_loadouts_and_rate": {
+  "bytes": 4803,
+  "files": 2,
+  "links": []
+ },
+ "main/experiments/results/036_condition_programs_and_hands_off": {
+  "bytes": 7892,
+  "files": 3,
+  "links": []
+ },
+ "main/experiments/results/037_parameterized_instructions": {
+  "bytes": 3454,
+  "files": 1,
+  "links": []
+ },
+ "main/experiments/results/038_every_line_costs_a_step": {
+  "bytes": 18815,
+  "files": 4,
+  "links": []
+ },
+ "main/experiments/results/039_days_since_purchase_and_fund_project": {
+  "bytes": 16518,
+  "files": 4,
+  "links": []
+ },
+ "main/experiments/results/041_debug_accelerators": {
+  "bytes": 8631,
+  "files": 3,
+  "links": []
+ },
+ "main/experiments/results/042_draft_whole_arc": {
+  "bytes": 1043645,
+  "files": 8,
+  "links": []
+ },
+ "main/experiments/results/043_author_over_cap_targets": {
+  "bytes": 3541,
+  "files": 1,
+  "links": []
+ },
+ "main/experiments/results/046_projects_fixes": {
+  "bytes": 2985,
+  "files": 1,
+  "links": []
+ },
+ "main/experiments/results/049_act1_alignment": {
+  "bytes": 2097,
+  "files": 1,
+  "links": []
+ },
+ "main/experiments/results/050_cortex_ui_mock": {
+  "bytes": 558125,
+  "files": 4,
+  "links": []
+ },
+ "main/experiments/results/051_cortex_radial_takeover": {
+  "bytes": 731876,
+  "files": 4,
+  "links": []
+ },
+ "main/experiments/results/052_cortex_polish": {
+  "bytes": 3121033,
+  "files": 6,
+  "links": []
+ },
+ "main/experiments/results/053_cortex_contrast_light": {
+  "bytes": 1706597,
+  "files": 8,
+  "links": []
+ },
+ "main/experiments/results/054_cortex_theorem_column": {
+  "bytes": 1239111,
+  "files": 6,
+  "links": []
+ },
+ "main/experiments/results/055_cortex_frames": {
+  "bytes": 3302369,
+  "files": 8,
+  "links": []
+ },
+ "main/experiments/results/056_cortex_one_grammar": {
+  "bytes": 3798899,
+  "files": 9,
+  "links": []
+ },
+ "main/experiments/results/057_cortex_skip_theorems": {
+  "bytes": 2450492,
+  "files": 6,
+  "links": []
+ },
+ "main/experiments/results/059_program_simplify": {
+  "bytes": 2495,
+  "files": 1,
+  "links": []
+ },
+ "main/experiments/results/060_loadout_exploration": {
+  "bytes": 45822,
+  "files": 14,
+  "links": []
+ },
+ "main/experiments/results/061_handsoff_redefine": {
+  "bytes": 3875,
+  "files": 2,
+  "links": []
+ },
+ "main/experiments/results/062_readings_round2": {
+  "bytes": 5644,
+  "files": 2,
+  "links": []
+ },
+ "main/experiments/results/063_program_text_editor": {
+  "bytes": 1031990,
+  "files": 9,
+  "links": []
+ },
+ "main/experiments/results/064_general_cleanup": {
+  "bytes": 2281,
+  "files": 1,
+  "links": []
+ },
+ "main/experiments/results/065_sim_players_step_cost": {
+  "bytes": 8129,
+  "files": 2,
+  "links": []
+ },
+ "main/experiments/results/066_bug_hunt": {
+  "bytes": 424922,
+  "files": 4,
+  "links": []
+ },
+ "main/experiments/results/067_program_else": {
+  "bytes": 215834,
+  "files": 2,
+  "links": []
+ },
+ "main/experiments/results/068_bug_hunt_030_deferrals": {
+  "bytes": 428738,
+  "files": 3,
+  "links": []
+ },
+ "main/experiments/results/069_no_cargo_pads": {
+  "bytes": 190117,
+  "files": 2,
+  "links": []
+ },
+ "main/experiments/results/070_instruction_panel_and_comparison_symbols": {
+  "bytes": 395994,
+  "files": 3,
+  "links": []
+ },
+ "main/experiments/results/071_programs_view": {
+  "bytes": 569277,
+  "files": 4,
+  "links": []
+ },
+ "main/experiments/results/072_cheats_and_panel_tidy": {
+  "bytes": 642495,
+  "files": 5,
+  "links": []
+ },
+ "main/experiments/results/073_programs_view_text_and_number_box": {
+  "bytes": 285889,
+  "files": 2,
+  "links": []
+ },
+ "main/experiments/results/074_act1_opening_and_story_modals": {
+  "bytes": 772258,
+  "files": 6,
+  "links": []
+ },
+ "main/experiments/results/075_story_view_and_achievements_tile": {
+  "bytes": 1712347,
+  "files": 8,
+  "links": []
+ },
+ "main/experiments/results/076_story_header_and_title_art_r1": {
+  "bytes": 36149,
+  "files": 8,
+  "links": []
+ },
+ "main/experiments/results/077_story_title_art_r2": {
+  "bytes": 4766461,
+  "files": 16,
+  "links": []
+ },
+ "main/experiments/results/078_ship_story_headers_title_and_picture_slots": {
+  "bytes": 2263167,
+  "files": 19,
+  "links": []
+ },
+ "main/experiments/results/079_quest_pictures_act1_r1": {
+  "bytes": 36228,
+  "files": 7,
+  "links": []
+ },
+ "main/experiments/results/080_ship_act1_quest_pictures": {
+  "bytes": 2895448,
+  "files": 21,
+  "links": []
+ },
+ "main/experiments/results/082_bug_hunt": {
+  "bytes": 670485,
+  "files": 4,
+  "links": []
+ },
+ "main/experiments/results/083_cleanup": {
+  "bytes": 5082,
+  "files": 1,
+  "links": []
+ },
+ "main/experiments/results/084_timeline_scoped_project_effects": {
+  "bytes": 380178,
+  "files": 4,
+  "links": []
+ },
+ "main/experiments/results/085_swarm_clock_and_retirement_gap": {
+  "bytes": 685128,
+  "files": 6,
+  "links": []
+ },
+ "main/experiments/results/086_swarm_clock_after_discovery": {
+  "bytes": 286099,
+  "files": 5,
+  "links": []
+ },
+ "main/experiments/results/089_programming_unlock": {
+  "bytes": 203806,
+  "files": 4,
+  "links": []
+ },
+ "main/experiments/results/090_bug_hunt": {
+  "bytes": 419527,
+  "files": 5,
+  "links": []
+ },
+ "main/experiments/results/091_programming_unlocks_editor_only": {
+  "bytes": 223977,
+  "files": 2,
+  "links": []
+ },
+ "main/experiments/results/092_test_cleanup": {
+  "bytes": 4788,
+  "files": 1,
+  "links": []
+ },
+ "main/experiments/results/094_profiling_pass": {
+  "bytes": 12962,
+  "files": 3,
+  "links": []
+ },
+ "main/experiments/results/096_ui_playtest_fixes": {
+  "bytes": 2408393,
+  "files": 9,
+  "links": []
+ },
+ "main/experiments/results/099_scope_icons": {
+  "bytes": 1148549,
+  "files": 7,
+  "links": []
+ },
+ "main/experiments/results/100_wire_project_art_and_research_glyphs": {
+  "bytes": 1209491,
+  "files": 14,
+  "links": []
+ },
+ "main/experiments/results/104_ui_polish_parked_edits": {
+  "bytes": 1223731,
+  "files": 8,
+  "links": []
+ },
+ "main/experiments/results/105_quest_mechanics_text": {
+  "bytes": 569991,
+  "files": 4,
+  "links": []
+ },
+ "main/experiments/results/107_parked_ui_edits_2": {
+  "bytes": 369889,
+  "files": 1,
+  "links": []
+ },
+ "main/experiments/results/108_mechanics_style_and_story_cards": {
+  "bytes": 2012535,
+  "files": 7,
+  "links": []
+ },
+ "main/experiments/results/109_nav_single_layout": {
+  "bytes": 532505,
+  "files": 6,
+  "links": []
+ },
+ "main/experiments/results/111_act1_unlock_trim_and_run_simulations": {
+  "bytes": 351353,
+  "files": 4,
+  "links": []
+ },
+ "main/experiments/results/112_right_panel_events_and_popups": {
+  "bytes": 2227640,
+  "files": 11,
+  "links": []
+ },
+ "main/experiments/results/113_handsoff_loadout_research": {
+  "bytes": 13943,
+  "files": 10,
+  "links": []
+ },
+ "main/experiments/results/114_a_voice_projects_and_program_lights": {
+  "bytes": 374069,
+  "files": 5,
+  "links": []
+ },
+ "main/experiments/results/116_parked_batch_projects_panel_adversaries": {
+  "bytes": 1197376,
+  "files": 8,
+  "links": []
+ },
+ "main/experiments/results/117_parked_batch_research_reveal_ideologies": {
+  "bytes": 296939,
+  "files": 9,
+  "links": []
+ },
+ "main/experiments/results/118_ideology_emblems_r1": {
+  "bytes": 24677,
+  "files": 6,
+  "links": []
+ },
+ "main/experiments/results/119_no_partial_purchases": {
+  "bytes": 909973,
+  "files": 7,
+  "links": []
+ },
+ "main/experiments/results/121_author_agent_small_grid_fix": {
+  "bytes": 5116,
+  "files": 2,
+  "links": []
+ },
+ "main/experiments/results/122_bug_hunt": {
+  "bytes": 638931,
+  "files": 10,
+  "links": []
+ },
+ "main/experiments/results/124_parked_batch_cards_nav_project_popups": {
+  "bytes": 2552008,
+  "files": 16,
+  "links": []
+ },
+ "main/experiments/results/126_test_cleanup": {
+  "bytes": 2255,
+  "files": 1,
+  "links": []
+ },
+ "drive total": {
+  "bytes": 285026531,
+  "files": 840,
+  "links": []
+ },
+ "drive/archive": {
+  "bytes": 217321563,
+  "files": 598,
+  "links": []
+ },
+ "drive/archive/art": {
+  "bytes": 217321563,
+  "files": 598,
+  "links": []
+ },
+ "drive/archive/art/buildings": {
+  "bytes": 91842139,
+  "files": 88,
+  "links": []
+ },
+ "drive/archive/art/nav_horizon": {
+  "bytes": 11264318,
+  "files": 5,
+  "links": []
+ },
+ "drive/archive/art/pickers": {
+  "bytes": 98475987,
+  "files": 497,
+  "links": []
+ },
+ "drive/archive/art/projects_r1": {
+  "bytes": 1904034,
+  "files": 1,
+  "links": []
+ },
+ "drive/archive/art/quest_act1_r1": {
+  "bytes": 2156744,
+  "files": 1,
+  "links": []
+ },
+ "drive/archive/art/small_icons": {
+  "bytes": 1878201,
+  "files": 1,
+  "links": []
+ },
+ "drive/archive/art/story_title": {
+  "bytes": 9800140,
+  "files": 5,
+  "links": []
+ },
+ "drive/playlogs": {
+  "bytes": 985599,
+  "files": 38,
+  "links": []
+ },
+ "drive/screenshots": {
+  "bytes": 66719369,
+  "files": 204,
+  "links": []
+ },
+ "worktrees total": {
+  "bytes": 74022962,
+  "files": 920,
+  "links": [
+   "C:\\Code\\helium-hustle-worktrees\\helium-hustle\\127_disk_cleanup\\art"
+  ]
+ },
+ "worktrees/127_disk_cleanup": {
+  "bytes": 74022962,
+  "files": 920,
+  "links": [
+   "C:\\Code\\helium-hustle-worktrees\\helium-hustle\\127_disk_cleanup\\art"
+  ]
+ },
+ "worktrees/127_disk_cleanup/target": null,
+ "worktrees/127_disk_cleanup/web/node_modules": null,
+ "worktrees/127_disk_cleanup/out": {
+  "bytes": 18002,
+  "files": 2,
+  "links": []
+ },
+ "worktrees/127_disk_cleanup/.git": {
+  "bytes": 62,
+  "files": 1,
+  "links": []
+ },
+ "control total": {
+  "bytes": 100215594,
+  "files": 2958,
+  "links": []
+ }
+}

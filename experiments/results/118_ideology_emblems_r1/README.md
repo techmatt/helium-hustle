@@ -1,5 +1,7 @@
 # 118: ideology emblems, round 1
 
+> Archived (127): `art/pickers/ideology_emblems_r1/` now lives at `C:\Code\gdrive-sync\helium-hustle\archive\art\pickers\`.
+
 Picker `ideology_emblems_r1` (`art/pickers/ideology_emblems_r1/manifest.json`, in the shared,
 uncommitted `art/` folder): one row per axis (Nationalist, Humanist, Rationalist), five
 captioned candidates each, nothing selected. Nothing goes into the game here; a later item

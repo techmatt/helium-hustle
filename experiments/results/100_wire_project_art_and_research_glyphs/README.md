@@ -1,5 +1,7 @@
 # 100: project card art and research chips in the game
 
+> Archived (127): `art/pickers/project_art_r1/` and `art/pickers/research_glyphs_r1/` now live at `C:\Code\gdrive-sync\helium-hustle\archive\art\pickers\`.
+
 Ships Matt's picks from pickers `project_art_r1` (one picture per project, all 15) and
 `research_glyphs_r1` (category chip colors, one glyph per research item, all 17).
 

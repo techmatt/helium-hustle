@@ -1,5 +1,7 @@
 # 077: Story header compositions and the title, round 2
 
+> Archived (127): `art/pickers/story_title_art_r2/` now lives at `C:\Code\gdrive-sync\helium-hustle\archive\art\pickers\`.
+
 Picker `story_title_art_r2` (`art/pickers/story_title_art_r2/manifest.json`, the shared,
 uncommitted `art/` folder): 7 rows, 57 images. Nothing goes into the game here; a later item
 ships the picks. The whole-window pages are also in `shots/` (JPEG) and the shared

@@ -1,5 +1,7 @@
 # 079: Act 1 quest pictures, round 1
 
+> Archived (127): `art/pickers/quest_pictures_act1_r1/` now lives at `C:\Code\gdrive-sync\helium-hustle\archive\art\pickers\`.
+
 Picker `quest_pictures_act1_r1` (`art/pickers/quest_pictures_act1_r1/manifest.json`, in the
 shared, uncommitted `art/` folder): 14 `many` rows, one per Act 1 quest (1.1-1.11, then the
 side quests 1.a-1.c), 49 captioned candidates. Nothing goes into the game here; a later item

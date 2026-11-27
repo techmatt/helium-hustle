@@ -1,5 +1,7 @@
 # 076: act chapter headers and the title, candidates
 
+> Archived (127): `art/pickers/story_title_art_r1/` now lives at `C:\Code\gdrive-sync\helium-hustle\archive\art\pickers\`.
+
 Picker `story_title_art_r1` (`art/pickers/story_title_art_r1/manifest.json`, the shared,
 uncommitted `art/` folder). Nothing goes into the game here; a later item ships the picks.
 

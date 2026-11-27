@@ -1,0 +1,9 @@
+C:\Users\techm\.cargo\registry                                    668.0 MB  (1 s)
+C:\Users\techm\.cargo\git                                           0.0 MB  (0 s)
+C:\Users\techm\.cargo\bin                                         199.1 MB  (0 s)
+C:\Users\techm\.rustup\toolchains                                2843.3 MB  (1 s)
+C:\Users\techm\AppData\Local\npm-cache                           1131.6 MB  (1 s)
+C:\Users\techm\AppData\Local\ms-playwright                        753.1 MB  (0 s)
+C:\Users\techm\AppData\Local\.wasm-pack                            40.0 MB  (0 s)
+C:\Users\techm\AppData\Local\wasm-pack                              0.0 MB  (0 s)
+done
