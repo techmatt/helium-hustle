@@ -19,6 +19,7 @@ the target itself before deleting, and stops if it meets one mid-delete.
 Storage policy as practiced: generated art lives in the main checkout's `art/` (linked into every
 worktree); finished pickers and superseded draw rounds go to the Drive archive at the same
 relative path. `gdrive-sync` is a local mirror, so a move there backs up but frees no local disk.
+(Since 128, the main checkout's `art/` is a junction into the Drive home's `art\`: README, *Layout*.)
 
 A worktree's own `target/debug` reaches ~680 MB after one `cargo build --workspace` (30 s cold
 on 3 jobs): the biggest transient cost, removed with the worktree.
