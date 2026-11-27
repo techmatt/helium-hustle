@@ -1107,6 +1107,9 @@ async function storyView() {
     "1.b's completion popup",
     20000,
   );
+  // The picture (64 KB) is fetched as the popup opens: given up to 3 s to arrive (122: read
+  // at once, it failed once beside a qa sweep, loaded on a rerun).
+  await waitFor(`(() => { const i = document.querySelector('[data-testid="story-modal"] [data-testid="quest-pic-modal"]'); return !!i && i.complete && i.naturalWidth > 0; })()`, "the popup's picture", 3000).catch(() => {});
   const popup = await evaluate(`(() => { const i = document.querySelector('[data-testid="story-modal"] [data-testid="quest-pic-modal"]'); return { pic: i?.dataset.picture ?? null, loaded: !!i && i.complete && i.naturalWidth > 0, listed: !!document.querySelector('[data-side-quest="qfull_cluster"]') }; })()`);
   const sidePic = content('events.json').find((e) => e.id === 'qfull_cluster').picture;
   check(!!sidePic && popup.pic === sidePic && popup.loaded && !popup.listed, `a side quest's completion popup shows its picture; the quest left the right panel: ${JSON.stringify(popup)}`);

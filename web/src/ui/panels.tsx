@@ -421,8 +421,13 @@ function HoldButton({ disabled, step, children }: { disabled: boolean; step: (n:
     timer.id = step(n) ? window.setTimeout(tick, HOLD_EVERY_MS) : undefined;
   };
   const down = (e: PointerEvent) => {
-    if (e.button !== 0) return;
+    // Not a press landing just after a modal moved (App's click guard sees only clicks).
+    if (e.button !== 0 || justMoved()) return;
     stop();
+    // Captured, the press stays the button's when a step moves it (a card's line coming
+    // or a row of cards reflowing): it ends on release, not because the button slid away
+    // under a still pointer (122: a hold from 0 gave one step).
+    (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
     timer.t0 = performance.now();
     if (step(1)) timer.id = window.setTimeout(tick, HOLD_DELAY_MS);
   };
@@ -434,8 +439,8 @@ function HoldButton({ disabled, step, children }: { disabled: boolean; step: (n:
       disabled={disabled}
       onPointerDown={down}
       onPointerUp={stop}
-      onPointerLeave={stop}
       onPointerCancel={stop}
+      onLostPointerCapture={stop}
       // A click no pointer press began (keyboard, assistive tech, a script's click()) steps
       // once; a mouse or touch click's step already came on its press.
       onClick={(e) => e.detail === 0 && step(1)}
@@ -487,9 +492,13 @@ export function Project({ v, p, fresh }: { v: View; p: ProjectView; fresh: Set<s
               Completed {p.completions} {p.completions === 1 ? 'time' : 'times'}
             </p>
           )}
-          {funded && (
-            <p class="muted small">
-              {p.days_to_done !== null
+          {/* Always there on a card that can be funded, so the first step doesn't grow the
+              card and move its rows (and the button being pressed) down. */}
+          {p.unlocked && (
+            <p class="muted small" data-testid="project-status">
+              {!funded
+                ? 'Not funded'
+                : p.days_to_done !== null
                 ? `Done in ${p.days_to_done} ${p.days_to_done === 1 ? 'day' : 'days'}`
                 : Object.keys(p.costs).every((res) => Number(p.rates[res] ?? '0') > 0 || Number(p.progress[res] ?? '0') >= Number(p.costs[res]))
                   ? 'Stalled: the stock is supplying nothing of a cost'

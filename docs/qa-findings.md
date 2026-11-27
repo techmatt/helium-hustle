@@ -8,9 +8,9 @@ The checker that finds most of these is `web/scripts/qa.mjs` ([web/TESTING.md](.
 
 ## Fixed
 
-Rows 1-93 (bug hunts 007 to 068) are fixed, summarized here by kind so a hunt doesn't
+Rows 1-116 (bug hunts 007 to 090) are fixed, summarized here by kind so a hunt doesn't
 re-report them; the full rows are in git history (rows 1-77: this file before 032; 78-93:
-before 090). A new fixed row continues the table below, and a later prune folds it here.
+before 090; 94-116: before 122). A new fixed row continues the table below, and a later prune folds it here.
 
 - **Numbers and text** (#3, 13, 20, 32, 44, 45, 47, 53, 54, 64, 70): `num()` rounding and
   separators; signed ideology scores and next-rank targets; one floored `ranPercent`; "had"
@@ -46,40 +46,31 @@ before 090). A new fixed row continues the table below, and a later prune folds 
   room; Saga bars' own width; Esc behind the summary; 1.1 Online's pin names Sell Cloud Compute; the
   20-day average a true mean; Story by day; overclock `{days}`; "the next day"; `{rate}` as
   Stats rounds it.
+- **Rows 94-116:** e2e's "if held" reads the check mark only; Esc and Enter under a story
+  modal (no view closed, one page a click or key, the button focused on every page); a
+  beat or Add to Program ignores clicks 0.5 s after a modal; a modal on the day its quest
+  changed at any speed; Esc in a Programs number box keeps the number; a same-number edit
+  sends nothing; Text / Blocks toggle and medal star contrast; faked bold on act bands, a
+  Ready pad and "complete"; compact nav tiles at 1920; a cut program line's title; the boot
+  line removed; the Programs status strip's boredom bar; qa's false findings and run 1's
+  Full Load; Run by hand's rows (moot since 091).
 
 Guards that cover them: `the_view_fills_every_text_placeholder`, `a_play_log_replays_…`,
 `a_partial_pass_building_that_ran_in_full_is_not_starved`, `unpaid_upkeep_withholds_…`,
 `forced_retirement_…`, `npm run unit`, e2e, and qa's *text*, *overflow*, *program frame*,
-*input*, *card probe*, *second tab*, *assets*, *play log*, *breakdown*, *hidden*, *unread*
-and *storage blocked* checks.
+*input*, *card probe*, *story modal*, *contrast*, *second tab*, *assets*, *play log*,
+*breakdown*, *hidden*, *unread* and *storage blocked* checks.
 
 New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 
 | # | Finding | Fix | Guard |
 |---|---|---|---|
-| 94 | e2e's "the if held once Credits > 800" read that day's line outcomes after the program moved on (the new Battery drops Energy, the top `if` runs instead): failed 5 of 7 runs in 068 | Checks the depot built and the `if`'s ✓ only (070) | e2e |
-| 95 | Esc with a story modal up closed a view behind it (the Programs view), its unapplied draft refused | Esc does nothing to a takeover while a story modal is up, as behind the summary (#87) | qa story modal probe |
-| 96 | A double-click on a story page's Continue, or a held Enter, turned two or more pages: a chain could end, and play resume, before its task was read | The button ignores pointer clicks for 0.5 s after the modal opens or a page turns, and Enter's key repeats | qa story modal probes |
-| 97 | The story modal's button had the keyboard only on a page load's first modal (`autoFocus`): later chains needed the mouse | Each page focuses it, and Enter reads on wherever the focus went | qa story modal probes |
-| 98 | A double-click on a modal's last button could land on a Story beat under it and replay that beat's chain | A beat ignores pointer clicks for 0.5 s after a modal closes | manual |
-| 99 | Above 10x a transition's modal came after the rest of the wake's days had played (up to 19 at 200x; a background tab's whole catch-up) | `advance_run` stops after a tick that changes the active quest (a debug jump plays on) | qa *input* (a modal's day against its "Quest complete" line) |
-| 100 | Esc while typing in a Programs number box closed the view and dropped the typed number | The field is blurred (its change fires) before the view closes | e2e section 10 |
-| 101 | A count or clause number retyped as the same number ("06") restarted the program's pointer and runs | An edit that changes no line is not sent | manual |
-| 102 | The Programs view's Text / Blocks toggle: its selected button read 1.66:1 in the dark theme (4.13:1 light) | Selected as the program tabs are (`--sel-bg`, the accent's border) | qa *contrast* |
-| 103 | qa: every pass stopped at the Programs tile since 071 (a takeover, no panel) | qa opens it as the view | qa |
-| 104 | Faked bold: the painted act bands' titles, a Ready pad's status and the Blocks repeat count at Plex Sans 700; a story modal's "complete" at Rajdhani 400 (neither bundled) | 600, and the body font for "complete" | qa *assets* |
-| 105 | An earned achievement's star read 3.82:1 on its medal (light theme) | The medal on `--accent-text` (a `contrast.mjs` pair) | qa *contrast*, `npm run unit` |
-| 106 | At 1920 a late career's compact nav, three tiles a row: "Achievements" ran past its tile | Compact tiles at least 124 px (two a row, as at 1280) | qa *overflow* |
-| 107 | A right-column program line cut short ("Sell Cloud Compute (x…") had no tooltip | The line's name in its title | qa *overflow* |
-| 108 | qa false findings since 074/078: a click a just-opened story modal refused timed as slow input; run 2's card probe with no card a run's start can afford (074); two frames counted with the right column hidden under the Programs view; the Everything autopilot run from story_acts (no game behind its quests) | Not timed; run 2's probe skipped then; shown frames only; story_acts audited first | qa |
-| 109 | The boot line "Loading…" stayed in the page under the app: a page scrolled into view (seen in qa's story_acts Story shot) showed it below the status bar and cut the title | Removed once the app mounts | qa *overflow* (the page scrolled or kept its boot line) |
-| 110 | The Programs view's status strip at 1280 in a late career squeezed its boredom bar to ~50 px: "285 /" | The bar keeps room for its figures (the strip's gaps 10 px; wider figures wrap the strip to a second line) | screenshots (qa `late-programs`) |
-| 111 | qa's run 1 never finished Full Load: Advanced Blueprints marked done before on sale, the pad left on Titanium, launches at 10 cargo | Research waits for its card; during Full Load the pad carries He-3 and launches full | qa (089) |
-| 112 | Idle's Run (089) was a free credit a click with no limit, paused on day 0 too (a held Enter on the focused button repeats it): nothing paces it | Moot since 091 (rules 31): Run by hand is gone, commands run only as program lines | none |
-| 113 | A Run button took the second click of a double-click on a story modal's last button or the summary's Continue (cards already ignored it, #31) | 091: Run gone; Add to Program ignores pointer clicks for 0.5 s after a modal moves, as cards | manual (090 probe) |
-| 114 | A refused Run said "run Sell Cloud Compute: short of an input", naming nothing | Moot since 091: Run gone | none |
-| 115 | Processors' text says "Write programs" while Programming (research) may be unbought, with nothing pointing to it | Moot since 091: programs are open from day 1; "Write programs" is true again | content |
-| 116 | The run summary and Retirement panel list "saved programs (Load, in each program tab)" as kept before Programming opens any | 091: loadouts open from day 1, so saved programs always listed; Programming named once bought | manual |
+| 117 | A held project −/+ from 0 stepped once: the first step added the card's status line (and reflowed its row of cards), the button slid from under a still pointer and its leave ended the hold | The press captures the pointer (release ends it); a fundable card always has its status line ("Not funded") | qa project probe (a real 1.2 s hold from 0) |
+| 118 | A double-click on a popup's OK: its second click reached what lay under it (Options' "Start a new career…" opened its confirm; a third click could erase the career). Only cards, beats and Add to Program had a guard | No pointer click outside a modal counts for 0.5 s after one moves, page-wide; a −/+ press too | qa popup probe |
+| 119 | Scope icons (◆, ∞; 099) read 3.99:1 in the light theme | On `--accent-text` (a `contrast.mjs` pair) | qa *contrast*, `npm run unit` |
+| 120 | Faked fonts: an idle program tab at Rajdhani 400 (114), the ideology rank figure at Plex Sans 700 (118) | 600 | qa *assets* |
+| 121 | A Story card's first sentence cut again by its box (108), with no hover | The line is its own title | qa *overflow* |
+| 122 | e2e section 11 read the side quest popup's picture before it loaded (failed once beside qa) | Waits up to 3 s for it | e2e |
 
 ## Deferred (Matt's decisions)
 
@@ -97,6 +88,7 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | A Blocks number box being typed in keeps its draft on its row index: an instruction inserted above it (keyboard focus only) moves the draft to another line | Key the rows by a stable id |
 | qa once (090, seed 45 at 1280): the debug autopilot's Everything reached super timeline 4 and the page answered nothing for 30 s, so the pass never reached the ending; the same seed passed on a rerun | Debug only; if it recurs, have the autopilot yield between chunks in late timelines |
 | A refusal notice stays up until the next accepted action or its ×, across days and a retirement (seen 160 days on, under 089's since-removed Run) | Clear it at a run's end, or fade it after ~5 s |
+| A program's tab light is red on a run's first day (and a scenario's start) before any day has run: "no steps ran", nothing wrong yet | No light (or a gray one) until the run's first day has played |
 
 
 ## Won't fix
@@ -104,7 +96,7 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | Finding | Why |
 |---|---|
 | Sell All's native `confirm()` lets game time run while it is open, then plays it before the sells | The clock catches up on wall time by design (as for a background tab); the sells land between the right ticks and a run that ended is refused with a notice |
-| Opening the Cortex mock takes one 300-400 ms frame (the whole wheel drawn at once) | A UI-only mock: the real Cortex's build decides how it draws |
+| Opening the Cortex mock takes one 300-400 ms frame (the whole wheel drawn at once), and closing it one of 570-630 ms under qa's load (122; 52 ms or less on a quiet box) | A UI-only mock: the real Cortex's build decides how it draws |
 | Starting a debug scenario takes a 0.3-1.3 s frame | Debug menu only: a new game built and its first view drawn |
 | Jump ahead plays no days when the wake settling it opens a story modal | Debug only: the modal is shown, the jump marked in the play log |
 | The autopilot's Everything from scenario story_acts never reaches the ending | Debug only: a display scenario whose quests are marked done with no game behind them |
@@ -113,3 +105,5 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | Silicon Valley wants 1,000 circuits on hand; the cap is 10 + 20 per Storage Depot (about 50 depots) | Placeholder content, Matt's call in 068 |
 | Boredom phases 3 to 5 say "Dream effectiveness reduced to 20%/15%/10%"; Dream is flat | Placeholder content, Matt's call in 068 |
 | A first note ("needs …") on a program line grows that line once | Matt's call in 068: the row is kept on purpose, so a note coming and going day to day moves no line below it |
+| A held project −/+ keeps stepping when the pointer drifts off it (122) | Captured on purpose, so a reflow can't end the hold; release ends it, and it stops at 0 or the cap |
+| A debug scenario's start notice, cleared by the first action, moves the panel up ~150 px under the pointer | Debug only; a real refusal notice is the deferred row above |

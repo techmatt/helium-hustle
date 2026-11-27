@@ -1268,9 +1268,10 @@ tr.is-new td:first-child {
   text-transform: uppercase;
   color: var(--muted);
 }
+/* Plex Sans ships 400 and 600: 700 was faked bold (qa *assets*, 122). */
 .axis-rank-num {
   font-size: 56px;
-  font-weight: 700;
+  font-weight: 600;
   line-height: 1;
   font-variant-numeric: tabular-nums;
 }
@@ -1547,16 +1548,17 @@ tr.is-new td:first-child {
   min-width: 18px;
   height: 18px;
   line-height: 18px;
-  border: 1px solid var(--accent);
+  /* --accent-text: the light theme's --accent read 3.99:1 against the card (qa *contrast*, 122). */
+  border: 1px solid var(--accent-text);
   border-radius: 3px;
-  color: var(--accent);
+  color: var(--accent-text);
   font-size: 12px;
   font-weight: 600;
   text-align: center;
   cursor: help;
 }
 .scope-icon.scope-eternal {
-  background: var(--accent);
+  background: var(--accent-text);
   color: var(--card);
 }
 .side-title .scope-icon {
@@ -1743,9 +1745,10 @@ tr.is-new td:first-child {
   white-space: nowrap;
 }
 /* A tab with no processors: just its number, dimmed. */
+/* Rajdhani ships 600 and 700 only: 400 was faked by the browser (qa *assets*, 122). */
 .prog-tabs button.idle {
   color: var(--muted);
-  font-weight: 400;
+  font-weight: 600;
 }
 .prog-tabs .prog-count {
   font-size: 13px;

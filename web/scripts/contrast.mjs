@@ -37,6 +37,8 @@ const PAIRS = [
   ['sel-text', ['sel-bg', 'sel-hover']],
   // An earned achievement's star on its medal.
   ['panel', ['accent-text']],
+  // An eternal scope icon's glyph on its filled box.
+  ['card', ['accent-text']],
   ['on-neg', ['neg']],
   ['axis-nationalist', ['panel', 'card']],
   ['axis-humanist', ['panel', 'card']],

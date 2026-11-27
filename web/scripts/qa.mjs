@@ -14,7 +14,9 @@
 //   contrast   text against its solid background under 4.5:1 (3:1 large)
 //   text       (also) a program-grammar form the Programs view's Text mode reads red, a block view not
 //              holding every applied line, text not reading back as written
-//   input      (also) a project rate step the engine refused, an autopilot quest step that
+//   input      (also) a project rate step the engine refused, a held + from 0 that stopped
+//              early or stepped on after release, an Events popup that didn't hold the
+//              clock or whose OK's double-click reached under it, an autopilot quest step that
 //              never finished or left the quest where it was
 //   assets     an image that failed to load; a building card picture missing, not 96 px or
 //              never shown; text in a bundled font at a weight or style it doesn't ship
@@ -26,7 +28,8 @@
 //              not holding the clock against space and 3, its button without the keyboard,
 //              Esc closing a view behind it, or coming over a day after its quest completed
 //   frame      a frame gap over FRAME_MS while the page is visible (the won't-fix ones, a
-//              debug scenario's start, the ending and the first panel after Story, print
+//              debug scenario's start, the ending, the first panel after Story and opening
+//              or closing the Cortex mock, print
 //              tagged `known` and don't count toward the exit code)
 //   memory     JS heap growth over a pass past HEAP_GROWTH_MB (before the autopilot's
 //              Everything; past HEAP_ENDED_MB with its finished career), a save over 2 MB
@@ -789,10 +792,16 @@ async function pass(seed, width, theme) {
       await sleep(400);
       await knownFrame('opening the Cortex mock');
       await capture(`${when}-cortex`);
+      await evaluate(`window.__qaFrames && (window.__qaFrames.worst = 0)`);
       await evaluate(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }))`);
       await sleep(200);
       if (await exists('[data-takeover="cortex"]')) note('input', `${when}: Esc doesn't close the Cortex mock`);
       await click('#cortex-mock-toggle', 'cortex mock toggle off');
+      // Closing it takes one slow frame too (the whole page drawn back; 122 found it, earlier
+      // counted in rich's known start): read at once, not counted, as the open.
+      await sleep(300);
+      await knownFrame('closing the Cortex mock');
+      await capture(`${when}-cortex-closed`);
     } else note('input', `${when}: no Cortex mock toggle in the debug menu`);
   };
   /** Projects' rate buttons: on every open project's rows, Max then − steps down to 0, each
@@ -805,6 +814,24 @@ async function pass(seed, width, theme) {
     const rowSel = (i) => `(document.querySelectorAll('.card.project[data-id] .proj-row')[${i}])`;
     const rate = (i) => evaluate(`${rowSel(i)}?.querySelector('.proj-rate')?.textContent ?? ''`);
     const press = (i, label) => evaluate(`(() => { const b = [...${rowSel(i)}.querySelectorAll('button')].find((x) => x.textContent.trim() === ${q(label)}); if (!b || b.disabled) return false; b.click(); return true; })()`);
+    // A real mouse held on the first row's + from 0 for 1.2 s keeps stepping (the first
+    // step must not move the button from under the pointer: 122), and stops on release.
+    if (rows.length && (await rate(0)).startsWith('0/')) {
+      const at = await evaluate(`(() => { const b = [...${rowSel(0)}.querySelectorAll('button')].find((x) => x.textContent.trim() === '+'); b.scrollIntoView({ block: 'center' }); const r = b.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
+      await send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: at.x, y: at.y });
+      await send('Input.dispatchMouseEvent', { type: 'mousePressed', x: at.x, y: at.y, button: 'left', buttons: 1, clickCount: 1 });
+      await sleep(1200);
+      await send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: at.x, y: at.y, button: 'left', buttons: 0, clickCount: 1 });
+      await sleep(150);
+      const held = await rate(0);
+      await sleep(500);
+      const later = await rate(0);
+      // The rate set: "12/day", or "0 / 12 per day" when the stock covers less.
+      const n = Number((held.match(/([\d.]+)(?:\/day| per day)/) ?? ['', '0'])[1]);
+      if (n < 3) note('input', `${when}: project ${rows[0]}: + held 1.2 s from 0 reached only "${held}" (the hold stopped)`);
+      if (later !== held) note('input', `${when}: project ${rows[0]}: + kept stepping after release ("${held}" then "${later}")`);
+      await capture(`${when}-project-held`);
+    }
     for (let i = 0; i < rows.length; i++) {
       await press(i, 'Max');
       await sleep(120);
@@ -820,6 +847,32 @@ async function pass(seed, width, theme) {
       }
       while (await press(i, '−')) await sleep(60);
     }
+  };
+  /** The right column's popups (112) under a real mouse, over Options: an Events line
+   * clicked opens one popup holding the clock; its OK double-clicked closes it and the
+   * second click lands on nothing (122: it opened "Start a new career…"'s confirm). */
+  const popupProbe = async (when) => {
+    await speed(0);
+    await panel('options');
+    const at = (sel) => evaluate(`(() => { const e = document.querySelector(${q(sel)}); if (!e) return null; e.scrollIntoView({ block: 'center' }); const r = e.getBoundingClientRect(); return { x: r.x + r.width / 2, y: r.y + r.height / 2 }; })()`);
+    const line = await at('[data-event]');
+    if (!line) return note('input', `popup probe (${when}): no Events line to click`);
+    await speed(3);
+    await mouse(line.x, line.y);
+    if (!(await exists('[data-testid="story-modal"]'))) return note('input', `popup probe (${when}): an Events line's click opened no popup`);
+    if ((await evaluate(`document.querySelector('#speeds button[aria-pressed="true"]')?.dataset.speed`)) !== '0') note('input', `popup probe (${when}): an Events popup didn't hold the clock`);
+    await capture(`popup-${when}`);
+    await sleep(600);
+    const ok = await at('[data-testid="story-next"]');
+    await mouse(ok.x, ok.y, { clicks: 2 });
+    await sleep(200);
+    if (await exists('[data-testid="story-modal"]')) note('input', `popup probe (${when}): a double-click on an Events popup's OK left it open`);
+    if (await exists('.confirm')) {
+      note('input', `popup probe (${when}): a double-click on an Events popup's OK: its second click opened Options' confirm`);
+      await click('.confirm button:last-child', 'cancel the confirm');
+    }
+    if ((await evaluate(`document.querySelector('#speeds button[aria-pressed="true"]')?.dataset.speed`)) !== '3') note('input', `popup probe (${when}): after an Events popup the speed isn't the 3x before it`);
+    await speed(0);
   };
   /** Events' unread counts: Recent Activity folded counts what arrives while it is shut;
    * opened and on screen for over a second, the count clears. */
@@ -1436,6 +1489,7 @@ async function pass(seed, width, theme) {
       if (sc === 'late_unlocks') {
         await padProbe(sc);
         await unreadProbe(sc);
+        await popupProbe(sc);
       }
     }
     // The later acts (the Saga draft): the debug autopilot's "Everything" plays this game

@@ -130,18 +130,21 @@ playlog` (a release build, or `HH_SIM`: a fresh worktree has none, so build it f
 debug scenario (each played, its pads given Helium-3 first, or Titanium while 1.2 allows only that, its panels audited): every Resources row's breakdown opened
 and closed, Stats' breakdowns; program lines dragged; in `late_unlocks`, a loaded
 pad switched to another good (the stockpile gains what its tooltip promised) and Recent
-Activity's unread count (counts while folded, clears once read); in `everything`, the
+Activity's unread count (counts while folded, clears once read), and an Events popup over
+Options under a real mouse (it holds the clock; its OK double-clicked lands nowhere: no
+confirm opens, 3x again after); in `everything`, the
 takeovers (a program in every form the text grammar writes, pasted in Programs' Text mode:
 each line reads, Blocks holds every line, the text reads back unchanged; the
 Cortex mock by its toggle, closed with Esc) and every open project's Max then − steps,
-each taken. A career short of 1.5 A Voice (where the autopilot's quest steps stop) is played on by the debug autopilot's
+each taken, after a real mouse holds the first row's + from 0 for 1.2 s (at least 3 steps,
+none after release). A career short of 1.5 A Voice (where the autopilot's quest steps stop) is played on by the debug autopilot's
 *Next quest step*, each step timed and checked to move the quest; after the scenarios its
 *Everything* plays to the ending (~15 s) and every later-act panel is audited. Building cards with no
 picture drawn yet (placeholder art) are not findings. The late panels again in
 the other theme; every building's card (`?all-cards`, a display-only URL flag) in both.
 Real mouse and key probes of click-to-buy and the program frame. Checks and `HH_*`
 settings: the script's header. Exit 1 on any finding, but known won't-fix slow frames (a
-debug scenario start, the ending, the first panel after Story, opening the Cortex mock: `docs/qa-findings.md`), read
+debug scenario start, the ending, the first panel after Story, opening or closing the Cortex mock: `docs/qa-findings.md`), read
 at that moment and printed tagged `[known: won't fix]`. A pass that never reaches the ending is an `ending`
 finding, its line says NEVER REACHED THE ENDING, `report.json` keeps `ended` per pass, and
 `scripts/warning_checks.py` warns (kind `qa`) while the tree's last report has one.

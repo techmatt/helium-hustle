@@ -65,7 +65,22 @@ export function App() {
       } else if (KEY_SPEEDS[e.key]) setSpeed(KEY_SPEEDS[e.key]);
     };
     window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
+    // The second click of a double-click on a modal's last button lands on whatever was
+    // under it once the modal is gone: no click outside a modal counts for a moment after
+    // one moves (`justMoved`), whatever is there (122: Options' "Start a new career…"
+    // opened its confirm; cards, beats and Add to Program had their own guards). Pointer
+    // clicks only: a key or a script's click() (detail 0) still acts.
+    const onClick = (e: MouseEvent) => {
+      if (e.detail === 0 || !justMoved()) return;
+      if ((e.target as Element | null)?.closest?.('.modal')) return;
+      e.preventDefault();
+      e.stopPropagation();
+    };
+    window.addEventListener('click', onClick, true);
+    return () => {
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('click', onClick, true);
+    };
   }, []);
   // A panel whose tile hides (a new run re-gates it) falls back to Buildings.
   const shown = navShown(s.view, panel) ? panel : 'buildings';

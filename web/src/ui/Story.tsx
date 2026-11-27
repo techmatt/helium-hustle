@@ -73,7 +73,8 @@ function Card({
       >
         {head}
         {!open && texts.length > 0 && (
-          <span class="beat-text" data-testid="story-card-line">
+          // A first sentence longer than the card is cut again by the box: its hover holds it (qa *overflow*, 122).
+          <span class="beat-text" data-testid="story-card-line" title={firstLine(texts)}>
             {firstLine(texts)}
           </span>
         )}
