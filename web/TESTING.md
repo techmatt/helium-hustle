@@ -5,10 +5,11 @@ and serving the page: [README.md](README.md). e2e and qa share the DevTools harn
 `scripts/cdp.mjs`, whose `driver()` holds the page helpers both use (`panel`, `runOnly`,
 `pickCommand`, the debug menu): a UI change a helper reads is fixed there once.
 
-**When to run them** (light testing per item, CLAUDE.md): a `web/` change runs `npm run
-check` and `npm run unit`. e2e (~5 min) and qa (~36 min) run only in a bug hunt or
-when the prompt asks; an item that changes a helper they read still fixes it, unrun. One
-browser at a time on this machine: several exhaust its memory.
+**When to run them** (light testing per item, CLAUDE.md): a `web/` change runs `npm test`,
+the web fast lane (`npm run check` then `npm run unit`, ~1.5 s). e2e (~5 min) and qa
+(~20 min) run only in a bug hunt or when the prompt asks; an item that changes a helper
+they read still fixes it, unrun. One browser at a time on this machine: several exhaust
+its memory.
 
 ## Browser check
 
@@ -75,8 +76,12 @@ the text-on-background pairs in its hand-kept `PAIRS` list, in both themes, at
 `npm run qa` (`scripts/qa.mjs`) plays the game as a player would, over seeds, widths and
 both themes, and audits the screen at each meaningful moment (a panel, a story text, a new
 quest, a launch, the summary, a reload). Hunts' findings: `docs/qa-findings.md`. **Its
-checks and `HH_*` settings are the script's header.** Per pass (a seed at a width), in a
-fresh headless browser:
+checks and `HH_*` settings are the script's header.** A pass is one seed's career, in a
+fresh headless browser, played at one width; every moment is also audited and shot at the
+other widths, in the theme on screen (a resize, then back: findings there say `at <width>`).
+The played width and the theme cycle over seeds: 11 at 1280 light, 12 at 1920 light, 13 at
+1920 dark, so the mouse and key probes meet both widths and each width meets both themes.
+Per pass:
 
 - **Run 1:** a first visit, a new game on the seed (its story modal probed under real keys
   and mouse), run 1 at 3x then 10x played from the right column's program with every panel,
@@ -101,8 +106,18 @@ warns (kind `qa`) while the tree's last report has one.
 
 ```sh
 npm run build && npx vite preview --port 0          # a static build: dev-server reloads break a pass
-HH_URL=http://localhost:<port>/ npm run qa           # required, as for e2e; ~6 min a pass, ~36 min in all (run 1 at 10x)
+HH_URL=http://localhost:<port>/ npm run qa           # required, as for e2e; ~6.5 min a pass, ~20 min in all (run 1 at 10x)
+HH_SEEDS=11 HH_WIDTHS=1280 npm run qa                # one pass at one width: ~6 min
 ```
 
+Progress lines carry the pass's elapsed time (m:ss) at each quest and phase; its summary
+line, the time spent in captures (at the played width and at the others). Where a pass's
+time goes: run 1 ~2:55, run 2 and the late panels ~0:50, the debug scenarios ~1:30,
+*Everything* with the second tab and blocked storage ~1:00, every card ~0:20; inside
+those, captures take ~30 s at the played width and ~45 s at the other.
+A theme switched by setting `<html>`'s `data-theme` alone is not the theme: the page sets
+some colors from its theme listeners (`theme.ts`), so the contrast audit reads a mix.
+
 Output (`HH_QA_OUT`, default `out/qa`, wiped): a PNG per moment in
-`<out>/<seed>-<width>-<theme>/`, a contact sheet per pass, and `report.json`.
+`<out>/<seed>-<width>-<theme>/`, a contact sheet per seed and width, and `report.json`
+(a pass's other widths under `also`, its `seconds`).

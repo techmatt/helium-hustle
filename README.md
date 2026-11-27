@@ -53,8 +53,8 @@ Times are on this machine, otherwise idle.
 
 ```sh
 cargo build --workspace                      # ~30 s cold on 3 jobs; target/debug ~680 MB, safe to delete
-cargo test --workspace                       # the fast lane: ~4 s once built, ~11 s after an hh-core edit; first build ~1.5 min
-cargo test-all                               # the full run, slow lane too: ~40 s (the autopilot's career)
+cargo test --workspace                       # the fast lane: ~6 s once built, ~11 s after an hh-core edit; first build ~1.5 min
+cargo test-all                               # the full run, slow lane too: ~45 s (the autopilot's career)
 cargo clippy --workspace --all-targets       # must stay clean; ~7 s
 cargo run -q -p hh-sim -- run --seed 1 --ticks 365 --policy script
 cargo run -q --release -p hh-sim -- objectives reference/scenarios/run1_fresh.json   # ~0.2 s
@@ -66,6 +66,7 @@ python scripts/warning_checks.py --all       # parity and balance whatever was t
 python scripts/warning_checks.py --no-parity --no-balance   # static checks only (tunables, floats, docs, qa's last report), no builds; ~1 s
 cd web && npm ci && npm run dev              # the browser UI at http://localhost:5173/ (web/README.md)
 cd web && npm run wasm && npm run check      # type-check alone: a fresh worktree has no web/src/wasm until `npm run wasm` (~80 s)
+cd web && npm test                           # the web fast lane: type-check, unit and contrast checks, ~1.5 s
 ```
 
 **Test lanes.** `cargo test --workspace` is the fast lane and the default: run it after
@@ -82,6 +83,12 @@ The test profile is `opt-level = 2` with overflow checks, and test and sim binar
 view's state copies, twice as slow on the Windows allocator. To time tests one by one, run the test binary itself (`<exe> --list`,
 `<exe> --exact <name>`; per-test times: `RUSTC_BOOTSTRAP=1 <exe> -Z unstable-options
 --report-time`): Rust 1.100 puts them under `target/debug/build/<crate>/<hash>/out/`.
+`RUSTC_BOOTSTRAP=1` on `cargo` instead rebuilds the whole workspace (~90 s), and again
+once it is unset.
+The full run's time is its two longest binaries, side by side: `hh-sim`'s lib (one test,
+the autopilot's career to the ending, ~45 s) and its `cli` tests (~43 s, the oracle's ~25 s
+the longest). In `web/`, `npm test` is the fast lane;
+e2e (~5 min) and qa (~20 min) are the browser lanes, on request only (web/TESTING.md).
 
 **A second target dir** (a parallel helper, a copy under `out/`) is set absolute:
 `CARGO_TARGET_DIR="$(git rev-parse --show-toplevel)/out/target-<name>"`. Cargo reads a

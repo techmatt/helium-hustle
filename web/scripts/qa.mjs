@@ -40,7 +40,9 @@
 // counted finding.
 //   HH_URL     the page, required: a `vite preview` of a static build (TESTING.md)
 //   HH_SEEDS   comma-separated seeds (default 11,12,13)
-//   HH_WIDTHS  comma-separated window widths (default 1280,1920)
+//   HH_WIDTHS  comma-separated window widths (default 1280,1920): one career per seed, played
+//              at one width (cycling over seeds), every moment also audited and shot at the
+//              others in the same theme (the theme alternates over seeds and widths)
 //   HH_HEIGHT  the window height (default 900)
 //   HH_THEMES  themes, alternated over seeds and widths (default light,dark)
 //   HH_QA_OUT  output folder (default ../out/qa, wiped first)
@@ -409,19 +411,37 @@ const FRAMES = `(() => {
   requestAnimationFrame(f);
 })()`;
 
-// ---- one pass: a seed at a width ----------------------------------------------------
+// ---- one pass: a seed's career, played at one width, captured at every width ---------
 
 const report = { url, seeds, widths, themes, passes: [] };
 let failures = 0;
+/** A pass's start, for the elapsed times in its progress lines. */
+let passStarted = Date.now();
+const elapsed = () => {
+  const s = Math.round((Date.now() - passStarted) / 1000);
+  return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`;
+};
 
-async function pass(seed, width, theme) {
+/** One pass per seed (126: a career per seed, not per seed and width, halved the run). The
+ * career plays at `width` in `theme`; every moment is also audited and shot at each of the
+ * `others` widths, in the same theme. */
+async function pass(seed, width, theme, others = []) {
   const tag = `${seed}-${width}-${theme}`;
   const dir = resolve(outDir, tag);
   mkdirSync(dir, { recursive: true });
+  passStarted = Date.now();
+  /** A progress line: the pass's elapsed time (m:ss) at the start of a phase. */
+  const phase = (what) => console.log(`  ${tag} ${elapsed()} ${what}`);
   const b = await launch(width);
   const { evaluate, send } = b;
   const findings = [];
   const shots = [];
+  const views = others.map((w) => ({ width: w, theme, shots: [] }));
+  for (const v of views) {
+    v.tag = `${seed}-${v.width}-${v.theme}`;
+    v.dir = resolve(outDir, v.tag);
+    mkdirSync(v.dir, { recursive: true });
+  }
   const heap = [];
   const seenFindings = new Set();
   const artSeen = new Set();
@@ -491,6 +511,7 @@ async function pass(seed, width, theme) {
   let lastDay = 0;
   /** A meaningful moment: audit the screen and keep a screenshot. */
   const capture = async (name) => {
+    const t0 = Date.now();
     moment++;
     lastDay = await day().catch(() => lastDay);
     for (const f of await evaluate(AUDIT)) note(f.kind, f.what);
@@ -500,10 +521,39 @@ async function pass(seed, width, theme) {
     while (b.errors.length) note('console', b.errors.shift());
     const h = await send('Runtime.getHeapUsage');
     heap.push(h.result?.usedSize ?? 0);
-    const r = await send('Page.captureScreenshot', { format: 'png' });
+    // optimizeForSpeed: a faster PNG encoder (126), still lossless.
+    const r = await send('Page.captureScreenshot', { format: 'png', optimizeForSpeed: true });
     const file = `${String(moment).padStart(3, '0')}-${name.replace(/[^\w-]+/g, '_')}.png`;
     writeFileSync(resolve(dir, file), Buffer.from(r.result.data, 'base64'));
     shots.push({ file, name, day: lastDay });
+    captureMs += Date.now() - t0;
+    const t1 = Date.now();
+    for (const v of views) await captureAt(v, file, name);
+    otherMs += Date.now() - t1;
+  };
+  /** Time spent in captures at the played width, and at the others (the pass line's). */
+  let captureMs = 0;
+  let otherMs = 0;
+  /** Two frames painted (or 300 ms, for a page that paints none). */
+  const frames2 = 'new Promise((r) => { requestAnimationFrame(() => requestAnimationFrame(r)); setTimeout(r, 300); })';
+  /** The same moment at another width, in the theme on screen (a theme switched by hand
+   * misses the colors the page sets from its theme listeners): the page's metrics switched,
+   * audited and shot, then switched back. The resize's own frame gap is dropped; findings
+   * name the width. */
+  const captureAt = async (v, file, name) => {
+    try {
+      await send('Emulation.setDeviceMetricsOverride', { width: v.width, height: HEIGHT, deviceScaleFactor: 1, mobile: false });
+      await evaluate(frames2);
+      for (const f of await evaluate(AUDIT)) note(f.kind, `at ${v.width}: ${f.what}`);
+      for (const id of await evaluate(`[...document.querySelectorAll('.card.building img.card-art')].filter((i) => i.complete && i.naturalWidth === 192).map((i) => i.closest('.card').dataset.id)`)) artSeen.add(id);
+      const r = await send('Page.captureScreenshot', { format: 'png', optimizeForSpeed: true });
+      writeFileSync(resolve(v.dir, file), Buffer.from(r.result.data, 'base64'));
+      v.shots.push({ file, name, day: lastDay });
+    } finally {
+      await send('Emulation.setDeviceMetricsOverride', { width, height: HEIGHT, deviceScaleFactor: 1, mobile: false });
+      await evaluate(frames2);
+      await evaluate(`window.__qaFrames && (window.__qaFrames.worst = 0)`);
+    }
   };
 
   /** Real mouse input at a point (modifiers: 8 Shift), clickCount clicks in a row. */
@@ -1138,7 +1188,7 @@ async function pass(seed, width, theme) {
       if (s.quest !== quest) {
         quest = s.quest;
         // A progress line per quest, so a stalled run 1 shows where it stopped.
-        console.log(`  ${tag} day ${lastDay}, quest ${quest}, credits ${s.res.credits ?? '-'}`);
+        console.log(`  ${tag} ${elapsed()} day ${lastDay}, quest ${quest}, credits ${s.res.credits ?? '-'}`);
         await capture(`quest-${quest}`);
       }
       for (const id of s.nav)
@@ -1222,6 +1272,7 @@ async function pass(seed, width, theme) {
       await page.runOnly(cmd, s.lines, { skipDisabled: true });
       await sleep(60);
     }
+    phase("run 1's end");
     // The program panel's frame at a person's speed and the span coloring above 10x.
     if (!(await exists('[data-testid="summary"]'))) {
       await frameProbe(3, 'run1');
@@ -1239,6 +1290,7 @@ async function pass(seed, width, theme) {
       await breakdownProbe('run1');
       await padProbe('run1');
     }
+    phase('retirement');
     // Retire (unless boredom got there first), the summary, run 2.
     if (!(await exists('[data-testid="summary"]'))) {
       await panel('retirement');
@@ -1291,6 +1343,7 @@ async function pass(seed, width, theme) {
       await capture('programming-bought');
     }
     await programsProbe();
+    phase('run 2');
     // Run 2 at 10x, then a reload: the save must come back.
     await speed(FAST);
     const d2 = await day();
@@ -1323,6 +1376,7 @@ async function pass(seed, width, theme) {
     const n = await evaluate(`document.getElementById('notice')?.textContent ?? ''`);
     if (!/^Replay ok/.test(n)) note('console', `replay check: ${n}`);
     await capture('replay-check');
+    phase('the late panels, cheats');
     // With cheats, on this career (retired once, so Retirement is open): the late panels
     // with science to spend.
     await panel('options');
@@ -1442,6 +1496,7 @@ async function pass(seed, width, theme) {
       // Reproduced, or not checkable yet (no checkpoint at the last tick so far): fine.
       if (!/final state reproduced|no fingerprint at its last tick/.test(r.stdout ?? '')) note('console', `hh-sim playlog ${file}: ${(r.stdout + r.stderr).slice(0, 300)}`);
     } else note('console', `play log not checked (career ${career || '-'}, dir ${logDir || '-'}, ${existsSync(sim) ? 'hh-sim found' : `no ${sim}`})`);
+    phase('the debug scenarios');
     // Every debug-menu scenario, every panel it shows, a few days played. The list is in
     // the Debug fold, closed again once Options remounts: open it before reading.
     await panel('options');
@@ -1492,6 +1547,7 @@ async function pass(seed, width, theme) {
         await popupProbe(sc);
       }
     }
+    phase("the autopilot's Everything");
     // The later acts (the Saga draft): the debug autopilot's "Everything" plays this game
     // to the ending, then every panel it opened is audited (16 tiles and the calendar in
     // the left column).
@@ -1559,6 +1615,7 @@ async function pass(seed, width, theme) {
       while (b.errors.length) b.errors.shift(); // the blocked page's own warnings are expected
       await load(); // storage back: the steps below write to it
     }
+    phase("every building's card");
     // Every building's card (`?all-cards`), in both themes, screen by screen: the pictures
     // all load at 96 px and nothing on a card overflows or sits under its picture.
     const allUrl = url + (url.includes('?') ? '&' : '?') + 'all-cards';
@@ -1591,29 +1648,32 @@ async function pass(seed, width, theme) {
   if (grownEnded > HEAP_ENDED_MB) note('memory', `JS heap grew ${grownEnded.toFixed(1)} MB with the finished career`);
   // A pass that never reached the ending is its own kind: 071-082 stalled unnoticed.
   if (!ended) note('ending', `the pass never reached the ending (last moment ${shots.at(-1)?.name ?? 'none'})`);
-  // A contact sheet of the pass: its screenshots on one page, captured whole.
-  const sheet = resolve(dir, 'contact.html');
-  writeFileSync(
-    sheet,
-    `<!doctype html><style>body{margin:0;font:12px sans-serif;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;width:2400px}figure{margin:0}img{width:100%;border:1px solid #888}</style>` +
-      shots.map((s) => `<figure><img src="${s.file}"><figcaption>${s.file} (day ${s.day})</figcaption></figure>`).join(''),
-    { encoding: 'utf-8' },
-  );
-  try {
-    await send('Emulation.setDeviceMetricsOverride', { width: 2400, height: 1200, deviceScaleFactor: 1, mobile: false });
-    await send('Page.navigate', { url: pathToFileURL(sheet).href });
-    await sleep(1500);
-    const r = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true });
-    writeFileSync(resolve(outDir, `contact-${tag}.png`), Buffer.from(r.result.data, 'base64'));
-  } catch {}
+  // A contact sheet per width: its screenshots on one page, captured whole.
+  for (const v of [{ dir, tag, shots }, ...views]) {
+    const sheet = resolve(v.dir, 'contact.html');
+    writeFileSync(
+      sheet,
+      `<!doctype html><style>body{margin:0;font:12px sans-serif;display:grid;grid-template-columns:repeat(4,1fr);gap:4px;width:2400px}figure{margin:0}img{width:100%;border:1px solid #888}</style>` +
+        v.shots.map((s) => `<figure><img src="${s.file}"><figcaption>${s.file} (day ${s.day})</figcaption></figure>`).join(''),
+      { encoding: 'utf-8' },
+    );
+    try {
+      await send('Emulation.setDeviceMetricsOverride', { width: 2400, height: 1200, deviceScaleFactor: 1, mobile: false });
+      await send('Page.navigate', { url: pathToFileURL(sheet).href });
+      await sleep(1500);
+      const r = await send('Page.captureScreenshot', { format: 'png', captureBeyondViewport: true });
+      writeFileSync(resolve(outDir, `contact-${v.tag}.png`), Buffer.from(r.result.data, 'base64'));
+    } catch {}
+  }
   b.close();
   const heapMb = heap.map((h) => Math.round(h / 1e5) / 10);
   const art = artIds.filter((id) => artSeen.has(id));
-  report.passes.push({ seed, width, theme, ended, moments: shots.length, heapMb, art: art.length, findings });
+  const also = views.map((v) => ({ width: v.width, theme: v.theme, moments: v.shots.length }));
+  report.passes.push({ seed, width, theme, also, ended, moments: shots.length, heapMb, art: art.length, findings, seconds: Math.round((Date.now() - passStarted) / 1000) });
   // Known won't-fix rows print but don't fail the run.
   const counted = findings.filter((f) => !f.known).length;
   failures += counted;
-  console.log(`${tag}: ${ended ? 'reached the ending' : 'NEVER REACHED THE ENDING'}, ${shots.length} moments, heap ${heapMb[0]}..${Math.max(...heapMb)} MB, card art ${art.length}/${artIds.length} seen, ${counted} findings${findings.length > counted ? ` (+${findings.length - counted} known)` : ''}`);
+  console.log(`${tag}${also.map((a) => ` (+${a.width} ${a.theme})`).join('')}: ${elapsed()} (captures ${Math.round(captureMs / 1000)} s${views.length ? `, at the other widths ${Math.round(otherMs / 1000)} s` : ''}), ${ended ? 'reached the ending' : 'NEVER REACHED THE ENDING'}, ${shots.length} moments, heap ${heapMb[0]}..${Math.max(...heapMb)} MB, card art ${art.length}/${artIds.length} seen, ${counted} findings${findings.length > counted ? ` (+${findings.length - counted} known)` : ''}`);
   for (const f of findings) console.log(`  ${f.kind.padEnd(8)} m${f.moment} d${f.day} ${f.what}${f.known ? ` [known: ${f.known}]` : ''}`);
 }
 
@@ -1730,8 +1790,14 @@ async function longRun(minutes) {
 if (process.env.HH_PACE) await pace(Number(process.env.HH_PACE));
 else if (process.env.HH_LONG) await longRun(Number(process.env.HH_LONG));
 else {
-  // Themes alternate like a checkerboard over seeds and widths, so every width meets each.
-  for (const [i, seed] of seeds.entries()) for (const [j, width] of widths.entries()) await pass(seed, width, themes[(i + j) % themes.length]);
+  // One career per seed (126), each moment audited and shot at every width in the seed's
+  // theme. The played width j and the theme cycle so that, with the defaults, the probes
+  // meet every width and every width meets each theme: 11 at 1280 light, 12 at 1920 light,
+  // 13 at 1920 dark (a pass's late screens again in the other theme, as before).
+  for (const [i, seed] of seeds.entries()) {
+    const j = (i + Math.floor(i / widths.length)) % widths.length;
+    await pass(seed, widths[j], themes[(i + j) % themes.length], widths.filter((_, k) => k !== j));
+  }
 }
 writeFileSync(resolve(outDir, 'report.json'), JSON.stringify(report, null, 1), { encoding: 'utf-8' });
 const short = report.passes.filter((p) => !p.ended).length;

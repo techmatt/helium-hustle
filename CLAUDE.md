@@ -73,8 +73,8 @@ Locked by Matt: changing any of these is his decision, not an implementation det
 
 - **Commit to the branch you are on.** Leave nothing uncommitted. Never commit to or push `main`.
 - **Testing is light by default** (Matt, docs/rulings/engine.md). After every change: the fast
-  lane, `cargo test --workspace`, plus the checks for what you touched (`npm run check` and
-  `npm run unit` for `web/`). Before a commit that touches Rust, `content/` or `configs/`: the
+  lane, `cargo test --workspace`, plus the checks for what you touched (`npm test` in `web/`:
+  its fast lane, `check` then `unit`). Before a commit that touches Rust, `content/` or `configs/`: the
   full run, `cargo test-all`; Markdown or `web/` alone skips it. Leave `cargo clippy
   --workspace --all-targets` clean. **Heavy reads only on request** (a bug hunt, or the prompt
   asks), never as routine: a full `npm run qa`, e2e, balance reads (`hh-sim balance`, ladders,
