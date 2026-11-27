@@ -108,7 +108,7 @@ fn unlocks_are_staggered() {
     assert!(shown(&r, &g).contains(&"dream_protocols"));
     // Speculators' arrival: Market Analysis.
     assert!(!shown(&r, &g).contains(&"market_awareness"));
-    g.career.flags.insert("speculators_seen".into());
+    g.run.events.insert("speculators_arrive".into(), g.run.day);
     assert!(shown(&r, &g).contains(&"market_awareness"));
     // A Voice: Geopolitical Intelligence and Programming as it starts, Overclock Protocols once done.
     for q in ["qpower_boot_sequence", "qfirst_shipment", "qfull_load"] {
@@ -123,6 +123,40 @@ fn unlocks_are_staggered() {
     assert!(shown(&r, &g).contains(&"overclock_protocols") && shown(&r, &g).contains(&"programming"));
     // Process Telemetry and Accelerated Scheduling wait for Act 2 to place them.
     assert!(!shown(&r, &g).contains(&"process_telemetry") && !shown(&r, &g).contains(&"accelerated_scheduling"));
+}
+
+/// Research groups reveal by this run's triggers, items bought before included: run 2's
+/// day 0 shows Blueprints and (A Voice active) Political Influence and Programming only;
+/// the Lab's groups follow its Research Lab, Market Analysis its speculators.
+#[test]
+fn research_groups_reveal_by_this_runs_triggers() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    for q in ["qpower_boot_sequence", "qfirst_shipment", "qfull_load", "qtrade"] {
+        g.career.completed_quests.insert(q.into());
+    }
+    for id in ["regolith_processing", "liquid_cooling", "market_awareness", "propellant_synthesis", "basic_blueprints"] {
+        g.career.researched.insert(id.into());
+    }
+    g.career.flags.insert("speculators_seen".into());
+    g.career.flags.insert("research_lab".into());
+    g.run.enabled_panels.insert("retirement".into());
+    r.apply(&mut g, &Action::Retire).unwrap();
+    r.advance(&mut g, 1);
+    assert_eq!(g.career.run_number, 2);
+    let groups = |g: &GameState| -> std::collections::BTreeSet<&'static str> {
+        r.view(g).research.into_iter().filter(|x| x.visible).map(|x| x.category).collect()
+    };
+    let day0: Vec<_> = groups(&g).into_iter().collect();
+    assert_eq!(day0, ["Blueprints", "Political Influence", "Programs"]);
+    own(&mut g, "research_lab", 1);
+    r.advance(&mut g, 1);
+    let lab: Vec<_> = groups(&g).into_iter().collect();
+    assert_eq!(lab, ["Blueprints", "Extraction", "Political Influence", "Programs", "Self-Maintenance"]);
+    let shown = |g: &GameState| r.view(g).research.into_iter().filter(|x| x.visible).map(|x| x.id).collect::<Vec<_>>();
+    assert!(shown(&g).contains(&"recreation_dome_blueprints") && shown(&g).contains(&"dream_protocols"));
+    g.run.events.insert("speculators_arrive".into(), g.run.day);
+    assert!(groups(&g).contains("Market Analysis"));
 }
 
 /// Burnout is a story event, once a career: boredom's phase 2 fires it in the

@@ -19,9 +19,8 @@ export interface Save {
   scenario: Scenario | null;
   actions: Stamped[];
   speed: Speed;
-  /** A run summary still open, the speed Continue restores, and the last speed played. */
+  /** A run summary still open (Continue plays the new run at 1x), and the last speed played. */
   summary?: LastRun | null;
-  speedBeforeSummary?: Speed;
   /** What the summarized run started with (the summary's deltas). */
   summaryBase?: SummaryBase | null;
   resumeSpeed?: Speed;

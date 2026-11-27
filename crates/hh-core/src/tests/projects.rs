@@ -27,9 +27,9 @@ fn research_needs_visibility_and_science() {
     assert!(r.apply(&mut g, &res("basic_blueprints")).unwrap_err().contains("not open"));
     g.run.enabled_panels.insert(crate::modules::research::RESEARCH_PANEL.into());
     assert!(r.apply(&mut g, &res("basic_blueprints")).unwrap_err().contains("science"));
-    // Before speculators arrive Market Awareness doesn't show.
+    // Before speculators arrive this run Market Awareness doesn't show.
     assert!(r.apply(&mut g, &res("market_awareness")).unwrap_err().contains("not available"));
-    g.career.flags.insert("speculators_seen".into());
+    g.run.events.insert("speculators_arrive".into(), 0);
     assert!(r.apply(&mut g, &res("market_awareness")).unwrap_err().contains("science"));
     assert!(r.apply(&mut g, &res("dream_protocols")).unwrap_err().contains("not available"));
     set(&mut g, "science", "250");
@@ -57,6 +57,10 @@ fn the_dome_needs_its_blueprints_which_the_archive_discounts_once_bought() {
     g.run.enabled_panels.insert(research::RESEARCH_PANEL.into());
     assert!(!economy::unlocked(&g, dome()), "no Dome before its blueprint");
     let shown = |g: &GameState| r.view(g).research.into_iter().find(|x| x.id == item.id).unwrap();
+    // It shows once the run's Research Lab is built.
+    assert!(!shown(&g).visible);
+    super::support::own(&mut g, "research_lab", 1);
+    r.advance(&mut g, 1);
     assert!(shown(&g).visible);
     assert_eq!(shown(&g).cost, f("300"));
     set(&mut g, "science", "300");

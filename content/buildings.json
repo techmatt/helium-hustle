@@ -121,7 +121,7 @@
     "cost_scaling": "1.5",
     "max_count": null,
     "cost": {"credits": "50", "ice": "16"},
-    "produces": {"propellant": "2"},
+    "produces": {"propellant": "1"},
     "upkeep": {"ice": "2", "energy": "1"},
     "effects": [],
     "output_modifiers": [],

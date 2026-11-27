@@ -552,17 +552,27 @@ export function Ideologies({ s }: { s: Store }) {
         const sc = Math.abs(Number(a.score));
         // Below rank 1 either way the rank is 0: the score's sign says which way it heads.
         const down = Number(a.score) < 0;
+        // Each axis a bold card (117): its emblem fills the left edge (a 160 px slot, sized
+        // for the per-axis emblem art to drop in), its name centered in its color, a large
+        // rank numeral, and a full-width rank bar.
         return (
-          <div class="axis" key={a.axis} data-axis={a.axis}>
-            <h3 class={`axis-${a.axis}`}>
-              <Chip id={a.axis} title={capitalize(a.axis)} size={18} /> {capitalize(a.axis)}
-            </h3>
-            <div>
-              Rank <strong>{a.rank}</strong> · score {num(a.score)} · next rank at {down ? '−' : ''}
-              {num(a.next_rank_score)}
+          <div class={`axis axis-tone-${a.axis}`} key={a.axis} data-axis={a.axis}>
+            <div class="axis-emblem" data-testid={`axis-emblem-${a.axis}`}>
+              <Chip id={a.axis} title={capitalize(a.axis)} size={112} />
             </div>
-            <Bar frac={(sc - lo) / (hi - lo)} tone={down ? 'red' : 'green'} />
-            <div class="muted small">Career best rank: {v.career.max_ideology_ranks[a.axis] ?? 0}</div>
+            <div class="axis-body">
+              <h3 class={`axis-name axis-${a.axis}`}>{capitalize(a.axis)}</h3>
+              <div class="axis-rank">
+                <span class="axis-rank-label">Rank</span>
+                <span class={`axis-rank-num axis-${a.axis}`}>{a.rank}</span>
+              </div>
+              <Bar
+                frac={(sc - lo) / (hi - lo)}
+                tone={down ? 'red' : 'green'}
+                label={`score ${num(a.score)} · next rank at ${down ? '−' : ''}${num(a.next_rank_score)}`}
+              />
+              <div class="axis-best muted">Career best rank: {v.career.max_ideology_ranks[a.axis] ?? 0}</div>
+            </div>
           </div>
         );
       })}

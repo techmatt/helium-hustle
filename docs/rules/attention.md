@@ -37,8 +37,9 @@ per execution ([demand.md](demand.md)).
 **Events.** The `adversary_present` condition holds while the adversary is present
 ([events.md](events.md)). Two silent one-offs read it: `rivals_arrive`, the first time rivals
 are present, sets `contest_claims`; `speculators_arrive`, the first time speculators are
-present, sets the career flag `speculators_seen` (side quest 1.a's trigger, the Market
-Analysis research's visibility) and opens the `adversaries` panel.
+present, sets the career flag `speculators_seen` (side quest 1.a's trigger) and opens the
+`adversaries` panel; its firing this run reveals the Market Analysis research
+([research.md](research.md)).
 
 **Display.** The view's `adversaries` gives each adversary's Attention, threshold,
 presence and `seen` (present now, or an event waiting on its presence seen in the career).

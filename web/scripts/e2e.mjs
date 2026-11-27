@@ -1465,9 +1465,9 @@ async function freshGame() {
     const hint = await evaluate(`[...document.querySelectorAll('.buy-hint.short')].map((h) => h.textContent).join(' ')`);
     check((await evaluate(owned)) === o0 && !hint, `a double-click on Continue buys nothing under it (${o0} -> ${await evaluate(owned)}${hint ? `, "${hint}"` : ''})`);
   }
-  await sleep(800);
+  await sleep(1500);
   check((await run()) === 2 && (await day()) > 0 && !(await exists('[data-testid="summary"]')), `run 2 plays on (day ${await day()}; run 1 lasted ${runDays} days)`);
-  check(await exists('#speeds button[data-speed="200"][aria-pressed="true"]'), 'Continue restores the speed before the summary');
+  check(await exists('#speeds button[data-speed="1"][aria-pressed="true"]'), 'Continue plays the new run at 1x');
   await speed(0);
   check(await navVisible('launch_pads'), 'known nav tiles stay visible in run 2');
   check(await navVisible('retirement'), 'the first retirement opens the Retirement tile in run 2');

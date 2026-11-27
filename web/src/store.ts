@@ -94,7 +94,6 @@ let stoodDown = false;
 let lastSave = 0;
 let saveFailed = false;
 let configHash = '';
-let speedBeforeSummary: Speed = 1;
 /** The speed the story modal's last page resumes. */
 let speedBeforeStory: Speed = 1;
 /** The last speed other than pause. */
@@ -484,8 +483,8 @@ function refresh(reset = false, story: 'load' | 'intro' | 'play' = reset ? 'load
   store.actionCount = game.actions.length;
   let justEnded: View | null = null;
   if (before !== undefined && v.run > before && v.last_run && !reset) {
-    // A run just ended: show its summary with the clock stopped; Continue restores the
-    // speed it had (paused included).
+    // A run just ended: show its summary with the clock stopped; Continue plays the new
+    // run at 1x, whatever speed was set before (Matt, 117).
     store.summary = v.last_run;
     store.backdrop = endedState ? engine.view(endedState) : null;
     justEnded = store.backdrop;
@@ -493,9 +492,8 @@ function refresh(reset = false, story: 'load' | 'intro' | 'play' = reset ? 'load
     store.summaryBase = c
       ? { starting_credits: c.starting_credits, boredom_resilience: c.boredom_resilience, buy_power_mult: c.buy_power_mult }
       : null;
-    // An open story modal already stopped the clock: Continue resumes what it held.
-    const was = holdClock();
-    speedBeforeSummary = store.storyPages.length > 0 ? speedBeforeStory : was;
+    holdClock();
+    resumeSpeed = 1;
     playlog.log('retirement', { ended: v.last_run.run, forced: v.last_run.forced, days: v.last_run.days });
     checkpoint();
     save();
@@ -609,7 +607,6 @@ function save(): void {
     // held meanwhile), so a reload mid-chain shows its unread pages again.
     speed: clock.speed,
     summary: store.summary,
-    speedBeforeSummary,
     summaryBase: store.summaryBase,
     resumeSpeed,
     storyPages: store.storyPages,
@@ -778,7 +775,8 @@ export function togglePause(): void {
   setSpeed(store.speed === 0 ? resumeSpeed : 0);
 }
 
-/** Closes the retirement summary and plays on at the speed before it. */
+/** Closes the retirement summary and plays the new run at 1x, whatever speed was set before
+ * (Matt, 117). */
 export function continueAfterRetirement(): void {
   if (stoodDown) return;
   movedAt = performance.now();
@@ -786,14 +784,14 @@ export function continueAfterRetirement(): void {
   store.backdrop = null;
   store.summaryBase = null;
   playlog.log('continue');
-  // A story chain that came with the retirement shows next, the clock still stopped;
-  // its last page resumes the speed before the summary.
+  // A story chain that came with the retirement shows next, the clock still stopped; its
+  // last page plays on at 1x.
   if (store.storyPages.length > 0) {
-    speedBeforeStory = speedBeforeSummary;
+    speedBeforeStory = 1;
     emit();
     return;
   }
-  setSpeed(speedBeforeSummary);
+  setSpeed(1);
 }
 
 export function setCheatsEnabled(on: boolean): void {
@@ -1022,7 +1020,6 @@ export function start(): void {
       clock.speed = speed;
       store.speed = speed;
       if (s.resumeSpeed && normal(s.resumeSpeed)) resumeSpeed = offered(s.resumeSpeed);
-      if (s.speedBeforeSummary !== undefined && normal(s.speedBeforeSummary)) speedBeforeSummary = offered(s.speedBeforeSummary);
       // A story chain left mid-read shows its unread pages again, the clock held; its
       // last page resumes the speed saved with it.
       if (Array.isArray(s.storyPages) && s.storyPages.length > 0) {

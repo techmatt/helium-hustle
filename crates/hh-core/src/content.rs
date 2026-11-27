@@ -248,6 +248,9 @@ pub struct Research {
     pub requires: Option<String>,
     pub effect: Option<ResearchEffect>,
     pub visible_when: Visibility,
+    /// This run's trigger for its group: it must hold even for an item bought in an
+    /// earlier run, so each run's research unfolds in the same order.
+    pub reveal_when: Visibility,
     pub description: String,
 }
 
@@ -817,6 +820,7 @@ impl Content {
             let w = format!("research {:?}", r.id);
             need(r.requires.as_deref().is_none_or(research), format!("{w}: bad requires"));
             need(r.visible_when.ids_ok(self), format!("{w}: bad visible_when"));
+            need(r.reveal_when.ids_ok(self), format!("{w}: bad reveal_when"));
             if let Some(ResearchEffect::CommandCostOverride { command, resource, .. }) = &r.effect {
                 need(self.command(command).is_some() && res(resource), format!("{w}: bad override"));
             }

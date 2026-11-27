@@ -41,14 +41,15 @@ quest opens as built (its unlocks, the `requires`, research and projects gated o
 | 1.c Blueprints for everyone | `qblueprints_for_everyone` (side) | the `a_voice` flag (beside 1.5, so it starts as the Archive is offered) | the Blueprint Archive global project (placeholder: 2,000 credits, 300 science) | (the Archive's effects while it counts as completed: Basic and Advanced Blueprints bought at the start of every run; Blueprints research bought in an earlier run 20% cheaper) | draft |
 | 1.d Three voices | `qthree_voices` (side) | 1.5 | career-best rank 5 on each axis, in any runs | for good: ideology decays half as fast in the retirement gap (`ideology_half_life_mult` ×2) | draft |
 
-**Silent unlocks** (one-off events, re-applied from day 0 of every later run once seen):
+**Silent unlocks** (one-off events, re-applied from day 0 of every later run once seen; the
+research they reveal waits for each run's own firing):
 
 | When | Event | Opens |
 |---|---|---|
-| the first Research Lab | `research_lab_built` (flag `research_lab`) | Regolith Processing, Liquid Cooling (opens Run Simulations) |
+| the first Research Lab | `research_lab_built` (flag `research_lab`) | each run: the Self-Maintenance and Extraction research (Regolith Processing, Liquid Cooling: opens Run Simulations) |
 | A Voice's start (1.5) | `a_voice_projects` (flag `a_voice`) | the Projects panel and the first global projects: Blueprint Archive, Conditional Logic (opens `if`), Lunar Cartography, Foundation Grant |
-| the first retirement | `first_retirement` (flag `retired`) | the Projects panel with Blueprint Archive, Conditional Logic and Foundation Grant if A Voice hasn't opened them, Chemical Energy, Daydreaming and the boredom research, Recreation Dome Blueprints (300 science; the Dome needs them), the Retirement panel (voluntary retirement) |
-| speculators' arrival | `speculators_arrive` (flag `speculators_seen`) | the Adversaries panel, the Market Analysis research category (Speculator Analysis opens Disrupt Speculators) |
+| the first retirement | `first_retirement` (flag `retired`) | the Projects panel with Blueprint Archive, Conditional Logic and Foundation Grant if A Voice hasn't opened them, Chemical Energy, Daydreaming and the boredom research and Recreation Dome Blueprints (300 science; the Dome needs them) once each run's Lab is built, the Retirement panel (voluntary retirement) |
+| speculators' arrival | `speculators_arrive` (flag `speculators_seen`) | the Adversaries panel; each run: the Market Analysis research (Speculator Analysis opens Disrupt Speculators) |
 | rivals' arrival (Act 2) | `rivals_arrive` (flag `contest_claims`) | Contest Claims |
 
 **Burnout** is no quest: the first time boredom bites (its phase 2, once a career) the story

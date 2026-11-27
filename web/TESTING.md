@@ -101,7 +101,8 @@ A story modal refuses every action and speed until read: `readStory()` reads one
   He-3 on both pads, launch by hand, grant He-3 and propellant as they run low (116's `check.mjs`).
 - Edge needs an **absolute** `--user-data-dir` (the script resolves it).
 - Leaving a page fires `pagehide`, then `visibilitychange`; the page saves on both, so a
-  test editing the save does it after both.
+  test editing the save does it after both, or edits `localStorage` then sets
+  `Storage.prototype.setItem = () => {}` before reloading (104's and 117's `check.mjs`).
 
 `npm run unit` (Node, no page) checks the number formatting (`src/format.ts`) and
 `fillRate` (an event effect's `{rate}`), `programEdit.ts`'s line edits, that every quest `picture` has a file, then `scripts/contrast.mjs`

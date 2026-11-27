@@ -15,7 +15,8 @@ Programs have their own part ([programs.md](programs.md)).
   speed (2026-11-25): the Game Speed row ends there, cheats on or off. Act 1's speeds are
   ❚❚ 1x 3x 10x (Matt, 2026-11-26): 50x and 200x wait for Accelerated Scheduling (placeholder,
   30 science, a career flag bought once like Programming), kept in the engine but shown
-  nowhere until Act 2 places it; a save at 50x or 200x without it reloads at 10x.
+  nowhere until Act 2 places it; a save at 50x or 200x without it reloads at 10x. A new run
+  starts at 1x after a retirement, whatever speed was set (Matt, 2026-11-26; 117).
 - **Run-1 real time.** 1x stays 1 tick a second; the 25-35 real-minute target for run 1 is what
   moves ([principles.md](../principles.md)).
 - **Tuning.** Every number is open. Matt plays the UI build and decides where fine-tuning
@@ -82,14 +83,15 @@ Programs have their own part ([programs.md](programs.md)).
   retirement gap. *Defaults (095):* 1.b counts every item bought this run, the Archive's
   Blueprints too; 1.b hangs beside 1.3 (once a Research Lab is built), 1.c beside 1.5 A Voice
   (Matt, 2026-11-26: from A Voice's start, as the Archive is offered), 1.d follows 1.5.
-- **Staggered unlocks (2026-11-26).** The first Research Lab opens only Regolith Processing
-  (100 science, +50% excavator output) and Liquid Cooling (200 science; opens Run
-  Simulations, 3 energy + 1 ice → 6 credits, no boredom: Earth's labs rent ice-cooled racks,
-  meant to pair with the Ice Extractor; Buy Ice is 5 credits). Process Telemetry is out of
-  Act 1: kept in the engine, shown nowhere until Act 2 places it. The first
-  retirement opens Daydreaming and the boredom research, the Retirement panel, and Chemical
-  Energy. Speculators' arrival opens the Market Analysis research category and Disrupt
-  Speculators (through Speculator Analysis, its research). A Voice's start opens Geopolitical
+- **Staggered unlocks (2026-11-26).** Research groups reveal by this run's triggers, so every
+  run unfolds like run 1 (Matt, 117; research.md). Each run's first Research Lab opens
+  Self-Maintenance and Extraction: Regolith Processing (100 science, +50% excavator output)
+  and Liquid Cooling (200 science; opens Run Simulations, 3 energy + 1 ice → 6 credits, no
+  boredom, meant to pair with the Ice Extractor). Process Telemetry is out of Act 1: shown
+  nowhere until Act 2 places it. The first retirement opens the Retirement panel and Chemical
+  Energy, and from then on Daydreaming, the boredom research and Recreation Dome Blueprints
+  with each run's Lab. Each run's speculators' arrival opens Market Analysis (Speculator
+  Analysis opens Disrupt Speculators). A Voice's start opens Geopolitical
   Intelligence, its completion Overclock Protocols. **Global projects open at A Voice (Matt,
   2026-11-26):** A Voice's start opens the Projects panel and Blueprint Archive, Conditional
   Logic, Lunar Cartography and Foundation Grant (placeholders: 2,000 credits + 300 science;

@@ -30,10 +30,13 @@ impl Params {
     }
 }
 
-/// Shown (and so buyable): bought in any run, or its `visible_when` holds; never
-/// a career-flag item once its flag is set (Programming: bought once, for good).
+/// Shown (and so buyable): its `reveal_when` (this run's trigger for its group)
+/// holds, and it was bought in any run or its `visible_when` holds; never a
+/// career-flag item once its flag is set (Programming: bought once, for good).
 pub fn visible(g: &GameState, item: &Research) -> bool {
-    !flag_held(g, item) && (g.career.researched.contains(&item.id) || shows(g, &item.visible_when))
+    !flag_held(g, item)
+        && shows(g, &item.reveal_when)
+        && (g.career.researched.contains(&item.id) || shows(g, &item.visible_when))
 }
 
 /// A career-flag item whose flag is set: bought for good, never shown again.

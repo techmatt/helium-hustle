@@ -9,10 +9,12 @@ elsewhere. Buying is a player action; research has no step of its own in
 ## Rules
 
 **Visibility.** An item with a `career_flag` effect is never shown once its flag is set.
-Otherwise an item is shown, and so buyable, if it was bought in any run of the career
-(`career.researched`), or its `visible_when` holds now:
+Otherwise an item is shown, and so buyable, if its `reveal_when` holds now (its group's trigger
+this run, binding even for an item bought before, so every run's research unfolds in run 1's
+order) and it was bought in any run of the career (`career.researched`) or its `visible_when`
+holds now. Both take the same conditions:
 
-| `visible_when` | Holds when |
+| Condition | Holds when |
 |---|---|
 | `always` | always |
 | `never` | never: a row kept in the engine, not placed in the game yet |
@@ -61,7 +63,7 @@ count as bought from day 0 of every run while the project counts as completed ([
   a tier (display only, [demand.md](demand.md)).
 - `modifier` (`key`, `value`): multiplies the modifier `key` by `value`, one more source in
   the shared modifier framework ([README.md](README.md), *Modifiers*). Regolith Processing
-  (100 science, category *Extraction*, visible once a Research Lab is built): `excavator_output_mult`
+  (100 science, category *Extraction*, visible once this run's Research Lab is built): `excavator_output_mult`
   1.5, so Regolith Excavators make 50% more ([economy.md](economy.md)).
 - `program_readings` (Process Telemetry, 50 science, `never` visible: out of Act 1 until Act 2 places it, its own category
   *Program Analysis*): programs' `energy per day` and `days since a purchase` readings
@@ -106,24 +108,34 @@ Every number is on the content rows: costs, visibility thresholds and effect val
 ## Content
 
 `content/research.json`: 20 rows, each with `cost`, optional `requires`, optional `effect`,
-`visible_when`, a `category` and a placeholder `description`. The *Blueprints* category comes
-first: Basic Blueprints (10 science, always visible; no quest asks for it) unlocks the Regolith
+`visible_when`, `reveal_when`, a `category` and a placeholder `description`. A group (a
+category) is revealed by its rows' `reveal_when`, a trigger of this run (the same on each row,
+but for Recreation Dome Blueprints):
+
+| Group | Revealed |
+|---|---|
+| Blueprints, Political Influence, Programs, Overclock Algorithms, Program Analysis | always (their `visible_when` gates them) |
+| Self-Maintenance, Extraction, and Recreation Dome Blueprints | once a Research Lab is built this run (the silent one-off `research_lab_built` fired) |
+| Market Analysis | once speculators are present this run (the one-off `speculators_arrive` fired) |
+
+The *Blueprints* category comes first: Basic Blueprints (10 science, always visible; no quest asks for it) unlocks the Regolith
 Excavator, Smelter, Launch Pad and Storage Depot, Advanced Blueprints (20, visible once
 quest 1.2 First Shipment is completed) the Battery, Refinery, Fabricator and Research Lab, and
-Recreation Dome Blueprints (300, placeholder, visible from the first retirement) the Recreation
-Dome, through those buildings' `requires` ([economy.md](economy.md)). The rest open in stages
+Recreation Dome Blueprints (300, placeholder, visible from the first retirement, once its run's
+Research Lab is built) the Recreation Dome, through those buildings' `requires`
+([economy.md](economy.md)). Within a revealed group, items open by their `visible_when`
 ([events.md](events.md)):
 
 | When | Shows |
 |---|---|
-| First Research Lab (flag `research_lab`, the silent `research_lab_built`) | Regolith Processing, Liquid Cooling (200 science, *Self-Maintenance*; no effect of its own: Run Simulations `requires` it, [commands.md](commands.md)) |
+| Its group revealed | Regolith Processing, Liquid Cooling (200 science, *Self-Maintenance*; no effect of its own: Run Simulations `requires` it, [commands.md](commands.md)), Market Awareness |
 | First retirement (flag `retired`) | Daydreaming (Dream Protocols); Stress Tolerance and Efficient Dreaming once it is bought |
-| Speculators' arrival (flag `speculators_seen`) | Market Awareness; Speculator Analysis and Trade Promotion once it is bought; Shipping Efficiency at 10 shipments |
+| Market Awareness bought | Speculator Analysis and Trade Promotion; Shipping Efficiency at 10 shipments |
 | Quest 1.5 A Voice starts | Geopolitical Intelligence, Programming |
 | 1.5 completes | Overclock Protocols; Overclock Boost once it is bought |
 | 1.6 Deep Space Telescope completes | Novelty Simulation (draft, [timeline.md](timeline.md)) |
 
-Propellant Synthesis shows with the propellant discovery event (4 shipments). Side quest 1.b
+Propellant Synthesis shows with the propellant discovery event (4 shipments), once its group is. Side quest 1.b
 Full Cluster's `research_count` counts the items bought this run (Archive-granted Blueprints
 included); Market Awareness only reveals demand, and Speculator Analysis opens Disrupt
 Speculators ([demand.md](demand.md)). The `research` panel

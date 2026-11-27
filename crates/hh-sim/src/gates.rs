@@ -4,7 +4,8 @@
 //! grants, research), a building's or command's `requires` (`quest`: active or
 //! done; `quest_completed`), research `visible_when` (`quest_completed`), a
 //! project's `quest_active` unlock, and an Earth tech's `requires`. One-off
-//! events follow, with what the career flags they set open. docs/arc.md
+//! events follow, with the research their firing reveals this run (`reveal_when`)
+//! and what the career flags they set open. docs/arc.md
 //! keeps the design's hand-written "Opens" column; this is what is built.
 
 use std::fmt::Write as _;
@@ -29,6 +30,15 @@ fn visible_on(v: &Visibility, q: &str) -> bool {
     match v {
         Visibility::QuestCompleted { quest } | Visibility::QuestActive { quest } => quest == q,
         Visibility::AllOf { all: xs } | Visibility::AnyOf { any: xs } => xs.iter().any(|x| visible_on(x, q)),
+        _ => false,
+    }
+}
+
+/// A research row's `reveal_when` waits on the one-off event `ev` firing this run.
+fn revealed_by(v: &Visibility, ev: &str) -> bool {
+    match v {
+        Visibility::EventCompleted { event } => event == ev,
+        Visibility::AllOf { all: xs } | Visibility::AnyOf { any: xs } => xs.iter().any(|x| revealed_by(x, ev)),
         _ => false,
     }
 }
@@ -105,6 +115,10 @@ pub fn run() -> String {
     for e in c.events.iter().filter(|e| !e.is_quest() && !e.is_side() && !e.unlocks.is_empty()) {
         let _ = writeln!(t, "{} (event{})", e.id, if e.silent { ", silent" } else { "" });
         let _ = writeln!(t, "  on firing: {}", e.unlocks.iter().map(unlock).collect::<Vec<_>>().join(", "));
+        let revealed: Vec<&str> = c.research.iter().filter(|r| revealed_by(&r.reveal_when, &e.id)).map(|r| r.id.as_str()).collect();
+        if !revealed.is_empty() {
+            let _ = writeln!(t, "  research revealed this run: {}", revealed.join(", "));
+        }
         for u in &e.unlocks {
             if let Unlock::SetFlag { flag: f } = u {
                 let lines = flag(c, f);

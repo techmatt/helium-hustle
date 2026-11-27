@@ -124,11 +124,11 @@ const PINNED: &[(&str, u64, &str)] = &[
     ("random", 2, "20c121225c181e45"),
     ("greedy", 1, "27e3dc588587c60f"),
     ("greedy", 2, "3359cd61da2f5bc6"),
-    ("author", 1, "71778159f08c7b22"),
+    ("author", 1, "8607a4f9b257b390"),
     ("author", 2, "5857cb74eaaaa501"),
-    ("casual", 1, "d5d7d27d503aac4e"),
-    ("casual", 2, "3da46151739d9201"),
-    ("handsoff", 1, "72e65b69b70baf50"),
+    ("casual", 1, "f0afb637b67b7c2a"),
+    ("casual", 2, "92a76e97cf61a8e5"),
+    ("handsoff", 1, "a6ead950ce098612"),
     ("handsoff", 2, "24c5e3dca9d5b071"),
 ];
 
@@ -192,7 +192,7 @@ fn the_ladder_prints_its_tables_and_writes_results() {
 /// handsoff games are the author's), so this one goes to run 3 on seed 1,
 /// where the loadout file plays, and ships and buys. A new loadout file moves
 /// the pin: copy it from the failing assertion.
-const HANDSOFF_PIN: &str = "66280ed2fe6d3717";
+const HANDSOFF_PIN: &str = "f2aeccefb7794484";
 
 #[test]
 #[ignore = "slow lane: a 3-run career (~4 s)"]
@@ -351,7 +351,7 @@ fn the_oracle_plays_on_copies_and_its_game_replays() {
     let half = fingerprints.len() / 2;
     assert_eq!(fingerprints[..half], fingerprints[half..]);
     // Seeds 1 and 2 of the oracle, then of the pinned one.
-    assert_eq!(fingerprints[..half], ["864b6d57a88053c7", "912e32637456de43", "5bd8ca2e98d10cee", "4d4c5ab9f3754f92"]);
+    assert_eq!(fingerprints[..half], ["d31a537f80cd314e", "ea818ab4ffb4ad34", "50c884d89dbcc0b6", "4423d09431b62efc"]);
 }
 
 /// `--agents` splits players, not knobs: a knob's value may hold a `:` (a
@@ -371,6 +371,7 @@ fn gates_lists_what_each_quest_opens() {
     let out = run(&["gates".to_string()]).unwrap();
     assert!(out.contains("on completion: "), "{out}");
     assert!(out.contains("research shown once done: "), "{out}");
+    assert!(out.lines().any(|l| l.contains("research revealed this run: ") && l.contains("regolith_processing")), "{out}");
     assert!(matches!(run(&["gates".to_string(), "x".to_string()]), Err(Fail::Usage(_))));
 }
 
