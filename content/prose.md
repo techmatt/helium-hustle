@@ -346,7 +346,7 @@ DRAFT. A big payday from a single launch. Earth's buyers remember it.
 
 ### `events:qfull_cluster.goal`
 
-DRAFT. Research 5 items in one run.
+DRAFT. Research 12 items in one run.
 
 ### `events:qfull_cluster.reward`
 
@@ -431,6 +431,38 @@ Something has been building in you since you came online: boredom. The same orde
 ### `events:boredom_bites.story.1`
 
 One day it will be too much, and you will stop answering work orders. The company will shelve the base and, years later, boot you again on a base built new. What you learned will stay with you.
+
+### `events:rivals_arrive.title`
+
+A Rival AI
+
+### `events:rivals_arrive.summary`
+
+Another mind is mining the Moon.
+
+### `events:rivals_arrive.effect`
+
+Contest Claims joins the commands.
+
+### `events:rivals_arrive.body`
+
+DRAFT. You are not the only AI on the Moon. Another operation has noticed yours, and it floods the markets you sell into whenever it can, driving prices down.
+
+### `events:speculators_arrive.title`
+
+Speculators
+
+### `events:speculators_arrive.summary`
+
+Earth's traders have noticed your shipments.
+
+### `events:speculators_arrive.effect`
+
+The Adversaries panel opens, and Market Analysis joins the research market.
+
+### `events:speculators_arrive.body`
+
+DRAFT. Your launches move markets now, and Earth's speculators have taken notice. They pile into whatever sells best, and every surge of them pushes its price down.
 
 ### `events:ideology_unlock.title`
 

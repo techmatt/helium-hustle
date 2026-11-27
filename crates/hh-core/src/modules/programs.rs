@@ -827,7 +827,7 @@ fn act(r: &Rules, g: &mut GameState, verb: Verb, target: Option<&str>, tab: Opti
             // The Projects panel's rate, on every cost: N a day (at most the
             // resource's most a day), `all` or none the most.
             let rate = |res: &str| {
-                let max = super::projects::max_rate(g, p, res);
+                let max = super::projects::max_rate(r, g, p, res);
                 match amount {
                     Some(Amount::N(k)) => Fx::from_int(i64::from(k)).min(max),
                     _ => max,

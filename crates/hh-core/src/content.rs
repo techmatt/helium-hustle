@@ -518,9 +518,11 @@ pub struct Project {
     pub unlock: Condition,
     /// The first completion's costs (a repeatable one's grow per completion).
     pub costs: Amounts,
-    /// The fewest days funding may take: each resource's most a day is its
-    /// cost over this.
-    pub min_days: u32,
+    /// A deliberate fewest days funding may take (the Deep Space Telescope's):
+    /// each resource's most a day is also at most its cost over this. Absent:
+    /// only the projects module's funding cap limits it.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub min_days: Option<u32>,
     /// Absent: completes once. Present: repeatable.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub repeat: Option<Repeat>,
@@ -872,7 +874,7 @@ impl Content {
         for p in &self.projects {
             let w = format!("project {:?}", p.id);
             need(p.costs.keys().all(|r| res(r)), format!("{w}: unknown cost resource"));
-            need(p.min_days >= 1, format!("{w}: min_days below 1"));
+            need(p.min_days.is_none_or(|d| d >= 1), format!("{w}: min_days below 1"));
             need(p.repeat.as_ref().is_none_or(|x| x.cost_growth >= Fx::ONE), format!("{w}: cost_growth below 1"));
             need(
                 self.condition_ok(&p.unlock) && !matches!(p.unlock, Condition::AllOf { .. }),

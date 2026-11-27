@@ -128,7 +128,8 @@ before Act 4's done, shows Story's four act bands). Their contents are asserted 
 `tests/economy.rs` reads `late_unlocks`' one-energy shortage and its programs,
 `tests/replay.rs` `everything`'s nav tiles, flags, active quest and processors, and replays
 `rich` (as hh-sim's `tests/cli.rs` does); e2e plays `late_unlocks` (sections 2, 6, 11), `everything` (7-10), `rich` and `at_cap`
-(3, 5) and `pad_loading` (5). An edit to a scenario, or to the content it leans on, reruns both.
+(3, 5) and `pad_loading` (5); `speculators_due` is for hand checks (speculators' first
+arrival popup: 116's `check.mjs`). An edit to a scenario, or to the content it leans on, reruns both.
 
 ## Records and saves
 

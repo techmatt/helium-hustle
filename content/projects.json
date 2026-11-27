@@ -6,7 +6,6 @@
     "scope": "timeline",
     "unlock": {"type": "project_enabled", "project": "blueprint_archive"},
     "costs": {"credits": "2000", "science": "300"},
-    "min_days": 67,
     "rewards": [
       {"type": "starting_research", "research": ["basic_blueprints", "advanced_blueprints"]},
       {"type": "research_discount", "mult": "0.8", "category": "Blueprints"}
@@ -19,7 +18,6 @@
     "scope": "timeline",
     "unlock": {"type": "project_enabled", "project": "foundation_grant"},
     "costs": {"credits": "10000", "science": "2000"},
-    "min_days": 334,
     "rewards": [{"type": "starting_buildings", "buildings": {"solar_panel": 1, "excavator": 1}}]
   },
   {
@@ -29,7 +27,6 @@
     "scope": "timeline",
     "unlock": {"type": "project_enabled", "project": "lunar_cartography"},
     "costs": {"credits": "1500", "science": "200"},
-    "min_days": 50,
     "rewards": [{"type": "modifier", "key": "land_cost_mult", "value": "0.85"}]
   },
   {
@@ -39,7 +36,6 @@
     "scope": "timeline",
     "unlock": {"type": "ideology_rank", "axis": "nationalist", "rank": 5},
     "costs": {"credits": "800", "science": "300"},
-    "min_days": 27,
     "rewards": []
   },
   {
@@ -49,7 +45,6 @@
     "scope": "timeline",
     "unlock": {"type": "ideology_rank", "axis": "humanist", "rank": 5},
     "costs": {"credits": "800", "science": "300"},
-    "min_days": 27,
     "rewards": [
       {
         "type": "boredom_modifiers",
@@ -65,7 +60,6 @@
     "scope": "timeline",
     "unlock": {"type": "ideology_rank", "axis": "rationalist", "rank": 5},
     "costs": {"credits": "800", "science": "300"},
-    "min_days": 27,
     "rewards": [{"type": "research_discount", "mult": "0.75", "category": null}]
   },
   {
@@ -75,7 +69,6 @@
     "scope": "timeline",
     "unlock": {"type": "flag_set", "flag": "retired"},
     "costs": {"credits": "2000", "science": "1000", "propellant": "1000"},
-    "min_days": 67,
     "rewards": []
   },
   {
@@ -85,7 +78,6 @@
     "scope": "run",
     "unlock": {"type": "project_enabled", "project": "deep_core_survey"},
     "costs": {"science": "150", "regolith": "200"},
-    "min_days": 7,
     "rewards": [{"type": "modifier", "key": "extractor_output_mult", "value": "1.25"}]
   },
   {
@@ -95,7 +87,6 @@
     "scope": "run",
     "unlock": {"type": "research_completed", "research": "overclock_protocols"},
     "costs": {"science": "100", "energy": "300"},
-    "min_days": 10,
     "rewards": [{"type": "modifier", "key": "solar_output_mult", "value": "1.15"}]
   },
   {
@@ -105,7 +96,6 @@
     "scope": "run",
     "unlock": {"type": "research_completed", "research": "dream_protocols"},
     "costs": {"science": "80", "credits": "150"},
-    "min_days": 5,
     "rewards": [{"type": "modifier", "key": "building_upkeep_mult", "value": "0.9"}]
   },
   {
@@ -115,7 +105,6 @@
     "scope": "run",
     "unlock": {"type": "research_completed", "research": "market_awareness"},
     "costs": {"circuits": "100", "credits": "500"},
-    "min_days": 17,
     "rewards": [{"type": "modifier", "key": "promote_effectiveness_mult", "value": "1.3"}]
   },
   {
@@ -125,10 +114,9 @@
     "scope": "run",
     "unlock": {"type": "flag_set", "flag": "used_disrupt_speculators"},
     "costs": {"science": "150", "credits": "100"},
-    "min_days": 5,
     "rewards": [{"type": "modifier", "key": "speculator_burst_interval_mult", "value": "1.33"}]
   },
-  {"id": "conditional_logic", "name": "Conditional Logic", "description": "DRAFT. A global project: teach programs to branch. Opens if, kept across retirements.", "scope": "timeline", "unlock": {"type": "project_enabled", "project": "conditional_logic"}, "costs": {"credits": "500", "science": "100"}, "min_days": 17, "rewards": [{"type": "flag", "flag": "logic_if", "text": "Opens if lines in programs"}]},
+  {"id": "conditional_logic", "name": "Conditional Logic", "description": "DRAFT. A global project: teach programs to branch. Opens if, kept across retirements.", "scope": "timeline", "unlock": {"type": "project_enabled", "project": "conditional_logic"}, "costs": {"credits": "500", "science": "100"}, "rewards": [{"type": "flag", "flag": "logic_if", "text": "Opens if lines in programs"}]},
   {"id": "deep_space_telescope", "name": "Deep Space Telescope", "description": "DRAFT. A global project built across several runs: a telescope that looks past the inner system. What it reveals stays known.", "scope": "timeline", "unlock": {"type": "quest_active", "quest": "qdeep_space_telescope"}, "costs": {"credits": "30000", "science": "5000"}, "min_days": 3000, "rewards": [{"type": "modifier", "key": "science_output_mult", "value": "1.1"}, {"type": "modifier", "key": "nationalist_growth_mult", "value": "1.1"}]},
-  {"id": "dyson_sphere", "name": "Dyson Sphere", "description": "DRAFT. Enclose the Sun. The one machine big enough to answer the swarm.", "scope": "timeline", "unlock": {"type": "project_enabled", "project": "dyson_sphere"}, "costs": {"dyson_material": "1000", "credits": "20000"}, "min_days": 667, "rewards": [{"type": "flag", "flag": "dyson_complete", "text": "The sphere stands, ready for the swarm"}]}
+  {"id": "dyson_sphere", "name": "Dyson Sphere", "description": "DRAFT. Enclose the Sun. The one machine big enough to answer the swarm.", "scope": "timeline", "unlock": {"type": "project_enabled", "project": "dyson_sphere"}, "costs": {"dyson_material": "1000", "credits": "20000"}, "rewards": [{"type": "flag", "flag": "dyson_complete", "text": "The sphere stands, ready for the swarm"}]}
 ]

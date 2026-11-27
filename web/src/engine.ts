@@ -349,7 +349,9 @@ export interface ProjectView {
   rates: Amounts;
   /** The most each rate may be, per resource, per day. */
   max_rates: Amounts;
-  /** Days to the next completion at today's rates; null while a cost still owed has no rate. */
+  /** What each set rate actually gets: the last day's take where the stock fell short, else the rate (keys as `rates`). */
+  actual_rates: Amounts;
+  /** Days to the next completion at the actual rates; null while a cost still owed gets nothing. */
   days_to_done: number | null;
   /** What opens it (the engine's text). */
   unlock_text: string;

@@ -123,7 +123,7 @@ quest moves on, the web UI pauses and shows the finished quests' payoffs with th
 quest passed through the same day), then the new quest's story with its goal, resuming after
 the last; a new game shows only 1.1's. A quest with no `story` shows its `body`. Every one-off in `event_texts` is a
 modal (a popup) as it fires: its `story` pages (Burnout's), else its `body`, with its effect; a
-completed side quest's is its payoff (else body) and reward. Events' "Hide popups for events
+completed side quest's is its payoff (else body) and reward. Options' "Hide popups for events
 you've already seen" skips one this career has shown before (rulings/ui.md, *Popups*). The view
 carries them (`quest.story`; each completed quest's `chain`, `story` and `payoff`). A quest
 (chain or side) may name a `picture`, the stem of a web asset (`[a-z0-9_]`; the view carries
@@ -169,21 +169,22 @@ Space Telescope (the swarm's reveal; [../arc.md](../arc.md)), then the draft 2.1
 Epilogue (4.3). 1.3 Full Load opens Launch Full Pads; 1.4 Trade counts this run's launch pay and
 unlocks nothing; 1.5 A Voice is rank 5 on any axis this run. Four `side`, each with a permanent reward: 1.a Big Launch (the
 `speculators_seen` flag beside 1.4; `modifier` `shipment_credit_mult` ×1.1), 1.b Full Cluster
-(the `research_lab` flag beside 1.3; 5 research items in one run; a `grant` of 50 Science, so
+(the `research_lab` flag beside 1.3; 12 research items in one run; a `grant` of 50 Science, so
 every later run starts with it), 1.c Blueprints for Everyone (the `a_voice` flag beside 1.5;
 completes with the Blueprint Archive; no unlock: the rewards are the project's,
 [projects.md](projects.md)) and 1.d Three Voices (1.5's completion; career-best rank 5 on each
-axis; `modifier` `ideology_half_life_mult` ×2). Twelve `ongoing`, five silent:
+axis; `modifier` `ideology_half_life_mult` ×2). Twelve `ongoing`, three silent:
 `research_lab_built` (a Research Lab owned: sets the `research_lab` flag), `first_retirement`
 (a retirement in the career: sets the `retired` flag, opens the `retirement` and `projects`
 panels, Foundation Grant, Blueprint Archive and Conditional Logic), `a_voice_projects` (1.5
 A Voice active or done: sets the `a_voice` flag, opens the `projects` panel and those three
-projects and Lunar Cartography), `speculators_arrive` (speculators present: sets the `speculators_seen` flag, opens the `adversaries` panel), `rivals_arrive` (rivals
-present, Act 2: sets the `contest_claims` flag); then `boredom_bites` (Burnout: boredom phase
+projects and Lunar Cartography); then `speculators_arrive` (Speculators: present, sets the
+`speculators_seen` flag, opens the `adversaries` panel), `rivals_arrive` (A Rival AI: present,
+Act 2, sets the `contest_claims` flag), each an arrival popup, `boredom_bites` (Burnout: boredom phase
 2, `once`, a story modal; sets the `burnout` flag that starts boredom, [boredom.md](boredom.md)), Political Currents, propellant discovery and boredom phases 2 to 5
 (phase 2 skips Burnout's run: `event_not_fired`).
-The silent ones trigger at `game_start` in any run, so once seen in the career their unlocks
-re-apply from each run's day 0 (*Run start*).
+Those triggering at `game_start` in any run (the silent ones and the two arrivals) re-apply
+their unlocks from each run's day 0 once seen in the career (*Run start*).
 
 ## Port notes
 

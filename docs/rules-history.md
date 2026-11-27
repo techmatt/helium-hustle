@@ -6,6 +6,7 @@ about 400 bytes; rows older than the last ten revisions are trimmed to a line (M
 
 | Revision | Item | What changed | Why |
 |---|---|---|---|
+| 41 | 116_parked_batch_projects_panel_adversaries | Project funding cap: 30 credits and 10 of each other resource a day (projects params), replacing derived `min_days` (the telescope's 3,000 stays). Full Cluster (1.b) 12 research items. Arbitrage Engine requires Market Awareness. Speculators' and rivals' arrivals are popup events. Bumped from the constant, 40 → 41. | Matt's parked edits (2026-11-26). |
 | 40 | 114_a_voice_projects_and_program_lights | A Voice's start opens Projects with Blueprint Archive (2,000 credits + 300 science), Conditional Logic, Lunar Cartography (1,500 + 200) and Foundation Grant (10,000 + 2,000); 1.c hangs beside A Voice. Liquid Cooling 200 science. Display: a per-day step tally per program (tab lights). Bumped from the constant, 39 → 40. | Matt: projects at A Voice, credits plentiful by then. |
 | 39 | 113_handsoff_loadout_research | Boredom Rising (phase 2) doesn't fire in the run Burnout fires in (new condition `event_not_fired`); from later runs it is the phase-2 notice as before. Bumped from the constant, 38 → 39. | Matt's parked edit: both fired at phase 2. |
 | 38 | 112_right_panel_events_and_popups | Buy Regolith and Buy Propellant 10 credits (were 8 and 12); Launch Pad 20 titanium (was 30); Data Center upkeep 4 energy (was 2); Solar Panel 6 energy (was 5). Bumped from the constant, 37 → 38. | Matt's parked edits (2026-11-26). |

@@ -15,6 +15,7 @@ import {
   pilotStatus,
   runAutopilot,
   setCheatsEnabled,
+  setHideSeenPopups,
   setNotice,
   stopAutopilot,
   type Store,
@@ -34,6 +35,17 @@ export function Options({ s }: { s: Store }) {
         </p>
         <p class="muted small">Keys: space pauses or resumes, 1 to 5 pick 1x to 200x.</p>
         <ThemePick id="theme" />
+        <p>
+          <label>
+            <input
+              type="checkbox"
+              data-testid="hide-seen-popups"
+              checked={s.hideSeenPopups}
+              onChange={(ev) => setHideSeenPopups((ev.target as HTMLInputElement).checked)}
+            />{' '}
+            Hide popups for events you've already seen
+          </label>
+        </p>
         <p class="small" data-testid="playlog-status" data-career={playlog.currentCareer() ?? ''}>
           {playlog.status === 'off'
             ? 'Play log: not recording (no log server; play through npm run dev).'

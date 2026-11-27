@@ -107,17 +107,26 @@ fn projects_drain_at_their_rates_and_complete() {
         resource: res.into(),
         rate: f(v),
     };
-    // min_days 5: science at most 80 / 5 = 16 a day, credits 150 / 5 = 30.
-    assert!(r.apply(&mut g, &rate("science", "17")).is_err(), "over the most a day");
-    r.apply(&mut g, &rate("science", "16")).unwrap();
+    // The funding cap: science at most 10 a day, credits 30.
+    assert!(r.apply(&mut g, &rate("science", "11")).is_err(), "over the most a day");
+    r.apply(&mut g, &rate("science", "10")).unwrap();
     r.apply(&mut g, &rate("credits", "30")).unwrap();
     assert!(r.apply(&mut g, &rate("credits", "31")).is_err(), "over the most a day");
     set(&mut g, "science", "1000");
     set(&mut g, "credits", "1000");
-    assert_eq!(r.view(&g).projects.iter().find(|p| p.id == "predictive_maintenance").unwrap().days_to_done, Some(5));
-    r.advance(&mut g, 4);
-    assert_eq!(g.amount("science"), f("936"), "80 needed: 16 a day");
-    assert!(!crate::modules::projects::completed(&g, "predictive_maintenance"), "credits: 120 of 150");
+    assert_eq!(r.view(&g).projects.iter().find(|p| p.id == "predictive_maintenance").unwrap().days_to_done, Some(8));
+    r.advance(&mut g, 5);
+    assert!(crate::modules::projects::progress(&g, crate::content::content().project("predictive_maintenance").unwrap())
+        .is_some_and(|m| m.get("credits") == Some(&f("150")) && m.get("science") == Some(&f("50"))));
+    // Science runs dry: the actual rate is what the stock covered.
+    set(&mut g, "science", "0");
+    r.advance(&mut g, 1);
+    let pv = |g: &crate::GameState| r.view(g).projects.into_iter().find(|p| p.id == "predictive_maintenance").unwrap();
+    assert_eq!(pv(&g).actual_rates.get("science"), Some(&f("0")), "nothing in stock: nothing taken");
+    assert_eq!(pv(&g).days_to_done, None, "a cost owed that gets nothing");
+    set(&mut g, "science", "1000");
+    r.advance(&mut g, 2);
+    assert!(!crate::modules::projects::completed(&g, "predictive_maintenance"), "science: 70 of 80");
     r.advance(&mut g, 1);
     assert_eq!(g.run.projects.completions.get("predictive_maintenance"), Some(&1));
     assert!(g.run.project_rates.is_empty(), "done for good: its rates clear");
@@ -137,7 +146,11 @@ fn a_repeatable_project_grows_its_costs_and_keeps_its_rates() {
     assert_eq!(crate::modules::projects::cost(&g, &p, "credits"), f("150"));
     g.career.forever_projects.completions.insert(p.id.clone(), 2);
     assert_eq!(crate::modules::projects::cost(&g, &p, "credits"), f("600"), "150 × 2²");
-    assert_eq!(crate::modules::projects::max_rate(&g, &p, "credits"), f("120"), "600 / 5 days");
+    assert_eq!(crate::modules::projects::max_rate(&r, &g, &p, "credits"), f("30"), "the cap, whatever the cost");
+    // A deliberate minimum (the telescope's 3,000 days) lowers the cap further.
+    let t = crate::content::content().project("deep_space_telescope").unwrap();
+    assert_eq!(crate::modules::projects::max_rate(&r, &g, t, "credits"), f("10"), "30,000 / 3,000");
+    assert_eq!(crate::modules::projects::max_rate(&r, &g, t, "science"), f("1.666667"), "5,000 / 3,000 rounded up");
 }
 
 #[test]

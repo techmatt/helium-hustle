@@ -1,5 +1,5 @@
-// Right column: the main quest, the open side quests, program tabs (processors, command
-// lines), Events (this run's one-off events) and Recent Activity.
+// Right column: the main quest, program tabs (processors, command lines), Events (this
+// run's one-off events), the open side quests and Recent Activity.
 
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
@@ -11,7 +11,6 @@ import {
   listedEvents,
   markRead,
   replayEvent,
-  setHideSeenPopups,
   showSideQuest,
   store,
   unreadIn,
@@ -45,7 +44,6 @@ export function Right({
           <Quest v={s.view} />
         </div>
       )}
-      <SideQuests v={s.view} />
       {/* The program, from day 1: Programming opens only the full editor (the Programs view). */}
       <Programs s={s} program={program} setProgram={setProgram} />
       <Events s={s} />
@@ -53,21 +51,50 @@ export function Right({
   );
 }
 
-/** The open side quests (started, not done), each its title and progress; a click opens
- * its popup. Nothing when none is open: a finished one lives only in the Story view. */
+/** Whether Side Quests is unfolded, kept while the section is gone (none open) as Events'
+ * fold is kept while it is mounted: for this page's life, not saved. */
+let sideQuestsOpen = true;
+
+/** The open side quests (started, not done), a fold styled like Events: the header counts
+ * those done of those started and, folded, shows the closest-to-done one's progress; each
+ * line its title and progress, a click opens its popup. Nothing when none is open: a
+ * finished one lives only in the Story view. */
 function SideQuests({ v }: { v: View }) {
+  const [unfolded, setUnfolded] = useState(sideQuestsOpen);
   const open = v.side_quests.filter((q) => !q.done);
   if (open.length === 0) return null;
+  const done = v.side_quests.length - open.length;
+  const frac = (q: (typeof open)[number]) => (q.progress ? Number(q.progress.now) / Number(q.progress.target) : -1);
+  const closest = open.reduce((a, b) => (frac(b) > frac(a) ? b : a));
+  const title = (
+    <>
+      Side Quests ({done}/{v.side_quests.length})
+      {!unfolded && closest.progress && (
+        <span class="side-fold-peek muted">
+          {' '}
+          {closest.title}: {num(closest.progress.now)} / {num(closest.progress.target)}
+        </span>
+      )}
+    </>
+  );
   return (
-    <div class="side-pin" data-testid="side-quests">
-      <div class="quest-pin-label">Side quests</div>
+    <Section
+      title={title}
+      dark
+      testid="side-quests"
+      open={unfolded}
+      onToggle={(o) => {
+        sideQuestsOpen = o;
+        setUnfolded(o);
+      }}
+    >
       {open.map((q) => (
         <button type="button" key={q.id} class="side-pin-item" data-side-quest={q.id} title="Show this side quest" onClick={() => showSideQuest(q)}>
           <span class="side-pin-title">{q.title}</span>
           {q.progress && <Bar frac={Number(q.progress.now) / Number(q.progress.target)} label={`${num(q.progress.now)} / ${num(q.progress.target)}`} />}
         </button>
       ))}
-    </div>
+    </Section>
   );
 }
 
@@ -259,16 +286,8 @@ function Events({ s }: { s: Store }) {
             {e.summary && <span class="muted"> {e.summary}</span>}
           </button>
         ))}
-        <label class="events-hide-seen">
-          <input
-            type="checkbox"
-            data-testid="hide-seen-popups"
-            checked={s.hideSeenPopups}
-            onChange={(ev) => setHideSeenPopups((ev.target as HTMLInputElement).checked)}
-          />{' '}
-          Hide popups for events you've already seen
-        </label>
       </Section>
+      <SideQuests v={v} />
       <Section
         title={`Recent Activity (${recent.length})`}
         dark

@@ -4,24 +4,36 @@
 
 use std::collections::BTreeMap;
 
-use super::{ModuleDef, VariantDef};
+use super::{param, ModuleDef, ParamKind as K, VariantDef};
 use crate::config::ModuleConfig;
 use crate::content::{content, Amounts, Project, ProjectReward, Scope};
 use crate::fx::Fx;
 use crate::rules::Rules;
 use crate::state::{GameState, ProjectBook};
 
+use super::economy::CREDITS;
+
 pub static DEF: ModuleDef = ModuleDef {
     id: "projects",
-    variants: &[VariantDef { name: "drain", params: &[], rng: &[] }],
+    variants: &[VariantDef {
+        name: "drain",
+        params: &[
+            param("credits_per_day", K::Fx, Some(("0.000001", "1000000")), "the most credits a project takes a day"),
+            param("other_per_day", K::Fx, Some(("0.000001", "1000000")), "the most of each other resource a project takes a day"),
+        ],
+        rng: &[],
+    }],
 };
 
 #[derive(Clone)]
-pub struct Params;
+pub struct Params {
+    pub credits_per_day: Fx,
+    pub other_per_day: Fx,
+}
 
 impl Params {
-    pub fn new(_: &ModuleConfig) -> Result<Params, String> {
-        Ok(Params)
+    pub fn new(mc: &ModuleConfig) -> Result<Params, String> {
+        Ok(Params { credits_per_day: mc.fx("credits_per_day"), other_per_day: mc.fx("other_per_day") })
     }
 }
 
@@ -95,14 +107,25 @@ pub fn costs(g: &GameState, p: &Project) -> Amounts {
     p.costs.keys().map(|res| (res.clone(), cost(g, p, res))).collect()
 }
 
-/// The most of a resource the project may take a day: its cost over
-/// `min_days`, rounded up a step when inexact, so funding at the most takes
-/// exactly `min_days` days.
-pub fn max_rate(g: &GameState, p: &Project, resource: &str) -> Fx {
+/// The most of a resource the project may take a day: the funding cap
+/// (`credits_per_day` for credits, `other_per_day` for every other resource),
+/// and on a row with `min_days` at most its cost over those days, rounded up a
+/// step when inexact, so funding at the most takes no fewer than `min_days`.
+pub fn max_rate(r: &Rules, g: &GameState, p: &Project, resource: &str) -> Fx {
+    let cap = if resource == CREDITS { r.p.projects.credits_per_day } else { r.p.projects.other_per_day };
+    let Some(min_days) = p.min_days else { return cap };
     let cost = cost(g, p, resource);
-    let days = i64::from(p.min_days);
+    let days = i64::from(min_days);
     let floor = cost.mul_ratio(1, days);
-    if floor.mul_int(days) < cost { floor.plus_steps(1) } else { floor }
+    cap.min(if floor.mul_int(days) < cost { floor.plus_steps(1) } else { floor })
+}
+
+/// The rate a project actually gets of a resource: the last drain's take
+/// when the stock couldn't cover the set rate, else the set rate.
+pub fn actual_rate(g: &GameState, p: &Project, resource: &str) -> Fx {
+    let set = g.run.project_rates.get(&p.id).and_then(|m| m.get(resource)).copied().unwrap_or(Fx::ZERO);
+    let short = g.run.project_short.get(&p.id).and_then(|m| m.get(resource)).copied();
+    short.map_or(set, |s| s.min(set))
 }
 
 /// Progress toward the next completion, by resource.
@@ -114,17 +137,17 @@ fn paid(g: &GameState, p: &Project, resource: &str) -> Fx {
     progress(g, p).and_then(|m| m.get(resource)).copied().unwrap_or(Fx::ZERO)
 }
 
-/// Days until every cost is met at today's rates (stock aside); `None` when a
-/// cost still owed has no rate.
+/// Days until every cost is met at the actual rates ([`actual_rate`]: the set
+/// rate, or the last drain's take where the stock fell short); `None` when a
+/// cost still owed gets nothing.
 pub fn days_to_done(g: &GameState, p: &Project) -> Option<u64> {
-    let rates = g.run.project_rates.get(&p.id);
     let mut days = 0u64;
     for res in p.costs.keys() {
         let owed = cost(g, p, res) - paid(g, p, res);
         if owed <= Fx::ZERO {
             continue;
         }
-        let rate = rates.and_then(|m| m.get(res)).copied().unwrap_or(Fx::ZERO);
+        let rate = actual_rate(g, p, res);
         if rate <= Fx::ZERO {
             return None;
         }
@@ -147,7 +170,7 @@ pub fn set_rate(r: &Rules, g: &mut GameState, id: &str, resource: &str, rate: Fx
         let shown = content().resource(resource).map_or(resource, |x| x.name.as_str());
         return Err(format!("project {}: takes no {shown}", p.name));
     }
-    let max = max_rate(g, p, resource);
+    let max = max_rate(r, g, p, resource);
     if rate.is_negative() || rate > max {
         return Err(format!("project {}: rate must be 0..={max}", p.name));
     }
@@ -167,6 +190,7 @@ pub fn set_rate(r: &Rules, g: &mut GameState, id: &str, resource: &str, rate: Fx
 /// rate of each resource it still needs (as much as is in stock); one whose
 /// every cost is met completes.
 pub fn drain(r: &Rules, g: &mut GameState) {
+    g.run.project_short.clear();
     for p in &content().projects {
         let Some(rates) = g.run.project_rates.get(&p.id).cloned() else {
             continue;
@@ -182,6 +206,7 @@ pub fn drain(r: &Rules, g: &mut GameState) {
                 // Funding the stock couldn't cover counts as unmet demand (the day's rate).
                 let u = g.run.today.unmet.entry(res.clone()).or_insert(Fx::ZERO);
                 *u = u.saturating_add(want - take);
+                g.run.project_short.entry(p.id.clone()).or_default().insert(res.clone(), take);
             }
             if take == Fx::ZERO {
                 continue;

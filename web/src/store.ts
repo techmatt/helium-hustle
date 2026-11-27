@@ -33,7 +33,7 @@ const ANOTHER_TAB = 'This game is playing in another tab. Reload this tab to pla
 /** Autosave at most this often while ticking (and always on an action or leaving). */
 const SAVE_EVERY_MS = 1000;
 const CHEATS_KEY = 'hh.cheats';
-/** Events' "Hide popups for events you've already seen" ('0': off; on by default). */
+/** Options' "Hide popups for events you've already seen" ('0': off; on by default). */
 const HIDE_SEEN_POPUPS_KEY = 'hh-hide-seen-popups';
 
 interface Game {
@@ -72,7 +72,7 @@ export interface Store {
   /** The popup's pages still to read (a main-story transition, a side quest's completion,
    * a one-off event), the open one first (the clock is paused while any are left). */
   storyPages: StoryPage[];
-  /** "Hide popups for events you've already seen" (Events' checkbox; per browser). */
+  /** "Hide popups for events you've already seen" (Options' checkbox; per browser). */
   hideSeenPopups: boolean;
   cheatsEnabled: boolean;
   seed: string;
@@ -355,7 +355,7 @@ export function showSideQuest(q: SideQuestView): void {
   showPages(pages);
 }
 
-/** Events' "Hide popups for events you've already seen" (remembered per browser). */
+/** Options' "Hide popups for events you've already seen" (remembered per browser). */
 export function setHideSeenPopups(on: boolean): void {
   store.hideSeenPopups = on;
   storageSet(HIDE_SEEN_POPUPS_KEY, on ? '1' : '0');

@@ -173,6 +173,7 @@ export function Section({
   testid,
   unread = 0,
   onRead,
+  onToggle,
 }: {
   title: ComponentChildren;
   children: ComponentChildren;
@@ -181,8 +182,14 @@ export function Section({
   testid?: string;
   unread?: number;
   onRead?: () => void;
+  /** Told each fold or unfold (a caller that keeps the state beyond this mount). */
+  onToggle?: (open: boolean) => void;
 }) {
-  const [open, setOpen] = useState(initial);
+  const [open, setOpenState] = useState(initial);
+  const setOpen = (o: boolean) => {
+    setOpenState(o);
+    onToggle?.(o);
+  };
   const body = useRef<HTMLDivElement>(null);
   const [onScreen, setOnScreen] = useState(false);
   const read = useRef(onRead);

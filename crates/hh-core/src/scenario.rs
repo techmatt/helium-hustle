@@ -29,6 +29,7 @@ const FILES: &[(&str, &str)] = &[
     ("at_cap.json", include_str!("../../../scenarios/at_cap.json")),
     ("late_unlocks.json", include_str!("../../../scenarios/late_unlocks.json")),
     ("pad_loading.json", include_str!("../../../scenarios/pad_loading.json")),
+    ("speculators_due.json", include_str!("../../../scenarios/speculators_due.json")),
     ("golden_start.json", include_str!("../../../scenarios/golden_start.json")),
     ("story_acts.json", include_str!("../../../scenarios/story_acts.json")),
 ];

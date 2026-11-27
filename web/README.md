@@ -72,9 +72,9 @@ Three columns and a status bar:
   Above 10x a redraw covers several days: each line shows its outcome over them
   (`advance_run`'s `lines`), no frame. A note line (`#`) is muted text, an unparsed one a
   red-tinted disabled row with its reason, a locked one dimmed with "locked this run" (the
-  view's `errors` and `locked`). Open side quests sit under the main quest; Events (a line
-  per one-off this run, a click reopening its popup) and Recent Activity (a checkbox per
-  kind) below the program, each with an unread count (rulings: docs/rulings/ui.md).
+  view's `errors` and `locked`). Below the program: Events (a line per one-off this run, a
+  click reopening its popup), Side Quests (the open ones, a fold) and Recent Activity (a
+  checkbox per kind), each fold with an unread count or progress (rulings: docs/rulings/ui.md).
 - **Bottom:** day and run, Boredom and Energy bars with their rates
   (capped as in Resources; "cap tomorrow" the day before a forced retirement).
 - **Takeover views** (`Takeover.tsx`): a large view that covers the middle and right

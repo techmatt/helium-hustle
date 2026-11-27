@@ -1,0 +1,12 @@
+{
+  "name": "speculators_due",
+  "description": "Day 20, the speculators not yet seen: two Launch Pads (pick their cargo, He-3), ten Storage Depots full of He-3 and propellant, and three Data Centers whose program loads the pads. Launching 500 units brings the speculators: their first arrival's popup (grant more He-3 and propellant as they run low).",
+  "start": {
+    "tick": 20,
+    "resources": { "credits": "500", "energy": "200", "he3": "320", "propellant": "430" },
+    "buildings": { "solar_panel": 12, "data_center": 3, "launch_pad": 2, "storage_depot": 10 },
+    "panels": [],
+    "events": ["qpower_boot_sequence", "qfirst_shipment"],
+    "programs": [[{ "op": "command", "command": "load_pads", "count": 1 }]]
+  }
+}

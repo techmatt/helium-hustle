@@ -127,6 +127,8 @@ const fresh = await exists('#new-game');
 if (fresh) await click('#new-game');
 await sleep(500);
 await readStory();
+// The checkbox lives in Options since 116.
+await panel('options');
 check(await evaluate(`document.querySelector('[data-testid="hide-seen-popups"]')?.checked === true`), 'the checkbox starts on');
 await cheats();
 await setValue('#cheat-days', '205');

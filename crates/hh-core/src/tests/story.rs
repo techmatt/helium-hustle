@@ -465,6 +465,35 @@ fn narrative_carries_no_mechanics() {
     }
 }
 
+/// Speculators' arrival is a popup event (it reaches the view's one-off events),
+/// the Arbitrage Engine waits for Market Awareness, and Full Cluster (1.b)
+/// takes 12 research items in one run.
+#[test]
+fn speculators_arrive_with_a_popup_and_the_engine_waits_for_market_awareness() {
+    let r = rules();
+    let mut g = r.new_game(1);
+    g.career.attention.insert("speculators".into(), f("600"));
+    r.advance(&mut g, 1);
+    assert!(g.run.events.contains_key("speculators_arrive"));
+    let arrival = r.view(&g).event_texts.into_iter().find(|e| e.id == "speculators_arrive").map(|e| e.title);
+    assert_eq!(arrival, Some("Speculators"), "a popup event, not silent");
+    let engine = crate::content::content().building("arbitrage_engine").unwrap();
+    assert!(!crate::modules::economy::requirement_met(&g, &engine.requires), "speculators alone don't open it");
+    g.run.research.insert("market_awareness".into());
+    assert!(crate::modules::economy::requirement_met(&g, &engine.requires));
+
+    let mut g = r.new_game(1);
+    g.career.flags.insert("research_lab".into());
+    g.career.completed_quests.extend(["qpower_boot_sequence", "qfirst_shipment", "qfull_load"].map(String::from));
+    let items: Vec<String> = crate::content::content().research.iter().take(12).map(|x| x.id.clone()).collect();
+    g.run.research.extend(items[..11].iter().cloned());
+    r.advance(&mut g, 1);
+    assert!(!g.career.completed_quests.contains("qfull_cluster"), "11 items: not yet");
+    g.run.research.insert(items[11].clone());
+    r.advance(&mut g, 1);
+    assert!(g.career.completed_quests.contains("qfull_cluster"), "12 items complete it");
+}
+
 #[test]
 fn an_event_records_the_day_it_fired() {
     let mut s = Session::new(&baseline(), 2, None).unwrap();

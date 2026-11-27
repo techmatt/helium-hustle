@@ -25,8 +25,8 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
 - **Nothing upcoming is telegraphed (2026-11-25).** UI for something not yet present stays
   hidden until it appears. The speculator column (Launch Pads' Markets) and the Adversaries
   panel's Speculators section wait for speculators' first arrival in the run (093 default:
-  per run), the Adversaries panel, Speculator Analysis and the Arbitrage Engine for their first
-  arrival in the career, and side quest 1.a, which names them, starts then too (once 1.4 is
+  per run), the Adversaries panel and Speculator Analysis for their first arrival in the
+  career (the Arbitrage Engine waits for Market Awareness: Matt, 2026-11-26), and side quest 1.a, which names them, starts then too (once 1.4 is
   reached). The Adversaries panel's Rival AIs section and Attention row wait for the rivals'
   first arrival in the career (096 default: the view's `seen`, present now or their arrival
   event seen). Projects never shows a locked card. No player-facing text names timelines before
@@ -36,6 +36,10 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   (`localStorage`, like the Programs mode), not in the save. Something completed while the
   view is open stays shown until the player leaves the view. *Default (104):* Projects starts
   ticked (096's no finished one-offs), Research unticked.
+- **Project funding (Matt, 2026-11-26; 116).** Holding a funding − or + keeps stepping: after
+  ~0.4 s at ~10 steps a second, held past ~1.5 s 5 steps a repeat, past 3 s 10, stopping at 0
+  or the cap. A rate fully met shows green; one the stock can't supply reads actual / set
+  ("9.2 / 15.9 per day", the actual in red), and "Done in N days" counts the actual rate.
 - **Bottom bar and modals (Matt, 2026-11-25).** The status bar's slots have fixed widths, so
   no value changing width moves the row, and Energy never reads "capped" there. Behind the run
   summary the ended run's last day stays on screen until Continue; the summary's sections read
@@ -80,20 +84,21 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   and Reward lines (the active beat's How lines too); a finished main beat's expanded card
   offers *Replay its story* (its modals). The spine is one unbroken line behind every dot,
   the active beat's included, with side quests branching off it.
-- **Right panel (Matt, 2026-11-26; 112).** Top to bottom: the main-quest box; **Side
-  quests**, the open ones only (title and progress bar; a click opens its popup: story, goal,
-  reward), hidden when none is open; the program; **Events**, one line per one-off event
-  fired this run (title and its one-line summary, no body or Effect), newest first, a click
-  reopening its popup; Recent Activity. Burnout and the boredom phases supersede each other
+- **Right panel (Matt, 2026-11-26; 112).** Top to bottom: the main-quest box (pinned); the program;
+  **Events**, one line per one-off event fired this run (title and its one-line summary, no
+  body or Effect), newest first, a click reopening its popup; **Side Quests** (Matt,
+  2026-11-26), a fold like Events, "Side Quests (done/started)", folded showing the
+  closest-to-done one's progress, the open ones only (title and progress bar; a click opens its
+  popup: story, goal, reward), hidden when none is open; Recent Activity. Burnout and the boredom phases supersede each other
   in Events: only the latest fired this run shows (the engine view's `superseded`); Recent
   Activity still logs each. In the run Burnout fires in, Boredom Rising is skipped (no popup,
   no Events line; Matt, 2026-11-26, 113): it is the phase-2 notice from later runs. No
   "Completed" section and no side-quest banner: Story is the quest archive.
 - **Popups (Matt, 2026-11-26; 112).** Every one-off event (Propellant discovery, Political
-  Currents, Burnout, each boredom phase) and every main and side quest completion opens a
+  Currents, Burnout, each boredom phase, each adversary's arrival: Matt, 2026-11-26, P7) and every main and side quest completion opens a
   popup when it fires (the story modal, the clock held until its last button). A side quest's
   completion popup shows its reward, then it leaves the right panel. **"Hide popups for
-  events you've already seen"**, a checkbox in Events, on by default, remembered per browser
+  events you've already seen"**, a checkbox in Options (Matt, 2026-11-26), on by default, remembered per browser
   (`localStorage`): when on, an event whose popup this career has shown before (any earlier
   run; the set is kept in the save) doesn't pop up again but still lands in Events and Recent
   Activity. Quest completions pop up once a career anyway.

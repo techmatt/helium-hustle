@@ -86,7 +86,7 @@
     },
     "projects": {
       "variant": "drain",
-      "params": {}
+      "params": { "credits_per_day": "30", "other_per_day": "10" }
     },
     "shipments": {
       "variant": "arc1",

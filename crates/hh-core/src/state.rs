@@ -651,6 +651,10 @@ pub struct Run {
     pub ideology: BTreeMap<String, Fx>,
     /// Project funding rates per day: project -> resource -> rate.
     pub project_rates: BTreeMap<String, BTreeMap<String, Fx>>,
+    /// The last drain's take of each funded resource the stock couldn't fully
+    /// cover (project -> resource -> take): the actual rate the Projects view
+    /// and `days_to_done` show. A resource met in full has no entry.
+    pub project_short: BTreeMap<String, BTreeMap<String, Fx>>,
     /// `run`-scoped projects' progress and completions.
     pub projects: ProjectBook,
     /// Events fired this run, each with the run day it fired on (display only:

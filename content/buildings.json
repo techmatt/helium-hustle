@@ -203,7 +203,7 @@
     "name": "Arbitrage Engine",
     "category": "trade",
     "ideology": "nationalist",
-    "requires": {"type": "flag", "flag": "speculators_seen"},
+    "requires": {"type": "research", "research": "market_awareness"},
     "land": 1,
     "cost_scaling": "1.5",
     "max_count": null,

@@ -36,8 +36,10 @@ Programs have their own part ([programs.md](programs.md)).
   (placeholder +10% science, +10% nationalist ideology growth); what it revealed (the swarm,
   the calendar, what 1.6 opened) stays for the career, and completing it again replays no
   story. *Default (084):* the science bonus multiplies Research Lab output, not Buy Science. *Defaults (046):* a
-  repeatable row keeps its rates across completions; every row's `min_days` is its largest
-  cost over 30 rounded up (the old flat cap's fastest finish).
+  repeatable row keeps its rates across completions. **Funding cap (Matt, 2026-11-26):** a
+  project takes at most 30 credits a day and 10 of each other resource (global params,
+  raisable by later unlocks), so a run's stockpile can't be dumped in on the last day;
+  deliberate per-row minimums stay (the Deep Space Telescope's 3,000 days).
 - **Bonus stacking (2026-11-21).** Bonuses from one source add (+5% ×10 is +50%); separate
   sources multiply. Exponential stacking only for a few named exceptions (Paradigms, late
   techs, the catastrophic-success tech); repeatable projects are rare exceptions.
@@ -71,7 +73,7 @@ Programs have their own part ([programs.md](programs.md)).
   adversary.
 - **Side quests give permanent rewards (2026-11-25, placeholders).** They outlive every reset,
   as completions do. 1.a Big Launch: one launch pays 1,000+; +10% launch pay. 1.b Full
-  Cluster: research 5 items in one run; every run starts with 50 science. 1.c Blueprints for
+  Cluster: research 12 items in one run (Matt, 2026-11-26); every run starts with 50 science. 1.c Blueprints for
   Everyone: the Blueprint Archive global project (placeholder 2,000 credits + 300
   science) makes both Blueprints bought at every run's start while it counts as completed
   (lost at a timeline's end, back when re-funded; 1.c stays completed), and (2026-11-25) every

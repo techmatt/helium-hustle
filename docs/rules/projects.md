@@ -32,8 +32,11 @@ is refused), so one set of conditions serves quests and projects. Today's rows u
 
 **Cost and the most a day.** The first completion costs `costs`. A repeatable row
 (`repeat: {cost_growth}`) multiplies every cost by `cost_growth` once per completion so
-far (`Fx::pow_int`, no float). Each resource's rate is at most its current cost over the
-row's `min_days`, so a project of any size takes at least `min_days` days.
+far (`Fx::pow_int`, no float). **The funding cap:** a project takes at most
+`credits_per_day` credits a day and at most `other_per_day` of each other resource (params;
+raisable later by unlocks). A row with a deliberate `min_days` (only the Deep Space
+Telescope's 3,000) also caps each rate at its current cost over those days, rounded up a step.
+So a run's stockpile can't be dumped into a project on its last day.
 
 **Drain** (each day, projects in file order). For each project with any rate set that is
 unlocked, for each resource it has a rate on (in id order):
@@ -43,7 +46,9 @@ unlocked, for each resource it has a rate on (in id order):
 where `stock` is the resource on hand at that moment (a hair below zero counts as zero).
 The take is removed from stock (counted as the day's use, which [achievements.md](achievements.md)
 reads) and added to progress. A short resource is taken partially; a met cost takes
-nothing. A project that is locked keeps its rates but takes nothing.
+nothing. A project that is locked keeps its rates but takes nothing. A take short of its
+want is kept until the next drain (`project_short`): the **actual rate** the Projects panel
+shows beside the set one, and the rate `days_to_done` ("Done in N days") counts.
 
 **Completion.** After its drain, a project whose progress meets every cost completes: its
 completion count in its scope rises by one, its progress starts over at zero, its
@@ -100,14 +105,17 @@ capped at its resource's most); a project not open (or completed) makes it fail
 ## Params
 
 <!-- params:projects -->
-The `drain` variant has no params (`"params": {}`).
+| Param | Baseline | Range | Meaning |
+|---|---|---|---|
+| `credits_per_day` | 30 | 0.000001 to 1000000 | The most credits a project takes a day. |
+| `other_per_day` | 10 | 0.000001 to 1000000 | The most of each other resource a project takes a day. |
 <!-- /params -->
 
 ## Content
 
 `content/projects.json`: 15 rows, ten `timeline` (the Dyson Sphere among them: draft,
 [timeline.md](timeline.md)) and five `run`, each with `scope`, `unlock`, `costs`,
-`min_days` and `rewards` (none repeats yet); names and descriptions are the Godot
+`rewards` (none repeats yet; `min_days` on the telescope only); names and descriptions are the Godot
 placeholders but for the draft rows (049): Conditional Logic (500 credits and 100 science;
 its reward the `logic_if` flag that opens `if`, [programs.md](programs.md)) and the
 Deep Space Telescope (offered once quest 1.6 is active; its first completion completes 1.6,
@@ -115,13 +123,13 @@ so it spans several runs: `min_days` 3,000; rebuilt each timeline, at the same c
 its placeholder passive, `science_output_mult` and `nationalist_growth_mult` ×1.1, and only
 that: the swarm's countdown runs without it, and what 1.6 opened stays:
 [timeline.md](timeline.md)). Chemical Energy Initiative is offered from the first
-retirement (the career flag `retired`). Blueprint Archive (draft: 2,000 credits and 300 science,
-`min_days` 67) completes side quest 1.c Blueprints for Everyone; its `starting_research`
+retirement (the career flag `retired`). Blueprint Archive (draft: 2,000 credits and 300 science)
+completes side quest 1.c Blueprints for Everyone; its `starting_research`
 reward has Basic and Advanced Blueprints bought from the start of every run of the timeline,
 and its `research_discount` (0.8, category Blueprints) makes every Blueprints item bought in
-an earlier run cost 20% less while it counts as completed ([research.md](research.md)). Every other row's `min_days` is its largest cost over 30, rounded up: the days the old
-flat cap of 30 a day took (Lunar Cartography 1,500 credits and 200 science; Foundation Grant
-10,000 and 2,000). **Where they open.** The Projects panel, where a player sees them, opens
+an earlier run cost 20% less while it counts as completed ([research.md](research.md)). At the cap
+Blueprint Archive takes 67 days (credits), Foundation Grant 334 (Lunar Cartography 1,500
+credits and 200 science; Foundation Grant 10,000 and 2,000). **Where they open.** The Projects panel, where a player sees them, opens
 at A Voice's start (quest 1.5; the silent `a_voice_projects` event, a `quest_active`
 condition) with Blueprint Archive, Conditional Logic, Lunar Cartography and Foundation
 Grant (each `project_enabled`); a first retirement before it (the silent `first_retirement`

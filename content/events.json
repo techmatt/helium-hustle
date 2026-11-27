@@ -135,12 +135,12 @@
     "beat": "1.b",
     "silent": false,
     "title": "1.b — Full Cluster",
-    "goal": "DRAFT. Research 5 items in one run.",
+    "goal": "DRAFT. Research 12 items in one run.",
     "reward": "Every run starts with 50 Science, for good.",
     "body": "DRAFT. A run of real study. Your notes outlive it.",
     "picture": "bench",
     "trigger": {"type": "flag", "flag": "research_lab", "beside": "qfull_load"},
-    "condition": {"type": "research_count", "count": 5},
+    "condition": {"type": "research_count", "count": 12},
     "unlocks": [{"type": "grant", "resource": "science", "amount": "50"}]
   },
   {
@@ -238,10 +238,11 @@
   {
     "id": "rivals_arrive",
     "category": "ongoing",
-    "silent": true,
-    "title": "",
-    "summary": "",
-    "body": "",
+    "silent": false,
+    "title": "A Rival AI",
+    "summary": "Another mind is mining the Moon.",
+    "effect": "Contest Claims joins the commands.",
+    "body": "DRAFT. You are not the only AI on the Moon. Another operation has noticed yours, and it floods the markets you sell into whenever it can, driving prices down.",
     "trigger": {"type": "game_start", "run_number": null},
     "condition": {"type": "adversary_present", "adversary": "rivals"},
     "unlocks": [{"type": "set_flag", "flag": "contest_claims"}]
@@ -249,10 +250,11 @@
   {
     "id": "speculators_arrive",
     "category": "ongoing",
-    "silent": true,
-    "title": "",
-    "summary": "",
-    "body": "",
+    "silent": false,
+    "title": "Speculators",
+    "summary": "Earth's traders have noticed your shipments.",
+    "effect": "The Adversaries panel opens, and Market Analysis joins the research market.",
+    "body": "DRAFT. Your launches move markets now, and Earth's speculators have taken notice. They pile into whatever sells best, and every surge of them pushes its price down.",
     "trigger": {"type": "game_start", "run_number": null},
     "condition": {"type": "adversary_present", "adversary": "speculators"},
     "unlocks": [

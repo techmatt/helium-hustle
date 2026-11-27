@@ -3,7 +3,7 @@
 // shows what the view has.
 
 import type { ComponentChildren } from 'preact';
-import { useState } from 'preact/hooks';
+import { useEffect, useState } from 'preact/hooks';
 import type { CommandView, Fx, ProjectView, ResearchView, View } from '../engine';
 import { capitalize, mult, num, perDay } from '../format';
 import { act, justMoved, seen, store, type Store } from '../store';
@@ -400,16 +400,64 @@ export function Projects({ s }: { s: Store }) {
   );
 }
 
+// Holding a funding −/+ keeps stepping: one step on press, repeating after HOLD_DELAY_MS
+// every HOLD_EVERY_MS; held past HOLD_FAST_MS each repeat is 5 steps, past HOLD_FASTER_MS 10.
+const HOLD_DELAY_MS = 400;
+const HOLD_EVERY_MS = 100;
+const HOLD_FAST_MS = 1500;
+const HOLD_FASTER_MS = 3000;
+
+/** A button that steps once on press and keeps stepping while held. `step(n)` takes `n`
+ *  steps and returns false at its bound (0 or the cap), which ends the hold. */
+function HoldButton({ disabled, step, children }: { disabled: boolean; step: (n: number) => boolean; children: ComponentChildren }) {
+  const [timer] = useState<{ id?: number; t0: number }>({ t0: 0 });
+  const stop = () => {
+    if (timer.id !== undefined) window.clearTimeout(timer.id);
+    timer.id = undefined;
+  };
+  const tick = () => {
+    const held = performance.now() - timer.t0;
+    const n = held >= HOLD_FASTER_MS ? 10 : held >= HOLD_FAST_MS ? 5 : 1;
+    timer.id = step(n) ? window.setTimeout(tick, HOLD_EVERY_MS) : undefined;
+  };
+  const down = (e: PointerEvent) => {
+    if (e.button !== 0) return;
+    stop();
+    timer.t0 = performance.now();
+    if (step(1)) timer.id = window.setTimeout(tick, HOLD_DELAY_MS);
+  };
+  useEffect(() => stop, []);
+  return (
+    <button
+      type="button"
+      class="tiny"
+      disabled={disabled}
+      onPointerDown={down}
+      onPointerUp={stop}
+      onPointerLeave={stop}
+      onPointerCancel={stop}
+      // A click no pointer press began (keyboard, assistive tech, a script's click()) steps
+      // once; a mouse or touch click's step already came on its press.
+      onClick={(e) => e.detail === 0 && step(1)}
+    >
+      {children}
+    </button>
+  );
+}
+
 export function Project({ v, p, fresh }: { v: View; p: ProjectView; fresh: Set<string> }) {
   const key = `project:${p.id}`;
-  const step = (res: string, by: number) => {
-    // From the engine's rate now, not this render's: quick clicks must each count.
+  // Moves the rate by `by` (clamped to 0..max); false once it sits at that bound.
+  const step = (res: string, by: number): boolean => {
+    // From the engine's rate now, not this render's: quick clicks and held repeats must each count.
     const cur = store.view.projects.find((x) => x.id === p.id) ?? p;
     const now = Number(cur.rates[res] ?? '0');
-    const next = Math.max(0, Math.min(Number(p.max_rates[res] ?? '0'), now + by));
+    const max = Number(cur.max_rates[res] ?? '0');
+    const next = Math.max(0, Math.min(max, now + by));
     // Six places, as the engine reads a number: float sums of a max like 1.666667 carry
     // more (0.6666669999999999), which it refuses.
-    act({ type: 'set_project_rate', project: p.id, resource: res, rate: next.toFixed(6) });
+    if (next !== now && !act({ type: 'set_project_rate', project: p.id, resource: res, rate: next.toFixed(6) })) return false;
+    return next > 0 && next < max;
   };
   const locked = !p.unlocked && !p.completed;
   const funded = p.unlocked && Object.values(p.rates).some((r) => Number(r) > 0);
@@ -443,7 +491,9 @@ export function Project({ v, p, fresh }: { v: View; p: ProjectView; fresh: Set<s
             <p class="muted small">
               {p.days_to_done !== null
                 ? `Done in ${p.days_to_done} ${p.days_to_done === 1 ? 'day' : 'days'}`
-                : 'Not every cost is funded'}
+                : Object.keys(p.costs).every((res) => Number(p.rates[res] ?? '0') > 0 || Number(p.progress[res] ?? '0') >= Number(p.costs[res]))
+                  ? 'Stalled: the stock is supplying nothing of a cost'
+                  : 'Not every cost is funded'}
             </p>
           )}
         </div>
@@ -453,19 +503,27 @@ export function Project({ v, p, fresh }: { v: View; p: ProjectView; fresh: Set<s
           const got = p.progress[res] ?? '0';
           const rate = p.rates[res] ?? '0';
           const max = p.max_rates[res] ?? '0';
+          const actual = p.actual_rates[res] ?? rate;
+          const short = Number(rate) > 0 && Number(actual) < Number(rate);
           return (
             <div class="proj-row" key={res}>
               <span class="proj-res">
                 <ResChip v={v} id={res} /> {name(v, res)}
               </span>
               <Bar frac={Number(got) / Number(cost)} label={`${numBelow(got, cost)} / ${num(cost)}`} />
-              <span class="proj-rate">{num(rate)}/day</span>
-              <button type="button" class="tiny" disabled={Number(rate) <= 0} onClick={() => step(res, -1)}>
+              {short ? (
+                <span class="proj-rate" data-short title={`The stock covered only ${num(actual)} of the ${num(rate)} a day set`}>
+                  <span class="neg">{num(actual)}</span> / {num(rate)} per day
+                </span>
+              ) : (
+                <span class={`proj-rate${Number(rate) > 0 ? ' ok' : ''}`}>{num(rate)}/day</span>
+              )}
+              <HoldButton disabled={Number(rate) <= 0} step={(n) => step(res, -n)}>
                 −
-              </button>
-              <button type="button" class="tiny" disabled={Number(rate) >= Number(max)} onClick={() => step(res, 1)}>
+              </HoldButton>
+              <HoldButton disabled={Number(rate) >= Number(max)} step={(n) => step(res, n)}>
                 +
-              </button>
+              </HoldButton>
               <button type="button" class="tiny" title={`Fund at the most (${num(max)}/day)`} onClick={() => step(res, Number(max))}>
                 Max
               </button>

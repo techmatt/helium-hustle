@@ -250,11 +250,11 @@ fn fund_sets_every_cost_rate_as_the_panel_does() {
     assert_eq!(rates(&g).get("credits"), Some(&Fx::from_int(3)));
     assert_eq!(rates(&g).get("science"), Some(&Fx::from_int(3)));
     assert_eq!(run_one(&r, &mut g, fund(Some(Amount::N(3)))), O::Done, "already at that rate: the step only");
-    // The most a day is each cost over min_days (167): 5000 and 2000.
+    // The most a day is the funding cap: 30 credits, 10 of any other resource.
     let fg = crate::content::content().project("foundation_grant").unwrap();
-    let most = |res: &str| crate::modules::projects::max_rate(&g, fg, res);
+    let most = |res: &str| crate::modules::projects::max_rate(&r, &g, fg, res);
     let (credits_max, science_max) = (most("credits"), most("science"));
-    assert_eq!(credits_max, f("29.94012"), "5000 / 167 rounded up a step: done in exactly 167 days");
+    assert_eq!((credits_max, science_max), (f("30"), f("10")), "the caps");
     assert_eq!(run_one(&r, &mut g, fund(Some(Amount::N(1_000_000)))), O::Ran);
     assert_eq!(rates(&g).get("credits"), Some(&credits_max), "capped at the most a day");
     assert_eq!(run_one(&r, &mut g, fund(Some(Amount::N(20)))), O::Ran);

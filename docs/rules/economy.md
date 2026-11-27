@@ -171,8 +171,8 @@ Six resource ids are fixed in code (`economy.rs` constants), named by content ro
   has no production (it enables Buy Power, commands.md). The engine takes the data.
 - Conflict: Arbitrage Engine's `spec_decay`: see [demand.md](demand.md#port-notes).
 - Changed: the data's Arbitrage Engine requires research `market_analysis` (not a research id);
-  the engine requires the `speculators_seen` flag (speculators' first arrival, 093: nothing
-  upcoming is telegraphed).
+  the engine requires research Market Awareness (Matt, 2026-11-26), so it isn't buildable the
+  moment speculators arrive.
 - Candidate: starting buildings take no land and selling one refunds none; they still count
   toward the price (the second Solar Panel costs 30 credits, as in Godot's opening).
 - Candidate: peak power is gross energy buildings made in a day.

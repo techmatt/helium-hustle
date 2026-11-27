@@ -32,8 +32,11 @@ pub struct ProjectView {
     pub rates: BTreeMap<String, Fx>,
     /// The most each rate may be (per resource, per day).
     pub max_rates: BTreeMap<String, Fx>,
-    /// Days to the next completion at today's rates; `None` while a cost
-    /// still owed has no rate.
+    /// What each set rate actually gets: the last day's take where the stock
+    /// fell short of it, else the set rate (keys as `rates`).
+    pub actual_rates: BTreeMap<String, Fx>,
+    /// Days to the next completion at the actual rates; `None` while a cost
+    /// still owed gets nothing.
     pub days_to_done: Option<u64>,
     /// What opens it.
     pub unlock_text: String,
@@ -58,7 +61,13 @@ pub(super) fn projects(r: &Rules, g: &GameState) -> Vec<ProjectView> {
             costs: projects::costs(g, p),
             progress: projects::progress(g, p).cloned().unwrap_or_default(),
             rates: g.run.project_rates.get(&p.id).cloned().unwrap_or_default(),
-            max_rates: p.costs.keys().map(|res| (res.clone(), projects::max_rate(g, p, res))).collect(),
+            max_rates: p.costs.keys().map(|res| (res.clone(), projects::max_rate(r, g, p, res))).collect(),
+            actual_rates: g
+                .run
+                .project_rates
+                .get(&p.id)
+                .map(|m| m.keys().map(|res| (res.clone(), projects::actual_rate(g, p, res))).collect())
+                .unwrap_or_default(),
             days_to_done: projects::days_to_done(g, p),
             unlock_text: condition_text(&p.unlock),
             reward_text: reward_text(p),

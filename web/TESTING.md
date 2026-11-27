@@ -96,6 +96,9 @@ A story modal refuses every action and speed until read: `readStory()` reads one
   (096 found both; not fixed).
 - **The late UI for screenshots:** `experiments/results/027_art_in_game/shots.mjs`
   (`pad_loading`, cheats, ~20 s); grants don't count toward `resource_cumulative`.
+- **Speculators' first arrival:** scenario `speculators_due` (no other scenario has pads that
+  load with the speculators unseen; He-3 caps at 20 and propellant at 30 without depots): pick
+  He-3 on both pads, launch by hand, grant He-3 and propellant as they run low (116's `check.mjs`).
 - Edge needs an **absolute** `--user-data-dir` (the script resolves it).
 - Leaving a page fires `pagehide`, then `visibilitychange`; the page saves on both, so a
   test editing the save does it after both.
