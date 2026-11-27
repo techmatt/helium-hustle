@@ -1,0 +1,268 @@
+{
+  "nav": [
+    "buildings",
+    "research",
+    "commands",
+    "programs",
+    "launch_pads",
+    "projects",
+    "adversaries",
+    "ideologies",
+    "retirement",
+    "achievements",
+    "story",
+    "stats",
+    "options"
+  ],
+  "research": {
+    "can": {
+      "id": "recreation_dome_blueprints",
+      "can": true,
+      "bg": "rgb(211, 236, 219)",
+      "border": "rgb(221, 216, 207)"
+    },
+    "cannot": {
+      "id": "recreation_dome_blueprints",
+      "can": false,
+      "bg": "rgba(0, 0, 0, 0)",
+      "border": "rgb(221, 216, 207)"
+    }
+  },
+  "cards": [
+    {
+      "id": "data_center",
+      "pic": true,
+      "h": 172,
+      "beside": true,
+      "statusBeside": true,
+      "desc": false,
+      "numbers": 4
+    },
+    {
+      "id": "solar_panel",
+      "pic": true,
+      "h": 172,
+      "beside": true,
+      "statusBeside": true,
+      "desc": false,
+      "numbers": 3
+    },
+    {
+      "id": "fuel_cell",
+      "pic": true,
+      "h": 172,
+      "beside": true,
+      "statusBeside": true,
+      "desc": false,
+      "numbers": 3
+    },
+    {
+      "id": "microwave_receiver",
+      "pic": true,
+      "h": 172,
+      "beside": true,
+      "statusBeside": true,
+      "desc": true,
+      "numbers": 4
+    },
+    {
+      "id": "excavator",
+      "pic": true,
+      "h": 172,
+      "beside": true,
+      "statusBeside": true,
+      "desc": false,
+      "numbers": 2
+    },
+    {
+      "id": "ice_extractor",
+      "pic": true,
+      "h": 172,
+      "beside": true,
+      "statusBeside": true,
+      "desc": false,
+      "numbers": 3
+    },
+    {
+      "id": "smelter",
+      "pic": true,
+      "h": 172,
+      "beside": true,
+      "statusBeside": true,
+      "desc": false,
+      "numbers": 3
+    },
+    {
+      "id": "refinery",
+      "pic": true,
+      "h": 172,
+      "beside": true,
+      "statusBeside": true,
+      "desc": false,
+      "numbers": 4
+    },
+    {
+      "id": "fabricator",
+      "pic": true,
+      "h": 172,
+      "beside": true,
+      "statusBeside": true,
+      "desc": false,
+      "numbers": 4
+    },
+    {
+      "id": "electrolysis",
+      "pic": true,
+      "h": 172,
+      "beside": true,
+      "statusBeside": true,
+      "desc": false,
+      "numbers": 3
+    },
+    {
+      "id": "launch_pad",
+      "pic": true,
+      "h": 172,
+      "beside": true,
+      "statusBeside": true,
+      "desc": false,
+      "numbers": 3
+    },
+    {
+      "id": "arbitrage_engine",
+      "pic": true,
+      "h": 172,
+      "beside": true,
+      "statusBeside": true,
+      "desc": true,
+      "numbers": 4
+    },
+    {
+      "id": "research_lab",
+      "pic": true,
+      "h": 172,
+      "beside": true,
+      "statusBeside": true,
+      "desc": false,
+      "numbers": 3
+    },
+    {
+      "id": "experiment_lab",
+      "pic": false,
+      "h": 172,
+      "beside": false,
+      "statusBeside": false,
+      "desc": false,
+      "numbers": 3
+    },
+    {
+      "id": "tachyon_condenser",
+      "pic": false,
+      "h": 172,
+      "beside": false,
+      "statusBeside": false,
+      "desc": false,
+      "numbers": 3
+    },
+    {
+      "id": "neodymium_mine",
+      "pic": false,
+      "h": 172,
+      "beside": false,
+      "statusBeside": false,
+      "desc": false,
+      "numbers": 3
+    },
+    {
+      "id": "dyson_foundry",
+      "pic": false,
+      "h": 172,
+      "beside": false,
+      "statusBeside": false,
+      "desc": false,
+      "numbers": 3
+    },
+    {
+      "id": "battery",
+      "pic": true,
+      "h": 208,
+      "beside": true,
+      "statusBeside": true,
+      "desc": false,
+      "numbers": 3
+    },
+    {
+      "id": "storage_depot",
+      "pic": true,
+      "h": 208,
+      "beside": true,
+      "statusBeside": true,
+      "desc": false,
+      "numbers": 3
+    },
+    {
+      "id": "recreation_dome",
+      "pic": true,
+      "h": 172,
+      "beside": true,
+      "statusBeside": true,
+      "desc": false,
+      "numbers": 3
+    }
+  ],
+  "cardHeights": {
+    "median": 172,
+    "min": 172,
+    "max": 208
+  },
+  "fundable": [
+    "foundation_grant",
+    "chemical_energy"
+  ],
+  "soon": [
+    [
+      "chemical_energy",
+      100
+    ],
+    [
+      "foundation_grant",
+      334
+    ]
+  ],
+  "popup": {
+    "quest": "foundation_grant",
+    "title": "Foundation Grant complete",
+    "rewards": [
+      "Reward: Every run starts with 1 Regolith Excavator and 1 Solar Panel free"
+    ],
+    "cost": "Cost: Credits 10KScience 2,000",
+    "pic": true,
+    "paused": true
+  },
+  "jump": {
+    "before": "Day 636",
+    "after": "Day 636",
+    "notice": "Jump ahead refused: close the popup first. ×"
+  },
+  "dots": {
+    "repeat": "3/3",
+    "skipped": "3",
+    "title": "3/3, 3 skipped at the cap",
+    "dots": [
+      "rep-skipped",
+      "rep-skipped",
+      "rep-skipped"
+    ]
+  },
+  "reload": {
+    "seen": {
+      "day": "Day 301",
+      "run": "Run 1"
+    },
+    "reloaded": {
+      "summary": true,
+      "day": "Day 301",
+      "run": "Run 1"
+    }
+  }
+}

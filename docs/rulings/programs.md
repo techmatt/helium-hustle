@@ -46,8 +46,8 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
 - **Commands run only as program lines (2026-11-25).** No command is runnable by clicking:
   there is no Run button and no by-hand action. From day 1 the right column's program, every
   "Add to Program" button and the loadout Save/Load buttons are there, as are processors
-  (the Processors row). 1.1's hint (mechanics text, never its story: ui.md, *Quest
-  mechanics text*) names Add to Program on Sell Cloud Compute as the way to earn credits. A player can play Act 1 up to the first Research Lab with the right
+  (the Processors row). 1.1's hint (mechanics text, never its story: story-ui.md,
+  *Quest mechanics text*) names Add to Program on Sell Cloud Compute as the way to earn credits. A player can play Act 1 up to the first Research Lab with the right
   column's program alone (add, drag to reorder, remove, −/+ counts; logic lines from its
   own add row once they open).
 - **No partial purchases (Matt, 2026-11-25; 119).** Every command needs its full cost for
@@ -93,8 +93,8 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   *Defaults (063):* blanks dropped.
 - **One gutter (2026-11-23).** Both modes show run state the same way: green ran, gray
   skipped, red unparsed, amber locked, fired k/10 on `if`s, the reasons. A repeated line
-  shows one small dot per run up to 8 (green done, red failed, hollow pending, filling left
-  to right); above 8, a short bar with "done/total, N failed" on hover; a single-run line
+  shows one small dot per run up to 8 (green done, red failed, gray skipped at its cap as a
+  single line's dot is (124), hollow pending, filling left to right); above 8, a short bar with "done/total, N failed" on hover; a single-run line
   keeps its one dot. *Default (071):* a repeated line shows its current pass, else its last
   (engine display state `Program.repeats`, cleared when the lines change).
 - **Repeat counts lead (2026-11-23).** `4x sell cloud compute`; a trailing number is always

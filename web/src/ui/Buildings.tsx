@@ -4,7 +4,7 @@ import type { BuildingView, View } from '../engine';
 import { capitalize, num } from '../format';
 import { act, actAll, seen, store, type Store } from '../store';
 import { buildingArt } from './cardArt';
-import { CostRows, FlowLines, ResChip, Section, cardButton, freshClass, name, navShown, ranPercent, shortText, useHint } from './common';
+import { CostLine, FlowLines, ResChip, Section, cardButton, freshClass, name, navShown, ranPercent, shortText, useHint } from './common';
 import { Chip } from './icons';
 
 /** `?all-cards` in the URL (the QA checker's): every building's card, revealed or not, so
@@ -106,17 +106,9 @@ function CheatCard({ v }: { v: View }) {
               </div>
             </div>
           </div>
-          <hr />
-          <table class="costs">
-            <tbody>
-              <tr class={ok ? '' : 'short'}>
-                <td>
-                  <ResChip v={v} id="credits" /> {name(v, 'credits')}
-                </td>
-                <td class="num">{num(c.cost)}</td>
-              </tr>
-            </tbody>
-          </table>
+          <div class="card-actions card-cost">
+            <CostLine v={v} cost={{ credits: c.cost }} short={ok ? [] : ['credits']} />
+          </div>
         </div>
       </div>
     </Section>
@@ -183,7 +175,8 @@ export function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: bo
           +
         </button>
       </div>
-      {/* The picture sits under the title, beside the flows (and a line, for a mechanic they don't show). */}
+      {/* The picture sits under the title, beside the flows and the status (and a line, for
+          a mechanic they don't show); the cost and the sell buttons share one row below (124). */}
       <div class="card-body">
         {art && <img class="card-art" src={art} alt="" width={96} height={96} draggable={false} />}
         <div class="card-text">
@@ -194,43 +187,30 @@ export function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: bo
             <FlowLines v={v} amounts={b.stores} sign={1} suffix=" cap" />
             <FlowLines v={v} amounts={b.grants} sign={1} suffix="" />
           </div>
+          {/* The status row's space is always kept, so a card never jumps as a stall comes and goes. */}
+          <div class="card-status" data-card-status title={b.starved ? shortText(v, b.starved) : undefined}>
+            {b.starved ? (
+              <span class="stall stall-input_starved">
+                {Number(b.starved.ran) > 0 ? `running at ${ranPercent(b.starved.ran)}` : 'not running'} · <ResChip v={v} id={b.starved.resource} /> short
+                {/* Effects (a processor, a pad, decay) come only from the copies paid for; a
+                    producer's output is already scaled by the share paid, so only an
+                    effect-only building says how many work. */}
+                {b.working < b.active && Object.keys(b.produces).length === 0 && ` · ${b.working} of ${b.active} working`}
+              </span>
+            ) : b.stall === 'input_starved' ? (
+              <span class="stall stall-input_starved">Short of inputs</span>
+            ) : b.stall === 'output_capped' ? (
+              <span class="stall stall-output_capped">Output at cap</span>
+            ) : null}
+          </div>
         </div>
       </div>
-      {/* The status row's space is always kept, so a card never jumps as a stall comes and goes. */}
-      <div class="card-status" data-card-status title={b.starved ? shortText(v, b.starved) : undefined}>
-        {b.starved ? (
-          <span class="stall stall-input_starved">
-            {Number(b.starved.ran) > 0 ? `running at ${ranPercent(b.starved.ran)}` : 'not running'} · <ResChip v={v} id={b.starved.resource} /> short
-            {/* Effects (a processor, a pad, decay) come only from the copies paid for; a
-                producer's output is already scaled by the share paid, so only an
-                effect-only building says how many work. */}
-            {b.working < b.active && Object.keys(b.produces).length === 0 && ` · ${b.working} of ${b.active} working`}
-          </span>
-        ) : b.stall === 'input_starved' ? (
-          <span class="stall stall-input_starved">Short of inputs</span>
-        ) : b.stall === 'output_capped' ? (
-          <span class="stall stall-output_capped">Output at cap</span>
-        ) : null}
-      </div>
-      <hr />
-      {atLimit ? (
-        <p class="muted">At its limit ({b.max_count}).</p>
-      ) : (
-        <>
-          <CostRows v={v} cost={b.cost} short={b.short} />
-          <table class="costs">
-            <tbody>
-              <tr class={b.short.includes('land') ? 'short' : ''}>
-                <td>
-                  <ResChip v={v} id="land" /> {name(v, 'land')}
-                </td>
-                <td class="num">{b.land}</td>
-              </tr>
-            </tbody>
-          </table>
-        </>
-      )}
-      <div class="card-actions">
+      <div class="card-actions card-cost">
+        {atLimit ? (
+          <span class="muted">At its limit ({b.max_count}).</span>
+        ) : (
+          <CostLine v={v} cost={b.cost} short={b.short} land={b.land} />
+        )}
         <span class={hint ? 'buy-hint short' : 'buy-hint muted'}>{hint ?? (b.unlocked ? '' : 'Locked')}</span>
         {b.owned > 0 && (
           <>

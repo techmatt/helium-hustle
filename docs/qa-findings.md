@@ -71,6 +71,9 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | 120 | Faked fonts: an idle program tab at Rajdhani 400 (114), the ideology rank figure at Plex Sans 700 (118) | 600 | qa *assets* |
 | 121 | A Story card's first sentence cut again by its box (108), with no hover | The line is its own title | qa *overflow* |
 | 122 | e2e section 11 read the side quest popup's picture before it loaded (failed once beside qa) | Waits up to 3 s for it | e2e |
+| 123 | Jump ahead played no days while a popup or the run summary waited (one already up, or opened by the wake settling it), yet marked the jump (115) | Refuses with a notice, checked before and after that wake, before the cheat lands (124) | 124's check.mjs |
+| 124 | Reloaded with the run summary up, the new run's day 0 showed behind it (120) | The ended run's last state is saved with the summary (124) | 124's check.mjs |
+| 125 | A skipped run inside a repeated line drew a green dot (119) | The pass records skips (`Repeat.skipped`); they draw gray (124) | hh-core economy test, 124's check.mjs |
 
 ## Deferred (Matt's decisions)
 
@@ -98,7 +101,6 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | Sell All's native `confirm()` lets game time run while it is open, then plays it before the sells | The clock catches up on wall time by design (as for a background tab); the sells land between the right ticks and a run that ended is refused with a notice |
 | Opening the Cortex mock takes one 300-400 ms frame (the whole wheel drawn at once), and closing it one of 570-630 ms under qa's load (122; 52 ms or less on a quiet box) | A UI-only mock: the real Cortex's build decides how it draws |
 | Starting a debug scenario takes a 0.3-1.3 s frame | Debug menu only: a new game built and its first view drawn |
-| Jump ahead plays no days when the wake settling it opens a story modal | Debug only: the modal is shown, the jump marked in the play log |
 | The autopilot's Everything from scenario story_acts never reaches the ending | Debug only: a display scenario whose quests are marked done with no game behind them |
 | The first panel opened after Story takes a 100-160 ms frame (qa: "before panel-achievements"; later switches 20-30 ms): likely the act bands, CSS backgrounds, decoding on the main thread | Once a visit, under the 250 ms bar on a quiet box (300-520 ms under qa's load); `<img decoding="async">` bands if it grows |
 | The debug autopilot's *Everything* ends on a 1.3-1.4 s frame (~28,000 days in ~12 s) | Debug only: its last chunk and the ending drawn at once |

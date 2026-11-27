@@ -240,6 +240,9 @@ export interface Repeat {
   done: number;
   failed: number;
   first_fails: number;
+  /** Runs skipped at their cap, and which of the first eight (bit k: run k); absent: none. */
+  skipped?: number;
+  first_skips?: number;
 }
 
 /** The program lines run over a span of days: per program, per line in queue order,
@@ -417,6 +420,21 @@ export interface StoryView {
   /** A one-off event a later one of its kind replaced in the Events list (Burnout and the
    * boredom phases show only the latest this run). */
   superseded?: boolean;
+  /** The day a one-off event fired this run; null on a quest. */
+  day?: number | null;
+}
+
+/** One project completion this run: its popup and its Events line. */
+export interface ProjectDoneView {
+  id: string;
+  name: string;
+  day: number;
+  /** Which completion in its scope it was (1 for the first). */
+  completion: number;
+  /** What that completion cost in total. */
+  costs: Amounts;
+  /** What it gives, one line per reward (the engine's text). */
+  reward_text: string[];
 }
 
 /** A side quest started (its trigger happened) or completed. */
@@ -623,6 +641,8 @@ export interface View {
   /** The acts reached, in order. */
   acts: ActView[];
   event_texts: StoryView[];
+  /** This run's project completions, oldest first (each pops up and lists in Events). */
+  project_done: ProjectDoneView[];
   achievement_list: AchievementView[];
   rivals: { id: string; name: string; good: string; dumps_seen: number }[];
   /** Each adversary's Attention, threshold and presence (docs/rules/attention.md); `seen`: it has arrived at some point in the career. */

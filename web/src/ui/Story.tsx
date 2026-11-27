@@ -28,7 +28,7 @@ function opening(q: QuestView): string[] {
   return q.story.length > 0 ? q.story : q.body ? [q.body] : [];
 }
 
-/** A card's one line: the text's first sentence, with "…" when more follows (ui.md). */
+/** A card's one line: the text's first sentence, with "…" when more follows (story-ui.md, *Story cards*). */
 function firstLine(texts: string[]): string {
   const whole = (texts[0] ?? '').trim();
   // A draft's "DRAFT." marker stays, with the sentence after it.
@@ -41,7 +41,7 @@ function firstLine(texts: string[]): string {
   return mark + (more ? `${first.replace(/\.+$/, '')}…` : first);
 }
 
-/** A Story card, collapsed by default (Matt, docs/rulings/ui.md, *Story cards*): its head
+/** A Story card, collapsed by default (Matt, docs/rulings/story-ui.md, *Story cards*): its head
  * (picture, title, ✓) and the story's first line, then `collapsed` (an unfinished quest's
  * progress); a click on the head expands it to the whole story and `children` (its
  * mechanics lines). */
@@ -80,7 +80,7 @@ function Card({
         )}
       </button>
       {open ? (
-        <div class="card-body" data-testid="story-card-body">
+        <div class="story-body" data-testid="story-card-body">
           {texts.map((t, i) => (
             <p key={i} class="card-para">
               {t}

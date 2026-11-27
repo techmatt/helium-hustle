@@ -1,9 +1,10 @@
 // What the story modal tells, and when: the pages of a main-story transition, a side
-// quest's completion and a one-off event's popup, built from the engine's view. Pure (type
+// quest's completion, a one-off event's popup and a project completion's, built from the
+// engine's view. Pure (type
 // imports only, the effect filler passed in), so scripts/unit.mjs runs it under Node; the
 // store (`store.ts` `tell`) holds the `Told` record and opens the pages.
 
-import type { SideQuestView, StoryView, View } from './engine';
+import type { Amounts, ProjectDoneView, SideQuestView, StoryView, View } from './engine';
 
 /** One page of the main-story modal: one paragraph. */
 export interface StoryPage {
@@ -24,6 +25,9 @@ export interface StoryPage {
   picture: string | null;
   /** The last page's button ("Begin" when absent: a main-story transition). */
   close?: string;
+  /** A project completion's popup (`text` empty): its card picture, what it gives and
+   * what that completion cost. */
+  project?: { id: string; rewards: string[]; costs: Amounts };
 }
 
 /** An event effect's `{rate}` filled in (`format.ts` `fillRate`). */
@@ -83,6 +87,17 @@ export function eventPages(e: StoryView, fill: Fill): StoryPage[] {
   return pages;
 }
 
+/** A project completion's popup: one page, its name, what it gives and what it cost. */
+export function projectPages(p: ProjectDoneView): StoryPage[] {
+  return [{ quest: p.id, title: p.name, kind: 'payoff', text: '', picture: null, close: 'OK', project: { id: p.id, rewards: p.reward_text, costs: p.costs } }];
+}
+
+/** A project completion's key in the told record and the Events list: the run, the
+ * project and which completion it was. */
+export function projectKey(run: number, p: ProjectDoneView): string {
+  return `${run}:project:${p.id}:${p.completion}`;
+}
+
 /** A finished chain quest's modal again (Story's Replay): its opening, then its payoff. */
 export function replayPages(q: StoryView): StoryPage[] {
   const pages: StoryPage[] = openingOf(q).map((text) => ({ quest: q.id, title: q.title, kind: 'story' as const, text, picture: q.picture ?? null }));
@@ -105,7 +120,7 @@ export function sideQuestPages(q: SideQuestView): StoryPage[] {
  * with its task on the last page. On load nothing is given; a brand-new game (run 1, day 0,
  * nothing completed) gives only its first quest's opening (`intro`). A completed side quest
  * gives its payoff and reward. Every one-off event fired gives its popup, unless
- * `hideSeen` is on and this career has shown it before. Under the autopilot (`pilot`)
+ * `hideSeen` is on and this career has shown it before; every project completion its own. Under the autopilot (`pilot`)
  * nothing is given and no popup counts as seen; the told record still moves on. */
 export function tellPages(v: View, mode: 'load' | 'intro' | 'play', t: Told, opts: { pilot: boolean; hideSeen: boolean; fill: Fill }): StoryPage[] {
   const pages: StoryPage[] = [];
@@ -132,6 +147,14 @@ export function tellPages(v: View, mode: 'load' | 'intro' | 'play', t: Told, opt
     t.seenPopups.add(e.id);
     if (seenBefore && opts.hideSeen) continue;
     pages.push(...eventPages(e, opts.fill));
+  }
+  // A project completion pops up as a quest completion does: told once, never on a load,
+  // never hidden as already seen (each completion is new).
+  for (const p of v.project_done) {
+    const key = projectKey(v.run, p);
+    if (t.stories.has(key)) continue;
+    t.stories.add(key);
+    if (mode === 'play') pages.push(...projectPages(p));
   }
   const fresh = mode === 'intro' && v.run === 1 && v.day === 0 && v.completed_quests.length === 0;
   if (quest && quest.id !== t.lastQuest && !t.opened.has(quest.id)) {

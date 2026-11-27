@@ -89,7 +89,10 @@ panel shows only projects that can be funded now (no locked or finished one-off 
 docs/rulings/ui.md), and names no timeline before the swarm's reveal (its global section
 reads "Global" until then). A funded one shows its days to
 done: the most, over its costs still owed, of owed / rate rounded up (stock aside), none
-while an owed cost has no rate. The Stats panel lists every live project reward.
+while an owed cost has no rate. The Stats panel lists every live project reward. The view's
+`project_done` lists this run's completions from the career log (day, which completion in
+its scope, its rewards, and what that completion cost: the cost after the completions
+before it); the UI pops each up and lists it in Events (rulings/story-ui.md, *Popups*).
 
 ## Actions
 

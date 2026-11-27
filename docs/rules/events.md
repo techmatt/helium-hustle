@@ -106,15 +106,15 @@ trigger and condition hold.
 `category` decides chain quest, side quest or one-off. `silent` keeps a one-off event out of the activity
 feed and the view's event list (display only). Text no rule reads: `title`, a one-off's
 `summary` (its headline), `body`, `story` and `payoff` (narrative only), and the mechanics
-fields, a quest's `goal` and `reward` (no `hints`: rulings/ui.md; the reward lists only real grants and
+fields, a quest's `goal` and `reward` (no `hints`: rulings/story-ui.md; the reward lists only real grants and
 is absent, never "None.", on a quest that grants nothing), a
-one-off's `effect` (rulings/ui.md, *Quest mechanics text*; checked at load).
+one-off's `effect` (rulings/story-ui.md, *Quest mechanics text*; checked at load).
 The view hands a boredom phase its `rate`, the phase's boredom per day, and the UI fills its
 effect's `{rate}` with it as Stats shows boredom growth. The run records the day
 each one-off fired (`Run.events`, display only); the view lists them by that day, content
 order within a day (side quests aside), marking all but the latest of Burnout and the
 boredom phases `superseded`; the right column's Events list leaves those out and shows the
-rest newest first (rulings/ui.md, *Right panel*).
+rest newest first (rulings/story-ui.md, *Right panel*).
 
 **Story modals** (UI only: no rule reads them, sims never see them). A chain quest's `story`
 (shown as it becomes active) and `payoff` (shown as it completes) are paragraphs, one modal
@@ -124,10 +124,10 @@ quest passed through the same day), then the new quest's story with its goal, re
 the last; a new game shows only 1.1's. A quest with no `story` shows its `body`. Every one-off in `event_texts` is a
 modal (a popup) as it fires: its `story` pages (Burnout's), else its `body`, with its effect; a
 completed side quest's is its payoff (else body) and reward. Options' "Hide popups for events
-you've already seen" skips one this career has shown before (rulings/ui.md, *Popups*). The view
+you've already seen" skips one this career has shown before (rulings/story-ui.md, *Popups*). The view
 carries them (`quest.story`; each completed quest's `chain`, `story` and `payoff`). A quest
 (chain or side) may name a `picture`, the stem of a web asset (`[a-z0-9_]`; the view carries
-it on `quest`, `story` and `side_quests`; where it shows: rulings/ui.md, *Quest pictures*).
+it on `quest`, `story` and `side_quests`; where it shows: rulings/story-ui.md, *Quest pictures*).
 
 **Story's timeline** (display only). Each chain quest belongs to an act: `content/acts.json`
 names the acts (placeholder names) and the chain quest each opens with; a quest is in the
@@ -137,7 +137,7 @@ quest exists (`quest.more`), and `side_quests`: each side quest started (its tri
 happened) or completed, with the chain quest it branches off (`parent`, its trigger's quest, or a `flag` trigger's
 `beside`) and its progress (a side quest's trigger must be a chain quest's completion or a
 `flag` beside one: a load error otherwise). The Story panel draws the finished beats, the
-active one and a "???" from these (cards: rulings/ui.md, *Story cards*).
+active one and a "???" from these (cards: rulings/story-ui.md, *Story cards*).
 
 **Activity feed** (display: no rule reads it). The run keeps a feed of what happened, by
 day: each completed quest, earned achievement, completed project and bought research (the

@@ -113,6 +113,7 @@ fn story(e: &'static Event) -> StoryView {
         act: content().act_of(&e.id),
         picture: e.picture.as_deref(),
         superseded: false,
+        day: None,
     }
 }
 
@@ -153,6 +154,7 @@ pub(super) fn event_texts(r: &Rules, g: &GameState) -> Vec<StoryView> {
         .map(|(day, e)| {
             let mut s = event_story(r, g, e);
             s.superseded = matches!(boredom_rank(day, e), Some(k) if Some(k) != latest);
+            s.day = Some(day);
             s
         })
         .collect()

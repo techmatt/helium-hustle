@@ -21,6 +21,7 @@ import {
   type LastRun,
   type LinesRun,
   type ParsedText,
+  type ProjectDoneView,
   type Scenario,
   type SideQuestView,
   type Stamped,
@@ -31,7 +32,7 @@ import { fillRate } from './format';
 import type { Autopilot } from './wasm/hh_wasm.js';
 import * as playlog from './playlog';
 import { clearSave, loadSave, SAVE_KEY, storageGet, storageSet, writeSave } from './save';
-import { clearTold, eventPages, newTold, replayPages, sideQuestPages, tellPages, type StoryPage } from './story';
+import { clearTold, eventPages, newTold, projectKey, projectPages, replayPages, sideQuestPages, tellPages, type StoryPage } from './story';
 /** wasm's `advance_run` takes a u32 tick count; larger catch-ups go in chunks. */
 const MAX_CHUNK = 1_000_000;
 /** What a tab that stood down (another tab plays the career) says when used. */
@@ -68,8 +69,8 @@ export interface Store {
   notice: string | null;
   /** The finished run's summary, shown until Continue (the clock is paused meanwhile). */
   summary: LastRun | null;
-  /** The ended run's view, shown behind its summary until Continue (null after a reload:
-   * the new run shows). */
+  /** The ended run's view, shown behind its summary until Continue (kept over a reload:
+   * its state is saved with the summary). */
   backdrop: View | null;
   /** What the ended run started with (the summary's deltas; null: not known). */
   summaryBase: SummaryBase | null;
@@ -108,6 +109,9 @@ let baselineRun = -1;
 /** The ended run's last state, when the ticks or action just played retired it, for the
  * next refresh (the summary's backdrop). */
 let endedState: string | null = null;
+/** The state behind `store.backdrop` while the run summary is open, saved with it so a
+ * reload keeps the ended run's last day on screen (120). */
+let backdropState: string | null = null;
 /** The lines run by the ticks just played, for the next refresh. */
 let ranLines: LinesRun | null = null;
 const baseline = new Set<string>();
@@ -247,6 +251,11 @@ export function replayEvent(e: StoryView): void {
   showPages(eventPages(e, fillRate));
 }
 
+/** An Events project line's click: that completion's popup again. */
+export function replayProject(p: ProjectDoneView): void {
+  showPages(projectPages(p));
+}
+
 /** An open side quest's click (the right column): its popup, its story with its goal and
  * reward. */
 export function showSideQuest(q: SideQuestView): void {
@@ -285,12 +294,26 @@ export function listedEvents(v: View): StoryView[] {
   return v.event_texts.filter((e) => !e.superseded);
 }
 
+/** One Events line: a one-off event or a project completion, with its stable key. */
+export type EventLine = { key: string; day: number } & ({ event: StoryView } | { project: ProjectDoneView });
+
+/** The Events list's lines, oldest first by day: this run's listed events and its project
+ * completions (a day's events before its projects). */
+export function eventLines(v: View): EventLine[] {
+  const lines: EventLine[] = [
+    ...listedEvents(v).map((e) => ({ key: `${v.run}:${e.id}`, day: e.day ?? 0, event: e })),
+    ...v.project_done.map((p) => ({ key: projectKey(v.run, p), day: p.day, project: p })),
+  ];
+  // Stable: each kind keeps its own order within a day.
+  return lines.sort((a, b) => a.day - b.day);
+}
+
 /** Each section's items now, as keys stable while the item stays listed: this run's
  * listed events, this run's activity feed (a repeated line numbered by its occurrence). */
 export function eventItems(v: View): Record<EventSection, string[]> {
   const n = new Map<string, number>();
   return {
-    events: listedEvents(v).map((e) => `${v.run}:${e.id}`),
+    events: eventLines(v).map((l) => l.key),
     activity: v.activity.map((a) => {
       const base = `${v.run}:${a.day}:${a.kind}:${a.id}`;
       const i = n.get(base) ?? 0;
@@ -385,6 +408,7 @@ function refresh(reset = false, story: 'load' | 'intro' | 'play' = reset ? 'load
     // A run just ended: show its summary with the clock stopped; Continue plays the new
     // run at 1x, whatever speed was set before (Matt, 117).
     store.summary = v.last_run;
+    backdropState = endedState;
     store.backdrop = endedState ? engine.view(endedState) : null;
     justEnded = store.backdrop;
     const c = store.backdrop?.career;
@@ -509,6 +533,7 @@ function save(): void {
     speed: clock.speed,
     summary: store.summary,
     summaryBase: store.summaryBase,
+    backdrop: (store.summary && backdropState) || null,
     resumeSpeed,
     storyPages: store.storyPages,
     seenPopups: [...told.seenPopups],
@@ -592,6 +617,7 @@ export function newGame(seed: string, scenario: Scenario | null, why = 'new game
   if (sessionOpen) playlog.log('session_start', { how: 'new', width: window.innerWidth, height: window.innerHeight, agent: navigator.userAgent });
   store.summary = null;
   store.backdrop = null;
+  backdropState = null;
   store.summaryBase = null;
   store.storyPages = [];
   clearTold(told);
@@ -684,6 +710,7 @@ export function continueAfterRetirement(): void {
   movedAt = performance.now();
   store.summary = null;
   store.backdrop = null;
+  backdropState = null;
   store.summaryBase = null;
   playlog.log('continue');
   // A story chain that came with the retirement shows next, the clock still stopped; its
@@ -706,8 +733,18 @@ export function setCheatsEnabled(on: boolean): void {
 /** Jumps ahead: a marked cheat action, then the days played as usual (stopping at a
  * retirement, not at a quest change: its modal shows after), so replay stays exact. */
 export function jumpAhead(days: number): void {
-  if (!act({ type: 'cheat', cheat: { kind: 'jump_ahead', days } })) return;
+  // A waiting popup or run summary holds the clock: the jump would play no days (and still
+  // be marked in the record), so it refuses and says why (115). The clock's due wall time
+  // settles first, as it may open one.
+  const held = () => {
+    if (!store.summary && store.storyPages.length === 0) return false;
+    setNotice(`Jump ahead refused: close the ${store.summary ? 'run summary' : 'popup'} first.`);
+    return true;
+  };
+  if (held()) return;
   clock.wake();
+  if (held()) return;
+  if (!act({ type: 'cheat', cheat: { kind: 'jump_ahead', days } })) return;
   runTicks(days, false);
   // The wall time the jump took to compute is no play time.
   clock.forgetTimeAway();
@@ -943,6 +980,17 @@ export function start(): void {
       // A run summary left open is still open.
       store.summary = s.summary ?? null;
       store.summaryBase = (store.summary && s.summaryBase) || null;
+      // Behind it, the ended run's last day, as before the reload (120).
+      backdropState = (store.summary && s.backdrop) || null;
+      try {
+        store.backdrop = backdropState ? engine.view(backdropState) : null;
+        // What it lists was read before the reload, as the new run's is (`baselineRead`).
+        if (store.backdrop) for (const keys of Object.values(eventItems(store.backdrop))) for (const k of keys) readItems.add(k);
+      } catch {
+        // An unreadable backdrop costs only the backdrop: the new run shows behind.
+        backdropState = null;
+        store.backdrop = null;
+      }
     } catch (e) {
       clearSave();
       // `offline`: written at a later visit, so it has no place in the career's time.

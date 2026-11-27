@@ -24,6 +24,9 @@ export interface Save {
   summary?: LastRun | null;
   /** What the summarized run started with (the summary's deltas). */
   summaryBase?: SummaryBase | null;
+  /** With a summary open, the ended run's last state (its backdrop), so a reload keeps
+   * that day behind the summary. */
+  backdrop?: string | null;
   resumeSpeed?: Speed;
   /** The one-off events whose popup this career has shown (Events' "Hide popups for
    * events you've already seen"). */

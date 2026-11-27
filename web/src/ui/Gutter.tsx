@@ -1,6 +1,7 @@
 // The run gutter both Programs modes share: one status dot per line (ran, skipped by its
 // `if`, failed, not run, locked, unparsed), and on a repeated command line one small dot
-// per run of its pass (green done, red failed, hollow pending, filling left to right) up
+// per run of its pass (green done, red failed, gray skipped at its cap, hollow pending,
+// filling left to right) up
 // to 8 runs, a short bar with "done/total, N failed" past that. The Text mode draws it
 // beside its text lines (TextEditor.tsx), the Blocks mode first in each row
 // (ProgramLines.tsx). Everything here is the view's.
@@ -33,6 +34,9 @@ interface RepeatState {
   failed: number;
   /** Bit k: run k (of the first 8) failed. */
   bits: number;
+  /** Runs skipped at their cap, and bit k: run k (of the first 8) skipped (gray). */
+  skipped: number;
+  skips: number;
 }
 
 const DOT_OF: Record<LineOutcome, Dot> = {
@@ -66,8 +70,8 @@ export const DOT_TITLE: Record<Dot, string> = {
 function repeatOf(p: ProgramView, j: number, of: number): RepeatState {
   const rep: Repeat | null = p.repeats?.[j] ?? null;
   const atStart = p.running > 0 && p.entry === j && p.step === 0;
-  if (!rep || (atStart && rep.done < of)) return { of, done: 0, failed: 0, bits: 0 };
-  return { of, done: Math.min(rep.done, of), failed: rep.failed, bits: rep.first_fails };
+  if (!rep || (atStart && rep.done < of)) return { of, done: 0, failed: 0, bits: 0, skipped: 0, skips: 0 };
+  return { of, done: Math.min(rep.done, of), failed: rep.failed, bits: rep.first_fails, skipped: rep.skipped ?? 0, skips: rep.first_skips ?? 0 };
 }
 
 /** A line that never runs: a note, or an `else` (with ELSE_TITLE). */
@@ -118,21 +122,24 @@ export function GutterMark({ st, line }: { st: LineStatus | null; line: number }
     // Not run on the last day (jumped with its `if`, or not reached): the last pass, muted.
     // A gray with a note (skipped at its cap) was reached today: its pass is current.
     const stale = (st.dot === 'gray' && st.note === null) || st.dot === 'none' ? ' rep-stale' : '';
-    const title = `${r.done}/${r.of}${r.failed > 0 ? `, ${r.failed} failed` : ''}${stale ? ' (an earlier pass)' : ''}`;
+    const title = `${r.done}/${r.of}${r.failed > 0 ? `, ${r.failed} failed` : ''}${r.skipped > 0 ? `, ${r.skipped} skipped at the cap` : ''}${stale ? ' (an earlier pass)' : ''}`;
     if (r.of <= MAX_DOTS) {
       return (
-        <span class={`rep-dots${stale}`} data-line={line} data-line-status={st.dot} data-repeat={`${r.done}/${r.of}`} data-repeat-failed={r.failed} title={title}>
+        <span class={`rep-dots${stale}`} data-line={line} data-line-status={st.dot} data-repeat={`${r.done}/${r.of}`} data-repeat-failed={r.failed} data-repeat-skipped={r.skipped} title={title}>
           {Array.from({ length: r.of }, (_, k) => (
-            <span key={k} class={`rep-dot ${k >= r.done ? 'rep-pending' : r.bits & (1 << k) ? 'rep-failed' : 'rep-done'}`} />
+            <span key={k} class={`rep-dot ${k >= r.done ? 'rep-pending' : r.bits & (1 << k) ? 'rep-failed' : r.skips & (1 << k) ? 'rep-skipped' : 'rep-done'}`} />
           ))}
         </span>
       );
     }
-    const ok = r.done - Math.min(r.failed, r.done);
+    const failed = Math.min(r.failed, r.done);
+    const skipped = Math.min(r.skipped, r.done - failed);
+    const ok = r.done - failed - skipped;
     return (
-      <span class={`rep-bar${stale}`} data-line={line} data-line-status={st.dot} data-repeat={`${r.done}/${r.of}`} data-repeat-failed={r.failed} title={title}>
+      <span class={`rep-bar${stale}`} data-line={line} data-line-status={st.dot} data-repeat={`${r.done}/${r.of}`} data-repeat-failed={r.failed} data-repeat-skipped={r.skipped} title={title}>
         <span class="rep-bar-ok" style={{ width: `${(100 * ok) / r.of}%` }} />
-        <span class="rep-bar-failed" style={{ width: `${(100 * (r.done - ok)) / r.of}%` }} />
+        <span class="rep-bar-skipped" style={{ width: `${(100 * skipped) / r.of}%` }} />
+        <span class="rep-bar-failed" style={{ width: `${(100 * failed) / r.of}%` }} />
       </span>
     );
   }

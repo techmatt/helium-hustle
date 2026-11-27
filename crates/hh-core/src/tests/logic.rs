@@ -229,9 +229,9 @@ fn a_repeated_line_records_each_run_of_its_pass_for_the_gutter() {
     r.apply(&mut g, &Action::SetProcessors { program: 0, processors: 1 }).unwrap();
     put(&r, &mut g, vec![Entry::command("idle", 4)]).unwrap();
     r.advance(&mut g, 1);
-    assert_eq!(rep(&g), [Some(Repeat { done: 1, failed: 0, first_fails: 0 })]);
+    assert_eq!(rep(&g), [Some(Repeat { done: 1, ..Repeat::default() })]);
     r.advance(&mut g, 3);
-    assert_eq!(rep(&g), [Some(Repeat { done: 4, failed: 0, first_fails: 0 })], "the last pass stays whole");
+    assert_eq!(rep(&g), [Some(Repeat { done: 4, ..Repeat::default() })], "the last pass stays whole");
     r.advance(&mut g, 1);
     assert_eq!(rep(&g)[0].map(|x| x.done), Some(1), "a new pass starts afresh");
     // Failed runs: red, by run; a new program clears the record; a single run keeps none.
@@ -239,7 +239,7 @@ fn a_repeated_line_records_each_run_of_its_pass_for_the_gutter() {
     put(&r, &mut g, vec![Entry::command("buy_ice", 3), Entry::command("idle", 1)]).unwrap();
     assert_eq!(rep(&g), [None, None]);
     r.advance(&mut g, 2);
-    assert_eq!(rep(&g), [Some(Repeat { done: 2, failed: 2, first_fails: 0b11 }), None]);
+    assert_eq!(rep(&g), [Some(Repeat { done: 2, failed: 2, first_fails: 0b11, ..Repeat::default() }), None]);
 }
 
 #[test]

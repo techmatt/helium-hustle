@@ -59,7 +59,7 @@ export function risingIsBad(id: string): boolean {
 
 /** A quest's mechanics text, apart from its narrative in the mechanics style (the UI font
  * one size smaller on a faint warm tint, each line led by a small muted label, "Reward: …";
- * docs/rulings/ui.md, *Quest mechanics text*): its goal (the same "Goal:" done or not: a ✓
+ * docs/rulings/story-ui.md, *Quest mechanics text*): its goal (the same "Goal:" done or not: a ✓
  * on the card's title says it) and what completing it does; or a one-off event's effect.
  * `children` (a progress bar, sub-objectives) sit under the goal. */
 export function Mechanics({
@@ -91,7 +91,7 @@ export function Mechanics({
 }
 
 /** The main-quest box at the upper right: the quest's title, its goal as one plain line in
- * the UI font, and its progress; no reward, no how-to steps (Matt, docs/rulings/ui.md,
+ * the UI font, and its progress; no reward, no how-to steps (Matt, docs/rulings/story-ui.md,
  * *Quest mechanics text*). */
 export function Quest({ v }: { v: View }) {
   const q = v.quest;
@@ -401,21 +401,19 @@ export function Breakdown({ v, id, avg = false }: { v: View; id: string; avg?: b
   );
 }
 
-/** A cost table: resource, amount; red where short. */
-export function CostRows({ v, cost, short }: { v: View; cost: Amounts; short: string[] }) {
+/** A cost on one wrapping line: each resource's chip (its name on hover) and amount, red
+ * where short; `land`, when given, last (a building's land). */
+export function CostLine({ v, cost, short = [], land }: { v: View; cost: Amounts; short?: string[]; land?: number }) {
+  const items: [string, string][] = Object.entries(cost).map(([res, amt]) => [res, num(amt)]);
+  if (land !== undefined) items.push(['land', String(land)]);
   return (
-    <table class="costs">
-      <tbody>
-        {Object.entries(cost).map(([res, amt]) => (
-          <tr key={res} class={short.includes(res) ? 'short' : ''}>
-            <td>
-              <ResChip v={v} id={res} /> {name(v, res)}
-            </td>
-            <td class="num">{num(amt)}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
+    <span class="cost-line">
+      {items.map(([res, amt]) => (
+        <span key={res} class={`cost-item${short.includes(res) ? ' short' : ''}`} data-res={res} title={name(v, res)}>
+          <ResChip v={v} id={res} /> {amt}
+        </span>
+      ))}
+    </span>
   );
 }
 

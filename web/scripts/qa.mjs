@@ -321,7 +321,7 @@ const AUDIT = `(() => {
     if (img.complete && (Math.round(r.width) !== 96 || Math.round(r.height) !== 96)) out.push({ kind: 'assets', what: 'card picture not 96 px: ' + c.dataset.id + ' ' + r.width + 'x' + r.height });
     const body = c.querySelector('.card-body')?.getBoundingClientRect();
     if (body && body.height < 95.5) out.push({ kind: 'overflow', what: 'card body shorter than its picture: ' + c.dataset.id + ' ' + body.height });
-    for (const t of c.querySelectorAll('.card-text, .card-actions, hr, .costs')) {
+    for (const t of c.querySelectorAll('.card-text, .card-actions')) {
       const tr = t.getBoundingClientRect();
       if (tr.left < r.right - 1 && tr.right > r.left + 1 && tr.top < r.bottom - 1 && tr.bottom > r.top + 1 && !t.contains(img)) out.push({ kind: 'hidden', what: 'card text under its picture: ' + c.dataset.id + ' ' + t.className });
     }
@@ -908,7 +908,7 @@ async function pass(seed, width, theme) {
   const storyPage = () =>
     evaluate(`(() => { const m = document.querySelector('[data-testid="story-modal"]'); if (!m) return null;
       const b = m.querySelector('[data-testid="story-next"]');
-      return { id: m.dataset.quest + '/' + m.dataset.kind + '/' + m.querySelector('.story-text').textContent.slice(0, 30), button: b.textContent, focused: document.activeElement === b }; })()`);
+      return { id: m.dataset.quest + '/' + m.dataset.kind + '/' + (m.querySelector('.story-text')?.textContent ?? '').slice(0, 30), button: b.textContent, focused: document.activeElement === b }; })()`);
   const rawKey = async (k, code, vk, autoRepeat = false) => {
     await send('Input.dispatchKeyEvent', { type: 'keyDown', key: k, code, windowsVirtualKeyCode: vk, autoRepeat, text: k === 'Enter' ? '\r' : k.length === 1 ? k : undefined });
     if (!autoRepeat) await send('Input.dispatchKeyEvent', { type: 'keyUp', key: k, code, windowsVirtualKeyCode: vk });
@@ -1255,7 +1255,7 @@ async function pass(seed, width, theme) {
     await sleep(800);
     if ((await day()) !== d0) note('input', 'keys during the run summary started the clock');
     // A reload with the summary up: it is still up, the clock still stopped.
-    // (Behind a reloaded summary the new run's day 0 shows, not the ended run's last day.)
+    // (Behind a reloaded summary the ended run's last day still shows, as before it: 124.)
     await load();
     const r0 = await day();
     await sleep(800);

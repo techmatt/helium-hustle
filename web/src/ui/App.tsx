@@ -17,7 +17,10 @@ import {
 } from '../store';
 import { QuestPicture, Sky } from './art';
 import { Buildings } from './Buildings';
-import { Bar, BoredomBar, Mechanics, RateCell, Section, isCapped, navShown } from './common';
+import { Bar, BoredomBar, CostLine, Mechanics, RateCell, Section, isCapped, navShown } from './common';
+import { projectArt } from './cardArt';
+import type { View } from '../engine';
+import type { StoryPage } from '../story';
 import { Chip } from './icons';
 import { Left } from './Left';
 import { Options } from './Options';
@@ -252,7 +255,7 @@ function StoryModal({ s }: { s: Store }) {
           {p.kind === 'payoff' && <span class="muted story-done"> complete</span>}
         </h2>
         <QuestPicture stem={p.picture} at="modal" />
-        <p class="story-text">{p.text}</p>
+        {p.project ? <ProjectDone v={s.view} p={p.project} /> : <p class="story-text">{p.text}</p>}
         {(p.reward || p.effect) && <Mechanics reward={p.reward} effect={p.effect} />}
         {p.task && (
           <div class="story-task">
@@ -276,6 +279,27 @@ function StoryModal({ s }: { s: Store }) {
           {last ? (p.close ?? 'Begin') : 'Continue'}
         </button>
       </div>
+    </div>
+  );
+}
+
+/** A project completion's popup body: its card picture beside what it gives (one Reward
+ * line each) and what that completion cost, in the mechanics style. */
+function ProjectDone({ v, p }: { v: View; p: NonNullable<StoryPage['project']> }) {
+  const art = projectArt(p.id);
+  return (
+    <div class="project-done" data-testid="project-done">
+      {art && <img class="card-art" src={art} alt="" width={128} height={128} draggable={false} />}
+      <span class="mechanics" data-testid="mechanics">
+        {p.rewards.map((r, i) => (
+          <span class="mech-line mech-reward" key={i}>
+            <span class="mech-key">Reward:</span> {r}
+          </span>
+        ))}
+        <span class="mech-line mech-cost">
+          <span class="mech-key">Cost:</span> <CostLine v={v} cost={p.costs} />
+        </span>
+      </span>
     </div>
   );
 }

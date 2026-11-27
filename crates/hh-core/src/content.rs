@@ -412,7 +412,7 @@ pub struct Event {
     /// A one-off event's one line (a quest has `goal` instead).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub summary: String,
-    /// A quest's mechanics text (docs/rulings/ui.md, *Quest mechanics text*): what to do,
+    /// A quest's mechanics text (docs/rulings/story-ui.md, *Quest mechanics text*): what to do,
     /// and what completing it does (no how-to steps: Matt, 2026-11-26). Display only, never
     /// read by a rule; the narrative (`body`, `story`, `payoff`) carries no instructions or
     /// numbers.

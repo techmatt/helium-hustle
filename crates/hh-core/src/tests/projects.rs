@@ -137,6 +137,15 @@ fn projects_drain_at_their_rates_and_complete() {
     assert_eq!(crate::modifiers::modifier(&r, &g, "building_upkeep_mult"), f("0.9"));
     let v = r.view(&g);
     assert!(v.live_rewards.iter().any(|t| t == "Predictive Maintenance: Building upkeep ×0.9"), "{:?}", v.live_rewards);
+    // Its popup's line: this run's completion, what it gave and what it cost.
+    let done = &v.project_done;
+    assert_eq!(done.len(), 1);
+    assert_eq!((done[0].id, done[0].completion, done[0].day), ("predictive_maintenance", 1, g.run.day - 1), "the day it played");
+    assert_eq!((done[0].costs["science"], done[0].costs["credits"]), (f("80"), f("150")));
+    assert_eq!(done[0].reward_text, vec!["Building upkeep ×0.9".to_string()]);
+    // A timeline's end starts the next run 1 afresh: nothing from before it lists.
+    g.note("timeline_end", "fell");
+    assert!(r.view(&g).project_done.is_empty());
 }
 
 #[test]

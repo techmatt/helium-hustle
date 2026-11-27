@@ -241,7 +241,7 @@ export function driver(b, { url, poll = 100, settle = 500, readyMs = 10000, clic
       pages.push(
         await evaluate(`(() => {
           const m = document.querySelector('[data-testid="story-modal"]');
-          return { quest: m.dataset.quest, kind: m.dataset.kind, text: m.querySelector('.story-text').textContent,
+          return { quest: m.dataset.quest, kind: m.dataset.kind, text: m.querySelector('.story-text')?.textContent ?? '',
             task: m.querySelector('.story-task')?.textContent ?? null, button: m.querySelector('[data-testid="story-next"]').textContent,
             paused: document.querySelector('#speeds button[data-speed="0"]')?.getAttribute('aria-pressed') === 'true' };
         })()`),

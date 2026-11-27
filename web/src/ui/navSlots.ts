@@ -1,6 +1,6 @@
 // The nav grid's tiles (Left.tsx): the open ones, packed from the top in `content/nav.json`'s
-// order with no reserved cells (Matt, 2026-11-26). The utility tiles (Stats, Story,
-// Achievements, Options) are that file's last rows, so they follow the last open play tile and
+// order with no reserved cells (Matt, 2026-11-26). The utility tiles (Achievements, Story,
+// Stats, Options: Matt's order, 124) are that file's last rows, so they follow the last open play tile and
 // move down as panels open.
 
 /** The tiles shown, in order. */

@@ -96,10 +96,15 @@ pub fn unlocked(r: &Rules, g: &GameState, p: &Project) -> bool {
 /// The next completion's cost of one resource: the row's cost times
 /// `cost_growth` once per completion so far.
 pub fn cost(g: &GameState, p: &Project, resource: &str) -> Fx {
+    cost_after(p, resource, completions(g, p))
+}
+
+/// One resource's cost of the completion that follows `done` completions:
+/// the row's cost times `cost_growth` once per completion before it.
+pub fn cost_after(p: &Project, resource: &str, done: u32) -> Fx {
     let base = p.costs.get(resource).copied().unwrap_or(Fx::ZERO);
     let Some(rep) = &p.repeat else { return base };
-    let n = i64::from(completions(g, p));
-    rep.cost_growth.pow_int(n).and_then(|f| base.checked_mul(f)).unwrap_or(Fx::MAX)
+    rep.cost_growth.pow_int(i64::from(done)).and_then(|f| base.checked_mul(f)).unwrap_or(Fx::MAX)
 }
 
 /// Every cost of the next completion.

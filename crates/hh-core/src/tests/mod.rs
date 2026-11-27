@@ -88,7 +88,7 @@ pub(crate) fn outcomes(g: &crate::GameState) -> Vec<Option<crate::state::LineOut
 // scripts/wasm-smoke.mjs); never type them (README, *Rules changes*).
 const GOLDEN_REVISION: u32 = 43;
 const GOLDEN_FINGERPRINT: &str = "e2e48fc08ede4792";
-const GOLDEN_CONTENT_HASH: &str = "38b15c85a0d0cfa0";
+const GOLDEN_CONTENT_HASH: &str = "cd95a0921bdc413e";
 const GOLDEN_CONFIG_HASH: &str = "ff44e1165d831ee2";
 
 pub(crate) fn golden_session() -> Session {

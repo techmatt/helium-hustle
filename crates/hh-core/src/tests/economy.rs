@@ -309,6 +309,9 @@ fn commands_convert_in_full_or_not_at_all_and_never_past_a_cap() {
     r.advance(&mut g, 3);
     assert_eq!((g.amount("titanium"), g.amount("credits")), (cap, f("40")));
     assert_eq!(super::outcomes(&g)[0], Some(crate::state::LineOutcome::Skipped));
+    // The pass records the skip (the gutter draws it gray): run 3 of 3.
+    let rep = r.view(&g).programs[0].repeats[0].unwrap();
+    assert_eq!((rep.done, rep.skipped, rep.first_skips, rep.failed), (3, 1, 0b100, 0));
 }
 
 #[test]

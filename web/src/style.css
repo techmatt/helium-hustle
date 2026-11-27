@@ -1116,16 +1116,6 @@ tr.is-new td:first-child {
   align-items: center;
   gap: 6px;
 }
-.costs {
-  width: 100%;
-  border-collapse: collapse;
-}
-.costs td {
-  padding: 1px 0;
-}
-.costs tr.short {
-  color: var(--neg);
-}
 .card-actions {
   display: flex;
   align-items: center;
@@ -1156,6 +1146,32 @@ tr.is-new td:first-child {
 .card-actions .buy-hint {
   margin-right: auto;
   font-size: 13px;
+}
+/* A building card's last row: its cost on one line (chips and amounts, red where short),
+   the buy hint, the sell buttons (124). */
+.card-actions.card-cost {
+  flex-wrap: wrap;
+  border-top: 1px solid var(--line);
+  padding-top: 6px;
+}
+.cost-line {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px 10px;
+}
+.cost-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  white-space: nowrap;
+}
+.cost-item.short {
+  color: var(--neg);
+}
+/* The flows' column also holds the status row: the card's text never runs under its picture. */
+.card.building .card-body {
+  min-height: 96px;
 }
 .card-actions .buy-hint.short {
   color: var(--neg);
@@ -1595,7 +1611,7 @@ tr.is-new td:first-child {
   width: 100%;
   margin: 4px 0 2px;
 }
-.card-body {
+.story-body {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1604,10 +1620,10 @@ tr.is-new td:first-child {
   margin: 0;
   line-height: 1.5;
 }
-.card-body .mechanics {
+.story-body .mechanics {
   margin: 2px 0 0;
 }
-.card-body .replay {
+.story-body .replay {
   align-self: flex-start;
   font-size: 12px;
 }
@@ -1955,7 +1971,7 @@ tr.is-new td:first-child {
   color: var(--muted);
   margin-bottom: 4px;
 }
-/* A quest's mechanics text (common.tsx Mechanics; ui.md, *Quest mechanics text*): the UI
+/* A quest's mechanics text (common.tsx Mechanics; story-ui.md, *Quest mechanics text*): the UI
    font one size smaller on a faint warm tint, no border, each line led by its small muted
    label inline ("Reward: …"), never the narrative's look. */
 .mechanics {
@@ -2178,18 +2194,25 @@ button.go:hover:not(:disabled) {
 .nav-tile .dot.dot-cargo {
   background: var(--neg);
 }
-/* An affordable building's name row is tinted (every card's head has the same box, so a
-   card turning affordable moves nothing). */
-.card.building .card-head {
+/* An affordable building's or research's name row is tinted (every card's head has the same
+   box, so a card turning affordable moves nothing). Research shows it by the bar alone, no
+   outline (124). */
+.card.building .card-head,
+.card.research .card-head {
   margin: -8px -10px 0;
   padding: 6px 10px 4px;
   border-radius: 3px 3px 0 0;
 }
-.card.building.can-buy .card-head {
+.card.building.can-buy .card-head,
+.card.research.can-buy .card-head {
   background: var(--ok-head);
 }
+.card.research.can-buy {
+  border-color: var(--line);
+}
 /* The tinted head would cover the card's "new" edge: it draws its own. */
-.card.building.is-new .card-head {
+.card.building.is-new .card-head,
+.card.research.is-new .card-head {
   box-shadow: inset 4px 0 0 var(--accent);
 }
 /* A capped resource's net rate: the surplus the cap throws away. */
@@ -2388,8 +2411,8 @@ button.go:hover:not(:disabled) {
   width: 260px;
   max-width: 100%;
 }
-/* A repeated line's runs: a dot each up to 8 (green done, red failed, hollow pending), a
-   short bar past that. */
+/* A repeated line's runs: a dot each up to 8 (green done, red failed, gray skipped at its
+   cap, hollow pending), a short bar past that. */
 .rep-dots {
   display: inline-flex;
   gap: 2px;
@@ -2407,6 +2430,10 @@ button.go:hover:not(:disabled) {
 .rep-failed {
   background: var(--neg);
 }
+/* Skipped at its cap: gray, as a single skipped line's dot (119). */
+.rep-skipped {
+  background: var(--muted);
+}
 .rep-pending {
   border: 1px solid var(--muted);
 }
@@ -2423,6 +2450,9 @@ button.go:hover:not(:disabled) {
 }
 .rep-bar-failed {
   background: var(--neg);
+}
+.rep-bar-skipped {
+  background: var(--muted);
 }
 .rep-stale {
   opacity: 0.4;
@@ -2472,6 +2502,22 @@ button.go:hover:not(:disabled) {
 }
 .story-modal .mechanics {
   margin: 12px 0 16px;
+}
+/* A project completion's popup (124): its card picture beside its rewards and cost. */
+.project-done {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+.project-done .card-art {
+  width: 128px;
+  height: 128px;
+}
+.project-done .mechanics {
+  flex: 1;
+}
+.mech-cost .cost-line {
+  vertical-align: middle;
 }
 .modal.ending {
   border-top: 4px solid var(--accent);

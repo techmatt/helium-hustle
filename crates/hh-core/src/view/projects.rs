@@ -75,6 +75,48 @@ pub(super) fn projects(r: &Rules, g: &GameState) -> Vec<ProjectView> {
         .collect()
 }
 
+/// One project completion this run (its popup and its Events line).
+#[derive(Debug, Clone, Serialize)]
+pub struct ProjectDoneView {
+    pub id: Text,
+    pub name: Text,
+    pub day: u64,
+    /// Which completion in its scope it was (1 for the first).
+    pub completion: u32,
+    /// What that completion cost in total.
+    pub costs: Amounts,
+    /// What it gives, one line per reward.
+    pub reward_text: Vec<String>,
+}
+
+/// The project completions this run, oldest first, from the career log. Each one's
+/// number is its scope's count less the same project's later completions this run;
+/// its cost is the cost after the completions before it.
+pub(super) fn project_done(g: &GameState) -> Vec<ProjectDoneView> {
+    let run = g.career.run_number;
+    // The log is in time order: this run's entries are its tail, back to another run's
+    // entry or a timeline's end (a new timeline starts again at run 1).
+    let start = g.career.log.iter().rposition(|e| e.run != run || e.kind == "timeline_end").map_or(0, |i| i + 1);
+    let notes: Vec<_> = g.career.log[start..].iter().filter(|e| e.kind == "project").collect();
+    notes
+        .iter()
+        .enumerate()
+        .filter_map(|(i, e)| {
+            let p = content().project(&e.id)?;
+            let later = notes[i + 1..].iter().filter(|x| x.id == e.id).count() as u32;
+            let completion = projects::completions(g, p).saturating_sub(later).max(1);
+            Some(ProjectDoneView {
+                id: &p.id,
+                name: &p.name,
+                day: e.day,
+                completion,
+                costs: p.costs.keys().map(|res| (res.clone(), projects::cost_after(p, res, completion - 1))).collect(),
+                reward_text: reward_text(p),
+            })
+        })
+        .collect()
+}
+
 /// Every live project reward, as `Project: what it gives` (content order).
 pub(super) fn live_rewards(g: &GameState) -> Vec<String> {
     content()

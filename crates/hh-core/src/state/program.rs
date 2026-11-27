@@ -295,11 +295,20 @@ pub struct Program {
 }
 
 /// A repeated line's pass: runs done of it, how many failed, and which of the
-/// first eight (bit k: run k) failed.
+/// first eight (bit k: run k) failed; likewise the runs skipped at their cap
+/// (left out of a pass's state when none, so a pass without one reads as before).
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct Repeat {
     pub done: u32,
     pub failed: u32,
     pub first_fails: u8,
+    #[serde(default, skip_serializing_if = "is_zero")]
+    pub skipped: u32,
+    #[serde(default, skip_serializing_if = "is_zero_u8")]
+    pub first_skips: u8,
+}
+
+fn is_zero_u8(n: &u8) -> bool {
+    *n == 0
 }

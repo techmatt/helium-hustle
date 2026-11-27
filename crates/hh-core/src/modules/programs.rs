@@ -977,6 +977,12 @@ fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
                             rep.first_fails |= 1 << rep.done;
                         }
                     }
+                    if outcome == LineOutcome::Skipped {
+                        rep.skipped += 1;
+                        if rep.done < u8::BITS {
+                            rep.first_skips |= 1 << rep.done;
+                        }
+                    }
                     rep.done += 1;
                 }
                 p.step += 1;

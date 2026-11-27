@@ -1404,21 +1404,25 @@ FRINGE-9
 
 Buildings
 
+### `nav:research.name`
+
+Research
+
 ### `nav:commands.name`
 
 Commands
 
-### `nav:research.name`
+### `nav:programs.name`
 
-Research
+Programs
 
 ### `nav:launch_pads.name`
 
 Launch Pads
 
-### `nav:programs.name`
+### `nav:projects.name`
 
-Programs
+Projects
 
 ### `nav:adversaries.name`
 
@@ -1431,10 +1435,6 @@ Ideologies
 ### `nav:retirement.name`
 
 Retirement
-
-### `nav:projects.name`
-
-Projects
 
 ### `nav:timeline.name`
 
@@ -1456,17 +1456,17 @@ Vault
 
 Dyson
 
-### `nav:stats.name`
+### `nav:achievements.name`
 
-Stats
+Achievements
 
 ### `nav:story.name`
 
 Story
 
-### `nav:achievements.name`
+### `nav:stats.name`
 
-Achievements
+Stats
 
 ### `nav:options.name`
 

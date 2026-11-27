@@ -53,13 +53,16 @@ Three columns and a status bar:
   axis's rank once Ideologies is unlocked (folded at first in a window under 800 px),
   and at the foot the active main quest's picture, else the lunar horizon.
 - **Middle:** a starry sky, then the active panel. Buildings: the Land bar (green and click-to-buy like a card
-  when affordable), a collapsible section per category, cards (`Buildings.tsx`). A click on an affordable card (outlined in green, its name row tinted), off its
+  when affordable), a collapsible section per category, cards (`Buildings.tsx`: the picture
+  beside flows and status, one row of cost, land and Sell). A
+  click on an affordable card (outlined in green, its name row tinted), off its
   controls, builds one (Shift: up to ten; ignored for 0.5 s after the summary or a story
-  text closes); any other card says why it can't. Research cards work the same way.
+  text closes); any other card says why it can't. Research cards work the same way (affordable:
+  name row tinted, no outline).
   Commands: a card per verb (Buy, Promote, ...), a target dropdown. Pad
   cards tint their head: green Ready, yellow Paused, red full but short of fuel. Stats ends
   on every breakdown. Story (`Story.tsx`): the quest archive, a spine of main-story beats under
-  painted act bands, side quests off it (ui.md, *Story cards*); Achievements: badges by category. Acts 2 and 3 (`Saga.tsx`, DRAFT; `docs/arc.md`): Timeline,
+  painted act bands, side quests off it (story-ui.md, *Story cards*); Achievements: badges by category. Acts 2 and 3 (`Saga.tsx`, DRAFT; `docs/arc.md`): Timeline,
   Earth Lab, Meta-Controller, Vault, Dyson; the ending covers the screen once.
 - **Right:** the main quest in its own slot at the top, which nothing else takes; program
   tabs 1 to 5 (each its ⚙ count and the engine's status light, `status`) with processors −/+, Reset, Save / Load (`Library.tsx`, the loadout library); a line per instruction, dragged to reorder
@@ -72,9 +75,9 @@ Three columns and a status bar:
   Above 10x a redraw covers several days: each line shows its outcome over them
   (`advance_run`'s `lines`), no frame. A note line (`#`) is muted text, an unparsed one a
   red-tinted disabled row with its reason, a locked one dimmed with "locked this run" (the
-  view's `errors` and `locked`). Below the program: Events (a line per one-off this run, a
-  click reopening its popup), Side Quests (the open ones, a fold) and Recent Activity (a
-  checkbox per kind), each fold with an unread count or progress (rulings: docs/rulings/ui.md).
+  view's `errors` and `locked`). Below the program: Events (a line per one-off and per
+  project completion this run, `store.ts` `eventLines`, a click reopening its popup), Side Quests (the open ones, a fold) and Recent Activity (a
+  checkbox per kind), each fold with an unread count or progress (rulings: docs/rulings/story-ui.md, *Right panel*).
 - **Bottom:** day and run, Boredom and Energy bars with their rates
   (capped as in Resources; "cap tomorrow" the day before a forced retirement).
 - **Takeover views** (`Takeover.tsx`): a large view that covers the middle and right
@@ -94,7 +97,7 @@ Three columns and a status bar:
   (`program_text`) the text (docs/rules/programs.md, *Text form*); a changed draft is
   applied on Apply, on a tab switch, a mode switch and on closing. **The gutter**
   (`Gutter.tsx`): a status dot (green ran, gray skipped, red unparsed, amber locked, hollow
-  failed); a repeated line's runs as dots up to 8 (green done, red failed, hollow pending;
+  failed); a repeated line's runs as dots up to 8 (green done, red failed, gray skipped at its cap, hollow pending;
   the view's `repeats`), a bar past 8. Right of either mode, **All instructions**
   (`Instructions.tsx`): the engine's list (`program_instructions`: by group, only lines
   revealed and usable now, nothing locked, `else` only where it fits at the caret or selected row); a
@@ -102,12 +105,11 @@ Three columns and a status bar:
   `else` at the top level with an empty body line, an empty caret line filled in place;
   `programEdit.ts` `insertLine`) and moves the caret or selection there; a hover shows the
   live card of its command, building, research or project.
-- **Modals**, each holding the clock: the run summary when a run ends (forced: why, and
-  that years passed); the story modal (`story.ts` `tellPages`, unit-checked) at each main-quest change and
-  for a side quest's completion and each one-off event, a page per paragraph of the view's
-  `story`/`payoff`, the new task last (a new game: the first quest's; the autopilot: none; a
-  load: a saved chain's unread pages, `storyPages` (and `seenPopups`) in `store.ts` `save()`; after a
-  summary, once closed).
+- **Modals**, each holding the clock: the run summary (the ended run's last state behind
+  it, saved with it); the story modal (`story.ts` `tellPages`, unit-checked) at a main-quest
+  change, a side quest's or project's completion and each one-off event, the new task last
+  (a new game: the first quest's; the autopilot: none; a load: a saved chain's unread pages;
+  after a summary, once closed).
 
 Rates are per day; numbers past 10,000 use K/M/B/T. **"New" markers** are the UI's own, not
 state: what is visible when a run starts (or the page loads) is the baseline; anything
@@ -176,9 +178,8 @@ be replayed exactly and set against the sim players (`hh-sim playlog`, `hh-sim v
   retries, and Options says it is NOT recording; a malformed batch (400) is dropped.
 - **One file per career:** `<local start time>_<random tag>_seed-<seed>.jsonl`. A new game
   or a discarded save closes the old file with a `career_end` line and starts a new one.
-- **Lines** (`src/playlog.ts` has the format; `grep "log('"` lists the kinds): a header (format
-  `hh-playlog/1`, career, revision, config, seed, scenario, `prior_actions`, and `commit`,
-  stamped by the server), then one line per happening, each with a unique `id` (a resent
+- **Lines** (`src/playlog.ts` has the format, the header's fields included; `grep "log('"`
+  lists the kinds): a header, then one line per happening, each with a unique `id` (a resent
   line is read once) and a `kind`: `action` (the game's record), `checkpoint` (the
   fingerprint, every 10 s while playing, at retirements, when hidden or closed), and the rest.
 

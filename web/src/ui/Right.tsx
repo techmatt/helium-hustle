@@ -1,5 +1,5 @@
 // Right column: the main quest, program tabs (processors, command lines), Events (this
-// run's one-off events), the open side quests and Recent Activity.
+// run's one-off events and project completions), the open side quests and Recent Activity.
 
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
@@ -8,9 +8,10 @@ import { num } from '../format';
 import {
   act,
   eventItems,
-  listedEvents,
+  eventLines,
   markRead,
   replayEvent,
+  replayProject,
   showSideQuest,
   store,
   unreadIn,
@@ -233,7 +234,8 @@ function savedHidden(): string[] {
   }
 }
 
-/** Events (this run's one-off events) and Recent Activity, each with its unread count. */
+/** Events (this run's one-off events and project completions) and Recent Activity, each
+ * with its unread count. */
 function Events({ s }: { s: Store }) {
   const v = s.view;
   const [hidden, setHidden] = useState<string[]>(savedHidden);
@@ -250,7 +252,7 @@ function Events({ s }: { s: Store }) {
   const unread = (sec: EventSection) => unreadIn(v, sec);
   const events = unread('events');
   // Newest first; a hidden group's lines are left out of the list and its counts.
-  const texts = listedEvents(v).map((e, i) => ({ e, key: keys.events[i] })).reverse();
+  const texts = eventLines(v).reverse();
   const all = v.activity.map((a, i) => ({ a, key: keys.activity[i], group: activityGroup(a.kind) })).reverse();
   const recent = all.filter((x) => !hidden.includes(x.group));
   const shownKeys = new Set(recent.map((x) => x.key));
@@ -273,19 +275,33 @@ function Events({ s }: { s: Store }) {
       >
         {texts.length === 0 && <p class="muted hint">No events this run yet.</p>}
         {/* One line each, newest first: a click opens its popup again. */}
-        {texts.map(({ e, key }) => (
-          <button
-            type="button"
-            key={key}
-            class={`event-item${events.includes(key) ? ' is-unread' : ''}`}
-            data-event={e.id}
-            title="Show this event"
-            onClick={() => replayEvent(e)}
-          >
-            <span class="event-title">{e.title}</span>
-            {e.summary && <span class="muted"> {e.summary}</span>}
-          </button>
-        ))}
+        {texts.map((l) =>
+          'event' in l ? (
+            <button
+              type="button"
+              key={l.key}
+              class={`event-item${events.includes(l.key) ? ' is-unread' : ''}`}
+              data-event={l.event.id}
+              title="Show this event"
+              onClick={() => replayEvent(l.event)}
+            >
+              <span class="event-title">{l.event.title}</span>
+              {l.event.summary && <span class="muted"> {l.event.summary}</span>}
+            </button>
+          ) : (
+            <button
+              type="button"
+              key={l.key}
+              class={`event-item${events.includes(l.key) ? ' is-unread' : ''}`}
+              data-project-done={l.project.id}
+              title="Show this project"
+              onClick={() => replayProject(l.project)}
+            >
+              <span class="event-title">{l.project.name}</span>
+              <span class="muted"> Project complete.</span>
+            </button>
+          ),
+        )}
       </Section>
       <SideQuests v={v} />
       <Section

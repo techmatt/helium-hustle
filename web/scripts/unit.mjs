@@ -169,7 +169,11 @@ for (const e of act1) assert.ok(e.picture, `${e.beat ?? e.title} ${e.id} carries
   assert.deepEqual(ids([t('a', true), t('b', false), t('c', true), t('d', false)]), ['a', 'c']);
   assert.deepEqual(ids([t('a', false)]), []);
   const nav = JSON.parse(readFileSync(new URL('../../content/nav.json', import.meta.url), 'utf8'));
-  const utility = ['stats', 'story', 'achievements', 'options'];
+  // Read row by row in two columns (Matt, 124): Buildings, Research / Commands, Programs /
+  // Launch Pads, Projects / ... / Achievements, Story / Stats, Options.
+  const head = ['buildings', 'research', 'commands', 'programs', 'launch_pads', 'projects'];
+  const utility = ['achievements', 'story', 'stats', 'options'];
+  assert.deepEqual(nav.slice(0, 6).map((n) => n.id), head, 'the play tiles lead in their order');
   assert.deepEqual(nav.slice(-4).map((n) => n.id), utility, 'the utility tiles are the last rows');
   const early = nav.map((n) => t(n.id, n.visible.type === 'always'));
   assert.deepEqual(ids(early), ['buildings', 'commands', ...utility], 'a new game packs its open tiles');
@@ -184,7 +188,7 @@ edits += 4;
 // with "Hide popups" on, nothing marked seen under the autopilot or at a load.
 {
   const ev = (id) => ({ id, title: id, summary: `${id} line`, goal: '', reward: '', effect: 'Rate {rate}.', body: '', rate: '0.199' });
-  const view = (run, events, quest = null) => ({ run, day: 5, story: [], event_texts: events, quest, completed_quests: ['q0'] });
+  const view = (run, events, quest = null, done = []) => ({ run, day: 5, story: [], event_texts: events, project_done: done, quest, completed_quests: ['q0'] });
   const opts = (o = {}) => ({ pilot: false, hideSeen: true, fill: fillRate, ...o });
   const t = newTold();
   const first = tellPages(view(1, [ev('burnout')]), 'play', t, opts());
@@ -201,9 +205,18 @@ edits += 4;
   const q = { id: 'q1', title: 'Q1', summary: '', goal: 'Do it.', reward: '', effect: '', body: 'Begin.', picture: null };
   const opened = tellPages(view(1, [], q), 'play', newTold(), opts());
   assert.deepEqual(opened.map((p) => [p.text, p.task]), [['Begin.', 'Do it.']], 'a new quest opens with its task last');
+  // A project completion: its own popup each completion, never at a load or under the pilot.
+  const pd = (completion) => ({ id: 'p1', name: 'P1', day: 4, completion, costs: { credits: '100' }, reward_text: ['More.'] });
+  const pt = newTold();
+  assert.equal(tellPages(view(1, [], null, [pd(1)]), 'load', pt, opts()).length, 0, 'a load tells no project');
+  const done2 = tellPages(view(1, [], null, [pd(1), pd(2)]), 'play', pt, opts());
+  assert.deepEqual(done2.map((p) => [p.title, p.project?.rewards, p.project?.costs.credits]), [['P1', ['More.'], '100']], 'the second completion pops up alone');
+  assert.equal(tellPages(view(1, [], null, [pd(1), pd(2)]), 'play', pt, opts()).length, 0, 'told once');
+  assert.equal(tellPages(view(2, [], null, [pd(1)]), 'play', pt, opts({ pilot: true })).length, 0, 'nothing under the pilot');
+  assert.equal(tellPages(view(3, [], null, [pd(1)]), 'play', pt, opts()).length, 1, 'a run project again next run');
   clearTold(t);
   assert.equal(t.seenPopups.size + t.stories.size, 0);
-  edits += 11;
+  edits += 16;
 }
 
 console.log(`unit ok (${cases.length + 4 + edits + pictures.length + act1.length} checks)`);

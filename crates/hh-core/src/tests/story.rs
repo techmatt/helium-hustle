@@ -479,7 +479,7 @@ fn a_panel_a_purchase_opens_shows_at_once() {
     assert!(!shown(&g, "research"));
 }
 
-/// Mechanics never live in narrative (docs/rulings/ui.md, *Quest mechanics text*): every
+/// Mechanics never live in narrative (docs/rulings/story-ui.md, *Quest mechanics text*): every
 /// quest has a goal and a reward only if it grants something (never "None."), and every event's narrative (a one-off's summary, body,
 /// story and payoff) carries no numbers (the He-3 in a name excepted), no `{rate}` and no
 /// UI instructions.

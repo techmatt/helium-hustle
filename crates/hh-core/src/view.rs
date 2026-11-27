@@ -43,7 +43,7 @@ mod stats;
 mod stock;
 mod trade;
 
-pub use self::projects::{condition_text, ProjectView};
+pub use self::projects::{condition_text, ProjectDoneView, ProjectView};
 pub use saga::{SagaView, TechView};
 
 pub use breakdown::{BreakdownView, FlowRow, ShortView};
@@ -300,6 +300,9 @@ pub struct StoryView {
     /// A one-off event a later one of its kind replaced in the Events list (Burnout and the
     /// boredom phases show only the latest fired this run); false on the rest.
     pub superseded: bool,
+    /// The day a one-off event fired this run (the Events list's order beside the
+    /// project completions); `None` on a quest.
+    pub day: Option<u64>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -491,6 +494,9 @@ pub struct View {
     /// Burnout and the boredom phases all but the latest carry `superseded` (the Events
     /// list leaves them out; they stay in `activity`).
     pub event_texts: Vec<StoryView>,
+    /// The project completions this run, oldest first, each popped up by the UI as it
+    /// happens and listed in Events: what it gave and what that completion cost.
+    pub project_done: Vec<ProjectDoneView>,
     /// Every achievement, earned or not, in content order.
     pub achievement_list: Vec<AchievementView>,
     pub rivals: Vec<RivalView>,
@@ -634,6 +640,7 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         side_quests,
         acts,
         event_texts: quests::event_texts(r, g),
+        project_done: self::projects::project_done(g),
         achievement_list: stats::achievements(g),
         rivals: rivals::rivals(g),
         adversaries: rivals::adversaries(r, g),
