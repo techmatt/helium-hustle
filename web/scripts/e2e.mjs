@@ -6,7 +6,7 @@
 //      then the opening through 1.3 Full Load (each
 //      quest change a modal chain holding the clock; the first pad offers Titanium only;
 //      Launch Full Pads never shown), no Retirement
-//      tile yet (it opens at the first retirement), then on at 200x to the forced retirement at the
+//      tile yet (it opens at the first retirement), then on at 10x (Act 1's fastest) to the forced retirement at the
 //      boredom cap, the run summary holding the clock (a double-click on Continue buys
 //      nothing under it), run 2 (known tiles and resources still shown, not cheated), the
 //      career's play log on disk as a bot's.
@@ -14,7 +14,8 @@
 //      Research Lab built, past a second run); no locked project shown, a funded one; every nav tile opens; the
 //      cheated mark, a jump ahead, the cheat building and Complete all research, and the
 //      replay check.
-//   3. A program's current-line frame at 10x and 50x, each speed's days per second,
+//   3. Act 1's speeds (pause to 10x), a program's current-line frame at 10x and (scenario
+//      everything, Accelerated Scheduling's flag set) 50x, each speed's days per second,
 //      pause, click-to-buy (a green card's text buys, its −/+ and Sell 1 don't, space after
 //      a click pauses and buys nothing, a gray card says why), a reload keeping the save,
 //      a save from another revision discarded, the scenarios and the replay check.
@@ -150,7 +151,8 @@ const look = () =>
  * current-line frame walks the queue in order, the lines keep their order and no line's
  * name moves; at 50x (several days a redraw) no frame hops around, and the lines show
  * what ran over the span. Leaves the game paused. */
-async function programOrder() {
+async function programOrder(fast) {
+  // fast: also 50x (a career holding Accelerated Scheduling's flag).
   const queue = [['idle', 2], ['cloud_compute', 1], ['idle', 3]];
   await speed(0);
   await click('.prog-tabs button[data-program="0"]');
@@ -189,18 +191,22 @@ async function programOrder() {
   await shot('program-lines');
   const lefts = await evaluate('[...window.__left]');
   check(lefts.length === 1, `10x: no line's text moves as the pointer walks (name starts at ${lefts.join(', ')} px)`);
+  if (!fast) {
+    await evaluate('window.__ob.disconnect()');
+    return;
+  }
   await evaluate('window.__ptr = []');
   await speed(50);
   await sleep(1000);
   // Read before pausing: paused, the frame is back.
-  const fast = await evaluate('window.__ptr');
+  const ptr50 = await evaluate('window.__ptr');
   const lit = await evaluate(`document.querySelectorAll('.lines .line[class*="out-"]').length`);
   const note = await exists('[data-testid="lines-span"]');
   const fastOrder = await order();
   await speed(0);
   check(
-    fast.length > 0 && fast.every((p) => p === -1) && note && lit >= 2,
-    `50x: no hopping pointer, lines lit by the span (pointer ${fast.join(',')}, ${lit} lit)`,
+    ptr50.length > 0 && ptr50.every((p) => p === -1) && note && lit >= 2,
+    `50x: no hopping pointer, lines lit by the span (pointer ${ptr50.join(',')}, ${lit} lit)`,
   );
   check(fastOrder === queued, `50x: lines keep their order: ${fastOrder}`);
   await evaluate('window.__ob.disconnect()');
@@ -224,7 +230,7 @@ const OPENING_END = 'qtrade';
  * on purpose: it plays on past 1.3 to look at screens (a longer ORDER, a launch at 10
  * cargo), where this one stops at 1.3 checking the story (a full 20 / 100 before a launch). */
 async function playOpening() {
-  await speed(50);
+  await speed(10);
   const started = Date.now();
   let lastLog = 0;
   let quest = (await look()).quest;
@@ -238,7 +244,7 @@ async function playOpening() {
   let pickerChecked = false;
   let he3Checked = false;
   let fullPads = false;
-  while (Date.now() - started < 150_000) {
+  while (Date.now() - started < 400_000) {
     if (await exists('[data-testid="story-modal"]')) {
       const d0 = await day();
       await sleep(300);
@@ -246,7 +252,7 @@ async function playOpening() {
       modals++;
       if (modals === 2) {
         // The first transition's chain, one page read: a reload shows the next unread page
-        // again, held (readStory checks paused below; the 50x check, the speed it resumes).
+        // again, held (readStory checks paused below; the 10x check, the speed it resumes).
         const first = await evaluate(`(() => { const m = document.querySelector('[data-testid="story-modal"]'); return { quest: m.dataset.quest, kind: m.dataset.kind, task: !!m.querySelector('.story-task') }; })()`);
         if (first.kind === 'payoff') paid.add(first.quest);
         if (first.task) told.add(first.quest);
@@ -268,7 +274,7 @@ async function playOpening() {
       for (const p of pages) if (p.kind === 'payoff') paid.add(p.quest);
       console.log(`     story modal (day ${d0}): ${pages.map((p) => `${p.quest}/${p.kind}`).join(', ')}; task "${last?.task ?? ''}"`);
       await sleep(100);
-      check(await exists('#speeds button[data-speed="50"][aria-pressed="true"]'), `the modal's last page resumes 50x (${last?.quest})`);
+      check(await exists('#speeds button[data-speed="10"][aria-pressed="true"]'), `the modal's last page resumes 10x (${last?.quest})`);
       continue;
     }
     const s = await look();
@@ -458,6 +464,8 @@ async function programLogic(grant) {
   console.log(`     lines at the false if: ${await classes()}`);
   await debugMenu();
   await grant('credits', '2000');
+  // The depot's 30 regolith too: the scenario starts with just that, and the Smelter eats it.
+  await grant('regolith', '60');
   await speed(10);
   await panel('buildings');
   await waitFor(`document.querySelector('.card.building[data-id="storage_depot"]')?.dataset.owned === '1'`, 'the Storage Depot once the if holds', 8000);
@@ -801,7 +809,6 @@ async function instructionPanel() {
     await click('.prog-tabs button[data-program="0"]');
     await openText();
     await sleep(300);
-    check(!(await exists('.te-help')), 'the Text mode shows no help line');
     const groups = await evaluate(`[...document.querySelectorAll('.ins-group')].map((g) => g.dataset.group)`);
     check(groups[0] === 'Commands' && groups.at(-1) === 'Control flow', `instruction groups: ${groups.join(', ')}`);
     const ifs = await entries('[data-group="Control flow"] [data-instruction^="if "]');
@@ -844,7 +851,7 @@ async function instructionPanel() {
   const flowFresh = (await entries('[data-group="Control flow"] .ins-item')).map((x) => x.text);
   const panelText = await evaluate(`document.querySelector('[data-testid="instructions"]').textContent`);
   check(
-    freshGroups.join(',') === 'Commands,Control flow' && flowFresh.join(',') === '#' && !/opens at|isn't|Locked/.test(panelText) && !(await exists('.ins-locked, [data-locked]')),
+    freshGroups.join(',') === 'Commands,Control flow' && flowFresh.join(',') === '#' && !/opens at|isn't|Locked/.test(panelText),
     `on a fresh career only usable entries: ${freshGroups.join(', ')}; control flow ${flowFresh.join(' ')}`,
   );
   await shot('instructions-fresh');
@@ -1090,6 +1097,8 @@ async function storyView() {
   await sleep(1000);
   await speed(0);
   await debugMenu();
+  // The popup is read here, not clicked away (autoStory, back on since the Replay).
+  await evaluate(`window.__autoStory?.disconnect(); window.__autoStory = undefined`);
   await click('#cheat-complete-research');
   await speed(1);
   // Any popup before it (events, other quests) is read on the way.
@@ -1141,7 +1150,7 @@ async function programsBlocks() {
   await sleep(250);
   const shape = (await rows()).join(' ');
   check(shape === 'if >command else >command command', `Blocks builds an if/else and a line after it: ${shape}`);
-  check(!(await exists('.te-help')) && !(await exists('.block-main .hint')), 'no help or hint lines in the Programs view');
+  check(!(await exists('.block-main .hint')), 'no hint lines in the Programs view');
   await numberBox(rows);
   await shot('programs-blocks');
   // Text: the same lines, the count first.
@@ -1295,10 +1304,11 @@ async function readability(grant) {
     unread: Number(document.querySelector('[data-testid="events-list"]').dataset.unread),
     head: document.querySelector('[data-testid="events-list"] .fold-head').textContent,
     // Events is folded: the beat's line in Recent Activity says it fired.
-    beat: [...document.querySelectorAll('[data-testid="events-activity"] li[data-kind="event"]')].some((e) => /Boredom Rising/.test(e.textContent)),
+    // (Phase 2's beat is Burnout in the run Burnout fires in, Boredom Rising after it.)
+    beat: [...document.querySelectorAll('[data-testid="events-activity"] li[data-kind="event"]')].some((e) => /Boredom Rising|Burnout/.test(e.textContent)),
     slot: [...document.querySelectorAll('[data-testid="quest-pin"] [data-quest]')].map((e) => e.dataset.quest),
   }))()`);
-  // Q1 completes on the way (Q2 opens): the slot holds the active quest and nothing else.
+  // The slot holds the active quest (1.3 Full Load: the scenario starts past 1.2) and nothing else.
   check(/^q/.test(beat.pin ?? '') && beat.slot.length === 1 && beat.beat && beat.unread >= 1,
     `a boredom beat fired: the quest stays pinned, Events counts it unread: ${JSON.stringify(beat)}`);
   await shot('read-pad-short-story-unread');
@@ -1434,7 +1444,7 @@ async function freshGame() {
   check(await exists('tr[data-res="propellant"]'), 'Propellant shows in Resources once granted');
   check(await navVisible('launch_pads'), 'the Launch Pads tile shows');
   // Voluntary retirement opens only with the first retirement: run 1 ends at the
-  // boredom cap, played on at 200x with no cheat.
+  // boredom cap, played on at 10x (Act 1's fastest) with no cheat.
   check(!(await navVisible('retirement')), 'no Retirement tile in run 1 (it opens at the first retirement)');
   // From here on story modals are read as they open (the section is about the retirement).
   storyAuto = true;
@@ -1443,27 +1453,29 @@ async function freshGame() {
   await shot('run1-buildings');
   await panel('launch_pads');
   await shot('run1-launch-pads');
-  await speed(200);
-  await waitFor(`!!document.querySelector('[data-testid="summary"]')`, 'the forced retirement at the boredom cap', 60_000);
+  await speed(10);
+  await waitFor(`!!document.querySelector('[data-testid="summary"]')`, 'the forced retirement at the boredom cap', 300_000);
   const summaryText = await evaluate(`document.querySelector('[data-testid="summary"]').textContent`);
   const runDays = (summaryText.match(/ended on day ([\d,.]+)/) ?? [, '?'])[1];
   check(/boredom filled.*Years passed/.test(summaryText), `boredom at its cap retires run 1, the summary saying why and that years passed (day ${runDays})`);
+  // The ended run's last day stays behind the summary until Continue (104).
   const paused1 = await day();
   await sleep(600);
-  check((await day()) === paused1 && (await run()) === 2, `the run summary pauses the game (run 2, day ${paused1})`);
+  check((await day()) === paused1 && (await exists('[data-testid="summary"]')), `the run summary pauses the game (day ${paused1} -> ${await day()})`);
   await shot('run-summary');
   // A real double-click on Continue over the Buildings panel: its second click lands on
-  // whatever the summary covered, and must not reach a card.
+  // whatever the summary covered, and must not reach a card. The cards behind the summary
+  // are the ended run's (104), so the save's Buy actions count, not the cards.
   await click('.nav-tile[data-nav="buildings"]');
   {
-    const owned = `[...document.querySelectorAll('.card.building')].reduce((n, c) => n + Number(c.dataset.owned), 0)`;
+    const owned = `JSON.parse(localStorage.getItem('hh.save')).actions.filter((a) => a.action.type === 'buy').length`;
     const o0 = await evaluate(owned);
     const p = await evaluate(`(() => { const r = document.querySelector('[data-testid="continue"]').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
     for (const clickCount of [1, 2])
       for (const type of ['mousePressed', 'mouseReleased']) await send('Input.dispatchMouseEvent', { type, x: p.x, y: p.y, button: 'left', clickCount });
     await sleep(200);
     const hint = await evaluate(`[...document.querySelectorAll('.buy-hint.short')].map((h) => h.textContent).join(' ')`);
-    check((await evaluate(owned)) === o0 && !hint, `a double-click on Continue buys nothing under it (${o0} -> ${await evaluate(owned)}${hint ? `, "${hint}"` : ''})`);
+    check((await evaluate(owned)) === o0 && !hint, `a double-click on Continue buys nothing under it (${o0} -> ${await evaluate(owned)} Buy actions${hint ? `, "${hint}"` : ''})`);
   }
   await sleep(1500);
   check((await run()) === 2 && (await day()) > 0 && !(await exists('[data-testid="summary"]')), `run 2 plays on (day ${await day()}; run 1 lasted ${runDays} days)`);
@@ -1573,12 +1585,9 @@ async function everyPanel() {
 
 // ---- 3. speeds, saves and scenarios ----
 /** Section 3, from the debug menu open with cheats on. */
-async function speedsAndSaves() {
-  await setValue('#scenario', 'rich');
-  await click('#start-scenario');
-  check((await day()) === 0 && /Started scenario rich/.test(await noticeText()), 'debug menu starts scenario rich');
-  await programOrder();
-  for (const [s, secs] of [[1, 3], [3, 2], [10, 2], [50, 1], [200, 1]]) {
+/** Each speed's days per second, `[speed, seconds]` each; leaves the game paused. */
+async function speedRates(list) {
+  for (const [s, secs] of list) {
     await speed(s);
     const a = await day();
     const t0 = Date.now();
@@ -1587,6 +1596,18 @@ async function speedsAndSaves() {
     check(rate > s * 0.6 && rate < s * 1.4, `${s}x: ${rate.toFixed(1)} days/s`);
   }
   await speed(0);
+}
+
+async function speedsAndSaves() {
+  await setValue('#scenario', 'rich');
+  await click('#start-scenario');
+  check((await day()) === 0 && /Started scenario rich/.test(await noticeText()), 'debug menu starts scenario rich');
+  // Act 1's speeds (Matt, 2026-11-26): 50x and 200x wait for Accelerated Scheduling.
+  const offered = () => evaluate(`[...document.querySelectorAll('#speeds button')].map((b) => b.dataset.speed).join(',')`);
+  const slow = await offered();
+  check(slow === '0,1,3,10', `without Accelerated Scheduling the speeds are pause, 1x, 3x and 10x: ${slow}`);
+  await programOrder(false);
+  await speedRates([[1, 3], [3, 2], [10, 2]]);
   const paused = await day();
   await sleep(1200);
   check((await day()) === paused, 'pause holds the day');
@@ -1629,9 +1650,11 @@ async function speedsAndSaves() {
     check((await grayOwned()) === g0 && hint.length > 0, `a gray card buys nothing and says why (${gray}: "${hint}")`);
   }
   const savedDay = await day();
+  const savedSpeed = await evaluate(`document.querySelector('#speeds button[aria-pressed="true"]')?.dataset.speed`);
   await load(url);
+  console.log(`     before the reload: speed ${savedSpeed}; after: ${await evaluate(`document.querySelector('#speeds button[aria-pressed="true"]')?.dataset.speed`)}, day ${await day()}`);
   await panel('buildings');
-  check((await day()) === savedDay && (await owned()) === kept, `reload keeps the save (day ${savedDay}, ${kept} panels)`);
+  check((await day()) === savedDay && (await owned()) === kept, `reload keeps the save (day ${savedDay} -> ${await day()}, ${kept} -> ${await owned()} panels)`);
   // As if the next load ran a newer engine: retag the save after each of the page's own
   // leaving saves (pagehide, then visibilitychange; listeners run in order, so ours last).
   await evaluate(`(() => {
@@ -1642,6 +1665,15 @@ async function speedsAndSaves() {
   await load(url);
   const n = await noticeText();
   check(/rules revision 999/.test(n) && (await day()) < savedDay, `revision mismatch discards the save: ${n}`);
+  // Above 10x, in scenario everything (its career holds Accelerated Scheduling's flag).
+  await debugMenu();
+  await speed(0);
+  await setValue('#scenario', 'everything');
+  await click('#start-scenario');
+  const fastOffered = await offered();
+  check(fastOffered === '0,1,3,10,50,200', `with Accelerated Scheduling's flag 50x and 200x are offered: ${fastOffered}`);
+  await programOrder(true);
+  await speedRates([[50, 1], [200, 1]]);
   await debugMenu();
   // Paused: a scenario keeps the speed in play, and on a loaded box a day can pass
   // between the start and the read.

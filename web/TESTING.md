@@ -6,7 +6,7 @@ and serving the page: [README.md](README.md). e2e and qa share the DevTools harn
 `pickCommand`, the debug menu): a UI change a helper reads is fixed there once.
 
 **When to run them** (light testing per item, CLAUDE.md): a `web/` change runs `npm run
-check` and `npm run unit`. e2e (~100 s) and qa (~19 min) run only in a bug hunt or
+check` and `npm run unit`. e2e (~5 min) and qa (~36 min) run only in a bug hunt or
 when the prompt asks; an item that changes a helper they read still fixes it, unrun. One
 browser at a time on this machine: several exhaust its memory.
 
@@ -17,20 +17,20 @@ protocol (no packages; the harness, shared with qa, is `scripts/cdp.mjs`) agains
 served page: `HH_URL`, required (it exits naming `vite preview` when unset),
 `HH_BROWSER` for a browser off the usual paths, `HH_SHOTS=<dir>` to save PNGs (an item's
 results folder; kept shots are also copied to the shared screenshots folder, CLAUDE.md). About
-100 s. `HH_ONLY=<n>[,<n>...]` runs only those sections (what a skipped one leaves behind is set
+5 min (120: Act 1 plays at 10x, its fastest, so run 1 to the boredom cap takes ~3). `HH_ONLY=<n>[,<n>...]` runs only those sections (what a skipped one leaves behind is set
 up directly). Its sections (`HH_ONLY`'s numbers) run in the order 1, 2, 3, 6 to 11, 5, 4:
 
 1. **A fresh game through the normal UI only** (no debug menu): only Solar Panel and Data
    Center offered, only 1.1's story modal (paused, its task on the last page; 1.1's picture
    above its paragraph, at the left column's foot and as Story's active-beat thumbnail, the
    split-glow title, no globe); then the
-   opening at 50x, Program 1 switched between Sell Cloud Compute, Buy Science and the
+   opening at 10x (Act 1's fastest), Program 1 switched between Sell Cloud Compute, Buy Science and the
    bridging buys: Basic Blueprints, the first pad offering Titanium only (1.2), 20+
    titanium loaded and launched by the card's Launch, Advanced Blueprints and Refineries,
    a full pad of Helium-3 (1.3). Each quest change must open a story modal chain that holds
    the clock and ends on the next task (the first, one page read, shows its next page again
    after a reload); Launch Full Pads never shows. No Retirement tile
-   (it opens at the first retirement), so on at 200x (story modals now clicked through as they
+   (it opens at the first retirement), so on at 10x (story modals now clicked through as they
    open, `autoStory`) to the forced retirement at the boredom cap; the run summary
    holding the clock, run 2 (known tiles and resources still shown, the Retirement tile
    open, not cheated). Its double-click-on-Continue check failed once (058: a buy hint under
@@ -40,8 +40,10 @@ up directly). Its sections (`HH_ONLY`'s numbers) run in the order 1, 2, 3, 6 to 
    nav tile shown opens, and every Act 1 tile is shown (all of `content/nav.json` but panels
    only a DRAFT quest opens); no CHEATED tag in the bottom bar (the mark in the debug info), a jump ahead, the cheat building (+1000 credits a day, 1 credit,
    no card with Cheats off) and Complete all research, and the replay check.
-3. A program's frame at 10x and 50x, each speed's days per second, pause, click-to-buy, a
-   reload keeping the save, another revision's save discarded, the scenarios.
+3. Act 1's speeds (❚❚ 1x 3x 10x), a program's frame at 10x and, in `everything` (the one
+   scenario whose career holds Accelerated Scheduling's `fast_speeds` flag), 50x, each speed's
+   days per second, pause, click-to-buy, a reload keeping the save, another revision's save
+   discarded, the scenarios.
 4. **The theme:** the toggles switch it with every element's box unchanged (to 0.01 px);
    a reload keeps it.
 5. **Readability** (before 4): capped rates, Resources' groups, affordable cards and Land,
@@ -90,10 +92,10 @@ A story modal refuses every action and speed until read: `readStory()` reads one
 - **Under load it flakes:** section 3's 10x pointer walk fails beside a cargo build, and
   so does section 6's "guarded line built" outcome check (066: beside `cargo test-all`; 067: once with
   nothing beside it, then passed on a rerun). Its "if held" check reads only the if's check
-  mark since 070 (qa-findings #94). Since 095 its "Storage Depot once the if holds" check
-  (`HH_ONLY=6`) fails every run, and so do `HH_ONLY=5`'s "a full pad short on fuel" and
-  "fuel enough" (`pad_loading`'s pad reads Fuel 30 / 20, Ready at once), on main as well
-  (096 found both; not fixed).
+  mark since 070 (qa-findings #94).
+- **The driver's `speed()` repeats its click** (up to a second) until that speed shows
+  pressed: a popup opening as a pause lands refuses it, and `autoStory` reading it resumes
+  the speed before it (120: section 3's reload then found the game running).
 - **The late UI for screenshots:** `experiments/results/027_art_in_game/shots.mjs`
   (`pad_loading`, cheats, ~20 s); grants don't count toward `resource_cumulative`.
 - **Speculators' first arrival:** scenario `speculators_due` (no other scenario has pads that
@@ -118,12 +120,12 @@ quest, a launch, the summary, a reload). Hunts' findings: `docs/qa-findings.md`.
 story modal under real keys and mouse: the clock held, space and 3 ignored, its button
 focused, Esc leaving the Programs view behind it open (only where its tile shows: a new
 game has none until Programming, so this probe is skipped there), a double-click on Continue turning
-one page), run 1 at 3x then 50x, its commands from the right column's program, with every panel (each chain's
+one page), run 1 at 3x then 10x (Act 1's fastest; `everything` probes the frame at 200x), its commands from the right column's program, with every panel (each chain's
 modal at most a day past its "Quest complete" line; on the first, a held Enter turns
 one page), retirement and the summary (keys must not start the
 clock), Programming (on sale from 1.5 A Voice's start: bought in run 1 with Buy Science if run 1 gets
-there, else in run 2 with the debug grant's science once it does) and the Programs view, the right column's
-program edited (processors moved, lines added, −/+, removed, dragged), run 2 at 200x, a reload, the replay check, the play log replayed by `hh-sim
+there, else in run 2 once the debug autopilot's *Next quest step* reaches it, with the debug grant's science) and the Programs view, the right column's
+program edited (processors moved, lines added, −/+, removed, dragged), run 2 at 10x, a reload, the replay check, the play log replayed by `hh-sim
 playlog` (a release build, or `HH_SIM`: a fresh worktree has none, so build it first), a second tab and site data blocked (first pass only). At run 1's end and in every
 debug scenario (each played, its pads given Helium-3 first, or Titanium while 1.2 allows only that, its panels audited): every Resources row's breakdown opened
 and closed, Stats' breakdowns; program lines dragged; in `late_unlocks`, a loaded
@@ -132,7 +134,7 @@ Activity's unread count (counts while folded, clears once read); in `everything`
 takeovers (a program in every form the text grammar writes, pasted in Programs' Text mode:
 each line reads, Blocks holds every line, the text reads back unchanged; the
 Cortex mock by its toggle, closed with Esc) and every open project's Max then − steps,
-each taken. A career without the Projects tile (it opens at A Voice's start or the first retirement) is played on by the debug autopilot's
+each taken. A career short of 1.5 A Voice (where the autopilot's quest steps stop) is played on by the debug autopilot's
 *Next quest step*, each step timed and checked to move the quest; after the scenarios its
 *Everything* plays to the ending (~15 s) and every later-act panel is audited. Building cards with no
 picture drawn yet (placeholder art) are not findings. The late panels again in
@@ -146,7 +148,7 @@ finding, its line says NEVER REACHED THE ENDING, `report.json` keeps `ended` per
 
 ```sh
 npm run build && npx vite preview --port 0          # a static build: dev-server reloads break a pass
-HH_URL=http://localhost:<port>/ npm run qa           # required, as for e2e; ~3 min a pass, ~19 min in all (091)
+HH_URL=http://localhost:<port>/ npm run qa           # required, as for e2e; ~6 min a pass, ~36 min in all (120, run 1 at 10x)
 ```
 
 Output (`HH_QA_OUT`, default `out/qa`, wiped): a PNG per moment in

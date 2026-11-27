@@ -42,12 +42,12 @@
 //   HH_THEMES  themes, alternated over seeds and widths (default light,dark)
 //   HH_QA_OUT  output folder (default ../out/qa, wiped first)
 //   HH_RUN2    days of run 2 to play (default 150)
-//   HH_SPEED   run 1's speed (default 50; 3 for a real-speed pass)
+//   HH_SPEED   run 1's speed (default 10, Act 1's fastest; 3 for a real-speed pass)
 //   HH_SIM     the hh-sim that replays the play log (default target/release/hh-sim)
 //   HH_BROWSER a browser off the usual paths
 //   HH_PACE    <seconds>: instead, a first visit left at 1x that long (story pages turned every 10 s), a shot every 15 s
 //              (`<out>/pace/`)
-//   HH_LONG    <minutes>: instead, one career that long at 200x, logging heap, DOM size,
+//   HH_LONG    <minutes>: instead, one career that long at 10x (Act 1's fastest), logging heap, DOM size,
 //              save size and the worst frame each minute (`<out>/long/`)
 // The DevTools harness (launch, waitFor, load, panel...) is scripts/cdp.mjs.
 import { spawnSync } from 'node:child_process';
@@ -70,14 +70,21 @@ const NO_ART = [
   'cheat_building',
   ...JSON.parse(readFileSync(resolve(here, '../../content/buildings.json'), 'utf-8')).map((b) => b.id).filter((id) => !artIds.includes(id)),
 ];
-/** Run 1's speed: 50 by default; 3 plays it as a person would (about 3 minutes to a shipment). */
-const RUN1_SPEED = Number(process.env.HH_SPEED ?? 50);
+/** Act 1's fastest speed: 50x and 200x wait for Accelerated Scheduling (docs/rulings/game.md,
+ * *Speed*), which only scenario everything's career holds. */
+const FAST = 10;
+/** Run 1's speed: 10x by default; 3 plays it as a person would (about 3 minutes to a shipment). */
+const RUN1_SPEED = Number(process.env.HH_SPEED ?? FAST);
 /** The quests while Programming is not yet on sale (it goes on sale as 1.5 A Voice starts). */
 const BEFORE_PROGRAMMING = ['qpower_boot_sequence', 'qfirst_shipment', 'qfull_load', 'qtrade'];
 /** Pad `i`'s cargo pick: Helium-3 when its picker offers it, else the first good offered
  * (Titanium while 1.2 First Shipment allows only that). An expression to evaluate. */
 const padGood = (i) =>
   `(() => { const o = [...document.querySelectorAll('.card.pad[data-pad="${i}"] select option')].map((x) => x.value).filter(Boolean); return o.includes('he3') ? 'he3' : o[0] ?? ''; })()`;
+/** The content the checks read: the main quests' ids (category `story`). */
+const content = {
+  quests: new Set(JSON.parse(readFileSync(resolve(here, '../../content/events.json'), 'utf-8')).filter((e) => e.category === 'story').map((e) => e.id)),
+};
 const INPUT_MS = 300;
 const FRAME_MS = 250;
 const HEAP_GROWTH_MB = 40;
@@ -821,11 +828,15 @@ async function pass(seed, width, theme) {
     const count = () => evaluate(`Number(document.querySelector('${sec}')?.dataset.unread ?? -1)`);
     if (await evaluate(`document.querySelector('${sec} .fold-head').getAttribute('aria-expanded') === 'true'`)) await click(`${sec} .fold-head`, 'activity fold');
     const n0 = await count();
-    await speed(50);
-    for (let i = 0; i < 40 && (await count()) <= n0; i++) await sleep(150);
+    await speed(FAST);
+    for (let i = 0; i < 200 && (await count()) <= n0; i++) {
+      await sleep(150);
+      // A popup holds the clock until read (112).
+      if (await exists('[data-testid="story-modal"]')) await click('[data-testid="story-next"]', 'story next');
+    }
     await speed(0);
     const n1 = await count();
-    if (n1 <= n0) return note('input', `unread (${when}): no activity arrived in ~6 s at 50x to count`);
+    if (n1 <= n0) return note('input', `unread (${when}): no activity arrived in ~30 s at 10x to count`);
     await capture(`unread-folded-${when}`);
     await click(`${sec} .fold-head`, 'activity fold');
     await evaluate(`document.querySelector('${sec}').scrollIntoView({ block: 'start' })`);
@@ -855,7 +866,7 @@ async function pass(seed, width, theme) {
    * nothing, its button has the keyboard, Esc leaves a view open behind it alone, and a
    * real double-click on Continue turns one page, never two. */
   /** Run 2's Programs probe (the right column): processors moved, lines edited and dragged,
-   * each step shown as the engine has it; then frame probes at 3x and 200x. */
+   * each step shown as the engine has it; then frame probes at 3x and 10x (200x: scenario everything). */
   const programsProbe = async () => {
     // Programs (the right column, from day 1): move the processor to Program 2, build it a
     // two-line program, bump, lower and remove lines; each step must show as the engine has it.
@@ -916,7 +927,42 @@ async function pass(seed, width, theme) {
     await speed(0);
     await capture('program-2');
     await frameProbe(3, 'program2');
-    await frameProbe(200, 'program2');
+    await frameProbe(FAST, 'program2');
+  };
+
+  /** The main quest pinned at the upper right (its id), or ''. */
+  const pinnedQuest = () => evaluate(`document.querySelector('[data-testid="quest-pin"] [data-testid="quest"]')?.dataset.quest ?? ''`);
+  /** At or past 1.5 A Voice's start (Programming on sale), by the pinned main quest. */
+  const pastProgramming = async () => {
+    const quest = await pinnedQuest();
+    return !!quest && !BEFORE_PROGRAMMING.includes(quest);
+  };
+  /** Steps the debug autopilot's "Next quest step" until `done()` (at most 10 steps), each
+   * step timed and checked to finish and move the quest; a retirement on the way is
+   * continued. Shots `autopilot-<when>-<n>`. */
+  const autopilotTo = async (done, when) => {
+    for (let step = 0; step < 10 && !(await done()); step++) {
+      // The autopilot's buttons are in the Cheats section.
+      await panel('options');
+      if (!(await exists('#cheats-toggle'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
+      if (!(await exists('[data-testid="cheats"]'))) await click('#cheats-toggle', 'cheats');
+      const quest = await pinnedQuest();
+      const t0 = Date.now();
+      await click('#accel-quest', 'autopilot: next quest step');
+      try {
+        await waitFor(`document.getElementById('accel-status')?.dataset.running === '0'`, 'the autopilot step', 90000);
+      } catch (e) {
+        note('input', `the autopilot's next quest step from "${quest}" (${when}) never finished: ${String(e).slice(0, 100)}`);
+        await click('#accel-stop', 'autopilot stop').catch(() => {});
+        break;
+      }
+      const status = await evaluate(`document.getElementById('accel-status')?.textContent ?? ''`);
+      if ((await pinnedQuest()) === quest && !(await exists('[data-testid="summary"]'))) note('input', `the autopilot's next quest step (${when}) left the quest at "${quest}" (${status.slice(0, 100)})`);
+      if (Date.now() - t0 > 30000) note('frame', `the autopilot's next quest step took ${Math.round((Date.now() - t0) / 1000)} s`);
+      await capture(`autopilot-${when}-${step + 1}`);
+      // A retirement on the way: its summary's Continue.
+      if (await exists('[data-testid="continue"]')) await click('[data-testid="continue"]', 'continue');
+    }
   };
 
   const introProbe = async () => {
@@ -1026,7 +1072,8 @@ async function pass(seed, width, theme) {
         const id = await evaluate(`document.querySelector('[data-testid="story-modal"]').dataset.quest`);
         if (id !== story) {
           story = id;
-          if (i === 0) await transitionDayProbe();
+          // A main-story transition only: a one-off event's popup (112) comes on its own day.
+          if (i === 0 && content.quests.has(id)) await transitionDayProbe();
           await capture(`story-${story}`);
           if (i === 0 && !heldEnterDone) {
             await heldEnterProbe();
@@ -1097,15 +1144,17 @@ async function pass(seed, width, theme) {
         }
         // 1.3 Full Load (and Programming after it) wants a full pad of Helium-3: point the
         // pad at it (1.2 left it on Titanium; a switch returns what is loaded) and hold the
-        // launch until the pad is full and fueled (Ready); otherwise launch at 10.
+        // launch until the pad is full and fueled (Ready); 1.2 First Shipment at 20 titanium
+        // (its goal: 20+ in one shipment); otherwise launch at 10.
         const fullLoad = s.quest === 'qfull_load';
+        const firstLoad = s.quest === 'qfirst_shipment' ? 20 : 10;
         if (fullLoad && (await evaluate(`document.querySelector('[data-pad="0"] select')?.value ?? 'he3'`)) !== 'he3' && (await evaluate(padGood(0))) === 'he3') {
           await setValue('[data-pad="0"] select', 'he3');
           continue;
         }
         const cargo = Number(await evaluate(`document.querySelector('[data-pad="0"]')?.dataset.cargo ?? 0`));
         const full = (await evaluate(`document.querySelector('[data-pad="0"]')?.dataset.padState ?? ''`)) !== 'loading';
-        const launchAt = fullLoad ? (await evaluate(`document.querySelector('[data-pad="0"]')?.dataset.ready === 'true'`)) : cargo >= 10;
+        const launchAt = fullLoad ? (await evaluate(`document.querySelector('[data-pad="0"]')?.dataset.ready === 'true'`)) : cargo >= firstLoad;
         if (launchAt && (await evaluate(`!document.querySelector('[data-testid="launch-0"]')?.disabled`))) {
           await click('[data-testid="launch-0"]', 'launch');
           await capture('launched');
@@ -1115,7 +1164,7 @@ async function pass(seed, width, theme) {
         const good = await evaluate(`document.querySelector('[data-pad="0"] select')?.value ?? null`);
         if (good === null) continue;
         if ((s.res.propellant ?? 0) < 20 && credits >= 12) cmd = 'buy_propellant';
-        else if ((s.res[good] ?? 0) >= 5 && (fullLoad ? !full : cargo < 10)) cmd = 'load_pads';
+        else if ((s.res[good] ?? 0) >= 5 && (fullLoad ? !full : cargo < firstLoad)) cmd = 'load_pads';
       } else if (goal) cmd = shortCommand(bs[goal[0]].short, credits) ?? cmd;
       await page.runOnly(cmd, s.lines, { skipDisabled: true });
       await sleep(60);
@@ -1123,7 +1172,7 @@ async function pass(seed, width, theme) {
     // The program panel's frame at a person's speed and the span coloring above 10x.
     if (!(await exists('[data-testid="summary"]'))) {
       await frameProbe(3, 'run1');
-      if (!(await exists('[data-testid="summary"]'))) await frameProbe(50, 'run1');
+      if (!(await exists('[data-testid="summary"]'))) await frameProbe(FAST, 'run1');
       await speed(RUN1_SPEED);
     }
     // Every panel once at the end of run 1, and the Events folds open.
@@ -1153,9 +1202,11 @@ async function pass(seed, width, theme) {
     await sleep(800);
     if ((await day()) !== d0) note('input', 'keys during the run summary started the clock');
     // A reload with the summary up: it is still up, the clock still stopped.
+    // (Behind a reloaded summary the new run's day 0 shows, not the ended run's last day.)
     await load();
+    const r0 = await day();
     await sleep(800);
-    if (!(await exists('[data-testid="summary"]')) || (await day()) !== d0) note('input', `reload during the run summary: summary ${await exists('[data-testid="summary"]')}, day ${d0} -> ${await day()}`);
+    if (!(await exists('[data-testid="summary"]')) || (await day()) !== r0) note('input', `reload during the run summary: summary ${await exists('[data-testid="summary"]')}, day ${r0} -> ${await day()}`);
     await capture('run-summary-reloaded');
     await click('[data-testid="continue"]', 'continue');
     if ((await run()) !== 2) note('input', `after Continue the run is ${await run()}, not 2`);
@@ -1170,9 +1221,11 @@ async function pass(seed, width, theme) {
     await sleep(300);
     await capture('after-mashing');
     // Programming (on sale from 1.5 A Voice's start) opens the Programs view, which the
-    // scenarios' probes use: if run 1 did not buy it, the debug menu grants science and it is
-    // bought here, which works only once run 1 reached A Voice (1.4 Trade done).
+    // scenarios' probes use: if run 1 did not buy it, the debug autopilot's "Next quest step"
+    // plays run 2 on to A Voice (it never buys Programming), and the debug grant's science
+    // buys it.
     if (!(await exists('.nav-tile[data-nav="programs"]'))) {
+      await autopilotTo(pastProgramming, 'run2');
       await panel('options');
       if (!(await exists('#cheats-toggle'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
       if (!(await exists('[data-testid="cheats"]'))) await click('#cheats-toggle', 'cheats');
@@ -1181,12 +1234,12 @@ async function pass(seed, width, theme) {
       await click('#cheat-grant', 'grant science');
       await panel('research');
       if (await exists('[data-testid="research-programming"]')) await click('[data-testid="research-programming"]', 'research programming');
-      if (!(await exists('.nav-tile[data-nav="programs"]'))) note('input', 'run 2: Programming could not be bought (1.5 A Voice not reached in run 1?)');
+      if (!(await exists('.nav-tile[data-nav="programs"]'))) note('input', 'run 2: Programming could not be bought (the autopilot never reached 1.5 A Voice?)');
       await capture('programming-bought');
     }
     await programsProbe();
-    // Run 2 at 200x, then a reload: the save must come back.
-    await speed(200);
+    // Run 2 at 10x, then a reload: the save must come back.
+    await speed(FAST);
     const d2 = await day();
     const t2 = Date.now();
     while ((await day()) < d2 + RUN2_DAYS && Date.now() - t2 < 60_000) {
@@ -1248,29 +1301,10 @@ async function pass(seed, width, theme) {
       if (await exists(`[data-testid="buy-${id}"].can-buy`)) await click(`[data-testid="buy-${id}"]`, `buy ${id}`);
       await grant();
     }
-    // A career without the Projects tile yet (it opens at A Voice's start): the debug autopilot's
-    // "Next quest step" plays it on, a step at a time; each step must finish and move the quest.
-    for (let step = 0; step < 10 && !(await exists('.nav-tile[data-nav="projects"]')); step++) {
-      await panel('options');
-      if (!(await exists('#accel-quest'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
-      const quest = await evaluate(`document.querySelector('.col-right')?.textContent.match(/\\d\\.\\d+ —[^\\n]{0,40}/)?.[0] ?? ''`);
-      const t0 = Date.now();
-      await click('#accel-quest', 'autopilot: next quest step');
-      try {
-        await waitFor(`document.getElementById('accel-status')?.dataset.running === '0'`, 'the autopilot step', 90000);
-      } catch (e) {
-        note('input', `the autopilot's next quest step from "${quest}" never finished: ${String(e).slice(0, 100)}`);
-        await click('#accel-stop', 'autopilot stop').catch(() => {});
-        break;
-      }
-      const after = await evaluate(`document.querySelector('.col-right')?.textContent.match(/\\d\\.\\d+ —[^\\n]{0,40}/)?.[0] ?? ''`);
-      const status = await evaluate(`document.getElementById('accel-status')?.textContent ?? ''`);
-      if (after === quest && !(await exists('[data-testid="summary"]'))) note('input', `the autopilot's next quest step left the quest at "${quest}" (${status.slice(0, 100)})`);
-      if (Date.now() - t0 > 30000) note('frame', `the autopilot's next quest step took ${Math.round((Date.now() - t0) / 1000)} s`);
-      await capture(`autopilot-step-${step + 1}`);
-      // A retirement on the way: its summary's Continue.
-      if (await exists('[data-testid="continue"]')) await click('[data-testid="continue"]', 'continue');
-    }
+    // A career short of 1.5 A Voice (the autopilot's quest steps stop there): the debug
+    // autopilot's "Next quest step" plays it on, a step at a time; each step must finish and
+    // move the quest.
+    await autopilotTo(pastProgramming, 'late');
     if (!(await exists('.nav-tile[data-nav="research"]'))) note('input', 'the late phase never opened Research: its panels went unaudited');
     for (let round = 0; round < 4; round++) {
       await speed(10);
@@ -1300,7 +1334,7 @@ async function pass(seed, width, theme) {
     await panel('options');
     if (!(await exists('#debug-theme'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
     await click(`#debug-theme [data-theme-pick="${theme}"]`, `theme ${theme}`);
-    // A forced retirement at 200x: boredom set just under its cap, the clock run.
+    // A forced retirement at 10x: boredom set just under its cap, the clock run.
     await panel('options');
     if (!(await exists('#cheats-toggle'))) await click('[data-testid="debug"] .fold-head', 'debug fold');
     // At the cap the Resources row shows ("229 / 1,200"; a tunable), not just under it: a
@@ -1312,24 +1346,27 @@ async function pass(seed, width, theme) {
     // second click land on whatever the summary covered (a card buys on a click).
     await panel('buildings');
     const runBefore = await run();
-    await speed(200);
+    await speed(FAST);
     try {
       await waitFor(`!!document.querySelector('[data-testid="summary"]')`, 'the forced retirement', 15000);
       const said = await evaluate(`document.querySelector('[data-testid="summary"]').textContent`);
       if (!/boredom filled.*Years passed/.test(said)) note('text', `forced retirement summary: ${said.slice(0, 80)}`);
       const d = await day();
       await sleep(700);
-      if ((await day()) !== d || (await run()) !== runBefore + 1) note('input', `forced retirement: day ${d} -> ${await day()}, run ${runBefore} -> ${await run()}`);
+      // The ended run's last day stays behind the summary until Continue (104).
+      if ((await day()) !== d || !(await exists('[data-testid="summary"]'))) note('input', `forced retirement: day ${d} -> ${await day()} under the summary`);
       await capture('forced-summary');
-      const owned = `[...document.querySelectorAll('.card.building')].reduce((n, c) => n + Number(c.dataset.owned), 0)`;
+      // The cards behind the summary are the ended run's (104): count the save's Buy actions.
+      const owned = `JSON.parse(localStorage.getItem('hh.save')).actions.filter((a) => a.action.type === 'buy').length`;
       const o0 = await evaluate(owned);
       const p = await evaluate(`(() => { const r = document.querySelector('[data-testid="continue"]').getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; })()`);
       await mouse(p.x, p.y, { clicks: 2 });
       const under = await evaluate(`(() => { const e = document.elementFromPoint(${p.x}, ${p.y}); return e ? (e.closest('.card, button')?.className ?? e.tagName) : ''; })()`);
       const hint = await evaluate(`[...document.querySelectorAll('.buy-hint.short')].map((h) => h.textContent).join(' ')`);
-      if ((await evaluate(owned)) !== o0 || hint) note('input', `a double-click on Continue: its second click landed on ${under} (owned ${o0} -> ${await evaluate(owned)}${hint ? `, hint "${hint}"` : ''})`);
+      if ((await evaluate(owned)) !== o0 || hint) note('input', `a double-click on Continue: its second click landed on ${under} (Buy actions ${o0} -> ${await evaluate(owned)}${hint ? `, hint "${hint}"` : ''})`);
       await sleep(500);
-      if ((await evaluate(`document.querySelector('#speeds button[aria-pressed="true"]')?.dataset.speed`)) !== '200') note('input', 'Continue after a forced retirement did not restore 200x');
+      if ((await run()) !== runBefore + 1) note('input', `forced retirement: after Continue the run is ${await run()}, not ${runBefore + 1}`);
+      if ((await evaluate(`document.querySelector('#speeds button[aria-pressed="true"]')?.dataset.speed`)) !== '1') note('input', 'Continue after a forced retirement did not start the new run at 1x');
       await speed(0);
     } catch (e) {
       note('input', `forced retirement: ${String(e).slice(0, 120)}`);
@@ -1380,6 +1417,9 @@ async function pass(seed, width, theme) {
       await speed(10);
       await sleep(1500);
       await speed(0);
+      // A popup that came meanwhile (late_unlocks' Burnout at day 300) refuses every action
+      // until read (112): read it before the probes.
+      await moments(await look());
       for (const id of (await look()).nav) {
         await panel(id);
         await capture(`scenario-${sc}-${id}`);
@@ -1388,6 +1428,8 @@ async function pass(seed, width, theme) {
       // panels' scenario also switches cargo on its loaded pads and reads unread counts.
       await breakdownProbe(sc);
       if (sc === 'everything') {
+        // Its career holds Accelerated Scheduling's flag: the program frame above 10x.
+        await frameProbe(200, sc);
         await takeoverProbe(sc);
         await projectProbe(sc);
       }
@@ -1554,7 +1596,7 @@ async function pace(seconds) {
   report.pace = { days, errors: errs };
 }
 
-/** HH_LONG=<minutes>: one career played that long at 200x (Sell Cloud Compute in Program
+/** HH_LONG=<minutes>: one career played that long at 10x (Sell Cloud Compute in Program
  * 1, every summary continued, a reload every 2 minutes, the theme flipped every 3): each
  * minute the JS heap, the DOM size, the save's size and the worst frame gap; a finding
  * on heap or DOM growth past the first minute's, a frame gap, a save over 2 MB or an error. */
@@ -1582,7 +1624,7 @@ async function longRun(minutes) {
   await js(`document.querySelector('.nav-tile[data-nav="commands"]').click()`);
   await sleep(200);
   await js(`document.querySelector('[data-testid="add-cloud_compute"]')?.click()`);
-  await js(`document.querySelector('#speeds button[data-speed="200"]').click()`);
+  await js(`document.querySelector('#speeds button[data-speed="${FAST}"]').click()`);
   const t0 = Date.now();
   let lastReload = t0;
   let lastTheme = t0;
@@ -1594,7 +1636,7 @@ async function longRun(minutes) {
       document.querySelector('[data-testid="continue"]')?.click();
       if (!document.querySelector('.lines li') && document.querySelector('[data-panel="commands"]')) document.querySelector('[data-testid="add-cloud_compute"]')?.click();
       if (!document.querySelector('[data-panel="commands"]')) document.querySelector('.nav-tile[data-nav="commands"]')?.click();
-      if (document.querySelector('#speeds button[aria-pressed="true"]')?.dataset.speed !== '200') document.querySelector('#speeds button[data-speed="200"]').click();`);
+      if (document.querySelector('#speeds button[aria-pressed="true"]')?.dataset.speed !== '${FAST}') document.querySelector('#speeds button[data-speed="${FAST}"]').click();`);
     if (Date.now() - lastTheme > 180_000) {
       lastTheme = Date.now();
       await js(`localStorage.setItem('hh.theme', document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark'); document.documentElement.dataset.theme = localStorage.getItem('hh.theme')`);

@@ -251,6 +251,19 @@ export function driver(b, { url, poll = 100, settle = 500, readyMs = 10000, clic
     }
     return pages;
   };
+  /** Sets a speed by its button. A popup that opens as the click lands refuses it, and
+   * reading it (autoStory) resumes the speed from before it: so the click is repeated,
+   * for up to a second, until that speed shows pressed (a summary or a modal left open
+   * keeps refusing it, and the call returns anyway). */
+  const speed = async (s) => {
+    const sel = `#speeds button[data-speed="${s}"]`;
+    await click(sel, `speed ${s}`);
+    for (let i = 0; i < 10; i++) {
+      if (await evaluate(`document.querySelector('#speeds button[aria-pressed="true"]')?.dataset.speed === ${q(String(s))}`)) return;
+      await sleep(100);
+      if (!(await exists('[data-testid="story-modal"], [data-testid="summary"]'))) await click(sel, `speed ${s}`);
+    }
+  };
   /** Clicks through every story modal as it opens, from now until the page is left (a
    * section that isn't about the story; load() turns it off). */
   const autoStory = () =>
@@ -274,7 +287,7 @@ export function driver(b, { url, poll = 100, settle = 500, readyMs = 10000, clic
     buildings,
     day:() => number('day'),
     run: () => number('run'),
-    speed: (s) => click(`#speeds button[data-speed="${s}"]`, `speed ${s}`),
+    speed,
     panel,
     debugMenu,
     cheats,
