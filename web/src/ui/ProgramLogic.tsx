@@ -20,7 +20,7 @@ const CMPS: [Cmp, string][] = [
 /** What a line did, in words (tooltips). */
 export const OUTCOME_TEXT: Record<LineOutcome, string> = {
   ran: 'ran',
-  skipped: 'skipped (output at its cap)',
+  skipped: 'skipped (its output would pass its cap)',
   failed: 'failed',
   true: 'true',
   false: 'false, its lines skipped',
@@ -315,9 +315,9 @@ export function ProgramLine(props: {
 }) {
   const { v, e, i, outcome, current, step, short, ranText, rowClass, drag, indent, noted, gutter, setCount, bump, remove } = props;
   const frac = current && step > 0 ? step / e.count : outcome ? 1 : 0;
-  // A failed line says why (today's last run of it); the tooltip has it in full.
-  // A conversion that ran part way says so too, as a starved building does.
-  const why = outcome === 'failed' || outcome === 'ran' ? short : null;
+  // A failed line says why (today's last run of it); the tooltip has it in full. No
+  // command runs part way (rules 43), so a line that ran has nothing to say.
+  const why = outcome === 'failed' ? short : null;
   const command = v.commands.find((c) => c.id === e.command);
   // A command locked again (used in an earlier run): the view's reason, or, failing
   // that, a failure with no input short.

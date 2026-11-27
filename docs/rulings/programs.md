@@ -50,6 +50,13 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   mechanics text*) names Add to Program on Sell Cloud Compute as the way to earn credits. A player can play Act 1 up to the first Research Lab with the right
   column's program alone (add, drag to reorder, remove, −/+ counts; logic lines from its
   own add row once they open).
+- **No partial purchases (Matt, 2026-11-25; 119).** Every command needs its full cost for
+  each execution, or that execution doesn't happen (a red dot naming what's short; its step
+  still spent); repeat counts are per execution; a buy whose output would overflow its cap
+  doesn't run, judged as the line runs (held + output > cap: Buy Power at 95 of 100 energy
+  is skipped even if upkeep drains it later), for every command with a capped product;
+  loading pads still tops up partially (not a purchase); fractions from production rates
+  stay.
 - **Programming (2026-11-25, replacing 2026-11-24's).** **Programming** is a research-view
   item (placeholder 200 science), on sale from quest 1.5 A Voice's start on (Matt, 2026-11-26); not a quest
   task. Buying it is permanent: a career flag (`programming`) that survives retirement and
@@ -125,9 +132,9 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   that doesn't read). Its hover says why ("2 processors · 6 of 8 steps ran in full · Load
   Launch Pads: short on energy"). The engine judges it (the view's `status`, from a per-day
   step tally); the open tab's "N assigned (M free)" line stays. *Defaults (114):* skipped
-  is outputs full or `load`/`launch pads` with no pad ready (another verb with its goal
+  is an output that would pass its cap or `load`/`launch pads` with no pad ready (another verb with its goal
   met is done, in full); a
-  partial run is short; a locked line or a processor not running (Data Centers unpaid)
+  failed step is short (no command runs part way); a locked line or a processor not running (Data Centers unpaid)
   makes it yellow too; no step taken (also before the first day with processors) is red; an
   edit keeps the day's tally; the hover names the first line in trouble, in line order. A
   command line (Load Launch Pads) that runs with nothing to load counts as run.

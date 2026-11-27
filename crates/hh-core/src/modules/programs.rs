@@ -1,7 +1,7 @@
 //! **programs**: program tabs and their lines (checks and locked lines), the
 //! loadout library, readings and conditions, the interpreter (`if`/`else`,
 //! the `act`, `build` and `buy land` instructions, command execution with
-//! output-cap skips and partial production), processors and overclocks
+//! output-cap skips, full cost or nothing), processors and overclocks
 //! (docs/rules/programs.md).
 
 use std::collections::BTreeMap;
@@ -519,31 +519,25 @@ pub fn execute(r: &Rules, g: &mut GameState, c: &Command, src: &str, short: &str
         return LineOutcome::Failed;
     }
     let (costs, produces) = flows(r, g, c);
-    if super::economy::all_capped(r, g, &produces) {
-        return LineOutcome::Skipped;
-    }
-    let frac = super::economy::input_fraction(g, &costs);
-    // An effect command needs its full cost, and so does one that relieves
-    // boredom (Distract, draft); a pure conversion runs at the fraction its
-    // scarcest input allows.
-    let relieves = boredom_cost(g, c) < Fx::ZERO;
-    let failed = frac <= Fx::ZERO || ((c.effect.is_some() || relieves) && frac < Fx::ONE);
-    if frac < Fx::ONE {
-        let ran = if failed { Fx::ZERO } else { frac };
-        if let Some(s) = super::economy::scarcest(g, &costs, ran) {
+    // Every command needs its full cost, or the execution doesn't happen: no
+    // partial runs. Checked first, so a line it can't afford always says what's short.
+    if super::economy::input_fraction(g, &costs) < Fx::ONE {
+        if let Some(s) = super::economy::scarcest(g, &costs, Fx::ZERO) {
             g.run.today.shorts.insert(short.to_string(), s);
         }
-        // What it wanted counts, met or not (the day's rate, `Run.day_net`).
-        super::economy::note_unmet(g, &costs, ran);
-    }
-    if failed {
+        // What it wanted counts, unmet (the day's rate, `Run.day_net`).
+        super::economy::note_unmet(g, &costs, Fx::ZERO);
         return LineOutcome::Failed;
     }
+    // A run whose output would pass a cap doesn't happen (held + output > cap).
+    if super::economy::would_overflow(r, g, &produces) {
+        return LineOutcome::Skipped;
+    }
     for (res, &v) in &costs {
-        g.consume(src, res, v * frac);
+        g.consume(src, res, v);
     }
     for (res, &v) in &produces {
-        g.produce(src, res, v * frac);
+        g.produce(src, res, v);
     }
     let b = boredom_cost(g, c);
     if b > Fx::ZERO {
@@ -900,8 +894,8 @@ fn step(r: &Rules, g: &mut GameState, i: usize, src: &str) {
         // The line's note is today's last run's.
         g.run.today.shorts.remove(&short);
         // A step's outcome, and the tab's tally of steps (display: its light):
-        // a failure; a skip (outputs full, or `load`/`launch pads` with no pad
-        // ready) or a short run, neither; anything else in full (a verb with its
+        // a failure; a skip (an output would pass its cap, or `load`/`launch pads`
+        // with no pad ready) or a step that noted a short, neither; anything else in full (a verb with its
         // goal already met is done, like `build ... up to N`).
         let verb = pads_verb(&op);
         let mark = |g: &mut GameState, l: usize, o: LineOutcome| {

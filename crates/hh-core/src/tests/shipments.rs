@@ -36,6 +36,23 @@ fn shipments_load_launch_pay_and_cool_down() {
 }
 
 #[test]
+fn loading_tops_a_pad_up_partially_with_what_is_held() {
+    // Loading is no purchase (commands.md): Load pays its full energy, then a pad takes
+    // what cargo there is, short of a full load.
+    let r = rules();
+    let mut g = r.new_game(1);
+    own(&mut g, "launch_pad", 1);
+    own(&mut g, "solar_panel", 3);
+    set(&mut g, "he3", "2");
+    r.apply(&mut g, &Action::SetPadGood { pad: 0, good: Some("he3".into()) }).unwrap();
+    program(&r, &mut g, &[("load_pads", 1)]);
+    r.advance(&mut g, 1);
+    assert_eq!(super::outcomes(&g)[0], Some(crate::state::LineOutcome::Ran));
+    assert_eq!(g.run.pads[0].cargo, f("2"));
+    assert_eq!(g.amount("he3"), Fx::ZERO);
+}
+
+#[test]
 fn switching_a_loaded_pads_cargo_returns_it_up_to_the_cap() {
     let r = rules();
     let mut g = r.new_game(1);

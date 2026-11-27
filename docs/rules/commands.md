@@ -15,15 +15,17 @@ The module's params, `overclock_base_cap` among them, are in [programs.md](progr
    and its `produces`; a `scale_modifier` multiplies both (Buy Power uses `buy_power_mult`,
    which includes the career's bonus; [career.md](career.md)). Dream at a Humanist major
    rank keeps only its energy cost ([dream.md](dream.md)).
-3. **Output-cap skip:** if it produces anything and every product is at or over its cap
-   (economy.md), it is skipped: nothing paid, nothing made, no boredom.
-4. **Fraction:** `frac` = the least of `max(held, 0) / cost` over its costs, at most 1 (1 with
-   no costs). If `frac` is 0, it fails. A command with an effect (Load, Launch, Dream,
-   Overclock, Promote, Disrupt, Fund, Neutralize) fails unless `frac` is 1; a pure conversion (Idle,
-   Cloud Compute, Buy *) runs at `frac`.
-5. It pays `cost × frac` and adds `produces × frac`. Products may pass their cap until the
-   day's clamp.
-6. It adds its flat `boredom` (whole, not scaled by `frac`); a completed project with
+3. **Full cost or nothing** (no partial purchases): unless every cost is held in full, it
+   fails: nothing paid, nothing made, no boredom; the line notes the scarcest input
+   (programs.md). A repeat count is per execution, so `3x buy titanium` on 45 credits buys
+   two and fails the third.
+4. **Output-cap skip:** if any capped product would pass its cap (economy.md) with this
+   execution's output, held + output > cap as the line runs (upkeep due later that day
+   doesn't count), it is skipped: nothing paid, nothing made, no boredom. A run that lands
+   exactly on the cap goes ahead.
+5. It pays its costs and adds its products. (Loading still tops pads up partially: Load
+   pays its full energy, then each pad takes what cargo there is, shipments.md.)
+6. It adds its flat `boredom`; a completed project with
    `boredom_modifiers` replaces a command's boredom with its own value. A negative one (the
    draft Distract) takes that much off, never below zero. Before Burnout a positive one is
    0 (boredom.md, *Burnout starts it*).
@@ -70,6 +72,6 @@ overclock's `target`, `bonus`, `duration`) and `scale_modifier`. `content/resear
   said "+200%"); Buy Ice needs nothing (handoffs wanted an Ice Extractor); research
   `unlocks_commands` is dropped for each command's `requires`; Microwave Receiver unlocks Buy
   Power ([economy.md](economy.md#port-notes)).
-- Candidates (Godot port): a repeat count; effect commands need their full cost; the
-  output-cap skip; one x1.05 overclock stack per execution for 5 days; AI Consciousness Act's
+- Candidates (Godot port): a repeat count; the output-cap skip, on any product its output
+  would pass (Matt); every command needs its full cost, conversions too (Matt); one x1.05 overclock stack per execution for 5 days; AI Consciousness Act's
   boredom values replace the commands'.

@@ -20,3 +20,12 @@ export function buildingArt(id: string): string | undefined {
 export function projectArt(id: string): string | undefined {
   return PROJECTS[id];
 }
+
+// Ideology emblems: one painted panel per axis (`src/assets/ideology/<axis>.webp`, 320x400, 2x
+// the Ideologies card's 160 px slot; made by experiments/results/119_no_partial_purchases/emblems.py).
+const EMBLEMS = stems(import.meta.glob<string>('../assets/ideology/*.webp', { eager: true, query: '?url', import: 'default' }));
+
+/** The URL of an ideology axis's emblem, if it has one. */
+export function emblemArt(axis: string): string | undefined {
+  return EMBLEMS[axis];
+}

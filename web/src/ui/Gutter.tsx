@@ -10,7 +10,7 @@ import type { LineOutcome, ProgramView, Repeat, View } from '../engine';
 import { ifFired, type Store } from '../store';
 import { shortText } from './common';
 
-/** A status dot: ran (green), skipped by its `if` (gray), won't parse (red), not unlocked
+/** A status dot: ran (green), skipped by its `if` or at its cap (gray), won't parse (red), not unlocked
  * this run (amber), failed (a hollow red ring), not run (an empty ring), a note (none). */
 export type Dot = 'green' | 'gray' | 'red' | 'amber' | 'failed' | 'none' | 'note' | 'blank';
 
@@ -39,7 +39,8 @@ const DOT_OF: Record<LineOutcome, Dot> = {
   ran: 'green',
   done: 'green',
   true: 'green',
-  skipped: 'green',
+  // Didn't run: its output would pass its cap (gray, as the one-gutter ruling's "skipped").
+  skipped: 'gray',
   jumped: 'gray',
   false: 'gray',
   failed: 'failed',
@@ -99,7 +100,8 @@ export function entryStatus(v: View, s: Store, program: number, j: number): Line
   const outcome = outcomes[j] ?? null;
   const dot: Dot = outcome ? DOT_OF[outcome] : 'none';
   const short = dot === 'failed' ? (p.shorts[j] ?? null) : null;
-  const note = dot === 'failed' ? (short ? `failed: ${shortText(v, short)}` : 'failed') : null;
+  const note =
+    dot === 'failed' ? (short ? `failed: ${shortText(v, short)}` : 'failed') : outcome === 'skipped' ? 'skipped: its output would pass its cap' : null;
   const fired = e.op === 'if' ? ifFired(program, j) : null;
   const repeat = e.op === 'command' && e.count > 1 ? repeatOf(p, j, e.count) : null;
   return { dot, note, title: note ?? DOT_TITLE[dot], fired, repeat };
@@ -114,7 +116,8 @@ export function GutterMark({ st, line }: { st: LineStatus | null; line: number }
   // A red or amber line shows its status, never its runs.
   if (r && st && st.dot !== 'red' && st.dot !== 'amber') {
     // Not run on the last day (jumped with its `if`, or not reached): the last pass, muted.
-    const stale = st.dot === 'gray' || st.dot === 'none' ? ' rep-stale' : '';
+    // A gray with a note (skipped at its cap) was reached today: its pass is current.
+    const stale = (st.dot === 'gray' && st.note === null) || st.dot === 'none' ? ' rep-stale' : '';
     const title = `${r.done}/${r.of}${r.failed > 0 ? `, ${r.failed} failed` : ''}${stale ? ' (an earlier pass)' : ''}`;
     if (r.of <= MAX_DOTS) {
       return (

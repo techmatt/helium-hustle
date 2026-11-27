@@ -588,7 +588,7 @@ pub struct Short {
 #[serde(rename_all = "snake_case")]
 pub enum LineOutcome {
     Ran,
-    /// Every output was at its cap: nothing paid, nothing made.
+    /// An output would pass its cap (held + output > cap): nothing paid, nothing made.
     Skipped,
     /// Locked, or short of its costs.
     Failed,

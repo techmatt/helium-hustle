@@ -163,15 +163,16 @@ fn programs_are_paid_before_upkeep_and_the_breakdown_shows_who_went_short() {
     for pad in 0..g.run.pads.len() as u32 {
         r.apply(&mut g, &Action::SetPadGood { pad, good: Some("he3".into()) }).unwrap();
     }
-    r.advance(&mut g, 3);
+    r.advance(&mut g, 2);
+    let energy_before = g.amount("energy");
+    r.advance(&mut g, 1);
     let v = r.view(&g);
     // Load Launch Pads ran on the Solar Panels' power; a building with upkeep went short.
     assert_eq!(v.programs[0].outcomes[0], Some(crate::state::LineOutcome::Ran));
-    // Buy Titanium on 10 credits ran at half on day 1 (a conversion runs part way), then
-    // fails and says why.
+    // Buy Titanium on 10 credits fails each day (no partial purchase) and says why.
     assert_eq!(v.programs[0].outcomes[1], Some(crate::state::LineOutcome::Failed));
     let why = v.programs[0].shorts[1].as_ref().unwrap();
-    assert_eq!((why.resource.as_str(), why.need, why.had, why.ran), ("credits", f("20"), Fx::ZERO, Fx::ZERO));
+    assert_eq!((why.resource.as_str(), why.need, why.had, why.ran), ("credits", f("20"), f("10"), Fx::ZERO));
     assert!(g.run.pads.iter().any(|p| p.cargo > Fx::ZERO));
     let starved: Vec<_> = v.buildings.iter().filter_map(|b| b.starved.as_ref()).collect();
     assert!(!starved.is_empty() && starved.iter().all(|s| s.ran < Fx::ONE && s.resource == "energy"));
@@ -180,11 +181,12 @@ fn programs_are_paid_before_upkeep_and_the_breakdown_shows_who_went_short() {
     assert_eq!(row("building:solar_panel").produced, f("36"));
     assert_eq!(row("program:0").consumed, f("2"));
     assert_eq!(energy.shorts.len(), starved.len());
-    // Every unit made is accounted for: sources less sinks is the change in stock (none:
-    // a short day spends it all), but for the clamp lifting a rounding dip below zero (a
-    // unit or two: each short consumer rounds its partial pay).
+    // Every unit made is accounted for: sources less sinks is the change in stock (a short
+    // day spends it all, a few 10^-6 left from yesterday too), but for the clamp lifting a
+    // rounding dip below zero (a unit or two: each short consumer rounds its partial pay).
     let net: Fx = energy.rows.iter().map(|x| x.produced - x.consumed).sum();
-    assert!(net.max(-net) <= f("0.000002"), "{net}");
+    let off = net - (g.amount("energy") - energy_before);
+    assert!(off.max(-off) <= f("0.000002"), "{net} against a change of {}", g.amount("energy") - energy_before);
     assert!(g.run.flow_average["energy"]["building:solar_panel"].produced > Fx::ZERO);
 }
 
@@ -268,7 +270,7 @@ fn caps_bind_at_the_end_of_the_day_and_overflow_is_counted() {
 }
 
 #[test]
-fn commands_convert_skip_at_cap_and_scale_down_when_short() {
+fn commands_convert_in_full_or_not_at_all_and_never_past_a_cap() {
     let r = rules();
     let mut g = r.new_game(1);
     g.career.flags.insert(crate::modules::boredom::BURNOUT_FLAG.into());
@@ -276,17 +278,55 @@ fn commands_convert_skip_at_cap_and_scale_down_when_short() {
     r.advance(&mut g, 1);
     assert_eq!(g.amount("credits"), f("5"));
     assert_eq!(g.amount("boredom"), f("0.1") + f("0.1"), "phase growth plus the command's");
-    // Buy Titanium with half its credits: half a unit, for half the price.
+    // Buy Titanium with half its credits: no partial purchase. It fails, nothing paid or
+    // made, and notes what it was short of.
     set(&mut g, "credits", "10");
     program(&r, &mut g, &[("buy_titanium", 1)]);
     r.advance(&mut g, 1);
-    assert_eq!(g.amount("titanium"), f("0.5"));
-    assert_eq!(g.amount("credits"), Fx::ZERO);
-    // At the titanium cap it skips: nothing paid.
-    set(&mut g, "titanium", "20");
+    assert_eq!(super::outcomes(&g)[0], Some(crate::state::LineOutcome::Failed));
+    assert_eq!((g.amount("titanium"), g.amount("credits")), (Fx::ZERO, f("10")));
+    let why = r.view(&g).programs[0].shorts[0].clone().unwrap();
+    assert_eq!((why.resource.as_str(), why.need, why.had, why.ran), ("credits", f("20"), f("10"), Fx::ZERO));
+    // Its full price: one unit.
+    set(&mut g, "credits", "20");
+    r.advance(&mut g, 1);
+    assert_eq!((g.amount("titanium"), g.amount("credits")), (Fx::ONE, Fx::ZERO));
+    // A run that would pass the titanium cap (20) skips: nothing paid. At the cap less one
+    // it runs, up to the cap exactly.
+    let cap = crate::modules::economy::cap(&r, &g, "titanium").unwrap();
+    assert_eq!(cap, f("20"));
+    set(&mut g, "titanium", "19.5");
     set(&mut g, "credits", "100");
     r.advance(&mut g, 1);
-    assert_eq!(g.amount("credits"), f("100"));
+    assert_eq!(super::outcomes(&g)[0], Some(crate::state::LineOutcome::Skipped));
+    assert_eq!((g.amount("titanium"), g.amount("credits")), (f("19.5"), f("100")));
+    set(&mut g, "titanium", "19");
+    r.advance(&mut g, 1);
+    assert_eq!((g.amount("titanium"), g.amount("credits")), (cap, f("80")));
+    // A repeat count is per execution: 3x from 18 runs twice, then skips.
+    set(&mut g, "titanium", "18");
+    program(&r, &mut g, &[("buy_titanium", 3)]);
+    r.advance(&mut g, 3);
+    assert_eq!((g.amount("titanium"), g.amount("credits")), (cap, f("40")));
+    assert_eq!(super::outcomes(&g)[0], Some(crate::state::LineOutcome::Skipped));
+}
+
+#[test]
+fn the_cap_overflow_check_counts_a_scaled_output() {
+    // Buy Power's output is scaled by the career's peak power: the skip judges the
+    // scaled amount (held + output > cap), not the content's 20.
+    let r = rules();
+    let mut g = r.new_game(1);
+    g.career.peak_power = f("100000");
+    let c = crate::content::content().command("buy_power").unwrap();
+    let (_, produces) = crate::modules::programs::flows(&r, &g, c);
+    let out = produces["energy"];
+    assert!(out > f("20"), "{out}");
+    let cap = crate::modules::economy::cap(&r, &g, "energy").unwrap();
+    set(&mut g, "energy", &(cap - out).to_string());
+    assert!(!crate::modules::economy::would_overflow(&r, &g, &produces), "lands on the cap: runs");
+    set(&mut g, "energy", &(cap - f("20")).to_string());
+    assert!(crate::modules::economy::would_overflow(&r, &g, &produces), "room for 20, not the scaled output");
 }
 
 #[test]
@@ -301,9 +341,9 @@ fn processors_share_a_pointer_and_failed_lines_advance() {
     assert_eq!(g.amount("credits"), f("1"));
     assert_eq!((g.run.programs[0].entry, g.run.programs[0].step), (1, 1));
     r.advance(&mut g, 1);
-    // Idle once more, then Buy Regolith runs at the fifth its 2 credits allow.
-    assert_eq!(g.amount("credits"), Fx::ZERO);
-    assert_eq!(g.amount("regolith"), f("0.2"));
+    // Idle once more, then Buy Regolith fails again: 2 credits are short of its 10.
+    assert_eq!(g.amount("credits"), f("2"));
+    assert_eq!(g.amount("regolith"), Fx::ZERO);
     assert!(r.apply(&mut g, &Action::SetProcessors { program: 1, processors: 1 }).is_err());
     // A lost data center takes its processor off the program.
     r.apply(&mut g, &Action::SetActive { building: "data_center".into(), active: 1 }).unwrap();

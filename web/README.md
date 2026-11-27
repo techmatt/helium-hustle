@@ -122,8 +122,8 @@ The two share markup, layout and art; only the color tokens atop `src/style.css`
 so switching moves nothing (e2e-checked). Chips (resources, axes, rivals) keep their true
 colors in both; an ideology axis drawn as text uses its `axis-<id>` class, which has a
 readable variant per theme. Fonts are bundled (`@fontsource`, named in `src/style.css`).
-Building and project pictures: `src/assets/{buildings,projects}/<id>.webp` (`src/ui/cardArt.ts`,
-`experiments/results/{020_building_card_art,100_wire_project_art_and_research_glyphs}/`).
+Building, project and ideology pictures: `src/assets/{buildings,projects,ideology}/<id>.webp`
+(`src/ui/cardArt.ts`; made by `experiments/results/{020_building_card_art,100_*,119_*}/`).
 Chips, nav icons, horizon: `src/ui/icons.tsx` over `src/assets/{chips,nav,horizon}/`
 (`experiments/results/027_art_in_game/`), research chips over `src/assets/research/` (100,
 a `"BG"` fill takes the chip's category color); a nav `<id>.svg` stands in for an unpainted

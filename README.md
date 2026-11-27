@@ -104,7 +104,8 @@ change bumps `RULES_REVISION`
 plays the golden game through `play_golden`, which runs `hh_core::driver` itself in wasm, with
 the same seed and length). The content hash moves with any `content/` byte and the config hash
 with any `configs/baseline.json` value, play or not; the fingerprint (`GameState::fingerprint`,
-the state less its config) only with play. **Step:** `python scripts/set_golden.py` (a release build first: background it) sets all
+the state less its config) only with play, and only with play the golden game reaches (a
+rule its policy never meets keeps it: only the revision moves). **Step:** `python scripts/set_golden.py` (a release build first: background it) sets all
 eight from `hh-sim golden`; never type them. The sim players' pinned games are separate:
 `PINNED`, `HANDSOFF_PIN` and the oracle's in `crates/hh-sim/tests/cli.rs` (an agent refactor
 keeps them; a rules change moves those whose play it changes): run `cargo test-all -p hh-sim`

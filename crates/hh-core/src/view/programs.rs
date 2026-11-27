@@ -24,7 +24,7 @@ pub struct ProgramView {
     /// What each line did the last time it ran today (`None`: not run today).
     pub outcomes: Vec<Option<LineOutcome>>,
     /// Per line, the input it was short of the last time it ran today
-    /// (failed, or a conversion run part way), if it was.
+    /// (it failed), if it was.
     pub shorts: Vec<Option<ShortView>>,
     /// Per line, an `if` line's condition as it reads now.
     pub conditions: Vec<Option<ConditionView>>,
@@ -46,7 +46,7 @@ pub struct ProgramView {
 pub enum Light {
     /// Every step ran in full.
     Green,
-    /// Some steps were short, skipped (outputs full, nothing to act on) or
+    /// Some steps were short, skipped (an output would pass its cap, nothing to act on) or
     /// failed, a line is locked, or a processor didn't run (Data Centers unpaid).
     Yellow,
     /// Nothing useful ran: no lines, no step taken, every step failed, or a
@@ -112,7 +112,7 @@ fn status(r: &Rules, g: &GameState, i: usize, running: u32) -> Option<ProgramSta
             let why = match (today.and_then(|t| t.get(&(l as u32))), short) {
                 (_, Some(s)) => format!("short on {}", names.get(s.resource.as_str()).copied().unwrap_or(&s.resource).to_lowercase()),
                 (Some(LineOutcome::Failed), None) => "couldn't run".to_string(),
-                (Some(LineOutcome::Skipped), None) => "outputs full".to_string(),
+                (Some(LineOutcome::Skipped), None) => "output would pass its cap".to_string(),
                 (Some(LineOutcome::Done), None) if programs::pads_verb(&e.op) => "no pad ready".to_string(),
                 _ => continue,
             };

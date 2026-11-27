@@ -83,13 +83,21 @@ impl Params {
 }
 
 /// Whether every product is at or over its cap (nothing to make room for); never for
-/// no products. A building so is "output at cap"; a command so is skipped.
+/// no products. A building so is "output at cap".
 pub fn all_capped(r: &Rules, g: &GameState, products: &Amounts) -> bool {
     !products.is_empty() && products.keys().all(|res| cap(r, g, res).is_some_and(|c| g.amount(res) >= c))
 }
 
+/// Whether making `products` would put any capped one over its cap (held +
+/// output > cap): a command so is skipped (commands.md).
+pub fn would_overflow(r: &Rules, g: &GameState, products: &Amounts) -> bool {
+    products
+        .iter()
+        .any(|(res, &v)| v > Fx::ZERO && cap(r, g, res).is_some_and(|c| g.amount(res).saturating_add(v) > c))
+}
+
 /// The fraction of `needs` the stock covers, at most 1: the scarcest input's (a
-/// partial run of a building or a conversion command).
+/// building's partial run; a command below 1 fails).
 pub fn input_fraction(g: &GameState, needs: &Amounts) -> Fx {
     let mut frac = Fx::ONE;
     for (res, &need) in needs {

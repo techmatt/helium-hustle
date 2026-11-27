@@ -98,8 +98,8 @@ under its source for the day (`today.flows`: each building type, each program, p
 loading and switch returns, launches, building and land purchases, sales, research,
 projects, boredom growth, Dream, and `cap`, the clamp's cut). Player actions after a
 tick count in that day. Who ran short is recorded too (`today.shorts`): a building type
-in the partial pass, or a program line short of a cost (failed, or a conversion run part
-way): the scarcest input, the need, what there was and the fraction run. At each tick's
+in the partial pass, or a program line short of a cost (it failed, fraction 0): the scarcest
+input, the need, what there was and the fraction run. At each tick's
 start the day folds into a rolling average, `avg += (day − avg) / k`, `k` the days folded
 this run up to `flow_average_days` (`Run.flow_days`, counted from the first fold with a
 flow: actions before the first tick are one): a source new to it enters at zero and one

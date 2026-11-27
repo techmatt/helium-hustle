@@ -37,9 +37,10 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   view is open stays shown until the player leaves the view. *Default (104):* Projects starts
   ticked (096's no finished one-offs), Research unticked.
 - **Ideologies view (Matt, 2026-11-26; 117).** The three axes carry gravitas: each a bold card
-  with its emblem filling a 160 px left-edge slot (the per-axis emblem art drops in there), its
-  name centered in its color, a large rank numeral and a full-width rank bar. *Default (117):*
-  the axis chip at 112 px stands in until the emblems land.
+  with its emblem filling a 160 px left-edge slot, its name centered in its color, a large
+  rank numeral and a full-width rank bar. Emblems (Matt's picks, 2026-11-26; 119, picker
+  `ideology_emblems_r1`): Nationalist the claim marker, Humanist the garden dome, Rationalist
+  the archive (`web/src/assets/ideology/`); an axis with no file shows its chip at 112 px.
 - **Project funding (Matt, 2026-11-26; 116).** Holding a funding − or + keeps stepping: after
   ~0.4 s at ~10 steps a second, held past ~1.5 s 5 steps a repeat, past 3 s 10, stopping at 0
   or the cap. A rate fully met shows green; one the stock can't supply reads actual / set
