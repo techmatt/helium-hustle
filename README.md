@@ -29,7 +29,7 @@ implemented (the Godot build's Arc 1, ported): [docs/rules/](docs/rules/README.m
 | `scripts/` | `wasm-smoke.mjs` (native = wasm), `wasm-speed.mjs` (engine speed in wasm), `warning_checks.py` (CLAUDE.md, *Warning checks*), `set_golden.py` (re-pins the golden game), `set_pins.py` (re-pins the sim players' games, *Rules changes* below), `seeds.py` (fresh seeds from the ledger, [docs/simulator.md](docs/simulator.md) *Seeds*), `baseline.py` (a built copy of another revision for reads against it, [docs/experiments.md](docs/experiments.md)), `prose.py` (every player-facing string out to `content/prose.md` and back by id: `export`, `import FILE`, `check`; re-export after a text change). |
 | `docs/` | `rules/` (the rules as implemented) and `rules-history.md`; `rulings.md` and `rulings/` (Matt's standing rulings, by area); `architecture.md`; `principles.md` (targets and the judge); `extending.md` (what a new module or program piece touches); `simulator.md`, `experiments.md` (grid reads, measures, costs), `agents.md` and `oracle.md` (hh-sim); `qa-findings.md` (bug hunts). |
 | `reference/` | The Godot snapshot ([reference/README.md](reference/README.md)). Never edited. |
-| `art/` | Generated art and picker images: a link to the main checkout's `art/`, shared by every worktree and never committed. The scripts that draw it are committed with their item's write-up in `experiments/results/<item>/`. Painted art is drawn by Codex CLI's image tool on Matt's ChatGPT login (no API key), 37–97 s a draw, 3–4 at once: recipe in [018's write-up](experiments/results/018_building_art_round/README.md); drawing against a fixed guide image (`codex exec -i`, isometric patches) in [019's](experiments/results/019_painterly_iso_round/README.md); the shipped building card pictures (draw, cut to WebP, picker) in [020's](experiments/results/020_building_card_art/README.md). **What ships** is in `web/src/assets/`: painted art cut to WebP (020's `process.py`, 027's `images.py`), and chip glyphs as SVG written by 027's `export.mjs` from [026's `glyphs.mjs`](experiments/results/026_icon_art_r1/) (which reads `icons.tsx`'s color maps as text, and holds the nav colors). Finished pickers (`art/pickers/`, mock-ups only) and superseded rounds (`art/buildings/r1/`) move to the Drive archive, `C:\Code\gdrive-sync\helium-hustle\archive\` at the same relative path; a new picker writes `art/pickers/` afresh. |
+| `art/` | Generated art and picker images: a link to the main checkout's `art/`, shared by every worktree and never committed. The scripts that draw it are committed with their item's write-up in `experiments/results/<item>/`. Painted art is drawn by Codex CLI's image tool on Matt's ChatGPT login (no API key), 37–97 s a draw, 3–4 at once: recipe in [018's write-up](experiments/results/018_building_art_round/README.md), against a fixed guide image (`codex exec -i`) in [019's](experiments/results/019_painterly_iso_round/README.md), cut to WebP for a card in [020's](experiments/results/020_building_card_art/README.md). **What ships** is in `web/src/assets/` (which loader reads what, and which write-up made it: [web/README.md](web/README.md), *Theme*); chip glyphs are SVG from [026's `glyphs.mjs`](experiments/results/026_icon_art_r1/), which reads `icons.tsx`'s color maps as text and holds the nav colors. Finished pickers (`art/pickers/`, mock-ups only) and superseded rounds (`art/buildings/r1/`) move to the Drive archive, `C:\Code\gdrive-sync\helium-hustle\archive\` at the same relative path; a new picker writes `art/pickers/` afresh. |
 | `out/` | Scratch and run output, git-ignored. |
 
 **One wasm build**, `web/src/wasm/` (git-ignored), by `node web/scripts/build-wasm.mjs`
@@ -90,37 +90,41 @@ relative one from the directory it runs in, and wasm-pack runs it in `crates/hh-
 relative one to the repo root; bare `cargo` can't (the variable outranks `.cargo/config.toml`).
 `/crates/**/out/` is git-ignored as a backstop.
 
-**Rules changes:** the `golden_game` test (`crates/hh-core/src/tests/mod.rs`) pins the final
+**Rules changes.** The `golden_game` test (`crates/hh-core/src/tests/mod.rs`) pins the final
 state of one fixed game: baseline config, seed `u64::MAX`, the `golden_start` scenario (`if`
-open from tick 0, `driver::golden_start`), 2000 ticks of the scripted policy
-(`driver.rs`: it ships, runs a condition program once program logic opens, is retired by
-boredom and starts run 2). An intended play
-change bumps `RULES_REVISION`
-(`crates/hh-core/src/lib.rs`, and the revision line in `docs/rules/README.md`), adds its
-`docs/rules-history.md` row, and updates the four golden constants, `GOLDEN_REVISION`,
-`GOLDEN_FINGERPRINT`, `GOLDEN_CONTENT_HASH` and `GOLDEN_CONFIG_HASH`, both in
-`crates/hh-core/src/tests/mod.rs` and in `scripts/wasm-smoke.mjs`
-(`wasm_smoke_expects_the_golden_constants` fails until they match; it also checks the smoke
-plays the golden game through `play_golden`, which runs `hh_core::driver` itself in wasm, with
-the same seed and length). The content hash moves with any `content/` byte and the config hash
-with any `configs/baseline.json` value, play or not; the fingerprint (`GameState::fingerprint`,
-the state less its config) only with play, and only with play the golden game reaches (a
-rule its policy never meets keeps it: only the revision moves). **Step:** `python scripts/set_golden.py` (a release build first: background it) sets all
-eight from `hh-sim golden`; never type them. The sim players' pinned games are separate:
-`PINNED`, `HANDSOFF_PIN` and the oracle's in `crates/hh-sim/tests/cli.rs` (an agent refactor
-keeps them; a rules change moves those whose play it changes): run `cargo test-all -p hh-sim`
-(the oracle's pin is a slow-lane test; failing pins still write their games to
-`out/hh-sim-tests/`), then `python scripts/set_pins.py` copies them into `cli.rs`. An energy or price change
-often turns `the_handsoff_loadout_ships_and_buys_after_if_opens` red: its fix is a new
-loadout (a search: `experiments/results/113_handsoff_loadout_research/`, variants by
-`--agents` as in docs/experiments.md), not a patch: run `hh-sim trace --agents handsoff --at T`
-first to see the wall, then report it. A param
-added, removed or re-ranged regenerates the `docs/rules/` param tables:
-`cargo run -q --release -p hh-sim -- params --write` (a test fails while they are stale).
-Content ids are also named outside `content/` (`configs/sim/milestones.json`, the sim agents,
-tests, `web/scripts/e2e.mjs`): `git grep` an id before removing it. The program text form
-is read from write-ups too (`experiments/results/063_program_text_editor/*.txt` by hh-core's
-tests, `060_loadout_exploration/loadouts/` by hh-sim's): a grammar change converts them.
+open from tick 0, `driver::golden_start`), 2000 ticks of the scripted policy (`driver.rs`: it
+ships, runs a condition program once program logic opens, is retired by boredom and starts
+run 2).
+
+- **An intended play change** bumps `RULES_REVISION` (`crates/hh-core/src/lib.rs`, and the
+  revision line in `docs/rules/README.md`), adds its `docs/rules-history.md` row, and updates
+  the four golden constants, `GOLDEN_REVISION`, `GOLDEN_FINGERPRINT`, `GOLDEN_CONTENT_HASH`
+  and `GOLDEN_CONFIG_HASH`, both in `crates/hh-core/src/tests/mod.rs` and in
+  `scripts/wasm-smoke.mjs` (`wasm_smoke_expects_the_golden_constants` fails until they
+  match; it also checks the smoke plays the golden game through `play_golden`, which runs
+  `hh_core::driver` itself in wasm, with the same seed and length). **Step:** `python
+  scripts/set_golden.py` (a release build first: background it) sets all eight from
+  `hh-sim golden`; never type them.
+- **What moves which constant:** the content hash moves with any `content/` byte and the
+  config hash with any `configs/baseline.json` value, play or not; the fingerprint
+  (`GameState::fingerprint`, the state less its config) only with play the golden game
+  reaches (a rule its policy never meets keeps it: only the revision moves).
+- **The sim players' pinned games** are separate: `PINNED`, `HANDSOFF_PIN` and the oracle's
+  in `crates/hh-sim/tests/cli.rs` (an agent refactor keeps them; a rules change moves those
+  whose play it changes). Run `cargo test-all -p hh-sim` (the oracle's pin is a slow-lane
+  test; failing pins still write their games to `out/hh-sim-tests/`), then `python
+  scripts/set_pins.py` copies them into `cli.rs`. An energy or price change often turns
+  `the_handsoff_loadout_ships_and_buys_after_if_opens` red: its fix is a new loadout (a
+  search: `experiments/results/113_handsoff_loadout_research/`, variants by `--agents` as in
+  docs/experiments.md), not a patch: run `hh-sim trace --agents handsoff --at T` first to
+  see the wall, then report it.
+- **A param** added, removed or re-ranged regenerates the `docs/rules/` param tables:
+  `cargo run -q --release -p hh-sim -- params --write` (a test fails while they are stale).
+- **Names outside `content/`:** content ids are named in `configs/sim/milestones.json`, the
+  sim agents, tests and `web/scripts/e2e.mjs`: `git grep` an id before removing it. The
+  program text form is read from write-ups too
+  (`experiments/results/063_program_text_editor/*.txt` by hh-core's tests,
+  `060_loadout_exploration/loadouts/` by hh-sim's): a grammar change converts them.
 
 **Adding to the engine** (a module, an event condition, a program reading, line kind or
 comparison): the files each one touches are listed in [docs/extending.md](docs/extending.md).

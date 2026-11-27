@@ -41,9 +41,10 @@ Locked by Matt: changing any of these is his decision, not an implementation det
   native = wasm; never `#[allow]` the lint that bans them.
 - **`RULES_REVISION` and a pinned golden game.** Any change to how games play out bumps
   `RULES_REVISION` and updates the golden constants (how: README, *Rules changes*). Bump from
-  the constant, not from a revision number in the prompt, and say so in the rules-history row
-  and the report. A rename or refactor that plays the same moves no
-  fingerprint (a content or config byte still moves its hash): if it does, play changed.
+  the constant in `lib.rs`, not from a revision number in the prompt, and give the new
+  revision in the rules-history row and the report. A rename or refactor leaves the
+  fingerprint where it was (a content or config byte still moves its hash); if the
+  fingerprint moves, play changed.
 - **Every tunable number lives in a config** under `configs/`, with **no defaults in code**: a
   missing key is a load error, never a silent fallback. A test may build its own config. Sim
   agents' numbers are player strategy, not rules, and exempt (docs/rulings/sim.md).
@@ -72,18 +73,17 @@ Locked by Matt: changing any of these is his decision, not an implementation det
 
 - **Commit to the branch you are on.** Leave nothing uncommitted. Never commit to or push `main`.
 - **Testing is light by default** (Matt, docs/rulings/engine.md). After every change: the fast
-  lane, `cargo test --workspace` (seconds), plus the checks for what you touched (`npm run
-  check` and `npm run unit` for `web/`). Before the commit: the full run, `cargo test-all`
-  (about 40 s once built), when it touches Rust, `content/` or `configs/`; Markdown or `web/` alone
-  skips it. Leave `cargo clippy --workspace --all-targets` clean. **Heavy reads only on
-  request:** a full `npm run qa`, e2e, balance reads (`hh-sim balance`, ladders, before/after
-  reads) and other sweeps run in a bug hunt or when the prompt asks, never as routine. A
-  balance warning is reported, not chased. Lanes and commands: README, *Build and test*.
+  lane, `cargo test --workspace`, plus the checks for what you touched (`npm run check` and
+  `npm run unit` for `web/`). Before a commit that touches Rust, `content/` or `configs/`: the
+  full run, `cargo test-all`; Markdown or `web/` alone skips it. Leave `cargo clippy
+  --workspace --all-targets` clean. **Heavy reads only on request** (a bug hunt, or the prompt
+  asks), never as routine: a full `npm run qa`, e2e, balance reads (`hh-sim balance`, ladders,
+  before/after reads) and other sweeps. A balance warning is reported, not chased. Lanes,
+  commands and their times: README, *Build and test*.
 - **Background any step over ~30 seconds** (builds, tests, sims, servers) and wait on the real
   process (the `cargo`, `node` or test binary), never on a launcher that returns before the work
-  is done. A fresh worktree's first build takes minutes: give it its time. It also has no
-  `web/node_modules` or `web/src/wasm`: run `npm ci` and `npm run wasm` in `web/` before the
-  first web check.
+  is done. A fresh worktree's first build takes minutes: give it its time. Its first web check
+  needs `npm ci` and `npm run wasm` in `web/` first.
 - **A before/after read** (main, another commit, new rules with old agents) builds its other
   side with `python scripts/baseline.py` (docs/experiments.md, *Reads against another revision*).
 - **Browser checks, sweeps and e2e run against `vite preview`** (a static build), never the dev
@@ -117,13 +117,11 @@ Write the report to the path conductor's preamble gives, starting with the heade
 
 Warnings are surfaced, never gate: an item whose own change trips one still finishes, and lists
 it in the header's `warnings:` line, led by its kind. Before its report, every item runs
-`python scripts/warning_checks.py` (always exits 0; prints one `<kind>: <text>` line per tripped
-check, nothing when clean; its parity and balance checks build and run only when the branch
-touched what they measure, `--all` forces them). Its kinds are **parity**, **tunables** (exceptions, each with its
-reason, in `scripts/warning_checks.json`), **platform-floats**, **balance** (the judge:
-`docs/principles.md`, *The judge*), **docs** and **qa** (the tree's last `npm run qa` had a
-pass that never reached the ending), and **checks** (a check itself crashed); the script's
-docstring defines each.
+`python scripts/warning_checks.py`: it always exits 0 and prints one `<kind>: <text>` line per
+tripped check. Its kinds (each defined in the script's docstring, with its flags) are
+**parity**, **tunables** (exceptions, each with its reason, in `scripts/warning_checks.json`),
+**platform-floats**, **balance** (the judge: `docs/principles.md`, *The judge*), **docs**,
+**qa** and **checks**.
 
 And one by hand, also kind **docs:** a rules change without its `docs/rules-history.md` row, or
 a `RULES_REVISION` bump without the golden constants moved (or the reverse).

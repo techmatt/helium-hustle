@@ -103,12 +103,12 @@ unlocks at the start of each run, so an unlocked building, panel or project stay
 after a retirement from day 0. One-off events still fire again during the run once their
 trigger and condition hold.
 
-`category` decides chain quest, side quest or one-off. `silent` keeps a one-off event out of the activity
-feed and the view's event list (display only). Text no rule reads: `title`, a one-off's
-`summary` (its headline), `body`, `story` and `payoff` (narrative only), and the mechanics
-fields, a quest's `goal` and `reward` (no `hints`: rulings/story-ui.md; the reward lists only real grants and
-is absent, never "None.", on a quest that grants nothing), a
-one-off's `effect` (rulings/story-ui.md, *Quest mechanics text*; checked at load).
+`category` decides chain quest, side quest or one-off. `silent` keeps a one-off event out of
+the activity feed and the view's event list (display only). Text no rule reads: `title`, a
+one-off's `summary` (its headline), `body`, `story` and `payoff` (narrative only), and the
+mechanics fields, a quest's `goal` and `reward` (the reward lists only real grants and is
+absent, never "None.", on a quest that grants nothing; no `hints`) and a one-off's `effect`
+(rulings/story-ui.md, *Quest mechanics text*; checked at load).
 The view hands a boredom phase its `rate`, the phase's boredom per day, and the UI fills its
 effect's `{rate}` with it as Stats shows boredom growth. The run records the day
 each one-off fired (`Run.events`, display only); the view lists them by that day, content
@@ -116,18 +116,15 @@ order within a day (side quests aside), marking all but the latest of Burnout an
 boredom phases `superseded`; the right column's Events list leaves those out and shows the
 rest newest first (rulings/story-ui.md, *Right panel*).
 
-**Story modals** (UI only: no rule reads them, sims never see them). A chain quest's `story`
-(shown as it becomes active) and `payoff` (shown as it completes) are paragraphs, one modal
-each, in `content/events.json`. When the active
-quest moves on, the web UI pauses and shows the finished quests' payoffs with their rewards (and the story of any
-quest passed through the same day), then the new quest's story with its goal, resuming after
-the last; a new game shows only 1.1's. A quest with no `story` shows its `body`. Every one-off in `event_texts` is a
-modal (a popup) as it fires: its `story` pages (Burnout's), else its `body`, with its effect; a
-completed side quest's is its payoff (else body) and reward. Options' "Hide popups for events
-you've already seen" skips one this career has shown before (rulings/story-ui.md, *Popups*). The view
-carries them (`quest.story`; each completed quest's `chain`, `story` and `payoff`). A quest
-(chain or side) may name a `picture`, the stem of a web asset (`[a-z0-9_]`; the view carries
-it on `quest`, `story` and `side_quests`; where it shows: rulings/story-ui.md, *Quest pictures*).
+**Story modals** (UI only: no rule reads them, sims never see them). A quest's `story`
+(shown as a chain quest becomes active) and `payoff` (shown as a quest completes) are
+paragraphs, one modal page each; a quest with no `story` shows its `body`, and a one-off's
+popup is its `story` pages (Burnout's), else its `body`, with its effect. The view carries
+them (`quest.story`; each completed quest's `chain`, `story` and `payoff`); the web UI's
+`story.ts` orders the pages, and when popups show is rulings/story-ui.md's, *Popups*. A
+quest (chain or side) may name a `picture`, the stem of a web asset (`[a-z0-9_]`; the view
+carries it on `quest`, `story` and `side_quests`; where it shows: rulings/story-ui.md,
+*Quest pictures*).
 
 **Story's timeline** (display only). Each chain quest belongs to an act: `content/acts.json`
 names the acts (placeholder names) and the chain quest each opens with; a quest is in the
@@ -164,28 +161,22 @@ Triggers, conditions and unlocks are content (`content/events.json`).
 
 ## Content
 
-`content/events.json`: 34 rows. Eighteen `story`: Act 1's beats 1.1 Online to 1.6 Deep
-Space Telescope (the swarm's reveal; [../arc.md](../arc.md)), then the draft 2.1 to 4.2 and the
-Epilogue (4.3). 1.3 Full Load opens Launch Full Pads; 1.4 Trade counts this run's launch pay and
-unlocks nothing; 1.5 A Voice is rank 5 on any axis this run. Four `side`, each with a permanent reward: 1.a Big Launch (the
-`speculators_seen` flag beside 1.4; `modifier` `shipment_credit_mult` ×1.1), 1.b Full Cluster
-(the `research_lab` flag beside 1.3; 12 research items in one run; a `grant` of 50 Science, so
-every later run starts with it), 1.c Blueprints for Everyone (the `a_voice` flag beside 1.5;
-completes with the Blueprint Archive; no unlock: the rewards are the project's,
-[projects.md](projects.md)) and 1.d Three Voices (1.5's completion; career-best rank 5 on each
-axis; `modifier` `ideology_half_life_mult` ×2). Twelve `ongoing`, three silent:
-`research_lab_built` (a Research Lab owned: sets the `research_lab` flag), `first_retirement`
-(a retirement in the career: sets the `retired` flag, opens the `retirement` and `projects`
-panels, Foundation Grant, Blueprint Archive and Conditional Logic), `a_voice_projects` (1.5
-A Voice active or done: sets the `a_voice` flag, opens the `projects` panel and those three
-projects and Lunar Cartography); then `speculators_arrive` (Speculators: present, sets the
-`speculators_seen` flag, opens the `adversaries` panel), `rivals_arrive` (A Rival AI: present,
-Act 2, sets the `contest_claims` flag), each an arrival popup, `boredom_bites` (Burnout: boredom phase
-2, `once`, a story modal; sets the `burnout` flag that starts boredom, [boredom.md](boredom.md)), Political Currents, propellant discovery and boredom phases 2 to 5
-(phase 2 skips Burnout's run: `event_not_fired`).
-Those triggering at `game_start` in any run (the three silent ones, the two arrivals, Political
-Currents and propellant discovery) re-apply
-their unlocks from each run's day 0 once seen in the career (*Run start*).
+`content/events.json`, 34 rows; the file holds each row's trigger, condition and unlocks.
+
+- **Eighteen `story`:** Act 1's beats 1.1 Online to 1.6 Deep Space Telescope (the swarm's
+  reveal; [../arc.md](../arc.md)), then the draft 2.1 to 4.2 and the Epilogue (4.3).
+- **Four `side`**, each with a permanent reward: 1.a Big Launch and 1.d Three Voices a
+  `modifier`, 1.b Full Cluster a `grant` (50 Science, so every later run starts with it),
+  1.c Blueprints for Everyone none of its own (it completes with the Blueprint Archive, whose
+  rewards are the project's, [projects.md](projects.md)). 1.a to 1.c hang beside a chain
+  quest on a flag a one-off sets; 1.d follows 1.5's completion.
+- **Twelve `ongoing`:** three silent ones that set flags and open panels and projects
+  (`research_lab_built`, `first_retirement`, `a_voice_projects`); the Speculators and Rival
+  AI arrivals (the first sets `speculators_seen`); Burnout (`boredom_bites`: boredom phase 2, `once`, setting the `burnout` flag
+  that starts boredom, [boredom.md](boredom.md)); Political Currents; propellant discovery;
+  boredom phases 2 to 5 (phase 2 skips Burnout's run: `event_not_fired`). All but Burnout
+  and the phases trigger at `game_start` in any run, so once seen they re-apply their
+  unlocks from each run's day 0 (*Run start*).
 
 ## Port notes
 
