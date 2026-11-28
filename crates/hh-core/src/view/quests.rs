@@ -118,13 +118,18 @@ fn story(e: &'static Event) -> StoryView {
 }
 
 /// An event's text with the number its `{rate}` takes: for a boredom-phase event, that
-/// phase's boredom per day under this run's multiplier (display only; the UI formats it).
+/// phase's boredom per day under this run's multiplier, and for the last phase its yearly
+/// escalation today, as Stats shows it (display only; the UI formats it).
 fn event_story(r: &Rules, g: &GameState, e: &'static Event) -> StoryView {
     let mut s = story(e);
     if let Trigger::BoredomPhase { phase } = e.trigger {
         let rates = &r.p.boredom.phase_rates;
         let i = (phase.max(1) as usize - 1).min(rates.len() - 1);
-        s.rate = Some(rates[i] * boredom::multiplier(r, g));
+        let mut rate = rates[i] * boredom::multiplier(r, g);
+        if i == rates.len() - 1 {
+            rate = rate.checked_mul(boredom::escalation(r, g.run.day)).unwrap_or(Fx::MAX);
+        }
+        s.rate = Some(rate);
     }
     s
 }

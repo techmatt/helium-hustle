@@ -14,8 +14,9 @@ export function ResChip({ v, id, size }: { v: View; id: string; size?: number })
 }
 
 /** The icon of the ideology axis that scales the figure beside it (its chip), its ×m on
- * hover. */
+ * hover. Nothing until Ideologies opens, as the building cards' ideology badge (134). */
 export function AxisMark({ v, axis }: { v: View; axis: string }) {
+  if (!navShown(v, 'ideologies')) return null;
   const m = v.ideology.find((a) => a.axis === axis)?.modifier;
   return (
     <span class="axis-mark" data-axis-mark={axis}>

@@ -109,7 +109,8 @@ one-off's `summary` (its headline), `body`, `story` and `payoff` (narrative only
 mechanics fields, a quest's `goal` and `reward` (the reward lists only real grants and is
 absent, never "None.", on a quest that grants nothing; no `hints`) and a one-off's `effect`
 (rulings/story-ui.md, *Quest mechanics text*; checked at load).
-The view hands a boredom phase its `rate`, the phase's boredom per day, and the UI fills its
+The view hands a boredom phase its `rate`, the phase's boredom per day (the last phase's with
+today's yearly escalation, [boredom.md](boredom.md)), and the UI fills its
 effect's `{rate}` with it as Stats shows boredom growth. The run records the day
 each one-off fired (`Run.events`, display only); the view lists them by that day, content
 order within a day (side quests aside), marking all but the latest of Burnout and the

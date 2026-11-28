@@ -1,0 +1,23 @@
+{
+  "foundationGrant": "Every run starts with these free: Regolith Excavator ×2, Smelter, Solar Panel ×2",
+  "sellTitles": [
+    "Sell one (refunds its land and half its average price paid; a free copy, nothing)",
+    "Sell every one (refunds their land and half their average price paid; free copies, nothing)"
+  ],
+  "relief": [
+    "Boredom −0.5 Boredom/day Scaled by Nationalist (×1.00)"
+  ],
+  "retirePress": {
+    "summary": "Year 1, day 5",
+    "bar": "Year 1, day 5",
+    "before": "Year 1, day 5"
+  },
+  "forced": {
+    "summary": "Year 1, day 5",
+    "bar": "Year 1, day 5"
+  },
+  "electrochemistry": {
+    "solar": "?",
+    "card": "Electrochemistry◆Chemistry for turning lunar propellant back into power. Unlocks the Chemical Energy Initiative project. Bought once for the whole career.Scienc"
+  }
+}

@@ -35,7 +35,7 @@ The module's params, `overclock_base_cap` among them, are in [programs.md](progr
    Disrupt (demand.md), Fund (ideology.md), Neutralize (Contest Claims: the named
    adversary's Attention to 0, [attention.md](attention.md)), Overclock (below).
 8. A command with both `ideology` and `nudge` adds `nudge` to that axis (Dream, Theorize:
-   0.25; ideology.md, *Nudges*): after its effect, so every tool's relief reads the rank
+   0.5; ideology.md, *Nudges*): after its effect, so every tool's relief reads the rank
    from before the run.
 
 **Only as program lines.** No action runs a command directly: a Commands card's Add to

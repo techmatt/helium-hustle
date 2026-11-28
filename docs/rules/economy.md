@@ -46,7 +46,7 @@ never affordable.
 event enabled it this run), under `max_count`, enough land (its `land`), and every price
 resource on hand. It then pays the price and the land, and the new building is owned and
 active. The price paid is added to the run's `paid` book for the type (per resource), and a
-building with a `nudge` adds it to its tagged axis (the Recreation Dome: 5 Nationalist,
+building with a `nudge` adds it to its tagged axis (the Recreation Dome: 2.5 Nationalist,
 ideology.md). Starting buildings and run-start bonus buildings take no land.
 
 A `requires` (on a building or command, [commands.md](commands.md)) is one of: `none`;

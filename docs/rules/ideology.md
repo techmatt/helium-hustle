@@ -64,8 +64,8 @@ current rank is at least `major_rank` (5), its major effect is on:
 
 Only the first major rank is built; the ranks between raise `m` as above.
 
-**Career bests.** At the end of each tick, each axis's best rank and best score in the career
-are raised to the current ones (they start at 0, so a negative axis leaves them at 0).
+**Career bests.** At the end of each tick, and as a run closes (a nudge between days, then
+Retire), each axis's best rank and best score in the career are raised to the current ones (they start at 0, so a negative axis leaves them at 0).
 Three `timeline` (global) projects unlock on the best rank (rank 5 on an axis opens its
 project, [projects.md](projects.md)), and side quest 1.d Three Voices needs a best rank of 5
 on each axis, so separate runs can reach it ([events.md](events.md)). Quest 1.5 A Voice reads

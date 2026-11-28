@@ -210,7 +210,10 @@ def parse(md):
                 body.pop()
             out[key] = (fp, '\n'.join(body))
 
-    for line in md.splitlines():
+    # Only the export's own headings end an entry: a text line of an entry that starts with
+    # `#` stays in its body (134: it cut the entry there, unsaid).
+    headings = {f'## {title}' for _, title in SCREENS}
+    for line in md.lstrip('﻿').splitlines():
         head = line.rstrip()
         if head.startswith('### `') and '`' in head[5:]:
             close()
@@ -218,7 +221,7 @@ def parse(md):
             key = head[5:end]
             fp = head[end + 1:].strip() or None
             body = []
-        elif line.startswith('## ') or line.startswith('# '):
+        elif head in headings or (key is None and (line.startswith('## ') or line.startswith('# '))):
             close()
             key = None
             body = []

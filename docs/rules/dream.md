@@ -10,7 +10,7 @@ variant.
 - Each Dream execution lowers boredom by `relief × m`, not below zero, `m` the Humanist
   modifier (ideology.md): Dream is Humanist's boredom tool. A negative Humanist rank makes
   the relief smaller than `relief`. Each execution also nudges Humanist by the command's
-  `nudge` (0.25, ideology.md, *Nudges*).
+  `nudge` (0.5, ideology.md, *Nudges*).
 - Relief is flat: it doesn't fade with use, phase or run length.
 - Dream is an effect command: it runs only when its full cost is on hand, otherwise it fails
   and does nothing (commands.md, *Running a command*). It is never skipped for caps (it

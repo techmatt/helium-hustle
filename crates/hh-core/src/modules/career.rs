@@ -134,6 +134,9 @@ pub fn next_run_preview(r: &Rules, g: &GameState) -> GameState {
 
 /// A retirement's first part: the run's stats fold into the career, then the gap.
 fn close_run(r: &Rules, g: &mut GameState, forced: bool) {
+    // The career bests see the run's last scores: a Recreation Dome's nudge between days
+    // then Retire never met a tick's end (134: its rank 5 was shown, never recorded).
+    super::ideology::track(r, g);
     let s = g.run.stats.clone();
     let day = g.run.day;
     g.note(if forced { "forced_retirement" } else { "retired" }, "");

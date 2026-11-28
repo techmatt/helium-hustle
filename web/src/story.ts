@@ -92,10 +92,18 @@ export function projectPages(p: ProjectDoneView): StoryPage[] {
   return [{ quest: p.id, title: p.name, kind: 'payoff', text: '', picture: null, close: 'OK', project: { id: p.id, rewards: p.reward_text, costs: p.costs } }];
 }
 
+/** This run's part of a told or Events key: its number, after a timeline's end with the
+ * timelines ended before it, as a new timeline starts again at run 1 (134: its run 1 met
+ * the first timeline's keys and lost its popups). The first timeline keeps the plain number,
+ * so a save's told and read records still match. */
+export function runTag(v: Pick<View, 'run' | 'saga'>): string {
+  return v.saga.ended > 0 ? `t${v.saga.ended}:${v.run}` : String(v.run);
+}
+
 /** A project completion's key in the told record and the Events list: the run, the
  * project and which completion it was. */
-export function projectKey(run: number, p: ProjectDoneView): string {
-  return `${run}:project:${p.id}:${p.completion}`;
+export function projectKey(v: Pick<View, 'run' | 'saga'>, p: ProjectDoneView): string {
+  return `${runTag(v)}:project:${p.id}:${p.completion}`;
 }
 
 /** A finished chain quest's modal again (Story's Replay): its opening, then its payoff. */
@@ -137,7 +145,7 @@ export function tellPages(v: View, mode: 'load' | 'intro' | 'play', t: Told, opt
     payoffPages(q, pages);
   }
   for (const e of v.event_texts) {
-    const key = `${v.run}:${e.id}`;
+    const key = `${runTag(v)}:${e.id}`;
     if (t.stories.has(key)) continue;
     t.stories.add(key);
     // Seen: popped up now. Not what the autopilot played past, a scenario started with or
@@ -151,7 +159,7 @@ export function tellPages(v: View, mode: 'load' | 'intro' | 'play', t: Told, opt
   // A project completion pops up as a quest completion does: told once, never on a load,
   // never hidden as already seen (each completion is new).
   for (const p of v.project_done) {
-    const key = projectKey(v.run, p);
+    const key = projectKey(v, p);
     if (t.stories.has(key)) continue;
     t.stories.add(key);
     if (mode === 'play') pages.push(...projectPages(p));

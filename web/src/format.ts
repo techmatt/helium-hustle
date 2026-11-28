@@ -37,6 +37,14 @@ export function num(x: Fx | number, digits = 1): string {
   return trim(n.toFixed(digits));
 }
 
+/** A signed figure (an ideology score or rank) with a minus sign (U+2212), none when it
+ * shows as 0: −12.5, 3, 0 for −0.01 (134: "−0", and "-2" beside "−124"). */
+export function signed(x: Fx | number, digits = 1): string {
+  const n = Number(x);
+  const s = num(Math.abs(n), digits);
+  return n < 0 && s !== '0' ? `−${s}` : s;
+}
+
 function trim(s: string): string {
   return s.includes('.') ? s.replace(/\.?0+$/, '') : s;
 }

@@ -326,7 +326,8 @@ ul.plain {
 }
 .status-day {
   font-weight: 600;
-  width: 100px;
+  /* "Year 100, day 365" whole (a late career's year passes 9; 134). */
+  width: 136px;
 }
 .status-run {
   width: 72px;

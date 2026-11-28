@@ -107,10 +107,11 @@ Every number is on the content rows: costs, visibility thresholds and effect val
 
 ## Content
 
-`content/research.json`: 21 rows, each with `cost`, optional `requires`, optional `effect`,
+`content/research.json`: 22 rows, each with `cost`, optional `requires`, optional `effect`,
 `visible_when`, `reveal_when`, a `category` and a placeholder `description`. A group (a
 category) is revealed by its rows' `reveal_when`, a trigger of this run (the same on each row,
-but for Recreation Dome Blueprints):
+but for Recreation Dome Blueprints and Electrochemistry, in Extraction but revealed always:
+its 8 Solar Panels gate it, before any Lab):
 
 | Group | Revealed |
 |---|---|

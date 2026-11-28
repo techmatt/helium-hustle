@@ -116,6 +116,19 @@ function CheatCard({ v }: { v: View }) {
 }
 
 /** Why a gray card buys nothing, in a few words. */
+/** When a building type's last copy was last sold (performance.now()): no building card buys
+ * for `SOLD_OUT_MS` after. Its Sell buttons go with it, and a card no longer shown takes its
+ * row's place, so the rest of a double-click on Sell 1 lands on a card (134: it bought that
+ * copy back, or the card that slid under the pointer). */
+let soldOutAt = -Infinity;
+const SOLD_OUT_MS = 500;
+
+/** Sells one copy, noting a sell-out (by the engine's count now, not a render's). */
+function sell1(id: string) {
+  const owned = store.view.buildings.find((x) => x.id === id)?.owned ?? 0;
+  if (act({ type: 'sell', building: id }) && owned <= 1) soldOutAt = performance.now();
+}
+
 function whyNot(v: View, b: BuildingView): string {
   if (b.at_limit) return 'At its limit.';
   if (!b.unlocked) return 'Locked.';
@@ -137,6 +150,8 @@ export function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: bo
   // double-click buys what its two clicks would, never more.
   const [hint, showHint] = useHint();
   const buy = (times: number) => {
+    // Just after a sell-out the click was meant for a Sell button that went (`sell1`).
+    if (performance.now() - soldOutAt < SOLD_OUT_MS) return;
     for (let i = 0; i < times; i++) {
       const now = store.view.buildings.find((x) => x.id === b.id);
       if (!now?.affordable) {
@@ -189,7 +204,7 @@ export function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: bo
             <FlowLines v={v} amounts={b.grants} sign={1} suffix="" />
             {Number(b.boredom_relief) > 0 && (
               <div class="flow pos" data-testid="boredom-relief">
-                <ResChip v={v} id="boredom" /> −{num(b.boredom_relief)} {name(v, 'boredom')}/day
+                <ResChip v={v} id="boredom" /> −{num(b.boredom_relief, 2)} {name(v, 'boredom')}/day
                 {b.ideology && (
                   <>
                     {' '}
@@ -226,16 +241,18 @@ export function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: bo
         <span class={hint ? 'buy-hint short' : 'buy-hint muted'}>{hint ?? (b.unlocked ? '' : 'Locked')}</span>
         {b.owned > 0 && (
           <>
-            <button type="button" class="tiny sell" title="Sell one (refunds its land only)" onClick={() => act({ type: 'sell', building: b.id })}>
+            <button type="button" class="tiny sell" title="Sell one (refunds its land and half its average price paid; a free copy, nothing)" onClick={() => sell1(b.id)}>
               Sell 1
             </button>
             <button
               type="button"
               class="tiny sell"
-              title="Sell every one (refunds their land only)"
+              title="Sell every one (refunds their land and half their average price paid; free copies, nothing)"
               onClick={() => {
-                if (confirm(`Sell all ${b.owned} ${b.name}? Only their land comes back.`))
+                if (confirm(`Sell all ${b.owned} ${b.name}? Bought copies refund their land and half their average price paid; free copies (starting or granted), nothing.`)) {
                   actAll(Array.from({ length: b.owned }, () => ({ type: 'sell', building: b.id })));
+                  soldOutAt = performance.now();
+                }
               }}
             >
               Sell All

@@ -5,7 +5,7 @@
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import type { CommandView, Fx, ResearchView, View } from '../engine';
-import { boredomText, capitalize, commandTip, dateText, mult, num, perDay, slotLetter } from '../format';
+import { boredomText, capitalize, commandTip, dateText, mult, num, perDay, signed, slotLetter } from '../format';
 import { act, justMoved, seen, store, type Store } from '../store';
 import { AxisMark, Bar, Breakdown, FlowLines, ResChip, Section, cardButton, freshClass, modText, name, navShown, numBelow, useHideCompleted, useHint } from './common';
 import { emblemArt } from './cardArt';
@@ -290,7 +290,7 @@ export function Research({ s }: { s: Store }) {
       </div>
       <p class="muted">
         <ResChip v={v} id="science" /> {num(sci?.amount ?? '0')} Science ({perDay(sci?.per_day ?? '0')}). Research resets each
-        run.
+        run, but for items marked as kept.
       </p>
       {shown.length === 0 && <p class="muted">Nothing to research yet.</p>}
       {cats.map((cat) => {
@@ -402,7 +402,7 @@ export function Ideologies({ s }: { s: Store }) {
               <h3 class={`axis-name axis-${a.axis}`}>{capitalize(a.axis)}</h3>
               <div class="axis-rank">
                 <span class="axis-rank-label">Rank</span>
-                <span class={`axis-rank-num axis-${a.axis}`}>{a.rank}</span>
+                <span class={`axis-rank-num axis-${a.axis}`}>{signed(a.rank)}</span>
                 <span class="axis-mod" data-testid={`axis-mod-${a.axis}`} title="This axis's modifier now: its tagged buildings cost ÷ this, its boredom tool works × this">
                   {modText(a.modifier)}
                 </span>
@@ -410,7 +410,7 @@ export function Ideologies({ s }: { s: Store }) {
               <Bar
                 frac={(sc - lo) / (hi - lo)}
                 tone={down ? 'red' : 'green'}
-                label={`score ${num(a.score)} · next rank at ${down ? '−' : ''}${num(a.next_rank_score)}`}
+                label={`score ${signed(a.score)} · next rank at ${down ? '−' : ''}${num(a.next_rank_score)}`}
               />
               <div class="axis-best muted">Career best rank: {v.career.max_ideology_ranks[a.axis] ?? 0}</div>
             </div>
@@ -586,7 +586,7 @@ export function Stats({ s }: { s: Store }) {
             ['Buildings built', v.run_stats.buildings_built],
             ['Research completed', v.run_stats.research_completed],
             ['Peak energy production', perDay(v.run_stats.peak_energy)],
-            ['Base boredom growth (before commands and Dream)', `${perDay(v.boredom.rate, 2)} (phase ${v.boredom.phase} of ${v.boredom.phases})`],
+            ['Base boredom growth (before buildings’ relief and commands)', `${perDay(v.boredom.rate, 2)} (phase ${v.boredom.phase} of ${v.boredom.phases})`],
           ]}
         />
       </Section>
@@ -662,12 +662,14 @@ export function NextRunRows({ v }: { v: View }) {
     ['Boredom growth (resilience)', changeText(c.boredom_resilience, n.boredom_resilience, mult)],
   ];
   if (Number(n.buy_power_mult) !== 1) rows.push(['Buy Power scaling', changeText(c.buy_power_mult, n.buy_power_mult, mult)]);
-  for (const a of n.ideology) {
-    if (Number(a.score) > 0) rows.push([
+  // A carried score either way once Ideologies is open: a negative one costs (m below 1;
+  // 134: only scores above 0 were listed, and before the panel opened too).
+  for (const a of navShown(v, 'ideologies') ? n.ideology : []) {
+    if (signed(a.score) !== '0') rows.push([
       <>
         <Chip id={a.axis} title={capitalize(a.axis)} /> {capitalize(a.axis)} carried
       </>,
-      `score ${num(a.score)} (rank ${a.rank})`,
+      `score ${signed(a.score)} (rank ${signed(a.rank)})`,
     ]);
   }
   return <Rows rows={rows} />;
@@ -684,7 +686,7 @@ export function Retirement({ s }: { s: Store }) {
     <div class="panel" data-panel="retirement">
       <h2>Retirement</h2>
       <p class="muted">
-        Retiring ends this run: buildings, resources, research, Strategic projects and every project's funding rates reset. The career keeps its
+        Retiring ends this run: buildings, resources, research (but for items marked as kept), Strategic projects and every project's funding rates reset. The career keeps its
         bests, achievements, global projects, quests, saved programs, {navShown(v, 'programs') ? 'Programming, ' : ''}ideology (fading through the years away), adversaries and what you have
         seen. Boredom at its cap retires you anyway.
       </p>

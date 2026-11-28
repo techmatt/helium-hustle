@@ -341,12 +341,14 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
             (a.unwrap_or(ladder), m.unwrap_or(spec.humans))
         }
     };
+    // Checked before `--skilled` joins: the best-player comparison needs one of these (134:
+    // `--agents "" --skilled` panicked after the careers had played).
+    if agents.is_empty() {
+        return usage("vs-human: no players");
+    }
     // `--skilled` (131): the skilled player beside them, and its own table.
     if skilled {
         agents.push(SKILLED.to_string());
-    }
-    if agents.is_empty() {
-        return usage("vs-human: no players");
     }
     let humans = crate::load_humans(&human_models)?;
     for m in &models {

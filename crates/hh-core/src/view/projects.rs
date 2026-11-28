@@ -157,8 +157,10 @@ fn reward_text(p: &Project) -> Vec<String> {
         .iter()
         .map(|reward| match reward {
             ProjectReward::StartingBuildings { buildings } => {
-                let list: Vec<String> = buildings.iter().map(|(b, n)| format!("{n} {}", name(b))).collect();
-                format!("Every run starts with {} free", list.join(" and "))
+                // "Name ×n" (×1 left out): content names are singular (134: "2 Solar Panel").
+                let list: Vec<String> =
+                    buildings.iter().map(|(b, n)| if *n == 1 { name(b) } else { format!("{} ×{n}", name(b)) }).collect();
+                format!("Every run starts with these free: {}", list.join(", "))
             }
             ProjectReward::Modifier { key, value } => format!("{} ×{}", modifier_name(key), short(*value)),
             ProjectReward::Flag { text, .. } => text.clone(),

@@ -8,9 +8,9 @@ The checker that finds most of these is `web/scripts/qa.mjs` ([web/TESTING.md](.
 
 ## Fixed
 
-Rows 1-116 (bug hunts 007 to 090) are fixed, summarized here by kind so a hunt doesn't
+Rows 1-125 (bug hunts 007 to 122) are fixed, summarized here by kind so a hunt doesn't
 re-report them; the full rows are in git history (rows 1-77: this file before 032; 78-93:
-before 090; 94-116: before 122). A new fixed row continues the table below, and a later prune folds it here.
+before 090; 94-116: before 122; 117-125: before 134). A new fixed row continues the table below, and a later prune folds it here.
 
 - **Numbers and text** (#3, 13, 20, 32, 44, 45, 47, 53, 54, 64, 70): `num()` rounding and
   separators; signed ideology scores and next-rank targets; one floored `ranPercent`; "had"
@@ -54,6 +54,11 @@ before 090; 94-116: before 122). A new fixed row continues the table below, and 
   Ready pad and "complete"; compact nav tiles at 1920; a cut program line's title; the boot
   line removed; the Programs status strip's boredom bar; qa's false findings and run 1's
   Full Load; Run by hand's rows (moot since 091).
+- **Rows 117-125:** a held project −/+ from 0 (pointer capture, the status line always
+  there); a popup's OK double-click reaching under it (0.5 s page-wide guard); scope icon
+  contrast; faked Rajdhani 400 and Plex 700; a Story card's cut first line; e2e's popup
+  picture wait; Jump ahead refused under a popup; the summary's backdrop over a reload; gray
+  skipped repeat dots.
 
 Guards that cover them: `the_view_fills_every_text_placeholder`, `a_play_log_replays_…`,
 `a_partial_pass_building_that_ran_in_full_is_not_starved`, `unpaid_upkeep_withholds_…`,
@@ -65,15 +70,20 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 
 | # | Finding | Fix | Guard |
 |---|---|---|---|
-| 117 | A held project −/+ from 0 stepped once: the first step added the card's status line (and reflowed its row of cards), the button slid from under a still pointer and its leave ended the hold | The press captures the pointer (release ends it); a fundable card always has its status line ("Not funded") | qa project probe (a real 1.2 s hold from 0) |
-| 118 | A double-click on a popup's OK: its second click reached what lay under it (Options' "Start a new career…" opened its confirm; a third click could erase the career). Only cards, beats and Add to Program had a guard | No pointer click outside a modal counts for 0.5 s after one moves, page-wide; a −/+ press too | qa popup probe |
-| 119 | Scope icons (◆, ∞; 099) read 3.99:1 in the light theme | On `--accent-text` (a `contrast.mjs` pair) | qa *contrast*, `npm run unit` |
-| 120 | Faked fonts: an idle program tab at Rajdhani 400 (114), the ideology rank figure at Plex Sans 700 (118) | 600 | qa *assets* |
-| 121 | A Story card's first sentence cut again by its box (108), with no hover | The line is its own title | qa *overflow* |
-| 122 | e2e section 11 read the side quest popup's picture before it loaded (failed once beside qa) | Waits up to 3 s for it | e2e |
-| 123 | Jump ahead played no days while a popup or the run summary waited (one already up, or opened by the wake settling it), yet marked the jump (115) | Refuses with a notice, checked before and after that wake, before the cheat lands (124) | 124's check.mjs |
-| 124 | Reloaded with the run summary up, the new run's day 0 showed behind it (120) | The ended run's last state is saved with the summary (124) | 124's check.mjs |
-| 125 | A skipped run inside a repeated line drew a green dot (119) | The pass records skips (`Repeat.skipped`); they draw gray (124) | hh-core economy test, 124's check.mjs |
+| 126 | The status bar's date ("Year 1, day 202", 129) cut by its 100 px slot (104); qa let a 1 px ellipsis pass | 136 px; qa counts any ellipsis cut | qa *overflow*, 134's check.mjs |
+| 127 | The run summary's "ended on" date read the new run's day (day 1), or a day past the last day played | The date the status bar behind it shows | qa forced retirement, 134's check.mjs |
+| 128 | The last boredom phase's `{rate}` left out the yearly escalation that Stats counts | The view applies it | `the_last_boredom_phase_rate_counts_the_yearly_escalation` |
+| 129 | After a timeline ends, run 1 of the next met the first's popup and Events keys: project and event popups skipped, read marks kept | Keys carry the timeline (`runTag`) | `npm run unit` |
+| 130 | Sell hovers and Sell All said only land comes back (129 refunds half the average price paid; free copies nothing) | Say so | 134's check.mjs |
+| 131 | Wording: Dome relief to 1 place (rank −1's 0.45 read 0.5); Stats' base growth "before commands and Dream"; Research and Retirement "research resets" with kept items; Foundation Grant "2 Regolith Excavator and 1 Smelter and 2 Solar Panel" | 2 places; "buildings' relief and commands"; "but for items marked as kept"; "Regolith Excavator ×2, Smelter, Solar Panel ×2" | 134's check.mjs |
+| 132 | Ideology figures: "Rank -2" beside "−124"; "−0" for a decayed score; a negative carried score missing from the summary and Retirement, and carried rows and axis marks shown before Ideologies opens | `signed()`; either sign listed; gated on the Ideologies tile | `npm run unit` |
+| 133 | A rank reached by a Dome's nudge between days, then Retire, was shown in the summary but never became the career best (a lost rank-5 unlock) | A run's close raises the bests first (rules 47) | `a_rank_a_dome_reaches_between_days_…` |
+| 134 | hh-sim: `vs-human --agents , --skilled` panicked after playing; an older log buried its revision error under the usage; `--skilled` credited a retirement tick's landmark to the next run and a scenario's starting projects to run 1; `axes` dropped a run cut by `--max-ticks` | Usage error first; the revision named; the ended run; skipped; kept as `c` | hh-sim `cli` |
+| 135 | `prose.py import`: a BOM dropped the first entry; a text line starting with `#` cut its entry, unsaid | Both read | none (scripts) |
+| 136 | qa's grammar probe wrote `program 2`, read back `program B` since 129 | Letters | qa *text* |
+| 137 | A double-click on the last copy's Sell 1: its buttons (and an unshown card) go, so the second click bought it back or the card that slid under the pointer | No building card buys for 0.5 s after a sell-out | 134's check.mjs (a real double-click) |
+| 138 | The library's save name ("Program A, run 3") stayed when the tab or run changed: Save as new filed Program B under A's name | Keyed by tab and run | 134's check.mjs |
+| 139 | e2e section 7 red since 129: 063's L4 text numbers its slots (read back as letters), and boredom set to its cap no longer retires a base whose Domes relieve more than it grows | The sample lettered; Retire pressed | e2e |
 
 ## Deferred (Matt's decisions)
 
@@ -92,6 +102,10 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | qa once (090, seed 45 at 1280): the debug autopilot's Everything reached super timeline 4 and the page answered nothing for 30 s, so the pass never reached the ending; the same seed passed on a rerun | Debug only; if it recurs, have the autopilot yield between chunks in late timelines |
 | A refusal notice stays up until the next accepted action or its ×, across days and a retirement (seen 160 days on, under 089's since-removed Run) | Clear it at a run's end, or fade it after ~5 s |
 | A program's tab light is red on a run's first day (and a scenario's start) before any day has run: "no steps ran", nothing wrong yet | No light (or a gray one) until the run's first day has played |
+| None of Matt's play logs (rules 45 and older) replays on this build, and `vs-human --skilled` (131) runs on none of them: a 130 build (`baseline.py`) has no `--skilled` (134) | Fine for `playlog`; for `--skilled`, play a fresh career on the current build |
+| AI Consciousness Act's reward reads "boredom per run of Cloud Compute 0.15" beside a ×0.85 growth cut: it reads as relief, yet raises 0.1 to 0.15 (134) | Show the change, "Cloud Compute boredom 0.1 → 0.15 a run" (Matt's call) |
+| Electrochemistry (1,000 science, shown at 8 Solar Panels) can be bought in run 1 before Projects opens: its project waits unseen until then (134) | Say so in its description, or show it from A Voice (Matt's call) |
+| The Ideologies intro says Nationalist and Humanist "get their own change" at rank 5 without naming either, nor that rank 5 on any axis opens a global project (134) | Name the two effects and the projects |
 
 
 ## Won't fix
@@ -108,4 +122,6 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | Boredom phases 3 to 5 say "Dream effectiveness reduced to 20%/15%/10%"; Dream is flat | Placeholder content, Matt's call in 068 |
 | A first note ("needs …") on a program line grows that line once | Matt's call in 068: the row is kept on purpose, so a note coming and going day to day moves no line below it |
 | A held project −/+ keeps stepping when the pointer drifts off it (122) | Captured on purpose, so a reflow can't end the hold; release ends it, and it stops at 0 or the cap |
+| A tagged building's price is `cost × scaling^n × floor(1/m)`, then rounded: rarely a unit off the exact `÷m` (2 of ~1,300 rank and count pairs; 134) | The one floor rule in `Fx` (docs/rules/README.md, *Numbers*); shown is what's charged |
+| A Nationalist rank lost to Fund's cross penalty shrinks the Dome's cap, which can retire the run (134) | The rule: the cap is ×m and a cap below boredom retires |
 | A debug scenario's start notice, cleared by the first action, moves the panel up ~150 px under the pointer | Debug only; a real refusal notice is the deferred row above |

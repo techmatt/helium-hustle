@@ -10,7 +10,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 
 // Must equal GOLDEN_* in crates/hh-core/src/tests/mod.rs (a fast-lane test checks it).
-const GOLDEN_REVISION = 46;
+const GOLDEN_REVISION = 47;
 const GOLDEN_FINGERPRINT = '46af725014d6467d';
 const GOLDEN_CONTENT_HASH = '67ce82562f655176';
 const GOLDEN_CONFIG_HASH = 'cd194eb3ea35c90e';

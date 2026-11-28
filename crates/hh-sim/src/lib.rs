@@ -108,7 +108,23 @@ pub(crate) fn load_humans(path: &str) -> Result<human::Humans, Fail> {
 
 /// The play log at `path` (errors name it).
 pub(crate) fn load_log(path: &str) -> Result<playlog::Log, Fail> {
-    playlog::Log::parse(&read(path)?).map_err(|e| Fail::Usage(format!("{path}: {e}")))
+    let text = read(path)?;
+    playlog::Log::parse(&text).map_err(|e| {
+        // A log from another rules revision says so, without the usage text (134: every log
+        // Matt had, a revision or more old, failed on a missing config key under 40 lines of usage).
+        let logged = text
+            .lines()
+            .next()
+            .and_then(|l| serde_json::from_str::<serde_json::Value>(l).ok())
+            .and_then(|h| h.get("rules_revision").and_then(serde_json::Value::as_u64));
+        match logged {
+            Some(n) if n != u64::from(hh_core::RULES_REVISION) => Fail::Check(format!(
+                "{path}: {e}\nThe log is rules revision {n}, this build {}: replay it on a build of that revision (scripts/baseline.py, docs/simulator.md).",
+                hh_core::RULES_REVISION
+            )),
+            _ => Fail::Usage(format!("{path}: {e}")),
+        }
+    })
 }
 
 /// The config at `path` (errors name it).

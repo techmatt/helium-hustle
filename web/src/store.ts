@@ -32,7 +32,7 @@ import { fillRate } from './format';
 import type { Autopilot } from './wasm/hh_wasm.js';
 import * as playlog from './playlog';
 import { clearSave, loadSave, SAVE_KEY, storageGet, storageSet, writeSave } from './save';
-import { clearTold, eventPages, newTold, projectKey, projectPages, replayPages, sideQuestPages, tellPages, type StoryPage } from './story';
+import { clearTold, eventPages, newTold, projectKey, projectPages, runTag, replayPages, sideQuestPages, tellPages, type StoryPage } from './story';
 /** wasm's `advance_run` takes a u32 tick count; larger catch-ups go in chunks. */
 const MAX_CHUNK = 1_000_000;
 /** What a tab that stood down (another tab plays the career) says when used. */
@@ -301,8 +301,8 @@ export type EventLine = { key: string; day: number } & ({ event: StoryView } | {
  * completions (a day's events before its projects). */
 export function eventLines(v: View): EventLine[] {
   const lines: EventLine[] = [
-    ...listedEvents(v).map((e) => ({ key: `${v.run}:${e.id}`, day: e.day ?? 0, event: e })),
-    ...v.project_done.map((p) => ({ key: projectKey(v.run, p), day: p.day, project: p })),
+    ...listedEvents(v).map((e) => ({ key: `${runTag(v)}:${e.id}`, day: e.day ?? 0, event: e })),
+    ...v.project_done.map((p) => ({ key: projectKey(v, p), day: p.day, project: p })),
   ];
   // Stable: each kind keeps its own order within a day.
   return lines.sort((a, b) => a.day - b.day);
@@ -315,7 +315,7 @@ export function eventItems(v: View): Record<EventSection, string[]> {
   return {
     events: eventLines(v).map((l) => l.key),
     activity: v.activity.map((a) => {
-      const base = `${v.run}:${a.day}:${a.kind}:${a.id}`;
+      const base = `${runTag(v)}:${a.day}:${a.kind}:${a.id}`;
       const i = n.get(base) ?? 0;
       n.set(base, i + 1);
       return `${base}:${i}`;

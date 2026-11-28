@@ -3,13 +3,14 @@
 // at speed, buying, programs, launches, every panel, retirement, the run summary, run 2,
 // a reload), captures a screenshot only at meaningful moments (a panel, a story text,
 // the run summary, a new quest), and checks each of them:
-//   overflow   text clipped by its box with no tooltip holding it, text past its button or
+//   overflow   text clipped by its box with no tooltip holding it (an ellipsis even 1 px over), text past its button or
 //              cell, off the right edge or cut off by a clipping column, table cells
 //              touching, a word broken across lines, a swatch alone on its line (its label
 //              below), a card body shorter than its picture, the page wider than the window
 //   hidden     a visible button or input whose center is covered by something else, card
 //              text under its picture, the story banner or notice covered
-//   text       placeholder or broken text on screen (undefined, NaN, [object ...], {x}),
+//   text       placeholder or broken text on screen (undefined, NaN, [object ...], {x}), a
+//              forced retirement's summary dated unlike the status bar behind it,
 //              more than one program line framed, a frame on a program with no processor
 //   contrast   text against its solid background under 4.5:1 (3:1 large)
 //   text       (also) a program-grammar form the Programs view's Text mode reads red, a block view not
@@ -118,9 +119,10 @@ const GRAMMAR = [
   'pause smelter 1',
   'resume smelter all',
   'research process telemetry',
-  'assign processors program 2 all',
+  // Program slots read back as letters (129; a number is still read).
+  'assign processors program B all',
   'fund foundation grant 100',
-  'load qa program into program 2',
+  'load qa program into program B',
   '#',
   'idle',
 ].join('\n');
@@ -161,7 +163,9 @@ const AUDIT = `(() => {
     const tooltip = el.closest('[title]')?.getAttribute('title') ?? '';
     // Its text as shown: an icon's <title> (a chip's "Credits") is no clipped text.
     const whole = [...el.querySelectorAll('svg')].reduce((t, s) => t.replace(s.textContent, ''), el.textContent || '').trim();
-    if (hasText && (cs.overflowX !== 'visible' || cs.textOverflow === 'ellipsis') && el.scrollWidth > el.clientWidth + 1 && cs.overflowX !== 'auto' && cs.overflowX !== 'scroll' && !(whole && tooltip.includes(whole)))
+    // An ellipsis drawn shows a cut even one pixel over (134: "Year 1, day 2…" at 101 > 100).
+    const slack = cs.textOverflow === 'ellipsis' ? 0 : 1;
+    if (hasText && (cs.overflowX !== 'visible' || cs.textOverflow === 'ellipsis') && el.scrollWidth > el.clientWidth + slack &&cs.overflowX !== 'auto' && cs.overflowX !== 'scroll' && !(whole && tooltip.includes(whole)))
       out.push({ kind: 'overflow', what: 'text clipped: ' + label(el) + ' (' + el.scrollWidth + ' > ' + el.clientWidth + ')' });
     // Text spilling past a fixed-size box (buttons, bars, cells, tiles).
     if (hasText && /^(BUTTON|TD|TH|SPAN|DIV|LABEL|STRONG|P|LI|H\\d)$/.test(el.tagName)) {
@@ -1462,6 +1466,9 @@ async function pass(seed, width, theme, others = []) {
       await sleep(700);
       // The ended run's last day stays behind the summary until Continue (104).
       if ((await day()) !== d || !(await exists('[data-testid="summary"]'))) note('input', `forced retirement: day ${d} -> ${await day()} under the summary`);
+      // Its "ended on" date is the one the status bar shows behind it (134: a day later).
+      const dates = await evaluate(`[(document.querySelector('[data-testid="summary"] h2')?.textContent ?? '').replace(/^.*ended on /, ''), document.getElementById('day')?.textContent ?? '']`);
+      if (dates[0] !== dates[1]) note('text', `forced retirement: the summary says it ended on ${dates[0]}, the status bar behind it ${dates[1]}`);
       await capture('forced-summary');
       // The cards behind the summary are the ended run's (104): count the save's Buy actions.
       const owned = `JSON.parse(localStorage.getItem('hh.save')).actions.filter((a) => a.action.type === 'buy').length`;

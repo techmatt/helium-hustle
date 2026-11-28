@@ -3,7 +3,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'preact/hooks';
 import { SPEEDS, type Speed } from '../clock';
-import { capitalize, dateText, delta, mult, num, perDay } from '../format';
+import { capitalize, dateText, delta, mult, num, perDay, signed } from '../format';
 import {
   continueAfterRetirement,
   justMoved,
@@ -329,7 +329,9 @@ function Summary({ s }: { s: Store }) {
     <div class="modal-back">
       <div class="modal" role="dialog" aria-label="Run summary" data-testid="summary">
         <h2>
-          Run {r.run} ended on {dateText(r.days, v.days_per_year)}
+          {/* The date the status bar behind shows (the ended run's last day): `days` counts the
+              days played, one past a retirement inside a day's tick (boredom cap, `retire`). */}
+          Run {r.run} ended on {dateText(s.backdrop ? s.backdrop.day : Math.max(0, r.days - 1), v.days_per_year)}
         </h2>
         <p data-testid="summary-why">{v.last_run_why}</p>
         <Section title={`Run ${r.run}`}>
@@ -384,15 +386,16 @@ function Summary({ s }: { s: Store }) {
                   </td>
                 </tr>
               )}
-              {v.ideology
-                .filter((a) => Number(a.score) > 0)
+              {/* A carried score either way once Ideologies is open (as Retirement's rows). */}
+              {(navShown(v, 'ideologies') ? v.ideology : [])
+                .filter((a) => signed(a.score) !== '0')
                 .map((a) => (
                   <tr key={a.axis}>
                     <td>
                       <Chip id={a.axis} title={capitalize(a.axis)} /> {capitalize(a.axis)} carried
                     </td>
                     <td class="num">
-                      score {num(a.score)} (rank {a.rank})
+                      score {signed(a.score)} (rank {signed(a.rank)})
                     </td>
                   </tr>
                 ))}

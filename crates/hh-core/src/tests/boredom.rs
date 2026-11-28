@@ -79,6 +79,25 @@ fn the_dome_lifts_the_cap_and_relieves_daily_by_nationalist_rank_and_its_purchas
 }
 
 #[test]
+fn a_rank_a_dome_reaches_between_days_counts_as_a_career_best_at_retire() {
+    // 134: the nudge lands between ticks; Retire before the next tick's end left the
+    // career best a rank short, while the summary showed the new one.
+    let r = rules();
+    let mut g = r.new_game(1);
+    g.run.research.insert("recreation_dome_blueprints".into());
+    g.run.enabled_panels.insert("retirement".into());
+    set(&mut g, "credits", "1000");
+    set(&mut g, "circuits", "100");
+    let first = ideology::score_for_rank(&r, 1);
+    g.run.ideology.insert("nationalist".into(), first - f("1"));
+    r.apply(&mut g, &buy("recreation_dome")).unwrap();
+    assert_eq!(ideology::rank(&r, &g, "nationalist"), 1);
+    r.apply(&mut g, &Action::Retire).unwrap();
+    assert_eq!(g.career.last_run.as_ref().unwrap().ideology_ranks["nationalist"], 1);
+    assert_eq!(g.career.max_ideology_ranks.get("nationalist"), Some(&1));
+}
+
+#[test]
 fn dream_and_theorize_relieve_by_their_axis_and_nudge_it() {
     let r = rules();
     let mut g = burnt(&r);

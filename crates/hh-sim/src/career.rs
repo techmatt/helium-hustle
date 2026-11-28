@@ -221,6 +221,9 @@ pub struct Meter<'a> {
     objectives_hit: BTreeMap<String, u64>,
     landmarks: BTreeMap<String, Hit>,
     book_sizes: (usize, usize),
+    /// Projects completed when the career started (a scenario's): no landmark while they
+    /// stay in their book (134: they read as first completed on run 1's first day).
+    at_start: std::collections::BTreeSet<String>,
 }
 
 impl<'a> Meter<'a> {
@@ -249,26 +252,47 @@ impl<'a> Meter<'a> {
             totals: Totals::of(s),
             objectives_hit: BTreeMap::new(),
             landmarks: BTreeMap::new(),
-            book_sizes: (0, 0),
+            book_sizes: (s.state.career.projects.completions.len(), s.state.career.forever_projects.completions.len()),
+            at_start: s
+                .state
+                .career
+                .projects
+                .completions
+                .keys()
+                .chain(s.state.career.forever_projects.completions.keys())
+                .cloned()
+                .collect(),
         }
     }
 
-    /// Records the long goals first met by now ([`GameResult::landmarks`]).
-    fn landmarks(&mut self, s: &Session) {
+    /// Records the long goals first met by now ([`GameResult::landmarks`]). `ended`: the
+    /// run a retirement closed in this step: one met on its last tick counts there, on its
+    /// last day, as `check`'s milestones do (134: they went to the new run's day 0).
+    fn landmarks(&mut self, s: &Session, ended: Option<&RunResult>) {
         let g = &s.state;
-        let hit = Hit { tick: g.tick - self.start_tick, run: g.career.run_number, day: g.run.day };
+        let (run, day) = ended.map_or((g.career.run_number, g.run.day), |r| (r.run, r.ticks));
+        let hit = Hit { tick: g.tick - self.start_tick, run, day };
         // Scan the books only when one changed size (a timeline's end empties one).
         let books = [&g.career.projects.completions, &g.career.forever_projects.completions];
         let sizes = (books[0].len(), books[1].len());
         if sizes != self.book_sizes {
             self.book_sizes = sizes;
+            self.at_start.retain(|id| books.iter().any(|b| b.contains_key(id)));
             for id in books.iter().flat_map(|b| b.keys()) {
-                self.landmarks.entry(format!("project:{id}")).or_insert(hit);
+                if !self.at_start.contains(id) {
+                    self.landmarks.entry(format!("project:{id}")).or_insert(hit);
+                }
             }
         }
+        // On a retirement tick the run's ranks are the ended run's, before the gap's decay.
+        let ended_ranks = ended.and(g.career.last_run.as_ref()).map(|l| &l.ideology_ranks);
         for axis in hh_core::content::AXES {
             let key = format!("rank5:{axis}");
-            if !self.landmarks.contains_key(&key) && hh_core::modules::ideology::rank(&s.rules, g, axis) >= LANDMARK_RANK {
+            let rank = match ended_ranks {
+                Some(ranks) => ranks.get(*axis).copied().unwrap_or(0),
+                None => hh_core::modules::ideology::rank(&s.rules, g, axis),
+            };
+            if !self.landmarks.contains_key(&key) && rank >= LANDMARK_RANK {
                 self.landmarks.insert(key, hit);
             }
         }
@@ -398,7 +422,7 @@ impl<'a> Meter<'a> {
         }
         self.tracker.after(s);
         self.check(s, ended.as_ref());
-        self.landmarks(s);
+        self.landmarks(s, ended.as_ref());
         Ok(())
     }
 

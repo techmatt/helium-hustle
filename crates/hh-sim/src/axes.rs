@@ -46,6 +46,8 @@ struct Run {
     days: u64,
     best: Fx,
     forced: bool,
+    /// Cut short by `--max-ticks` with the run under way (134: such a run was dropped).
+    cut: bool,
     /// The day its Fund command was first open at a look.
     fund_day: Option<u64>,
     /// The day quest 1.4 Trade was first seen done at a look (A Voice's start).
@@ -118,7 +120,7 @@ impl Race {
         let done = log[self.from..].iter().filter(|e| e.kind == "project").map(|e| (e.id.clone(), e.day)).collect();
         self.from = log.len();
         let (fund_day, trade_day) = (self.fund_day.take(), self.trade_day.take());
-        self.case.runs.push(Run { days: self.last_day, best: self.best, forced, fund_day, trade_day, projects, done });
+        self.case.runs.push(Run { days: self.last_day, best: self.best, forced, cut: false, fund_day, trade_day, projects, done });
         self.best = Fx::ZERO;
     }
 }
@@ -180,6 +182,12 @@ fn play(config: &Config, axis: &'static str, k: usize, skill: &'static str, seed
     let from = s.state.career.log.len();
     let mut race = Race { axis, fund: format!("fund_{axis}"), max_runs, case, best: Fx::ZERO, last_day: 0, fund_day: None, trade_day: None, from };
     career::drive(&mut s, agent.as_mut(), max_ticks, &mut race)?;
+    if !career::Watch::done(&race, &s) && race.last_day > 0 {
+        race.end_run(&s, false);
+        if let Some(r) = race.case.runs.last_mut() {
+            r.cut = true;
+        }
+    }
     race.case.wall_s = start.elapsed().as_secs_f64();
     Ok(race.case)
 }
@@ -244,7 +252,7 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     results.sort_by_key(|r| r.0);
     let bar = ideology::score_for_rank(&hh_core::Rules::new(&config).map_err(Fail::Usage)?, RANK);
     let mut out = String::new();
-    let _ = writeln!(out, "{} (config {}), rank {RANK} at score {bar}; runs: days (best score as % of rank {RANK}, f forced; x@day: done that day)", config.name, config.hash());
+    let _ = writeln!(out, "{} (config {}), rank {RANK} at score {bar}; runs: days (best score as % of rank {RANK}, f forced, c cut by --max-ticks; x@day: done that day)", config.name, config.hash());
     let _ = writeln!(out, "| Skill | Axis | Seed | Reached | Runs | Projects done by then | Wall s |");
     let _ = writeln!(out, "|---|---|---|---|---|---|---|");
     for (_, r) in results {
@@ -259,7 +267,7 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
                 let td = r.trade_day.map_or(String::new(), |d| format!(" trade@{d}"));
                 let at: String = r.done.iter().map(|(id, d)| format!(" {}@{d}", short(id))).collect();
                 let fd = format!("{td}{fd}{at} [{}]", r.projects.iter().map(|x| short(x)).collect::<Vec<_>>().join(" "));
-                format!("{}{} ({pct}%{fd})", r.days, if r.forced { "f" } else { "" })
+                format!("{}{} ({pct}%{fd})", r.days, if r.forced { "f" } else if r.cut { "c" } else { "" })
             })
             .collect();
         let projects = c.reached.as_ref().map_or("-".to_string(), |(_, _, p)| p.join(", "));

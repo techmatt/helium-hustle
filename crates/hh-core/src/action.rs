@@ -11,7 +11,8 @@ use crate::state::Entry;
 pub enum Action {
     /// Buy one building (a content id) at its current price.
     Buy { building: String },
-    /// Sell one: refunds its land only.
+    /// Sell one: a bought copy refunds its land and half its average price paid, a free copy
+    /// nothing (`economy::sell`).
     Sell { building: String },
     /// Set how many of a building type run.
     SetActive { building: String, active: u32 },

@@ -3,7 +3,7 @@
 
 import { Fragment, type ComponentChildren } from 'preact';
 import { speedsOffered } from '../clock';
-import { capitalize, num, perDay } from '../format';
+import { capitalize, num, perDay, signed } from '../format';
 import { navHasNews, seen, setSpeed, type Store } from '../store';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Breakdown, RateCell, Section, isCapped, modText, navShown, risingIsBad } from './common';
@@ -198,11 +198,10 @@ export function Left({
                     <Chip id={a.axis} title={capitalize(a.axis)} /> {capitalize(a.axis)}
                   </td>
                   <td>
-                    Rank {a.rank} <span class="muted" data-testid={`left-axis-mod-${a.axis}`}>{modText(a.modifier)}</span>
+                    Rank {signed(a.rank)} <span class="muted" data-testid={`left-axis-mod-${a.axis}`}>{modText(a.modifier)}</span>
                   </td>
                   <td class="num muted">
-                    {Number(a.score) < 0 ? '−' : ''}
-                    {num(Math.abs(Number(a.score)))} / {Number(a.score) < 0 ? '−' : ''}
+                    {signed(a.score)} / {Number(a.score) < 0 ? '−' : ''}
                     {num(a.next_rank_score)}
                   </td>
                 </tr>

@@ -2,7 +2,7 @@
 //   node scripts/unit.mjs   (npm run unit)
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
-import { boredomText, commandTip, dateText, delta, fillRate, num, perDay, slotLetter } from '../src/format.ts';
+import { boredomText, commandTip, dateText, delta, fillRate, num, perDay, signed, slotLetter } from '../src/format.ts';
 import { inPanelOrder, panelEntries } from '../src/ui/resourceOrder.ts';
 import { navSlots } from '../src/ui/navSlots.ts';
 import { offeredSpeed, speedsOffered } from '../src/speeds.ts';
@@ -74,6 +74,8 @@ assert.equal(dateText(365, 365), 'Year 2, day 1');
 assert.equal(dateText(3 * 365 + 111, 365), 'Year 4, day 112');
 assert.equal(boredomText('0'), '');
 assert.equal(boredomText('-10'), '−10');
+// Ideology scores and ranks: a minus sign, none on a figure that shows as 0 (134).
+assert.deepEqual(['-12.5', '-0.01', '3', -2, 0].map((x) => signed(x)), ['−12.5', '0', '3', '−2', '0']);
 // Program slots are lettered: A for the first.
 assert.deepEqual([0, 1, 4].map(slotLetter), ['A', 'B', 'E']);
 // The retirement summary's deltas round to the row's precision first: boredom growth moving
@@ -216,7 +218,7 @@ edits += 4;
 // with "Hide popups" on, nothing marked seen under the autopilot or at a load.
 {
   const ev = (id) => ({ id, title: id, summary: `${id} line`, goal: '', reward: '', effect: 'Rate {rate}.', body: '', rate: '0.199' });
-  const view = (run, events, quest = null, done = []) => ({ run, day: 5, story: [], event_texts: events, project_done: done, quest, completed_quests: ['q0'] });
+  const view = (run, events, quest = null, done = [], ended = 0) => ({ run, day: 5, story: [], event_texts: events, project_done: done, quest, completed_quests: ['q0'], saga: { ended } });
   const opts = (o = {}) => ({ pilot: false, hideSeen: true, fill: fillRate, ...o });
   const t = newTold();
   const first = tellPages(view(1, [ev('burnout')]), 'play', t, opts());
@@ -242,9 +244,13 @@ edits += 4;
   assert.equal(tellPages(view(1, [], null, [pd(1), pd(2)]), 'play', pt, opts()).length, 0, 'told once');
   assert.equal(tellPages(view(2, [], null, [pd(1)]), 'play', pt, opts({ pilot: true })).length, 0, 'nothing under the pilot');
   assert.equal(tellPages(view(3, [], null, [pd(1)]), 'play', pt, opts()).length, 1, 'a run project again next run');
+  // A new timeline starts again at run 1: its completions and events are new (134).
+  assert.equal(tellPages(view(1, [], null, [pd(1)], 1), 'play', pt, opts()).length, 1, 'run 1 of the next timeline');
+  assert.equal(tellPages(view(1, [ev('late')], null, [], 1), 'play', pt, opts()).length, 1, 'an event in the next timeline');
+  assert.equal(tellPages(view(1, [ev('late')], null, [], 1), 'play', pt, opts()).length, 0, 'told once there too');
   clearTold(t);
   assert.equal(t.seenPopups.size + t.stories.size, 0);
-  edits += 16;
+  edits += 19;
 }
 
 console.log(`unit ok (${cases.length + 4 + edits + pictures.length + act1.length} checks)`);

@@ -680,4 +680,21 @@ fn vs_human_sets_the_players_beside_the_human_and_finds_where_they_part() {
     let mut a = vec!["vs-human", bad.as_str()];
     a.extend(opts);
     assert!(matches!(run(&args(&a)), Err(Fail::Check(_))));
+    // No players besides `--skilled`'s: a usage error before any career (134: it panicked
+    // after playing them).
+    let a = ["vs-human", script.as_str(), "--agents", ",", "--skilled", "--milestones", &msf, "--human-models", &hf];
+    assert!(matches!(run(&args(&a)), Err(Fail::Usage(_))));
+    // A log from another rules revision whose config no longer loads says so (a failed
+    // check, its revision named), not a usage error.
+    let old = format!("{dir}/vs-old.jsonl");
+    let text = std::fs::read_to_string(&script).unwrap();
+    let mut head: serde_json::Value = serde_json::from_str(text.lines().next().unwrap()).unwrap();
+    head["rules_revision"] = serde_json::json!(1);
+    head["config"]["modules"]["ideology"]["params"].as_object_mut().unwrap().remove("rank_figures");
+    let rest: Vec<&str> = text.lines().skip(1).collect();
+    std::fs::write(&old, format!("{head}\n{}\n", rest.join("\n"))).unwrap();
+    match run(&args(&["playlog", &old, "--milestones", &msf, "--human-models", &hf])) {
+        Err(Fail::Check(e)) => assert!(e.contains("rules revision 1") && e.contains("rank_figures"), "{e}"),
+        other => panic!("{:?}", other.map(|_| ())),
+    }
 }

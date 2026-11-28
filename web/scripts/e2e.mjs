@@ -625,8 +625,10 @@ async function textEditor() {
     })()`);
   const lineOf = (g, text) => g.find((l) => l.text === text);
   const results = resolve(here, '../../experiments/results/063_program_text_editor');
-  const p1 = readFileSync(resolve(results, 'L4_program1.txt'), 'utf8').replace(/\r/g, '').trimEnd() + '\nfrobnicate 3\nbuild fuel cell array';
-  const p2 = readFileSync(resolve(results, 'L4_program2.txt'), 'utf8').replace(/\r/g, '').trimEnd();
+  // 063's files number the program slots; the text reads them back as letters (129).
+  const lettered = (t) => t.replace(/\bprogram (\d+)\b/g, (_, n) => `program ${String.fromCharCode(64 + Number(n))}`);
+  const p1 = lettered(readFileSync(resolve(results, 'L4_program1.txt'), 'utf8').replace(/\r/g, '').trimEnd()) + '\nfrobnicate 3\nbuild fuel cell array';
+  const p2 = lettered(readFileSync(resolve(results, 'L4_program2.txt'), 'utf8').replace(/\r/g, '').trimEnd());
   const entries = (text) => text.split('\n').filter((l) => l.trim() !== '').length;
 
   await openText();
@@ -720,11 +722,13 @@ async function textEditor() {
   await click('[data-testid="loadout-save-new"]');
   await sleep(100);
   const runBefore = await run();
-  await debugMenu();
-  await setValue('#cheat-boredom', '100000');
-  await click('#cheat-set-boredom');
-  await speed(1);
-  await waitFor(`!!document.querySelector('[data-testid="summary"]')`, 'the forced retirement', 8000);
+  // A Retire press: boredom set to its cap no longer retires this base, whose Recreation
+  // Domes relieve more a day than it grows (129).
+  await panel('retirement');
+  await click('[data-testid="retire"]');
+  await click('[data-testid="retire-confirm"]');
+  await waitFor(`!!document.querySelector('[data-testid="summary"]')`, 'the retirement', 8000);
+  await sleep(600);
   await click('[data-testid="continue"]');
   await sleep(800);
   await speed(0);

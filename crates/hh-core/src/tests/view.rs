@@ -160,6 +160,24 @@ fn the_view_fills_every_text_placeholder() {
 }
 
 #[test]
+fn the_last_boredom_phase_rate_counts_the_yearly_escalation() {
+    // Phase 5's `{rate}` is Stats' base growth, escalation included (134: it left it out,
+    // so past a year after the last phase the popup read 3/day beside Stats' 3.75).
+    let r = rules();
+    let mut g = r.new_game(1);
+    g.career.flags.insert(crate::modules::boredom::BURNOUT_FLAG.into());
+    g.run.events.insert("boredom_phase_5".to_string(), 2000);
+    let last = *r.p.boredom.phase_days.last().unwrap();
+    for (day, years) in [(last + 10, 0), (last + r.p.economy.days_per_year as u64, 1), (last + 2 * r.p.economy.days_per_year as u64 + 5, 2)] {
+        g.run.day = day;
+        let v = r.view(&g);
+        let p5 = v.event_texts.iter().find(|s| s.id == "boredom_phase_5").unwrap();
+        assert_eq!(p5.rate, Some(v.boredom.rate), "day {day}");
+        assert_eq!(crate::modules::boredom::years_past_last_phase(&r, day), years);
+    }
+}
+
+#[test]
 fn story_lists_only_the_latest_boredom_phase() {
     let r = rules();
     let mut g = r.new_game(1);

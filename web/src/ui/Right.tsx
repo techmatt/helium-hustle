@@ -190,7 +190,8 @@ function Programs({
           Load{v.library.length > 0 ? ` (${v.library.length})` : ''}
         </button>
       </div>
-      {library && <Library v={v} program={program} mode={library} close={() => setLibrary(null)} />}
+      {/* Keyed: a new tab or run starts its own default save name (134: it kept the first's). */}
+      {library && <Library key={`${program}:${v.run}`} v={v} program={program} mode={library} close={() => setLibrary(null)} />}
       {entries.length === 0 && (
         <p class="muted hint">Empty. Add commands from the Commands panel; each processor runs one step a day.</p>
       )}
