@@ -17,6 +17,8 @@ fn the_opening_unlocks_one_mechanic_at_a_time() {
     own(&mut g, "solar_panel", 2);
     r.advance(&mut g, 1);
     assert!(g.career.completed_quests.contains("qpower_boot_sequence"));
+    // 1.1's reward: 20 propellant, once a career (its `on_complete`, not re-applied by a run).
+    assert_eq!(g.amount("propellant"), f("20"));
     let v = r.view(&g);
     // 1.2 First Shipment follows at once: Blueprints is no quest, the player works it out.
     assert_eq!(v.quest.unwrap().id, "qfirst_shipment");
@@ -30,7 +32,7 @@ fn the_opening_unlocks_one_mechanic_at_a_time() {
     r.apply(&mut g, &Action::Research { research: "basic_blueprints".into() }).unwrap();
     r.apply(&mut g, &buy("excavator")).unwrap();
     r.advance(&mut g, 1);
-    // 1.2: 20 propellant once, pads carry Titanium only.
+    // 1.2: pads carry Titanium only.
     assert_eq!(r.view(&g).quest.unwrap().id, "qfirst_shipment");
     assert_eq!(g.amount("propellant"), f("20"));
     assert_eq!(r.view(&g).pad_goods, ["titanium"]);
@@ -482,6 +484,27 @@ fn a_panel_a_purchase_opens_shows_at_once() {
     assert!(!shown(&g, "research"));
 }
 
+/// A story text's panels split at a line holding only `--`, paragraphs inside kept; 1.1 has
+/// no payoff (its reward closes 1.2's story) and 1.2's story reaches the view in panels.
+#[test]
+fn story_text_splits_into_panels() {
+    use crate::content::panels;
+    assert_eq!(panels("One.\n\nTwo.\n--\nThree.\n  --  \nFour."), ["One.\n\nTwo.", "Three.", "Four."]);
+    assert_eq!(panels("Only one -- panel."), ["Only one -- panel."]);
+    assert!(panels("").is_empty());
+    let c = crate::content::content();
+    assert!(c.event("qpower_boot_sequence").unwrap().payoff.is_empty());
+    let r = rules();
+    let mut g = r.new_game(1);
+    own(&mut g, "solar_panel", 2);
+    r.advance(&mut g, 1);
+    let v = r.view(&g);
+    let q = v.quest.as_ref().unwrap();
+    assert_eq!((q.id, q.story.len()), ("qfirst_shipment", 2));
+    let done = v.story.iter().find(|s| s.id == "qpower_boot_sequence").unwrap();
+    assert!(done.payoff.is_empty() && done.reward.contains("20 propellant"), "{}", done.reward);
+}
+
 /// Mechanics never live in narrative (docs/rulings/story-ui.md, *Quest mechanics text*): every
 /// quest has a goal and a reward only if it grants something (never "None."), and every event's narrative (a one-off's summary, body,
 /// story and payoff) carries no numbers (the He-3 in a name excepted), no `{rate}` and no
@@ -491,7 +514,7 @@ fn narrative_carries_no_mechanics() {
     for e in crate::content::content().events.iter().filter(|e| !e.silent) {
         let quest = !e.is_one_off();
         assert!(!quest || !e.goal.is_empty() && e.reward != "None.", "{}: a goal, and no empty reward line", e.id);
-        for t in [&e.summary, &e.body].into_iter().chain(&e.story).chain(&e.payoff) {
+        for t in [&e.summary, &e.body, &e.story, &e.payoff] {
             let t = t.replace("Helium-3", "").replace("He-3", "");
             assert!(!t.contains("{rate}"), "{}: a rate in its narrative: {t}", e.id);
             assert!(!t.bytes().any(|b| b.is_ascii_digit()), "{}: a number in its narrative: {t}", e.id);

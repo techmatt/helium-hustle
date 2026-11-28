@@ -160,8 +160,18 @@ impl Content {
                 e.goal.is_empty() && e.reward.is_empty() && (e.silent || !e.summary.is_empty())
             };
             need(mechanics_ok, format!("{w}: a quest has a goal and maybe a reward, never \"None.\" (no summary or effect); a one-off event a summary"));
-            let story_ok = e.payoff.is_empty() && (e.story.is_empty() || e.once) || e.is_chain();
-            need(story_ok, format!("{w}: story and payoff are for chain quests (a story also for a once one-off)"));
+            // Every quest tells a story (and has no `body`); a payoff is a chain quest's; a
+            // one-off has a story only when `once`. No panel is empty.
+            let story_ok = if e.is_one_off() {
+                e.payoff.is_empty() && (e.story.is_empty() || e.once)
+            } else {
+                e.body.is_empty() && !e.story.trim().is_empty() && (e.payoff.is_empty() || e.is_chain())
+            };
+            need(story_ok, format!("{w}: a quest has a story and no body, a payoff only on the chain; a one-off a story only when once"));
+            let panels_ok = [&e.story, &e.payoff]
+                .iter()
+                .all(|t| t.is_empty() || crate::content::panels(t).len() == t.lines().filter(|l| l.trim() == "--").count() + 1);
+            need(panels_ok, format!("{w}: an empty story or payoff panel"));
             need(!e.once || e.is_one_off(), format!("{w}: once is for one-off events"));
             let modifier_ok = !e.is_one_off() || !e.unlocks.iter().any(|u| matches!(u, Unlock::Modifier { .. }));
             need(modifier_ok, format!("{w}: a modifier unlock is a quest's (read while completed)"));
@@ -175,6 +185,13 @@ impl Content {
                     .all(|u| matches!(u, Unlock::Grant { resource, amount } if res(resource) && *amount > Fx::ZERO))
                     && (e.on_start.is_empty() || e.is_chain()),
                 format!("{w}: on_start takes grants, on chain quests"),
+            );
+            need(
+                e.on_complete
+                    .iter()
+                    .all(|u| matches!(u, Unlock::Grant { resource, amount } if res(resource) && *amount > Fx::ZERO))
+                    && (e.on_complete.is_empty() || !e.is_one_off()),
+                format!("{w}: on_complete takes grants, on quests"),
             );
             if let Some(goods) = &e.pad_goods {
                 need(e.is_chain() && !goods.is_empty() && goods.iter().all(|g| res(g)), format!("{w}: bad pad_goods"));

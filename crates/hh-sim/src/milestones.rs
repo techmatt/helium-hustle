@@ -5,7 +5,7 @@
 use std::collections::{BTreeMap, BTreeSet, VecDeque};
 
 use hh_core::modules::economy;
-use hh_core::{content, Fx, Rules, Session};
+use hh_core::{content, Fx, GameState, Rules, Session};
 use serde::Deserialize;
 
 #[derive(Debug, Clone, Deserialize)]
@@ -153,7 +153,7 @@ fn check(w: &When) -> Result<(), String> {
 }
 
 /// When a milestone was first met.
-#[derive(Debug, Clone, Copy, serde::Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, Deserialize)]
 pub struct Hit {
     pub tick: u64,
     /// The run it was met in (1-based).
@@ -162,8 +162,9 @@ pub struct Hit {
     pub day: u64,
 }
 
-/// Run-scoped observations the milestones need, updated each tick.
-#[derive(Default)]
+/// Run-scoped observations the milestones need, updated each tick. Serializable: the web
+/// client's live play record ([`crate::playrecord`]) keeps one across page loads.
+#[derive(Debug, Default, Clone, serde::Serialize, Deserialize)]
 pub struct Tracker {
     run: u32,
     /// Credits earned this run at the end of each recent run day (`days`).
@@ -194,13 +195,22 @@ impl Tracker {
     /// revenue rising, or (on a speculator burst's day, which zeroes revenue)
     /// as a ready pad cooling down after the tick.
     pub fn before(&mut self, s: &Session) {
-        self.revenue = s.state.run.markets.iter().map(|(g, m)| (g.clone(), m.revenue)).collect();
-        self.pads = s.state.run.pads.iter().map(|p| (p.good.clone(), p.cooldown)).collect();
+        self.before_state(&s.state);
+    }
+
+    /// [`Tracker::before`] on a bare state.
+    pub fn before_state(&mut self, g: &GameState) {
+        self.revenue = g.run.markets.iter().map(|(g, m)| (g.clone(), m.revenue)).collect();
+        self.pads = g.run.pads.iter().map(|p| (p.good.clone(), p.cooldown)).collect();
     }
 
     /// Reads the state after a tick (or after a look's actions).
     pub fn after(&mut self, s: &Session) {
-        let g = &s.state;
+        self.after_state(&s.state);
+    }
+
+    /// [`Tracker::after`] on a bare state.
+    pub fn after_state(&mut self, g: &GameState) {
         if g.career.run_number != self.run {
             self.run = g.career.run_number;
             self.earned.clear();
@@ -249,7 +259,11 @@ impl Tracker {
     }
 
     pub fn met(&self, w: &When, s: &Session) -> bool {
-        let g = &s.state;
+        self.met_state(w, &s.state)
+    }
+
+    /// [`Tracker::met`] on a bare state.
+    pub fn met_state(&self, w: &When, g: &GameState) -> bool {
         match w {
             When::Building { building, count } => g.owned(building) >= *count,
             When::Shipments { count } => g.career.lifetime.shipments + g.run.stats.shipments >= *count,
@@ -275,8 +289,113 @@ impl Tracker {
                 .any(|p| hh_core::modules::projects::completed(g, &p.id)),
             When::IdeologyRank { rank } => g.career.max_ideology_ranks.values().any(|r| r >= rank),
             When::Quest { quest } => g.career.completed_quests.contains(quest),
-            When::AllOf { of } => of.iter().all(|x| self.met(x, s)),
+            When::AllOf { of } => of.iter().all(|x| self.met_state(x, g)),
         }
+    }
+}
+
+/// The career log's latest retirement, chosen or forced.
+pub fn last_retirement(g: &GameState) -> Option<&hh_core::state::LogEntry> {
+    g.career.log.iter().rev().find(|e| e.kind == "retired" || e.kind == "forced_retirement")
+}
+
+/// When each milestone and long goal was first met, read as a career plays: one home
+/// for the sim's measure ([`crate::career::Meter`]) and the web client's live play
+/// record ([`crate::playrecord`]), so `vs-human --skilled` sets like beside like.
+/// Call [`Marks::step`] after each tick and each round of actions, with
+/// [`Tracker::before_state`] before each tick.
+#[derive(Debug, Clone, serde::Serialize, Deserialize)]
+pub struct Marks {
+    pub tracker: Tracker,
+    /// Milestones by id.
+    pub hits: BTreeMap<String, Hit>,
+    /// Long goals (`project:<id>`, `rank5:<axis>`), ticks from `start_tick`
+    /// ([`crate::career::GameResult::landmarks`]).
+    pub landmarks: BTreeMap<String, Hit>,
+    start_tick: u64,
+    book_sizes: (usize, usize),
+    /// Projects completed when the career started (a scenario's): no landmark while they
+    /// stay in their book (134: they read as first completed on run 1's first day).
+    at_start: BTreeSet<String>,
+}
+
+impl Marks {
+    pub fn new(ms: &Milestones, g: &GameState) -> Marks {
+        let mut tracker = Tracker::new(ms);
+        tracker.after_state(g);
+        let books = [&g.career.projects.completions, &g.career.forever_projects.completions];
+        Marks {
+            tracker,
+            hits: BTreeMap::new(),
+            landmarks: BTreeMap::new(),
+            start_tick: g.tick,
+            book_sizes: (books[0].len(), books[1].len()),
+            at_start: books.iter().flat_map(|b| b.keys()).cloned().collect(),
+        }
+    }
+
+    /// Records each milestone met now; returns the ids newly met. `ended`: the run (and
+    /// its last day) a retirement closed in this step, if any. A milestone first seen then
+    /// counts in that run (on its last day): a retirement, or a career-wide condition (a
+    /// quest, lifetime shipments, a command used) the run's last tick met. A run-scoped one
+    /// the new run already reset (a building count, a launch on that tick) is not seen
+    /// (docs/principles.md).
+    pub fn check(&mut self, ms: &Milestones, g: &GameState, ended: Option<(u32, u64)>) -> Vec<String> {
+        let mut new = Vec::new();
+        for m in &ms.milestones {
+            if !self.hits.contains_key(&m.id) && self.tracker.met_state(&m.when, g) {
+                let (run, day) = match (&m.when, ended) {
+                    (_, Some(e)) => e,
+                    (When::Retirements { .. }, None) => {
+                        last_retirement(g).map_or((g.career.run_number, g.run.day), |e| (e.run, e.day))
+                    }
+                    _ => (g.career.run_number, g.run.day),
+                };
+                self.hits.insert(m.id.clone(), Hit { tick: g.tick, run, day });
+                new.push(m.id.clone());
+            }
+        }
+        new
+    }
+
+    /// Records the long goals first met by now; returns the keys newly met. `ended` as
+    /// for [`Marks::check`]: one met on a retirement's tick counts in the ended run, on
+    /// its last day (134: they went to the new run's day 0).
+    pub fn landmarks(&mut self, r: &Rules, g: &GameState, ended: Option<(u32, u64)>) -> Vec<String> {
+        let (run, day) = ended.unwrap_or((g.career.run_number, g.run.day));
+        let hit = Hit { tick: g.tick - self.start_tick, run, day };
+        let mut new = Vec::new();
+        // Scan the books only when one changed size (a timeline's end empties one).
+        let books = [&g.career.projects.completions, &g.career.forever_projects.completions];
+        let sizes = (books[0].len(), books[1].len());
+        if sizes != self.book_sizes {
+            self.book_sizes = sizes;
+            self.at_start.retain(|id| books.iter().any(|b| b.contains_key(id)));
+            for id in books.iter().flat_map(|b| b.keys()) {
+                let key = format!("project:{id}");
+                if !self.at_start.contains(id) && !self.landmarks.contains_key(&key) {
+                    self.landmarks.insert(key.clone(), hit);
+                    new.push(key);
+                }
+            }
+        }
+        // On a retirement tick the run's ranks are the ended run's, before the gap's decay.
+        let ended_ranks = ended.and(g.career.last_run.as_ref()).map(|l| &l.ideology_ranks);
+        for axis in content::AXES {
+            let key = format!("rank5:{axis}");
+            if self.landmarks.contains_key(&key) {
+                continue;
+            }
+            let rank = match ended_ranks {
+                Some(ranks) => ranks.get(*axis).copied().unwrap_or(0),
+                None => hh_core::modules::ideology::rank(r, g, axis),
+            };
+            if rank >= crate::career::LANDMARK_RANK {
+                self.landmarks.insert(key.clone(), hit);
+                new.push(key);
+            }
+        }
+        new
     }
 }
 

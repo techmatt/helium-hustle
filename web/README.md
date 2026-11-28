@@ -172,6 +172,17 @@ be replayed exactly and set against the sim players (`hh-sim playlog`, `hh-sim v
   kinds. A `checkpoint` (the fingerprint) is written every 10 s while playing, at
   retirements, and when the page is hidden or closed.
 
+- **The play record** (Matt, 2026-11-27; `hh_sim::playrecord`, the wasm `Recorder`): lines
+  written as the game plays, so a log stays readable after the rules change (nothing is
+  recomputed later): `record_start`, a `snapshot` about every 10 run days (resources,
+  buildings, ranks, boredom, credits earned), a `landmark` the first time each milestone,
+  project completion and this-run rank 5 is met, and a `run_end` (credits a day). The store
+  feeds the recorder every state it reaches, tick by tick: `runTicks` (through
+  `recorder.advance_run`; a jump ahead's days play through it), `act` (after the action)
+  and the autopilot (`step_recorded`). A recorder that throws is turned off, never the
+  game. The recorder is saved with the game; a save from before records starts one marked
+  `resumed`.
+
 `hh-sim playlog <file>` replays the header's config, seed and scenario with the logged
 actions to the last tick and checks the fingerprint logged there. An autopilot's actions
 are logged as any others, its days closed by `jump_end` as a jump's.

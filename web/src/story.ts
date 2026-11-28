@@ -6,7 +6,8 @@
 
 import type { Amounts, ProjectDoneView, SideQuestView, StoryView, View } from './engine';
 
-/** One page of the main-story modal: one paragraph. */
+/** One page of the main-story modal: one panel of a story or payoff (its paragraphs split
+ * by a blank line, `paragraphsOf`). */
 export interface StoryPage {
   /** The quest it belongs to. */
   quest: string;
@@ -19,6 +20,9 @@ export interface StoryPage {
   task?: string;
   /** The finished quest's reward, on its last payoff page (mechanics text). */
   reward?: string;
+  /** The rewards of the chain quests finished without a payoff (their completion has no
+   * popup of its own), on the last page of the next quest's story, after its task. */
+  doneRewards?: string[];
   /** A one-off event's effect, on its last page (mechanics text). */
   effect?: string;
   /** Its quest's picture's file stem (above the paragraph), null when it has none. */
@@ -59,24 +63,41 @@ export function clearTold(t: Told): void {
   t.lastQuest = null;
 }
 
-/** A quest's opening paragraphs, its body when it has none. */
-export function openingOf(q: { story?: string[]; body: string }): string[] {
-  return q.story && q.story.length > 0 ? q.story : q.body ? [q.body] : [];
+/** A quest's opening panels (the engine's view splits its `story` at `--` lines). */
+export function openingOf(q: { story?: string[] }): string[] {
+  return q.story ?? [];
 }
 
-/** A finished chain quest's payoff pages, its reward on the last. */
-export function payoffPages(q: StoryView, pages: StoryPage[]): void {
+/** A panel's paragraphs: split at blank lines (display only). */
+export function paragraphsOf(text: string): string[] {
+  return text
+    .split(/\n[ \t]*\n/)
+    .map((p) => p.trim())
+    .filter((p) => p.length > 0);
+}
+
+/** A finished chain quest's payoff pages, its reward on the last; false when it has no
+ * payoff (its reward then closes the next quest's story: `doneRewards`). */
+export function payoffPages(q: StoryView, pages: StoryPage[]): boolean {
   const at = pages.length;
   for (const t of q.payoff ?? []) pages.push({ quest: q.id, title: q.title, kind: 'payoff', text: t, picture: q.picture ?? null });
   if (pages.length > at && q.reward) pages[pages.length - 1].reward = q.reward;
+  return pages.length > at;
 }
 
-/** A completed side quest's popup: its payoff (its body when it has none), its reward. */
+/** A completed side quest's popup: its payoff (its story when it has none), its reward. */
 export function sideDonePages(q: StoryView): StoryPage[] {
-  const texts = q.payoff && q.payoff.length > 0 ? q.payoff : [q.body];
+  const texts = q.payoff && q.payoff.length > 0 ? q.payoff : openingOf(q).length > 0 ? openingOf(q) : [''];
   const pages: StoryPage[] = texts.map((text) => ({ quest: q.id, title: q.title, kind: 'payoff', text, picture: q.picture ?? null, close: 'OK' }));
   if (q.reward) pages[pages.length - 1].reward = q.reward;
   return pages;
+}
+
+/** Puts the carried rewards (chain quests finished without a payoff) on the last of
+ * `pages` from `from` on, emptying `carried`; nothing when no page is there. */
+function closeWith(pages: StoryPage[], from: number, carried: string[]): void {
+  if (carried.length === 0 || pages.length <= from) return;
+  pages[pages.length - 1].doneRewards = carried.splice(0);
 }
 
 /** A one-off event's popup: its story (its body when it has none), its effect. */
@@ -106,26 +127,31 @@ export function projectKey(v: Pick<View, 'run' | 'saga'>, p: ProjectDoneView): s
   return `${runTag(v)}:project:${p.id}:${p.completion}`;
 }
 
-/** A finished chain quest's modal again (Story's Replay): its opening, then its payoff. */
+/** A finished chain quest's modal again (Story's Replay): its opening, then its payoff
+ * (without one, its reward closes its opening, after its goal). */
 export function replayPages(q: StoryView): StoryPage[] {
   const pages: StoryPage[] = openingOf(q).map((text) => ({ quest: q.id, title: q.title, kind: 'story' as const, text, picture: q.picture ?? null }));
   if (pages.length > 0 && q.goal) pages[pages.length - 1].task = q.goal;
-  payoffPages(q, pages);
+  if (!payoffPages(q, pages) && q.reward) closeWith(pages, 0, [q.reward]);
   return pages;
 }
 
-/** An open side quest's popup: its story with its goal and reward. */
+/** An open side quest's popup: its story, one page a panel, with its goal and reward on
+ * the last. */
 export function sideQuestPages(q: SideQuestView): StoryPage[] {
-  const pages: StoryPage[] = [{ quest: q.id, title: q.title, kind: 'story', text: q.body, picture: q.picture ?? null, close: 'OK' }];
-  if (q.goal) pages[0].task = q.goal;
-  if (q.reward) pages[0].reward = q.reward;
+  const texts = openingOf(q).length > 0 ? openingOf(q) : [''];
+  const pages: StoryPage[] = texts.map((text) => ({ quest: q.id, title: q.title, kind: 'story' as const, text, picture: q.picture ?? null, close: 'OK' }));
+  const last = pages[pages.length - 1];
+  if (q.goal) last.task = q.goal;
+  if (q.reward) last.reward = q.reward;
   return pages;
 }
 
 /** The pages `v` tells, recording what it told in `t`. A main-story transition (the
  * active quest changed from X to Y) gives each chain quest completed since, in chain order
  * (one that was never shown active first gets its opening), its payoff, then Y's opening
- * with its task on the last page. On load nothing is given; a brand-new game (run 1, day 0,
+ * with its task on the last page. A chain quest without a payoff gives no page of its
+ * own: its reward closes the next story told (`doneRewards`, after the task). On load nothing is given; a brand-new game (run 1, day 0,
  * nothing completed) gives only its first quest's opening (`intro`). A completed side quest
  * gives its payoff and reward. Every one-off event fired gives its popup, unless
  * `hideSeen` is on and this career has shown it before; every project completion its own. Under the autopilot (`pilot`)
@@ -133,6 +159,8 @@ export function sideQuestPages(q: SideQuestView): StoryPage[] {
 export function tellPages(v: View, mode: 'load' | 'intro' | 'play', t: Told, opts: { pilot: boolean; hideSeen: boolean; fill: Fill }): StoryPage[] {
   const pages: StoryPage[] = [];
   const quest = v.quest;
+  // Rewards of chain quests finished without a payoff: they close the next quest's story.
+  const carried: string[] = [];
   for (const q of v.story) {
     if (t.stories.has(q.id)) continue;
     t.stories.add(q.id);
@@ -141,8 +169,12 @@ export function tellPages(v: View, mode: 'load' | 'intro' | 'play', t: Told, opt
       pages.push(...sideDonePages(q));
       continue;
     }
-    if (q.id !== t.lastQuest) for (const text of openingOf(q)) pages.push({ quest: q.id, title: q.title, kind: 'story', text, picture: q.picture ?? null });
-    payoffPages(q, pages);
+    if (q.id !== t.lastQuest) {
+      const from = pages.length;
+      for (const text of openingOf(q)) pages.push({ quest: q.id, title: q.title, kind: 'story', text, picture: q.picture ?? null });
+      closeWith(pages, from, carried);
+    }
+    if (!payoffPages(q, pages) && q.reward) carried.push(q.reward);
   }
   for (const e of v.event_texts) {
     const key = `${runTag(v)}:${e.id}`;
@@ -168,10 +200,15 @@ export function tellPages(v: View, mode: 'load' | 'intro' | 'play', t: Told, opt
   if (quest && quest.id !== t.lastQuest && !t.opened.has(quest.id)) {
     t.opened.add(quest.id);
     if (mode === 'play' || fresh) {
+      const from = pages.length;
       for (const text of openingOf(quest)) pages.push({ quest: quest.id, title: quest.title, kind: 'story', text, picture: quest.picture });
       if (pages.length > 0) Object.assign(pages[pages.length - 1], { task: quest.goal });
+      closeWith(pages, from, carried);
     }
   }
+  // No next story told (none follows, or it was told already): the rewards close whatever
+  // this redraw tells last, else they show only on the quest's Story card.
+  closeWith(pages, 0, carried);
   t.lastQuest = quest?.id ?? null;
   return opts.pilot ? [] : pages;
 }

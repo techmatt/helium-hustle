@@ -15,6 +15,7 @@ import { Clock, SPEEDS, offeredSpeed, type Speed } from './clock';
 import {
   engine,
   type Action,
+  type Advanced,
   type AutopilotStatus,
   type AutopilotTarget,
   type InstructionGroup,
@@ -22,6 +23,7 @@ import {
   type LinesRun,
   type ParsedText,
   type ProjectDoneView,
+  type RecordLine,
   type Scenario,
   type SideQuestView,
   type Stamped,
@@ -29,7 +31,7 @@ import {
   type View,
 } from './engine';
 import { fillRate } from './format';
-import type { Autopilot } from './wasm/hh_wasm.js';
+import type { Autopilot, Recorder } from './wasm/hh_wasm.js';
 import * as playlog from './playlog';
 import { clearSave, loadSave, SAVE_KEY, storageGet, storageSet, writeSave } from './save';
 import { clearTold, eventPages, newTold, projectKey, projectPages, runTag, replayPages, sideQuestPages, tellPages, type StoryPage } from './story';
@@ -502,8 +504,9 @@ function runTicks(ticks: number, toQuest = true): void {
   while (ticks > 0) {
     const n = Math.min(ticks, MAX_CHUNK);
     const pre = game.state;
-    const r = engine.advanceRun(pre, n);
+    const r = advance(pre, n);
     game.state = r.state;
+    if (r.record) logRecord(r.record);
     lines = r.lines; // one chunk in practice (MAX_CHUNK); a later one supersedes
     ticks -= r.ran;
     // The run ended on this chunk's last tick (nothing changed before it, or the chunk
@@ -538,6 +541,7 @@ function save(): void {
     storyPages: store.storyPages,
     seenPopups: [...told.seenPopups],
     speedBeforeStory,
+    record: recorder?.to_json() ?? null,
     page: playlog.pageId,
   });
   // Said until a save lands again (an action's success clears the notice line, so a save
@@ -573,6 +577,72 @@ function checkpoint(kind = 'checkpoint'): void {
   // Where the state itself stands (the view may lag a wake's ticks behind).
   const g = head();
   playlog.log(kind, { tick: g.tick, run: g.career.run_number, day: g.run.day, fingerprint: engine.fingerprint(game.state) });
+}
+
+/** The play record's recorder for the career in play (`engine.recorder`): every state the
+ * page reaches goes through it, and its lines go to the log. */
+let recorder: Recorder | null = null;
+
+/** Logs play record lines (their own `tick`, `run` and `day`). */
+function logRecord(lines: RecordLine[]): void {
+  for (const l of lines) playlog.log(l.kind, l);
+}
+
+/** The recorder for the game in hand: `saved`, resumed, or a new record (`resumed`: the
+ * career began before it). A recorder the engine can't read starts a new record. */
+function startRecorder(saved: string | null, resumed: boolean): void {
+  recorder?.free();
+  recorder = null;
+  try {
+    if (saved) {
+      recorder = engine.restoreRecorder(saved);
+      return;
+    }
+  } catch (e) {
+    console.warn(`play record: the saved recorder is unreadable (${e}); a new record starts`);
+    resumed = true;
+  }
+  try {
+    recorder = engine.recorder(game.state, resumed);
+    logRecord(JSON.parse(recorder.take_start()) as RecordLine[]);
+  } catch (e) {
+    // Observation only: a recorder that fails costs the record, never the game.
+    console.warn(`play record: off (${e})`);
+    recorder = null;
+  }
+}
+
+/** Turns the recorder off after it threw (the record ends there). After a panic wasm
+ * may still count it borrowed, so `free` can throw too: it is dropped either way. */
+function dropRecorder(e: unknown): void {
+  console.warn(`play record: off (${e})`);
+  try {
+    recorder?.free();
+  } catch {}
+  recorder = null;
+}
+
+/** `advance_run`, through the recorder when there is one. A recorder that throws is
+ * turned off (the record ends there) and the days play on without it. */
+function advance(state: string, n: number): Advanced {
+  if (recorder) {
+    try {
+      return JSON.parse(recorder.advance_run(state, n)) as Advanced;
+    } catch (e) {
+      dropRecorder(e);
+    }
+  }
+  return engine.advanceRun(state, n);
+}
+
+/** Records the state in hand (after actions). */
+function observe(): void {
+  if (!recorder) return;
+  try {
+    logRecord(JSON.parse(recorder.observe(game.state)) as RecordLine[]);
+  } catch (e) {
+    console.warn(`play record: ${e}`);
+  }
 }
 
 /** Starts a play log for the game in hand; `prior` are its actions taken before. */
@@ -613,6 +683,7 @@ export function newGame(seed: string, scenario: Scenario | null, why = 'new game
   store.view = undefined as unknown as View;
   game.careerId = openLog([]);
   playlog.log('new_game', { why, seed, scenario: scenario?.name ?? null });
+  startRecorder(null, false);
   // A career begun mid-visit starts its own session (a page load logs its own).
   if (sessionOpen) playlog.log('session_start', { how: 'new', width: window.innerWidth, height: window.innerHeight, agent: navigator.userAgent });
   store.summary = null;
@@ -667,6 +738,7 @@ export function act(action: Action): boolean {
     const tick = head().tick;
     game.actions.push({ tick, action });
     playlog.log('action', { tick, action });
+    observe();
     store.notice = null;
   } catch (e) {
     playlog.log('rejected', { action, error: String(e) });
@@ -767,6 +839,20 @@ const PILOT_CHUNK = 2000;
 /** The autopilot's progress line (null while none ran this visit). */
 export const pilotStatus: { text: string | null; running: boolean } = { text: null, running: false };
 
+/** An autopilot chunk, the recorder following its days and looks. */
+function pilotStep(ap: Autopilot): AutopilotStatus {
+  if (recorder) {
+    try {
+      const r = JSON.parse(ap.step_recorded(PILOT_CHUNK, recorder)) as { status: AutopilotStatus; record: RecordLine[] };
+      logRecord(r.record);
+      return r.status;
+    } catch (e) {
+      dropRecorder(e);
+    }
+  }
+  return JSON.parse(ap.step(PILOT_CHUNK)) as AutopilotStatus;
+}
+
 /** Hands the game to a sim player (the debug autopilot, docs/simulator.md *Accelerators*):
  * it plays on, honestly and with the boost when given, until `target` is reached, the
  * budget is spent or Stop. Its actions (the boost and autopilot cheats first) join the
@@ -812,7 +898,7 @@ export function runAutopilot(target: AutopilotTarget, agent: string, boost: stri
     if (pilot !== mine) return;
     let st: AutopilotStatus;
     try {
-      st = JSON.parse(ap.step(PILOT_CHUNK)) as AutopilotStatus;
+      st = pilotStep(ap);
       take();
     } catch (e) {
       finish(`Autopilot failed: ${e}`);
@@ -958,8 +1044,11 @@ export function start(): void {
       const fast = engine.view(s.state).fast_speeds; // throws if the engine can't read it
       game ={ state: s.state, seed: s.seed, scenario: s.scenario, actions: s.actions, careerId: s.careerId ?? '' };
       // A save from before play logs: its log starts now, carrying the actions so far.
-      if (!game.careerId) game.careerId = openLog(game.actions);
+      const fresh = !game.careerId;
+      if (fresh) game.careerId = openLog(game.actions);
       else playlog.open(game.careerId, null);
+      // A save from before play records (or a new log) starts its record now, mid-career.
+      startRecorder(fresh ? null : (s.record ?? null), true);
       how = 'save';
       // A speed no longer offered (an older save's 2000x or 10000x debug speed) reloads as 1x;
       // 50x or 200x without Accelerated Scheduling as 10x.

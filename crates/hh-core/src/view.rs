@@ -232,10 +232,8 @@ pub struct QuestView {
     /// Its mechanics text: the task line and what completing it does.
     pub goal: Text,
     pub reward: Text,
-    pub body: Text,
-    /// Its story, one paragraph per modal, shown as it becomes active (empty:
-    /// the UI shows `body`).
-    pub story: &'static [String],
+    /// Its story's panels (`content::panels`), one modal page each, shown as it becomes active.
+    pub story: Vec<Text>,
     pub progress: Option<ProgressView>,
     pub sub_objectives: Vec<SubObjectiveView>,
     /// Its number (`1.5`, from the chain), if it carries one.
@@ -257,7 +255,8 @@ pub struct SideQuestView {
     /// Its mechanics text: the task line and what completing it does.
     pub goal: Text,
     pub reward: Text,
-    pub body: Text,
+    /// Its story's panels (`content::panels`), one popup page each.
+    pub story: Vec<Text>,
     /// The chain quest whose completion started it (it branches off that beat).
     pub parent: Option<Text>,
     pub done: bool,
@@ -288,6 +287,7 @@ pub struct StoryView {
     pub reward: Text,
     /// A one-off event's mechanics text (may hold `{rate}`, as `body`; empty on a quest).
     pub effect: Text,
+    /// A one-off event's text (empty on a quest: it has `story`).
     pub body: Text,
     /// A boredom-phase event's boredom per day, for the UI to fill `{rate}` in
     /// `effect` with (the Stats panel's formatting); `None` for the rest.
@@ -295,10 +295,10 @@ pub struct StoryView {
     /// A chain quest (not a side quest or one-off event): its transition is
     /// a story modal in the UI.
     pub chain: bool,
-    /// A chain quest's story (shown as it became active) and payoff (shown as
-    /// it completed), one paragraph per modal.
-    pub story: &'static [String],
-    pub payoff: &'static [String],
+    /// A quest's (or `once` one-off's) story (shown as it became active) and a chain
+    /// quest's payoff (shown as it completed): their panels, one modal page each.
+    pub story: Vec<Text>,
+    pub payoff: Vec<Text>,
     /// The design doc's beat id, on quests that carry one.
     pub beat: Option<Text>,
     /// A chain quest's act (`content/acts.json`); `None` for the rest.

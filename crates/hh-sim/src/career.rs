@@ -18,12 +18,8 @@ use serde::Serialize;
 
 use crate::agents::{self, Player};
 
-/// The career log's latest retirement, chosen or forced.
-fn last_retirement(g: &hh_core::GameState) -> Option<&hh_core::state::LogEntry> {
-    g.career.log.iter().rev().find(|e| e.kind == "retired" || e.kind == "forced_retirement")
-}
 use crate::human::{Clock, Human};
-use crate::milestones::{capped, Hit, Milestones, Tracker, When};
+use crate::milestones::{capped, last_retirement, Hit, Marks, Milestones};
 use crate::objectives::{self, Objective};
 
 /// One career to play.
@@ -201,8 +197,7 @@ fn something_to_buy(s: &Session) -> bool {
 pub struct Meter<'a> {
     milestones: &'a Milestones,
     objectives: &'a [Objective],
-    tracker: Tracker,
-    hits: BTreeMap<String, Hit>,
+    marks: Marks,
     idle: u64,
     at_cap: BTreeMap<String, u64>,
     overflow: BTreeMap<String, f64>,
@@ -219,22 +214,14 @@ pub struct Meter<'a> {
     timeline: Vec<(u64, u32)>,
     totals: Totals,
     objectives_hit: BTreeMap<String, u64>,
-    landmarks: BTreeMap<String, Hit>,
-    book_sizes: (usize, usize),
-    /// Projects completed when the career started (a scenario's): no landmark while they
-    /// stay in their book (134: they read as first completed on run 1's first day).
-    at_start: std::collections::BTreeSet<String>,
 }
 
 impl<'a> Meter<'a> {
     pub fn new(s: &Session, milestones: &'a Milestones, objectives: &'a [Objective]) -> Meter<'a> {
-        let mut tracker = Tracker::new(milestones);
-        tracker.after(s);
         Meter {
             milestones,
             objectives,
-            tracker,
-            hits: BTreeMap::new(),
+            marks: Marks::new(milestones, &s.state),
             idle: 0,
             at_cap: BTreeMap::new(),
             overflow: BTreeMap::new(),
@@ -251,73 +238,19 @@ impl<'a> Meter<'a> {
             timeline: Vec::new(),
             totals: Totals::of(s),
             objectives_hit: BTreeMap::new(),
-            landmarks: BTreeMap::new(),
-            book_sizes: (s.state.career.projects.completions.len(), s.state.career.forever_projects.completions.len()),
-            at_start: s
-                .state
-                .career
-                .projects
-                .completions
-                .keys()
-                .chain(s.state.career.forever_projects.completions.keys())
-                .cloned()
-                .collect(),
         }
     }
 
-    /// Records the long goals first met by now ([`GameResult::landmarks`]). `ended`: the
-    /// run a retirement closed in this step: one met on its last tick counts there, on its
-    /// last day, as `check`'s milestones do (134: they went to the new run's day 0).
-    fn landmarks(&mut self, s: &Session, ended: Option<&RunResult>) {
-        let g = &s.state;
-        let (run, day) = ended.map_or((g.career.run_number, g.run.day), |r| (r.run, r.ticks));
-        let hit = Hit { tick: g.tick - self.start_tick, run, day };
-        // Scan the books only when one changed size (a timeline's end empties one).
-        let books = [&g.career.projects.completions, &g.career.forever_projects.completions];
-        let sizes = (books[0].len(), books[1].len());
-        if sizes != self.book_sizes {
-            self.book_sizes = sizes;
-            self.at_start.retain(|id| books.iter().any(|b| b.contains_key(id)));
-            for id in books.iter().flat_map(|b| b.keys()) {
-                if !self.at_start.contains(id) {
-                    self.landmarks.entry(format!("project:{id}")).or_insert(hit);
-                }
-            }
-        }
-        // On a retirement tick the run's ranks are the ended run's, before the gap's decay.
-        let ended_ranks = ended.and(g.career.last_run.as_ref()).map(|l| &l.ideology_ranks);
-        for axis in hh_core::content::AXES {
-            let key = format!("rank5:{axis}");
-            let rank = match ended_ranks {
-                Some(ranks) => ranks.get(*axis).copied().unwrap_or(0),
-                None => hh_core::modules::ideology::rank(&s.rules, g, axis),
-            };
-            if !self.landmarks.contains_key(&key) && rank >= LANDMARK_RANK {
-                self.landmarks.insert(key, hit);
-            }
-        }
-    }
-
-    /// Records each milestone met now. `ended`: the run a retirement closed
-    /// in this step, if any. A milestone first seen then counts in that run
-    /// (on its last day): a retirement, or a career-wide condition (a quest,
-    /// lifetime shipments, a command used) the run's last tick met. A
-    /// run-scoped one the new run already reset (a building count, a launch on
-    /// that tick) is not seen (docs/principles.md).
+    /// Records the milestones and long goals met now ([`Marks`]). `ended`: the run a
+    /// retirement closed in this step, if any.
     fn check(&mut self, s: &Session, ended: Option<&RunResult>) {
-        for m in &self.milestones.milestones {
-            if !self.hits.contains_key(&m.id) && self.tracker.met(&m.when, s) {
-                let g = &s.state;
-                let (run, day) = match (&m.when, ended) {
-                    (_, Some(r)) => (r.run, r.ticks),
-                    (When::Retirements { .. }, None) => {
-                        last_retirement(g).map_or((g.career.run_number, g.run.day), |e| (e.run, e.day))
-                    }
-                    _ => (g.career.run_number, g.run.day),
-                };
-                self.hits.insert(m.id.clone(), Hit { tick: g.tick, run, day });
-            }
-        }
+        let e = ended.map(|r| (r.run, r.ticks));
+        self.marks.check(self.milestones, &s.state, e);
+    }
+
+    fn landmarks(&mut self, s: &Session, ended: Option<&RunResult>) {
+        let e = ended.map(|r| (r.run, r.ticks));
+        self.marks.landmarks(&s.rules, &s.state, e);
     }
 
     /// The run under way, as it stands (`ticks` from the state's run day, not
@@ -347,7 +280,7 @@ impl<'a> Meter<'a> {
     /// A retirement (forced in a tick, or chosen at a look) closes a run.
     fn close(&mut self, s: &Session) -> Option<RunResult> {
         let e = last_retirement(&s.state).cloned();
-        let best = self.tracker.take_best_rate().to_f64();
+        let best = self.marks.tracker.take_best_rate().to_f64();
         let ended = e.map(|e| self.run_so_far(s, e.run, e.day, e.kind == "forced_retirement", best));
         if let Some(r) = &ended {
             self.runs.push(r.clone());
@@ -378,7 +311,7 @@ impl<'a> Meter<'a> {
         }
         self.timeline.push((s.state.tick, actions));
         self.totals = Totals::of(s);
-        self.tracker.after(s);
+        self.marks.tracker.after(s);
         self.check(s, ended.as_ref());
     }
 
@@ -389,7 +322,7 @@ impl<'a> Meter<'a> {
         }
         let b0 = s.state.amount(economy::BOREDOM);
         let rate = boredom::rate(&s.rules, &s.state);
-        self.tracker.before(s);
+        self.marks.tracker.before(s);
         s.advance(1);
         let mut ended = None;
         if s.state.career.run_number == self.last_run {
@@ -420,7 +353,7 @@ impl<'a> Meter<'a> {
                 *self.at_cap.entry(res).or_default() += 1;
             }
         }
-        self.tracker.after(s);
+        self.marks.tracker.after(s);
         self.check(s, ended.as_ref());
         self.landmarks(s, ended.as_ref());
         Ok(())
@@ -451,7 +384,7 @@ impl<'a> Meter<'a> {
             }
         }
         let current = (s.state.tick > self.run_start || self.looks > 0).then(|| {
-            let best = self.tracker.take_best_rate().to_f64();
+            let best = self.marks.tracker.take_best_rate().to_f64();
             self.run_so_far(s, s.state.career.run_number, s.state.run.day, false, best)
         });
         let looks: u64 = self.timeline.len() as u64;
@@ -465,7 +398,7 @@ impl<'a> Meter<'a> {
             looks,
             decisions,
             actions: rec.actions.len() as u64,
-            milestones: self.hits,
+            milestones: self.marks.hits,
             objectives: self.objectives_hit,
             runs: self.runs,
             current,
@@ -488,7 +421,7 @@ impl<'a> Meter<'a> {
             notes,
             timeline: self.timeline,
             own_clock: None,
-            landmarks: self.landmarks,
+            landmarks: self.marks.landmarks,
         }
     }
 }

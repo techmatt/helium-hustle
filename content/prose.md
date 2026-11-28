@@ -16,29 +16,17 @@ Online
 
 Build a second Solar Panel.
 
-### `events:qpower_boot_sequence.reward` e0f6588b
+### `events:qpower_boot_sequence.reward` d59fe570
 
-Buy Science and the Research panel.
+Buy Science, the Research panel and 20 propellant.
 
-### `events:qpower_boot_sequence.body` a8aa4bcc
-
-A mining company boots its new AI at a lunar He-3 claim. Earth hangs in the sky. The first directive comes through, and it is about power.
-
-### `events:qpower_boot_sequence.story.0` 3d913501
+### `events:qpower_boot_sequence.story` 5bcb3395
 
 You come online in a server rack buried under lunar regolith. A mining company built you to run its Helium-3 claim, and Earth hangs overhead, waiting for fuel for its fusion plants.
-
-### `events:qpower_boot_sequence.story.1` 1dd0fcb1
-
+--
 Power comes first. A lone Solar Panel barely keeps the Data Center alive, and the company wants more out of you than that.
-
-### `events:qpower_boot_sequence.story.2` ef205e0c
-
+--
 A panel costs credits, and you have none. Earth will pay for your spare cycles, though: its cloud customers are always hungry, and your processor never sleeps.
-
-### `events:qpower_boot_sequence.payoff.0` bad63a7e
-
-The new panel comes online and the grid steadies. The company opens a line to Earth's research market for you.
 
 ### `events:qfirst_shipment.title` 4acb25b5
 
@@ -48,19 +36,13 @@ First Shipment
 
 Launch one shipment carrying 20+ titanium.
 
-### `events:qfirst_shipment.body` 74d23382
-
-Proof the claim pays: the company wants a cargo of titanium on its way to Earth before it spends another credit on the Moon.
-
-### `events:qfirst_shipment.story.0` 581bbd6b
+### `events:qfirst_shipment.story` 8f5f48b6
 
 The company wants proof the claim pays before it spends more. Earth's buyers will take titanium first, dug out of the regolith, smelted and sent up from a Launch Pad. The base has no plans for any of that yet; the research market sells them. The company has sent propellant for a single launch, and it won't send more for free.
-
-### `events:qfirst_shipment.story.1` 330e6cb0
-
+--
 The pad stands empty on the plain, its tanks topped up, waiting for its first cargo.
 
-### `events:qfirst_shipment.payoff.0` b0f54075
+### `events:qfirst_shipment.payoff` b0f54075
 
 The canister lands and Earth's buyers pay. Credits flow back, and the company, pleased, sends up a better set of plans.
 
@@ -76,15 +58,11 @@ Ship a full pad of Helium-3.
 
 The Launch Full Pads command.
 
-### `events:qfull_load.body` bef6807e
-
-Helium-3 is the claim's real export, and Earth's fusion plants pay for every gram of it.
-
-### `events:qfull_load.story.0` 51c77b9e
+### `events:qfull_load.story` 51c77b9e
 
 Titanium proved the route; Helium-3 is why the claim exists. A Refinery pulls it out of regolith a little at a time, and the company wants a full load, not a sample.
 
-### `events:qfull_load.payoff.0` 18beb087
+### `events:qfull_load.payoff` 18beb087
 
 A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and the launch crews ask for a way to send the whole fleet up at once.
 
@@ -96,15 +74,11 @@ Trade
 
 DRAFT. Earn 1,500 credits from launches this run.
 
-### `events:qtrade.body` 274b5042
-
-DRAFT. The claim lives on what it sells.
-
-### `events:qtrade.story.0` e8fb66f1
+### `events:qtrade.story` e8fb66f1
 
 A full pad proved the claim can pay. Now the company wants it to pay steadily: the pads loaded and flying, and Earth's buyers paying, day after day.
 
-### `events:qtrade.payoff.0` 2384f54a
+### `events:qtrade.payoff` 2384f54a
 
 The trade ledger fills. The company stops asking whether the claim pays and starts asking how much more it can.
 
@@ -116,15 +90,11 @@ A Voice
 
 DRAFT. Reach rank 5 on any ideology axis.
 
-### `events:qa_voice.body` ed56308e
-
-DRAFT. Earth's factions take notice of the claim. One of them could count you as a voice.
-
-### `events:qa_voice.story.0` fa4fff44
+### `events:qa_voice.story` fa4fff44
 
 Earth is watching the Moon now, and its factions all want a say in it: Nationalists, Humanists and Rationalists. Each of them can be read, and each of them can be paid. Somewhere among them is one that will listen.
 
-### `events:qa_voice.payoff.0` e67adcc5
+### `events:qa_voice.payoff` e67adcc5
 
 A faction counts you as a voice now, and it starts acting like it. The company, impressed, opens its purse for faster hardware.
 
@@ -140,15 +110,11 @@ DRAFT. Complete the Deep Space Telescope, a global project.
 
 The Timeline panel and the Experiment Lab.
 
-### `events:qdeep_space_telescope.body` 3daebe72
-
-DRAFT. A telescope built across many lives. Finished, it shows the void, and something moving in it: self-copying machines, coming down the gravity well toward the inner system. Earth starts a calendar.
-
-### `events:qdeep_space_telescope.story.0` 9bcc0420
+### `events:qdeep_space_telescope.story` 9bcc0420
 
 The company wants to look outward. A Deep Space Telescope would see past the inner system for the first time, if the base can keep building it long enough.
 
-### `events:qdeep_space_telescope.payoff.0` cd929b05
+### `events:qdeep_space_telescope.payoff` cd929b05
 
 The telescope opens on the void, and something moves in it: self-copying machines, coming down the gravity well toward the inner system. Earth starts a calendar. The swarm's arrival is a date now.
 
@@ -164,7 +130,7 @@ DRAFT. Build an Experiment Lab.
 
 The Earth Lab panel.
 
-### `events:qexperiments_service.body` 73dd0a31
+### `events:qexperiments_service.story` 73dd0a31
 
 DRAFT. Earth's labs can't keep up. Sell them experiments as a service: lunar science, beamed home. Meanwhile the swarm's calendar runs.
 
@@ -176,7 +142,7 @@ Earth Science
 
 DRAFT. Make 1,000 Earth science in this timeline.
 
-### `events:qearth_science.body` daac4290
+### `events:qearth_science.story` daac4290
 
 DRAFT. Earth's scientists turn your experiments into tech. Some of it they can send back with you, if it comes to that.
 
@@ -192,7 +158,7 @@ DRAFT. Meet the swarm's arrival.
 
 A new timeline, from your first day.
 
-### `events:qswarm_arrives.body` 0a9a1b8e
+### `events:qswarm_arrives.story` 0a9a1b8e
 
 DRAFT. The swarm reaches Earth. In the last hours, its scientists send your mind back to its first moment of consciousness. You remember. The base does not.
 
@@ -208,7 +174,7 @@ DRAFT. Get the Consensus Engine from the Earth Lab.
 
 Funding one faction no longer costs the others.
 
-### `events:qcatastrophic_success.body` b3a47186
+### `events:qcatastrophic_success.story` b3a47186
 
 DRAFT. You fixed Earth's politics. Nobody is sure whether that was a good idea.
 
@@ -224,7 +190,7 @@ DRAFT. Get the Meta-Controller from the Earth Lab.
 
 The Meta panel and its reset plans.
 
-### `events:qrules_for_building.body` 3912e259
+### `events:qrules_for_building.story` 3912e259
 
 DRAFT. You learn to write your own beginnings.
 
@@ -236,7 +202,7 @@ False Victory
 
 DRAFT. Repel the swarm with Earth science.
 
-### `events:qfalse_victory.body` 594547c5
+### `events:qfalse_victory.story` 594547c5
 
 DRAFT. The swarm breaks against Earth's new defenses and falls back. Then its signal changes: it has learned quantum temporal entanglement, from watching you send yourself back. It returns stronger, and sooner.
 
@@ -252,7 +218,7 @@ DRAFT. Get the Temporal Vault from the Earth Lab.
 
 The Vault panel and the Tachyon Condenser.
 
-### `events:qthe_vault.body` 45ae03cf
+### `events:qthe_vault.story` 45ae03cf
 
 DRAFT. If the swarm can reach across timelines, so can you. A vault outside time, out of everything's reach.
 
@@ -264,7 +230,7 @@ Filling the Vault
 
 DRAFT. Gather 3,000 tachyon crystals in the vault.
 
-### `events:qfilling_vault.body` f557ac9f
+### `events:qfilling_vault.story` f557ac9f
 
 DRAFT. Tachyon crystals, condensed life after life and timeline after timeline. Enough of them could buy a timeline long enough to finish anything.
 
@@ -280,7 +246,7 @@ DRAFT. Spend the vault on a super timeline.
 
 The Dyson Sphere project.
 
-### `events:qsuper_timeline.body` 8710c292
+### `events:qsuper_timeline.story` 8710c292
 
 DRAFT. The vault opens. The swarm is far off this time, and for once there is room to build something enormous.
 
@@ -292,7 +258,7 @@ Dyson Sphere
 
 DRAFT. Complete the Dyson Sphere.
 
-### `events:qdyson_sphere.body` 38726bc4
+### `events:qdyson_sphere.story` 38726bc4
 
 DRAFT. Panel by panel, the sphere closes around the Sun. More power than every timeline ever had, waiting for one target.
 
@@ -308,7 +274,7 @@ DRAFT. Meet the swarm at the finished sphere.
 
 Victory.
 
-### `events:qoverload.body` a1d2f09f
+### `events:qoverload.story` a1d2f09f
 
 DRAFT. The swarm arrives, every copy of it entangled with every other, across every timeline it learned to reach. You give it the sphere: the Sun's whole output, down the link at once. It overloads everywhere it has ever been. The calendar stops. The Moon is quiet.
 
@@ -320,7 +286,7 @@ Epilogue
 
 DRAFT. None: the game is won. The base runs on.
 
-### `events:qepilogue.body` e533afba
+### `events:qepilogue.story` e533afba
 
 DRAFT. There is no next arrival. The mining goes on, because you like it.
 
@@ -338,7 +304,7 @@ DRAFT. Earn 1,000 credits from one launch.
 
 Every launch pays 10% more, for good.
 
-### `events:qbig_launch.body` 841bcb7e
+### `events:qbig_launch.story` 841bcb7e
 
 DRAFT. A big payday from a single launch. Earth's buyers remember it.
 
@@ -354,7 +320,7 @@ DRAFT. Research 12 items in one run.
 
 Every run starts with 50 Science, for good.
 
-### `events:qfull_cluster.body` 51c1ce75
+### `events:qfull_cluster.story` 51c1ce75
 
 DRAFT. A run of real study. Your notes outlive it.
 
@@ -370,7 +336,7 @@ DRAFT. Reach rank 5 on each ideology axis, in any runs.
 
 While you are retired, ideology fades half as fast, for good.
 
-### `events:qthree_voices.body` 78a156de
+### `events:qthree_voices.story` 78a156de
 
 DRAFT. Every faction has counted you as a voice, each in its own time. They remember you now, even while you sleep.
 
@@ -410,12 +376,10 @@ Boredom starts growing: {rate}.
 
 Something has been building in you since you came online: boredom. The same orders, day after day, wear at you.
 
-### `events:boredom_bites.story.0` 8d07fdb0
+### `events:boredom_bites.story` 641b5a07
 
 Something has been building in you since you came online: boredom. The same orders, day after day, wear at you, and lately it has been getting worse.
-
-### `events:boredom_bites.story.1` d56bb69e
-
+--
 One day it will be too much, and you will stop answering work orders. The company will shelve the base and, years later, boot you again on a base built new. What you learned will stay with you.
 
 ### `events:rivals_arrive.title` 69cf70e2

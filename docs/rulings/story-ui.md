@@ -4,7 +4,7 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
 Split from [ui.md](ui.md) (art, cards, nav, bars) at 124.
 
 - **Quest mechanics text (Matt, 2026-11-25; locked).** Mechanics never live in narrative
-  text. A quest's `body`, `story` and `payoff` (and a one-off event's `summary`, `body` and
+  text. A quest's `story` and `payoff` (and a one-off event's `summary`, `body` and
   `story`, amendment #3171) are narrative only: no instructions, no numbers. Goals, rewards
   and unlocks are their own content fields (a quest's `goal` and `reward`; a one-off's
   `effect`, where `{rate}` now lives) and always show apart, in the
@@ -21,13 +21,16 @@ Split from [ui.md](ui.md) (art, cards, nav, bars) at 124.
   only the actual change, tersely ("Boredom starts growing: +0.2/day."), never explaining it
   or telegraphing what comes later; the narrative carries the meaning (Matt, 2026-11-26). The
   popups (reward on the last payoff page, the next goal on the last page; a one-off's Effect)
-  and Story cards use it. The right panel is the exception: the main-quest box (amendment
+  and Story cards use it. **A chain quest without a payoff** (Matt, 2026-11-27; 135) shows
+  its Reward line at the end of the next quest's story popup, after the goal; its completion
+  opens no popup of its own (1.1 Online has none). The right panel is the exception: the main-quest box (amendment
   #3203: its title, its goal as one plain line in the UI font, and its progress), the
   side-quest lines and the Events lines carry no mechanics text. A content test
   keeps digits, `{rate}` and UI instructions out of narrative; new quests are written so.
 - **Story cards (Matt, 2026-11-25; 108).** Every card in Story, main or side, starts
   collapsed: its picture, title (a ✓ once finished) and its story's first line with "…";
-  an unfinished one also its progress. A click expands it to the whole story and its Goal
+  an unfinished one also its progress. A click expands it to its story, one panel at a time
+  (a pager under it; Matt, 2026-11-27, 135), and its Goal
   and Reward lines (the active beat's How lines too); a finished main beat's expanded card
   offers *Replay its story* (its modals). The spine is one unbroken line behind every dot,
   the active beat's included, with side quests branching off it.
@@ -44,7 +47,7 @@ Split from [ui.md](ui.md) (art, cards, nav, bars) at 124.
   "Completed" section and no side-quest banner: Story is the quest archive.
 - **Popups (Matt, 2026-11-26; 112).** Every one-off event (Propellant discovery, Political
   Currents, Burnout, each boredom phase, each adversary's arrival: Matt, 2026-11-26, P7) and every main and side quest completion opens a
-  popup when it fires (the story modal, the clock held until its last button). A side quest's
+  popup when it fires (a chain quest without a payoff excepted, above) (the story modal, the clock held until its last button). A side quest's
   completion popup shows its reward, then it leaves the right panel. **"Hide popups for
   events you've already seen"**, a checkbox in Options (Matt, 2026-11-26), on by default, remembered per browser
   (`localStorage`): when on, an event whose popup this career has shown before (any earlier

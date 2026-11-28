@@ -3,29 +3,24 @@
 // band, side quests branching off the beat that started them, one dim "???" below the
 // active beat. Every card starts collapsed: its quest picture's thumbnail, title (a ✓ once
 // finished) and its story's first line, an unfinished one its progress too; a click expands
-// it to the whole story and its Goal and Reward lines in the mechanics style (a finished
+// it to its story, one panel at a time, and its Goal and Reward lines in the mechanics style (a finished
 // main beat's also offers a replay of its story modals). Achievements are badges grouped
 // by category. Every text, act and progress comes from the engine's view (the same quest
 // rows the story modals read).
 
 import type { ComponentChildren } from 'preact';
 import { useEffect, useRef, useState } from 'preact/hooks';
-import type { QuestView, SideQuestView, StoryView, View } from '../engine';
+import type { SideQuestView, StoryView, View } from '../engine';
 import { capitalize, num } from '../format';
 import { justMoved, replayStory, type Store } from '../store';
+import { paragraphsOf } from '../story';
 import { QuestPicture, actBand } from './art';
 import { ScopeIcon } from './icons';
 import { Bar, Mechanics, QuestProgress, QuestTitle } from './common';
 
-/** A finished quest's paragraphs: its opening (its body when it has none), then its payoff. */
-function paragraphs(q: StoryView): string[] {
-  const opening = q.story && q.story.length > 0 ? q.story : q.body ? [q.body] : [];
-  return [...opening, ...(q.payoff ?? [])];
-}
-
-/** The active quest's paragraphs so far: its opening (its body when it has none). */
-function opening(q: QuestView): string[] {
-  return q.story.length > 0 ? q.story : q.body ? [q.body] : [];
+/** A finished quest's panels: its story's, then its payoff's. */
+function panels(q: StoryView): string[] {
+  return [...(q.story ?? []), ...(q.payoff ?? [])];
 }
 
 /** A card's one line: the text's first sentence, with "…" when more follows (story-ui.md, *Story cards*). */
@@ -59,6 +54,10 @@ function Card({
   testid: string;
 }) {
   const [open, setOpen] = useState(false);
+  // The story shows one panel at a time (135); a pager under it steps through them.
+  const [page, setPage] = useState(0);
+  const at = Math.min(page, Math.max(texts.length - 1, 0));
+  const step = (d: number) => (e: MouseEvent) => (e.detail > 0 && justMoved() ? undefined : setPage(at + d));
   return (
     <>
       <button
@@ -81,11 +80,25 @@ function Card({
       </button>
       {open ? (
         <div class="story-body" data-testid="story-card-body">
-          {texts.map((t, i) => (
-            <p key={i} class="card-para">
-              {t}
-            </p>
-          ))}
+          {texts.length > 0 &&
+            paragraphsOf(texts[at]).map((t, i) => (
+              <p key={`${at}:${i}`} class="card-para" data-testid="story-card-panel">
+                {t}
+              </p>
+            ))}
+          {texts.length > 1 && (
+            <span class="card-pager" data-testid="story-card-pager">
+              <button type="button" class="link" disabled={at === 0} onClick={step(-1)} aria-label="Previous panel">
+                ‹
+              </button>
+              <span class="muted">
+                {at + 1} / {texts.length}
+              </span>
+              <button type="button" class="link" disabled={at === texts.length - 1} onClick={step(1)} aria-label="Next panel">
+                ›
+              </button>
+            </span>
+          )}
           {children}
         </div>
       ) : (
@@ -118,7 +131,7 @@ function Side({ x }: { x: SideQuestView }) {
       <div class="side-card">
         <Card
           testid="story-side-toggle"
-          texts={x.body ? [x.body] : []}
+          texts={x.story}
           collapsed={bar}
           head={
             <span class="side-title">
@@ -177,7 +190,7 @@ export function Story({ s }: { s: Store }) {
                     <div class="beat-card">
                       <Card
                         testid="story-beat-toggle"
-                        texts={paragraphs(q)}
+                        texts={panels(q)}
                         head={
                           <span class="beat-head">
                             <QuestPicture stem={q.picture} at="thumb" />
@@ -209,7 +222,7 @@ export function Story({ s }: { s: Store }) {
                   <div class="beat-card">
                     <Card
                       testid="story-beat-toggle"
-                      texts={opening(active)}
+                      texts={active.story}
                       collapsed={<QuestProgress q={active} />}
                       head={
                         <span class="beat-head">

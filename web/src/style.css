@@ -1640,6 +1640,13 @@ tr.is-new td:first-child {
   align-self: flex-start;
   font-size: 12px;
 }
+/* A Story card's panel pager (135): one panel at a time. */
+.card-pager {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
 /* ---- Achievements: badges by category ---- */
 .badges {
   display: grid;

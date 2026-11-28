@@ -76,14 +76,23 @@ tick counts in the next run): first in **when** (the same building more than 50 
 quarter of the player's tick apart: `vs_human` in `configs/sim/milestones.json`) and first in **what** (a different building, or one side
 bought nothing), with each side's next five purchases. `--json`: one line, every row's
 `GameResult` and the divergence. Exit 1 if the log doesn't replay to its fingerprint.
-**`--skilled`** (131) adds the skilled player (`skilled=oracle:profile=4`, minutes for a
-long career) and a table of the human against it: each milestone's run and day, each global
-project's first completion, the first rank 5 this run (its axis) and projects done (from
-`GameResult::landmarks`). Logs land where web/README.md, *Play logs*, says: Matt's in
+**`--skilled`** (131; from the record since 135) reads the log's **play record** instead
+of replaying it, so it works on a log from any revision: the human's milestones and long
+goals as the log recorded them, beside the skilled player (`skilled=oracle:profile=4`,
+minutes for a long career) on today's rules, the log's config and seed, for as many ticks:
+each milestone's run and day, each global project's first completion, the first rank 5 this
+run (its axis), projects done and credits a day by run (the player's from
+`GameResult::landmarks`). Alone: no `--agents` or `--humans`. A log from before 135 has no
+record and says so. Logs land where web/README.md, *Play logs*, says: Matt's in
 `C:\Code\gdrive-sync\helium-hustle\playlogs\` (kept for good), one file per career, every
-session on the `game` target or `vite preview`, nothing to press. A log from an older rules
-revision may not load (its header config lacks a key added since: build that revision with
-`scripts/baseline.py`).
+session on the `game` target or `vite preview`, nothing to press.
+
+**Old logs.** Loading is tolerant: a header config missing a key added since takes
+today's default (`configs/baseline.json`) and one with a key since removed drops it, each
+with a `warning:` line. Exact replay is still the log's own revision's
+(`scripts/baseline.py`); **`playlog LOG --today`** plays the actions best-effort on today's
+rules, skipping what today's game refuses, and prints where they first stop working
+("run 2 day 412 (tick 1630): Buy Smelter skipped, 22 credits short") and the skips by action.
 
 ### Accelerators
 

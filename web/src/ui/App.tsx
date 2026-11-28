@@ -20,7 +20,7 @@ import { Buildings } from './Buildings';
 import { Bar, BoredomBar, CostLine, Mechanics, RateCell, Section, isCapped, navShown } from './common';
 import { projectArt } from './cardArt';
 import type { View } from '../engine';
-import type { StoryPage } from '../story';
+import { paragraphsOf, type StoryPage } from '../story';
 import { Chip } from './icons';
 import { Left } from './Left';
 import { Options } from './Options';
@@ -255,11 +255,28 @@ function StoryModal({ s }: { s: Store }) {
           {p.kind === 'payoff' && <span class="muted story-done"> complete</span>}
         </h2>
         <QuestPicture stem={p.picture} at="modal" />
-        {p.project ? <ProjectDone v={s.view} p={p.project} /> : <p class="story-text">{p.text}</p>}
+        {p.project ? (
+          <ProjectDone v={s.view} p={p.project} />
+        ) : (
+          paragraphsOf(p.text).map((t, i) => (
+            <p key={i} class="story-text">
+              {t}
+            </p>
+          ))
+        )}
         {(p.reward || p.effect) && <Mechanics reward={p.reward} effect={p.effect} />}
-        {p.task && (
+        {(p.task || p.doneRewards) && (
           <div class="story-task">
-            <Mechanics goal={p.task} />
+            {/* The next goal, then the rewards of the quests finished without a payoff
+                (their completion has no popup of its own), in the same tinted block. */}
+            <Mechanics goal={p.task} reward={p.task ? undefined : p.doneRewards?.join(' ')}>
+              {p.task &&
+                p.doneRewards?.map((r, i) => (
+                  <span key={i} class="mech-line mech-reward" data-testid="story-done-reward">
+                    <span class="mech-key">Reward:</span> {r}
+                  </span>
+                ))}
+            </Mechanics>
           </div>
         )}
         <button

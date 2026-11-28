@@ -6,7 +6,9 @@
                                             # content/prose.md matches the content
 
 The file is grouped by screen; each string is a `### \\`<file>:<id>.<field>\\` <fp>` heading
-with its text under it (a `story` or `payoff` paragraph adds its index). `<fp>` is the
+with its text under it, as many lines as it holds (a quest's `story` and `payoff` are one text
+each: panels split by a line holding only `--`, blank lines between a panel's paragraphs;
+leading and trailing blank lines are dropped on import). `<fp>` is the
 fingerprint of the string as the content held it at export: the first 8 hex of the sha256 of
 its UTF-8 text. Import matches strings by id and accepts a partial file (only the entries being
 changed): an id missing from the file leaves its string alone and is listed as not in the file;
@@ -16,9 +18,9 @@ skipped. Only strings whose text changed are rewritten, in place in the JSON tex
 other byte (layout, escapes) stays as it was. Ids are never edited. Import never needs anyone
 to read the prose: the fingerprint is the check that an edit was made against the current text.
 
-Covered: names, titles, summaries, quest goals and rewards, one-off events' effects,
-bodies, quest story and
-payoff paragraphs, descriptions,
+Covered: names, titles, summaries, quest goals and rewards, one-off events' effects and
+bodies, every quest's story and a chain quest's payoff (one text each: panels split by a
+`--` line, paragraphs by a blank line), descriptions,
 reward descriptions, sub-objective labels, project reward texts and the messages the view
 carries (`messages.json`: the run summary's line). Silent events have no
 text and are left out. UI chrome written in `web/src` is not content and is not here.
@@ -53,8 +55,8 @@ SCREENS = [
 ]
 # The content files read and written: SCREENS' stems, each once, in its order.
 FILES = list(dict.fromkeys(stem.split(':')[0] for stem, _ in SCREENS))
-TEXT = {'name', 'title', 'summary', 'goal', 'reward', 'effect', 'body', 'description', 'reward_description', 'label', 'text'}
-PARAGRAPHS = {'story', 'payoff'}
+TEXT = {'name', 'title', 'summary', 'goal', 'reward', 'effect', 'body', 'story', 'payoff',
+        'description', 'reward_description', 'label', 'text'}
 
 
 class Scanner:
@@ -141,9 +143,7 @@ def scan(stem, text):
         if stem == 'events' and row.get('silent'):
             continue
         last = path[-1]
-        prose = (isinstance(last, str) and last in TEXT) or (
-            isinstance(last, int) and len(path) >= 2 and path[-2] in PARAGRAPHS)
-        if not prose:
+        if not (isinstance(last, str) and last in TEXT):
             continue
         # A row's id, then each step: an array element with an id is named by it.
         parts = []

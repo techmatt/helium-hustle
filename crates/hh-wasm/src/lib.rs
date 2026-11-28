@@ -132,16 +132,29 @@ pub fn advance(state_json: &str, ticks: u32) -> Result<String, JsValue> {
 /// its last day. The ticks run are the state's `tick` minus the old one.
 #[wasm_bindgen]
 pub fn advance_run(state_json: &str, ticks: u32) -> Result<String, JsValue> {
+    advance_run_with(state_json, ticks, None)
+}
+
+/// [`advance_run`], with a [`Recorder`] watching each tick: its new record lines come
+/// back as `record` (a JSON array of `hh_sim::playrecord::Line`).
+fn advance_run_with(state_json: &str, ticks: u32, mut rec: Option<&mut Recorder>) -> Result<String, JsValue> {
     let (r, mut g) = load(state_json)?;
     let run = g.career.run_number;
     let quest = active_quest_id(&g);
     let mut lines = hh_core::view::LinesRun::default();
     let mut stopped = false;
     let mut ran = 0u32;
+    let mut record = Vec::new();
     for _ in 0..ticks {
+        if let Some(rec) = rec.as_deref_mut() {
+            rec.rec.before(&g);
+        }
         r.advance(&mut g, 1);
         ran += 1;
         lines.note(&g);
+        if let Some(rec) = rec.as_deref_mut() {
+            record.extend(rec.rec.observe(&rec.ms, &r, &g, true));
+        }
         if g.career.run_number != run || active_quest_id(&g) != quest {
             stopped = true;
             break;
@@ -153,9 +166,62 @@ pub fn advance_run(state_json: &str, ticks: u32) -> Result<String, JsValue> {
         lines: hh_core::view::LinesRun,
         stopped: bool,
         ran: u32,
+        #[serde(skip_serializing_if = "Vec::is_empty")]
+        record: Vec<hh_sim::playrecord::Line>,
     }
-    Ok(to_json(&Advanced { state: hand_out(g), lines, stopped, ran }))
+    Ok(to_json(&Advanced { state: hand_out(g), lines, stopped, ran, record }))
 }
+
+/// The play record a career's log keeps as it plays (`hh_sim::playrecord`; Matt,
+/// 2026-11-27): the page feeds it every state it reaches, and logs the lines it returns.
+/// Observation only: it never changes a game.
+#[wasm_bindgen]
+pub struct Recorder {
+    rec: hh_sim::playrecord::Recorder,
+    ms: hh_sim::milestones::Milestones,
+    /// A new record's first lines, until `take_start`.
+    start: Vec<hh_sim::playrecord::Line>,
+}
+
+#[wasm_bindgen]
+impl Recorder {
+    /// A record from the state now (`resumed`: the career began before it); its first
+    /// lines are `take_start`'s.
+    #[wasm_bindgen(constructor)]
+    pub fn new(state_json: &str, resumed: bool) -> Result<Recorder, JsValue> {
+        let (_, g) = load(state_json)?;
+        let ms = milestones()?;
+        let (rec, start) = hh_sim::playrecord::Recorder::new(&ms, &g, resumed);
+        Ok(Recorder { rec, ms, start })
+    }
+
+    /// A record saved with `to_json`, resumed.
+    pub fn restore(json: &str) -> Result<Recorder, JsValue> {
+        let rec = serde_json::from_str(json).map_err(|e| err(format!("bad recorder JSON: {e}")))?;
+        Ok(Recorder { rec, ms: milestones()?, start: Vec::new() })
+    }
+
+    /// The lines a new record starts with (once).
+    pub fn take_start(&mut self) -> String {
+        to_json(&std::mem::take(&mut self.start))
+    }
+
+    pub fn to_json(&self) -> String {
+        to_json(&self.rec)
+    }
+
+    /// The lines the state now (after actions, or a jump) adds to the record.
+    pub fn observe(&mut self, state_json: &str) -> Result<String, JsValue> {
+        let (r, g) = load(state_json)?;
+        Ok(to_json(&self.rec.observe(&self.ms, &r, &g, false)))
+    }
+
+    /// [`advance_run`], recorded tick by tick.
+    pub fn advance_run(&mut self, state_json: &str, ticks: u32) -> Result<String, JsValue> {
+        advance_run_with(state_json, ticks, Some(self))
+    }
+}
+
 
 /// The active quest's id: a change is a main-story transition, whose modal pauses the
 /// game on the day it happened (a fast speed's wake would otherwise play on past it).
@@ -277,6 +343,19 @@ impl Autopilot {
     /// Plays up to `ticks` more; returns its status (`hh_sim::autopilot::Status`).
     pub fn step(&mut self, ticks: u32) -> String {
         to_json(&self.ap.step(ticks as u64))
+    }
+
+    /// [`Autopilot::step`] with `rec` following each tick and each look: returns
+    /// `{"status": <as step's>, "record": [<the record's new lines>]}`.
+    pub fn step_recorded(&mut self, ticks: u32, rec: &mut Recorder) -> String {
+        use hh_sim::autopilot::Watched;
+        let mut record = Vec::new();
+        let status = self.ap.step_watched(ticks as u64, |w, s| match w {
+            Watched::BeforeTick => rec.rec.before(&s.state),
+            Watched::AfterTick => record.extend(rec.rec.observe(&rec.ms, &s.rules, &s.state, true)),
+            Watched::Look => record.extend(rec.rec.observe(&rec.ms, &s.rules, &s.state, false)),
+        });
+        to_json(&serde_json::json!({ "status": status, "record": record }))
     }
 
     pub fn state(&self) -> String {

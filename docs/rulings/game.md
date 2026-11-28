@@ -42,8 +42,8 @@ Programs have their own part ([programs.md](programs.md)); boredom and ideology 
   (Basic Blueprints, 10 science, shows from 1.1 and unlocks the Excavator, Smelter, Launch Pad
   and Storage Depot; Advanced Blueprints, 20, on sale once 1.2 is done: Battery, Refinery,
   Fabricator and, from 2026-11-25, the Research Lab, no longer gated on 2 Data Centers). A new game builds only Solar Panels and Data Centers; 1.1 opens Buy Science
-  (placeholder 10 credits + 1 energy → 1 science) and the research view. 1.2's start grants
-  20 propellant once; pads carry Titanium only while it is active; a partial pad launches by
+  (placeholder 10 credits + 1 energy → 1 science) and the research view. 1.1's completion
+  grants 20 propellant once a career (Matt, 2026-11-27); pads carry Titanium only while it is active; a partial pad launches by
   hand from its card. Load Launch Pads opens with the first pad. 1.4 never mentions
   speculators, who arrive on their own (playtest batch 1, 2026-11-25). *Default (095):* 1.5
   reads this run's rank.
@@ -93,8 +93,11 @@ Programs have their own part ([programs.md](programs.md)); boredom and ideology 
   too, in `content/messages.json`.
 - **Story modals (2026-11-23).** Each chain quest's transition is a modal that pauses the
   game: the finished quest's payoff (its reward under it), then the next quest's story, then
-  its goal in the mechanics style (story-ui.md, *Quest mechanics text*);
-  one paragraph a modal, chained or merged as the story reads best, one button, play resumes
+  its goal in the mechanics style (story-ui.md, *Quest mechanics text*; a quest without a
+  payoff: its reward closes the next story instead). **Text format (Matt, 2026-11-27; 135):**
+  a quest has `title`, `story` and an optional `payoff`, each one text, panels split by a
+  line holding only `--` and paragraphs inside a panel kept (no `body`: that is a one-off's);
+  one panel a modal, one button, play resumes
   after the last; a chain's unread pages and the speed it resumes are in the save, so a
   reload mid-chain shows them again (082's deferral). No modal at game start but the first quest's; side quests and one-off events pop up too (story-ui.md, *Popups*); sims
   never see them (UI only). Placeholder story for every Act 1 beat lives only in content

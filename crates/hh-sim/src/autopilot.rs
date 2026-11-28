@@ -141,6 +141,15 @@ pub struct Autopilot {
     budget: u64,
 }
 
+/// What [`Autopilot::step_watched`] tells its watcher.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Watched {
+    /// After the player's look (its actions applied, if any).
+    Look,
+    BeforeTick,
+    AfterTick,
+}
+
 impl Autopilot {
     /// Takes over `state`: applies the boost (when given) and the autopilot's
     /// marker, both cheats (so the game is marked accelerated), then aims at
@@ -249,6 +258,13 @@ impl Autopilot {
     /// Plays up to `ticks` more ticks (looks included), stopping early once the
     /// target is reached or the budget is spent.
     pub fn step(&mut self, ticks: u64) -> Status {
+        self.step_watched(ticks, |_, _| {})
+    }
+
+    /// [`Autopilot::step`], with `watch` told of each look that acted (`Watched::Look`),
+    /// and before and after each tick: the web's play record ([`crate::playrecord`])
+    /// follows an autopilot's days as it follows the page's own.
+    pub fn step_watched(&mut self, ticks: u64, mut watch: impl FnMut(Watched, &Session)) -> Status {
         let mut left = ticks;
         while left > 0 && !self.reached() && self.played < self.budget {
             // Stalled: the next driver takes over at once (a fresh player, as a
@@ -268,6 +284,7 @@ impl Autopilot {
                     self.seen_run = run;
                 }
                 self.agent.act(&mut p);
+                watch(Watched::Look, p.session());
                 let run = p.view().run;
                 if run != self.seen_run {
                     self.agent.new_run(&mut p);
@@ -281,9 +298,11 @@ impl Autopilot {
                 }
             }
             let run = self.s.state.career.run_number;
+            watch(Watched::BeforeTick, &self.s);
             self.tracker.before(&self.s);
             self.s.advance(1);
             self.tracker.after(&self.s);
+            watch(Watched::AfterTick, &self.s);
             self.note_hits();
             self.played += 1;
             left -= 1;

@@ -8,6 +8,12 @@
 //! human model for the players (`--humans`). Then where the human first
 //! diverged from the best player (most milestones, then most credits) in what
 //! was built, and when.
+//!
+//! `--skilled` (131; from the record since 135) reads the log's play record
+//! ([`crate::playrecord`]) instead of replaying it, so it works on a log from any rules
+//! revision: the human's milestones, long goals and credits a day as the log recorded
+//! them, beside the skilled player's career on today's rules, the log's (tolerantly
+//! loaded) config and seed, for as many ticks.
 
 use std::fmt::Write as _;
 
@@ -15,8 +21,11 @@ use serde::Serialize;
 
 use crate::career::{self, Build, GameResult, RunResult};
 use crate::human::Humans;
+use std::collections::BTreeMap;
+
 use crate::milestones::{Hit, Milestones, VsHuman};
 use crate::playlog;
+use crate::playrecord::{PlayRecord, RunCredits};
 use crate::{list, read, usage, Fail, HUMANS, LADDER, MILESTONES, THREADS};
 
 /// A row: the human or a sim player, by name.
@@ -274,9 +283,53 @@ fn at(h: Option<&Hit>) -> String {
     h.map_or("-".to_string(), |h| format!("run {} day {}", h.run, h.day))
 }
 
-/// The human against the skilled player (131): run and day of each
-/// milestone, each global project's first completion, and the first rank 5.
-pub fn skilled_report(human: &GameResult, skilled: &GameResult, ms: &Milestones) -> String {
+/// One side of the skilled table: when each milestone and long goal was first met, and
+/// credits a day by run.
+#[derive(Debug, Clone, Serialize)]
+pub struct Side {
+    pub milestones: BTreeMap<String, Hit>,
+    pub landmarks: BTreeMap<String, Hit>,
+    pub runs: Vec<RunCredits>,
+}
+
+impl Side {
+    /// A sim player's career, as measured.
+    pub fn of_game(g: &GameResult) -> Side {
+        let per = |r: &RunResult, open: bool| RunCredits {
+            run: r.run,
+            days: r.ticks,
+            per_day: if r.ticks > 0 { r.credits_earned / r.ticks as f64 } else { 0.0 },
+            open,
+        };
+        let runs = g.runs.iter().map(|r| per(r, false)).chain(g.current.iter().map(|r| per(r, true))).collect();
+        // Landmark ticks from the career's start in a GameResult; career ticks, as a record's.
+        let landmarks = g.landmarks.iter().map(|(k, h)| (k.clone(), Hit { tick: h.tick + g.start_tick, ..*h })).collect();
+        Side { milestones: g.milestones.clone(), landmarks, runs }
+    }
+
+    /// A human's career, as its play log recorded it.
+    pub fn of_record(r: &PlayRecord) -> Side {
+        Side { milestones: r.milestones.clone(), landmarks: r.landmarks.clone(), runs: r.credits_by_run() }
+    }
+}
+
+fn credits_line(s: &Side) -> String {
+    if s.runs.is_empty() {
+        return "-".into();
+    }
+    let mut parts: Vec<String> =
+        s.runs.iter().map(|r| format!("{:.0}{}", r.per_day, if r.open { "+" } else { "" })).collect();
+    if parts.len() > 8 {
+        let n = parts.len();
+        parts.drain(4..n - 3);
+        parts.insert(4, "…".into());
+    }
+    parts.join(", ")
+}
+
+/// The human against the skilled player (131): run and day of each milestone, each
+/// global project's first completion, the first rank 5, and credits a day by run.
+pub fn skilled_report(human: &Side, skilled: &Side, ms: &Milestones) -> String {
     let mut t = String::from("\n## Against the skilled player (`--skilled`: ");
     let _ = writeln!(t, "{SKILLED})\n\n| Goal | Human | Skilled |\n|---|---|---|");
     for m in &ms.milestones {
@@ -288,17 +341,75 @@ pub fn skilled_report(human: &GameResult, skilled: &GameResult, ms: &Milestones)
         let _ = writeln!(t, "| {k} | {} | {} |", at(human.landmarks.get(k)), at(skilled.landmarks.get(k)));
     }
     // Rank 5 on any axis, first (the axis named).
-    let first = |g: &GameResult| {
+    let first = |g: &Side| {
         g.landmarks
             .iter()
             .filter(|(k, _)| k.starts_with("rank5:"))
-            .min_by_key(|(_, h)| h.tick)
+            .min_by_key(|(_, h)| (h.run, h.day))
             .map_or("-".to_string(), |(k, h)| format!("{} ({})", at(Some(h)), &k["rank5:".len()..]))
     };
     let _ = writeln!(t, "| rank 5 this run, first | {} | {} |", first(human), first(skilled));
-    let done = |g: &GameResult| g.landmarks.keys().filter(|k| k.starts_with("project:")).count();
+    let done = |g: &Side| g.landmarks.keys().filter(|k| k.starts_with("project:")).count();
     let _ = writeln!(t, "| global projects done | {} | {} |", done(human), done(skilled));
+    let _ = writeln!(t, "| credits a day, by run (`+` under way) | {} | {} |", credits_line(human), credits_line(skilled));
     t
+}
+
+/// `vs-human LOG --skilled`: the log's record beside the skilled player, no replay.
+fn skilled_from_record(path: &str, milestones: &str, ticks: Option<u64>, include_accelerated: bool, json: bool) -> Result<String, Fail> {
+    let ms = crate::load_milestones(milestones)?;
+    let log = crate::load_log(path)?;
+    let Some(rec) = &log.record else {
+        return Err(Fail::Check(format!(
+            "{path}: no play record: logs written before 135 keep none, so --skilled can't read this one. A plain vs-human replays it on a build of its own revision (scripts/baseline.py)."
+        )));
+    };
+    if log.accelerated && !include_accelerated {
+        return usage(format!(
+            "vs-human: {path} used an accelerator (boost, autopilot or debug speed): no human's pace (--include-accelerated to compare anyway)"
+        ));
+    }
+    let start = hh_core::Session::new(&log.config, log.seed, log.scenario.as_ref()).map_err(Fail::Usage)?.state.tick;
+    let span = ticks.unwrap_or(log.last_tick.saturating_sub(start)).max(1);
+    let g = career::play(&career::Game {
+        config: &log.config,
+        seed: log.seed,
+        scenario: log.scenario.as_ref(),
+        agent: crate::agents::named(SKILLED).1,
+        retirements: u32::MAX,
+        max_ticks: span,
+        milestones: &ms,
+        objectives: &[],
+        trace: false,
+    })
+    .map_err(Fail::Usage)?;
+    let (human, skilled) = (Side::of_record(rec), Side::of_game(&g));
+    if json {
+        return Ok(serde_json::json!({
+            "log": path,
+            "seed": log.seed.to_string(),
+            "rules_revision": log.rules_revision,
+            "warnings": log.warnings,
+            "ticks": span,
+            "human": human,
+            "skilled": skilled,
+        })
+        .to_string()
+            + "\n");
+    }
+    let mut t = format!(
+        "{path}: seed {}, config {}, rules revision {}{}: the human's play record over {span} ticks; the skilled player on today's rules\n",
+        log.seed,
+        log.config_hash,
+        log.rules_revision,
+        if log.rules_revision != hh_core::RULES_REVISION { format!(" (this engine plays {})", hh_core::RULES_REVISION) } else { String::new() },
+    );
+    for w in &log.warnings {
+        let _ = writeln!(t, "warning: {w}");
+    }
+    let _ = writeln!(t, "{}", playlog::record_line(&log));
+    t.push_str(&skilled_report(&human, &skilled, &ms));
+    Ok(t)
 }
 
 pub fn run(args: &[String]) -> Result<String, Fail> {
@@ -331,9 +442,15 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
         return usage("--threads must be at least 1");
     }
     let Some(path) = path else { return usage("vs-human: give a play log") };
+    if skilled {
+        if agents.is_some() || models.is_some() {
+            return usage("vs-human --skilled reads the log's record and plays the skilled player alone: no --agents or --humans");
+        }
+        return skilled_from_record(&path, &milestones, ticks, include_accelerated, json);
+    }
     // The ladder's players and human models unless given; never the oracle by
     // default (its careers take minutes: `--agents oracle` asks for it).
-    let (mut agents, models) = match (agents, models) {
+    let (agents, models) = match (agents, models) {
         (Some(a), Some(m)) => (a, m),
         (a, m) => {
             let spec = crate::experiment::Spec::from_json(&read(LADDER)?).map_err(|e| Fail::Usage(format!("{LADDER}: {e}")))?;
@@ -341,14 +458,10 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
             (a.unwrap_or(ladder), m.unwrap_or(spec.humans))
         }
     };
-    // Checked before `--skilled` joins: the best-player comparison needs one of these (134:
-    // `--agents "" --skilled` panicked after the careers had played).
+    // The best-player comparison needs one of these (134: `--agents ""` panicked after the
+    // careers had played).
     if agents.is_empty() {
         return usage("vs-human: no players");
-    }
-    // `--skilled` (131): the skilled player beside them, and its own table.
-    if skilled {
-        agents.push(SKILLED.to_string());
     }
     let humans = crate::load_humans(&human_models)?;
     for m in &models {
@@ -390,9 +503,7 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
         let (name, spec) = crate::agents::named(a);
         rows.push(Row { name: name.into(), spec: spec.into(), game: r.map_err(Fail::Usage)? });
     }
-    // The best of the players asked for (`--skilled`'s row has its own table).
-    let others = rows.len() - usize::from(skilled);
-    let b = 1 + best(&rows[1..others]).expect("a player");
+    let b = 1 + best(&rows[1..]).expect("a player");
     let div = diverge(&rows[0].game, &rows[b].game, &rows[b].name, &ms.vs_human);
     let replay_bad = rows.iter().any(|r| !r.game.replay_ok);
     let text = if json {
@@ -421,9 +532,6 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
             }
         );
         t.push_str(&report(&rows, &div, &ms, &humans, &models));
-        if let Some(s) = rows.iter().find(|r| skilled && r.name == "skilled") {
-            t.push_str(&skilled_report(&rows[0].game, &s.game, &ms));
-        }
         t
     };
     if h.matches == Some(false) || replay_bad {

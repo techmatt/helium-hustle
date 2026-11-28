@@ -222,6 +222,9 @@ const ORDER = [
 ];
 /** Where play stops: 1.3 Full Load done. */
 const OPENING_END = 'qtrade';
+/** Chain quests without a payoff (1.1, 135): no page of their own; their reward closes the
+ * next quest's story. */
+const NO_PAYOFF = new Set(JSON.parse(readFileSync(resolve(here, '../../content/events.json'), 'utf8')).filter((e) => e.category === 'story' && !e.payoff).map((e) => e.id));
 
 /** Plays the opening from the screen, reading each story modal as it opens. Returns the
  * quests reached and the transitions seen; checks as it goes that every quest change came
@@ -282,7 +285,7 @@ async function playOpening() {
       // The wake that moved the quest may have opened its modal after the check above:
       // read it first (the modal holds the clock, so if it isn't open now it never opened).
       if (await exists('[data-testid="story-modal"]')) continue;
-      check(told.has(s.quest) && paid.has(quest), `${quest} -> ${s.quest} opened a story modal chain: ${quest}'s payoff, then ${s.quest}'s story ending on its task`);
+      check(told.has(s.quest) && (paid.has(quest) || NO_PAYOFF.has(quest)), `${quest} -> ${s.quest} opened a story modal chain: ${quest}'s payoff (unless it has none), then ${s.quest}'s story ending on its task`);
       quest = s.quest;
       reached.push(quest);
     }

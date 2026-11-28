@@ -23,15 +23,15 @@ About 25% of play (a readout, not a target). Skill: from clicking commands to pr
 whole runs. The chain is 1.1 to 1.6 in order, each opening one mechanic at a time, and marks
 only significant things; 1.a, 1.b and 1.d are side quests that complete beside it, never hold it up,
 and give permanent rewards. A new game can build only Solar Panels and Data Centers. Each chain
-quest's transition is a story modal in the UI (its `story` and `payoff` paragraphs in
+quest's transition is a story modal in the UI (its `story` and `payoff` panels in
 `content/events.json`, placeholder text; no doc copies them; [rules/events.md](rules/events.md),
 *Story modals*). The Opens columns are the design's, by hand; `hh-sim gates` lists what each
 quest opens as built (its unlocks, the `requires`, research and projects gated on it).
 
 | Beat | Quest (id) | Trigger | Condition | Opens | Status |
 |---|---|---|---|---|---|
-| 1.1 Online | `qpower_boot_sequence` | game start | 2 Solar Panels | the Buy Science command and the research view (Basic Blueprints, 10 science, shows: the Excavator, Smelter, Launch Pad and Storage Depot; nothing asks for it) | aligned |
-| 1.2 First shipment | `qfirst_shipment` | 1.1 | one launch carrying 20+ titanium | its start grants 20 Propellant once a career; while it is active pads carry Titanium only, and a partial pad launches by hand from its card; done, Advanced Blueprints (20 science: Battery, Refinery, Fabricator, Research Lab) goes on sale | aligned |
+| 1.1 Online | `qpower_boot_sequence` | game start | 2 Solar Panels | the Buy Science command and the research view (Basic Blueprints, 10 science, shows: the Excavator, Smelter, Launch Pad and Storage Depot; nothing asks for it); done, 20 Propellant once a career (the first launch's) | aligned |
+| 1.2 First shipment | `qfirst_shipment` | 1.1 | one launch carrying 20+ titanium | while it is active pads carry Titanium only, and a partial pad launches by hand from its card; done, Advanced Blueprints (20 science: Battery, Refinery, Fabricator, Research Lab) goes on sale | aligned |
 | 1.3 Full load | `qfull_load` | 1.2 | one launch carrying a full pad of He-3 | (teaches He-3, the claim's real export); the Launch Full Pads command | aligned |
 | 1.4 Trade | `qtrade` | 1.3 | 1,500 credits from launches this run (from before the quest's start too) | nothing. Speculators arrive on their own (Attention from units sold, [attention.md](rules/attention.md)) | draft |
 | 1.5 A voice | `qa_voice` | 1.4 | rank 5 on any ideology axis this run | on start, Geopolitical Intelligence (Fund, the Ideologies panel) and Programming (research, 200 science, bought once for the career: the Programs view, the full editor; programs, Add to Program and loadouts are open from day 1); done, Overclock Protocols | draft |

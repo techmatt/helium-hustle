@@ -383,8 +383,8 @@ export interface QuestView {
    * task and what completing it does. */
   goal: string;
   reward: string;
-  body: string;
-  /** Paragraphs shown when this quest begins (may be empty: show `[body]`). */
+  /** Its story's panels (the engine splits `story` at `--` lines), one modal page each,
+   * shown when this quest begins; a panel's paragraphs are split by a blank line. */
   story: string[];
   progress: ProgressView | null;
   sub_objectives: { id: string; label: string; done: boolean; progress: ProgressView | null }[];
@@ -409,12 +409,14 @@ export interface StoryView {
   /** A one-off event's mechanics text: what it does (empty on a quest). May hold `{rate}`:
    * fill it with `fillRate` (format.ts). */
   effect: string;
+  /** A one-off event's text (empty on a quest: it has `story`). */
   body: string;
   /** A boredom-phase event's boredom per day, for `{rate}`; null for the rest. */
   rate?: Fx | null;
-  /** A completed quest's paragraphs shown when it began (absent on event texts). */
+  /** A quest's (or a once one-off's) story panels, shown when it began. */
   story?: string[];
-  /** A completed quest's paragraphs shown when it completed (may be empty). */
+  /** A chain quest's payoff panels, shown when it completed (empty: no popup of its own;
+   * its reward closes the next quest's story). */
   payoff?: string[];
   /** A main-story quest (false for a side quest; absent on event texts). */
   chain?: boolean;
@@ -452,7 +454,8 @@ export interface SideQuestView {
   /** Mechanics text: the one-line task and what completing it does. */
   goal: string;
   reward: string;
-  body: string;
+  /** Its story's panels, one popup page each. */
+  story: string[];
   /** The chain quest it branches off (its completion started it). */
   parent: string | null;
   done: boolean;
@@ -692,6 +695,18 @@ export interface View {
   names: Record<string, string>;
 }
 
+/** `advance_run`'s answer; `record`: a recorder's new lines (none without one). */
+export interface Advanced {
+  state: string;
+  lines: LinesRun;
+  stopped: boolean;
+  ran: number;
+  record?: RecordLine[];
+}
+
+/** A play record line (`hh_sim::playrecord::Line`): `kind` and its fields. */
+export type RecordLine = { kind: string } & Record<string, unknown>;
+
 export interface Replayed {
   fingerprint: string;
   warnings: string[];
@@ -711,8 +726,13 @@ export const engine = {
    * the program lines run over those ticks. */
   /** `stopped`: it stopped early, after a tick that retired the run or changed the active
    * quest; `ran`: the ticks it ran. */
-  advanceRun: (state: string, ticks: number): { state: string; lines: LinesRun; stopped: boolean; ran: number } =>
-    JSON.parse(wasm.advance_run(state, ticks)),
+  advanceRun: (state: string, ticks: number): Advanced => JSON.parse(wasm.advance_run(state, ticks)),
+  /** The play record a career's log keeps as it plays (`hh_sim::playrecord`): feed it
+   * every state reached (its `advance_run` records each tick), log the lines it returns.
+   * `resumed`: the career began before it. Free it when done. */
+  recorder: (state: string, resumed: boolean): wasm.Recorder => new wasm.Recorder(state, resumed),
+  /** A recorder saved with its `to_json`, resumed. */
+  restoreRecorder: (json: string): wasm.Recorder => wasm.Recorder.restore(json),
   apply: (state: string, action: Action): string => wasm.apply(state, JSON.stringify(action)),
   view: (state: string): View => JSON.parse(wasm.view(state)),
   fingerprint: (state: string): string => wasm.fingerprint(state),

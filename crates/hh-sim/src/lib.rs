@@ -19,6 +19,7 @@ pub mod milestones;
 pub mod objectives;
 pub mod params;
 pub mod playlog;
+pub mod playrecord;
 pub mod summary;
 pub mod vs;
 
@@ -49,8 +50,8 @@ pub const USAGE: &str = "usage:
               [--config F] [--set module.key=value]... [--threads T]
                                                    the committed ideology players: run and day each first reaches rank 5
   hh-sim speed                                     native engine speed (ticks/s)
-  hh-sim playlog LOG.jsonl [--json] [--milestones F] [--human-models F]   replay and measure a human's play log
-  hh-sim vs-human LOG.jsonl [--agents a,b] [--humans a,b] [--ticks N] [--json] [--threads T] [--milestones F] [--human-models F] [--include-accelerated] [--skilled]
+  hh-sim playlog LOG.jsonl [--json] [--milestones F] [--human-models F] [--today]   replay and measure a human's play log (--today: best-effort on today's rules)
+  hh-sim vs-human LOG.jsonl [--agents a,b] [--humans a,b] [--ticks N] [--json] [--threads T] [--milestones F] [--human-models F] [--include-accelerated] [--skilled: the log's record beside the skilled player alone, no replay]
                                                    the sim players on the log's game, beside the human
   hh-sim accelerate [--seed S] [--config F] [--agent SPEC] [--boost P,R,B | --no-boost] [--target milestone|quest|end]
                     [--budget TICKS] [--save RECORD]   debug: a fresh career on the autopilot (docs/simulator.md, Accelerators)
@@ -109,7 +110,10 @@ pub(crate) fn load_humans(path: &str) -> Result<human::Humans, Fail> {
 /// The play log at `path` (errors name it).
 pub(crate) fn load_log(path: &str) -> Result<playlog::Log, Fail> {
     let text = read(path)?;
-    playlog::Log::parse(&text).map_err(|e| {
+    // Tolerant (Matt, 2026-11-27): a config key the log lacks takes today's default.
+    // (This build's own baseline, embedded: the defaults are the rules it plays.)
+    let today: Option<serde_json::Value> = serde_json::from_str(include_str!("../../../configs/baseline.json")).ok();
+    playlog::Log::parse_with(&text, today.as_ref()).map_err(|e| {
         // A log from another rules revision says so, without the usage text (134: every log
         // Matt had, a revision or more old, failed on a missing config key under 40 lines of usage).
         let logged = text
@@ -337,16 +341,18 @@ fn run_game(o: &Opts) -> Result<String, Fail> {
     }
 }
 
-/// `hh-sim playlog LOG [--json] [--milestones F] [--human-models F]`: replays a
-/// human's play log and measures it as the ladder measures an agent.
+/// `hh-sim playlog LOG [--json] [--milestones F] [--human-models F] [--today]`: replays
+/// a human's play log and measures it as the ladder measures an agent; `--today` plays
+/// its actions best-effort on today's rules instead ([`playlog::replay_today`]).
 fn playlog_cmd(args: &[String]) -> Result<String, Fail> {
-    let (mut path, mut json) = (None, false);
+    let (mut path, mut json, mut today) = (None, false, false);
     let mut milestones = MILESTONES.to_string();
     let mut humans = HUMANS.to_string();
     let mut it = args.iter();
     while let Some(a) = it.next() {
         match a.as_str() {
             "--json" => json = true,
+            "--today" => today = true,
             "--milestones" => milestones = it.next().ok_or(Fail::Usage("--milestones needs a value".into()))?.clone(),
             "--human-models" => humans = it.next().ok_or(Fail::Usage("--human-models needs a value".into()))?.clone(),
             f if f.starts_with("--") => return usage(format!("playlog: unknown option {f:?}")),
@@ -358,6 +364,14 @@ fn playlog_cmd(args: &[String]) -> Result<String, Fail> {
         return usage("playlog: give a log file");
     };
     let log = load_log(&path)?;
+    if today {
+        let r = playlog::replay_today(&log).map_err(|e| Fail::Check(format!("{path}: {e}")))?;
+        return Ok(if json {
+            serde_json::json!({ "log": path, "warnings": log.warnings, "today": r }).to_string() + "\n"
+        } else {
+            playlog::today_report(&path, &log, &r)
+        });
+    }
     let ms = load_milestones(&milestones)?;
     let pf = load_humans(&humans)?;
     let r = playlog::replay(&log, &ms).map_err(|e| Fail::Check(format!("{path}: replay failed: {e}")))?;

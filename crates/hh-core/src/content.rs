@@ -439,15 +439,19 @@ pub struct Event {
     /// A one-off event's mechanics text: what it does (may hold `{rate}`, as `body` did).
     #[serde(default, skip_serializing_if = "String::is_empty")]
     pub effect: String,
+    /// A one-off event's text (a quest has `story` instead).
+    #[serde(default, skip_serializing_if = "String::is_empty")]
     pub body: String,
-    /// A chain quest's story, one paragraph per modal, shown when it becomes
-    /// active; a `once` one-off's, shown when it fires (UI only;
-    /// docs/rules/events.md, *Story modals*).
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub story: Vec<String>,
-    /// A chain quest's payoff, one paragraph per modal, shown when it completes.
-    #[serde(default, skip_serializing_if = "Vec::is_empty")]
-    pub payoff: Vec<String>,
+    /// A quest's story (every quest has one), shown when it becomes active (a side quest's
+    /// in its popup); a `once` one-off's, shown when it fires (UI only; docs/rules/events.md,
+    /// *Story modals*). One text: panels split by a line holding only `--` ([`panels`]),
+    /// paragraphs inside a panel kept.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub story: String,
+    /// A chain quest's payoff, shown when it completes (same format as `story`). Without
+    /// one, its reward closes the next quest's story and its completion has no popup.
+    #[serde(default, skip_serializing_if = "String::is_empty")]
+    pub payoff: String,
     /// A quest's picture (display only, never read by a rule): the stem of a file in
     /// the web client's `src/assets/quests/` (docs/rules/events.md, *Story modals*).
     #[serde(default, skip_serializing_if = "Option::is_none")]
@@ -456,6 +460,10 @@ pub struct Event {
     /// (only `grant` here).
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub on_start: Vec<Unlock>,
+    /// Applied once a career, as the quest completes (only `grant` here): unlike
+    /// `unlocks`, a new run doesn't re-apply it.
+    #[serde(default, skip_serializing_if = "Vec::is_empty")]
+    pub on_complete: Vec<Unlock>,
     /// While the quest is active, the only goods a pad may be set to.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub pad_goods: Option<Vec<String>>,
@@ -482,6 +490,25 @@ impl Event {
     pub fn is_one_off(&self) -> bool {
         !self.is_chain() && !self.is_side()
     }
+}
+
+/// A story or payoff text's panels, in order: split at each line holding only `--`, each
+/// trimmed, an empty one dropped (paragraphs inside a panel, split by a blank line, kept).
+/// Display only: one modal page or Story page each.
+pub fn panels(text: &str) -> Vec<&str> {
+    let mut out = Vec::new();
+    let mut start = 0;
+    let mut at = 0;
+    for line in text.split_inclusive('\n') {
+        if line.trim() == "--" {
+            out.push(text[start..at].trim());
+            start = at + line.len();
+        }
+        at += line.len();
+    }
+    out.push(text[start..].trim());
+    out.retain(|p| !p.is_empty());
+    out
 }
 
 /// How long a project's progress and completions last (docs/rules/projects.md).

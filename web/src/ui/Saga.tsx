@@ -319,7 +319,7 @@ const ENDING_FALLBACK = 'The swarm overloads everywhere it has ever been. The ca
 const ENDING_SEEN = 'hh-ending-seen';
 
 function endingText(v: View): string {
-  return v.story.find((e) => e.id === ENDING_QUEST)?.body ?? ENDING_FALLBACK;
+  return v.story.find((e) => e.id === ENDING_QUEST)?.story?.join('\n\n') || ENDING_FALLBACK;
 }
 
 /** Which victory this is: its timeline and calendar day, so a later career's shows again. */

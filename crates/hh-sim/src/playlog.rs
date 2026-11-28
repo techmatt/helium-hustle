@@ -25,6 +25,7 @@ use crate::career::{GameResult, Meter};
 use crate::experiment::{self, Cell, Loaded, Spec};
 use crate::human::{Clock, Humans};
 use crate::milestones::Milestones;
+use crate::playrecord::PlayRecord;
 
 pub const FORMAT: &str = "hh-playlog/1";
 
@@ -61,6 +62,64 @@ pub struct Log {
     /// The career used an accelerator (a boost, the autopilot or a debug
     /// speed): no human's pace, so `vs-human` refuses it.
     pub accelerated: bool,
+    /// What loading had to bend: a config key the log lacks (today's default used) or
+    /// one today's config dropped ([`tolerant_config`]).
+    pub warnings: Vec<String>,
+    /// Action lines this build can't read (an action since renamed or reshaped): their
+    /// tick and why. Exact replay refuses a log with any; [`replay_today`] skips them.
+    pub unreadable: Vec<(u64, String)>,
+    /// The play record the log carries (logs from 135 on), if any.
+    pub record: Option<PlayRecord>,
+}
+
+/// A logged config, read tolerantly (Matt, 2026-11-27): as it is if this build takes it;
+/// else laid over today's config (`defaults`, configs/baseline.json: the one home of a
+/// key's default), each key the log lacks taking today's value and each key today's
+/// config no longer has dropped, with a warning for each. A module whose variant
+/// changed keeps its logged parameters whole (another variant's keys aren't its).
+pub fn tolerant_config(logged: &Value, defaults: Option<&Value>, warnings: &mut Vec<String>) -> Result<Config, String> {
+    let err = match Config::from_value(logged) {
+        Ok(c) => return Ok(c),
+        Err(e) => e,
+    };
+    let Some(today) = defaults else { return Err(err) };
+    let mut w = Vec::new();
+    let merged = merge(logged, today, "", 0, &mut w);
+    let c = Config::from_value(&merged).map_err(|e| format!("{err}\n(laid over today's defaults, still: {e})"))?;
+    warnings.extend(w);
+    Ok(c)
+}
+
+/// Merges by the config's own shape: the top, `modules`, each module and its `params`
+/// (depths 0 to 3). A parameter's value is the log's whole: a map in one
+/// (`starting_resources`) is data keyed by content id, not more keys.
+fn merge(logged: &Value, today: &Value, path: &str, depth: u32, w: &mut Vec<String>) -> Value {
+    let (Value::Object(l), Value::Object(t)) = (logged, today) else { return logged.clone() };
+    if depth > 3 {
+        return logged.clone();
+    }
+    if l.contains_key("variant") && l.get("variant") != t.get("variant") {
+        return logged.clone();
+    }
+    let at = |k: &str| if path.is_empty() { k.to_string() } else { format!("{path}.{k}") };
+    let mut out = serde_json::Map::new();
+    for (k, tv) in t {
+        match l.get(k) {
+            Some(lv) => {
+                out.insert(k.clone(), merge(lv, tv, &at(k), depth + 1, w));
+            }
+            None => {
+                w.push(format!("config {}: not in the log; today's default {tv} used", at(k)));
+                out.insert(k.clone(), tv.clone());
+            }
+        }
+    }
+    for (k, lv) in l {
+        if !t.contains_key(k) {
+            w.push(format!("config {}: no longer a key; the log's {lv} dropped", at(k)));
+        }
+    }
+    Value::Object(out)
 }
 
 /// The page's fastest speed but a debug one (`web/src/clock.ts`, `SPEEDS`): a log
@@ -86,14 +145,21 @@ fn as_u64(v: &Value, k: &str, line: usize) -> Result<u64, String> {
 }
 
 impl Log {
+    /// A log read strictly: its config as logged, or an error.
     pub fn parse(text: &str) -> Result<Log, String> {
+        Log::parse_with(text, None)
+    }
+
+    /// A log read tolerantly against today's config (`defaults`, [`tolerant_config`]).
+    pub fn parse_with(text: &str, defaults: Option<&Value>) -> Result<Log, String> {
         let mut lines = text.lines().enumerate().filter(|(_, l)| !l.trim().is_empty());
         let (_, first) = lines.next().ok_or("empty log")?;
         let h: Value = serde_json::from_str(first).map_err(|e| format!("line 1: {e}"))?;
         if h.get("kind").and_then(Value::as_str) != Some("header") || h.get("format").and_then(Value::as_str) != Some(FORMAT) {
             return Err(format!("line 1: not a {FORMAT} header"));
         }
-        let config = Config::from_value(field(&h, "config", 1)?).map_err(|e| format!("header config: {e}"))?;
+        let mut warnings = Vec::new();
+        let config = tolerant_config(field(&h, "config", 1)?, defaults, &mut warnings).map_err(|e| format!("header config: {e}"))?;
         let seed = field(&h, "seed", 1)?
             .as_str()
             .and_then(|s| s.parse().ok())
@@ -124,7 +190,12 @@ impl Log {
             panels: BTreeMap::new(),
             duplicates: 0,
             accelerated: actions.iter().any(|a| is_accelerator(&a.action)),
+            warnings,
+            unreadable: Vec::new(),
+            record: None,
         };
+        let mut record = PlayRecord::default();
+        let mut has_record = false;
         // In tick, then wall-clock, order: a page's closing beacon can land
         // before a send still in flight, so file order may swap neighbors (ticks
         // never fall within a career; the clock could step back).
@@ -163,9 +234,23 @@ impl Log {
         for (n, tick, t, v) in parsed {
             let kind = field(&v, "kind", n)?.as_str().ok_or(format!("line {n}: kind"))?.to_string();
             match kind.as_str() {
+                "record_start" | "snapshot" | "landmark" | "run_end" => {
+                    has_record = true;
+                    record.read(&v);
+                }
                 "action" => {
-                    let a: Action = serde_json::from_value(field(&v, "action", n)?.clone())
-                        .map_err(|e| format!("line {n}: action: {e}"))?;
+                    let a: Action = match serde_json::from_value(field(&v, "action", n)?.clone()) {
+                        Ok(a) => a,
+                        Err(e) => {
+                            log.unreadable.push((tick, format!("line {n}: {e}")));
+                            // An accelerator still counts, by its kind, when its shape changed.
+                            let k = v.pointer("/action/cheat/kind").and_then(Value::as_str);
+                            if matches!(k, Some("boost" | "autopilot" | "cheat_building" | "complete_research")) {
+                                log.accelerated = true;
+                            }
+                            continue;
+                        }
+                    };
                     if is_accelerator(&a) {
                         log.accelerated = true;
                     }
@@ -211,6 +296,7 @@ impl Log {
             log.points.push(Point { t, tick, speed, kind, hidden });
         }
         log.actions = actions;
+        log.record = has_record.then_some(record);
         Ok(log)
     }
 
@@ -300,6 +386,21 @@ pub struct Replayed {
 /// a pause included, counts toward that next tick). A decision is a tick
 /// where the human applied actions.
 pub fn replay(log: &Log, milestones: &Milestones) -> Result<Replayed, String> {
+    if let Some((tick, e)) = log.unreadable.first() {
+        return Err(format!(
+            "{} action lines this build can't read (first at tick {tick}, {e}): replay it on its own revision (scripts/baseline.py), or best-effort (--today)",
+            log.unreadable.len()
+        ));
+    }
+    // Exact replay plays the log's own config: one patched from today's defaults is
+    // another game (the tolerant load is for the record and --today).
+    if let Some(w) = log.warnings.first() {
+        return Err(format!(
+            "the log's config needed today's defaults ({w}{}): the log is rules revision {}, this build {RULES_REVISION}: replay it on a build of that revision (scripts/baseline.py), best-effort on today's rules (playlog --today), or read its record (vs-human --skilled)",
+            if log.warnings.len() > 1 { format!(", and {} more", log.warnings.len() - 1) } else { String::new() },
+            log.rules_revision
+        ));
+    }
     let wall = std::time::Instant::now();
     let mut s = Session::new(&log.config, log.seed, log.scenario.as_ref())?;
     let mut meter = Meter::new(&s, milestones, &[]);
@@ -360,6 +461,172 @@ pub fn replay(log: &Log, milestones: &Milestones) -> Result<Replayed, String> {
     Ok(Replayed { game, time: time_use(log), fingerprint, matches })
 }
 
+/// An action the best-effort replay couldn't apply.
+#[derive(Debug, Clone, Serialize)]
+pub struct Skip {
+    pub tick: u64,
+    pub run: u32,
+    pub day: u64,
+    pub action: String,
+    pub why: String,
+}
+
+/// The log's actions played on today's rules ([`replay_today`]).
+#[derive(Debug, Clone, Serialize)]
+pub struct Today {
+    pub applied: u64,
+    pub skips: Vec<Skip>,
+    /// Where the best-effort career ended: tick, run, retirements.
+    pub end: (u64, u32, u32),
+}
+
+/// An action as a player reads it: `Buy Smelter`, `Retire`, `Set program ...`.
+fn describe(a: &Action) -> String {
+    let c = hh_core::content();
+    let v = serde_json::to_value(a).unwrap_or(Value::Null);
+    let ty = v.get("type").and_then(Value::as_str).unwrap_or("action");
+    let mut ty = ty.replace('_', " ");
+    if let Some(f) = ty.get_mut(0..1) {
+        f.make_ascii_uppercase();
+    }
+    let arg = v.as_object().and_then(|o| o.iter().find(|(k, _)| *k != "type").map(|(_, x)| x.clone()));
+    match (a, arg) {
+        (Action::Buy { building }, _) => {
+            format!("Buy {}", c.buildings.iter().find(|b| b.id == *building).map_or(building.as_str(), |b| b.name.as_str()))
+        }
+        (Action::Research { research }, _) => {
+            format!("Research {}", c.research.iter().find(|r| r.id == *research).map_or(research.as_str(), |r| r.name.as_str()))
+        }
+        (_, Some(Value::String(s))) => format!("{ty} {s}"),
+        _ => ty,
+    }
+}
+
+/// Why `a` was refused, with a purchase's shortfall (`22 credits short`) where the
+/// refusal was its price.
+fn why(s: &Session, a: &Action, e: &str) -> String {
+    let credits = |price: hh_core::Fx| {
+        let have = s.state.amount(hh_core::modules::economy::CREDITS);
+        format!("{} credits short", (price - have).to_f64().ceil())
+    };
+    if let (Action::BuyLand, true) = (a, e.ends_with("can't afford it")) {
+        return credits(hh_core::modules::economy::land_price(&s.rules, &s.state));
+    }
+    if let (Action::Buy { building }, true) = (a, e.ends_with("can't afford it")) {
+        if let Some(b) = hh_core::content().buildings.iter().find(|b| b.id == *building) {
+            let short: Vec<String> = hh_core::modules::economy::price(&s.rules, &s.state, b)
+                .iter()
+                .filter(|(r, c)| s.state.amount(r) < **c)
+                .map(|(r, c)| format!("{} {r} short", (*c - s.state.amount(r)).to_f64().ceil()))
+                .collect();
+            if !short.is_empty() {
+                return short.join(", ");
+            }
+        }
+    }
+    e.to_string()
+}
+
+/// Best-effort replay (Matt, 2026-11-27): the log's actions on today's rules and its
+/// (tolerantly loaded) config, each at its logged tick; an action today's game refuses
+/// (or this build can't read) is skipped and noted, and play goes on. The first skip is
+/// where the log stops working on today's rules. Exact replay at the log's own revision
+/// is `scripts/baseline.py`'s.
+pub fn replay_today(log: &Log) -> Result<Today, String> {
+    let mut s = Session::new(&log.config, log.seed, log.scenario.as_ref())?;
+    let mut skips: Vec<Skip> = Vec::new();
+    let mut unread = log.unreadable.iter().peekable();
+    let mut applied = 0u64;
+    let note = |s: &Session, skips: &mut Vec<Skip>, action: String, why: String| {
+        let g = &s.state;
+        skips.push(Skip { tick: g.tick, run: g.career.run_number, day: g.run.day, action, why });
+    };
+    for st in &log.actions {
+        if st.tick > s.state.tick {
+            while let Some((t, e)) = unread.peek().filter(|(t, _)| *t <= st.tick).cloned() {
+                s.advance(t - s.state.tick);
+                note(&s, &mut skips, "an action".into(), format!("unreadable on this build ({e})"));
+                unread.next();
+            }
+            s.advance(st.tick - s.state.tick);
+        }
+        match s.apply(&st.action) {
+            Ok(()) => applied += 1,
+            Err(e) => {
+                let w = why(&s, &st.action, &e);
+                note(&s, &mut skips, describe(&st.action), w);
+            }
+        }
+    }
+    for (t, e) in unread {
+        s.advance(t.saturating_sub(s.state.tick));
+        note(&s, &mut skips, "an action".into(), format!("unreadable on this build ({e})"));
+    }
+    s.advance(log.last_tick.saturating_sub(s.state.tick));
+    Ok(Today { applied, skips, end: (s.state.tick, s.state.career.run_number, s.state.career.retirements) })
+}
+
+/// The best-effort replay's report: the first point the log stops working, then the
+/// skips by action.
+pub fn today_report(path: &str, log: &Log, r: &Today) -> String {
+    let mut t = String::new();
+    let _ = writeln!(
+        t,
+        "{path}: best-effort replay on today's rules (revision {RULES_REVISION}; the log's {}), {} of {} actions applied",
+        log.rules_revision,
+        r.applied,
+        log.actions.len() + log.unreadable.len()
+    );
+    match r.skips.first() {
+        None => {
+            let _ = writeln!(t, "Every action applied: the log still plays on today's rules.");
+        }
+        Some(k) => {
+            let _ = writeln!(t, "First stops working: run {} day {} (tick {}): {} skipped, {}", k.run, k.day, k.tick, k.action, k.why);
+            let mut by: BTreeMap<&str, u64> = BTreeMap::new();
+            for k in &r.skips {
+                *by.entry(k.action.as_str()).or_default() += 1;
+            }
+            let _ = writeln!(
+                t,
+                "{} skipped in all: {}",
+                r.skips.len(),
+                by.iter().map(|(a, n)| format!("{a} {n}")).collect::<Vec<_>>().join(", ")
+            );
+            for k in r.skips.iter().skip(1).take(9) {
+                let _ = writeln!(t, "- run {} day {}: {} skipped, {}", k.run, k.day, k.action, k.why);
+            }
+        }
+    }
+    let (tick, run, ret) = r.end;
+    let _ = writeln!(t, "Ended at tick {tick}: run {run}, {ret} retirements (the log's own: tick {}).", log.last_tick);
+    if !log.warnings.is_empty() {
+        let _ = writeln!(t, "\nThe log's config, laid over today's ({} keys):", log.warnings.len());
+        for w in &log.warnings {
+            let _ = writeln!(t, "warning: {w}");
+        }
+    }
+    t
+}
+
+/// One line on the log's play record: what it holds, or that the log has none.
+pub fn record_line(log: &Log) -> String {
+    match &log.record {
+        None => "play record: none (logs written before 135 keep none)".to_string(),
+        Some(r) => format!(
+            "play record: {} snapshots, {} milestones, {} landmarks, {} runs ended{}",
+            r.snapshots,
+            r.milestones.len(),
+            r.landmarks.len(),
+            r.runs.len(),
+            match r.start {
+                Some((_, run, day, true)) => format!("; begun mid-career at run {run} day {day} (a save from before records)"),
+                _ => String::new(),
+            }
+        ),
+    }
+}
+
 fn mins(s: f64) -> String {
     format!("{:.1}", s / 60.0)
 }
@@ -395,6 +662,10 @@ pub fn report(path: &str, log: &Log, r: &Replayed, milestones: Milestones, human
     if log.accelerated {
         let _ = writeln!(t, "ACCELERATED: an accelerator (boost, autopilot or debug speed) was used: not a human's pace");
     }
+    for w in &log.warnings {
+        let _ = writeln!(t, "warning: {w}");
+    }
+    let _ = writeln!(t, "{}", record_line(log));
     let cell = Cell::new(&log.config.name, "human", "human");
     let sum = experiment::summarize(&cell, std::slice::from_ref(&r.game), &milestones, &[("log".into(), None)]);
     let spec = Spec {

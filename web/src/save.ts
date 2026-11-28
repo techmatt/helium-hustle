@@ -35,6 +35,9 @@ export interface Save {
    * page resumes: a reload mid-chain shows them again, the clock held. */
   storyPages?: StoryPage[];
   speedBeforeStory?: Speed;
+  /** The play record's recorder (`hh_sim::playrecord::Recorder`), so a reload keeps the
+   * log's record whole. */
+  record?: string | null;
   /** The page that wrote it: a claim by another tab always changes the save, so the
    * tab playing before hears of it (`storage` fires only on a change). */
   page?: string;

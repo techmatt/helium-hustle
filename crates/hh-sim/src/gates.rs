@@ -80,7 +80,7 @@ fn quest(c: &Content, q: &str) -> Vec<String> {
     };
     let e = c.event(q).expect("a quest id");
     row("on start", e.on_start.iter().map(unlock).collect());
-    row("on completion", e.unlocks.iter().map(unlock).collect());
+    row("on completion", e.unlocks.iter().chain(&e.on_complete).map(unlock).collect());
     let reached = |r: &Requirement| matches!(r, Requirement::QuestReached { quest } if quest == q);
     let done = |r: &Requirement| matches!(r, Requirement::QuestCompleted { quest } if quest == q);
     row("buildings once reached", c.buildings.iter().filter(|b| reached(&b.requires)).map(|b| b.id.clone()).collect());

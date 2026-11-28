@@ -1,7 +1,7 @@
 //! The Story panel: the active quest, side quests, acts, completed quests and this run's event texts.
 
 use super::{keep, ActView, ProgressView, QuestView, SideQuestView, StoryView, SubObjectiveView, Text};
-use crate::content::{content, Condition, Event, Trigger};
+use crate::content::{content, panels, Condition, Event, Trigger};
 use crate::fx::Fx;
 use crate::modules::*;
 use crate::rules::Rules;
@@ -16,8 +16,7 @@ pub(super) fn quest(r: &Rules, g: &GameState) -> Option<QuestView> {
         title: &q.title,
         goal: &q.goal,
         reward: &q.reward,
-        body: &q.body,
-        story: &q.story,
+        story: panels(&q.story),
         progress: progress(events::progress(r, g, &q.condition)),
         sub_objectives: match &q.condition {
             Condition::AllOf { sub_objectives } => sub_objectives
@@ -52,7 +51,7 @@ pub(super) fn side_quests(r: &Rules, g: &GameState) -> Vec<SideQuestView> {
                 title: &e.title,
                 goal: &e.goal,
                 reward: &e.reward,
-                body: &e.body,
+                story: panels(&e.story),
                 parent: match &e.trigger {
                     Trigger::QuestComplete { quest } => Some(quest.as_str()),
                     Trigger::Flag { beside, .. } => Some(beside.as_str()),
@@ -107,8 +106,8 @@ fn story(e: &'static Event) -> StoryView {
         body: &e.body,
         rate: None,
         chain: e.is_chain(),
-        story: &e.story,
-        payoff: &e.payoff,
+        story: panels(&e.story),
+        payoff: panels(&e.payoff),
         beat: e.beat.as_deref(),
         act: content().act_of(&e.id),
         picture: e.picture.as_deref(),

@@ -69,7 +69,10 @@ latched (cumulative He-3, shipments, science made) starts over after a retiremen
 
 **Quest start.** The first time a chain quest becomes active in the career (as the check
 reaches it), its `on_start` grants are added to the run's stock, once: a retirement doesn't
-repeat them (career `started_quests`). 1.2 First Shipment's 20 Propellant is the one.
+repeat them (career `started_quests`); no quest has one now. **Quest completion:** a
+quest's `on_complete` grants are added as it completes, once a career (unlike its `unlocks`,
+a new run doesn't re-apply them; a scenario's starting quests don't: its resources are its
+file's). 1.1 Online's 20 Propellant, the first launch's, is the one.
 While a chain quest naming `pad_goods` is active, a pad may be set only to those goods (1.2:
 Titanium; [shipments.md](shipments.md)).
 
@@ -105,7 +108,7 @@ trigger and condition hold.
 
 `category` decides chain quest, side quest or one-off. `silent` keeps a one-off event out of
 the activity feed and the view's event list (display only). Text no rule reads: `title`, a
-one-off's `summary` (its headline), `body`, `story` and `payoff` (narrative only), and the
+one-off's `summary` (its headline) and `body`, a quest's `story` and `payoff` (narrative only), and the
 mechanics fields, a quest's `goal` and `reward` (the reward lists only real grants and is
 absent, never "None.", on a quest that grants nothing; no `hints`) and a one-off's `effect`
 (rulings/story-ui.md, *Quest mechanics text*; checked at load).
@@ -117,11 +120,17 @@ order within a day (side quests aside), marking all but the latest of Burnout an
 boredom phases `superseded`; the right column's Events list leaves those out and shows the
 rest newest first (rulings/story-ui.md, *Right panel*).
 
-**Story modals** (UI only: no rule reads them, sims never see them). A quest's `story`
-(shown as a chain quest becomes active) and `payoff` (shown as a quest completes) are
-paragraphs, one modal page each; a quest with no `story` shows its `body`, and a one-off's
-popup is its `story` pages (Burnout's), else its `body`, with its effect. The view carries
-them (`quest.story`; each completed quest's `chain`, `story` and `payoff`); the web UI's
+**Story modals** (UI only: no rule reads them, sims never see them). Every quest, chain or
+side, has a `story` (no `body`: that is a one-off's); a chain quest may have a `payoff`. Each
+is one text: panels split by a line holding only `--`, paragraphs inside a panel by a blank
+line; the view carries the panels (`content::panels`), one modal page each, and Story's
+cards show one at a time. A chain quest's story shows as it becomes active, its payoff (its
+reward under it) as it completes; **a chain quest without a payoff** opens no popup of its
+own: its Reward line closes the next quest's story, after that quest's goal (1.1 Online's,
+and Acts 2-4's drafts). A side quest's popup is its story with its goal and reward; a
+one-off's is its `story` pages (Burnout's), else its `body`, with its effect. The view
+carries them (`quest.story`; each completed quest's `chain`, `story` and `payoff`;
+`side_quests[].story`); the web UI's
 `story.ts` orders the pages, and when popups show is rulings/story-ui.md's, *Popups*. A
 quest (chain or side) may name a `picture`, the stem of a web asset (`[a-z0-9_]`; the view
 carries it on `quest`, `story` and `side_quests`; where it shows: rulings/story-ui.md,

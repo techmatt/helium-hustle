@@ -287,6 +287,20 @@ pub(crate) fn fire(g: &mut GameState, e: &Event) {
     apply_unlocks(g, e);
 }
 
+/// A quest completing in play: it fires, and its `on_complete` grants are paid (once: a
+/// quest completes once a career, and a new run re-applies only `unlocks`). A scenario's
+/// starting quests only fire: its resources are as its file gives them.
+fn complete(g: &mut GameState, q: &Event) {
+    g.career.completed_quests.insert(q.id.clone());
+    fire(g, q);
+    for u in &q.on_complete {
+        if let Unlock::Grant { resource, amount } = u {
+            grant(g, resource, *amount);
+        }
+    }
+    g.note("quest", &q.id);
+}
+
 /// End of tick: the active quest completes if its condition holds (and the
 /// next may too, the same day); then each one-off event not yet fired this
 /// run fires if triggered and its condition holds; then each side quest not
@@ -298,9 +312,7 @@ pub fn check(r: &Rules, g: &mut GameState) {
         if !holds(r, g, &q.id, &q.condition) {
             break;
         }
-        g.career.completed_quests.insert(q.id.clone());
-        fire(g, q);
-        g.note("quest", &q.id);
+        complete(g, q);
     }
     // One-off events before side quests, so a flag one sets starts a side
     // quest the same day.
@@ -317,9 +329,7 @@ pub fn check(r: &Rules, g: &mut GameState) {
     // condition holds, beside the chain (it never waits on them).
     for e in content().events.iter().filter(|e| e.is_side()) {
         if !g.career.completed_quests.contains(&e.id) && triggered(g, e) && holds(r, g, &e.id, &e.condition) {
-            g.career.completed_quests.insert(e.id.clone());
-            fire(g, e);
-            g.note("quest", &e.id);
+            complete(g, e);
         }
     }
 }

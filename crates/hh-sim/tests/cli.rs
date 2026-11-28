@@ -684,17 +684,93 @@ fn vs_human_sets_the_players_beside_the_human_and_finds_where_they_part() {
     // after playing them).
     let a = ["vs-human", script.as_str(), "--agents", ",", "--skilled", "--milestones", &msf, "--human-models", &hf];
     assert!(matches!(run(&args(&a)), Err(Fail::Usage(_))));
-    // A log from another rules revision whose config no longer loads says so (a failed
-    // check, its revision named), not a usage error.
+    // A log from another rules revision missing a config key loads tolerantly (135): the
+    // key takes today's default, with a warning; one with a key today's config dropped too.
     let old = format!("{dir}/vs-old.jsonl");
     let text = std::fs::read_to_string(&script).unwrap();
     let mut head: serde_json::Value = serde_json::from_str(text.lines().next().unwrap()).unwrap();
     head["rules_revision"] = serde_json::json!(1);
     head["config"]["modules"]["ideology"]["params"].as_object_mut().unwrap().remove("rank_figures");
+    head["config"]["modules"]["ideology"]["params"]["gone_key"] = serde_json::json!(3);
     let rest: Vec<&str> = text.lines().skip(1).collect();
     std::fs::write(&old, format!("{head}\n{}\n", rest.join("\n"))).unwrap();
+    // Exact replay still refuses it (a patched config is another game), naming its revision...
     match run(&args(&["playlog", &old, "--milestones", &msf, "--human-models", &hf])) {
         Err(Fail::Check(e)) => assert!(e.contains("rules revision 1") && e.contains("rank_figures"), "{e}"),
         other => panic!("{:?}", other.map(|_| ())),
     }
+    // ...and best effort on today's rules plays it, saying what it patched.
+    let out = run(&args(&["playlog", &old, "--today"])).unwrap();
+    assert!(out.contains("warning: config modules.ideology.params.rank_figures: not in the log"), "{out}");
+    assert!(out.contains("gone_key: no longer a key") && out.contains("Every action applied"), "{out}");
+}
+
+/// The play record lines a career writes as it plays (as the web client's recorder
+/// does), for the career of `s`'s record.
+fn record_lines(s: &hh_core::Session) -> Vec<serde_json::Value> {
+    use hh_sim::playrecord::Recorder;
+    let ms = hh_sim::milestones::Milestones::from_json(&std::fs::read_to_string(root("configs/sim/milestones.json")).unwrap()).unwrap();
+    let rec = s.record();
+    let mut g = hh_core::Session::new(&rec.config, rec.seed, None).unwrap();
+    let (mut r, mut lines) = Recorder::new(&ms, &g.state, false);
+    let mut i = 0;
+    while g.state.tick < rec.ticks {
+        while i < rec.actions.len() && rec.actions[i].tick == g.state.tick {
+            g.apply(&rec.actions[i].action).unwrap();
+            i += 1;
+            lines.extend(r.observe(&ms, &g.rules, &g.state, false));
+        }
+        r.before(&g.state);
+        g.advance(1);
+        lines.extend(r.observe(&ms, &g.rules, &g.state, true));
+    }
+    lines.iter().map(|l| {
+        let mut v = serde_json::to_value(l).unwrap();
+        v["t"] = serde_json::json!(v["tick"].as_u64().unwrap() as f64 * 100.0);
+        v["speed"] = serde_json::json!(10);
+        v
+    }).collect()
+}
+
+#[test]
+fn vs_human_skilled_reads_the_play_record_and_today_replays_best_effort() {
+    use hh_core::{driver, Config, Session};
+    let dir = root("out/hh-sim-tests");
+    std::fs::create_dir_all(&dir).unwrap();
+    let (msf, hf) = (root("configs/sim/milestones.json"), root("configs/sim/humans.json"));
+    let c = Config::from_json(&std::fs::read_to_string(baseline()).unwrap()).unwrap();
+    let mut s = Session::new(&c, 7, None).unwrap();
+    driver::play(&mut s, 600, driver::Policy::Script);
+    // No record (a log from before 135): said plainly.
+    let bare = format!("{dir}/rec-none.jsonl");
+    write_log_of(&bare, &c, &s, false);
+    match run(&args(&["vs-human", &bare, "--skilled", "--milestones", &msf, "--human-models", &hf])) {
+        Err(Fail::Check(e)) => assert!(e.contains("no play record"), "{e}"),
+        other => panic!("{:?}", other.map(|_| ())),
+    }
+    // With a record, and a header from another revision: no replay needed.
+    let with = format!("{dir}/rec-with.jsonl");
+    let mut text = std::fs::read_to_string(&bare).unwrap();
+    for l in record_lines(&s) {
+        text.push_str(&format!("{l}\n"));
+    }
+    let mut lines: Vec<String> = text.lines().map(String::from).collect();
+    let mut head: serde_json::Value = serde_json::from_str(&lines[0]).unwrap();
+    head["rules_revision"] = serde_json::json!(1);
+    lines[0] = head.to_string();
+    std::fs::write(&with, lines.join("\n") + "\n").unwrap();
+    let out = run(&args(&["vs-human", &with, "--skilled", "--milestones", &msf, "--human-models", &hf])).unwrap();
+    for want in ["## Against the skilled player", "| M1 First Light | run 1 day", "credits a day, by run", "play record: ", "rules revision 1 (this engine plays"] {
+        assert!(out.contains(want), "{want}: {out}");
+    }
+    // Best effort on today's rules: every action of a log made today applies...
+    let out = run(&args(&["playlog", &with, "--today"])).unwrap();
+    assert!(out.contains("Every action applied"), "{out}");
+    // ...and one today's game refuses is skipped, its shortfall named.
+    let bad = format!("{dir}/rec-today.jsonl");
+    let buy = serde_json::json!({"t": 150.0, "kind": "action", "tick": 1, "run": 1, "day": 1, "speed": 10,
+        "action": {"type": "buy", "building": "data_center"}});
+    std::fs::write(&bad, format!("{}\n{buy}\n{}\n", lines[0], lines[1..].join("\n"))).unwrap();
+    let out = run(&args(&["playlog", &bad, "--today"])).unwrap();
+    assert!(out.contains("First stops working: run 1 day 1 (tick 1): Buy Data Center skipped,") && out.contains("short"), "{out}");
 }

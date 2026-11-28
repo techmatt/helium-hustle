@@ -22,6 +22,12 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   oracle; its strategies are a fixed table; it takes `--milestones`. Its `Looks` and
   `milestones::Tracker` judge history milestones differently: the next oracle item moves it to
   `Tracker` semantics and re-pins.
+- **Play logs across rules changes (Matt, 2026-11-27; 135).** A log loads tolerantly (a
+  missing config key takes its default, with a warning); every log carries a play record
+  written as the game plays (snapshots about every 10 days; milestones, projects, first
+  rank 5, credits a day by run), never recomputed, kept small; `vs-human --skilled` reads
+  the record, no replay; best-effort replay on today's rules reports where a log stops
+  working; exact replay at the log's revision stays `scripts/baseline.py`'s.
 - **Ideology parity (Matt, 2026-11-27; 130, targets placeholders).** One committed player per
   axis at each skill (funds its axis, uses its boredom tool, buys its tagged buildings, a
   sensible retirement), read by `hh-sim axes`. Skilled (the oracle): run 1 finishes Blueprint

@@ -6,7 +6,7 @@ import { boredomText, commandTip, dateText, delta, fillRate, num, perDay, signed
 import { inPanelOrder, panelEntries } from '../src/ui/resourceOrder.ts';
 import { navSlots } from '../src/ui/navSlots.ts';
 import { offeredSpeed, speedsOffered } from '../src/speeds.ts';
-import { clearTold, newTold, tellPages } from '../src/story.ts';
+import { clearTold, newTold, paragraphsOf, tellPages } from '../src/story.ts';
 import { blockEnd, blockLen, canAddElse, canIndent, insertLine, moveLines, otherUnit, removeLine, sameEntry, setIndent, tidy } from '../src/ui/programEdit.ts';
 
 const cases = [
@@ -232,9 +232,23 @@ edits += 4;
   assert.equal(tellPages(view(1, [ev('a')]), 'play', quiet, opts({ pilot: true })).length, 0);
   assert.equal(tellPages(view(1, [ev('b')]), 'load', quiet, opts()).length, 0);
   assert.deepEqual([...quiet.seenPopups], [], 'the autopilot and a load mark nothing seen');
-  const q = { id: 'q1', title: 'Q1', summary: '', goal: 'Do it.', reward: '', effect: '', body: 'Begin.', picture: null };
+  const q = { id: 'q1', title: 'Q1', summary: '', goal: 'Do it.', reward: '', effect: '', body: '', story: ['Begin.'], picture: null };
   const opened = tellPages(view(1, [], q), 'play', newTold(), opts());
   assert.deepEqual(opened.map((p) => [p.text, p.task]), [['Begin.', 'Do it.']], 'a new quest opens with its task last');
+  // A chain quest without a payoff (1.1, 135): no page of its own; its reward closes the
+  // next quest's story, after its task. With a payoff, the reward stays on the payoff.
+  const done0 = (payoff) => ({ id: 'q0', title: 'Q0', summary: '', goal: 'Did.', reward: '20 propellant.', effect: '', body: '', chain: true, story: ['Was.'], payoff, picture: null });
+  const q2 = { ...q, story: ['One.', 'Two.\n\nTwo, second paragraph.'] };
+  const shift = (payoff) => {
+    const tt = newTold();
+    tt.lastQuest = 'q0';
+    return tellPages({ ...view(1, [], q2), story: [done0(payoff)] }, 'play', tt, opts());
+  };
+  const bare = shift([]);
+  assert.deepEqual(bare.map((p) => [p.kind, p.text, p.task, p.doneRewards]), [['story', 'One.', undefined, undefined], ['story', 'Two.\n\nTwo, second paragraph.', 'Do it.', ['20 propellant.']]], 'no payoff: the reward closes the next story');
+  assert.deepEqual(paragraphsOf(bare[1].text), ['Two.', 'Two, second paragraph.'], 'a panel keeps its paragraphs');
+  const paid = shift(['Paid.']);
+  assert.deepEqual(paid.map((p) => [p.text, p.reward, p.doneRewards]), [['Paid.', '20 propellant.', undefined], ['One.', undefined, undefined], ['Two.\n\nTwo, second paragraph.', undefined, undefined]], 'a payoff carries its own reward');
   // A project completion: its own popup each completion, never at a load or under the pilot.
   const pd = (completion) => ({ id: 'p1', name: 'P1', day: 4, completion, costs: { credits: '100' }, reward_text: ['More.'] });
   const pt = newTold();
@@ -250,7 +264,7 @@ edits += 4;
   assert.equal(tellPages(view(1, [ev('late')], null, [], 1), 'play', pt, opts()).length, 0, 'told once there too');
   clearTold(t);
   assert.equal(t.seenPopups.size + t.stories.size, 0);
-  edits += 19;
+  edits += 22;
 }
 
 console.log(`unit ok (${cases.length + 4 + edits + pictures.length + act1.length} checks)`);
