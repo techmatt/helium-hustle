@@ -33,7 +33,7 @@ $S summarize out/experiments/ladder/games.jsonl      # each game's runs, milesto
 $S compare --config-b configs/other.json      # two configs, paired on the same seeds
 $S compare --set boredom.base_cap=500         # a param (or module.variant=name) against the base
 $S balance                                    # the judge's missed targets, as balance: lines (~5 s)
-$S trace --agents author --retirements 2      # one career (the grid's first agent at --first-seed; --retirements at least 1): actions, the agent's notes (#), the career log
+$S trace --agents author --retirements 2      # one career (the grid's first agent at --first-seed; --retirements at least 1): actions, the agent's notes (#; the oracle's carry its last plan note and the author's look), the career log
 $S trace --lines                              # ... and each day's program lines run, in queue order
 $S trace --agents oracle --first-seed 2 --at 1500   # the state at a tick: what walls a run in
 $S agents                                     # the ladder's rungs
@@ -104,8 +104,10 @@ the oracle (`oracle:profile=4,commit=k`) from a new game; *medium*, the author
 (`author:commit=k`) from a new game with Blueprint Archive, Lunar Cartography and Foundation
 Grant completed. Each career stops when this run's rank on its axis first reaches 5 (A Voice)
 or after `--runs` runs; it prints the run and day, the projects done by then, and per run its
-days (`f` forced), best axis score as % of the rank-5 score, Trade's and Fund's days and the
-global projects done. `--seeds`, `--first-seed`, `--skills`, `--axes`, `--set`, `--threads`;
+days (`f` forced), best axis score as % of the rank-5 score, Trade's and Fund's days, each
+project completed that run with its day (`ba@1012`: never funded and funded late read apart
+without a trace) and the global projects done at its end. It plays through
+`career::drive`, the loop `play` and `trace` share (a `Watch` per caller). `--seeds`, `--first-seed`, `--skills`, `--axes`, `--set`, `--threads`;
 a skilled career is 1-2 minutes on one thread. Its read: experiments/results/130_ideology_parity_sim/.
 
 ### Grid reads

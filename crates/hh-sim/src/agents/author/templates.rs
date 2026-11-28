@@ -1,4 +1,4 @@
-//! The author's program templates (docs/agents.md, *The program author*):
+//! The author's program templates (docs/author.md):
 //! the main program's hand plan and standing cycle, the side programs, the
 //! condition programs it saves by name (`ship`, `dream watch`, `build order`)
 //! and the line builders they share. Free functions of the view: the

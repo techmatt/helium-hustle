@@ -122,6 +122,10 @@ the branch's worktree reads the branch's `configs/` and may fail to load them.
 - **New rules, old agents:** `python scripts/baseline.py HEAD --agents-from main` lays main's
   `crates/hh-sim/src/agents/` over a copy of `HEAD`. Agents and engine must still compile
   together.
+- **A UI before/after:** `python scripts/baseline.py main --web` builds the copy's page
+  (this tree's `web/node_modules` linked in, its own wasm, `vite build`; ~2 min cold) and
+  prints its `vite preview` line: serve it on the item's port, beside this tree's preview
+  (its play logs stay in the copy, never the synced folder).
 - **A content or config what-if** (a readonly item included): a copy as above, edit its
   `content/` or `configs/`, rebuild there with an absolute `CARGO_TARGET_DIR`
   ([README](../README.md#build-and-test)), run from it. A `--set` is enough for a param.

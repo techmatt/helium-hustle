@@ -1,0 +1,10 @@
+baseline (config cd194eb3ea35c90e), rank 5 at score 730.000000; runs: days (best score as % of rank 5, f forced; x@day: done that day)
+| Skill | Axis | Seed | Reached | Runs | Projects done by then | Wall s |
+|---|---|---|---|---|---|---|
+| medium | nationalist | 1 | run 1 day 991 | 991 (100% trade@561 fund@636 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | nationalist | 2 | run 1 day 910 | 910 (100% trade@537 fund@552 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | humanist | 1 | run 1 day 951 | 951 (100% trade@557 fund@593 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | humanist | 2 | run 1 day 982 | 982 (100% trade@553 fund@620 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | rationalist | 1 | run 1 day 1078 | 1078 (100% trade@697 fund@715 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | rationalist | 2 | run 1 day 974 | 974 (100% trade@605 fund@615 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+exit 0

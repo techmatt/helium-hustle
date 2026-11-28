@@ -12,6 +12,11 @@ the day), `configs/baseline.json`, `docs/rules/README.md` (*Modules*, *The day*)
 them), `content.rs` (`Condition`), `content/check.rs` (`condition_ok`), `modules/events.rs` (`holds`, `progress`, `kind`),
 `view/projects.rs` (`condition_text`) and `hh-sim`'s `agents/progress.rs` (`condition`).
 
+**A new content field** goes on its row struct in `content.rs` (checks in `content/check.rs`).
+An optional one is an `Option` with `#[serde(default, skip_serializing_if = "Option::is_none")]`
+(as `nudge`): rows without it omit the key, no `null` on every row. A config key has no such
+default (CLAUDE.md: a missing key is a load error).
+
 **A new program reading** touches `state::Reading` (`describe`, and `researched` for a
 research-gated one), `modules/programs.rs` (`check_line`, `reading`; `locked` for a gated
 one), `program_text.rs` (its text both ways), `view/programs.rs` (`readings`, the editor's

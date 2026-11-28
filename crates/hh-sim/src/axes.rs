@@ -10,7 +10,10 @@
 //!
 //! Each case prints the run and day rank 5 was first reached, the projects
 //! completed by then, and each run's length and best score on the axis as a
-//! share of the rank-5 score. Cases run in parallel (`--threads`).
+//! share of the rank-5 score, with the days 1.4 Trade was done (`trade@`), Fund
+//! opened (`fund@`) and each project completed that run (`ba@1012`, from the
+//! career log), then the global projects done at its end (`[ba lc]`). Cases run
+//! in parallel (`--threads`).
 
 use std::fmt::Write as _;
 
@@ -20,6 +23,7 @@ use hh_core::scenario::Start;
 use hh_core::{Config, Fx, Scenario, Session};
 
 use crate::agents::{self, Player};
+use crate::career;
 use crate::{load_config, load_milestones, usage, Fail, BASELINE, MILESTONES, THREADS};
 
 /// The rank the players race to (mirrors content/events.json 1.5 A Voice's
@@ -48,6 +52,8 @@ struct Run {
     trade_day: Option<u64>,
     /// Global projects completed in the career at its end.
     projects: Vec<String>,
+    /// Projects completed during the run, each with its day, in order.
+    done: Vec<(String, u64)>,
 }
 
 /// One case's career.
@@ -86,91 +92,96 @@ fn medium_start() -> Scenario {
     }
 }
 
+/// A case's watch over [`career::drive`]: each run's length, best score and
+/// days, until rank 5 is reached or `max_runs` runs end.
+struct Race {
+    axis: &'static str,
+    fund: String,
+    max_runs: u32,
+    case: Case,
+    best: Fx,
+    last_day: u64,
+    fund_day: Option<u64>,
+    trade_day: Option<u64>,
+    /// The career log's length when the run began: its `project` entries
+    /// since are the run's completions (run numbers restart at a timeline's end).
+    from: usize,
+}
+
+impl Race {
+    /// Ends the run in `case.runs`: the career's global projects done now
+    /// (they outlive the run's end) and the run's completions.
+    fn end_run(&mut self, s: &Session, forced: bool) {
+        let v = s.rules.view(&s.state);
+        let projects = v.projects.iter().filter(|x| x.completed && x.scope != "run").map(|x| x.id.to_string()).collect();
+        let log = &s.state.career.log;
+        let done = log[self.from..].iter().filter(|e| e.kind == "project").map(|e| (e.id.clone(), e.day)).collect();
+        self.from = log.len();
+        let (fund_day, trade_day) = (self.fund_day.take(), self.trade_day.take());
+        self.case.runs.push(Run { days: self.last_day, best: self.best, forced, fund_day, trade_day, projects, done });
+        self.best = Fx::ZERO;
+    }
+}
+
+impl career::Watch for Race {
+    fn before(&mut self, p: &mut Player) {
+        if self.fund_day.is_none() && agents::command_unlocked(p.view(), &self.fund) {
+            self.fund_day = Some(p.view().day);
+        }
+        if self.trade_day.is_none() && p.state().career.completed_quests.contains(TRADE) {
+            self.trade_day = Some(p.view().day);
+        }
+    }
+
+    /// A retirement the agent chose.
+    fn retired(&mut self, p: &mut Player) {
+        self.end_run(p.session(), false);
+    }
+
+    fn tick(&mut self, s: &mut Session) -> Result<(), String> {
+        let run = s.state.career.run_number;
+        s.advance(1);
+        let g = &s.state;
+        if g.career.run_number != run {
+            // The run ended (chosen or forced): `retirements` rose either way.
+            let forced = g
+                .career
+                .log
+                .iter()
+                .rev()
+                .find(|e| e.kind == "retired" || e.kind == "forced_retirement")
+                .is_some_and(|e| e.kind == "forced_retirement");
+            self.end_run(s, forced);
+            return Ok(());
+        }
+        self.last_day = g.run.day;
+        self.best = self.best.max(ideology::score(g, self.axis));
+        if ideology::rank(&s.rules, g, self.axis) >= RANK {
+            let v = s.rules.view(g);
+            let done: Vec<String> = v.projects.iter().filter(|p| p.completed && p.scope != "run").map(|p| p.id.to_string()).collect();
+            self.case.reached = Some((g.career.run_number, g.run.day, done));
+            self.end_run(s, false);
+        }
+        Ok(())
+    }
+
+    fn done(&self, _s: &Session) -> bool {
+        self.case.reached.is_some() || self.case.runs.len() as u32 >= self.max_runs
+    }
+}
+
 fn play(config: &Config, axis: &'static str, k: usize, skill: &'static str, seed: u64, max_runs: u32, max_ticks: u64) -> Result<Case, String> {
     let start = std::time::Instant::now();
     let ms = load_milestones(MILESTONES).map_err(|e| format!("{e:?}"))?;
     let scenario = (skill == "medium").then(medium_start);
     let mut s = Session::new(config, seed, scenario.as_ref())?;
     let mut agent = agents::build(&spec(skill, k), seed, &ms)?;
-    let mut case = Case { axis, skill, seed, runs: Vec::new(), reached: None, wall_s: 0.0 };
-    let mut seen_run = 0u32;
-    let (mut best, mut last_day, mut fund_day, mut trade_day) = (Fx::ZERO, 0u64, None, None);
-    // The career's global projects done now (they outlive the run's end).
-    let global = |s: &Session| -> Vec<String> {
-        let v = s.rules.view(&s.state);
-        v.projects.iter().filter(|x| x.completed && x.scope != "run").map(|x| x.id.to_string()).collect()
-    };
-    let fund = format!("fund_{axis}");
-    let end = s.state.tick.saturating_add(max_ticks);
-    'career: while s.state.tick < end {
-        let gap = {
-            let mut p = Player::new(&mut s);
-            let run = p.view().run;
-            if run != seen_run {
-                if seen_run != 0 {
-                    agent.new_run(&mut p);
-                }
-                seen_run = run;
-            }
-            if fund_day.is_none() && agents::command_unlocked(p.view(), &fund) {
-                fund_day = Some(p.view().day);
-            }
-            if trade_day.is_none() && p.state().career.completed_quests.contains(TRADE) {
-                trade_day = Some(p.view().day);
-            }
-            agent.act(&mut p);
-            let run = p.view().run;
-            if run != seen_run {
-                agent.new_run(&mut p);
-                seen_run = run;
-                // A retirement the agent chose.
-                let projects = global(p.session());
-                case.runs.push(Run { days: last_day, best, forced: false, fund_day: fund_day.take(), trade_day: trade_day.take(), projects });
-                best = Fx::ZERO;
-            }
-            agent.next_look(&mut p).max(1)
-        };
-        if case.runs.len() as u32 >= max_runs {
-            break 'career;
-        }
-        for _ in 0..gap {
-            let run = s.state.career.run_number;
-            s.advance(1);
-            let g = &s.state;
-            if g.career.run_number != run {
-                // The run ended (chosen or forced): `retirements` rose either way.
-                let forced = g
-                    .career
-                    .log
-                    .iter()
-                    .rev()
-                    .find(|e| e.kind == "retired" || e.kind == "forced_retirement")
-                    .is_some_and(|e| e.kind == "forced_retirement");
-                let projects = global(&s);
-                case.runs.push(Run { days: last_day, best, forced, fund_day: fund_day.take(), trade_day: trade_day.take(), projects });
-                best = Fx::ZERO;
-                if case.runs.len() as u32 >= max_runs {
-                    break 'career;
-                }
-                break;
-            }
-            last_day = g.run.day;
-            best = best.max(ideology::score(g, axis));
-            if ideology::rank(&s.rules, g, axis) >= RANK {
-                let v = s.rules.view(g);
-                let done: Vec<String> = v.projects.iter().filter(|p| p.completed && p.scope != "run").map(|p| p.id.to_string()).collect();
-                let projects = done.clone();
-                case.reached = Some((g.career.run_number, g.run.day, done));
-                case.runs.push(Run { days: last_day, best, forced: false, fund_day: fund_day.take(), trade_day: trade_day.take(), projects });
-                break 'career;
-            }
-            if s.state.tick >= end {
-                break 'career;
-            }
-        }
-    }
-    case.wall_s = start.elapsed().as_secs_f64();
-    Ok(case)
+    let case = Case { axis, skill, seed, runs: Vec::new(), reached: None, wall_s: 0.0 };
+    let from = s.state.career.log.len();
+    let mut race = Race { axis, fund: format!("fund_{axis}"), max_runs, case, best: Fx::ZERO, last_day: 0, fund_day: None, trade_day: None, from };
+    career::drive(&mut s, agent.as_mut(), max_ticks, &mut race)?;
+    race.case.wall_s = start.elapsed().as_secs_f64();
+    Ok(race.case)
 }
 
 /// `hh-sim axes [--seeds N] [--first-seed S] [--skills a,b] [--axes a,b]
@@ -233,7 +244,7 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     results.sort_by_key(|r| r.0);
     let bar = ideology::score_for_rank(&hh_core::Rules::new(&config).map_err(Fail::Usage)?, RANK);
     let mut out = String::new();
-    let _ = writeln!(out, "{} (config {}), rank {RANK} at score {bar}; runs: days (best score as % of rank {RANK}, f forced)", config.name, config.hash());
+    let _ = writeln!(out, "{} (config {}), rank {RANK} at score {bar}; runs: days (best score as % of rank {RANK}, f forced; x@day: done that day)", config.name, config.hash());
     let _ = writeln!(out, "| Skill | Axis | Seed | Reached | Runs | Projects done by then | Wall s |");
     let _ = writeln!(out, "|---|---|---|---|---|---|---|");
     for (_, r) in results {
@@ -246,7 +257,8 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
                 let pct = if bar > Fx::ZERO { (r.best.mul_int(100) / bar).floor_int() } else { 0 };
                 let fd = r.fund_day.map_or(String::new(), |d| format!(" fund@{d}"));
                 let td = r.trade_day.map_or(String::new(), |d| format!(" trade@{d}"));
-                let fd = format!("{td}{fd} [{}]", r.projects.iter().map(|x| short(x)).collect::<Vec<_>>().join(" "));
+                let at: String = r.done.iter().map(|(id, d)| format!(" {}@{d}", short(id))).collect();
+                let fd = format!("{td}{fd}{at} [{}]", r.projects.iter().map(|x| short(x)).collect::<Vec<_>>().join(" "));
                 format!("{}{} ({pct}%{fd})", r.days, if r.forced { "f" } else { "" })
             })
             .collect();

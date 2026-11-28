@@ -18,7 +18,9 @@ author, cloned, plays a copy of the game under the goals, and the score picks. T
 looks exactly when the author would (plans fall due at its next look) and rollouts look as
 often, so a rollout of the current goals is what will happen.
 
-- **Strategy** (each run's start, every `replan` ticks): standing bundles, a fixed table
+- **Strategy** (each run's start, every `replan` ticks, default 500: so an uncommitted oracle
+  may start A Voice's campaign up to ~500 days late; a committed one also re-chooses at once
+  when A Voice starts or ends and when its campaign's project completes): standing bundles, a fixed table
   (`strategies`, its rows documented there; `strategy=k` pins row k): the author's own,
   *trade* variants, trade + sustain, research or Foundation Grant, and trade + each axis
   funded. Each is played `long` ticks through retirements. The quests profile, while 1.5 A Voice is

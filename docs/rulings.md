@@ -11,7 +11,8 @@ size margin splits again (a new file here, a row below); never trim a ruling to 
 
 | Part | What it holds |
 |---|---|
-| [rulings/game.md](rulings/game.md) | Pillars, speed, tuning and placeholders, Act 1 (no legacy numbers, the main quest line 1.1-1.6, Burnout and rivals off the line, side quests' permanent rewards, staggered unlocks, the prose round-trip, story modals), projects, bonuses, No-cargo pads, adversaries, retirement, the swarm's clock, the day's rate, rules port picks |
+| [rulings/game.md](rulings/game.md) | Pillars, speed, tuning and placeholders, Act 1 (no legacy numbers, the main quest line 1.1-1.6, Burnout and rivals off the line, side quests' permanent rewards, staggered unlocks, the prose round-trip, story modals), No-cargo pads, adversaries, the day's rate, rules port picks |
+| [rulings/projects.md](rulings/projects.md) | Project scopes (global projects, funding cap, the Deep Space Telescope), bonus stacking, starting buildings as free extras, the retirement gap, the swarm's clock |
 | [rulings/boredom.md](rulings/boredom.md) | Boredom as a speed governor, numbers easy to think through (soft goal), escalation, one modifier per ideology axis (tagged buildings), each axis's boredom tool (Dome, Dream, Theorize), axis nudges, sell refunds, major ranks, rounding after ÷m and rank thresholds, the AI Consciousness Act |
 | [rulings/programs.md](rulings/programs.md) | Programs: the line template, steps, locked lines, `if`, `else`, the language unlocking early, commands only as program lines, no partial purchases (full cost or nothing, the cap-overflow skip), Programming (unlocks the Programs view), loadouts, the Programs view (Text and Blocks, one gutter, repeat counts first), readings, `fund`, program tabs (processor counts, status lights) |
 | [rulings/engine.md](rulings/engine.md) | Architecture, numbers, rules-history rows, light testing per item, saves |

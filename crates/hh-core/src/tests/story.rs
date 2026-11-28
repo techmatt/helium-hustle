@@ -194,7 +194,7 @@ fn boredom_waits_for_burnout() {
     let r = rules();
     let mut g = r.new_game(1);
     let cloud = crate::content::content().commands.iter().find(|c| c.id == "cloud_compute").unwrap();
-    let command_boredom = |g: &GameState| crate::modules::programs::boredom_cost(&r, g, cloud);
+    let command_boredom = |g: &GameState| crate::modules::programs::flat_boredom(&r, g, cloud);
     assert!(cloud.boredom > Fx::ZERO);
     let phase2 = r.p.boredom.phase_days[1];
     r.advance(&mut g, phase2);

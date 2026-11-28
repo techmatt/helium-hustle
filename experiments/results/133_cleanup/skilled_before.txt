@@ -1,0 +1,5 @@
+baseline (config cd194eb3ea35c90e), rank 5 at score 730.000000; runs: days (best score as % of rank 5, f forced; x@day: done that day)
+| Skill | Axis | Seed | Reached | Runs | Projects done by then | Wall s |
+|---|---|---|---|---|---|---|
+| skilled | humanist | 1 | no | 1575f (0% trade@1011 lc@1566 [lc]) | - | 36 |
+| skilled | rationalist | 1 | no | 1478f (0% trade@958 ba@1255 lc@1345 [ba lc]) | - | 34 |

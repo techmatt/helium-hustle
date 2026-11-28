@@ -5,6 +5,10 @@ tripped check and nothing when clean; always exits 0 (warnings never gate).
                                                 the branch touched what they measure
     python scripts/warning_checks.py --all      every check, whatever was touched
     python scripts/warning_checks.py --no-parity --no-balance  static checks only (no builds)
+    python scripts/warning_checks.py --help     this text; an unknown argument prints it too
+
+Its output can run past a terminal tail (a balance line per missed target): write it to
+a file (`> out/<item>/warnings.txt`) and read that.
 
 Checks:
 - parity: the golden game's fingerprint natively (`hh-sim golden`) and in wasm
@@ -329,8 +333,20 @@ def wanted(flag, paths, changed):
     return any(p.startswith(paths) for p in changed)
 
 
+FLAGS = ("--all", "--no-parity", "--no-balance")
+
+
 def main():
     sys.stdout.reconfigure(encoding="utf-8", newline="\n")
+    args = sys.argv[1:]
+    # `--help` (or any unknown argument) prints the usage and runs nothing: an unknown
+    # flag used to be ignored, so `--help` ran every check, builds included.
+    if any(a not in FLAGS for a in args):
+        bad = [a for a in args if a not in FLAGS and a not in ("-h", "--help")]
+        if bad:
+            print(f"unknown argument {' '.join(bad)}; nothing was checked\n")
+        print(__doc__)
+        return
     try:
         settings = json.loads((ROOT / "scripts" / "warning_checks.json").read_text(encoding="utf-8"))
         check_tunables(settings)

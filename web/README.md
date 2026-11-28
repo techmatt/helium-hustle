@@ -183,3 +183,13 @@ summary; its header indexes its sections), `src/story.ts` what the story modal t
 (pure), `src/playlog.ts` the play log's client half (the queue, sends to `/__playlog`,
 career ids), `src/ui/` the panels; each file's header says the rest. The config is
 `configs/baseline.json`, imported at build time.
+
+- **A new popup kind:** a `StoryPage` builder in `story.ts` (as `eventPages`,
+  `projectPages`), its loop in `tellPages`, and, to list it under Events, a line kind in
+  `store.ts` `eventLines`. The flow: `tell` queues `tellPages`' pages, `openStory` shows
+  them, `ui/App.tsx` `StoryModal` renders them.
+- **Events' data path:** the view's `event_texts` → `store.ts` `listedEvents` (drops
+  superseded ones), with `project_done`, → `eventLines` (one keyed line each) →
+  `eventItems` (the keys, for unread counts) → `ui/Right.tsx`.
+- **Debug actions** go through `act()`, which refuses every action while a popup, the run
+  summary or the autopilot is up; a refused cheat sets the notice line (jump ahead too).

@@ -13,8 +13,8 @@
     "preview": "vite preview",
     "e2e": "node scripts/e2e.mjs",
     "qa": "node scripts/qa.mjs",
-    "unit": "node scripts/unit.mjs && node scripts/contrast.mjs",
-    "test": "tsc --noEmit && node scripts/unit.mjs && node scripts/contrast.mjs"
+    "unit": "node scripts/unit.mjs && node scripts/contrast.mjs && node scripts/css.mjs",
+    "test": "tsc --noEmit && node scripts/unit.mjs && node scripts/contrast.mjs && node scripts/css.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",

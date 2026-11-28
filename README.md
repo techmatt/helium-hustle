@@ -27,7 +27,7 @@ implemented (the Godot build's Arc 1, ported): [docs/rules/](docs/rules/README.m
 | `scenarios/` | Named starting states for the sim and the web debug menu, embedded in `hh-core`. |
 | `experiments/` | Experiment specs (`ladder.json`, `ceiling.json` the oracle's, `balance.json` the judge's); `results/<item>/` holds an item's write-up and working papers when it left any (bug hunts record into `docs/qa-findings.md`). A read's `games.jsonl`: `hh-sim summarize`. |
 | `scripts/` | `wasm-smoke.mjs` (native = wasm), `wasm-speed.mjs` (engine speed in wasm), `warning_checks.py` (CLAUDE.md, *Warning checks*), `set_golden.py` (re-pins the golden game), `set_pins.py` (re-pins the sim players' games, *Rules changes* below), `seeds.py` (fresh seeds from the ledger, [docs/simulator.md](docs/simulator.md) *Seeds*), `baseline.py` (a built copy of another revision for reads against it, [docs/experiments.md](docs/experiments.md)), `prose.py` (every player-facing string out to `content/prose.md` and back by id: `export`, `import FILE`, `check`; re-export after a text change). |
-| `docs/` | `rules/` (the rules as implemented) and `rules-history.md`; `rulings.md` and `rulings/` (Matt's standing rulings, by area); `architecture.md`; `principles.md` (targets and the judge); `extending.md` (what a new module or program piece touches); `simulator.md`, `experiments.md` (grid reads, measures, costs), `agents.md` and `oracle.md` (hh-sim); `qa-findings.md` (bug hunts). |
+| `docs/` | `rules/` (the rules as implemented) and `rules-history.md`; `rulings.md` and `rulings/` (Matt's standing rulings, by area); `architecture.md`; `principles.md` (targets and the judge); `extending.md` (what a new module or program piece touches); `simulator.md`, `experiments.md` (grid reads, measures, costs), `agents.md`, `author.md` and `oracle.md` (hh-sim); `qa-findings.md` (bug hunts). |
 | `reference/` | The Godot snapshot ([reference/README.md](reference/README.md)). Never edited. |
 | `art/` | Generated art and picker images (the only originals, ~500 MB): a link to the main checkout's `art/`, shared by every worktree and never committed. That `art/` is itself a junction into the project's Drive home, `C:\Code\gdrive-sync\helium-hustle\art\`, where Drive backs it up; reads and writes through either link land there. The scripts that draw it are committed with their item's write-up in `experiments/results/<item>/`. Painted art is drawn by Codex CLI's image tool on Matt's ChatGPT login (no API key), 37–97 s a draw, 3–4 at once: recipe in [018's write-up](experiments/results/018_building_art_round/README.md), against a fixed guide image (`codex exec -i`) in [019's](experiments/results/019_painterly_iso_round/README.md), cut to WebP for a card in [020's](experiments/results/020_building_card_art/README.md). **What ships** is in `web/src/assets/` (which loader reads what, and which write-up made it: [web/README.md](web/README.md), *Theme*); chip glyphs are SVG from [026's `glyphs.mjs`](experiments/results/026_icon_art_r1/), which reads `icons.tsx`'s color maps as text and holds the nav colors. Finished pickers (`art/pickers/`, mock-ups only) , superseded rounds (`art/buildings/r1/`) and rejected redraws (`*.try<n>.png`) move to the Drive archive, `C:\Code\gdrive-sync\helium-hustle\archive\` at the same relative path; a new picker writes `art/pickers/` afresh. |
 | `out/` | Scratch and run output, git-ignored. |
@@ -64,11 +64,11 @@ cargo run -q --release -p hh-sim -- ladder   # the agent ladder, 15 careers: ~20
 node web/scripts/build-wasm.mjs              # -> web/src/wasm (git-ignored); ~80 s cold, <1 s when inputs are unchanged; its cache is target/wasm32-unknown-unknown plus host build scripts in target/release (~190 MB in the main checkout, which conductor's Run game reuses: deleting it only buys one cold build)
 node scripts/wasm-smoke.mjs                  # native = wasm on that build; ~1 s
 python scripts/warning_checks.py             # warning checks; parity and balance only if the branch touched what they read: ~1 s, else up to 2 min cold
-python scripts/warning_checks.py --all       # parity and balance whatever was touched (rebuilds stale builds)
+python scripts/warning_checks.py --all       # parity and balance whatever was touched (`--help`: flags only)
 python scripts/warning_checks.py --no-parity --no-balance   # static checks only (tunables, floats, docs, qa's last report), no builds; ~1 s
 cd web && npm ci && npm run dev              # the browser UI at http://localhost:5173/ (web/README.md)
 cd web && npm run wasm && npm run check      # type-check alone: a fresh worktree has no web/src/wasm until `npm run wasm` (~80 s)
-cd web && npm test                           # the web fast lane: type-check, unit and contrast checks, ~1.5 s
+cd web && npm test                           # the web fast lane: type-check, unit, contrast and stylesheet checks, ~1.5 s
 ```
 
 **Test lanes.** `cargo test --workspace` is the fast lane and the default: run it after
@@ -80,9 +80,8 @@ edit), and `cargo test-slow` runs only those. Both aliases (`.cargo/config.toml`
 unless a package is named), then runs every test binary at once (the slow lane's longest
 tests sit in three), each printed whole as it ends, then their times. A bare word filters
 tests, as for `cargo test`: `cargo test-all -j 3 -p hh-sim golden -- --test-threads=3`.
-The test profile is `opt-level = 2` with overflow checks, and test and sim binaries
-(release `hh-sim` too, never hh-core or wasm) use mimalloc: a game's time goes to the
-view's state copies, twice as slow on the Windows allocator. To time tests one by one, run the test binary itself (`<exe> --list`,
+The test profile is `opt-level = 2` with overflow checks; test and sim binaries (never
+hh-core or wasm) use mimalloc, twice as fast as Windows' allocator on the view's copies. To time tests one by one, run the test binary itself (`<exe> --list`,
 `<exe> --exact <name>`; per-test times: `RUSTC_BOOTSTRAP=1 <exe> -Z unstable-options
 --report-time`): Rust 1.100 puts them under `target/debug/build/<crate>/<hash>/out/`.
 `RUSTC_BOOTSTRAP=1` on `cargo` instead rebuilds the whole workspace (~90 s), and again
@@ -105,19 +104,20 @@ open from tick 0, `driver::golden_start`), 2000 ticks of the scripted policy (`d
 ships, runs a condition program once program logic opens, is retired by boredom and starts
 run 2).
 
-- **An intended play change** bumps `RULES_REVISION` (`crates/hh-core/src/lib.rs`, and the
-  revision line in `docs/rules/README.md`), adds its `docs/rules-history.md` row, and updates
-  the four golden constants, `GOLDEN_REVISION`, `GOLDEN_FINGERPRINT`, `GOLDEN_CONTENT_HASH`
-  and `GOLDEN_CONFIG_HASH`, both in `crates/hh-core/src/tests/mod.rs` and in
-  `scripts/wasm-smoke.mjs` (`wasm_smoke_expects_the_golden_constants` fails until they
-  match; it also checks the smoke plays the golden game through `play_golden`, which runs
-  `hh_core::driver` itself in wasm, with the same seed and length). **Step:** `python
-  scripts/set_golden.py` (a release build first: background it) sets all eight from
-  `hh-sim golden`; never type them.
+- **An intended play change, in order:** bump `RULES_REVISION` (`crates/hh-core/src/lib.rs`,
+  and the revision line in `docs/rules/README.md`) and add its `docs/rules-history.md` row;
+  `python scripts/set_golden.py` (a release build first: background it) sets the four golden
+  constants, `GOLDEN_REVISION`, `GOLDEN_FINGERPRINT`, `GOLDEN_CONTENT_HASH` and
+  `GOLDEN_CONFIG_HASH`, in both `crates/hh-core/src/tests/mod.rs` and
+  `scripts/wasm-smoke.mjs`, from `hh-sim golden` (never type them;
+  `wasm_smoke_expects_the_golden_constants` fails until they match, and checks the smoke
+  plays the golden game through `play_golden`, `hh_core::driver` in wasm); then the sim
+  players' pins (below).
 - **What moves which constant:** the content hash moves with any `content/` byte and the
   config hash with any `configs/baseline.json` value, play or not; the fingerprint
   (`GameState::fingerprint`, the state less its config) only with play the golden game
-  reaches (a rule its policy never meets keeps it: only the revision moves).
+  reaches (a rule its policy never meets keeps it: only the revision moves). So an edit that
+  plays the same (`nav.json`, a description) runs `set_golden.py` alone: no bump, no row.
 - **The sim players' pinned games** are separate: `PINNED`, `HANDSOFF_PIN` and the oracle's
   in `crates/hh-sim/tests/cli.rs` (an agent refactor keeps them; a rules change moves those
   whose play it changes). Run `cargo test-all -p hh-sim` (the oracle's pin is a slow-lane

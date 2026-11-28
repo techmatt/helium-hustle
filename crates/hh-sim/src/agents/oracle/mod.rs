@@ -162,6 +162,8 @@ pub struct Oracle {
     plans: u32,
     rollouts: u64,
     note: String,
+    /// Whether the author acted at this look (a retirement look returns first).
+    base_acted: bool,
 }
 
 impl Oracle {
@@ -226,6 +228,7 @@ impl Oracle {
             plans: 0,
             rollouts: 0,
             note: String::new(),
+            base_acted: false,
         })
     }
 
@@ -257,6 +260,7 @@ impl Oracle {
 
 impl Agent for Oracle {
     fn act(&mut self, p: &mut Player) {
+        self.base_acted = false;
         let (tick, run, day, built) = {
             let g = p.state();
             (g.tick, g.career.run_number, g.run.day, g.run.stats.buildings_built)
@@ -317,6 +321,7 @@ impl Agent for Oracle {
             self.next_plan = tick + self.every;
         }
         self.base.act(p);
+        self.base_acted = true;
     }
 
     /// The author's own gap: plans fall due at its next look, so the real
@@ -326,6 +331,10 @@ impl Agent for Oracle {
     }
 
     fn note(&self) -> String {
-        format!("{} [{} plans, {} rollouts] {}", self.profile.name(), self.plans, self.rollouts, self.note)
+        // The author's own look (its target, credits, gap) after the oracle's last plan
+        // note, so a trace says what each look the author acted at did, not only the
+        // looks that re-planned (none at a retirement look, which returns before it).
+        let look = if self.base_acted { format!("; look: {}", self.base.note()) } else { String::new() };
+        format!("{} [{} plans, {} rollouts] {}{look}", self.profile.name(), self.plans, self.rollouts, self.note)
     }
 }

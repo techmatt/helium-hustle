@@ -200,5 +200,5 @@ fn overclock_cards_say_the_days_a_run_lasts() {
     }
     assert_eq!(crate::modules::ideology::rank(&r, &g, "rationalist"), -1);
     assert!(text(&g).contains("for 5 days."), "{}", text(&g));
-    assert_eq!(crate::modules::programs::overclock_days(&r, &g, 5), 5);
+    assert_eq!(crate::modules::programs::overclock_days(5), 5);
 }

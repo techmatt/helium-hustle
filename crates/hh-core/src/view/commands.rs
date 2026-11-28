@@ -29,7 +29,7 @@ pub(super) fn commands(r: &Rules, g: &GameState) -> Vec<CommandView> {
                 target,
                 id: &cmd.id,
                 name: &cmd.name,
-                description: command_description(r, g, cmd),
+                description: command_description(cmd),
                 unlocked: program_rules::unlocked(g, cmd),
                 visible: program_rules::visible(g, cmd),
                 costs,
@@ -43,10 +43,10 @@ pub(super) fn commands(r: &Rules, g: &GameState) -> Vec<CommandView> {
 
 /// A command's description with an overclock's `{days}` filled in: its fixed
 /// duration ("4 days", "1 day").
-fn command_description(r: &Rules, g: &GameState, cmd: &'static crate::content::Command) -> Cow<'static, str> {
+fn command_description(cmd: &'static crate::content::Command) -> Cow<'static, str> {
     match &cmd.effect {
         Some(CommandEffect::Overclock { duration, .. }) => {
-            let n = program_rules::overclock_days(r, g, *duration);
+            let n = program_rules::overclock_days(*duration);
             let days = if n == 1 { "1 day".to_string() } else { format!("{n} days") };
             Cow::Owned(cmd.description.replace("{days}", &days))
         }

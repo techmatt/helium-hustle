@@ -1,7 +1,8 @@
 //! Plays one career: an agent for N retirements, in game time, measured tick
 //! by tick (docs/experiments.md, *Measures*).
 //!
-//! The loop: at each look the agent reads the view and acts, then says how
+//! The loop ([`drive`], shared with `hh-sim axes` through a [`Watch`]): at
+//! each look the agent reads the view and acts, then says how
 //! many ticks to skip to its next look ([`crate::agents::Agent::next_look`]);
 //! a forced retirement wakes it early. Results are ticks and decisions (looks
 //! that acted); real time is a separate projection ([`crate::human`]). The
@@ -472,18 +473,34 @@ pub fn play(game: &Game) -> Result<GameResult, String> {
     play_session(game).map(|r| r.0)
 }
 
-/// [`play`], also returning the session (for `hh-sim trace`).
-pub fn play_session(game: &Game) -> Result<(GameResult, Session), String> {
-    let start = Instant::now();
-    let mut s = Session::new(game.config, game.seed, game.scenario)?;
-    let mut agent = agents::build(game.agent, game.seed, game.milestones)?;
-    let mut meter = Meter::new(&s, game.milestones, game.objectives);
+/// What a career's caller watches or measures while [`drive`] plays it; every
+/// hook but `tick` and `done` defaults to nothing.
+pub trait Watch {
+    /// At a look, before the agent acts.
+    fn before(&mut self, _p: &mut Player) {}
+    /// Right after the agent acted (its note is this look's).
+    fn acted(&mut self, _p: &mut Player, _agent: &dyn agents::Agent) {}
+    /// After the agent retired at this look and its new run's hook ran.
+    fn retired(&mut self, _p: &mut Player) {}
+    /// After a look, with the actions it applied.
+    fn looked(&mut self, _s: &Session, _applied: u32) {}
+    /// Plays one tick (advancing the session once).
+    fn tick(&mut self, s: &mut Session) -> Result<(), String>;
+    /// Whether the career is over, asked before each look, after it and after
+    /// each tick.
+    fn done(&self, s: &Session) -> bool;
+}
+
+/// Plays `agent` on `s` look by look until `watch` is done or `max_ticks`
+/// pass: each look the agent acts (a new run's hook first), then the ticks to
+/// its next look play, a run's end (a forced retirement) waking it early.
+/// The one loop every career shares (`play`, `hh-sim trace`, `hh-sim axes`).
+pub fn drive(s: &mut Session, agent: &mut dyn agents::Agent, max_ticks: u64, watch: &mut impl Watch) -> Result<(), String> {
     let mut seen_run = 0u32;
-    let max_tick = s.state.tick.saturating_add(game.max_ticks);
-    let mut notes: Vec<(u64, String)> = Vec::new();
-    'career: while s.state.career.retirements < game.retirements && s.state.tick < max_tick {
+    let max_tick = s.state.tick.saturating_add(max_ticks);
+    'career: while !watch.done(s) && s.state.tick < max_tick {
         let (applied, gap) = {
-            let mut p = Player::new(&mut s);
+            let mut p = Player::new(s);
             let run = p.view().run;
             if run != seen_run {
                 if seen_run != 0 {
@@ -491,30 +508,27 @@ pub fn play_session(game: &Game) -> Result<(GameResult, Session), String> {
                 }
                 seen_run = run;
             }
+            watch.before(&mut p);
             agent.act(&mut p);
-            if game.trace {
-                let n = agent.note();
-                if !n.is_empty() {
-                    notes.push((p.view().tick, n));
-                }
-            }
+            watch.acted(&mut p, agent);
             // A retirement the agent chose: its new run's hook comes at once.
             let run = p.view().run;
             if run != seen_run {
                 agent.new_run(&mut p);
                 seen_run = run;
+                watch.retired(&mut p);
             }
             let gap = agent.next_look(&mut p).max(1);
             (p.applied, gap)
         };
-        meter.look(&s, applied);
-        if s.state.career.retirements >= game.retirements {
+        watch.looked(s, applied);
+        if watch.done(s) {
             break;
         }
         let run = s.state.career.run_number;
         for _ in 0..gap {
-            meter.tick(&mut s)?;
-            if s.state.career.retirements >= game.retirements || s.state.tick >= max_tick {
+            watch.tick(s)?;
+            if watch.done(s) || s.state.tick >= max_tick {
                 break 'career;
             }
             // A forced retirement wakes the player.
@@ -523,6 +537,46 @@ pub fn play_session(game: &Game) -> Result<(GameResult, Session), String> {
             }
         }
     }
-    let result = meter.finish(&s, game.seed, game.agent, notes, start.elapsed().as_secs_f64());
+    Ok(())
+}
+
+/// [`play`]'s watch: the meter, the agent's notes when traced, and the
+/// retirements to stop at.
+struct Measured<'a> {
+    meter: Meter<'a>,
+    retirements: u32,
+    trace: bool,
+    notes: Vec<(u64, String)>,
+}
+
+impl Watch for Measured<'_> {
+    fn acted(&mut self, p: &mut Player, agent: &dyn agents::Agent) {
+        if self.trace {
+            let n = agent.note();
+            if !n.is_empty() {
+                self.notes.push((p.view().tick, n));
+            }
+        }
+    }
+    fn looked(&mut self, s: &Session, applied: u32) {
+        self.meter.look(s, applied);
+    }
+    fn tick(&mut self, s: &mut Session) -> Result<(), String> {
+        self.meter.tick(s)
+    }
+    fn done(&self, s: &Session) -> bool {
+        s.state.career.retirements >= self.retirements
+    }
+}
+
+/// [`play`], also returning the session (for `hh-sim trace`).
+pub fn play_session(game: &Game) -> Result<(GameResult, Session), String> {
+    let start = Instant::now();
+    let mut s = Session::new(game.config, game.seed, game.scenario)?;
+    let mut agent = agents::build(game.agent, game.seed, game.milestones)?;
+    let meter = Meter::new(&s, game.milestones, game.objectives);
+    let mut w = Measured { meter, retirements: game.retirements, trace: game.trace, notes: Vec::new() };
+    drive(&mut s, agent.as_mut(), game.max_ticks, &mut w)?;
+    let result = w.meter.finish(&s, game.seed, game.agent, w.notes, start.elapsed().as_secs_f64());
     Ok((result, s))
 }

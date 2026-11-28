@@ -645,7 +645,11 @@ export function act(action: Action): boolean {
   }
   // The run summary covers the screen: a key on a card still focused behind it must not
   // play into the new run unseen. So does the story modal.
-  if (store.summary || store.storyPages.length > 0 || pilotBusy()) return false;
+  if (store.summary || store.storyPages.length > 0 || pilotBusy()) {
+    // A debug button pressed under one used to do nothing, silently (124): say why.
+    if (action.type === 'cheat' && !pilot) setNotice(`Cheat refused: close the ${store.summary ? 'run summary' : 'popup'} first.`);
+    return false;
+  }
   const run = store.view.run;
   clock.wake(); // settle the ticks owed so the action lands between the right ticks
   if (store.view.run !== run) {

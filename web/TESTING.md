@@ -69,7 +69,9 @@ A story modal refuses every action and speed until read: `readStory()` reads one
 (told once a run, a seen one hidden, nothing seen under the autopilot or at a load), the
 nav slots, the offered speeds, that every quest `picture` has a file, then `scripts/contrast.mjs`
 the text-on-background pairs in its hand-kept `PAIRS` list, in both themes, at
-4.5:1 (7:1 for `pos-text`, the Resources rates' green): a new token needs its pairs there.
+4.5:1 (7:1 for `pos-text`, the Resources rates' green): a new token needs its pairs there;
+then `scripts/css.mjs`: no two top-level rules for one lone selector set the same property
+(124's second global `.card-body` restyled every card; a selector list or `@media` passes).
 
 ## QA checker
 

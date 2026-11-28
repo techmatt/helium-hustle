@@ -492,19 +492,19 @@ pub fn flows(r: &Rules, g: &GameState, c: &Command) -> (BTreeMap<String, Fx>, BT
 }
 
 /// What one execution does to boredom now, signed (negative: it relieves):
-/// the flat [`boredom_cost`], or for Dream its relief (the tooltips' figure).
+/// the flat [`flat_boredom`], or for Dream its relief (the tooltips' figure).
 pub fn boredom_effect(r: &Rules, g: &GameState, c: &Command) -> Fx {
     if matches!(c.effect, Some(CommandEffect::Dream)) {
         return -super::dream::relief(r, g);
     }
-    boredom_cost(r, g, c)
+    flat_boredom(r, g, c)
 }
 
 /// The flat boredom one execution adds: the content's, unless a completed
 /// project's boredom modifiers replace it. Zero before Burnout starts boredom
 /// (`boredom::started`); a relief (negative) stands, × its tagged axis's
 /// modifier when it has one (Theorize).
-pub fn boredom_cost(r: &Rules, g: &GameState, c: &Command) -> Fx {
+pub fn flat_boredom(r: &Rules, g: &GameState, c: &Command) -> Fx {
     let mut b = c.boredom;
     for reward in super::projects::live_rewards(g) {
         if let ProjectReward::BoredomModifiers { command_boredom, .. } = reward {
@@ -556,7 +556,7 @@ pub fn execute(r: &Rules, g: &mut GameState, c: &Command, src: &str, short: &str
     }
     // Boredom counts by command, not program (the Stats view's Boredom section).
     let bsrc = format!("command:{}", c.id);
-    let b = boredom_cost(r, g, c);
+    let b = flat_boredom(r, g, c);
     if b > Fx::ZERO {
         g.add(BOREDOM, b);
         g.track(&bsrc, BOREDOM, b, Fx::ZERO);
@@ -577,7 +577,7 @@ pub fn execute(r: &Rules, g: &mut GameState, c: &Command, src: &str, short: &str
         Some(CommandEffect::Dream) => super::dream::dream(r, g),
         Some(CommandEffect::Overclock { target, bonus, duration }) => {
             // Live from today's building pass (after programs).
-            let days = overclock_days(r, g, *duration);
+            let days = overclock_days(*duration);
             g.run.overclocks.push(Overclock { target: target.clone(), bonus: *bonus, until_day: g.run.day + days });
         }
         Some(CommandEffect::Promote { good }) => super::demand::promote(r, g, good),
@@ -1056,7 +1056,7 @@ pub fn overclock_cap(r: &Rules, g: &GameState) -> Fx {
 }
 
 /// Days an overclock run lasts: its `duration` (the command cards' `{days}`).
-pub fn overclock_days(_r: &Rules, _g: &GameState, duration: u32) -> u64 {
+pub fn overclock_days(duration: u32) -> u64 {
     duration as u64
 }
 
