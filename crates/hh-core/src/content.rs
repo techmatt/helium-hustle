@@ -17,7 +17,7 @@ use crate::hash::{fnv1a64, hex};
 mod check;
 
 /// The embedded files, in hash order: `(name, text)`.
-const FILES: &[(&str, &str)] = &[
+pub(crate) const FILES: &[(&str, &str)] = &[
     ("resources.json", include_str!("../../../content/resources.json")),
     ("buildings.json", include_str!("../../../content/buildings.json")),
     ("commands.json", include_str!("../../../content/commands.json")),

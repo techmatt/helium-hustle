@@ -21,6 +21,9 @@ The engine rules that bind every item are in [CLAUDE.md](../../CLAUDE.md), *Engi
   changes no play moves no pinned fingerprint.
 - **Rules history rows (2026-11-22, docs rule).** A `docs/rules-history.md` row stays under
   about 400 bytes; rows older than the last ten revisions are trimmed to a line.
+- **Content files one row per line (2026-11-27, 136).** Every `content/*.json` is an array
+  with each row on one line; `python scripts/format_content.py` lays them out, and hh-core's
+  `content_files_are_one_row_per_line` test holds them to it.
 
 ## Testing
 

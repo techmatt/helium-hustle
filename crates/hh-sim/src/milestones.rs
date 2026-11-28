@@ -78,6 +78,10 @@ pub struct Run1Minutes {
 pub struct Judge {
     /// A milestone reached by at most this percent of the seeds is late.
     pub late_percent: u64,
+    /// Checks switched off until the balance work rebases them (Matt, 2026-11-27): milestone
+    /// ids, and `run1` for run 1's length bands (ticks and real minutes). Their lines are
+    /// not written; the milestones are still tracked and reported.
+    pub paused: Vec<String>,
 }
 
 /// When `vs-human` counts the same purchase as parted in time: more than
@@ -113,6 +117,9 @@ impl Milestones {
             if x.target.runs[0] < 1 || x.target.runs[0] > x.target.runs[1] {
                 return Err(format!("milestone {}: bad run window {:?}", x.id, x.target.runs));
             }
+        }
+        if let Some(p) = m.judge.paused.iter().find(|p| *p != "run1" && !ids.contains(*p)) {
+            return Err(format!("milestones: judge.paused names {p}, neither a milestone nor run1"));
         }
         Ok(m)
     }

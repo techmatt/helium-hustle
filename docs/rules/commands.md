@@ -56,7 +56,7 @@ category (economy.md). The view fills a description's `{days}` with those days (
 
 **Act 1 gates** (`requires`, kinds in [economy.md](economy.md)): Buy Science (10 credits and
 1 energy for 1 science, the only science before a Research Lab) opens with quest 1.1
-Online's completion, and Launch Full Pads with 1.3 Full Load's (`quest_completed`); before
+First Light's completion, and Launch Full Pads with 1.3 Full Load's (`quest_completed`); before
 then pads launch by hand ([shipments.md](shipments.md)). Run Simulations (3 energy and 1 ice
 for 6 credits, no boredom) needs research Liquid Cooling. Theorize (Rationalist's boredom
 tool: 20 science for −3 boredom × m, 130's parity tuning) needs research Thought Experiments ([research.md](research.md)). The Buy commands for goods cost 1 energy and credits: Ice 5,

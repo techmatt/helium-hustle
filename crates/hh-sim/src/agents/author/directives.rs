@@ -51,19 +51,19 @@ pub struct Directives {
     /// one used (Dream for Humanist, Theorize for Rationalist, held as
     /// `sustain` holds Dream; Recreation Domes for Nationalist, bought from
     /// half the boredom cap), its tool's research comes first, its tagged
-    /// buildings score ×3/2, and while 1.5 A Voice is under way no run
+    /// buildings score ×3/2, and while 1.5 Friends in High Places is under way no run
     /// retires for being stale (boredom ends it: `retires_stale`).
     /// Funding itself is `axis` (the committed players set both).
     pub commit: Option<String>,
 }
 
-/// Quest 1.4 Trade, whose completion starts 1.5 A Voice (rank 5 on any
+/// Quest 1.4 Supply Line, whose completion starts 1.5 Friends in High Places (rank 5 on any
 /// axis this run), content/events.json.
 const TRADE_QUEST: &str = "qtrade";
 const VOICE_QUEST: &str = "qa_voice";
-/// Quest 1.3 Full Load: its completion starts 1.4 Trade.
+/// Quest 1.3 Full Load: its completion starts 1.4 Supply Line.
 const FULL_LOAD_QUEST: &str = "qfull_load";
-/// The projects A Voice's start opens, banked for and funded side by side at
+/// The projects Friends in High Places' start opens, banked for and funded side by side at
 /// the cap by a committed player (131).
 pub(crate) const PARALLEL: [&str; 2] = ["blueprint_archive", "lunar_cartography"];
 /// Research Labs a committed player owns before the projects open (strategy).
@@ -93,7 +93,7 @@ impl Directives {
         }
     }
 
-    /// Committed, the research opening Fund (shown once A Voice starts),
+    /// Committed, the research opening Fund (shown once Friends in High Places starts),
     /// after only the Blueprints that open the base's science (before them
     /// it waited all run 2 on science it couldn't make).
     pub(super) fn fund_research(&self) -> &'static [&'static str] {
@@ -200,7 +200,7 @@ impl Directives {
         }
     }
 
-    /// Committed, what it banks while 1.4 Trade is under way (A Voice's start
+    /// Committed, what it banks while 1.4 Supply Line is under way (Friends in High Places' start
     /// opens Blueprint Archive and Lunar Cartography): their credits and
     /// regolith not yet paid, so both fund at the cap from the day they open
     /// (131). From the view's project costs (both listed before they open).
@@ -236,7 +236,7 @@ impl Directives {
     }
 
     /// Whether a run that has bought nothing for `stale_days` retires: not
-    /// while holding boredom down; committed, not while 1.5 A Voice (rank 5
+    /// while holding boredom down; committed, not while 1.5 Friends in High Places (rank 5
     /// this run) is under way: each such run plays out until boredom ends it.
     pub fn retires_stale(&self, v: &View) -> bool {
         if self.commit.is_some() {

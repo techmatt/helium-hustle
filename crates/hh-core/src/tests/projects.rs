@@ -28,7 +28,7 @@ fn research_needs_visibility_and_science() {
     let r = rules();
     let mut g = r.new_game(1);
     let res = |id: &str| Action::Research { research: id.into() };
-    // No research before 1.1 Online opens the research panel.
+    // No research before 1.1 First Light opens the research panel.
     assert!(r.apply(&mut g, &res("basic_blueprints")).unwrap_err().contains("not open"));
     g.run.enabled_panels.insert(crate::modules::research::RESEARCH_PANEL.into());
     assert!(r.apply(&mut g, &res("basic_blueprints")).unwrap_err().contains("science"));

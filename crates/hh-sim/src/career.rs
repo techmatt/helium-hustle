@@ -152,13 +152,13 @@ pub struct GameResult {
     pub own_clock: Option<Clock>,
     /// When each long goal was first met (131, `vs-human --skilled`):
     /// `project:<id>` a global project's first completion, `rank5:<axis>` an
-    /// axis's this-run rank first at 5 (1.5 A Voice's bar).
+    /// axis's this-run rank first at 5 (1.5 Friends in High Places' bar).
     #[serde(skip_serializing_if = "BTreeMap::is_empty")]
     pub landmarks: BTreeMap<String, Hit>,
 }
 
 /// The this-run rank `vs-human --skilled` times (mirrors content/events.json
-/// 1.5 A Voice's `ideology_rank_any` 5).
+/// 1.5 Friends in High Places' `ideology_rank_any` 5).
 pub const LANDMARK_RANK: i64 = 5;
 
 impl GameResult {

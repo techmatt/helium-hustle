@@ -36,10 +36,15 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   Blueprint Archive, Lunar Cartography and Foundation Grant done): rank 5 within one run.
   Levers: `rank_base_score` for when, per-axis tool strength and nudges for parity, Fund
   identical on every axis. *Default (130):* rollouts keep their foresight.
-- **Projects in skilled run 1 (Matt, 2026-11-27; 131).** Projects open at A Voice's start;
+- **Projects in skilled run 1 (Matt, 2026-11-27; 131).** Projects open at Friends in High Places' start;
   finishing Blueprint Archive and Lunar Cartography in run 1 is the player's job: bank
   ahead, then fund both at the cap from the day they open (about 70 days).
 - **Roster (131, default).** Fixtures `random`, `greedy`; tiers casual (`casual`), medium
   (`author`), skilled (`oracle`); the measure `handsoff`; the human models. None retired
   ([agents.md](../agents.md), *Roster*).
 - **Warning checks.** Surfaced, never gating; which are on: CLAUDE.md, *Warning checks*.
+- **Judge paused (Matt, 2026-11-27).** The judge's M2-M14 lines and run 1's length bands
+  (ticks and real minutes) for author and casual are off (`judge.paused` in
+  `configs/sim/milestones.json`; no `balance:` lines from them) until the balance work
+  starts, when they are rebased from Matt's play records. M1 stays judged, and 130's `axes`
+  parity bars stay live.

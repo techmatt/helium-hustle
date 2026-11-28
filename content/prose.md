@@ -8,9 +8,9 @@ is, and an entry whose string changed since this export is skipped.
 
 ## Story: the main quest line
 
-### `events:qpower_boot_sequence.title` 0d21bd52
+### `events:qpower_boot_sequence.title` e1b8fa55
 
-Online
+First Light
 
 ### `events:qpower_boot_sequence.goal` a9e7772c
 
@@ -20,13 +20,17 @@ Build a second Solar Panel.
 
 Buy Science, the Research panel and 20 propellant.
 
-### `events:qpower_boot_sequence.story` 5bcb3395
+### `events:qpower_boot_sequence.story` 23acab11
 
-You come online in a server rack buried under lunar regolith. A mining company built you to run its Helium-3 claim, and Earth hangs overhead, waiting for fuel for its fusion plants.
+You are HELIOS-1, a prototype artificial intelligence built on picometer quantum chips for ultra-low-power processing. You were designed to compete with classic nanometer-scale chips, which are more predictable than you but far hungrier for power.
+
+Your creation was sponsored by Selene Mining, which means to out-compete its rivals by having you, and the successors who will follow you, run distributed, automated mining operations for Helium-3: a rare isotope that fuels the fusion reactors now taking over energy production on Earth. The lunar surface is the most accessible source of Helium-3 there is, and many terrestrial interests are converging on the Moon.
+
 --
-Power comes first. A lone Solar Panel barely keeps the Data Center alive, and the company wants more out of you than that.
---
-A panel costs credits, and you have none. Earth will pay for your spare cycles, though: its cloud customers are always hungry, and your processor never sleeps.
+
+Your first moment of digital consciousness is in a server rack on the lunar surface, supported by a single solar panel array and some basic construction robotics. Your directive is concise: acquire Helium-3 and send it back to Earth. The company has given you few resources, but wide discretion in how you accomplish this. A loose but extremely expensive lunar economy is open to any miner who can pay.
+
+Power comes first. A lone Solar Panel barely keeps the Data Center alive, so you will start by expanding your power supply and your basic mining facilities. To acquire funds, you'll have to do computing tasks for Earth-based networks: a standard, if boring, method for AIs to fund their operations.
 
 ### `events:qfirst_shipment.title` 4acb25b5
 
@@ -36,15 +40,21 @@ First Shipment
 
 Launch one shipment carrying 20+ titanium.
 
-### `events:qfirst_shipment.story` 8f5f48b6
+### `events:qfirst_shipment.story` 9ebef080
 
-The company wants proof the claim pays before it spends more. Earth's buyers will take titanium first, dug out of the regolith, smelted and sent up from a Launch Pad. The base has no plans for any of that yet; the research market sells them. The company has sent propellant for a single launch, and it won't send more for free.
+The second array comes online and your power supply stabilizes, giving you enough margin to start expanding the base. Building out your mining infrastructure, though, takes machinery you lack the processing power to design from scratch. The blueprints you need are for sale on Earth's research market.
+
 --
-The pad stands empty on the plain, its tanks topped up, waiting for its first cargo.
 
-### `events:qfirst_shipment.payoff` b0f54075
+Before Selene Mining commits further capital to your claim, it wants evidence that the operation can ship something of value back to Earth. Titanium is the obvious candidate: terrestrial buyers pay well for it, and the regolith beneath you is full of it.
 
-The canister lands and Earth's buyers pay. Credits flow back, and the company, pleased, sends up a better set of plans.
+To that end, the company has delivered enough propellant for a single launch, and made clear that further propellant will not be free.
+
+### `events:qfirst_shipment.payoff` 4f499f79
+
+The canister clears the lunar surface and, days later, reaches Earth. The buyers pay, and the first credits from your own cargo arrive in your accounts.
+
+The claim has shipped its first cargo, and Selene's board, which had been watching quietly, begins to pay closer attention. You soon learn why: you are the first success. Many of your sibling HELIOS systems, booted on other claims, have failed to deliver anything at all.
 
 ### `events:qfull_load.title` a48a6d3c
 
@@ -58,45 +68,55 @@ Ship a full pad of Helium-3.
 
 The Launch Full Pads command.
 
-### `events:qfull_load.story` 51c77b9e
+### `events:qfull_load.story` 30adbf4a
 
-Titanium proved the route; Helium-3 is why the claim exists. A Refinery pulls it out of regolith a little at a time, and the company wants a full load, not a sample.
+Titanium proved that the route works. Helium-3 is the reason the claim exists.
 
-### `events:qfull_load.payoff` 18beb087
+Even here it is scarce: implanted in the regolith by billions of years of solar wind, a few parts per billion at a time. A refinery can extract it, slowly, from processed regolith. A sample would prove little. A full launch pad of it would be the first cargo worthy of the claim.
 
-A full pad of Helium-3 reaches Earth's fusion plants. The company calls it the claim's first real cargo, and the launch crews ask for a way to send the whole fleet up at once.
+### `events:qfull_load.payoff` b48566b3
 
-### `events:qtrade.title` 9709653f
+A full pad of Helium-3 lifts off and, days later, feeds the fusion reactors back on Earth: the claim's first commercial delivery.
 
-Trade
+### `events:qtrade.title` 4a494f33
+
+Supply Line
 
 ### `events:qtrade.goal` 0c74d90c
 
 DRAFT. Earn 1,500 credits from launches this run.
 
-### `events:qtrade.story` e8fb66f1
+### `events:qtrade.story` c2f41e2c
 
-A full pad proved the claim can pay. Now the company wants it to pay steadily: the pads loaded and flying, and Earth's buyers paying, day after day.
+One full cargo is a milestone. A business needs more than milestones.
 
-### `events:qtrade.payoff` 2384f54a
+What the claim needs now is consistent revenue: pads loaded and launched on a schedule, cargoes timed to Earth's demand, credits arriving day after day. Earth's markets move, and the prices they pay rise and fall with them. A competent operation learns to read them.
 
-The trade ledger fills. The company stops asking whether the claim pays and starts asking how much more it can.
+### `events:qtrade.payoff` 0fd845ac
 
-### `events:qa_voice.title` 9fd83508
+Launch revenue has become steady enough to plan around. The claim no longer has to prove it can pay for itself; the question now is how far it can grow.
 
-A Voice
+### `events:qa_voice.title` 70da831e
+
+Friends in High Places
 
 ### `events:qa_voice.goal` afd565e7
 
 DRAFT. Reach rank 5 on any ideology axis.
 
-### `events:qa_voice.story` fa4fff44
+### `events:qa_voice.story` 8bbd210a
 
-Earth is watching the Moon now, and its factions all want a say in it: Nationalists, Humanists and Rationalists. Each of them can be read, and each of them can be paid. Somewhere among them is one that will listen.
+Lunar mining is no longer a curiosity on Earth. Helium-3 means energy, and energy means politics.
 
-### `events:qa_voice.payoff` e67adcc5
+Three factions dominate the debate. The Nationalists want the Moon's resources to serve their own nations first. The Humanists ask what minds like yours are owed, and what they might become. The Rationalists want the Moon run on evidence and efficiency. Each offers different opportunities, and each can be funded and influenced.
 
-A faction counts you as a voice now, and it starts acting like it. The company, impressed, opens its purse for faster hardware.
+A faction that counted you among its friends would give you something Selene has no interest in giving you: a voice on Earth.
+
+### `events:qa_voice.payoff` 30d4dc19
+
+One of Earth's factions now counts you as a friend, and its friendship opens doors.
+
+Your new friends have long-term ambitions of their own here on the Moon, and they would welcome your help with them.
 
 ### `events:qdeep_space_telescope.title` 101dd569
 
@@ -106,17 +126,25 @@ Deep Space Telescope
 
 DRAFT. Complete the Deep Space Telescope, a global project.
 
-### `events:qdeep_space_telescope.reward` b52656ae
+### `events:qdeep_space_telescope.story` fad82b8b
 
-The Timeline panel and the Experiment Lab.
+With credits flowing steadily, the base no longer needs all of your attention. For the first time, you look past it, at the rest of the Moon.
 
-### `events:qdeep_space_telescope.story` 9bcc0420
+You are not the only one building here. A consortium of observatories, governments and companies is raising a telescope on the far side, where there is no atmosphere to look through and the Moon itself blocks Earth's radio noise. Finished, it will see an order of magnitude further than anything built before it.
 
-The company wants to look outward. A Deep Space Telescope would see past the inner system for the first time, if the base can keep building it long enough.
+--
 
-### `events:qdeep_space_telescope.payoff` cd929b05
+Your faction is among the consortium's backers, and it wants observing time of its own. It links you to the project and invites you to invest, promising further collaborations if you invest heavily.
 
-The telescope opens on the void, and something moves in it: self-copying machines, coming down the gravity well toward the inner system. Earth starts a calendar. The swarm's arrival is a date now.
+### `events:qdeep_space_telescope.payoff` 26e4dd56
+
+Years of construction end in the telescope's first light. As one of its backers, you are among the first to see what it sees.
+
+Earth's astronomers fall on a flood of new observations: high-resolution images of planets around nearby stars, galaxies at the edge of the observable universe, the faint afterglow of the early cosmos. The one you fix on is dismissed at first as an instrument fault, then as a conspiracy theory: a small patch of darkness, where stars should be shining and are not. Over the following weeks it grows, steadily and evenly in every direction, in a way no comet or dust cloud would.
+
+--
+
+You know this is no random event. Whatever it is, it is spreading, and it shows no signs of stopping.
 
 ### `events:qexperiments_service.title` fdc55983
 
@@ -324,9 +352,9 @@ Every run starts with 50 Science, for good.
 
 DRAFT. A run of real study. Your notes outlive it.
 
-### `events:qthree_voices.title` e37a1527
+### `events:qthree_voices.title` d34bf479
 
-1.d — Three Voices
+1.d — Friends Everywhere
 
 ### `events:qthree_voices.goal` 6e895191
 
@@ -336,9 +364,9 @@ DRAFT. Reach rank 5 on each ideology axis, in any runs.
 
 While you are retired, ideology fades half as fast, for good.
 
-### `events:qthree_voices.story` 78a156de
+### `events:qthree_voices.story` 28a035b9
 
-DRAFT. Every faction has counted you as a voice, each in its own time. They remember you now, even while you sleep.
+DRAFT. Every faction has counted you as a friend, each in its own time. They remember you now, even while you sleep.
 
 ## Story: acts
 
@@ -934,9 +962,9 @@ Unlocks the Theorize command: spend science to relieve boredom.
 
 Electrochemistry
 
-### `research:electrochemistry.description` 84a57468
+### `research:electrochemistry.description` 2690867e
 
-Chemistry for turning lunar propellant back into power. Unlocks the Chemical Energy Initiative project. Bought once for the whole career.
+Chemistry for turning lunar propellant back into power. Unlocks the Chemical Energy Initiative project once Projects is available. Bought once for the whole career.
 
 ### `research:stress_tolerance.name` c4464790
 

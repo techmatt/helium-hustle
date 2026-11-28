@@ -84,6 +84,7 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | 137 | A double-click on the last copy's Sell 1: its buttons (and an unshown card) go, so the second click bought it back or the card that slid under the pointer | No building card buys for 0.5 s after a sell-out | 134's check.mjs (a real double-click) |
 | 138 | The library's save name ("Program A, run 3") stayed when the tab or run changed: Save as new filed Program B under A's name | Keyed by tab and run | 134's check.mjs |
 | 139 | e2e section 7 red since 129: 063's L4 text numbers its slots (read back as letters), and boredom set to its cap no longer retires a base whose Domes relieve more than it grows | The sample lettered; Retire pressed | e2e |
+| 140 | Wording (134's, Matt 2026-11-27): AI Consciousness Act's reward read as relief; Electrochemistry hid that its project waits for Projects; the Ideologies intro left out rank 5's unlocks | "Sell Cloud Compute boredom 0.1 → 0.15" (the command's name; 136); "once Projects is available"; rank 5 on any axis completes 1.5 and opens that faction's global project | none (text) |
 
 ## Deferred (Matt's decisions)
 
@@ -103,9 +104,6 @@ New fixed rows go in a table here: `| # | Finding | Fix | Guard |`.
 | A refusal notice stays up until the next accepted action or its ×, across days and a retirement (seen 160 days on, under 089's since-removed Run) | Clear it at a run's end, or fade it after ~5 s |
 | A program's tab light is red on a run's first day (and a scenario's start) before any day has run: "no steps ran", nothing wrong yet | No light (or a gray one) until the run's first day has played |
 | None of Matt's play logs (rules 45 and older) replays on this build, and `vs-human --skilled` (131) runs on none of them: a 130 build (`baseline.py`) has no `--skilled` (134) | Fine for `playlog`; for `--skilled`, play a fresh career on the current build |
-| AI Consciousness Act's reward reads "boredom per run of Cloud Compute 0.15" beside a ×0.85 growth cut: it reads as relief, yet raises 0.1 to 0.15 (134) | Show the change, "Cloud Compute boredom 0.1 → 0.15 a run" (Matt's call) |
-| Electrochemistry (1,000 science, shown at 8 Solar Panels) can be bought in run 1 before Projects opens: its project waits unseen until then (134) | Say so in its description, or show it from A Voice (Matt's call) |
-| The Ideologies intro says Nationalist and Humanist "get their own change" at rank 5 without naming either, nor that rank 5 on any axis opens a global project (134) | Name the two effects and the projects |
 
 
 ## Won't fix

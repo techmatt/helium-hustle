@@ -182,7 +182,7 @@ fn global_projects_effects_last_as_long_as_their_completion() {
         g.career.completed_quests.insert(q.into());
         g.career.seen_events.insert(q.into());
     }
-    // The first global projects are offered from A Voice's start (a day's events).
+    // The first global projects are offered from Friends in High Places' start (a day's events).
     r.advance(&mut g, 1);
     for id in ["conditional_logic", "blueprint_archive", "deep_space_telescope"] {
         finish(&r, &mut g, id);
@@ -373,7 +373,7 @@ fn scope_icons_show_legacy_until_the_reveal_then_eternal() {
 
 #[test]
 fn a_rank_on_one_axis_shows_its_progress() {
-    // A career-best rank (Three Voices, 1.d) counts up, as `holds` reads them.
+    // A career-best rank (Friends Everywhere, 1.d) counts up, as `holds` reads them.
     let r = rules();
     let mut g = r.new_game(7);
     let c = crate::content::Condition::IdeologyRank { axis: "humanist".into(), rank: 5 };

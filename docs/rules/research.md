@@ -39,7 +39,7 @@ in an earlier run, each live `research_discount` project reward whose
 Research Archive's 0.75 (any category, but only research completed in an earlier run, as
 every discount), so a Blueprint bought before with both done costs ×0.6. Each product is floored once (the [rounding rule](README.md#numbers)).
 
-**Buying** checks, in order: the `research` panel is enabled this run (quest 1.1 Online's completion opens
+**Buying** checks, in order: the `research` panel is enabled this run (quest 1.1 First Light's completion opens
 it, [events.md](events.md); the nav's Research tile shows with it); not already bought this
 run; visible; its `requires` item
 bought this run (if it names one); science at least the price. Then science falls by the
@@ -68,7 +68,7 @@ count as bought from day 0 of every run while the project counts as completed ([
   *Program Analysis*): programs' `energy per day` and `days since a purchase` readings
   open ([programs.md](programs.md)).
 
-- `career_flag` (Programming, 200 science, visible once quest 1.5 A Voice starts, from then on, category
+- `career_flag` (Programming, 200 science, visible once quest 1.5 Friends in High Places starts, from then on, category
   *Programs*): buying it sets the career flag `flag` for good (`programming`); retirements
   and a timeline's end keep it, and the item never shows again. The `programming` flag shows
   the Programs nav tile (`nav.json`, a `flag` condition) and with it the Programs view (the
@@ -132,7 +132,7 @@ Research Lab is built) the Recreation Dome, through those buildings' `requires`
 | Its group revealed | Regolith Processing, Liquid Cooling (200 science, *Self-Maintenance*; no effect of its own: Run Simulations `requires` it, [commands.md](commands.md)), Market Awareness |
 | First retirement (flag `retired`) | Daydreaming (Dream Protocols) and Thought Experiments (300 science, *Self-Maintenance*: Theorize, [commands.md](commands.md)); Stress Tolerance and Efficient Dreaming once it is bought |
 | Market Awareness bought | Speculator Analysis and Trade Promotion; Shipping Efficiency at 10 shipments |
-| Quest 1.5 A Voice starts | Geopolitical Intelligence, Programming |
+| Quest 1.5 Friends in High Places starts | Geopolitical Intelligence, Programming |
 | 1.5 completes | Overclock Protocols; Overclock Boost once it is bought |
 | 1.6 Deep Space Telescope completes | Novelty Simulation (draft, [timeline.md](timeline.md)) |
 
@@ -150,7 +150,7 @@ id is fixed in code (`research::RESEARCH_PANEL`). Unlocks live on the unlocked r
 - Conflict: Overclock cap. The Godot command text said "+200%" (rewritten to the engine's caps); Overclock Boost's data says the
   cap goes from 150% to 200%. The engine has a base cap of 1.5 in config
   (`programs.overclock_base_cap`) and Overclock Boost's `overclock_cap` 2.
-- Changed: Geopolitical Intelligence shows once quest 1.5 A Voice starts (the handoffs had
+- Changed: Geopolitical Intelligence shows once quest 1.5 Friends in High Places starts (the handoffs had
   QAutomate, the data QMarket, a quest no longer in the line).
 - Conflict: the data's research `unlocks_commands` lists duplicate each command's own
   `requires`. Dropped: the command's `requires` is the one home.

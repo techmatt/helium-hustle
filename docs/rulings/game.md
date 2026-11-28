@@ -33,9 +33,9 @@ Programs have their own part ([programs.md](programs.md)); boredom and ideology 
 - **No legacy numbers (2026-11-25, standing).** When things are renumbered, nothing keeps the
   old numbers: no mapping column, alias or "was" note in content, code or docs. Content ids
   may stay as they are.
-- **Act 1's main quest line (2026-11-26, numbers placeholders).** 1.1 Online (2 Solar Panels),
+- **Act 1's main quest line (2026-11-26, numbers placeholders).** 1.1 First Light (2 Solar Panels),
   1.2 First Shipment (one launch of 20+ titanium), 1.3 Full Load (a full He-3 pad; Launch
-  Full Pads opens), 1.4 Trade (1,500 credits from launches this run), 1.5 A Voice (rank 5 on
+  Full Pads opens), 1.4 Supply Line (1,500 credits from launches this run), 1.5 Friends in High Places (rank 5 on
   any axis; Geopolitical Intelligence and Programming open as it starts), 1.6 Deep Space
   Telescope. A quest's number comes from its place in the chain, never the data. No Science
   quest (deleted 2026-11-26): players find Research Labs useful on their own. Blueprints is no quest: players work it out
@@ -56,7 +56,7 @@ Programs have their own part ([programs.md](programs.md)); boredom and ideology 
   adversary.
 - **Side quests give permanent rewards (2026-11-25, placeholders).** They outlive every reset,
   as completions do. 1.a Big Launch: one launch pays 1,000+; +10% launch pay. 1.b Full
-  Cluster: research 12 items in one run (Matt, 2026-11-26); every run starts with 50 science. 1.d Three Voices:
+  Cluster: research 12 items in one run (Matt, 2026-11-26); every run starts with 50 science. 1.d Friends Everywhere:
   career-best rank 5 on each axis, across runs; ideology decays half as fast in the
   retirement gap. 1.c Blueprints for Everyone is cut (Matt, 2026-11-27, 129); its Blueprint
   Archive stays a global project (placeholder 2,000 credits + 300 science): while it counts
@@ -72,23 +72,24 @@ Programs have their own part ([programs.md](programs.md)); boredom and ideology 
   nowhere until Act 2 places it. The first retirement opens the Retirement panel and Chemical
   Energy, and from then on Daydreaming, the boredom research and Recreation Dome Blueprints
   with each run's Lab. Each run's speculators' arrival opens Market Analysis (Speculator
-  Analysis opens Disrupt Speculators). A Voice's start opens Geopolitical
-  Intelligence, its completion Overclock Protocols. **Global projects open at A Voice (Matt,
-  2026-11-26):** A Voice's start opens the Projects panel and Blueprint Archive, Conditional
+  Analysis opens Disrupt Speculators). Friends in High Places' start opens Geopolitical
+  Intelligence, its completion Overclock Protocols. **Global projects open at Friends in High Places (Matt,
+  2026-11-26):** Friends in High Places' start opens the Projects panel and Blueprint Archive, Conditional
   Logic, Lunar Cartography and Foundation Grant (placeholder costs since 130:
   [rules/projects.md](../rules/projects.md), *Content*). A first retirement
-  before A Voice still opens Projects with Blueprint Archive, Conditional Logic and Foundation
+  before Friends in High Places still opens Projects with Blueprint Archive, Conditional Logic and Foundation
   Grant, as before.
   The Recreation Dome is never ungated (Matt, 2026-11-25): it needs its own Blueprints research,
   Recreation Dome Blueprints (300 science, placeholder), shown from the first retirement; Programming shows from
-  A Voice's start on, every later run too (Matt, 2026-11-26, question 111_1); Propellant Synthesis shows with the propellant discovery (4 shipments) alone. The main quest
+  Friends in High Places' start on, every later run too (Matt, 2026-11-26, question 111_1); Propellant Synthesis shows with the propellant discovery (4 shipments) alone. The main quest
   line marks only significant things: never "research this"; a beat may be an untelegraphed
   expectation. Refinery upkeep is 5 regolith + 2 energy; the excavator makes 2 regolith a day.
 - **Prose round-trip (2026-11-25).** Every player-facing string in `content/` exports to one
   Markdown file grouped by screen (`content/prose.md`, committed) and imports back by id
   (`python scripts/prose.py`); ids never change, a missing id leaves its string alone. Each id
   carries a fingerprint of its exported text; import takes a partial file and skips an entry
-  whose id is gone or fingerprint stale, unread (2026-11-27). UI
+  whose id is gone or fingerprint stale, unread (2026-11-27). Text Matt writes fresh comes
+  unstamped and is applied by id (`import --unstamped`; 2026-11-28, 136). UI
   prose the engine's view carries (the run summary's line on why the run ended) is content
   too, in `content/messages.json`.
 - **Story modals (2026-11-23).** Each chain quest's transition is a modal that pauses the

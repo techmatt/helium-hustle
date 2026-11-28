@@ -130,7 +130,7 @@ pub struct Oracle {
     pin: i64,
     /// Committed to one axis (130, `commit` knob as the author's): every
     /// strategy carries it, rows funding another axis are skipped, and
-    /// while A Voice is open its campaign is the only strategy.
+    /// while Friends in High Places is open its campaign is the only strategy.
     commit: Option<&'static str>,
     /// Try retiring every `RETIRE_EVERY` ticks, from day `min_run` of a run.
     retire: bool,
@@ -151,7 +151,7 @@ pub struct Oracle {
     /// Buildings built this run at the last look, and the day that rose.
     built: u32,
     built_day: u64,
-    /// Whether A Voice was under way at the last look: its start chooses
+    /// Whether Friends in High Places was under way at the last look: its start chooses
     /// the strategy again at once (a committed oracle's campaign).
     voice: bool,
     /// The target's count when it was set: once it rises, the goal is met.

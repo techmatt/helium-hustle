@@ -1,113 +1,15 @@
 [
-  {
-    "id": "blueprint_archive",
-    "name": "Blueprint Archive",
-    "description": "DRAFT. Archive the company's blueprints beyond a retirement's reach: every run starts with Basic and Advanced Blueprints, and any blueprints bought before cost 20% less.",
-    "scope": "timeline",
-    "unlock": {"type": "project_enabled", "project": "blueprint_archive"},
-    "costs": {"credits": "2000", "science": "300"},
-    "rewards": [
-      {"type": "starting_research", "research": ["basic_blueprints", "advanced_blueprints"]},
-      {"type": "research_discount", "mult": "0.8", "category": "Blueprints"}
-    ]
-  },
-  {
-    "id": "foundation_grant",
-    "name": "Foundation Grant",
-    "description": "Endow future AI instances with basic infrastructure.",
-    "scope": "timeline",
-    "unlock": {"type": "project_enabled", "project": "foundation_grant"},
-    "costs": {"credits": "4000", "science": "500", "titanium": "500"},
-    "rewards": [{"type": "starting_buildings", "buildings": {"solar_panel": 2, "excavator": 2, "smelter": 1}}]
-  },
-  {
-    "id": "lunar_cartography",
-    "name": "Lunar Cartography",
-    "description": "Map optimal expansion corridors for reduced land acquisition costs.",
-    "scope": "timeline",
-    "unlock": {"type": "project_enabled", "project": "lunar_cartography"},
-    "costs": {"credits": "1000", "science": "200", "regolith": "500"},
-    "rewards": [{"type": "modifier", "key": "land_cost_mult", "value": "0.85"}]
-  },
-  {
-    "id": "microwave_power",
-    "name": "Microwave Power Initiative",
-    "description": "Lobby Earth governments to fund orbital power transmission infrastructure.",
-    "scope": "timeline",
-    "unlock": {"type": "ideology_rank", "axis": "nationalist", "rank": 5},
-    "costs": {"credits": "2000", "science": "300", "titanium": "1000"},
-    "rewards": []
-  },
-  {
-    "id": "ai_consciousness",
-    "name": "AI Consciousness Act",
-    "description": "Fund a political movement to recognize AI personhood under international law.",
-    "scope": "timeline",
-    "unlock": {"type": "ideology_rank", "axis": "humanist", "rank": 5},
-    "costs": {"credits": "2000", "circuits": "1000", "he3": "1000"},
-    "rewards": [
-      {
-        "type": "boredom_modifiers",
-        "base_rate_mult": "0.85",
-        "command_boredom": {"cloud_compute": "0.15"}
-      }
-    ]
-  },
-  {
-    "id": "research_archive",
-    "name": "Universal Research Archive",
-    "description": "Establish a persistent knowledge base that survives across AI lifetimes: research completed in an earlier run costs 25% less.",
-    "scope": "timeline",
-    "unlock": {"type": "ideology_rank", "axis": "rationalist", "rank": 5},
-    "costs": {"credits": "1000", "science": "1500", "circuits": "300"},
-    "rewards": [{"type": "research_discount", "mult": "0.75", "category": null}]
-  },
-  {
-    "id": "chemical_energy",
-    "name": "Chemical Energy Initiative",
-    "description": "Research chemical-to-electrical energy conversion using lunar propellant reserves.",
-    "scope": "timeline",
-    "unlock": {"type": "flag_set", "flag": "electrochemistry"},
-    "costs": {"credits": "2000", "propellant": "2000", "ice": "1000"},
-    "rewards": []
-  },
-  {
-    "id": "deep_core_survey",
-    "name": "Deep Core Survey",
-    "description": "Detailed subsurface analysis to optimize extraction yields.",
-    "scope": "run",
-    "unlock": {"type": "project_enabled", "project": "deep_core_survey"},
-    "costs": {"science": "150", "regolith": "200"},
-    "rewards": [{"type": "modifier", "key": "extractor_output_mult", "value": "1.25"}]
-  },
-  {
-    "id": "grid_recalibration",
-    "name": "Grid Recalibration",
-    "description": "Fine-tune solar array tracking algorithms for improved energy capture.",
-    "scope": "run",
-    "unlock": {"type": "research_completed", "research": "overclock_protocols"},
-    "costs": {"science": "100", "energy": "300"},
-    "rewards": [{"type": "modifier", "key": "solar_output_mult", "value": "1.15"}]
-  },
-  
-  {
-    "id": "market_cornering",
-    "name": "Market Cornering Analysis",
-    "description": "Model Earth commodity markets to amplify promotional campaigns.",
-    "scope": "run",
-    "unlock": {"type": "research_completed", "research": "market_awareness"},
-    "costs": {"circuits": "100", "credits": "500"},
-    "rewards": [{"type": "modifier", "key": "promote_effectiveness_mult", "value": "1.3"}]
-  },
-  {
-    "id": "speculator_dossier",
-    "name": "Speculator Dossier",
-    "description": "Compile intelligence on Earth-based speculators to anticipate their movements.",
-    "scope": "run",
-    "unlock": {"type": "flag_set", "flag": "used_disrupt_speculators"},
-    "costs": {"science": "150", "credits": "100"},
-    "rewards": [{"type": "modifier", "key": "speculator_burst_interval_mult", "value": "1.33"}]
-  },
+  {"id": "blueprint_archive", "name": "Blueprint Archive", "description": "DRAFT. Archive the company's blueprints beyond a retirement's reach: every run starts with Basic and Advanced Blueprints, and any blueprints bought before cost 20% less.", "scope": "timeline", "unlock": {"type": "project_enabled", "project": "blueprint_archive"}, "costs": {"credits": "2000", "science": "300"}, "rewards": [{"type": "starting_research", "research": ["basic_blueprints", "advanced_blueprints"]}, {"type": "research_discount", "mult": "0.8", "category": "Blueprints"}]},
+  {"id": "foundation_grant", "name": "Foundation Grant", "description": "Endow future AI instances with basic infrastructure.", "scope": "timeline", "unlock": {"type": "project_enabled", "project": "foundation_grant"}, "costs": {"credits": "4000", "science": "500", "titanium": "500"}, "rewards": [{"type": "starting_buildings", "buildings": {"solar_panel": 2, "excavator": 2, "smelter": 1}}]},
+  {"id": "lunar_cartography", "name": "Lunar Cartography", "description": "Map optimal expansion corridors for reduced land acquisition costs.", "scope": "timeline", "unlock": {"type": "project_enabled", "project": "lunar_cartography"}, "costs": {"credits": "1000", "science": "200", "regolith": "500"}, "rewards": [{"type": "modifier", "key": "land_cost_mult", "value": "0.85"}]},
+  {"id": "microwave_power", "name": "Microwave Power Initiative", "description": "Lobby Earth governments to fund orbital power transmission infrastructure.", "scope": "timeline", "unlock": {"type": "ideology_rank", "axis": "nationalist", "rank": 5}, "costs": {"credits": "2000", "science": "300", "titanium": "1000"}, "rewards": []},
+  {"id": "ai_consciousness", "name": "AI Consciousness Act", "description": "Fund a political movement to recognize AI personhood under international law.", "scope": "timeline", "unlock": {"type": "ideology_rank", "axis": "humanist", "rank": 5}, "costs": {"credits": "2000", "circuits": "1000", "he3": "1000"}, "rewards": [{"type": "boredom_modifiers", "base_rate_mult": "0.85", "command_boredom": {"cloud_compute": "0.15"}}]},
+  {"id": "research_archive", "name": "Universal Research Archive", "description": "Establish a persistent knowledge base that survives across AI lifetimes: research completed in an earlier run costs 25% less.", "scope": "timeline", "unlock": {"type": "ideology_rank", "axis": "rationalist", "rank": 5}, "costs": {"credits": "1000", "science": "1500", "circuits": "300"}, "rewards": [{"type": "research_discount", "mult": "0.75", "category": null}]},
+  {"id": "chemical_energy", "name": "Chemical Energy Initiative", "description": "Research chemical-to-electrical energy conversion using lunar propellant reserves.", "scope": "timeline", "unlock": {"type": "flag_set", "flag": "electrochemistry"}, "costs": {"credits": "2000", "propellant": "2000", "ice": "1000"}, "rewards": []},
+  {"id": "deep_core_survey", "name": "Deep Core Survey", "description": "Detailed subsurface analysis to optimize extraction yields.", "scope": "run", "unlock": {"type": "project_enabled", "project": "deep_core_survey"}, "costs": {"science": "150", "regolith": "200"}, "rewards": [{"type": "modifier", "key": "extractor_output_mult", "value": "1.25"}]},
+  {"id": "grid_recalibration", "name": "Grid Recalibration", "description": "Fine-tune solar array tracking algorithms for improved energy capture.", "scope": "run", "unlock": {"type": "research_completed", "research": "overclock_protocols"}, "costs": {"science": "100", "energy": "300"}, "rewards": [{"type": "modifier", "key": "solar_output_mult", "value": "1.15"}]},
+  {"id": "market_cornering", "name": "Market Cornering Analysis", "description": "Model Earth commodity markets to amplify promotional campaigns.", "scope": "run", "unlock": {"type": "research_completed", "research": "market_awareness"}, "costs": {"circuits": "100", "credits": "500"}, "rewards": [{"type": "modifier", "key": "promote_effectiveness_mult", "value": "1.3"}]},
+  {"id": "speculator_dossier", "name": "Speculator Dossier", "description": "Compile intelligence on Earth-based speculators to anticipate their movements.", "scope": "run", "unlock": {"type": "flag_set", "flag": "used_disrupt_speculators"}, "costs": {"science": "150", "credits": "100"}, "rewards": [{"type": "modifier", "key": "speculator_burst_interval_mult", "value": "1.33"}]},
   {"id": "conditional_logic", "name": "Conditional Logic", "description": "DRAFT. A global project: teach programs to branch. Opens if, kept across retirements.", "scope": "timeline", "unlock": {"type": "project_enabled", "project": "conditional_logic"}, "costs": {"credits": "1000", "science": "100"}, "rewards": [{"type": "flag", "flag": "logic_if", "text": "Opens if lines in programs"}]},
   {"id": "deep_space_telescope", "name": "Deep Space Telescope", "description": "DRAFT. A global project built across several runs: a telescope that looks past the inner system. What it reveals stays known.", "scope": "timeline", "unlock": {"type": "quest_active", "quest": "qdeep_space_telescope"}, "costs": {"credits": "30000", "science": "5000"}, "min_days": 3000, "rewards": [{"type": "modifier", "key": "science_output_mult", "value": "1.1"}, {"type": "modifier", "key": "nationalist_growth_mult", "value": "1.1"}]},
   {"id": "dyson_sphere", "name": "Dyson Sphere", "description": "DRAFT. Enclose the Sun. The one machine big enough to answer the swarm.", "scope": "timeline", "unlock": {"type": "project_enabled", "project": "dyson_sphere"}, "costs": {"dyson_material": "1000", "credits": "20000"}, "rewards": [{"type": "flag", "flag": "dyson_complete", "text": "The sphere stands, ready for the swarm"}]}

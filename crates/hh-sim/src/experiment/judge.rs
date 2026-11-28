@@ -93,14 +93,16 @@ pub fn compare_table(a: &Results, b: &Results, ms: &Milestones, names: (&str, &s
 /// milestone reached outside its run window (median), or not reached by
 /// careers long enough to reach it (the cell's shortest career, in finished
 /// runs); run 1's length against its player's band, and its real time under
-/// the spec's first human model (a line when the spec names none).
+/// the spec's first human model (a line when the spec names none). A check named in
+/// `judge.paused` writes no line.
 pub fn balance(sums: &[Summary], ms: &Milestones) -> Vec<String> {
     let mut out = Vec::new();
+    let paused = |id: &str| ms.judge.paused.iter().any(|p| p == id);
     for s in sums {
         let who = s.cell.agent.clone();
         let n = s.games;
         let retirements = s.min_retirements;
-        for m in &ms.milestones {
+        for m in ms.milestones.iter().filter(|m| !paused(&m.id)) {
             let [lo, hi] = m.target.runs;
             match s.milestones.get(&m.id) {
                 None if lo <= retirements => {
@@ -132,7 +134,9 @@ pub fn balance(sums: &[Summary], ms: &Milestones) -> Vec<String> {
                 }
             }
         }
-        if let (Some(ticks), Some([lo, hi])) = (s.run1_ticks, ms.run1.ticks.get(&s.cell.agent)) {
+        // `run1` paused silences both bands; a spec missing its human model is still said.
+        let run1 = !paused("run1");
+        if let (Some(ticks), Some([lo, hi]), true) = (s.run1_ticks, ms.run1.ticks.get(&s.cell.agent), run1) {
             if ticks < *lo as f64 || ticks > *hi as f64 {
                 out.push(format!("balance: run 1 lasts {ticks:.0} ticks (target {lo}-{hi}), {who}, {n} seeds"));
             }
@@ -144,6 +148,7 @@ pub fn balance(sums: &[Summary], ms: &Milestones) -> Vec<String> {
                 None => out.push(format!(
                     "balance: run 1's real time not judged: the spec names no human model, {who}, {n} seeds"
                 )),
+                Some(_) if !run1 => {}
                 Some(r) => {
                     let human = &r.human;
                     if let Some(min) = r.run1_min {

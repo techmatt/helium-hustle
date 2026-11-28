@@ -72,7 +72,7 @@ reaches it), its `on_start` grants are added to the run's stock, once: a retirem
 repeat them (career `started_quests`); no quest has one now. **Quest completion:** a
 quest's `on_complete` grants are added as it completes, once a career (unlike its `unlocks`,
 a new run doesn't re-apply them; a scenario's starting quests don't: its resources are its
-file's). 1.1 Online's 20 Propellant, the first launch's, is the one.
+file's). 1.1 First Light's 20 Propellant, the first launch's, is the one.
 While a chain quest naming `pad_goods` is active, a pad may be set only to those goods (1.2:
 Titanium; [shipments.md](shipments.md)).
 
@@ -95,7 +95,7 @@ completed earlier in the same check can fire that same day.
 | Unlock | Effect |
 |---|---|
 | `enable_building` | the building may be bought this run. A building named by any event's `enable_building` is locked until one enables it ([economy.md](economy.md)). |
-| `enable_nav_panel` | the panel is shown this run. Two gate a rule: `retirement` (the Retire action, [career.md](career.md)) and `research` (buying research, [research.md](research.md)); others (`adversaries` once speculators first arrive, `projects` from A Voice's start, `ideologies`, ...) are display, and the view shows such a tile at once when its event would fire at the tick's end (`events::pending_panels`: a purchase while paused). |
+| `enable_nav_panel` | the panel is shown this run. Two gate a rule: `retirement` (the Retire action, [career.md](career.md)) and `research` (buying research, [research.md](research.md)); others (`adversaries` once speculators first arrive, `projects` from Friends in High Places' start, `ideologies`, ...) are display, and the view shows such a tile at once when its event would fire at the tick's end (`events::pending_panels`: a purchase while paused). |
 | `enable_project` | a project whose unlock is `project_enabled` may be funded this run ([projects.md](projects.md)) |
 | `set_flag` | sets a career flag |
 | `grant` (`resource`, `amount`) | adds the amount to this run's stock; re-applied at each run start (below), a starting bonus from then on |
@@ -126,7 +126,7 @@ is one text: panels split by a line holding only `--`, paragraphs inside a panel
 line; the view carries the panels (`content::panels`), one modal page each, and Story's
 cards show one at a time. A chain quest's story shows as it becomes active, its payoff (its
 reward under it) as it completes; **a chain quest without a payoff** opens no popup of its
-own: its Reward line closes the next quest's story, after that quest's goal (1.1 Online's,
+own: its Reward line closes the next quest's story, after that quest's goal (1.1 First Light's,
 and Acts 2-4's drafts). A side quest's popup is its story with its goal and reward; a
 one-off's is its `story` pages (Burnout's), else its `body`, with its effect. The view
 carries them (`quest.story`; each completed quest's `chain`, `story` and `payoff`;
@@ -173,9 +173,9 @@ Triggers, conditions and unlocks are content (`content/events.json`).
 
 `content/events.json`, 33 rows; the file holds each row's trigger, condition and unlocks.
 
-- **Eighteen `story`:** Act 1's beats 1.1 Online to 1.6 Deep Space Telescope (the swarm's
+- **Eighteen `story`:** Act 1's beats 1.1 First Light to 1.6 Deep Space Telescope (the swarm's
   reveal; [../arc.md](../arc.md)), then the draft 2.1 to 4.2 and the Epilogue (4.3).
-- **Three `side`**, each with a permanent reward: 1.a Big Launch and 1.d Three Voices a
+- **Three `side`**, each with a permanent reward: 1.a Big Launch and 1.d Friends Everywhere a
   `modifier`, 1.b Full Cluster a `grant` (50 Science, so every later run starts with it).
   1.a and 1.b hang beside a chain quest on a flag a one-off sets; 1.d follows 1.5's
   completion. There is no 1.c (cut in 129; the Blueprint Archive project stays).

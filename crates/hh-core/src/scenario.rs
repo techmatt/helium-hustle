@@ -164,7 +164,7 @@ impl Scenario {
             }
             crate::modules::events::fire(g, e);
         }
-        // A scenario past 1.5 A Voice's start starts with Programming bought.
+        // A scenario past 1.5 Friends in High Places' start starts with Programming bought.
         crate::modules::research::grant_flags_due(g);
         for (p, entries) in g.run.programs.iter_mut().zip(&self.start.programs) {
             p.entries = entries.clone();

@@ -1,6 +1,6 @@
 //! `hh-sim axes`: the committed ideology players (130), one per axis at each
 //! skill, each playing a career until this run's rank on its axis first
-//! reaches 5 (quest 1.5 A Voice's bar) or `--runs` runs end.
+//! reaches 5 (quest 1.5 Friends in High Places' bar) or `--runs` runs end.
 //!
 //! - **skilled**: the oracle (quests profile) committed to the axis
 //!   (`oracle:profile=4,commit=k`), from a new game.
@@ -10,7 +10,7 @@
 //!
 //! Each case prints the run and day rank 5 was first reached, the projects
 //! completed by then, and each run's length and best score on the axis as a
-//! share of the rank-5 score, with the days 1.4 Trade was done (`trade@`), Fund
+//! share of the rank-5 score, with the days 1.4 Supply Line was done (`trade@`), Fund
 //! opened (`fund@`) and each project completed that run (`ba@1012`, from the
 //! career log), then the global projects done at its end (`[ba lc]`). Cases run
 //! in parallel (`--threads`).
@@ -26,11 +26,11 @@ use crate::agents::{self, Player};
 use crate::career;
 use crate::{load_config, load_milestones, usage, Fail, BASELINE, MILESTONES, THREADS};
 
-/// The rank the players race to (mirrors content/events.json 1.5 A Voice's
+/// The rank the players race to (mirrors content/events.json 1.5 Friends in High Places'
 /// `ideology_rank_any` 5).
 const RANK: i64 = 5;
 
-/// Quest 1.4 Trade, whose completion starts 1.5 A Voice.
+/// Quest 1.4 Supply Line, whose completion starts 1.5 Friends in High Places.
 const TRADE: &str = "qtrade";
 
 /// A project's initials, for the runs column (`blueprint_archive`: `ba`).
@@ -50,7 +50,7 @@ struct Run {
     cut: bool,
     /// The day its Fund command was first open at a look.
     fund_day: Option<u64>,
-    /// The day quest 1.4 Trade was first seen done at a look (A Voice's start).
+    /// The day quest 1.4 Supply Line was first seen done at a look (Friends in High Places' start).
     trade_day: Option<u64>,
     /// Global projects completed in the career at its end.
     projects: Vec<String>,

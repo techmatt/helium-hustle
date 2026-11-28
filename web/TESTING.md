@@ -34,7 +34,7 @@ order 1, 2, 3, 6 to 11, 5, 4:
 8. `else` (`programElse`): text and blocks agree, each pass runs its branch.
 9. The All instructions panel (`instructionPanel`).
 10. The Programs view's Blocks mode (`programsBlocks`).
-11. Story and Achievements (`storyView`), played by the autopilot to 1.5 A Voice.
+11. Story and Achievements (`storyView`), played by the autopilot to 1.5 Friends in High Places.
 
 Any uncaught page error fails the run. Run it against `vite preview` (CLAUDE.md).
 `panel()` closes the debug menu: call `debugMenu()` again before a `grant()` after one.
@@ -88,7 +88,7 @@ Per pass:
 - **Run 1:** a first visit, a new game on the seed (its story modal probed under real keys
   and mouse), run 1 at 3x then 10x played from the right column's program with every panel,
   retirement and the summary. Programming is bought in run 1 with Buy Science if run 1
-  reaches 1.5 A Voice, else in run 2 once the debug autopilot's *Next quest step* reaches it;
+  reaches 1.5 Friends in High Places, else in run 2 once the debug autopilot's *Next quest step* reaches it;
   then the Programs view and the right column's program edited.
 - **Run 2** at 10x, a reload, the replay check, the play log replayed by `hh-sim playlog` (a
   release build, or `HH_SIM`: a fresh worktree has none, so build it first), and on the

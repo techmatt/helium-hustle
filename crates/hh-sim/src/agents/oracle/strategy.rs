@@ -18,7 +18,7 @@ pub struct Strategy {
     pub label: String,
     pub dir: Directives,
     /// It funds an ideology axis, which needs Geopolitical Intelligence,
-    /// visible once A Voice starts (Trade done): until then it is skipped.
+    /// visible once Friends in High Places starts (Supply Line done): until then it is skipped.
     pub funds: bool,
 }
 
@@ -56,7 +56,7 @@ pub fn strategy_index(label: &str) -> Option<usize> {
     strategies().iter().position(|s| s.label == label)
 }
 
-/// An A Voice campaign (1.5) on `axis`: one run held long against
+/// A Friends in High Places campaign (1.5) on `axis`: one run held long against
 /// boredom, funding the axis toward rank 5 and then its rank-5 project,
 /// trading meanwhile. Uncommitted (the quests profile, one campaign per
 /// axis, the best kept) it holds boredom with Dream; `commit` (a committed
@@ -86,14 +86,14 @@ fn trade() -> Directives {
     }
 }
 
-/// The Trade quest (1.4): its completion starts A Voice, which opens
+/// The Supply Line quest (1.4): its completion starts Friends in High Places, which opens
 /// Geopolitical Intelligence (Fund's research).
 const TRADE: &str = "qtrade";
 
-/// The A Voice quest (1.5, rank 5 on any axis): the quests profile's ideology stretch.
+/// The Friends in High Places quest (1.5, rank 5 on any axis): the quests profile's ideology stretch.
 const A_VOICE: &str = "qa_voice";
 
-/// Whether the A Voice quest is the one under way.
+/// Whether the Friends in High Places quest is the one under way.
 pub(super) fn a_voice_open(g: &GameState) -> bool {
     g.career.completed_quests.contains(TRADE) && !g.career.completed_quests.contains(A_VOICE)
 }
@@ -101,12 +101,12 @@ pub(super) fn a_voice_open(g: &GameState) -> bool {
 impl Oracle {
     /// Plays each strategy for `long` ticks and keeps the best: the pinned
     /// one only, while it is available (else every available one); the
-    /// quests profile's campaign alone while A Voice (1.5) is open.
+    /// quests profile's campaign alone while Friends in High Places (1.5) is open.
     pub(super) fn choose_strategy(&mut self, p: &mut Player) {
         let mut best: Option<(i64, String, Directives)> = None;
         let voice = a_voice_open(p.state());
         let all: Vec<(String, Directives)> = if let (Some(axis), true) = (self.commit, voice) {
-            // Blueprint Archive, then Lunar Cartography (A Voice's start
+            // Blueprint Archive, then Lunar Cartography (Friends in High Places' start
             // opens them) pushed first, while open: then the axis's project.
             let (label, mut d) = campaign(axis, true);
             let v = p.view();

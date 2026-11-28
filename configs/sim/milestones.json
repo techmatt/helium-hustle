@@ -1,5 +1,5 @@
 {
-  "_doc": "Arc 1 milestones as measurable objectives, and their targets (docs/principles.md). Each `when` follows the design rules: building existence for capability, events for pipeline outputs, cumulative counters for volume, production-rate thresholds for scaling, stockpile thresholds only for uncapped resources (a load error otherwise). `runs` is the target window in run numbers (run 1 is the first; run n starts after n-1 retirements); `ticks` a window in run-1 ticks where the design gives one. `run1` holds the first run's length bands by player name (`author` played well, `casual` played casually) and its real-time band, read for the players named under the judge's human model (the first of experiments/balance.json's `humans`). The judge's cells (players, human model, seeds) are experiments/balance.json's. `judge.late_percent`: a milestone reached by at most this percent of the seeds is late. `vs_human`: the same purchase counts as parted in time when more than the larger of `when_ticks` and `when_percent` of the best player's tick apart.",
+  "_doc": "Arc 1 milestones as measurable objectives, and their targets (docs/principles.md). Each `when` follows the design rules: building existence for capability, events for pipeline outputs, cumulative counters for volume, production-rate thresholds for scaling, stockpile thresholds only for uncapped resources (a load error otherwise). `runs` is the target window in run numbers (run 1 is the first; run n starts after n-1 retirements); `ticks` a window in run-1 ticks where the design gives one. `run1` holds the first run's length bands by player name (`author` played well, `casual` played casually) and its real-time band, read for the players named under the judge's human model (the first of experiments/balance.json's `humans`). The judge's cells (players, human model, seeds) are experiments/balance.json's. `judge.late_percent`: a milestone reached by at most this percent of the seeds is late; `judge.paused`: the checks that write no line (milestone ids, and `run1` for both run-1 bands). `vs_human`: the same purchase counts as parted in time when more than the larger of `when_ticks` and `when_percent` of the best player's tick apart.",
   "milestones": [
     {
       "id": "M1", "name": "First Light", "says": "self-sustaining energy (run 1, early)",
@@ -85,6 +85,9 @@
     "ticks": { "author": [800, 1100], "casual": [1300, 1700] },
     "minutes": { "band": [25, 35], "players": ["author"] }
   },
-  "judge": { "late_percent": 50 },
+  "judge": {
+    "late_percent": 50,
+    "paused": ["M2", "M3", "M4", "M5", "M6", "M7", "M8", "M9", "M10", "M11", "M12", "M13", "M14", "run1"]
+  },
   "vs_human": { "when_ticks": 50, "when_percent": 25 }
 }

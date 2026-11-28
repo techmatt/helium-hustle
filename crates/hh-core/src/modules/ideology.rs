@@ -94,7 +94,7 @@ pub fn major(r: &Rules, g: &GameState, axis: &str) -> bool {
 
 /// The retirement gap's daily decay factor on every score:
 /// `0.5 ^ (1 / (half_life_days × ideology_half_life_mult))` (fractional,
-/// through `libm`; the modifier is Three Voices' reward).
+/// through `libm`; the modifier is Friends Everywhere's reward).
 pub fn gap_decay_factor(r: &Rules, g: &GameState) -> Fx {
     let half_life = r.p.ideology.half_life_days * crate::modifiers::modifier(r, g, "ideology_half_life_mult");
     let exp = Fx::ONE / half_life;

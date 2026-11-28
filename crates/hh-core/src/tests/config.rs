@@ -182,3 +182,25 @@ fn the_rules_readme_counts_the_content() {
         assert!(doc.contains(&w), "docs/rules/README.md *Content* should say {w:?}");
     }
 }
+
+/// Every content file is laid out one row per line (Matt, 2026-11-27): `[`, then each row as
+/// one line of JSON, indented two spaces, a comma after all but the last, then `]`. The
+/// formatter: `python scripts/format_content.py`.
+#[test]
+fn content_files_are_one_row_per_line() {
+    for (name, text) in crate::content::FILES {
+        let bad = |at: &str| -> ! { panic!("content/{name} is not one row per line ({at}): run python scripts/format_content.py") };
+        if *text == "[\n]\n" {
+            continue;
+        }
+        let body = text.strip_prefix("[\n").and_then(|t| t.strip_suffix("\n]\n")).unwrap_or_else(|| bad("its brackets"));
+        let lines: Vec<&str> = body.split('\n').collect();
+        for (i, line) in lines.iter().enumerate() {
+            let at = format!("line {}", i + 2);
+            let row = line.strip_prefix("  ").unwrap_or_else(|| bad(&at));
+            let row = if i + 1 < lines.len() { row.strip_suffix(',').unwrap_or_else(|| bad(&at)) } else { row };
+            let v: Value = serde_json::from_str(row).unwrap_or_else(|_| bad(&at));
+            assert!(v.is_object(), "content/{name} {at} is not a row");
+        }
+    }
+}

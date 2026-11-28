@@ -15,7 +15,9 @@ Split from [ui.md](ui.md) (art, cards, nav, bars) at 124.
   headline, not an inventory: only what the player actually gets (a granted command, panel,
   building, resource or lasting bonus; 1.3: "The Launch Full Pads command."), never research
   merely appearing on the market (players find it by the unread dots; Matt, 2026-11-26);
-  secondary effects go unlisted; a quest that grants nothing shows no reward line at all (no
+  secondary effects go unlisted; panels aren't rewards (Matt, 2026-11-28, 136: 1.6 opens the
+  Timeline panel and the Experiment Lab with no Reward line; 1.1's line still names the
+  Research panel, as he kept it); a quest that grants nothing shows no reward line at all (no
   "None."). No how-to hints (Matt, 2026-11-26): quests carry no `hints` and nothing shows
   a "How:" line, no handholding until playtests say what's needed. A one-off's Effect states
   only the actual change, tersely ("Boredom starts growing: +0.2/day."), never explaining it
@@ -23,7 +25,7 @@ Split from [ui.md](ui.md) (art, cards, nav, bars) at 124.
   popups (reward on the last payoff page, the next goal on the last page; a one-off's Effect)
   and Story cards use it. **A chain quest without a payoff** (Matt, 2026-11-27; 135) shows
   its Reward line at the end of the next quest's story popup, after the goal; its completion
-  opens no popup of its own (1.1 Online has none). The right panel is the exception: the main-quest box (amendment
+  opens no popup of its own (1.1 First Light has none). The right panel is the exception: the main-quest box (amendment
   #3203: its title, its goal as one plain line in the UI font, and its progress), the
   side-quest lines and the Events lines carry no mechanics text. A content test
   keeps digits, `{rate}` and UI instructions out of narrative; new quests are written so.

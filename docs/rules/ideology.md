@@ -67,17 +67,17 @@ Only the first major rank is built; the ranks between raise `m` as above.
 **Career bests.** At the end of each tick, and as a run closes (a nudge between days, then
 Retire), each axis's best rank and best score in the career are raised to the current ones (they start at 0, so a negative axis leaves them at 0).
 Three `timeline` (global) projects unlock on the best rank (rank 5 on an axis opens its
-project, [projects.md](projects.md)), and side quest 1.d Three Voices needs a best rank of 5
-on each axis, so separate runs can reach it ([events.md](events.md)). Quest 1.5 A Voice reads
+project, [projects.md](projects.md)), and side quest 1.d Friends Everywhere needs a best rank of 5
+on each axis, so separate runs can reach it ([events.md](events.md)). Quest 1.5 Friends in High Places reads
 this run's rank instead: 5 on any axis.
 
 **Carried scores and the gap.** A retirement keeps the run's scores in the career. Through
 the retirement gap's `gap_days` days ([career.md](career.md)) each is multiplied each day by
 `0.5^(1 / (half_life_days × ideology_half_life_mult))` (fractional, through `libm`, floored
 to 10^-6): proportional decay toward 0, one half-life for all three axes. The modifier is
-side quest 1.d Three Voices' reward (×2 once it is completed). A new run starts each axis at its carried score.
+side quest 1.d Friends Everywhere's reward (×2 once it is completed). A new run starts each axis at its carried score.
 At baseline (1,825 days, a 365-day half-life) a run keeps about 3% of the last run's scores
-(about 18% with Three Voices).
+(about 18% with Friends Everywhere).
 Run 1, and the first run after a timeline's end (the career resets), start every axis at 0.
 
 ## Actions

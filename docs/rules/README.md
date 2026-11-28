@@ -1,6 +1,6 @@
 # Rules
 
-The rules as implemented, rules revision **48** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **49** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
 The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
@@ -111,7 +111,7 @@ game does (bug hunts, `docs/qa-findings.md`).
 Every quantity is `Fx` (10^-6, floor rounding: [architecture](../architecture.md#numbers-fx));
 counts (buildings, days, ticks, ranks, pads) are integers. Two rules ask for a deliberate
 rounding beside that floor: `Fx::round_to`/`round_sig`, nearest, halves away from zero (a
-tagged building's price to whole units; rank thresholds to `rank_figures`, 131).
+building's price to whole units, tagged or not, 136; rank thresholds to `rank_figures`, 131).
 
 **Whole powers are exact.** `Fx::pow_int` builds `x^n` by repeated multiplication at 10^-18
 in `i128` and floors once to 10^-6, so 1.15^2 is 1.3225, not the float floor 1.322499. It
@@ -136,7 +136,7 @@ A modifier key's value is the product of every live source naming it, 1 with non
 | `building_upkeep_mult` | none now (Predictive Maintenance, its source, was cut in 129) | every building's upkeep |
 | `promote_effectiveness_mult` | Market Cornering (Strategic) | Promote's demand effect |
 | `speculator_burst_interval_mult` | Speculator Dossier (Strategic) | days between speculator bursts |
-| `land_cost_mult` | Lunar Cartography (global, from A Voice) | land price |
+| `land_cost_mult` | Lunar Cartography (global, from Friends in High Places) | land price |
 | `storage_cap_mult` | Silicon Valley (achievement) | every cap but energy's (and boredom's) |
 | `shipment_credit_mult` | First Profit (achievement), 1.a Big Launch (side quest) | shipment payouts |
 | `cargo_capacity_mult` | Bulk Shipper (achievement) | cargo loaded per Load |
@@ -146,7 +146,7 @@ A modifier key's value is the product of every live source naming it, 1 with non
 | `ideology_cross_mult` | Consensus Engine (Earth tech, draft) | Fund's cross-penalty on the other axes |
 | `science_output_mult` | Deep Space Telescope (global) | Research Lab output |
 | `nationalist_growth_mult` | Deep Space Telescope (global) | a Fund Nationalist's push to its own axis |
-| `ideology_half_life_mult` | 1.d Three Voices (side quest) | the retirement gap's ideology half-life ([ideology.md](ideology.md)) |
+| `ideology_half_life_mult` | 1.d Friends Everywhere (side quest) | the retirement gap's ideology half-life ([ideology.md](ideology.md)) |
 
 A building lists the keys that multiply its output (`output_modifiers`); a command its
 `scale_modifier`. Achievement and `forever` project rewards apply from the moment they are

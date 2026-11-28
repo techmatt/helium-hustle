@@ -216,8 +216,8 @@ pub fn visible(g: &GameState, b: &Building) -> bool {
 }
 
 /// The next one's price: `cost × cost_scaling ^ (owned − bonus) ÷ m` (`m`, its
-/// tagged axis's modifier, ideology.md; a tagged price then rounds to whole
-/// units), the power exact (`Fx::pow_int`). Land
+/// tagged axis's modifier, ideology.md), then rounded to whole units, the power
+/// exact (`Fx::pow_int`). Land
 /// is not a price here, so the modifier never touches it. A price past `Fx`'s
 /// range is `Fx::MAX`: shown, never affordable.
 pub fn price(r: &Rules, g: &GameState, b: &Building) -> BTreeMap<String, Fx> {
@@ -228,9 +228,9 @@ pub fn price(r: &Rules, g: &GameState, b: &Building) -> BTreeMap<String, Fx> {
         let inv = Fx::ONE / super::ideology::modifier(r, g, axis);
         factor = factor.and_then(|f| f.checked_mul(inv));
     }
-    // A tagged building's price rounds to whole units after ÷m, every resource
-    // (Matt, 131: what's shown is what's charged).
-    let whole = |p: Fx| if b.ideology.is_some() && p < Fx::MAX { p.round_whole() } else { p };
+    // Every building's price rounds to whole units, after ÷m for a tagged one, every
+    // resource (Matt, 131 and 2026-11-27: what's shown is what's charged).
+    let whole = |p: Fx| if p < Fx::MAX { p.round_whole() } else { p };
     b.cost
         .iter()
         .map(|(res, &base)| (res.clone(), factor.and_then(|f| base.checked_mul(f)).map_or(Fx::MAX, whole)))

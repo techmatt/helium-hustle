@@ -24,8 +24,9 @@ The game's other rulings are in [game.md](game.md); the rules themselves in
   price, boredom growth, overclock duration). *Default (129):* the tags are Nationalist:
   Recreation Dome, Launch Pad, Arbitrage Engine; Humanist: Data Center, Battery;
   Rationalist: Research Lab, Fabricator.
-- **Rounding after ÷m (Matt, 2026-11-27; 131).** Building prices round to whole units
-  internally after the ideology modifier, every resource (what's shown is what's charged).
+- **Rounding after ÷m (Matt, 2026-11-27; 131, 136).** Every building price rounds to whole
+  units internally, after the ideology modifier for a tagged one, untagged ones too, every
+  resource (what's shown is what's charged).
   Tool effects (Dome relief, Dream, Theorize) stay exact internally and round only for
   display (0.605 shows as 0.6). Rank thresholds round to two significant figures after the
   geometric formula (55 / 140 / 260 / 450 / 730 at base 55).

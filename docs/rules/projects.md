@@ -142,7 +142,7 @@ Microwave Power Initiative 2,000 credits, 300 science and 1,000 titanium; AI Con
 Act 2,000 credits, 1,000 circuits and 1,000 He-3; Universal Research Archive 1,000 credits,
 1,500 science and 300 circuits. At the caps Blueprint Archive takes 67 days (credits),
 Foundation Grant 134, Lunar Cartography 50 (regolith). **Where they open.** The Projects panel, where a player sees them, opens
-at A Voice's start (quest 1.5; the silent `a_voice_projects` event, a `quest_active`
+at Friends in High Places' start (quest 1.5; the silent `a_voice_projects` event, a `quest_active`
 condition) with Blueprint Archive, Conditional Logic, Lunar Cartography and Foundation
 Grant (each `project_enabled`); a first retirement before it (the silent `first_retirement`
 event, [events.md](events.md)) opens the panel with all of those but Lunar Cartography.
@@ -150,7 +150,7 @@ event, [events.md](events.md)) opens the panel with all of those but Lunar Carto
 ## Port notes
 
 - Conflict: Microwave Receiver gate: see [economy.md](economy.md#port-notes).
-- Changed: A Voice's start (and the first retirement) enables Foundation Grant and the
+- Changed: Friends in High Places' start (and the first retirement) enables Foundation Grant and the
   Projects panel (the Godot data had Market Awareness, a quest no longer in the line).
 - Conflict: Deep Core Survey unlocks by `project_enabled`, but no event enables it. Kept
   as data, so it is unreachable (candidate: give it an enabling event or another unlock).

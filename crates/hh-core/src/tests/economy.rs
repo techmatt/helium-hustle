@@ -37,8 +37,10 @@ fn buying_costs_resources_and_land_and_grows_the_price() {
     let v = r.view(&g);
     let panel = v.buildings.iter().find(|b| b.id == "solar_panel").unwrap();
     assert_eq!(panel.cost["credits"], f("45"));
-    assert_eq!(panel.cost["titanium"], f("13.5"));
-    // 11 titanium can't buy a 13.5-titanium panel, and a refused buy changes nothing.
+    // 6 × 1.5² = 13.5 titanium, rounded to whole units, halves up (Matt, 2026-11-27: every
+    // building's price, tagged or not; what's shown is what's charged).
+    assert_eq!(panel.cost["titanium"], f("14"));
+    // 11 titanium can't buy a 14-titanium panel, and a refused buy changes nothing.
     let before = g.clone();
     assert!(r.apply(&mut g, &buy("solar_panel")).unwrap_err().contains("can't afford"));
     assert_eq!(g, before);

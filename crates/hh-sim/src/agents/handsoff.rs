@@ -146,7 +146,7 @@ impl Agent for HandsOff {
         let v = p.view();
         let run = v.run;
         // The loadout guards with `if`: the author plays every run until
-        // `if` opens (a global project offered from A Voice or the first retirement), and that run.
+        // `if` opens (a global project offered from Friends in High Places or the first retirement), and that run.
         // A timeline's end closes `if` with Conditional Logic's completion: the
         // author plays again (and re-funds it) until it reopens, and that run.
         if v.if_open {

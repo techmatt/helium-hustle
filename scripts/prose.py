@@ -2,6 +2,7 @@
 
     python scripts/prose.py export [FILE]   # write the strings (default content/prose.md)
     python scripts/prose.py import FILE     # write FILE's edited strings back into content/
+        [--unstamped]                       # also apply entries with no fingerprint, by id
     python scripts/prose.py check           # the round trip changes nothing, and
                                             # content/prose.md matches the content
 
@@ -14,7 +15,8 @@ its UTF-8 text. Import matches strings by id and accepts a partial file (only th
 changed): an id missing from the file leaves its string alone and is listed as not in the file;
 an id the content no longer has, an entry without a fingerprint, and one whose fingerprint no
 longer matches the content (the string changed since that export) are each reported and
-skipped. Only strings whose text changed are rewritten, in place in the JSON text, so every
+skipped; `--unstamped` applies an entry without a fingerprint by id instead (text written
+fresh, not edited from an export: 136's prose pass). Only strings whose text changed are rewritten, in place in the JSON text, so every
 other byte (layout, escapes) stays as it was. Ids are never edited. Import never needs anyone
 to read the prose: the fingerprint is the check that an edit was made against the current text.
 
@@ -231,12 +233,13 @@ def parse(md):
     return out
 
 
-def apply(texts, entries):
+def apply(texts, entries, unstamped_ok=False):
     """The content texts with `entries` written in, and what was skipped or left out.
 
     Returns (texts, gone, unstamped, stale, absent): ids the content no longer has, entries
     without a fingerprint, entries whose fingerprint no longer matches the content, and ids
-    the content has that `entries` doesn't carry.
+    the content has that `entries` doesn't carry. With `unstamped_ok`, an entry without a
+    fingerprint is applied by id (and still listed in `unstamped`).
     """
     known = []
     unstamped = []
@@ -253,8 +256,9 @@ def apply(texts, entries):
             fp, new = entries[key]
             if fp is None:
                 unstamped.append(key)
-                continue
-            if fp != fingerprint(value):
+                if not unstamped_ok:
+                    continue
+            elif fp != fingerprint(value):
                 stale.append(key)
                 continue
             if new != value:
@@ -289,15 +293,20 @@ def main(argv):
         print(f'wrote {path}')
         return 0
     if argv[0] == 'import':
-        if len(argv) < 2:
+        unstamped_ok = '--unstamped' in argv[1:]
+        files = [a for a in argv[1:] if a != '--unstamped']
+        if len(files) != 1:
             print('import needs the edited file')
             return 2
-        entries = parse(Path(argv[1]).read_text(encoding='utf-8'))
-        new, gone, unstamped, stale, absent = apply(texts, entries)
+        entries = parse(Path(files[0]).read_text(encoding='utf-8'))
+        new, gone, unstamped, stale, absent = apply(texts, entries, unstamped_ok)
         for k in gone:
             print(f'skipped, id gone from content: {k}')
         for k in unstamped:
-            print(f'skipped, no fingerprint beside the id (re-export and edit that): {k}')
+            if unstamped_ok:
+                print(f'applied by id, no fingerprint (--unstamped): {k}')
+            else:
+                print(f'skipped, no fingerprint beside the id (re-export and edit that, or pass --unstamped): {k}')
         for k in stale:
             print(f'skipped, fingerprint no longer matches (the string changed since that export): {k}')
         # New since the export: ids in content now that the exported content/prose.md
@@ -307,11 +316,11 @@ def main(argv):
             show('ids new since the export (not in content/prose.md: export again to edit them)',
                  [k for k in absent if k not in exported])
         show('ids in content but not in this file (left as they are)', absent)
-        changed =[s for s in FILES if new[s] != texts[s]]
+        changed = [s for s in FILES if new[s] != texts[s]]
         for stem in changed:
             json.loads(new[stem])
             (CONTENT / f'{stem}.json').write_text(new[stem], encoding='utf-8', newline='\n')
-        skipped = len(gone) + len(unstamped) + len(stale)
+        skipped = len(gone) + (0 if unstamped_ok else len(unstamped)) + len(stale)
         print(f'{len(entries)} strings read, {skipped} skipped, {len(changed)} files changed: '
               f'{", ".join(changed) or "none"}')
         return 0

@@ -42,7 +42,7 @@ count at retirement is its length (a forced retirement counts the tick it happen
 one, in which only the slow systems run: each carried ideology score is multiplied by
 `0.5^(1 / (half_life_days × ideology_half_life_mult))` each day ([ideology.md](ideology.md);
 with the baseline's 1,825 days and 365-day half-life, about 3% of each score is left, about
-18% once side quest 1.d Three Voices doubles the half-life), and each adversary's Attention
+18% once side quest 1.d Friends Everywhere doubles the half-life), and each adversary's Attention
 loses its daily decay ([attention.md](attention.md)). The career counts the gap's days. It is
 the one gap of every act: unseen in Act 1 (no calendar), and in Acts 2 and up the same days
 move the swarm's countdown.

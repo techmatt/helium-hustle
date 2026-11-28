@@ -19,11 +19,11 @@ looks exactly when the author would (plans fall due at its next look) and rollou
 often, so a rollout of the current goals is what will happen.
 
 - **Strategy** (each run's start, every `replan` ticks, default 500: so an uncommitted oracle
-  may start A Voice's campaign up to ~500 days late; a committed one also re-chooses at once
-  when A Voice starts or ends and when its campaign's project completes): standing bundles, a fixed table
+  may start Friends in High Places' campaign up to ~500 days late; a committed one also re-chooses at once
+  when Friends in High Places starts or ends and when its campaign's project completes): standing bundles, a fixed table
   (`strategies`, its rows documented there; `strategy=k` pins row k): the author's own,
   *trade* variants, trade + sustain, research or Foundation Grant, and trade + each axis
-  funded. Each is played `long` ticks through retirements. The quests profile, while 1.5 A Voice is
+  funded. Each is played `long` ticks through retirements. The quests profile, while 1.5 Friends in High Places is
   under way, tries one campaign per axis (`campaign`: trade, Dream held, the axis funded, then
   its rank-5 project) and keeps the best.
 - **Committed** (`commit=k`, 130; 1 Nationalist, 2 Humanist, 3 Rationalist, the author's
@@ -31,15 +31,15 @@ often, so a rollout of the current goals is what will happen.
   Dream, Theorize, or Recreation Domes bought from half the cap; its tool's research, and
   Basic/Advanced Blueprints then Geopolitical Intelligence, first, with no science to
   projects while those wait; its tagged buildings
-  scored ×3/2), rows funding another axis are skipped, and while A Voice is under way its
-  campaign is the only strategy. For the projects A Voice's start opens (131): while 1.4
-  Trade is under way, two Research Labs come first and it buys nothing else
+  scored ×3/2), rows funding another axis are skipped, and while Friends in High Places is under way its
+  campaign is the only strategy. For the projects Friends in High Places' start opens (131): while 1.4
+  Supply Line is under way, two Research Labs come first and it buys nothing else
   until its credits and regolith, after the purchase, cover Blueprint Archive's and Lunar
   Cartography's unpaid costs (the bank, at most each resource's cap); once open, both are
   funded side by side at the caps (credits: all on hand), run-1 science to them first.
   Fund's processors are seated before the tool's, so a long run's growing tool count never
   takes them.
-  Retirement: while A Voice is under way neither the prestige rule nor a stale run retires
+  Retirement: while Friends in High Places is under way neither the prestige rule nor a stale run retires
   it (boredom ends each run); otherwise as below. `hh-sim axes` plays these players
   ([simulator.md](simulator.md)). Rollouts keep their foresight (130's choice: reseeding
   rollouts' streams would not hide the run's already-scheduled bursts, so not cheap).

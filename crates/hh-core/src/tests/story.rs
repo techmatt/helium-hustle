@@ -62,21 +62,22 @@ fn act_1_reads_1_1_to_1_6() {
     assert_eq!(
         act1,
         [
-            ("1.1", "1.1 — Online"),
+            ("1.1", "1.1 — First Light"),
             ("1.2", "1.2 — First Shipment"),
             ("1.3", "1.3 — Full Load"),
-            ("1.4", "1.4 — Trade"),
-            ("1.5", "1.5 — A Voice"),
+            ("1.4", "1.4 — Supply Line"),
+            ("1.5", "1.5 — Friends in High Places"),
             ("1.6", "1.6 — Deep Space Telescope"),
         ]
     );
     // Each act numbers from 1: Act 2 opens with 2.1.
     let q = c.event("qexperiments_service").unwrap();
     assert_eq!((q.beat.as_deref(), q.title.as_str()), (Some("2.1"), "2.1 — Experiments as a Service"));
-    // A reward line lists only real grants: none for a quest that grants nothing.
+    // A reward line lists only real grants: none for a quest that grants nothing, and
+    // panels aren't rewards (1.6 opens the Timeline and the Experiment Lab unlisted; 136).
     let reward = |id: &str| c.event(id).unwrap().reward.as_str();
     assert_eq!(reward("qfull_load"), "The Launch Full Pads command.");
-    for id in ["qfirst_shipment", "qtrade", "qa_voice"] {
+    for id in ["qfirst_shipment", "qtrade", "qa_voice", "qdeep_space_telescope"] {
         assert_eq!(reward(id), "", "{id} grants nothing");
     }
     let side: Vec<&str> = c.events.iter().filter(|e| e.is_side()).filter_map(|e| e.beat.as_deref()).collect();
@@ -85,7 +86,7 @@ fn act_1_reads_1_1_to_1_6() {
 
 /// Staggered unlocks: the first Research Lab opens only Regolith Processing and
 /// Liquid Cooling; the first retirement Projects, Daydreaming and the Retirement
-/// panel; speculators' arrival Market Analysis; A Voice Geopolitical Intelligence
+/// panel; speculators' arrival Market Analysis; Friends in High Places Geopolitical Intelligence
 /// and Programming on start (shown from then on) and Overclock Protocols on completion.
 #[test]
 fn unlocks_are_staggered() {
@@ -112,7 +113,7 @@ fn unlocks_are_staggered() {
     assert!(!shown(&r, &g).contains(&"market_awareness"));
     g.run.events.insert("speculators_arrive".into(), g.run.day);
     assert!(shown(&r, &g).contains(&"market_awareness"));
-    // A Voice: Geopolitical Intelligence and Programming as it starts, Overclock Protocols once done.
+    // Friends in High Places: Geopolitical Intelligence and Programming as it starts, Overclock Protocols once done.
     for q in ["qpower_boot_sequence", "qfirst_shipment", "qfull_load"] {
         g.career.completed_quests.insert(q.into());
     }
@@ -128,7 +129,7 @@ fn unlocks_are_staggered() {
 }
 
 /// Research groups reveal by this run's triggers, items bought before included: run 2's
-/// day 0 shows Blueprints and (A Voice active) Political Influence and Programming only;
+/// day 0 shows Blueprints and (Friends in High Places active) Political Influence and Programming only;
 /// the Lab's groups follow its Research Lab, Market Analysis its speculators.
 #[test]
 fn research_groups_reveal_by_this_runs_triggers() {
@@ -307,10 +308,10 @@ fn full_load_opens_launch_full_pads() {
     g.career.completed_quests.insert("qfull_load".into());
     assert!(open(&g));
     r.advance(&mut g, 1);
-    assert_eq!(r.view(&g).quest.unwrap().id, "qtrade", "Trade follows 1.3");
+    assert_eq!(r.view(&g).quest.unwrap().id, "qtrade", "Supply Line follows 1.3");
 }
 
-/// 1.4 Trade counts all of this run's launch pay, from before the quest's start
+/// 1.4 Supply Line counts all of this run's launch pay, from before the quest's start
 /// too (Matt, 2026-11-26); a retirement starts the count over.
 #[test]
 fn trade_counts_the_whole_run() {
@@ -376,8 +377,8 @@ fn playtest_batch_1_reads_as_ruled() {
     g.run.stats.trade_credits = f("1500");
     r.advance(&mut g, 1);
     assert_eq!(r.view(&g).quest.unwrap().id, "qa_voice");
-    // A Voice's start opens Projects and four global projects at their costs (Matt,
-    // 2026-11-27, 130), and 1.c hangs beside A Voice.
+    // Friends in High Places' start opens Projects and four global projects at their costs (Matt,
+    // 2026-11-27, 130), and 1.c hangs beside Friends in High Places.
     assert!(g.run.enabled_panels.contains("projects"));
     let v = r.view(&g);
     let open: Vec<_> = v.projects.iter().filter(|p| p.unlocked).map(|p| (p.id, p.costs["credits"], p.costs["science"])).collect();
@@ -410,7 +411,7 @@ fn playtest_batch_1_reads_as_ruled() {
     assert_eq!(open(&g), ["blueprint_archive", "foundation_grant", "lunar_cartography", "conditional_logic"]);
     g.career.flags.insert("electrochemistry".into());
     assert_eq!(open(&g), ["blueprint_archive", "foundation_grant", "lunar_cartography", "chemical_energy", "conditional_logic"]);
-    // A retirement before A Voice still opens Projects with three of them.
+    // A retirement before Friends in High Places still opens Projects with three of them.
     let mut g = r.new_game(2);
     g.career.retirements = 1;
     r.advance(&mut g, 1);
@@ -507,7 +508,7 @@ fn story_text_splits_into_panels() {
 
 /// Mechanics never live in narrative (docs/rulings/story-ui.md, *Quest mechanics text*): every
 /// quest has a goal and a reward only if it grants something (never "None."), and every event's narrative (a one-off's summary, body,
-/// story and payoff) carries no numbers (the He-3 in a name excepted), no `{rate}` and no
+/// story and payoff) carries no numbers (the digits in a name excepted: He-3, HELIOS-1), no `{rate}` and no
 /// UI instructions.
 #[test]
 fn narrative_carries_no_mechanics() {
@@ -515,7 +516,7 @@ fn narrative_carries_no_mechanics() {
         let quest = !e.is_one_off();
         assert!(!quest || !e.goal.is_empty() && e.reward != "None.", "{}: a goal, and no empty reward line", e.id);
         for t in [&e.summary, &e.body, &e.story, &e.payoff] {
-            let t = t.replace("Helium-3", "").replace("He-3", "");
+            let t = t.replace("Helium-3", "").replace("He-3", "").replace("HELIOS-1", "");
             assert!(!t.contains("{rate}"), "{}: a rate in its narrative: {t}", e.id);
             assert!(!t.bytes().any(|b| b.is_ascii_digit()), "{}: a number in its narrative: {t}", e.id);
             for word in ["press ", "Press ", "click", "Click", "Add to Program", "Reward:", "on its card", "'s card"] {

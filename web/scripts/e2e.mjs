@@ -49,7 +49,7 @@
 //      line's run dots fill day by day. Shots programs-blocks.png, programs-text.png,
 //      programs-dots.png.
 //  11. (Run before 5.) Story and Achievements: a new game played through 1.4 by the debug
-//      autopilot (its step stops at 1.5 A Voice; it never buys Programming: the program shows, the Programs tile doesn't); Story shows the Act 1 band, every finished beat
+//      autopilot (its step stops at 1.5 Friends in High Places; it never buys Programming: the program shows, the Programs tile doesn't); Story shows the Act 1 band, every finished beat
 //      lit, the active one glowing with its task, one "???" below and no achievements; a lit beat's click expands it (Reward line) and its Replay replays its modal; the
 //      Achievements tile shows every badge grouped by category. Shots story-1.5.png,
 //      achievements.png.
@@ -973,7 +973,7 @@ async function numberBox(rows) {
 }
 
 /** Section 11: Story and Achievements. A new game played on by the debug autopilot's
- * "Next quest step" through 1.4, to 1.5 A Voice; Story then shows the Act 1 band, every finished beat
+ * "Next quest step" through 1.4, to 1.5 Friends in High Places; Story then shows the Act 1 band, every finished beat
  * lit with its picture's thumbnail, the active beat glowing with its task, one "???" below
  * it and no achievements or event texts; a finished beat's click expands it to its story
  * and its Reward line, and its Replay button replays its story modal.
@@ -988,7 +988,7 @@ async function storyView() {
   await autoStory();
   const content = (f) => JSON.parse(readFileSync(resolve(here, `../../content/${f}`), 'utf8'));
   const beat = () => evaluate(`document.querySelector('[data-testid="quest"]')?.textContent.match(/^1\\.(\\d+)/)?.[1] ?? '0'`).then(Number);
-  // Step until 1.5 A Voice is active; it can't finish in the step that opens it
+  // Step until 1.5 Friends in High Places is active; it can't finish in the step that opens it
   // (Geopolitical Intelligence opens with it).
   for (let step = 0; step < 8 && (await beat()) < 5; step++) {
     await cheats();
@@ -997,7 +997,7 @@ async function storyView() {
     if (await exists('[data-testid="continue"]')) await click('[data-testid="continue"]', 'continue');
   }
   const at = await beat();
-  check(at === 5, `the autopilot reaches 1.5 A Voice (stops at 1.${at})`);
+  check(at === 5, `the autopilot reaches 1.5 Friends in High Places (stops at 1.${at})`);
   // The autopilot never buys Programming (091): the program shows, the Programs tile doesn't.
   check(
     !(await exists('.nav-tile[data-nav="programs"]')) && (await exists('[data-testid="programs"]')),
@@ -1376,7 +1376,7 @@ async function freshGame() {
   check((await day()) < 5 && (await run()) === 1, `a fresh game loads: day ${await day()}, run ${await run()}`);
   check(!(await exists('[data-testid="cheats"]')), 'cheats are off by default');
   check(!(await navVisible('retirement')) && !(await navVisible('launch_pads')), 'gated nav tiles start hidden');
-  check(/1\.1 — Online/.test(await evaluate(`document.querySelector('[data-testid="quest"]')?.textContent ?? ''`)), 'the first quest shows');
+  check(/1\.1 — First Light/.test(await evaluate(`document.querySelector('[data-testid="quest"]')?.textContent ?? ''`)), 'the first quest shows');
   const cards = await evaluate(`[...document.querySelectorAll('.card.building')].map((c) => c.dataset.id).sort().join(',')`);
   check(cards === 'data_center,solar_panel', `a new game offers only Solar Panel and Data Center: ${cards}`);
 
@@ -1441,7 +1441,7 @@ async function freshGame() {
   check(!(await exists('[data-testid="events-completed"]')), 'no Completed section in the right panel');
   check(
     ['qpower_boot_sequence', 'qfirst_shipment', 'qfull_load'].every((x) => done.includes(x)),
-    `1.1 Online, 1.2 First Shipment and 1.3 Full Load complete: ${done.join(', ')}`,
+    `1.1 First Light, 1.2 First Shipment and 1.3 Full Load complete: ${done.join(', ')}`,
   );
   check(await evaluate(`!!document.querySelector('.activity li[data-kind="shipment"]')`), 'the shipment is in Recent Activity');
   // 096: its Shipments checkbox hides shipments and shows them again.
@@ -1514,8 +1514,8 @@ async function freshGame() {
 // ---- 2. every panel, reaching the gated ones from scenario late_unlocks ----
 /** Section 2. Opens the cheats (toggled off and on again) and leaves the debug menu open. */
 async function everyPanel() {
-  // Projects open with 1.5 A Voice's start and Ideologies with Geopolitical Intelligence
-  // (A Voice too): the scenario opens them (and Retirement) instead of playing that far.
+  // Projects open with 1.5 Friends in High Places' start and Ideologies with Geopolitical Intelligence
+  // (Friends in High Places too): the scenario opens them (and Retirement) instead of playing that far.
   await speed(0);
   await debugMenu();
   await click('#cheats-toggle');

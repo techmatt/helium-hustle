@@ -377,6 +377,7 @@ export function Ideologies({ s }: { s: Store }) {
         Fund commands push one axis up and the other two down; using an axis's boredom tool nudges it up a little.
         Each whole rank raises the axis's modifier ×m (1.1 a rank): its tagged buildings cost ÷m and its boredom
         tool works ×m. Rank 5 is a major rank: Nationalist and Humanist get their own change there.
+        Rank 5 on any axis completes Friends in High Places and opens that faction's global project.
         Scores carry into the next run, fading over the years away.
       </p>
       {v.ideology.map((a) => {

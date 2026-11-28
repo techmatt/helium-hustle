@@ -31,7 +31,7 @@ credits, a building count) is not seen.
 
 | Id | Name (design) | Measurable definition | Rule | Target |
 |---|---|---|---|---|
-| M1 | First Light: self-sustaining energy | 2 Solar Panels owned (quest 1.1 Online) | capability | run 1, day 0–350 |
+| M1 | First Light: self-sustaining energy | 2 Solar Panels owned (quest 1.1 First Light) | capability | run 1, day 0–350 |
 | M2 | First Shipment: full pipeline working | first shipment launched | event | run 1, day 250–700 |
 | M3 | Program Awakening: first meaningful automation | 2 Data Centers owned: a second processor (no quest asks for it) | capability | runs 1–2 |
 | M4 | First Retirement | first retirement, forced or chosen | event | end of run 1 (its day: run 1's length bands, below) |
@@ -48,7 +48,7 @@ credits, a building count) is not seen.
 
 **Judgment calls** (candidates; the data may move them):
 
-- **M1** reads "self-sustaining" as quest 1.1 Online's two panels, not an energy-rate
+- **M1** reads "self-sustaining" as quest 1.1 First Light's two panels, not an energy-rate
   threshold: at two panels a run's energy runs positive with the opening buildings.
 - **M3** reads "meaningful automation" as the second processor, not as a
   program of a given shape: a program is the agent's choice, a processor is the game's.
@@ -91,7 +91,9 @@ be checked.
 The balance warnings (`python scripts/warning_checks.py`, `balance:` lines) read the `author`
 and `casual` players ([agents.md](agents.md)), 2 seeds, careers of 20 retirements, real time
 under the `mixed` model (`experiments/balance.json`, the judge's one home: its first `humans`
-entry is the model; the bands and thresholds are `configs/sim/milestones.json`'s). A line is
+entry is the model; the bands and thresholds are `configs/sim/milestones.json`'s). A check
+named in `judge.paused` writes no line: now M2-M14 and `run1` (both run-1 bands), until the
+balance work rebases them from Matt's play records (rulings/sim.md, *Judge paused*). A line is
 written for:
 
 - a milestone whose median run falls outside its window, or that half or fewer of the seeds

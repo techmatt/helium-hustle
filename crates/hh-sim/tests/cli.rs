@@ -122,14 +122,14 @@ fn grid(cmd: &str, agents: &str, extra: &[&str]) -> Vec<String> {
 const PINNED: &[(&str, u64, &str)] = &[
     ("random", 1, "234a6518b3e4a851"),
     ("random", 2, "047a6a73f031d8ab"),
-    ("greedy", 1, "e0fe1a489f42eeac"),
-    ("greedy", 2, "603e13a782725fc5"),
-    ("author", 1, "2db9a1f27044b89c"),
-    ("author", 2, "01d52af72abd08b3"),
-    ("casual", 1, "d73f016d8fb6c470"),
-    ("casual", 2, "40ba31f5c5e6317b"),
-    ("handsoff", 1, "1e8a64cd923eb39a"),
-    ("handsoff", 2, "9d55c832d8f8af4d"),
+    ("greedy", 1, "5c76adbde97fec3a"),
+    ("greedy", 2, "f078a05a3e731863"),
+    ("author", 1, "4a7f5cbd39581941"),
+    ("author", 2, "11fabfd4e03a3402"),
+    ("casual", 1, "fd8b61805a355ffe"),
+    ("casual", 2, "f112e80e21e39982"),
+    ("handsoff", 1, "defd36243e407056"),
+    ("handsoff", 2, "c0cb0f30ceb70a20"),
 ];
 
 #[test]
@@ -193,7 +193,7 @@ fn the_ladder_prints_its_tables_and_writes_results() {
 /// seed 1 and checks the run after Conditional Logic's, where the loadout
 /// file plays, ships and buys. A new loadout file moves the pin: copy it from
 /// the failing assertion.
-const HANDSOFF_PIN: &str = "f323e91b436459fc";
+const HANDSOFF_PIN: &str = "8a6fa1431129d0a2";
 
 #[test]
 #[ignore = "slow lane: a 5-run career (~7 s)"]
@@ -273,8 +273,9 @@ fn compare_pairs_two_configs_on_the_same_seeds() {
 
 #[test]
 fn balance_prints_only_balance_lines() {
+    // Empty is fine: M2-M14 and run 1's bands are paused (judge.paused, Matt 2026-11-27).
     let out = run(&grid("balance", "author", &[])).unwrap();
-    assert!(!out.is_empty() && out.lines().all(|l| l.starts_with("balance: ")), "{out}");
+    assert!(out.lines().all(|l| l.starts_with("balance: ")), "{out}");
 }
 
 /// A judge's spec with no human model says run 1's real time went unjudged
@@ -357,7 +358,7 @@ fn the_oracle_plays_on_copies_and_its_game_replays() {
     let half = fingerprints.len() / 2;
     assert_eq!(fingerprints[..half], fingerprints[half..]);
     // Seeds 1 and 2 of the oracle, then of the pinned one.
-    assert_eq!(fingerprints[..half], ["dd82e2b7e21280fc", "b0c0373f9ea22a02", "8f75a371fd5cdd1f", "077ab5d985d32c5e"]);
+    assert_eq!(fingerprints[..half], ["a80e7caab14aba24", "d50d20ec35a1093e", "5263bbb12dfe2fdd", "5410d1f110ac6e30"]);
 }
 
 /// `--agents` splits players, not knobs: a knob's value may hold a `:` (a

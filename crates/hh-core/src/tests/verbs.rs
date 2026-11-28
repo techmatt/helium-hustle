@@ -6,7 +6,7 @@ use crate::modules::{career, economy, programs};
 use crate::state::{Amount, Entry, GameState, Holding, LineOutcome as O, Op, Reading, Verb};
 use crate::{Action, Fx, Rules};
 
-/// A new game with every line open and research too (1.1 Online's panel).
+/// A new game with every line open and research too (1.1 First Light's panel).
 fn game(r: &Rules) -> GameState {
     let mut g = logic_open(r);
     g.run.enabled_panels.insert(crate::modules::research::RESEARCH_PANEL.into());

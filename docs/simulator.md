@@ -111,9 +111,9 @@ fresh career so natively. The draft later acts: the author's `agents/arc.rs`
 **`axes`** (130) plays the committed ideology players, one per axis at each skill: *skilled*,
 the oracle (`oracle:profile=4,commit=k`) from a new game; *medium*, the author
 (`author:commit=k`) from a new game with Blueprint Archive, Lunar Cartography and Foundation
-Grant completed. Each career stops when this run's rank on its axis first reaches 5 (A Voice)
+Grant completed. Each career stops when this run's rank on its axis first reaches 5 (Friends in High Places)
 or after `--runs` runs; it prints the run and day, the projects done by then, and per run its
-days (`f` forced), best axis score as % of the rank-5 score, Trade's and Fund's days, each
+days (`f` forced), best axis score as % of the rank-5 score, Supply Line's and Fund's days, each
 project completed that run with its day (`ba@1012`: never funded and funded late read apart
 without a trace) and the global projects done at its end. It plays through
 `career::drive`, the loop `play` and `trace` share (a `Watch` per caller). `--seeds`, `--first-seed`, `--skills`, `--axes`, `--set`, `--threads`;

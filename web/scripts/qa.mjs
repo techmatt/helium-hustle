@@ -81,7 +81,7 @@ const NO_ART = [
 const FAST = 10;
 /** Run 1's speed: 10x by default; 3 plays it as a person would (about 3 minutes to a shipment). */
 const RUN1_SPEED = Number(process.env.HH_SPEED ?? FAST);
-/** The quests while Programming is not yet on sale (it goes on sale as 1.5 A Voice starts). */
+/** The quests while Programming is not yet on sale (it goes on sale as 1.5 Friends in High Places starts). */
 const BEFORE_PROGRAMMING = ['qpower_boot_sequence', 'qfirst_shipment', 'qfull_load', 'qtrade'];
 /** Pad `i`'s cargo pick: Helium-3 when its picker offers it, else the first good offered
  * (Titanium while 1.2 First Shipment allows only that). An expression to evaluate. */
@@ -1039,7 +1039,7 @@ async function pass(seed, width, theme, others = []) {
 
   /** The main quest pinned at the upper right (its id), or ''. */
   const pinnedQuest = () => evaluate(`document.querySelector('[data-testid="quest-pin"] [data-testid="quest"]')?.dataset.quest ?? ''`);
-  /** At or past 1.5 A Voice's start (Programming on sale), by the pinned main quest. */
+  /** At or past 1.5 Friends in High Places' start (Programming on sale), by the pinned main quest. */
   const pastProgramming = async () => {
     const quest = await pinnedQuest();
     return !!quest && !BEFORE_PROGRAMMING.includes(quest);
@@ -1152,7 +1152,7 @@ async function pass(seed, width, theme, others = []) {
     // playOpening is the other copy, kept apart on purpose: it stops at 1.3 and checks the
     // story on the way (its own ORDER, a full 20 / 100 cargo before a launch), where this
     // one plays on to look at screens (a longer ORDER, a launch at 10 cargo, but a full
-    // pad during 1.3; Programming goes on sale only as 1.5 A Voice starts, bought then).
+    // pad during 1.3; Programming goes on sale only as 1.5 Friends in High Places starts, bought then).
     const ORDER = [
       ['solar_panel', 2], ['excavator', 1], ['smelter', 1], ['solar_panel', 3], ['excavator', 2],
       ['storage_depot', 1], ['solar_panel', 4], ['launch_pad', 1], ['solar_panel', 5], ['refinery', 1],
@@ -1329,9 +1329,9 @@ async function pass(seed, width, theme, others = []) {
     await send('Emulation.setDeviceMetricsOverride', { width, height: HEIGHT, deviceScaleFactor: 1, mobile: false });
     await sleep(300);
     await capture('after-mashing');
-    // Programming (on sale from 1.5 A Voice's start) opens the Programs view, which the
+    // Programming (on sale from 1.5 Friends in High Places' start) opens the Programs view, which the
     // scenarios' probes use: if run 1 did not buy it, the debug autopilot's "Next quest step"
-    // plays run 2 on to A Voice (it never buys Programming), and the debug grant's science
+    // plays run 2 on to Friends in High Places (it never buys Programming), and the debug grant's science
     // buys it.
     if (!(await exists('.nav-tile[data-nav="programs"]'))) {
       await autopilotTo(pastProgramming, 'run2');
@@ -1343,7 +1343,7 @@ async function pass(seed, width, theme, others = []) {
       await click('#cheat-grant', 'grant science');
       await panel('research');
       if (await exists('[data-testid="research-programming"]')) await click('[data-testid="research-programming"]', 'research programming');
-      if (!(await exists('.nav-tile[data-nav="programs"]'))) note('input', 'run 2: Programming could not be bought (the autopilot never reached 1.5 A Voice?)');
+      if (!(await exists('.nav-tile[data-nav="programs"]'))) note('input', 'run 2: Programming could not be bought (the autopilot never reached 1.5 Friends in High Places?)');
       await capture('programming-bought');
     }
     await programsProbe();
@@ -1412,7 +1412,7 @@ async function pass(seed, width, theme, others = []) {
       if (await exists(`[data-testid="buy-${id}"].can-buy`)) await click(`[data-testid="buy-${id}"]`, `buy ${id}`);
       await grant();
     }
-    // A career short of 1.5 A Voice (the autopilot's quest steps stop there): the debug
+    // A career short of 1.5 Friends in High Places (the autopilot's quest steps stop there): the debug
     // autopilot's "Next quest step" plays it on, a step at a time; each step must finish and
     // move the quest.
     await autopilotTo(pastProgramming, 'late');

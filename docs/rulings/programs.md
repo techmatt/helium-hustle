@@ -38,7 +38,7 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   building, research item or project) is kept (loaded, pasted or set) and skipped for free,
   like a note; a locked `if` skips its body free too. The amber status stays (both modes).
 - **Program logic unlocks (2026-11-21).** `if` is not available from the start: a cheap
-  global project offered from A Voice's start (2026-11-26; or a first retirement before it)
+  global project offered from Friends in High Places' start (2026-11-26; or a first retirement before it)
   unlocks it. Its effect lives on the project's
   completion (2026-11-24): a timeline's end locks `if` again until Conditional Logic is
   re-funded, and saved loadouts' `if` lines stay locked (passed free) meanwhile; no upgrade
@@ -58,7 +58,7 @@ The rules as implemented: [rules/programs.md](../rules/programs.md).
   loading pads still tops up partially (not a purchase); fractions from production rates
   stay.
 - **Programming (2026-11-25, replacing 2026-11-24's).** **Programming** is a research-view
-  item (placeholder 200 science), on sale from quest 1.5 A Voice's start on (Matt, 2026-11-26); not a quest
+  item (placeholder 200 science), on sale from quest 1.5 Friends in High Places' start on (Matt, 2026-11-26); not a quest
   task. Buying it is permanent: a career flag (`programming`) that survives retirement and
   a timeline's end, like `swarm_revealed`; once bought it never shows again. It hides only
   the Programs nav tile and its view (Text | Blocks, the all-instructions panel); the

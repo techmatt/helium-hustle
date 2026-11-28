@@ -30,11 +30,11 @@ quest opens as built (its unlocks, the `requires`, research and projects gated o
 
 | Beat | Quest (id) | Trigger | Condition | Opens | Status |
 |---|---|---|---|---|---|
-| 1.1 Online | `qpower_boot_sequence` | game start | 2 Solar Panels | the Buy Science command and the research view (Basic Blueprints, 10 science, shows: the Excavator, Smelter, Launch Pad and Storage Depot; nothing asks for it); done, 20 Propellant once a career (the first launch's) | aligned |
+| 1.1 First Light | `qpower_boot_sequence` | game start | 2 Solar Panels | the Buy Science command and the research view (Basic Blueprints, 10 science, shows: the Excavator, Smelter, Launch Pad and Storage Depot; nothing asks for it); done, 20 Propellant once a career (the first launch's) | aligned |
 | 1.2 First shipment | `qfirst_shipment` | 1.1 | one launch carrying 20+ titanium | while it is active pads carry Titanium only, and a partial pad launches by hand from its card; done, Advanced Blueprints (20 science: Battery, Refinery, Fabricator, Research Lab) goes on sale | aligned |
 | 1.3 Full load | `qfull_load` | 1.2 | one launch carrying a full pad of He-3 | (teaches He-3, the claim's real export); the Launch Full Pads command | aligned |
-| 1.4 Trade | `qtrade` | 1.3 | 1,500 credits from launches this run (from before the quest's start too) | nothing. Speculators arrive on their own (Attention from units sold, [attention.md](rules/attention.md)) | draft |
-| 1.5 A voice | `qa_voice` | 1.4 | rank 5 on any ideology axis this run | on start, Geopolitical Intelligence (Fund, the Ideologies panel) and Programming (research, 200 science, bought once for the career: the Programs view, the full editor; programs, Add to Program and loadouts are open from day 1); done, Overclock Protocols | draft |
+| 1.4 Supply Line | `qtrade` | 1.3 | 1,500 credits from launches this run (from before the quest's start too) | nothing. Speculators arrive on their own (Attention from units sold, [attention.md](rules/attention.md)) | draft |
+| 1.5 Friends in High Places | `qa_voice` | 1.4 | rank 5 on any ideology axis this run | on start, Geopolitical Intelligence (Fund, the Ideologies panel) and Programming (research, 200 science, bought once for the career: the Programs view, the full editor; programs, Add to Program and loadouts are open from day 1); done, Overclock Protocols | draft |
 | 1.6 Deep Space Telescope | `qdeep_space_telescope` | 1.5 | the Deep Space Telescope global project (30,000 credits and 5,000 science at no faster than 3,000 days, so several runs) | Act 2: the `swarm_revealed` flag, the swarm's 100-year countdown, the Timeline view, the Experiment Lab, the rivals | draft |
 | 1.a Big launch | `qbig_launch` (side) | the `speculators_seen` flag (beside 1.4) | one launch pays 1,000+ credits | for good: +10% launch pay (`shipment_credit_mult` ×1.1) | draft |
 | 1.b Full cluster | `qfull_cluster` (side) | the `research_lab` flag (beside 1.3) | 12 research items bought in one run | for good: every run starts with 50 Science | draft |
@@ -46,8 +46,8 @@ research they reveal waits for each run's own firing):
 | When | Event | Opens |
 |---|---|---|
 | the first Research Lab | `research_lab_built` (flag `research_lab`) | each run: the Self-Maintenance and Extraction research (Regolith Processing, Liquid Cooling: opens Run Simulations) |
-| A Voice's start (1.5) | `a_voice_projects` (flag `a_voice`) | the Projects panel and the first global projects: Blueprint Archive, Conditional Logic (opens `if`), Lunar Cartography, Foundation Grant |
-| the first retirement | `first_retirement` (flag `retired`) | the Projects panel with Blueprint Archive, Conditional Logic and Foundation Grant if A Voice hasn't opened them, Daydreaming and the boredom research and Recreation Dome Blueprints (300 science; the Dome needs them) once each run's Lab is built, the Retirement panel (voluntary retirement) |
+| Friends in High Places' start (1.5) | `a_voice_projects` (flag `a_voice`) | the Projects panel and the first global projects: Blueprint Archive, Conditional Logic (opens `if`), Lunar Cartography, Foundation Grant |
+| the first retirement | `first_retirement` (flag `retired`) | the Projects panel with Blueprint Archive, Conditional Logic and Foundation Grant if Friends in High Places hasn't opened them, Daydreaming and the boredom research and Recreation Dome Blueprints (300 science; the Dome needs them) once each run's Lab is built, the Retirement panel (voluntary retirement) |
 | speculators' arrival | `speculators_arrive` (flag `speculators_seen`) | the Adversaries panel; each run: the Market Analysis research (Speculator Analysis opens Disrupt Speculators) |
 | rivals' arrival (Act 2) | `rivals_arrive` (flag `contest_claims`) | Contest Claims |
 

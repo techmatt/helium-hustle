@@ -169,9 +169,16 @@ fn reward_text(p: &Project) -> Vec<String> {
                 format!("Every run starts with {} researched", list.join(" and "))
             }
             ProjectReward::BoredomModifiers { base_rate_mult, command_boredom } => {
-                let cmds: Vec<String> =
-                    command_boredom.iter().map(|(c, v)| format!("{} {}", name(c), short(*v))).collect();
-                format!("Boredom growth ×{}; boredom per run of {}", short(*base_rate_mult), cmds.join(", "))
+                // The change, from the command's own boredom (Matt, 2026-11-27: "Cloud
+                // Compute boredom 0.1 → 0.15", never read as relief).
+                let cmds: Vec<String> = command_boredom
+                    .iter()
+                    .map(|(c, v)| {
+                        let was = content().command(c).map_or(Fx::ZERO, |x| x.boredom);
+                        format!("{} boredom {} → {}", name(c), short(was), short(*v))
+                    })
+                    .collect();
+                format!("Boredom growth ×{}; {}", short(*base_rate_mult), cmds.join(", "))
             }
             ProjectReward::ResearchDiscount { mult, category } => match category {
                 Some(cat) => format!("{cat} research bought in an earlier run costs ×{}", short(*mult)),

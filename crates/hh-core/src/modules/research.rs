@@ -12,7 +12,7 @@ use crate::state::GameState;
 
 use super::economy::{BOREDOM, SCIENCE};
 
-/// The panel an event opens before any research can be bought (1.1 Online's
+/// The panel an event opens before any research can be bought (1.1 First Light's
 /// completion).
 pub const RESEARCH_PANEL: &str = "research";
 
@@ -46,7 +46,7 @@ pub fn flag_held(g: &GameState, item: &Research) -> bool {
 
 /// A state saved before career-flag research existed (`Career::flag_research`
 /// false): each career-flag item whose `visible_when` already holds counts as
-/// bought, its flag set (Programming for a career past A Voice's start). Called
+/// bought, its flag set (Programming for a career past Friends in High Places' start). Called
 /// on load only.
 pub fn grant_past_flags(g: &mut GameState) {
     if g.career.flag_research.0 {
