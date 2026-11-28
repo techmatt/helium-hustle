@@ -162,7 +162,11 @@ phase), the nav tiles (`content/nav.json`), the career's bests, the next run's b
 the run retired now (`career::retire` on a copy), the last finished run's summary, the
 run's activity feed, each resource's flow breakdown, display names by id and the cheat
 mark. Clients
-compute no rule; an agent reads the same view. The change per day comes from playing one
+compute no rule. Sim players read `Rules::agent_view`: the same builder with a skip flag,
+leaving out the `view::Shown` fields no sim player reads (the next-run preview, breakdown,
+story and event texts, nav, activity, names and others); a left-out field panics when read
+and fails to serialize, and play on it is the full view's (`hh-sim`'s
+`sim_players_play_the_same_games_on_both_views`). The change per day comes from playing one
 day on a copy. The view is never read by the rules and isn't in the state, fingerprint or
 replay.
 

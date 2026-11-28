@@ -166,6 +166,13 @@ impl Rules {
         crate::view::build(self, g)
     }
 
+    /// The sim players' view (docs/rulings/sim.md, *View*): the full view without the
+    /// fields no sim player reads (`view::Shown`; reading one panics). Play on it is
+    /// identical to play on [`Rules::view`].
+    pub fn agent_view(&self, g: &GameState) -> View {
+        crate::view::build_for(self, g, true)
+    }
+
     /// The state one day on, for the view's expected change per day.
     pub(crate) fn peek(&self, g: &GameState) -> GameState {
         let mut h = g.clone();

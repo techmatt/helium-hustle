@@ -30,7 +30,7 @@ human-calibrated tier from Matt's logged careers (`vs-human --skilled` sets one 
 ## Rules every player follows
 
 - **The view and actions only.** An agent gets a `Player`: `view()` (the engine's `View`, as
-  the web client gets it) and `apply(action)`. It never sees the state: what an agent needs
+  the web client gets it, less the fields no sim player reads: `Rules::agent_view`) and `apply(action)`. It never sees the state: what an agent needs
   that the view lacks goes into the view. The one exception is the oracle's privilege (Matt's ruling: it may see the
   future), its privileged seats: `Player::state()` (the whole state), `Player::session()`
   (the session, for its milestone tracker) and `Player::fork()`, a copy of the game to play

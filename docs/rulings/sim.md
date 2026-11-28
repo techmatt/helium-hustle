@@ -17,7 +17,11 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   measure is its credits a run and milestones from run 2 on as a share of the author's on the
   same seeds (the ladder's *Hands-off* table, [experiments.md](../experiments.md#measures)).
 - **View (009, default).** `per_day` and `next_run` keep playing a day or a retirement on a
-  copy (exact; they show the next day, not the last). Sim players keep the full view.
+  copy (exact; they show the next day, not the last). *Sim players get their own view (Matt,
+  2026-11-28; 138, overturns 009's "full view"):* `Rules::agent_view`, the one builder with a
+  skip flag, leaves out the fields no sim player reads (`view::Shown`: next-run preview,
+  breakdown, story, event texts, nav and others); reading one panics. Play is identical to
+  the full view, checked on the pinned careers.
 - **Oracle (013, defaults).** The oracle lives in `experiments/ceiling.json`; `hh-sim ladder` stays fast and `vs-human` excludes the
   oracle; its strategies are a fixed table; it takes `--milestones`. Its `Looks` and
   `milestones::Tracker` judge history milestones differently: the next oracle item moves it to

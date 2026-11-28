@@ -132,11 +132,70 @@ const PINNED: &[(&str, u64, &str)] = &[
     ("handsoff", 2, "c0cb0f30ceb70a20"),
 ];
 
+/// The view sim players read (`hh_sim::agents::set_full_view`) is process-wide, and tests run
+/// side by side: a test that checks their games against pins holds this while it plays, so
+/// the drift test's full view never leaks into another's games.
+static VIEW: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+fn view_lock() -> std::sync::MutexGuard<'static, ()> {
+    VIEW.lock().unwrap_or_else(|e| e.into_inner())
+}
+
+/// Sim players read the full view until dropped (a failed assertion included).
+struct FullView;
+
+impl FullView {
+    fn on() -> Self {
+        hh_sim::agents::set_full_view(true);
+        FullView
+    }
+}
+
+impl Drop for FullView {
+    fn drop(&mut self) {
+        hh_sim::agents::set_full_view(false);
+    }
+}
+
+const LADDER_PLAYERS: &str = "random,greedy,author,casual=author:min_gap=120,handsoff";
+
+/// Each game's (agent, seed, fingerprint) in a grid's `games.jsonl`.
+fn played(dir: &str) -> Vec<(String, u64, String)> {
+    let games = std::fs::read_to_string(format!("{dir}/games.jsonl")).unwrap();
+    games
+        .lines()
+        .map(|l| {
+            let v: serde_json::Value = serde_json::from_str(l).unwrap();
+            (v["cell"]["agent"].as_str().unwrap().into(), v["seed"].as_u64().unwrap(), v["fingerprint"].as_str().unwrap().into())
+        })
+        .collect()
+}
+
+/// The sim players' own view (`Rules::agent_view`, docs/rulings/sim.md *View*) plays the
+/// same games as the full view: the ladder's pinned careers on both, identical to each other
+/// and to `PINNED`. (A field it leaves out that a player starts reading panics instead.)
+#[test]
+fn sim_players_play_the_same_games_on_both_views() {
+    let _v = view_lock();
+    let dir = root("out/hh-sim-tests/views-agent");
+    run(&grid("experiment", LADDER_PLAYERS, &["--out", &dir, "--threads", "3"])).unwrap();
+    let agent = played(&dir);
+    let full = {
+        let _full = FullView::on();
+        let dir = root("out/hh-sim-tests/views-full");
+        run(&grid("experiment", LADDER_PLAYERS, &["--out", &dir, "--threads", "3"])).unwrap();
+        played(&dir)
+    };
+    assert_eq!(agent, full, "the sim players' view played other games than the full view");
+    let pinned: Vec<(String, u64, String)> = PINNED.iter().map(|&(a, s, f)| (a.into(), s, f.into())).collect();
+    assert_eq!(agent, pinned, "the ladder's players played other games (PINNED's doc says what to do)");
+}
+
 #[test]
 fn the_ladder_prints_its_tables_and_writes_results() {
+    let _v = view_lock();
     let dir = root("out/hh-sim-tests/ladder");
-    let players = "random,greedy,author,casual=author:min_gap=120,handsoff";
-    let out = run(&grid("experiment", players, &["--out", &dir, "--threads", "3"])).unwrap();
+    let out = run(&grid("experiment", LADDER_PLAYERS, &["--out", &dir, "--threads", "3"])).unwrap();
     for want in [
         "## Pace in game time",
         "## Milestones",
@@ -155,15 +214,8 @@ fn the_ladder_prints_its_tables_and_writes_results() {
     }
     let games = std::fs::read_to_string(format!("{dir}/games.jsonl")).unwrap();
     assert_eq!(games.lines().count(), 10);
-    let played: Vec<(String, u64, String)> = games
-        .lines()
-        .map(|l| {
-            let v: serde_json::Value = serde_json::from_str(l).unwrap();
-            (v["cell"]["agent"].as_str().unwrap().into(), v["seed"].as_u64().unwrap(), v["fingerprint"].as_str().unwrap().into())
-        })
-        .collect();
     let pinned: Vec<(String, u64, String)> = PINNED.iter().map(|&(a, s, f)| (a.into(), s, f.into())).collect();
-    assert_eq!(played, pinned, "the ladder's players played other games (PINNED's doc says what to do)");
+    assert_eq!(played(&dir), pinned, "the ladder's players played other games (PINNED's doc says what to do)");
     for line in games.lines() {
         let v: serde_json::Value = serde_json::from_str(line).unwrap();
         assert_eq!(v["replay_ok"], true, "{line}");
@@ -198,6 +250,7 @@ const HANDSOFF_PIN: &str = "8a6fa1431129d0a2";
 #[test]
 #[ignore = "slow lane: a 5-run career (~7 s)"]
 fn the_handsoff_loadout_ships_and_buys_after_if_opens() {
+    let _v = view_lock();
     let dir = root("out/hh-sim-tests/handsoff");
     let mut a = grid("experiment", "handsoff", &["--out", &dir]);
     for (k, v) in [("--seeds", "1"), ("--retirements", "5")] {
@@ -334,15 +387,18 @@ fn agents_keep_their_knobs_and_cope_with_one_program() {
 /// The oracle plans on copies of the game: its own game's record replays, a
 /// second play is the same game, a strategy pinned by its row in the table
 /// (trade) and its knobs parse, and both play the pinned games (an oracle
-/// refactor keeps them; see `PINNED`).
+/// refactor keeps them; see `PINNED`). The second play reads the full view: the oracle's
+/// games on the sim players' view are the same (`sim_players_play_the_same_games_on_both_views`).
 #[test]
 #[ignore = "slow lane: an oracle career plays thousands of rollouts (~25 s)"]
 fn the_oracle_plays_on_copies_and_its_game_replays() {
+    let _v = view_lock();
     let dir = root("out/hh-sim-tests/oracle");
     let player = "oracle:horizon=90,long=200,every=200,replan=1000,width=2";
     let trade = hh_sim::agents::oracle::strategy_index("trade").unwrap();
     let mut fingerprints = Vec::new();
     for threads in ["1", "2"] {
+        let _full = (threads == "2").then(FullView::on);
         let a = grid("experiment", &format!("{player},pinned=oracle:strategy={trade},horizon=60,long=100,every=400"), &[
             "--out", &dir, "--threads", threads,
         ]);

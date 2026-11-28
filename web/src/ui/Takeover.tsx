@@ -7,7 +7,7 @@
 
 import type { ComponentChildren } from 'preact';
 import { useEffect, useState } from 'preact/hooks';
-import { dateText, num } from '../format';
+import { dateText, held } from '../format';
 import { store, togglePause, type Store } from '../store';
 import { BoredomBar, RateCell } from './common';
 import { Chip } from './icons';
@@ -128,7 +128,7 @@ function StatusStrip({ s }: { s: Store }) {
       </span>
       {STRIP_RESOURCES.flatMap((id) => v.resources.filter((r) => r.id === id && r.visible)).map((r) => (
         <span key={r.id} class="takeover-res" data-strip-res={r.id} title={r.name}>
-          <Chip id={r.id} title={r.name} /> {num(r.amount)}
+          <Chip id={r.id} title={r.name} /> {held(r.amount)}
           <span class="muted">
             {' '}
             <RateCell r={r} compact />

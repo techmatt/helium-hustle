@@ -12,12 +12,12 @@ Split from [ui.md](ui.md) (art, cards, nav, bars) at 124.
   line led by a small muted label inline ("Goal:", "Reward:", "Effect:"), on a faint
   warm tan tint with no border. No monospace and no blue strip, anywhere. "Goal: …" reads the
   same done or not (no "Done" label: a ✓ on the card's title says it). A reward is a
-  headline, not an inventory: only what the player actually gets (a granted command, panel,
+  headline, not an inventory: only what the player actually gets (a granted command,
   building, resource or lasting bonus; 1.3: "The Launch Full Pads command."), never research
   merely appearing on the market (players find it by the unread dots; Matt, 2026-11-26);
   secondary effects go unlisted; panels aren't rewards (Matt, 2026-11-28, 136: 1.6 opens the
-  Timeline panel and the Experiment Lab with no Reward line; 1.1's line still names the
-  Research panel, as he kept it); a quest that grants nothing shows no reward line at all (no
+  Timeline panel and the Experiment Lab with no Reward line; 138: 1.1's line drops the
+  Research panel, "Buy Science and 20 propellant.", though the panel still opens); a quest that grants nothing shows no reward line at all (no
   "None."). No how-to hints (Matt, 2026-11-26): quests carry no `hints` and nothing shows
   a "How:" line, no handholding until playtests say what's needed. A one-off's Effect states
   only the actual change, tersely ("Boredom starts growing: +0.2/day."), never explaining it

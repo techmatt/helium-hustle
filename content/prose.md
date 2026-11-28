@@ -16,9 +16,9 @@ First Light
 
 Build a second Solar Panel.
 
-### `events:qpower_boot_sequence.reward` d59fe570
+### `events:qpower_boot_sequence.reward` 2954941a
 
-Buy Science, the Research panel and 20 propellant.
+Buy Science and 20 propellant.
 
 ### `events:qpower_boot_sequence.story` 23acab11
 

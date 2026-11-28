@@ -37,6 +37,20 @@ export function num(x: Fx | number, digits = 1): string {
   return trim(n.toFixed(digits));
 }
 
+/** A stock on hand: `num`'s format, rounded down to what it shows under 10,000, so a stock
+ * never reads as more than is held there. Prices are whole units, shown exactly under 10,000:
+ * 5.96 titanium read "6" beside a Solar Panel's price of 6, short of titanium (138). From
+ * 10,000 up, stocks and prices both abbreviate (K/M/B/T), so the stock rounds as the price
+ * does (`num`): one rounding keeps an affordable stock from reading under its price. */
+export function held(x: Fx | number, digits = 1): string {
+  const n = typeof x === 'number' ? x : Number(x);
+  if (!Number.isFinite(n) || Math.abs(n) >= 10_000) return num(n, digits);
+  // The shown precision: `digits` decimals under 100, whole numbers to 10,000.
+  const step = Math.abs(n) < 100 ? 10 ** -digits : 1;
+  // A hair's tolerance, so 0.3 held stays 0.3 through the division's float error.
+  return num(Math.floor(n / step + 1e-9) * step, digits);
+}
+
 /** A signed figure (an ideology score or rank) with a minus sign (U+2212), none when it
  * shows as 0: −12.5, 3, 0 for −0.01 (134: "−0", and "-2" beside "−124"). */
 export function signed(x: Fx | number, digits = 1): string {

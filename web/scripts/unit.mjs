@@ -2,7 +2,7 @@
 //   node scripts/unit.mjs   (npm run unit)
 import assert from 'node:assert/strict';
 import { readdirSync, readFileSync } from 'node:fs';
-import { boredomText, commandTip, dateText, delta, fillRate, num, perDay, signed, slotLetter } from '../src/format.ts';
+import { boredomText, commandTip, dateText, delta, fillRate, held, num, perDay, signed, slotLetter } from '../src/format.ts';
 import { inPanelOrder, panelEntries } from '../src/ui/resourceOrder.ts';
 import { navSlots } from '../src/ui/navSlots.ts';
 import { offeredSpeed, speedsOffered } from '../src/speeds.ts';
@@ -35,6 +35,20 @@ const cases = [
 for (const [n, want] of cases) assert.equal(num(n), want, `num(${n})`);
 // Whole numbers read as toLocaleString('en-US') does (num keeps one formatter, 094).
 for (const n of [-0, -9999, -150, 0, 7, 100, 1000, 9999, 3.25e3]) assert.equal(num(n), n.toLocaleString('en-US'), `num(${n})`);
+// A stock rounds down to what it shows: 5.96 held is not the 6 a price asks (138).
+const heldCases = [
+  [5.96, '5.9'],
+  [6, '6'],
+  [0.3, '0.3'],
+  [99.96, '99.9'],
+  [134.6, '134'],
+  [9999.6, '9,999'],
+  // From 10,000 up, as prices round (num): 12,360 and 12,380 both read 12.4K.
+  [12_380, '12.4K'],
+  [999_600, '1M'],
+  [-2.57, '-2.6'],
+];
+for (const [n, want] of heldCases) assert.equal(held(n), want, `held(${n})`);
 assert.equal(perDay(-2.5), '−2.5/day');
 assert.equal(perDay(0.001), '0/day');
 assert.equal(perDay(1500.4), '+1,500/day');

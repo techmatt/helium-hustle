@@ -3,7 +3,7 @@
 
 import { Fragment, type ComponentChildren } from 'preact';
 import { speedsOffered } from '../clock';
-import { capitalize, num, perDay, signed } from '../format';
+import { capitalize, held, num, perDay, signed } from '../format';
 import { navHasNews, seen, setSpeed, type Store } from '../store';
 import { useEffect, useRef, useState } from 'preact/hooks';
 import { Breakdown, RateCell, Section, isCapped, modText, navShown, risingIsBad } from './common';
@@ -119,7 +119,7 @@ export function Left({
                 const cap = r.cap === null ? null : Number(r.cap);
                 const full = cap !== null && amt >= cap;
                 const empty = amt <= 0;
-                let shown = r.cap === null ? num(r.amount) : `${num(r.amount)} / ${num(r.cap)}`;
+                let shown = r.cap === null ? held(r.amount) : `${held(r.amount)} / ${num(r.cap)}`;
                 // The rate is the engine's (tomorrow's). At its
                 // cap it reads the surplus the cap throws away, muted and marked; capped
                 // Energy's surplus is spare power, good news: it shows green. Short, it reads

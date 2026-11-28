@@ -12,7 +12,7 @@ import path from 'node:path';
 // Must equal GOLDEN_* in crates/hh-core/src/tests/mod.rs (a fast-lane test checks it).
 const GOLDEN_REVISION = 49;
 const GOLDEN_FINGERPRINT = '1666f4a127764a29';
-const GOLDEN_CONTENT_HASH = '5ca09d9be08ddb7a';
+const GOLDEN_CONTENT_HASH = 'b2b730caea14ff94';
 const GOLDEN_CONFIG_HASH = 'cd194eb3ea35c90e';
 // The golden game (crates/hh-core/src/driver.rs): baseline, seed u64::MAX, 2000 ticks of
 // the scripted policy.

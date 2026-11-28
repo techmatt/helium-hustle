@@ -480,7 +480,7 @@ pub struct View {
     /// The readings a condition may use now.
     pub readings: Vec<ReadingView>,
     /// The verbs an `act` line may use, with their slots' choices now.
-    pub verbs: Vec<VerbView>,
+    pub verbs: Shown<Vec<VerbView>>,
     /// Processors the active buildings grant (what can be assigned).
     pub processors: u32,
     pub processors_free: u32,
@@ -499,7 +499,7 @@ pub struct View {
     pub quest: Option<QuestView>,
     pub completed_quests: Vec<Text>,
     /// The completed quests' texts, in chain order.
-    pub story: Vec<StoryView>,
+    pub story: Shown<Vec<StoryView>>,
     /// The side quests started or completed, in content order.
     pub side_quests: Vec<SideQuestView>,
     /// The acts reached, in order.
@@ -508,23 +508,23 @@ pub struct View {
     /// fired (content order within a day), each popped up by the UI as it fires; of
     /// Burnout and the boredom phases all but the latest carry `superseded` (the Events
     /// list leaves them out; they stay in `activity`).
-    pub event_texts: Vec<StoryView>,
+    pub event_texts: Shown<Vec<StoryView>>,
     /// The project completions this run, oldest first, each popped up by the UI as it
     /// happens and listed in Events: what it gave and what that completion cost.
     pub project_done: Vec<ProjectDoneView>,
     /// Every achievement, earned or not, in content order.
-    pub achievement_list: Vec<AchievementView>,
-    pub rivals: Vec<RivalView>,
+    pub achievement_list: Shown<Vec<AchievementView>>,
+    pub rivals: Shown<Vec<RivalView>>,
     /// Each adversary's Attention, threshold and presence (attention.md).
-    pub adversaries: Vec<AdversaryView>,
+    pub adversaries: Shown<Vec<AdversaryView>>,
     /// Live overclocks.
     pub overclocks: Vec<Overclock>,
     /// Every modifier key's value now (1 with no source).
-    pub modifiers: BTreeMap<Text, Fx>,
+    pub modifiers: Shown<BTreeMap<Text, Fx>>,
     /// Every live project reward as text, `Project: what it gives`.
     pub live_rewards: Vec<String>,
     pub career: CareerView,
-    pub next_run: NextRunView,
+    pub next_run: Shown<NextRunView>,
     /// The last finished run's summary, if any.
     pub last_run: Option<LastRun>,
     /// Why it ended, the run summary's line (`content/messages.json`), if any.
@@ -533,7 +533,7 @@ pub struct View {
     pub run_stats: RunStats,
     pub boredom: BoredomView,
     /// The nav grid's tiles (`content/nav.json`), in order, each shown or not.
-    pub nav: Vec<NavView>,
+    pub nav: Shown<Vec<NavView>>,
     /// The 50x and 200x game speeds are open: the career flag Accelerated Scheduling
     /// sets (display only; no rule reads it).
     pub fast_speeds: bool,
@@ -542,10 +542,10 @@ pub struct View {
     /// read from that day, are 0 and say nothing.
     pub retires_next: bool,
     /// The run's activity feed, oldest first.
-    pub activity: Vec<Activity>,
+    pub activity: Shown<Vec<Activity>>,
     /// Each resource's flows by source for the last day (and the rolling
     /// average), and who went short of it; resources with none are left out.
-    pub breakdown: Vec<BreakdownView>,
+    pub breakdown: Shown<Vec<BreakdownView>>,
     /// Days in the breakdown's rolling average.
     pub flow_average_days: i64,
     /// Days in a player-facing year: dates show as years and days.
@@ -553,7 +553,74 @@ pub struct View {
     /// Display names by content id (resources, buildings, commands, research,
     /// projects, achievements, rivals, and events by title). Content only, so
     /// built once.
-    pub names: &'static BTreeMap<Text, Text>,
+    pub names: Shown<&'static BTreeMap<Text, Text>>,
+}
+
+/// A view field the sim players' view ([`Rules::agent_view`]) leaves out: no sim player reads
+/// it (docs/rulings/sim.md, *View*). Built, it reads and serializes as its value; left out,
+/// reading it panics and serializing it fails, naming the field, so a sim player that starts
+/// reading one fails loudly instead of seeing it empty.
+#[derive(Debug, Clone)]
+pub enum Shown<T> {
+    Built(T),
+    Skipped(&'static str),
+}
+
+impl<T> Shown<T> {
+    /// Built unless `skip`: `make` runs only when it is built.
+    fn new(skip: bool, field: &'static str, make: impl FnOnce() -> T) -> Self {
+        if skip {
+            Shown::Skipped(field)
+        } else {
+            Shown::Built(make())
+        }
+    }
+
+    /// The value, by value (`into_iter` on a field).
+    pub fn into_inner(self) -> T {
+        match self {
+            Shown::Built(v) => v,
+            Shown::Skipped(f) => panic!("view.{f}: the sim players' view leaves it out (Rules::agent_view)"),
+        }
+    }
+}
+
+impl<T> std::ops::Deref for Shown<T> {
+    type Target = T;
+    fn deref(&self) -> &T {
+        match self {
+            Shown::Built(v) => v,
+            Shown::Skipped(f) => panic!("view.{f}: the sim players' view leaves it out (Rules::agent_view)"),
+        }
+    }
+}
+
+impl<T: IntoIterator> IntoIterator for Shown<T> {
+    type Item = T::Item;
+    type IntoIter = T::IntoIter;
+    fn into_iter(self) -> T::IntoIter {
+        self.into_inner().into_iter()
+    }
+}
+
+impl<'a, T> IntoIterator for &'a Shown<T>
+where
+    &'a T: IntoIterator,
+{
+    type Item = <&'a T as IntoIterator>::Item;
+    type IntoIter = <&'a T as IntoIterator>::IntoIter;
+    fn into_iter(self) -> Self::IntoIter {
+        (**self).into_iter()
+    }
+}
+
+impl<T: Serialize> Serialize for Shown<T> {
+    fn serialize<S: serde::Serializer>(&self, s: S) -> Result<S::Ok, S::Error> {
+        match self {
+            Shown::Built(v) => v.serialize(s),
+            Shown::Skipped(f) => Err(serde::ser::Error::custom(format!("view.{f}: left out of the sim players' view"))),
+        }
+    }
 }
 
 /// The view's `names`: later content kinds win an id shared with an earlier one.
@@ -613,7 +680,14 @@ fn axes(r: &Rules, g: &GameState) -> Vec<AxisView> {
         .collect()
 }
 
+/// The full view (every client but the sim players).
 pub fn build(r: &Rules, g: &GameState) -> View {
+    build_for(r, g, false)
+}
+
+/// The view; `skip` (the sim players' view, [`Rules::agent_view`]) leaves out the
+/// [`Shown`] fields, the ones no sim player reads. Every other field is the same.
+pub(crate) fn build_for(r: &Rules, g: &GameState, skip: bool) -> View {
     let c = content();
     let next = r.peek(g);
     let same_run = next.career.run_number == g.career.run_number;
@@ -624,11 +698,11 @@ pub fn build(r: &Rules, g: &GameState) -> View {
     let quest = quests::quest(r, g);
     let side_quests = quests::side_quests(r, g);
     let acts = quests::acts(g);
-    let next_run = stats::next_run(r, g);
+    let next_run = Shown::new(skip, "next_run", || stats::next_run(r, g));
     let procs = program_rules::capacity(g);
     let running = program_rules::running(g);
     let readings = programs::readings(r, g, &resources);
-    let verbs = programs::verbs(r, g, &buildings);
+    let verbs = Shown::new(skip, "verbs", || programs::verbs(r, g, &buildings));
     View {
         tick: g.tick,
         day: g.run.day,
@@ -673,18 +747,18 @@ pub fn build(r: &Rules, g: &GameState) -> View {
         live_rewards: self::projects::live_rewards(g),
         quest,
         completed_quests: quests::completed_quests(g),
-        story: quests::story_list(g),
+        story: Shown::new(skip, "story", || quests::story_list(g)),
         side_quests,
         acts,
-        event_texts: quests::event_texts(r, g),
+        event_texts: Shown::new(skip, "event_texts", || quests::event_texts(r, g)),
         project_done: self::projects::project_done(g),
-        achievement_list: stats::achievements(g),
-        rivals: rivals::rivals(g),
-        adversaries: rivals::adversaries(r, g),
+        achievement_list: Shown::new(skip, "achievement_list", || stats::achievements(g)),
+        rivals: Shown::new(skip, "rivals", || rivals::rivals(g)),
+        adversaries: Shown::new(skip, "adversaries", || rivals::adversaries(r, g)),
         // Only those the next day still applies: one whose last day has passed lingers in
         // state until the next tick drops it.
         overclocks: g.run.overclocks.iter().filter(|o| o.until_day > g.run.day).cloned().collect(),
-        modifiers: MODIFIER_KEYS.iter().map(|&k| (k, modifier(r, g, k))).collect(),
+        modifiers: Shown::new(skip, "modifiers", || MODIFIER_KEYS.iter().map(|&k| (k, modifier(r, g, k))).collect()),
         career: stats::career(r, g),
         next_run,
         last_run: g.career.last_run.clone(),
@@ -700,13 +774,13 @@ pub fn build(r: &Rules, g: &GameState) -> View {
             sources: boredom_sources(g),
         },
         days_per_year: r.p.economy.days_per_year,
-        nav: nav::nav(r, g),
+        nav: Shown::new(skip, "nav", || nav::nav(r, g)),
         fast_speeds: g.career.flags.contains(FAST_SPEEDS_FLAG),
         can_retire: career::retire_blocker(g).is_none(),
         retires_next: !same_run,
-        activity: g.run.activity.clone(),
-        breakdown: breakdown(g),
+        activity: Shown::new(skip, "activity", || g.run.activity.clone()),
+        breakdown: Shown::new(skip, "breakdown", || breakdown(g)),
         flow_average_days: r.p.economy.flow_average_days,
-        names: names(),
+        names: Shown::new(skip, "names", names),
     }
 }

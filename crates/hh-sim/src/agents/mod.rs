@@ -8,6 +8,7 @@
 //! decision can't differ between native and wasm builds.
 
 use std::collections::BTreeMap;
+use std::sync::atomic::{AtomicBool, Ordering};
 
 use hh_core::state::Entry;
 use hh_core::{Action, Fx, Session, View};
@@ -23,6 +24,15 @@ pub mod oracle;
 pub mod progress;
 pub mod random;
 
+/// Sim players read the full view instead of their own (process-wide; the drift test that
+/// plays the pinned careers on both views, `tests/cli.rs`).
+static FULL_VIEW: AtomicBool = AtomicBool::new(false);
+
+/// Every [`Player`] in this process reads the full view (`true`) or the sim players' view.
+pub fn set_full_view(full: bool) {
+    FULL_VIEW.store(full, Ordering::Relaxed);
+}
+
 /// The seat an agent plays from: the view, and actions. Nothing else.
 pub struct Player<'a> {
     s: &'a mut Session,
@@ -36,10 +46,13 @@ impl<'a> Player<'a> {
         Player { s, view: None, applied: 0 }
     }
 
-    /// The current view (rebuilt after an action changed the game).
+    /// The current view (rebuilt after an action changed the game): the sim players' view
+    /// (`Rules::agent_view`, docs/rulings/sim.md *View*), or the full one under
+    /// [`set_full_view`].
     pub fn view(&mut self) -> &View {
         if self.view.is_none() {
-            self.view = Some(self.s.rules.view(&self.s.state));
+            let (r, g) = (&self.s.rules, &self.s.state);
+            self.view = Some(if FULL_VIEW.load(Ordering::Relaxed) { r.view(g) } else { r.agent_view(g) });
         }
         self.view.as_ref().expect("just built")
     }

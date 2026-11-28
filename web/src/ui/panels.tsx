@@ -5,7 +5,7 @@
 import type { ComponentChildren } from 'preact';
 import { useState } from 'preact/hooks';
 import type { CommandView, Fx, ResearchView, View } from '../engine';
-import { boredomText, capitalize, commandTip, dateText, mult, num, perDay, signed, slotLetter } from '../format';
+import { boredomText, capitalize, commandTip, dateText, held, mult, num, perDay, signed, slotLetter } from '../format';
 import { act, justMoved, seen, store, type Store } from '../store';
 import { AxisMark, Bar, Breakdown, FlowLines, ResChip, Section, cardButton, freshClass, modText, name, navShown, numBelow, useHideCompleted, useHint } from './common';
 import { emblemArt } from './cardArt';
@@ -289,7 +289,7 @@ export function Research({ s }: { s: Store }) {
         {hide.box}
       </div>
       <p class="muted">
-        <ResChip v={v} id="science" /> {num(sci?.amount ?? '0')} Science ({perDay(sci?.per_day ?? '0')}). Research resets each
+        <ResChip v={v} id="science" /> {held(sci?.amount ?? '0')} Science ({perDay(sci?.per_day ?? '0')}). Research resets each
         run, but for items marked as kept.
       </p>
       {shown.length === 0 && <p class="muted">Nothing to research yet.</p>}

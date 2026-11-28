@@ -216,3 +216,33 @@ fn story_lists_events_by_the_day_they_fired() {
     let ids: Vec<&str> = v.event_texts.iter().map(|s| s.id).collect();
     assert_eq!(ids, ["propellant_discovery", "boredom_phase_2"]);
 }
+
+/// The sim players' view (`Rules::agent_view`) is the full view without its `Shown` fields:
+/// every other field the same, and a left-out one fails loudly when read or serialized.
+#[test]
+fn the_sim_players_view_is_the_full_view_without_what_they_never_read() {
+    use crate::view::Shown;
+    let s = super::golden_session();
+    let (r, g) = (&s.rules, &s.state);
+    let a = r.agent_view(g);
+    let mut v = r.view(g);
+    v.next_run = Shown::Skipped("next_run");
+    v.verbs = Shown::Skipped("verbs");
+    v.story = Shown::Skipped("story");
+    v.event_texts = Shown::Skipped("event_texts");
+    v.achievement_list = Shown::Skipped("achievement_list");
+    v.rivals = Shown::Skipped("rivals");
+    v.adversaries = Shown::Skipped("adversaries");
+    v.modifiers = Shown::Skipped("modifiers");
+    v.nav = Shown::Skipped("nav");
+    v.activity = Shown::Skipped("activity");
+    v.breakdown = Shown::Skipped("breakdown");
+    v.names = Shown::Skipped("names");
+    assert_eq!(format!("{a:?}"), format!("{v:?}"));
+    let read = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| a.next_run.starting_credits));
+    assert!(read.is_err(), "reading a left-out field panics");
+    let e = serde_json::to_string(&a).unwrap_err().to_string();
+    // The first left out in field order.
+    assert!(e.contains("view.verbs: left out"), "{e}");
+    assert!(serde_json::to_string(&r.view(g)).is_ok());
+}
