@@ -130,8 +130,9 @@ impl Oracle {
                 .map(|i| (table[i].label.clone(), Directives { commit: commit.clone(), ..table[i].dir.clone() }))
                 .collect()
         };
-        for (label, d) in all {
-            let s = self.rollout(p, &d, self.long, true);
+        let dirs: Vec<Directives> = all.iter().map(|x| x.1.clone()).collect();
+        let scores = self.rollouts(p, &dirs, self.long, true);
+        for ((label, d), s) in all.into_iter().zip(scores) {
             if best.as_ref().is_none_or(|b| s > b.0) {
                 best = Some((s, label, d));
             }
@@ -198,20 +199,20 @@ impl Oracle {
         let cur = self.base.dir.clone();
         let (short, long) = ((self.horizon / 3).max(60), self.horizon);
         // A screen: every candidate over a third of the horizon.
-        let mut screened: Vec<(i64, String, Directives)> = Vec::new();
-        for (label, d) in self.candidates(p, &cur) {
-            let s = self.rollout(p, &d, short, false);
-            screened.push((s, label, d));
-        }
+        let cands = self.candidates(p, &cur);
+        let dirs: Vec<Directives> = cands.iter().map(|x| x.1.clone()).collect();
+        let scores = self.rollouts(p, &dirs, short, false);
+        let mut screened: Vec<(i64, String, Directives)> = cands.into_iter().zip(scores).map(|((label, d), s)| (s, label, d)).collect();
         // Best first; ties keep candidate order (the sort is stable).
         screened.sort_by_key(|x| std::cmp::Reverse(x.0));
-        // The best `width` over the whole horizon, beside keeping.
-        let keep = self.rollout(p, &cur, long, false);
-        let mut scored: Vec<(i64, String, Directives)> = Vec::new();
-        for (_, label, d) in screened.into_iter().take(self.width) {
-            let s = self.rollout(p, &d, long, false);
-            scored.push((s, label, d));
-        }
+        // The best `width` over the whole horizon, beside keeping (played together:
+        // keeping first).
+        let best: Vec<(String, Directives)> = screened.into_iter().take(self.width).map(|(_, l, d)| (l, d)).collect();
+        let mut dirs: Vec<Directives> = vec![cur.clone()];
+        dirs.extend(best.iter().map(|x| x.1.clone()));
+        let scores = self.rollouts(p, &dirs, long, false);
+        let keep = scores[0];
+        let mut scored: Vec<(i64, String, Directives)> = best.into_iter().zip(scores[1..].iter()).map(|((label, d), &s)| (s, label, d)).collect();
         scored.sort_by_key(|x| std::cmp::Reverse(x.0));
         // The two best changes in different goals, together.
         if self.beam && scored.len() >= 2 {

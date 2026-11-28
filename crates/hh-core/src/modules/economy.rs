@@ -174,11 +174,14 @@ pub fn cap(r: &Rules, g: &GameState, resource: &str) -> Option<Fx> {
 pub fn stored(g: &GameState, resource: &str) -> Fx {
     let mut total = Fx::ZERO;
     for b in &content().buildings {
-        let n = g.working(&b.id);
         for e in &b.effects {
             if let BuildingEffect::Store { resource: res, amount } = e {
-                if res == resource && n > 0 {
-                    total += amount.mul_int(n as i64);
+                // The working count only for a building that stores this resource.
+                if res == resource {
+                    let n = g.working(&b.id);
+                    if n > 0 {
+                        total += amount.mul_int(n as i64);
+                    }
                 }
             }
         }

@@ -33,8 +33,19 @@ const SCALE: Raw = 1_000_000;
 pub struct Fx(Raw);
 
 /// Floor division (the rounding rule), for any sign of either operand.
+///
+/// The same quotient in `i64` whenever both operands fit (nearly every product and
+/// quotient in play): `i128` division is a software routine, natively and in wasm,
+/// and was a large share of a tick's and a view's time (137). `i64::MIN / -1`, the
+/// one `i64` quotient that overflows, takes the `i128` path.
+#[inline]
 fn div_floor(a: Wide, b: Wide) -> Wide {
     assert!(b != 0, "Fx: division by zero");
+    if let (Ok(x), Ok(y)) = (i64::try_from(a), i64::try_from(b)) {
+        if let Some(q) = x.checked_div(y) {
+            return Wide::from(if x % y != 0 && ((x < 0) != (y < 0)) { q - 1 } else { q });
+        }
+    }
     let q = a / b;
     if a % b != 0 && ((a < 0) != (b < 0)) {
         q - 1

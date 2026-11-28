@@ -57,6 +57,8 @@ often, so a rollout of the current goals is what will happen.
   before `min_run` (a retirement re-rolls the markets, which a peeking player farms);
   `first_margin` loosens the first one in a profile that scores milestones.
 
-It plays about 30 ticks a second (a rollout a few milliseconds): a career of 20 retirements
-is about 18 minutes on one thread. Results and what blocks each milestone:
+It plays about 70 ticks a second on one thread (137, 54 before its fixes: a committed skilled
+career of ~2,800 ticks in ~39 s; a rollout ~60 ms; the older "30" was for other careers and
+content), and a grid's idle threads play its rollouts
+(docs/simulator.md, `axes`). Its time is rollouts: views ~60%, ticks ~30% (137's profile). Results and what blocks each milestone:
 [experiments/results/011_oracle_planner/](../experiments/results/011_oracle_planner/README.md).

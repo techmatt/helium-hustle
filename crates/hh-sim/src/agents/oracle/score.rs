@@ -93,7 +93,19 @@ impl Oracle {
     /// ticks and scores it; `through` plays on past a retirement (with the
     /// same goals, the target dropped), else the rollout stops there.
     pub(super) fn rollout(&mut self, p: &Player, dir: &Directives, horizon: u64, through: bool) -> i64 {
-        self.rollouts += 1;
+        self.rollouts(p, std::slice::from_ref(dir), horizon, through)[0]
+    }
+
+    /// [`Oracle::rollout`] of each of `dirs`, in order, on spare threads when a grid
+    /// lends some ([`crate::pool`]): each plays its own copy, so the scores are the
+    /// same however many threads play them.
+    pub(super) fn rollouts(&mut self, p: &Player, dirs: &[Directives], horizon: u64, through: bool) -> Vec<i64> {
+        self.rollouts += dirs.len() as u64;
+        let me: &Oracle = self;
+        crate::pool::map(dirs, |d| me.play_out(p, d, horizon, through))
+    }
+
+    fn play_out(&self, p: &Player, dir: &Directives, horizon: u64, through: bool) -> i64 {
         let ms = &self.ms;
         let mut s: Session = p.fork();
         let mut a = self.base.clone();

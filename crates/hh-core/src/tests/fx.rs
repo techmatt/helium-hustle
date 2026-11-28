@@ -87,6 +87,47 @@ fn overflow_panics() {
     let _ = big + big;
 }
 
+/// The `i64` fast path of the rounding rule (137) gives the `i128` floor: every sign,
+/// remainders and none, and products on both sides of `i64`'s range.
+#[test]
+fn products_and_quotients_floor_on_both_paths() {
+    let raw = |k: i64| Fx::EPSILON.mul_int(k);
+    let floor = |a: i128, b: i128| -> i128 {
+        let q = a / b;
+        if a % b != 0 && ((a < 0) != (b < 0)) {
+            q - 1
+        } else {
+            q
+        }
+    };
+    let mut vals: Vec<i64> = vec![0, 1, -1, 2, -2, 7, -7, 999_999, -999_999, 1_000_000, -1_000_000, 1_000_001, -1_000_001];
+    vals.extend([3_037_000_499, -3_037_000_499, 3_037_000_500, -3_037_000_500, 730_000_000, -730_000_000, 998_102]);
+    vals.extend([9_223_372_036_854, -9_223_372_036_854, 9_223_372_036_854_775, i64::MAX / 7, i64::MIN / 7, i64::MAX, i64::MIN + 1]);
+    let mut x: u64 = 0x9E37_79B9_7F4A_7C15;
+    for _ in 0..400 {
+        x ^= x << 13;
+        x ^= x >> 7;
+        x ^= x << 17;
+        vals.push((x as i64) >> (x % 50));
+    }
+    for &a in &vals {
+        for &b in &vals {
+            let p = floor(a as i128 * b as i128, 1_000_000);
+            if let Ok(p) = i64::try_from(p) {
+                assert_eq!((raw(a) * raw(b)).steps(), p, "{a} * {b}");
+            }
+            if b != 0 {
+                let q = floor(a as i128 * 1_000_000, b as i128);
+                if let Ok(q) = i64::try_from(q) {
+                    assert_eq!((raw(a) / raw(b)).steps(), q, "{a} / {b}");
+                    assert_eq!(raw(a).mul_ratio(1_000_000, b).steps(), q, "{a} ratio {b}");
+                }
+            }
+        }
+        assert_eq!(raw(a).floor_int() as i128, floor(a as i128, 1_000_000), "floor {a}");
+    }
+}
+
 #[test]
 #[should_panic(expected = "division by zero")]
 fn division_by_zero_panics() {

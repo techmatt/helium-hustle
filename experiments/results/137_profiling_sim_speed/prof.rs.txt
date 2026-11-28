@@ -1,0 +1,46 @@
+//! TEMPORARY (137): thread-summed timers for the profile. Removed before commit.
+use std::sync::atomic::{AtomicU64, Ordering};
+use std::time::Instant;
+
+pub const NAMES: &[&str] = &[
+    "view", "roll_total", "roll_fork", "roll_act", "roll_advance", "roll_track", "roll_score", "retire", "strategy", "plan",
+    "view_clone_tick", "view_preview",
+];
+pub const VIEW: usize = 0;
+pub const ROLL: usize = 1;
+pub const FORK: usize = 2;
+pub const ACT: usize = 3;
+pub const ADV: usize = 4;
+pub const TRACK: usize = 5;
+pub const SCORE: usize = 6;
+pub const RETIRE: usize = 7;
+pub const STRATEGY: usize = 8;
+pub const PLAN: usize = 9;
+pub const CLONE_TICK: usize = 10;
+
+static NS: [AtomicU64; 12] = [const { AtomicU64::new(0) }; 12];
+static N: [AtomicU64; 12] = [const { AtomicU64::new(0) }; 12];
+
+pub fn time<T>(slot: usize, f: impl FnOnce() -> T) -> T {
+    let t = Instant::now();
+    let r = f();
+    NS[slot].fetch_add(t.elapsed().as_nanos() as u64, Ordering::Relaxed);
+    N[slot].fetch_add(1, Ordering::Relaxed);
+    r
+}
+
+pub fn report() -> String {
+    let mut s = String::from("PROF slot calls total_s us_each\n");
+    for (i, n) in NAMES.iter().enumerate() {
+        let ns = NS[i].load(Ordering::Relaxed);
+        let c = N[i].load(Ordering::Relaxed).max(1);
+        s += &format!("PROF {n} {} {:.2} {:.1}\n", N[i].load(Ordering::Relaxed), ns as f64 / 1e9, ns as f64 / 1e3 / c as f64);
+    }
+    let mut v: Vec<(u64, &str)> = hh_core::view::VT_NAMES.iter().enumerate().map(|(i, n)| (hh_core::view::VT[i].load(Ordering::Relaxed), *n)).collect();
+    v.sort();
+    let views = N[VIEW].load(Ordering::Relaxed).max(1) as f64;
+    for (ns, n) in v.iter().rev() {
+        s += &format!("VIEWPART {n} {:.1} us/view\n", *ns as f64 / 1e3 / views);
+    }
+    s
+}

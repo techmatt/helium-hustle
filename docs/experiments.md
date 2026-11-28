@@ -81,13 +81,17 @@ After `ladder`'s and `experiment`'s tables, the engine's speed natively and in w
 
 ## Costs
 
-This machine, idle: the ladder (5 players × 3 seeds, careers of 20 retirements)
-about 20 s on 6 threads; `ceiling` about 20 minutes, set by the oracle's careers
-([oracle.md](oracle.md)); `balance`
-(4 careers) about 6.5 s (on mimalloc: half the Windows allocator's time); `vs-human` on a 1,600-tick log a second. Other careers play
-4,000-20,000 ticks a second, slower the more often their
-player looks (random and the author every 5-10 ticks, the casual author every ~130): a view
-(~130-270 µs) costs ten state copies, so a rollout that plays an agent is view-bound.
+This machine, idle (137's figures, upper bounds): the ladder (5 players × 3 seeds, careers of
+20 retirements) about 19 s on 6 threads; `ceiling` about 20 minutes before 137 (not re-read
+since; its oracle careers play ~25% faster now, [oracle.md](oracle.md)); `balance` (4 careers) about 9 s (on mimalloc: half the Windows
+allocator's time); `playlog --today` on a 158-action log 0.3 s (`vs-human` not re-timed: no
+log on disk is on today's rules). The
+engine natively: ~79,000 ticks a second bare, ~3,200 with a view a tick (the ladder's
+footer). Other careers play 4,000-20,000 ticks a second, slower the more often their player
+looks (random and the author every 5-10 ticks, the casual author every ~130): a view
+(~190-280 µs over the golden game's ticks 100-1500, more for a committed player) costs ten state copies, so a rollout that plays an agent is view-bound.
+Where a skilled career's time goes, and what is left to gain:
+[137](../experiments/results/137_profiling_sim_speed/README.md).
 
 **The page's own cost**: headless Edge's main thread while the game runs, busy
 milliseconds a wall second, early (a new game) and late (`everything`): under 10 at 1x,
@@ -102,8 +106,9 @@ needs no rebuild. Hands-off loadout variants the same way, natively: `--agents
 "a=handsoff:loadout=out/x/a.txt,b=handsoff:loadout=out/x/b.txt"` plays each file in place of
 the built-in `configs/sim/handsoff_loadout.txt` (a path without commas).
 
-**Tuning a committed player (`hh-sim axes`):** a skilled read (9 oracle careers) is about
-2.5-3.5 minutes on 6 threads, the medium one a second. A run-1 question needs only run 1:
+**Tuning a committed player (`hh-sim axes`):** a skilled read (`--skills skilled --seeds 3`,
+9 oracle careers) is about 75 s on 6 threads, one seed (3 careers, the default) about 35 s
+(idle threads play the last cases' rollouts), the medium one a second. A run-1 question needs only run 1:
 `--skills skilled --runs 1` (run 1 is roughly half a skilled career's days); `--axes a,b` narrows further. Change one
 thing a read: 131 tested bank, cap-rate funding and gating together and three reads went to
 untangling them (one variant deadlocked every career). A paired before/after uses the same

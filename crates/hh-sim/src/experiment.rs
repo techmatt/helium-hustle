@@ -224,19 +224,25 @@ pub(crate) fn milestone_head(ms: &Milestones, lead: &str) -> String {
 }
 
 /// `f(0..n)` on up to `threads` threads, each taking the next index as it frees;
-/// results in index order, so the output never depends on the thread count.
+/// results in index order, so the output never depends on the thread count. A
+/// thread with no job left lends itself to the oracle's rollouts ([`crate::pool`]).
 pub(crate) fn par_map<T: Send>(n: usize, threads: usize, f: impl Fn(usize) -> T + Sync) -> Vec<T> {
     let next = AtomicUsize::new(0);
     let out: Mutex<Vec<Option<T>>> = Mutex::new((0..n).map(|_| None).collect());
+    let lend = crate::pool::Lend::new(threads.max(1).saturating_sub(n.max(1)));
     std::thread::scope(|sc| {
         for _ in 0..threads.clamp(1, n.max(1)) {
-            sc.spawn(|| loop {
-                let j = next.fetch_add(1, Ordering::SeqCst);
-                if j >= n {
-                    break;
+            sc.spawn(|| {
+                let _worker = lend.enter();
+                loop {
+                    let j = next.fetch_add(1, Ordering::SeqCst);
+                    if j >= n {
+                        lend.give();
+                        break;
+                    }
+                    let r = f(j);
+                    out.lock().expect("no panics while held")[j] = Some(r);
                 }
-                let r = f(j);
-                out.lock().expect("no panics while held")[j] = Some(r);
             });
         }
     });

@@ -117,7 +117,10 @@ days (`f` forced), best axis score as % of the rank-5 score, Supply Line's and F
 project completed that run with its day (`ba@1012`: never funded and funded late read apart
 without a trace) and the global projects done at its end. It plays through
 `career::drive`, the loop `play` and `trace` share (a `Watch` per caller). `--seeds`, `--first-seed`, `--skills`, `--axes`, `--set`, `--threads`;
-a skilled career is 1-2 minutes on one thread. Its read: experiments/results/130_ideology_parity_sim/.
+a skilled career is 35-60 s on one thread. A thread with no case left (fewer cases than
+`--threads`, or the queue run dry) plays the remaining cases' rollouts (`hh-sim::pool`, one
+pool a grid; also `experiment`'s grids): the same games, never more than `--threads` threads. Its read:
+experiments/results/130_ideology_parity_sim/.
 
 ### Grid reads
 

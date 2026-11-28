@@ -18,6 +18,7 @@ pub mod lab;
 pub mod milestones;
 pub mod objectives;
 pub mod params;
+pub mod pool;
 pub mod playlog;
 pub mod playrecord;
 pub mod summary;

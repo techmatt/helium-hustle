@@ -56,7 +56,7 @@ Times are on this machine, otherwise idle.
 ```sh
 cargo build --workspace                      # ~30 s cold on 3 jobs; target/debug ~680 MB, safe to delete
 cargo test --workspace                       # the fast lane: ~6 s once built, ~11 s after an hh-core edit; first build ~1.5 min
-cargo test-all                               # the full run, slow lane too: ~45 s (the autopilot's career)
+cargo test-all                               # the full run, slow lane too: ~38 s built, ~3 min cold
 cargo clippy --workspace --all-targets       # must stay clean; ~7 s
 cargo run -q -p hh-sim -- run --seed 1 --ticks 365 --policy script
 cargo run -q --release -p hh-sim -- objectives reference/scenarios/run1_fresh.json   # ~0.2 s
@@ -77,18 +77,17 @@ or configs (when to run what: CLAUDE.md, *Working rules*): a test over ~3 s is m
 `#[ignore = "slow lane: ..."]` (but hh-sim's ladder pin, ~4 s, the guard on every agent
 edit), and `cargo test-slow` runs only those. Both aliases (`.cargo/config.toml`) run
 `crates/xtask`: it builds as `cargo test` does (cargo's flags before a `--`, `--workspace`
-unless a package is named), then runs every test binary at once (the slow lane's longest
-tests sit in three), each printed whole as it ends, then their times. A bare word filters
+unless a package is named), then runs every test binary at once, each printed whole as it
+ends, then their times. A bare word filters
 tests, as for `cargo test`: `cargo test-all -j 3 -p hh-sim golden -- --test-threads=3`.
 The test profile is `opt-level = 2` with overflow checks; test and sim binaries (never
-hh-core or wasm) use mimalloc, twice as fast as Windows' allocator on the view's copies. To time tests one by one, run the test binary itself (`<exe> --list`,
+hh-core or wasm) use mimalloc (twice Windows' allocator's speed). To time tests one by one, run the test binary itself (`<exe> --list`,
 `<exe> --exact <name>`; per-test times: `RUSTC_BOOTSTRAP=1 <exe> -Z unstable-options
 --report-time`): Rust 1.100 puts them under `target/debug/build/<crate>/<hash>/out/`.
-`RUSTC_BOOTSTRAP=1` on `cargo` instead rebuilds the whole workspace (~90 s), and again
-once it is unset.
+`RUSTC_BOOTSTRAP=1` on `cargo` instead rebuilds everything (~90 s), and again unset.
 The full run's time is its two longest binaries, side by side: `hh-sim`'s lib (one test,
-the autopilot's career to the ending, ~45 s) and its `cli` tests (~43 s, the oracle's ~25 s
-the longest). In `web/`, `npm test` is the fast lane;
+the autopilot's career, ~37 s) and its `cli` tests (~26 s). No sampler runs here (`samply`
+needs elevation): timers, `experiments/results/137_profiling_sim_speed/`. In `web/`, `npm test` is the fast lane;
 e2e (~5 min) and qa (~20 min) are the browser lanes, on request only (web/TESTING.md).
 
 **A second target dir** (a parallel helper, a copy under `out/`) is set absolute:

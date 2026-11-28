@@ -238,13 +238,22 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     }
     let next = std::sync::atomic::AtomicUsize::new(0);
     let results = std::sync::Mutex::new(Vec::new());
+    // Workers without a case, and each one the queue runs dry for, lend their
+    // thread to the cases still playing (the oracle's rollouts).
+    let lend = crate::pool::Lend::new(threads.saturating_sub(jobs.len()));
     std::thread::scope(|sc| {
         for _ in 0..threads.min(jobs.len()) {
-            sc.spawn(|| loop {
-                let i = next.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
-                let Some(&(axis, k, skill, seed)) = jobs.get(i) else { break };
-                let r = play(&config, axis, k, skill, seed, runs, max_ticks);
-                results.lock().unwrap_or_else(|e| e.into_inner()).push((i, r));
+            sc.spawn(|| {
+                let _worker = lend.enter();
+                loop {
+                    let i = next.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+                    let Some(&(axis, k, skill, seed)) = jobs.get(i) else {
+                        lend.give();
+                        break;
+                    };
+                    let r = play(&config, axis, k, skill, seed, runs, max_ticks);
+                    results.lock().unwrap_or_else(|e| e.into_inner()).push((i, r));
+                }
             });
         }
     });
