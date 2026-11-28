@@ -25,8 +25,9 @@ reaches rank *n* is
 score_for_rank(n) = rank_base_score × (rank_growth^n − 1) / (rank_growth − 1)
 ```
 
-with the power exact (`Fx::pow_int`, [README.md](README.md)). At baseline (base 55, 130's tuning): rank 1 at 55,
-2 at 137.5, 3 at 261.25, 4 at 446.875, 5 at 725.3125. An axis's rank is the highest whole *n* (at
+with the power exact (`Fx::pow_int`, [README.md](README.md)), then rounded to `rank_figures`
+significant figures, halves up (`Fx::round_sig`; Matt, 131). At baseline (base 55, 2 figures):
+rank 1 at 55, 2 at 140, 3 at 260, 4 at 450, 5 at 730. An axis's rank is the highest whole *n* (at
 most `max_rank`) with `score_for_rank(n) <= |score|`, negated for a negative score. A rank
 too costly to represent is never reached.
 
@@ -43,7 +44,9 @@ upkeep):
 | Rationalist | Research Lab, Fabricator | Theorize relief ([commands.md](commands.md)) |
 
 A building is tagged by its content `ideology` field: the next copy's whole price (every
-resource, never land) is ÷m; copies already built are unaffected. A command's `ideology`
+resource, never land) is ÷m, then rounded to whole units, halves up (Matt, 131: what's shown
+is what's charged); copies already built are unaffected. Boredom tool effects (×m) stay exact
+and round only for display. A command's `ideology`
 field names the axis whose boredom tool it is.
 
 **Nudges.** Using a path's boredom tool nudges its axis's score up, with no cross penalty:
@@ -90,6 +93,7 @@ Geopolitical Intelligence research.
 |---|---|---|---|
 | `rank_base_score` | 55 | 0.000001 to 1000000 | Score rank 1 costs. |
 | `rank_growth` | 1.5 | 1.000001 to 10 | Each rank costs this times the one before. |
+| `rank_figures` | 2 | 1 to 18 | Significant figures each rank's score threshold rounds to. |
 | `max_rank` | 99 | 1 to 1000 | Highest rank either way. |
 | `fund_push` | 1 | 0 to 1000 | Score a Fund command adds to its axis. |
 | `fund_cross_penalty` | 0.5 | 0 to 10 | Fraction of the push taken from each other axis. |

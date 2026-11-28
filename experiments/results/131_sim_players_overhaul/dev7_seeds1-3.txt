@@ -1,0 +1,12 @@
+baseline (config cd194eb3ea35c90e), rank 5 at score 730.000000; runs: days (best score as % of rank 5, f forced)
+| Skill | Axis | Seed | Reached | Runs | Projects done by then | Wall s |
+|---|---|---|---|---|---|---|
+| skilled | nationalist | 1 | run 2 day 1168 | 1537f (0% trade@853 [ba lc]), 1168 (100% trade@0 fund@495 [ba lc]) | blueprint_archive, lunar_cartography | 54 |
+| skilled | nationalist | 2 | run 2 day 1176 | 1509f (0% trade@1175 [ba lc]), 1176 (100% trade@0 fund@498 [ba lc]) | blueprint_archive, lunar_cartography | 54 |
+| skilled | nationalist | 3 | run 2 day 1178 | 1547f (0% trade@853 [ba lc]), 1178 (100% trade@0 fund@807 [ba lc]) | blueprint_archive, lunar_cartography | 55 |
+| skilled | humanist | 1 | run 2 day 1340 | 1575f (0% trade@1011 [lc]), 1340 (100% trade@0 fund@937 [ba lc]) | blueprint_archive, lunar_cartography | 65 |
+| skilled | humanist | 2 | run 2 day 1254 | 1498f (0% trade@1198 [ba lc]), 1254 (100% trade@0 fund@613 [ba lc]) | blueprint_archive, lunar_cartography | 61 |
+| skilled | humanist | 3 | run 2 day 1104 | 1459f (0% trade@927 [ba lc]), 1104 (100% trade@0 fund@467 [ba lc]) | blueprint_archive, lunar_cartography | 50 |
+| skilled | rationalist | 1 | run 2 day 962 | 1478f (0% trade@958 [ba lc]), 962 (100% trade@0 fund@607 [ba lc]) | blueprint_archive, lunar_cartography | 51 |
+| skilled | rationalist | 2 | run 2 day 1088 | 1496f (0% trade@1105 [ba lc]), 1088 (100% trade@0 fund@423 [ba lc]) | blueprint_archive, lunar_cartography | 49 |
+| skilled | rationalist | 3 | run 3 day 1276 | 1552f (0% trade@1000 []), 2003f (55% trade@0 fund@684 [ba lc]), 1276 (100% trade@0 fund@925 [ba lc]) | blueprint_archive, lunar_cartography | 97 |

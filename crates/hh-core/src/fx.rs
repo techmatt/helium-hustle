@@ -72,6 +72,37 @@ impl Fx {
         narrow(div_floor(self.0 as Wide * num as Wide, den as Wide), "mul_ratio")
     }
 
+    /// The nearest multiple of `unit` (a positive `Fx`), halves away from zero:
+    /// a deliberate display-grade rounding a rule asks for (a price to whole
+    /// credits, a threshold to two figures), not arithmetic's rounding rule.
+    /// Clamped to [`Fx::MAX`]/[`Fx::MIN`] at the range's edges.
+    pub fn round_to(self, unit: Fx) -> Fx {
+        assert!(unit.0 > 0, "Fx::round_to: unit must be positive");
+        let (a, u) = (self.0.unsigned_abs() as Wide, unit.0 as Wide);
+        let r = (a + u / 2) / u * u;
+        let v = if self.0 < 0 { -r } else { r };
+        Fx(v.clamp(Raw::MIN as Wide, Raw::MAX as Wide) as Raw)
+    }
+
+    /// [`Fx::round_to`] whole units.
+    pub fn round_whole(self) -> Fx {
+        self.round_to(Fx::ONE)
+    }
+
+    /// [`Fx::round_to`] `figures` significant figures (725.3 at 2 is 730; 0 is 0).
+    pub fn round_sig(self, figures: u32) -> Fx {
+        let a = self.0.unsigned_abs() as Wide;
+        if a == 0 || figures == 0 {
+            return self;
+        }
+        let digits = a.ilog10() + 1; // of the raw value
+        if digits <= figures {
+            return self;
+        }
+        let unit = (10 as Wide).pow(digits - figures);
+        self.round_to(narrow(unit, "round_sig"))
+    }
+
     /// `self * n` for a count `n`: exact.
     pub fn mul_int(self, n: i64) -> Fx {
         narrow(self.0 as Wide * n as Wide, "mul_int")

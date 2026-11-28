@@ -76,6 +76,14 @@ tick counts in the next run): first in **when** (the same building more than 50 
 quarter of the player's tick apart: `vs_human` in `configs/sim/milestones.json`) and first in **what** (a different building, or one side
 bought nothing), with each side's next five purchases. `--json`: one line, every row's
 `GameResult` and the divergence. Exit 1 if the log doesn't replay to its fingerprint.
+**`--skilled`** (131) adds the skilled player (`skilled=oracle:profile=4`, minutes for a
+long career) and a table of the human against it: each milestone's run and day, each global
+project's first completion, the first rank 5 this run (its axis) and projects done (from
+`GameResult::landmarks`). Logs land where web/README.md, *Play logs*, says: Matt's in
+`C:\Code\gdrive-sync\helium-hustle\playlogs\` (kept for good), one file per career, every
+session on the `game` target or `vite preview`, nothing to press. A log from an older rules
+revision may not load (its header config lacks a key added since: build that revision with
+`scripts/baseline.py`).
 
 ### Accelerators
 
@@ -120,9 +128,9 @@ baseline), 3010-3012 (011, sup.), 3013-3015 (011, the oracle's final read), 3016
 loadouts), 4-8 (036, development), 3024-3039 (036, sup.), 3040-3047 (036, hands-off against
 main), 3048-3055 (037, sup.), 3056-3063 (037, verbs: hands-off share), 3064-3071 (038,
 sup.), 3072-3079 (038, done steps), 3080-3087 (039, hands-off retire and fund lines),
-0 (041, tuning), 3088-3093 (041, autopilot; 042, development), 3094-3096 (042), 3097-3104 (044), 3105-3112 (046, paired), 3113-3118 (060, sup.), 3119-3124 (060, loadouts), 3125-3130 (061, hands-off loadout), 3131-3136 (062, hands-off retire line), 3137-3142 (065, step-cost players, fresh read), 3143-3146 (074, the author's run-1 opening), 3147-3149 (130, sup.), 3150-3152 (130, ideology parity final read).
+0 (041, tuning), 3088-3093 (041, autopilot; 042, development), 3094-3096 (042), 3097-3104 (044), 3105-3112 (046, paired), 3113-3118 (060, sup.), 3119-3124 (060, loadouts), 3125-3130 (061, hands-off loadout), 3131-3136 (062, hands-off retire line), 3137-3142 (065, step-cost players, fresh read), 3143-3146 (074, the author's run-1 opening), 3147-3149 (130, sup.), 3150-3152 (130, ideology parity final read), 3153-3155 (130, final), 3156-3158 (131, a final read before the diff review's bank fix), 3159-3161 (131, final read).
 
-Next free: 3156
+Next free: 3162
 
 ## `run` and `replay`
 

@@ -15,7 +15,7 @@ use serde::Serialize;
 
 use crate::career::{self, Build, GameResult, RunResult};
 use crate::human::Humans;
-use crate::milestones::{Milestones, VsHuman};
+use crate::milestones::{Hit, Milestones, VsHuman};
 use crate::playlog;
 use crate::{list, read, usage, Fail, HUMANS, LADDER, MILESTONES, THREADS};
 
@@ -265,10 +265,46 @@ pub fn report(rows: &[Row], div: &Divergence, ms: &Milestones, humans: &Humans, 
 
 /// `hh-sim vs-human LOG [--agents a,b] [--humans a,b] [--ticks N] [--json]
 /// [--threads T] [--milestones F] [--human-models F] [--include-accelerated]`.
+/// `--skilled`'s player: the skilled tier, the oracle's quests profile (the
+/// skilled side of `hh-sim axes`, uncommitted: it picks its own axis).
+pub const SKILLED: &str = "skilled=oracle:profile=4";
+
+/// `run N day D` for a hit, `-` for none.
+fn at(h: Option<&Hit>) -> String {
+    h.map_or("-".to_string(), |h| format!("run {} day {}", h.run, h.day))
+}
+
+/// The human against the skilled player (131): run and day of each
+/// milestone, each global project's first completion, and the first rank 5.
+pub fn skilled_report(human: &GameResult, skilled: &GameResult, ms: &Milestones) -> String {
+    let mut t = String::from("\n## Against the skilled player (`--skilled`: ");
+    let _ = writeln!(t, "{SKILLED})\n\n| Goal | Human | Skilled |\n|---|---|---|");
+    for m in &ms.milestones {
+        let _ = writeln!(t, "| {} {} | {} | {} |", m.id, m.name, at(human.milestones.get(&m.id)), at(skilled.milestones.get(&m.id)));
+    }
+    let keys: std::collections::BTreeSet<&String> =
+        human.landmarks.keys().chain(skilled.landmarks.keys()).filter(|k| k.starts_with("project:")).collect();
+    for k in keys {
+        let _ = writeln!(t, "| {k} | {} | {} |", at(human.landmarks.get(k)), at(skilled.landmarks.get(k)));
+    }
+    // Rank 5 on any axis, first (the axis named).
+    let first = |g: &GameResult| {
+        g.landmarks
+            .iter()
+            .filter(|(k, _)| k.starts_with("rank5:"))
+            .min_by_key(|(_, h)| h.tick)
+            .map_or("-".to_string(), |(k, h)| format!("{} ({})", at(Some(h)), &k["rank5:".len()..]))
+    };
+    let _ = writeln!(t, "| rank 5 this run, first | {} | {} |", first(human), first(skilled));
+    let done = |g: &GameResult| g.landmarks.keys().filter(|k| k.starts_with("project:")).count();
+    let _ = writeln!(t, "| global projects done | {} | {} |", done(human), done(skilled));
+    t
+}
+
 pub fn run(args: &[String]) -> Result<String, Fail> {
     let mut path = None;
     let (mut json, mut threads, mut ticks) = (false, THREADS, None::<u64>);
-    let mut include_accelerated = false;
+    let (mut include_accelerated, mut skilled) = (false, false);
     let mut agents: Option<Vec<String>> = None;
     let mut models: Option<Vec<String>> = None;
     let mut milestones = MILESTONES.to_string();
@@ -279,6 +315,7 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
         match a.as_str() {
             "--json" => json = true,
             "--include-accelerated" => include_accelerated = true,
+            "--skilled" => skilled = true,
             "--agents" => agents = Some(crate::lab::agent_list(&val()?)),
             "--humans" => models = Some(list(&val()?)),
             "--ticks" => ticks = Some(val()?.parse().map_err(|_| Fail::Usage("bad --ticks".into()))?),
@@ -296,7 +333,7 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     let Some(path) = path else { return usage("vs-human: give a play log") };
     // The ladder's players and human models unless given; never the oracle by
     // default (its careers take minutes: `--agents oracle` asks for it).
-    let (agents, models) = match (agents, models) {
+    let (mut agents, models) = match (agents, models) {
         (Some(a), Some(m)) => (a, m),
         (a, m) => {
             let spec = crate::experiment::Spec::from_json(&read(LADDER)?).map_err(|e| Fail::Usage(format!("{LADDER}: {e}")))?;
@@ -304,6 +341,10 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
             (a.unwrap_or(ladder), m.unwrap_or(spec.humans))
         }
     };
+    // `--skilled` (131): the skilled player beside them, and its own table.
+    if skilled {
+        agents.push(SKILLED.to_string());
+    }
     if agents.is_empty() {
         return usage("vs-human: no players");
     }
@@ -347,7 +388,9 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
         let (name, spec) = crate::agents::named(a);
         rows.push(Row { name: name.into(), spec: spec.into(), game: r.map_err(Fail::Usage)? });
     }
-    let b = 1 + best(&rows[1..]).expect("a player");
+    // The best of the players asked for (`--skilled`'s row has its own table).
+    let others = rows.len() - usize::from(skilled);
+    let b = 1 + best(&rows[1..others]).expect("a player");
     let div = diverge(&rows[0].game, &rows[b].game, &rows[b].name, &ms.vs_human);
     let replay_bad = rows.iter().any(|r| !r.game.replay_ok);
     let text = if json {
@@ -376,6 +419,9 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
             }
         );
         t.push_str(&report(&rows, &div, &ms, &humans, &models));
+        if let Some(s) = rows.iter().find(|r| skilled && r.name == "skilled") {
+            t.push_str(&skilled_report(&rows[0].game, &s.game, &ms));
+        }
         t
     };
     if h.matches == Some(false) || replay_bad {

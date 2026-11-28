@@ -1,6 +1,6 @@
 # Rules
 
-The rules as implemented, rules revision **45** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **46** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
 The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
@@ -109,7 +109,9 @@ game does (bug hunts, `docs/qa-findings.md`).
 ## Numbers
 
 Every quantity is `Fx` (10^-6, floor rounding: [architecture](../architecture.md#numbers-fx));
-counts (buildings, days, ticks, ranks, pads) are integers.
+counts (buildings, days, ticks, ranks, pads) are integers. Two rules ask for a deliberate
+rounding beside that floor: `Fx::round_to`/`round_sig`, nearest, halves away from zero (a
+tagged building's price to whole units; rank thresholds to `rank_figures`, 131).
 
 **Whole powers are exact.** `Fx::pow_int` builds `x^n` by repeated multiplication at 10^-18
 in `i128` and floors once to 10^-6, so 1.15^2 is 1.3225, not the float floor 1.322499. It

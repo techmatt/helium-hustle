@@ -17,6 +17,7 @@ pub static DEF: ModuleDef = ModuleDef {
         params: &[
             param("rank_base_score", K::Fx, Some(("0.000001", "1000000")), "score rank 1 costs"),
             param("rank_growth", K::Fx, Some(("1.000001", "10")), "each rank costs this times the one before"),
+            param("rank_figures", K::Int, Some(("1", "18")), "significant figures each rank's score threshold rounds to"),
             param("max_rank", K::Int, Some(("1", "1000")), "highest rank either way"),
             param("fund_push", K::Fx, Some(("0", "1000")), "score a Fund command adds to its axis"),
             param("fund_cross_penalty", K::Fx, Some(("0", "10")), "fraction of the push taken from each other axis"),
@@ -32,6 +33,7 @@ pub static DEF: ModuleDef = ModuleDef {
 pub struct Params {
     pub rank_base_score: Fx,
     pub rank_growth: Fx,
+    pub rank_figures: i64,
     pub max_rank: i64,
     pub fund_push: Fx,
     pub fund_cross_penalty: Fx,
@@ -45,6 +47,7 @@ impl Params {
         Ok(Params {
             rank_base_score: mc.fx("rank_base_score"),
             rank_growth: mc.fx("rank_growth"),
+            rank_figures: mc.int("rank_figures"),
             max_rank: mc.int("max_rank"),
             fund_push: mc.fx("fund_push"),
             fund_cross_penalty: mc.fx("fund_cross_penalty"),
@@ -56,11 +59,15 @@ impl Params {
 }
 
 /// Score for rank `n`: `base × (growth^n − 1) / (growth − 1)` (rank 1 costs
-/// `base`, each next one `growth` times more).
+/// `base`, each next one `growth` times more), rounded to two significant
+/// figures, `rank_figures` (Matt, 131: at 2, 55 / 140 / 260 / 450 / 730 at base 55).
 pub fn score_for_rank(r: &Rules, n: i64) -> Fx {
     let p = &r.p.ideology;
     match p.rank_growth.pow_int(n) {
-        Some(g) => p.rank_base_score.checked_mul(g - Fx::ONE).map_or(Fx::MAX, |v| v / (p.rank_growth - Fx::ONE)),
+        Some(g) => p
+            .rank_base_score
+            .checked_mul(g - Fx::ONE)
+            .map_or(Fx::MAX, |v| (v / (p.rank_growth - Fx::ONE)).round_sig(p.rank_figures as u32)),
         None => Fx::MAX,
     }
 }

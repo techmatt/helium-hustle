@@ -189,7 +189,7 @@ export function Card({ v, b, tags, fresh }: { v: View; b: BuildingView; tags: bo
             <FlowLines v={v} amounts={b.grants} sign={1} suffix="" />
             {Number(b.boredom_relief) > 0 && (
               <div class="flow pos" data-testid="boredom-relief">
-                <ResChip v={v} id="boredom" /> −{num(b.boredom_relief, 2)} {name(v, 'boredom')}/day
+                <ResChip v={v} id="boredom" /> −{num(b.boredom_relief)} {name(v, 'boredom')}/day
                 {b.ideology && (
                   <>
                     {' '}

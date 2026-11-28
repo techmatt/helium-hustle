@@ -158,4 +158,5 @@ event, [events.md](events.md)) opens the panel with all of those but Lunar Carto
   completed (the Deep Space Telescope stays fundable after 1.6 completes).
 - Candidate: AI Consciousness Act's `command_boredom` values replace the commands' own
   boredom per execution rather than adding to it: Cloud Compute's 0.15 is ×1.5 its own 0.1
-  (Matt, 130); Load Pads' 0.3 and Disrupt Speculators' 0.5 replace their 0.
+  (Matt, 130). It is the only entry (Matt, 131: Load Pads' 0.3 and Disrupt Speculators' 0.5
+  dropped).

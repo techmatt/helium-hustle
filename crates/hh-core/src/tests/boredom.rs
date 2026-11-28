@@ -45,7 +45,8 @@ fn tagged_buildings_cost_less_with_rank_and_nothing_else_moves() {
     assert_eq!(base["credits"], f("300"));
     g.run.ideology.insert("nationalist".into(), f("100"));
     let now = economy::price(&r, &g, dome);
-    assert_eq!(now["credits"], f("300") * (Fx::ONE / f("1.1")));
+    // 300 ÷ 1.1 = 272.7, rounded to whole credits after ÷m (Matt, 131).
+    assert_eq!(now["credits"], f("273"));
     assert!(now["credits"] < base["credits"] && now["circuits"] < base["circuits"]);
     assert_eq!(economy::land_price(&r, &g), land, "land excluded");
     assert_eq!(economy::price(&r, &g, panel), panel_price, "an untagged building keeps its price");

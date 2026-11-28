@@ -36,7 +36,8 @@ ones' grants, paid or not (programs.md). Launch Pads owned and pads are matched
 `cost × cost_scaling ^ (owned − bonus) ÷ m`, the last factor only for a building tagged
 with an `ideology` axis (`m`, that axis's modifier, ideology.md: Recreation Dome, Launch Pad
 and Arbitrage Engine Nationalist; Data Center and Battery Humanist; Research Lab and
-Fabricator Rationalist). Land is not part of the price, so `m` never touches it. `bonus` counts free
+Fabricator Rationalist), a tagged price then rounded to whole units, halves up (Matt, 131:
+what's shown is what's charged). Land is not part of the price, so `m` never touches it. `bonus` counts free
 buildings granted at run start, so they don't raise the price. Whole powers use `Fx::pow_int`
 (see [the rounding rule](README.md#numbers)). A price past `Fx`'s range is shown as the maximum and is
 never affordable.

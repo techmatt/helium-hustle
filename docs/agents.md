@@ -1,7 +1,34 @@
 # Agents
 
-The simulator's players (`crates/hh-sim/src/agents/`), weakest first. What they're measured
-against: [principles.md](principles.md); how they're run: [simulator.md](simulator.md), [experiments.md](experiments.md).
+The simulator's players (`crates/hh-sim/src/agents/`). What they're measured against:
+[principles.md](principles.md); how they're run: [simulator.md](simulator.md),
+[experiments.md](experiments.md).
+
+## Roster
+
+Each player has one job (131's review). Balance work reads the three tiers; the fixtures guard
+the engine and agent code; the human model maps game time to real minutes.
+
+| Player (spec) | Role | Read by |
+|---|---|---|
+| `random` | **Fixture**: uniform actions; replay, refusal and robustness floor | ladder, `PINNED` |
+| `greedy` | **Fixture**: the builder alone (no programs, projects or retirement) | ladder, `PINNED` |
+| `casual` (`author:min_gap=120`) | **Casual tier**: the author looking about 12 times a run | ladder, the judge (`balance.json`) |
+| `author` | **Medium tier**: programs, research, projects, Dream, retirement | ladder, the judge, `axes` medium (`commit=k`) |
+| `handsoff` | **Measure**: Act 1's exit, automation alone ([rulings/sim.md](rulings/sim.md)) | ladder *Hands-off*, `HANDSOFF_PIN` |
+| `oracle` | **Skilled tier**: the author steered by rollouts, future included ([oracle.md](oracle.md)) | `ceiling.json`, `axes` skilled (`profile=4,commit=k`), `vs-human --skilled` (uncommitted: picks its axis) |
+| human models (`configs/sim/humans.json`) | **Human model**: real minutes from looks; not a player | ladder `--humans`, `vs-human` |
+
+None merged or retired: each is read by a check or a tier. Not built: `planner` (plans
+across retirements without peeking; hook `Agent::new_run`).
+
+**Missing for balance work** (recommended, not built): a cheaper skilled proxy (a skilled
+`axes` read is ~3.5 min on 6 threads: the oracle with `long`/`horizon` cut, or the committed
+author with the oracle's run-1 project plan, checked against the oracle on a few seeds); an
+early stop in `axes` once a case's bar is decided; a human-calibrated tier from Matt's logged
+careers (`vs-human --skilled` sets one beside the skilled player).
+
+## Rules every player follows
 
 - **The view and actions only.** An agent gets a `Player`: `view()` (the engine's `View`, as
   the web client gets it) and `apply(action)`. It never sees the state: what an agent needs
@@ -24,18 +51,19 @@ against: [principles.md](principles.md); how they're run: [simulator.md](simulat
   `RULES_REVISION` bump. Agent edits are guarded by the pinned games (`PINNED`, `HANDSOFF_PIN` and
   the oracle's, in `crates/hh-sim/tests/cli.rs`): a refactor keeps them.
 
-| Rung | What it does | Knobs (defaults) |
-|---|---|---|
-| `random` | Each look, `actions` times: one action uniform over what the view offers (an affordable building or research, land, a random 1-4 line program on a random program, free processors to a random program, a random rate on an open project); points a No-cargo pad at the first good it may carry (`pick_cargo`), launches a full pad by hand; retires with chance 1 in `retire_odds` a look; looks every `every` ticks. | `actions` 2, `retire_odds` 500, `every` 5 |
-| `greedy` | The **builder**: buys the best-scored building it can afford (land included), up to `buys` a look, never saving; the cheapest affordable research; one command on the first program with every processor, chosen afresh each look. No projects, no voluntary retirement. Looks again when its target comes within reach, at most `max_gap` ticks on. | `buys` 3, `decay`, `starved` 100, `reserve` 3, `min_gap` 1, `max_gap` 10 |
-| `author` | The **program author**: the builder's score, but saves for its target; writes condition programs kept in the library; research, projects (the cheapest open `run` one beside the first other in `PROJECTS` order: re-funded after a timeline's end), ideology, Dream, market commands; retires a stale run. | the builder's, `min_gap` 1, `max_gap` 10, `compute` 1, `hand_gap` 60, `loads` 20, `pause` 1, `wait_demand` 0, `dream_at` 60, `stale_days` 300, `project_rate` 3, `fund` 1, `market` 1, `construct` 1, `cond` 1, `diversify` 0, `all_research` 0 (a no-op today: it should add research outside `RESEARCH`, but the author looks only at that list), `science_share` 50, `ship_loads` 2, `fill` 8, `dream_fill` 1 |
-| `handsoff` | **Automation alone**: the author's until the run `if` opens in (the loadout guards with `if`; again once a timeline's end closes it), then from the next run it loads the best known loadout (`configs/sim/handsoff_loadout.txt`) and seats processors at each reset; its one hand is a stale-run retirement, a backstop to the loadout's own `retire` line. | the author's, `every` 10, `loadout` |
-| `planner` | **Not built.** A strategic player that plans across retirements without peeking: the hook is `Agent::new_run`, called once a run: at the first look after a forced retirement, before `act`; after a retirement the agent chose, at the end of that look (whatever else `act` did in the new run came first, so a planner should retire last in its look). | |
-| `oracle` | The **ceiling**: the author steered by rollouts on copies of the game, the future included ([oracle.md](oracle.md)). Profiles: `profile` 0 milestones, 1 credits, 2 ideology, 3 builder, 4 quests. | `profile` 0, `every` 50, `horizon` 600, `width` 5, `beam` 1, `margin` 20, `long` 2000, `replan` 500, `strategy` -1 (search), `retire` 1, `min_run` 1000, `retire_margin` 0, `first_margin` 0, `early` and `ideology` (the profile's weights), `tail` 400, `hoard_at` 5000, `stale_days` 300, `max_gap` 10, `roll_gap` = `max_gap` |
+| Rung | What it does |
+|---|---|
+| `random` | Each look, `actions` times: one action uniform over what the view offers (an affordable building or research, land, a random 1-4 line program on a random program, free processors to a random program, a random rate on an open project); points a No-cargo pad at the first good it may carry (`pick_cargo`), launches a full pad by hand; retires with chance 1 in `retire_odds` a look; looks every `every` ticks. |
+| `greedy` | The **builder**: buys the best-scored building it can afford (land included), up to `buys` a look, never saving; the cheapest affordable research; one command on the first program with every processor, chosen afresh each look. No projects, no voluntary retirement. Looks again when its target comes within reach, at most `max_gap` ticks on. |
+| `author` | The **program author**: the builder's score, but saves for its target; writes condition programs kept in the library; research, projects (the cheapest open `run` one beside the first other in `PROJECTS` order: re-funded after a timeline's end), ideology, Dream, market commands; retires a stale run. `all_research` is a no-op today (the author looks only at `RESEARCH`). |
+| `handsoff` | **Automation alone**: the author's until the run `if` opens in (the loadout guards with `if`; again once a timeline's end closes it), then from the next run it loads the best known loadout (`configs/sim/handsoff_loadout.txt`) and seats processors at each reset; its one hand is a stale-run retirement, a backstop to the loadout's own `retire` line. |
+| `oracle` | The **ceiling** ([oracle.md](oracle.md)). Profiles: `profile` 0 milestones, 1 credits, 2 ideology, 3 builder, 4 quests. |
 
-Where each picks research: random in `Random::act` (random.rs), greedy in builder.rs's
-`act` (cheapest affordable), the author in `next_research` over `RESEARCH`/`PLAN_RESEARCH`
-(author.rs; handsoff and the oracle inherit it); every one skips `agents::NEVER_BUY` (mod.rs).
+Knobs and their defaults: each rung's `KNOBS` list (`random.rs`, `builder.rs`, `author.rs`,
+`oracle/mod.rs`) and the `k.get(name, default)` beside it; `hh-sim agents` lists the rungs.
+
+Research: random's in `Random::act`, greedy's cheapest affordable, the author's
+`next_research` (handsoff and the oracle inherit it); all skip `agents::NEVER_BUY`.
 
 ## The builder (`builder.rs`)
 
@@ -132,18 +160,12 @@ any player. The casual player (`min_gap` 120) writes the standing cycle, about 1
 A hand plan is also rewritten to run its due lines again once the pointer passed into its
 filler, never over one that reaches the next look: about 90 decisions a run.
 
-**The hands-off player** (`handsoff.rs`) loads the best known loadout at every reset; its only
-hand move is a stale-run retirement. Its programs are data, not strategy code:
-`configs/sim/handsoff_loadout.txt` (the form: `agents/loadout.rs`), replaced when the rules or the best loadout change (then re-pin `HANDSOFF_PIN` in `tests/cli.rs`; a refused tab panics). It is
-the author until the run `if` opens in (the loadout guards with `if`), counted as its
-first; from the next run, at each reset it puts each of the file's tabs in its program through
-the library (written and saved as `hands-off N` once, loaded after) and seats processors by
-the file's `seat` line. A tab reading a researched reading can't be written before that
-research: the first time, it goes in without those `if` blocks and is rewritten whole once
-the research is done (once a career). Then nothing by hand but a backstop retirement once the
-run has bought nothing (buildings, research, land) for `stale_days` days (the file's own
-`retire` line reads Process Telemetry's reading, not in Act 1).
-What its tabs do: the file's header.
+**The hands-off player** (`handsoff.rs`): its programs are data,
+`configs/sim/handsoff_loadout.txt` (the form: `agents/loadout.rs`; what its tabs do: the
+file's header), replaced when the rules or the best loadout change (then re-pin
+`HANDSOFF_PIN`; a refused tab panics). Each reset it puts the file's tabs in through the
+library (saved as `hands-off N`) and seats processors by its `seat` line; a tab reading
+research not yet done goes in without those `if` blocks and is rewritten once it is.
 
 ## The oracle (`oracle/`)
 

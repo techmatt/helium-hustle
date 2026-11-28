@@ -1,0 +1,21 @@
+baseline (config cd194eb3ea35c90e), rank 5 at score 730.000000; runs: days (best score as % of rank 5, f forced)
+| Skill | Axis | Seed | Reached | Runs | Projects done by then | Wall s |
+|---|---|---|---|---|---|---|
+| skilled | nationalist | 3156 | run 2 day 1179 | 1547f (0% trade@1065 [ba lc]), 1179 (100% trade@0 fund@817 [ba lc]) | blueprint_archive, lunar_cartography | 81 |
+| skilled | nationalist | 3157 | run 2 day 1173 | 1499f (20% trade@1058 fund@1432 [ba lc]), 1173 (100% trade@0 fund@498 [ba lc]) | blueprint_archive, lunar_cartography | 91 |
+| skilled | nationalist | 3158 | run 2 day 1275 | 1485f (0% trade@1058 [ba lc]), 1275 (100% trade@0 fund@904 [ba lc]) | blueprint_archive, lunar_cartography | 101 |
+| skilled | humanist | 3156 | run 2 day 1960 | 1554f (0% trade@1011 []), 1960 (100% trade@0 fund@739 [ba lc]) | blueprint_archive, lunar_cartography | 104 |
+| skilled | humanist | 3157 | run 2 day 1347 | 1558f (0% trade@1009 []), 1347 (100% trade@0 fund@548 [ba lc]) | blueprint_archive, lunar_cartography | 93 |
+| skilled | humanist | 3158 | run 2 day 1615 | 1562f (0% trade@1009 []), 1615 (100% trade@0 fund@514 [ba lc]) | blueprint_archive, lunar_cartography | 86 |
+| skilled | rationalist | 3156 | run 2 day 2020 | 1568f (0% trade@1011 []), 2020 (100% trade@0 fund@590 [ba lc]) | blueprint_archive, lunar_cartography | 76 |
+| skilled | rationalist | 3157 | run 2 day 1214 | 1558f (0% trade@1009 []), 1214 (100% trade@0 fund@552 [ba lc]) | blueprint_archive, lunar_cartography | 46 |
+| skilled | rationalist | 3158 | run 2 day 1090 | 1535f (23% trade@1100 fund@1370 [ba lc]), 1090 (100% trade@0 fund@424 [ba lc]) | blueprint_archive, lunar_cartography | 50 |
+| medium | nationalist | 3156 | run 1 day 974 | 974 (100% trade@594 fund@615 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | nationalist | 3157 | run 1 day 959 | 959 (100% trade@540 fund@598 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | nationalist | 3158 | run 1 day 952 | 952 (100% trade@567 fund@594 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | humanist | 3156 | run 1 day 1076 | 1076 (100% trade@543 fund@713 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | humanist | 3157 | run 1 day 977 | 977 (100% trade@547 fund@607 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | humanist | 3158 | run 1 day 910 | 910 (100% trade@541 fund@551 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | rationalist | 3156 | run 1 day 960 | 960 (100% trade@591 fund@598 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | rationalist | 3157 | run 1 day 1114 | 1114 (100% trade@743 fund@753 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | rationalist | 3158 | run 1 day 1150 | 1150 (100% trade@490 fund@500 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |

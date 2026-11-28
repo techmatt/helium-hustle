@@ -8,9 +8,14 @@ use crate::{Action, Fx, GameState};
 fn ideology_ranks_are_geometric() {
     let r = rules();
     assert_eq!(ideology::score_for_rank(&r, 1), f("55"));
-    assert_eq!(ideology::score_for_rank(&r, 5), f("725.3125"));
-    assert_eq!(ideology::rank_for_score(&r, f("725.3125")), 5);
-    assert_eq!(ideology::rank_for_score(&r, f("725.3124")), 4);
+    // Two significant figures (Matt, 131): 55 / 140 / 260 / 450 / 730.
+    let t: Vec<Fx> = (1..=5).map(|n| ideology::score_for_rank(&r, n)).collect();
+    assert_eq!(t, ["55", "140", "260", "450", "730"].map(f));
+    assert_eq!(f("-137.5").round_sig(2), f("-140"));
+    assert_eq!(f("0.0123").round_sig(2), f("0.012"));
+    assert_eq!(Fx::MAX.round_whole(), Fx::MAX, "clamped at the range's edge");
+    assert_eq!(ideology::rank_for_score(&r, f("730")), 5);
+    assert_eq!(ideology::rank_for_score(&r, f("729.999999")), 4);
     assert_eq!(ideology::rank_for_score(&r, f("-250")), -2);
     let mut g = r.new_game(1);
     ideology::fund(&r, &mut g, "humanist");

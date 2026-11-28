@@ -187,6 +187,13 @@ pub struct Directives {
 /// axis this run), content/events.json.
 const TRADE_QUEST: &str = "qtrade";
 const VOICE_QUEST: &str = "qa_voice";
+/// Quest 1.3 Full Load: its completion starts 1.4 Trade.
+const FULL_LOAD_QUEST: &str = "qfull_load";
+/// The projects A Voice's start opens, banked for and funded side by side at
+/// the cap by a committed player (131).
+pub(crate) const PARALLEL: [&str; 2] = ["blueprint_archive", "lunar_cartography"];
+/// Research Labs a committed player owns before the projects open (strategy).
+const BANK_LABS: u32 = 2;
 
 /// Each decision the directives change, one method each: the author asks
 /// these, and with none set each answers as the plain author plays.
@@ -240,6 +247,14 @@ impl Directives {
             if axis == "nationalist" && half && v.buildings.iter().any(|b| b.id == dome && b.unlocked) {
                 ranked.retain(|(id, _)| id != dome);
                 ranked.insert(0, (dome.to_string(), i64::MAX));
+            }
+            // Banking for the projects: science made before they open (Fund's
+            // research and their science; 130's run 1 had no lab until day 1,162).
+            let lab = "research_lab";
+            let labs = v.buildings.iter().find(|b| b.id == lab && b.unlocked).map(|b| b.owned);
+            if self.banking(v) && labs.is_some_and(|n| n < BANK_LABS) {
+                ranked.retain(|(id, _)| id != lab);
+                ranked.insert(0, (lab.to_string(), i64::MAX));
             }
         }
         if let Some(t) = &self.target {
@@ -309,6 +324,41 @@ impl Directives {
             Some(c) => own + command_cost(v, c, "energy").mul_int(2),
             None => own,
         }
+    }
+
+    /// Committed, what it banks while 1.4 Trade is under way (A Voice's start
+    /// opens Blueprint Archive and Lunar Cartography): their credits and
+    /// regolith not yet paid, so both fund at the cap from the day they open
+    /// (131). From the view's project costs (both listed before they open).
+    fn banking(&self, v: &View) -> bool {
+        let done = |q: &str| v.completed_quests.contains(&q);
+        self.commit.is_some() && done(FULL_LOAD_QUEST) && !done(TRADE_QUEST)
+    }
+
+    fn bank(&self, v: &View) -> Vec<(String, Fx)> {
+        if !self.banking(v) {
+            return Vec::new();
+        }
+        let mut bank: BTreeMap<String, Fx> = BTreeMap::new();
+        for p in v.projects.iter().filter(|p| PARALLEL.contains(&p.id) && !p.completed) {
+            for (res, &c) in p.costs.iter().filter(|(r, _)| *r == "credits" || *r == "regolith") {
+                let paid = p.progress.get(res).copied().unwrap_or(Fx::ZERO);
+                *bank.entry(res.clone()).or_default() += (c - paid).max(Fx::ZERO);
+            }
+        }
+        bank.into_iter().collect()
+    }
+
+    /// Whether buying at `cost` keeps the bank ([`Directives::bank`]): every
+    /// banked resource on hand past its bank after the purchase, so nothing is
+    /// bought until the bank is full (a strict save; the bank holds at most a
+    /// resource's cap, regolith's starting at 50).
+    fn keeps_bank(&self, v: &View, cost: &BTreeMap<String, Fx>) -> bool {
+        self.bank(v).iter().all(|(res, b)| {
+            let c = cost.get(res).copied().unwrap_or(Fx::ZERO);
+            let b = cap(v, res).map_or(*b, |cap| (*b).min(cap));
+            amount(v, res) - c >= b
+        })
     }
 
     /// Whether a run that has bought nothing for `stale_days` retires: not
@@ -541,6 +591,11 @@ impl Author {
             let t = self.reachable_target(v);
             target = t.clone();
             let Some(t) = t else { break };
+            // Committed, nothing bought into the projects' bank (131).
+            let banked = |v: &View, id: &str| v.buildings.iter().find(|b| b.id == id).is_some_and(|b| (b.id == "research_lab" && b.owned < BANK_LABS) || self.dir.keeps_bank(v, &b.cost));
+            if !banked(v, &t) {
+                break;
+            }
             if Builder::try_buy(p, &t) {
                 continue;
             }
@@ -551,7 +606,7 @@ impl Author {
             let other = self.b.ranked(v).into_iter().map(|(id, _)| id).find(|id| {
                 *id != t
                     && v.buildings.iter().any(|b| {
-                        b.id == *id && b.affordable && credits_price(b) <= spare
+                        b.id == *id && b.affordable && credits_price(b) <= spare && self.dir.keeps_bank(v, &b.cost)
                     })
                     && self.b.resolve(v, id) == id.as_str()
             });
@@ -681,7 +736,13 @@ impl Author {
             .project_order()
             .filter_map(|id| v.projects.iter().find(|p| p.id == id))
             .filter(|p| p.unlocked && !p.completed)
-            .collect();
+            .fold(Vec::new(), |mut o: Vec<&hh_core::view::ProjectView>, p| {
+                // The pushed one is also in PROJECTS: once each.
+                if !o.iter().any(|x| x.id == p.id) {
+                    o.push(p);
+                }
+                o
+            });
         // Every cost must be able to move: on hand, or made by a building.
         let can_move = |p: &hh_core::view::ProjectView| {
             p.costs.keys().all(|res| {
@@ -689,7 +750,12 @@ impl Author {
             })
         };
         let total = |p: &hh_core::view::ProjectView| p.costs.values().fold(Fx::ZERO, |s, x| s + *x);
+        // Committed: Blueprint Archive and Lunar Cartography side by side, at
+        // the cap, while either is open (131: about 70 days from the bank).
+        let parallel: Vec<&hh_core::view::ProjectView> =
+            open.iter().filter(|p| self.dir.commit.is_some() && PARALLEL.contains(&p.id)).copied().collect();
         let chosen: Vec<&hh_core::view::ProjectView> = match open.iter().find(|p| self.dir.pushes(p.id)) {
+            _ if !parallel.is_empty() => parallel.clone(),
             Some(p) => vec![*p],
             None => {
                 let cheap_run = open.iter().filter(|p| p.scope == "run" && can_move(p)).min_by_key(|p| total(p));
@@ -704,7 +770,8 @@ impl Author {
         let fund_waits = self.next_research(v).is_some_and(|r| self.dir.fund_research().contains(&r.id));
         let mut want = Vec::new();
         for proj in &chosen {
-            let pushed = self.dir.pushes(proj.id);
+            let side = parallel.iter().any(|x| x.id == proj.id);
+            let pushed = self.dir.pushes(proj.id) || side;
             let movable = can_move(proj);
             for res in proj.costs.keys() {
                 let max = proj.max_rates.get(res).copied().unwrap_or(Fx::ZERO);
@@ -716,10 +783,15 @@ impl Author {
                         "science" if super::science_short(v).is_some() => Fx::ZERO,
                         // Committed: none while Fund's research waits (the
                         // run-2 Blueprint Archive took it for 1,300 days: 130).
-                        "science" if fund_waits => Fx::ZERO,
+                        // In run 1 the side-by-side projects come first
+                        // (rank 5 waits for run 2 anyway, 131).
+                        "science" if fund_waits && !(side && v.run == 1) => Fx::ZERO,
                         // All of it, unless research is waiting: then a share.
                         "science" if !self.science_wanted(v) => max,
                         "science" => max.mul_ratio(self.science_share, 100),
+                        // Side by side: all on hand, at most the cap (they
+                        // come before the next building, 131).
+                        "credits" if side => amount(v, "credits").max(Fx::ZERO).min(max),
                         // Pushed: everything past the target's price.
                         "credits" if pushed => (amount(v, "credits") - keep).max(Fx::ZERO).min(max),
                         // A tenth of the credits past twice the target's price and 200.
@@ -727,6 +799,7 @@ impl Author {
                             let spare = amount(v, "credits") - keep.mul_int(2) - Fx::from_int(200);
                             spare.mul_ratio(1, 10).max(Fx::ZERO).min(max)
                         }
+                        _ if side => max,
                         _ => self.project_rate.min(max),
                     }
                 };
@@ -850,8 +923,15 @@ impl Author {
             // Blueprints before it) waits on it.
             let science_free = tool != "theorize"
                 || self.next_research(v).is_none_or(|r| r.affordable || !self.dir.fund_research().contains(&r.id));
+            // Fund's processors come first: late in a long run the tool's
+            // count grows with boredom and took them all (131).
+            let fund_seat = self
+                .dir
+                .funded_axis()
+                .filter(|(a, _)| command_unlocked(v, &format!("fund_{a}")) && FUND < want.len())
+                .map_or(0, |(_, n)| n);
             if third && science_free && command_unlocked(v, tool) && left > 1 && dream < want.len() {
-                let n = sustain_dreamers(v, total).min(left - 1);
+                let n = sustain_dreamers(v, total).min(left.saturating_sub(1 + fund_seat).max(1));
                 want[dream] = vec![e(tool, 1)];
                 procs[dream] = n;
                 left -= n;

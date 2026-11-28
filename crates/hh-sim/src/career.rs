@@ -153,7 +153,16 @@ pub struct GameResult {
     /// A human's real clock (from the play log).
     #[serde(skip)]
     pub own_clock: Option<Clock>,
+    /// When each long goal was first met (131, `vs-human --skilled`):
+    /// `project:<id>` a global project's first completion, `rank5:<axis>` an
+    /// axis's this-run rank first at 5 (1.5 A Voice's bar).
+    #[serde(skip_serializing_if = "BTreeMap::is_empty")]
+    pub landmarks: BTreeMap<String, Hit>,
 }
+
+/// The this-run rank `vs-human --skilled` times (mirrors content/events.json
+/// 1.5 A Voice's `ideology_rank_any` 5).
+pub const LANDMARK_RANK: i64 = 5;
 
 impl GameResult {
     /// Real seconds by career tick: a human's own clock, else `model`'s
@@ -209,6 +218,8 @@ pub struct Meter<'a> {
     timeline: Vec<(u64, u32)>,
     totals: Totals,
     objectives_hit: BTreeMap<String, u64>,
+    landmarks: BTreeMap<String, Hit>,
+    book_sizes: (usize, usize),
 }
 
 impl<'a> Meter<'a> {
@@ -236,6 +247,29 @@ impl<'a> Meter<'a> {
             timeline: Vec::new(),
             totals: Totals::of(s),
             objectives_hit: BTreeMap::new(),
+            landmarks: BTreeMap::new(),
+            book_sizes: (0, 0),
+        }
+    }
+
+    /// Records the long goals first met by now ([`GameResult::landmarks`]).
+    fn landmarks(&mut self, s: &Session) {
+        let g = &s.state;
+        let hit = Hit { tick: g.tick - self.start_tick, run: g.career.run_number, day: g.run.day };
+        // Scan the books only when one changed size (a timeline's end empties one).
+        let books = [&g.career.projects.completions, &g.career.forever_projects.completions];
+        let sizes = (books[0].len(), books[1].len());
+        if sizes != self.book_sizes {
+            self.book_sizes = sizes;
+            for id in books.iter().flat_map(|b| b.keys()) {
+                self.landmarks.entry(format!("project:{id}")).or_insert(hit);
+            }
+        }
+        for axis in hh_core::content::AXES {
+            let key = format!("rank5:{axis}");
+            if !self.landmarks.contains_key(&key) && hh_core::modules::ideology::rank(&s.rules, g, axis) >= LANDMARK_RANK {
+                self.landmarks.insert(key, hit);
+            }
         }
     }
 
@@ -363,6 +397,7 @@ impl<'a> Meter<'a> {
         }
         self.tracker.after(s);
         self.check(s, ended.as_ref());
+        self.landmarks(s);
         Ok(())
     }
 
@@ -428,6 +463,7 @@ impl<'a> Meter<'a> {
             notes,
             timeline: self.timeline,
             own_clock: None,
+            landmarks: self.landmarks,
         }
     }
 }

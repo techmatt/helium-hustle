@@ -107,6 +107,7 @@
       "params": {
         "rank_base_score": "55",
         "rank_growth": "1.5",
+        "rank_figures": 2,
         "max_rank": 99,
         "fund_push": "1",
         "fund_cross_penalty": "0.5",

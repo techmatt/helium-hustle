@@ -50,7 +50,7 @@ pub const USAGE: &str = "usage:
                                                    the committed ideology players: run and day each first reaches rank 5
   hh-sim speed                                     native engine speed (ticks/s)
   hh-sim playlog LOG.jsonl [--json] [--milestones F] [--human-models F]   replay and measure a human's play log
-  hh-sim vs-human LOG.jsonl [--agents a,b] [--humans a,b] [--ticks N] [--json] [--threads T] [--milestones F] [--human-models F] [--include-accelerated]
+  hh-sim vs-human LOG.jsonl [--agents a,b] [--humans a,b] [--ticks N] [--json] [--threads T] [--milestones F] [--human-models F] [--include-accelerated] [--skilled]
                                                    the sim players on the log's game, beside the human
   hh-sim accelerate [--seed S] [--config F] [--agent SPEC] [--boost P,R,B | --no-boost] [--target milestone|quest|end]
                     [--budget TICKS] [--save RECORD]   debug: a fresh career on the autopilot (docs/simulator.md, Accelerators)

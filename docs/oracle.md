@@ -30,7 +30,13 @@ often, so a rollout of the current goals is what will happen.
   Basic/Advanced Blueprints then Geopolitical Intelligence, first, with no science to
   projects while those wait; its tagged buildings
   scored ×3/2), rows funding another axis are skipped, and while A Voice is under way its
-  campaign is the only strategy, pushing Blueprint Archive then Lunar Cartography while open.
+  campaign is the only strategy. For the projects A Voice's start opens (131): while 1.4
+  Trade is under way, two Research Labs come first and it buys nothing else
+  until its credits and regolith, after the purchase, cover Blueprint Archive's and Lunar
+  Cartography's unpaid costs (the bank, at most each resource's cap); once open, both are
+  funded side by side at the caps (credits: all on hand), run-1 science to them first.
+  Fund's processors are seated before the tool's, so a long run's growing tool count never
+  takes them.
   Retirement: while A Voice is under way neither the prestige rule nor a stale run retires
   it (boredom ends each run); otherwise as below. `hh-sim axes` plays these players
   ([simulator.md](simulator.md)). Rollouts keep their foresight (130's choice: reseeding
