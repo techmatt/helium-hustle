@@ -102,6 +102,14 @@ needs no rebuild. Hands-off loadout variants the same way, natively: `--agents
 "a=handsoff:loadout=out/x/a.txt,b=handsoff:loadout=out/x/b.txt"` plays each file in place of
 the built-in `configs/sim/handsoff_loadout.txt` (a path without commas).
 
+**Tuning a committed player (`hh-sim axes`):** a skilled read (9 oracle careers) is about
+2.5-3.5 minutes on 6 threads, the medium one a second. A run-1 question needs only run 1:
+`--skills skilled --runs 1` (run 1 is roughly half a skilled career's days); `--axes a,b` narrows further. Change one
+thing a read: 131 tested bank, cap-rate funding and gating together and three reads went to
+untangling them (one variant deadlocked every career). A paired before/after uses the same
+`--first-seed`; the seed-to-seed spread of run-1 project completion is wide (2/9 and 4/9 on
+two fresh triples of one player), so a 3-seed difference of one or two cases is noise.
+
 ## Reads against another revision
 
 Every read of another tree runs from that tree's root (*Paths*, above): a base binary run in

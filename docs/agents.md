@@ -25,7 +25,8 @@ across retirements without peeking; hook `Agent::new_run`).
 **Missing for balance work** (recommended, not built): a cheaper skilled proxy (a skilled
 `axes` read is ~3.5 min on 6 threads: the oracle with `long`/`horizon` cut, or the committed
 author with the oracle's run-1 project plan, checked against the oracle on a few seeds); an
-early stop in `axes` once a case's bar is decided; a human-calibrated tier from Matt's logged
+early stop in `axes` once a case's bar is decided (`--runs 1` already cuts a run-1 question
+short); a human-calibrated tier from Matt's logged
 careers (`vs-human --skilled` sets one beside the skilled player).
 
 ## Rules every player follows

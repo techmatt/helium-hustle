@@ -33,7 +33,7 @@ $S summarize out/experiments/ladder/games.jsonl      # each game's runs, milesto
 $S compare --config-b configs/other.json      # two configs, paired on the same seeds
 $S compare --set boredom.base_cap=500         # a param (or module.variant=name) against the base
 $S balance                                    # the judge's missed targets, as balance: lines (~5 s)
-$S trace --agents author --retirements 2      # one career (the grid's first agent at --first-seed): actions, the agent's notes (#), the career log
+$S trace --agents author --retirements 2      # one career (the grid's first agent at --first-seed; --retirements at least 1): actions, the agent's notes (#), the career log
 $S trace --lines                              # ... and each day's program lines run, in queue order
 $S trace --agents oracle --first-seed 2 --at 1500   # the state at a tick: what walls a run in
 $S agents                                     # the ladder's rungs

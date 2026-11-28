@@ -249,7 +249,7 @@ impl Directives {
                 ranked.insert(0, (dome.to_string(), i64::MAX));
             }
             // Banking for the projects: science made before they open (Fund's
-            // research and their science; 130's run 1 had no lab until day 1,162).
+            // research and their science; a 131 trace had no lab until run-1 day 1,162).
             let lab = "research_lab";
             let labs = v.buildings.iter().find(|b| b.id == lab && b.unlocked).map(|b| b.owned);
             if self.banking(v) && labs.is_some_and(|n| n < BANK_LABS) {
