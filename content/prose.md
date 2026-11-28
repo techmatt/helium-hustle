@@ -964,6 +964,14 @@ Thought Experiments
 
 Unlocks the Theorize command: spend science to relieve boredom.
 
+### `research:electrochemistry.name`
+
+Electrochemistry
+
+### `research:electrochemistry.description`
+
+Chemistry for turning lunar propellant back into power. Unlocks the Chemical Energy Initiative project. Bought once for the whole career.
+
 ### `research:stress_tolerance.name`
 
 Stress Tolerance
@@ -1108,7 +1116,7 @@ Universal Research Archive
 
 ### `projects:research_archive.description`
 
-Establish a persistent knowledge base that survives across AI lifetimes.
+Establish a persistent knowledge base that survives across AI lifetimes: research completed in an earlier run costs 25% less.
 
 ### `projects:chemical_energy.name`
 

@@ -33,11 +33,11 @@ Visibility is checked only at purchase: an item that was shown and stops being s
 falls back) can't be bought until it holds again.
 
 **Price** in science: `cost` (ideology ranks don't touch it). If the item was bought
-in an earlier run and Rationalist is at its major rank, the price is 0 (the major effect,
-[ideology.md](ideology.md#rules)); else each live `research_discount` project reward whose
+in an earlier run, each live `research_discount` project reward whose
 `category` is null or the item's multiplies the price by its `mult`, in content order
 ([projects.md](projects.md)): the Blueprint Archive's 0.8 (Blueprints only), then the Universal
-Research Archive's 0.75 (any research), so a Blueprint bought before with both done costs ×0.6. Each product is floored once (the [rounding rule](README.md#numbers)).
+Research Archive's 0.75 (any category, but only research completed in an earlier run, as
+every discount), so a Blueprint bought before with both done costs ×0.6. Each product is floored once (the [rounding rule](README.md#numbers)).
 
 **Buying** checks, in order: the `research` panel is enabled this run (quest 1.1 Online's completion opens
 it, [events.md](events.md); the nav's Research tile shows with it); not already bought this
@@ -78,6 +78,9 @@ count as bought from day 0 of every run while the project counts as completed ([
   Accelerated Scheduling (30 science, placeholder, category *Self-Maintenance*, `never`
   visible: out of Act 1 until Act 2 places it) sets `fast_speeds`: the view's `fast_speeds` opens the
   50x and 200x game speeds in the UI (display only; no rule reads it).
+  Electrochemistry (1,000 science, category *Extraction*, visible once 8 Solar Panels are
+  owned in the run, granted copies included; Matt, 130) sets `electrochemistry`, which
+  unlocks the Chemical Energy Initiative project ([projects.md](projects.md)).
 
 A purchase of research (as of a building or land) sets the run's `last_purchase`.
 

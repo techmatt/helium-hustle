@@ -7,10 +7,10 @@ use crate::{Action, Fx, GameState};
 #[test]
 fn ideology_ranks_are_geometric() {
     let r = rules();
-    assert_eq!(ideology::score_for_rank(&r, 1), f("100"));
-    assert_eq!(ideology::score_for_rank(&r, 5), f("1318.75"));
-    assert_eq!(ideology::rank_for_score(&r, f("1318.75")), 5);
-    assert_eq!(ideology::rank_for_score(&r, f("1318.74")), 4);
+    assert_eq!(ideology::score_for_rank(&r, 1), f("55"));
+    assert_eq!(ideology::score_for_rank(&r, 5), f("725.3125"));
+    assert_eq!(ideology::rank_for_score(&r, f("725.3125")), 5);
+    assert_eq!(ideology::rank_for_score(&r, f("725.3124")), 4);
     assert_eq!(ideology::rank_for_score(&r, f("-250")), -2);
     let mut g = r.new_game(1);
     ideology::fund(&r, &mut g, "humanist");

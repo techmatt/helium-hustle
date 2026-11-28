@@ -25,8 +25,8 @@ reaches rank *n* is
 score_for_rank(n) = rank_base_score × (rank_growth^n − 1) / (rank_growth − 1)
 ```
 
-with the power exact (`Fx::pow_int`, [README.md](README.md)). At baseline: rank 1 at 100,
-2 at 250, 3 at 475, 4 at 812.5, 5 at 1318.75. An axis's rank is the highest whole *n* (at
+with the power exact (`Fx::pow_int`, [README.md](README.md)). At baseline (base 55, 130's tuning): rank 1 at 55,
+2 at 137.5, 3 at 261.25, 4 at 446.875, 5 at 725.3125. An axis's rank is the highest whole *n* (at
 most `max_rank`) with `score_for_rank(n) <= |score|`, negated for a negative score. A rank
 too costly to represent is never reached.
 
@@ -47,8 +47,8 @@ resource, never land) is ÷m; copies already built are unaffected. A command's `
 field names the axis whose boredom tool it is.
 
 **Nudges.** Using a path's boredom tool nudges its axis's score up, with no cross penalty:
-each Recreation Dome purchase adds the building's `nudge` (5) to Nationalist, and each Dream
-or Theorize execution adds the command's `nudge` (0.25) to Humanist or Rationalist.
+each Recreation Dome purchase adds the building's `nudge` (2.5) to Nationalist, and each Dream
+or Theorize execution adds the command's `nudge` (0.5) to Humanist or Rationalist (130's parity tuning).
 
 **Major ranks** (draft, 049; placeholder effects, [../arc.md](../arc.md)). While an axis's
 current rank is at least `major_rank` (5), its major effect is on:
@@ -57,7 +57,7 @@ current rank is at least `major_rank` (5), its major effect is on:
 |---|---|
 | Nationalist | speculator bursts stop landing ([demand.md](demand.md)) |
 | Humanist | Dream costs only its energy, no He-3 ([dream.md](dream.md)) |
-| Rationalist | research bought in an earlier run is free ([research.md](research.md)) |
+| Rationalist | none for now (130: the earlier-run free research was never approved, Matt) |
 
 Only the first major rank is built; the ranks between raise `m` as above.
 
@@ -88,7 +88,7 @@ Geopolitical Intelligence research.
 <!-- params:ideology -->
 | Param | Baseline | Range | Meaning |
 |---|---|---|---|
-| `rank_base_score` | 100 | 0.000001 to 1000000 | Score rank 1 costs. |
+| `rank_base_score` | 55 | 0.000001 to 1000000 | Score rank 1 costs. |
 | `rank_growth` | 1.5 | 1.000001 to 10 | Each rank costs this times the one before. |
 | `max_rank` | 99 | 1 to 1000 | Highest rank either way. |
 | `fund_push` | 1 | 0 to 1000 | Score a Fund command adds to its axis. |

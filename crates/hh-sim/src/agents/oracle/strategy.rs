@@ -4,7 +4,7 @@
 
 use hh_core::GameState;
 
-use super::super::author::Directives;
+use super::super::author::{Directives, AXES as AXIS_PROJECTS};
 use super::super::Player;
 use super::score::Profile;
 use super::Oracle;
@@ -56,18 +56,23 @@ pub fn strategy_index(label: &str) -> Option<usize> {
     strategies().iter().position(|s| s.label == label)
 }
 
-/// The A Voice campaign (the quests profile, 1.5): one run held long by
-/// Dream, funding Humanist toward rank 5 (cheaper boredom,
-/// stronger Dream) and then its AI Consciousness project, trading meanwhile.
-pub fn campaign() -> (String, Directives) {
+/// An A Voice campaign (1.5) on `axis`: one run held long against
+/// boredom, funding the axis toward rank 5 and then its rank-5 project,
+/// trading meanwhile. Uncommitted (the quests profile, one campaign per
+/// axis, the best kept) it holds boredom with Dream; `commit` (a committed
+/// oracle, its only campaign) holds it with the axis's own tool
+/// (`Directives::commit`).
+pub fn campaign(axis: &str, commit: bool) -> (String, Directives) {
+    let project = AXIS_PROJECTS.iter().find(|(a, _)| *a == axis).map(|(_, p)| p.to_string());
     let d = Directives {
         sustain: true,
-        axis: Some("humanist".into()),
+        axis: Some(axis.into()),
         fund_procs: 2,
-        project: Some("ai_consciousness".into()),
+        project,
+        commit: commit.then(|| axis.to_string()),
         ..trade()
     };
-    ("open horizons".into(), d)
+    (format!("voice {axis}"), d)
 }
 
 /// The `trade` row's goals, which most rows and the campaign build on.
@@ -89,7 +94,7 @@ const TRADE: &str = "qtrade";
 const A_VOICE: &str = "qa_voice";
 
 /// Whether the A Voice quest is the one under way.
-fn a_voice_open(g: &GameState) -> bool {
+pub(super) fn a_voice_open(g: &GameState) -> bool {
     g.career.completed_quests.contains(TRADE) && !g.career.completed_quests.contains(A_VOICE)
 }
 
@@ -99,14 +104,31 @@ impl Oracle {
     /// quests profile's campaign alone while A Voice (1.5) is open.
     pub(super) fn choose_strategy(&mut self, p: &mut Player) {
         let mut best: Option<(i64, String, Directives)> = None;
-        let all: Vec<(String, Directives)> = if self.profile == Profile::Quests && a_voice_open(p.state()) {
-            vec![campaign()]
+        let voice = a_voice_open(p.state());
+        let all: Vec<(String, Directives)> = if let (Some(axis), true) = (self.commit, voice) {
+            // Blueprint Archive, then Lunar Cartography (A Voice's start
+            // opens them) pushed first, while open: then the axis's project.
+            let (label, mut d) = campaign(axis, true);
+            let v = p.view();
+            let open = |id: &str| v.projects.iter().any(|x| x.id == id && x.unlocked && !x.completed);
+            if let Some(first) = ["blueprint_archive", "lunar_cartography"].into_iter().find(|id| open(id)) {
+                d.project = Some(first.to_string());
+            }
+            vec![(label, d)]
+        } else if self.profile == Profile::Quests && voice {
+            AXES.iter().map(|a| campaign(a, false)).collect()
         } else {
             let table = strategies();
-            let open = |i: usize| table[i].available(p.state());
+            // Committed: no row funding another axis.
+            let open = |i: usize| {
+                table[i].available(p.state()) && self.commit.is_none_or(|c| table[i].dir.axis.as_deref().is_none_or(|a| a == c))
+            };
             let pinned = usize::try_from(self.pin).ok().filter(|&i| i < table.len() && open(i));
             let rows: Vec<usize> = (0..table.len()).filter(|&i| open(i) && pinned.is_none_or(|k| k == i)).collect();
-            rows.into_iter().map(|i| (table[i].label.clone(), table[i].dir.clone())).collect()
+            let commit = self.commit.map(String::from);
+            rows.into_iter()
+                .map(|i| (table[i].label.clone(), Directives { commit: commit.clone(), ..table[i].dir.clone() }))
+                .collect()
         };
         for (label, d) in all {
             let s = self.rollout(p, &d, self.long, true);
@@ -231,6 +253,7 @@ fn merge(cur: &Directives, a: &Directives, b: &Directives) -> Directives {
         diversify: pick(a.diversify != cur.diversify).diversify,
         hoard: pick(a.hoard != cur.hoard).hoard,
         main_last: pick(a.main_last != cur.main_last).main_last,
+        commit: cur.commit.clone(),
     }
 }
 

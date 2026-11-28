@@ -244,6 +244,11 @@ impl Content {
                 }
             }
         }
+        for r in &self.research {
+            if let Some(ResearchEffect::CareerFlag { flag }) = &r.effect {
+                set.insert(flag);
+            }
+        }
         // `if` opens on a flag content must set (programs.md, *Unlock*).
         let flag = crate::modules::programs::IF_FLAG;
         need(set.contains(flag), format!("programs: nothing sets flag {flag:?}"));

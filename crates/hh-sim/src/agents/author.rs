@@ -63,7 +63,7 @@ use super::{amount, cap, ceil_int, command_cost, command_unlocked, credits_price
 pub const KNOBS: &[&str] = &[
     "decay", "starved", "reserve", "buys", "compute", "dream_at", "stale_days", "project_rate", "fund", "market",
     "hand_gap", "loads", "pause", "wait_demand", "min_gap", "max_gap", "construct", "cond", "diversify",
-    "all_research", "science_share", "ship_loads", "fill", "dream_fill",
+    "all_research", "science_share", "ship_loads", "fill", "dream_fill", "commit", "fund_procs",
 ];
 
 /// Library names of the condition programs (`cond`): one saved copy each,
@@ -122,7 +122,7 @@ pub(crate) const PROJECTS: &[&str] = &[
 
 /// Ideology axes in funding order, each with its rank-5 persistent project
 /// (mirrors content/projects.json; the order is strategy).
-const AXES: &[(&str, &str)] = &[
+pub(crate) const AXES: &[(&str, &str)] = &[
     ("humanist", "ai_consciousness"),
     ("rationalist", "research_archive"),
     ("nationalist", "microwave_power"),
@@ -173,13 +173,75 @@ pub struct Directives {
     /// The main program runs last (programs run in order), so Dream, Fund
     /// and the market get energy before Cloud Compute's filler takes it.
     pub main_last: bool,
+    /// Committed to one ideology axis (130): its boredom tool is the only
+    /// one used (Dream for Humanist, Theorize for Rationalist, held as
+    /// `sustain` holds Dream; Recreation Domes for Nationalist, bought from
+    /// half the boredom cap), its tool's research comes first, its tagged
+    /// buildings score ×3/2, and while 1.5 A Voice is under way no run
+    /// retires for being stale (boredom ends it: `retires_stale`).
+    /// Funding itself is `axis` (the committed players set both).
+    pub commit: Option<String>,
 }
+
+/// Quest 1.4 Trade, whose completion starts 1.5 A Voice (rank 5 on any
+/// axis this run), content/events.json.
+const TRADE_QUEST: &str = "qtrade";
+const VOICE_QUEST: &str = "qa_voice";
 
 /// Each decision the directives change, one method each: the author asks
 /// these, and with none set each answers as the plain author plays.
 impl Directives {
-    /// The builder's ranking with the target, while unlocked, first.
+    /// The command holding boredom down: the committed axis's tool (none
+    /// for Nationalist, whose tool is a building), else Dream with `sustain`.
+    pub fn tool_command(&self) -> Option<&'static str> {
+        match self.commit.as_deref() {
+            Some("humanist") => Some("dream"),
+            Some("rationalist") => Some("theorize"),
+            Some(_) => None,
+            None => self.sustain.then_some("dream"),
+        }
+    }
+
+    /// The research that opens the committed axis's tool.
+    fn tool_research(&self) -> Option<&'static str> {
+        match self.commit.as_deref() {
+            Some("humanist") => Some("dream_protocols"),
+            Some("rationalist") => Some("thought_experiments"),
+            Some("nationalist") => Some("recreation_dome_blueprints"),
+            _ => None,
+        }
+    }
+
+    /// Committed, the research opening Fund (shown once A Voice starts),
+    /// after only the Blueprints that open the base's science (before them
+    /// it waited all run 2 on science it couldn't make).
+    fn fund_research(&self) -> &'static [&'static str] {
+        if self.commit.is_some() {
+            &["basic_blueprints", "advanced_blueprints", "geopolitical_intelligence"]
+        } else {
+            &[]
+        }
+    }
+
+    /// The builder's ranking with the target, while unlocked, first; for a
+    /// committed player its tagged buildings scored up, and a Recreation
+    /// Dome first from half the boredom cap (Nationalist).
     fn rank_target(&self, v: &View, ranked: &mut Vec<(String, i64)>) {
+        if let Some(axis) = self.commit.as_deref() {
+            let tagged = |id: &str| v.buildings.iter().any(|b| b.id == id && b.ideology == Some(axis));
+            for (id, s) in ranked.iter_mut() {
+                if tagged(id) {
+                    *s = s.saturating_mul(3) / 2;
+                }
+            }
+            ranked.sort_by_key(|x| std::cmp::Reverse(x.1));
+            let dome = "recreation_dome";
+            let half = v.boredom.amount.mul_int(2) >= v.boredom.cap;
+            if axis == "nationalist" && half && v.buildings.iter().any(|b| b.id == dome && b.unlocked) {
+                ranked.retain(|(id, _)| id != dome);
+                ranked.insert(0, (dome.to_string(), i64::MAX));
+            }
+        }
         if let Some(t) = &self.target {
             if v.buildings.iter().any(|b| b.id == t && b.unlocked) {
                 ranked.retain(|(id, _)| id != t);
@@ -191,12 +253,18 @@ impl Directives {
     /// Research worth its science whatever else is open: all of it, or the
     /// directed one.
     fn wants_research(&self, id: &str) -> bool {
-        self.all_research || self.research.as_deref() == Some(id)
+        self.all_research || self.research.as_deref() == Some(id) || self.tool_research() == Some(id) || self.fund_research().contains(&id)
     }
 
-    /// Research in the order wanted: the directed one, then [`RESEARCH`].
+    /// Research in the order wanted: committed, Fund's; the directed one,
+    /// the committed tool's, then [`RESEARCH`].
     fn research_order(&self) -> impl Iterator<Item = &str> {
-        self.research.as_deref().into_iter().chain(RESEARCH.iter().copied())
+        self.fund_research()
+            .iter()
+            .copied()
+            .chain(self.research.as_deref())
+            .chain(self.tool_research())
+            .chain(RESEARCH.iter().copied())
     }
 
     /// Projects in the order funded: the pushed one, then [`PROJECTS`].
@@ -215,7 +283,7 @@ impl Directives {
         let last = len.saturating_sub(1);
         if self.main_last && last > MARKET {
             (last, DREAM)
-        } else if self.sustain {
+        } else if self.tool_command().is_some() {
             (DREAM, MAIN)
         } else {
             (MAIN, DREAM)
@@ -237,16 +305,20 @@ impl Directives {
     /// The builder's energy reserve: holding boredom down, room for two
     /// Dreams a day once Dream is unlocked (before, the room starved the run).
     fn energy_reserve(&self, own: Fx, v: &View) -> Fx {
-        if self.sustain && command_unlocked(v, "dream") {
-            own + command_cost(v, "dream", "energy").mul_int(2)
-        } else {
-            own
+        match self.tool_command().filter(|c| command_unlocked(v, c)) {
+            Some(c) => own + command_cost(v, c, "energy").mul_int(2),
+            None => own,
         }
     }
 
     /// Whether a run that has bought nothing for `stale_days` retires: not
-    /// while holding boredom down.
-    fn retires_stale(&self) -> bool {
+    /// while holding boredom down; committed, not while 1.5 A Voice (rank 5
+    /// this run) is under way: each such run plays out until boredom ends it.
+    pub fn retires_stale(&self, v: &View) -> bool {
+        if self.commit.is_some() {
+            let done = |q: &str| v.completed_quests.contains(&q);
+            return !(done(TRADE_QUEST) && !done(VOICE_QUEST));
+        }
         !self.sustain
     }
 }
@@ -322,6 +394,11 @@ impl Author {
             dir: Directives {
                 diversify: k.get("diversify", 0) != 0,
                 all_research: k.get("all_research", 0) != 0,
+                // `commit` (130): one axis (1 Nationalist, 2 Humanist, 3
+                // Rationalist), funded on `fund_procs` processors (default 2).
+                axis: super::axis_knob(k.get("commit", 0)).map(String::from),
+                fund_procs: k.get("fund_procs", 2).clamp(1, 64) as u32,
+                commit: super::axis_knob(k.get("commit", 0)).map(String::from),
                 ..Directives::default()
             },
             reserve: b.reserve,
@@ -624,6 +701,7 @@ impl Author {
             return;
         }
         let keep = target.map_or(Fx::ZERO, |t| price(v, t, "credits"));
+        let fund_waits = self.next_research(v).is_some_and(|r| self.dir.fund_research().contains(&r.id));
         let mut want = Vec::new();
         for proj in &chosen {
             let pushed = self.dir.pushes(proj.id);
@@ -636,6 +714,9 @@ impl Author {
                     match res.as_str() {
                         // None while the Blueprints wait on science: the base's buildings come first.
                         "science" if super::science_short(v).is_some() => Fx::ZERO,
+                        // Committed: none while Fund's research waits (the
+                        // run-2 Blueprint Archive took it for 1,300 days: 130).
+                        "science" if fund_waits => Fx::ZERO,
                         // All of it, unless research is waiting: then a share.
                         "science" if !self.science_wanted(v) => max,
                         "science" => max.mul_ratio(self.science_share, 100),
@@ -761,16 +842,22 @@ impl Author {
         // Dream, while the run still builds.
         let bored = v.boredom.amount.mul_int(100) >= v.boredom.cap.mul_int(self.dream_at);
         let building = v.day.saturating_sub(self.built_day) < self.stale_days;
-        if self.dir.sustain {
-            // Holding boredom down: Dream from a third of the cap
-            // ([`sustain_dreamers`] processors).
+        if let Some(tool) = self.dir.tool_command() {
+            // Holding boredom down: Dream (or the committed axis's Theorize)
+            // from a third of the cap ([`sustain_dreamers`] processors).
             let third = v.boredom.amount.mul_int(3) >= v.boredom.cap;
-            if third && command_unlocked(v, "dream") && left > 1 && dream < want.len() {
+            // Theorize spends science: not while Fund's research (or the
+            // Blueprints before it) waits on it.
+            let science_free = tool != "theorize"
+                || self.next_research(v).is_none_or(|r| r.affordable || !self.dir.fund_research().contains(&r.id));
+            if third && science_free && command_unlocked(v, tool) && left > 1 && dream < want.len() {
                 let n = sustain_dreamers(v, total).min(left - 1);
-                want[dream] = vec![e("dream", 1)];
+                want[dream] = vec![e(tool, 1)];
                 procs[dream] = n;
                 left -= n;
             }
+        } else if self.dir.commit.is_some() {
+            // Committed to an axis whose tool is a building: no Dream.
         } else if cond && building && command_unlocked(v, "dream") && left > 1 && dream < want.len() {
             // The Dream watch: dreams past `dream_at`% of the cap, else computes.
             want[dream] = dream_watch(self.dream_at, filler, self.dream_fill);
@@ -940,7 +1027,7 @@ impl Author {
         if let Some(pad) = v.pads.iter().find(|p| p.active && p.cooldown > 0) {
             sooner(&mut soon, u64::from(pad.cooldown));
         }
-        if v.can_retire && self.dir.retires_stale() {
+        if v.can_retire && self.dir.retires_stale(v) {
             let stale = v.day.saturating_sub(self.built_day);
             sooner(&mut soon, self.stale_days.saturating_sub(stale));
         }
@@ -994,7 +1081,7 @@ impl Agent for Author {
             self.built_day = day;
         }
         let v = p.view();
-        if v.can_retire && self.dir.retires_stale() && day.saturating_sub(self.built_day) >= self.stale_days {
+        if v.can_retire && self.dir.retires_stale(v) && day.saturating_sub(self.built_day) >= self.stale_days {
             let _ = p.apply(&Action::Retire);
             let v = p.view();
             self.run = v.run;

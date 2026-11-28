@@ -63,8 +63,11 @@ timeline's end a global project is offered again and re-funding it brings them b
 bonus-stacking ruling): `n` completions of a ×`v` multiplier give `1 + (v − 1) × n` (floored
 at 0), and `n` times each starting building; the others live once (no row repeats yet):
 
-- `starting_buildings`: free bonus buildings at the start of every run (owned and
-  running, not counted in their price curve; [career.md](career.md), [economy.md](economy.md)).
+- `starting_buildings`: free bonus buildings at the start of every run, free extras (Matt,
+  130): owned and running, so every building count (quest conditions, research shown at a
+  count) includes them, but not counted in their price curve, outside the average price
+  paid, and sold for no refund ([career.md](career.md), [economy.md](economy.md)). A
+  scenario's completed projects grant them too.
 - `modifier`: a modifier `key` multiplied by `value` ([Modifiers](README.md#modifiers)).
 - `flag`: a flag held while live (not a career flag: a timeline's end takes it), read
   wherever a flag is (`flag_set` conditions, flag requirements, `logic_if`), and `text`,
@@ -119,20 +122,26 @@ capped at its resource's most); a project not open (or completed) makes it fail
 `content/projects.json`: 14 rows, ten `timeline` (the Dyson Sphere among them: draft,
 [timeline.md](timeline.md)) and four `run`, each with `scope`, `unlock`, `costs`,
 `rewards` (none repeats yet; `min_days` on the telescope only); names and descriptions are the Godot
-placeholders but for the draft rows (049): Conditional Logic (500 credits and 100 science;
+placeholders but for the draft rows (049): Conditional Logic (1,000 credits and 100 science;
 its reward the `logic_if` flag that opens `if`, [programs.md](programs.md)) and the
 Deep Space Telescope (offered once quest 1.6 is active; its first completion completes 1.6,
 so it spans several runs: `min_days` 3,000; rebuilt each timeline, at the same cost, for
 its placeholder passive, `science_output_mult` and `nationalist_growth_mult` ×1.1, and only
 that: the swarm's countdown runs without it, and what 1.6 opened stays:
-[timeline.md](timeline.md)). Chemical Energy Initiative is offered from the first
-retirement (the career flag `retired`). Blueprint Archive (draft: 2,000 credits and 300 science):
+[timeline.md](timeline.md)). Chemical Energy Initiative (2,000 credits, 2,000 propellant,
+1,000 ice) is offered once the research Electrochemistry is bought (its career flag
+`electrochemistry`, [research.md](research.md)). Blueprint Archive (draft: 2,000 credits and 300 science):
 its `starting_research`
 reward has Basic and Advanced Blueprints bought from the start of every run of the timeline,
 and its `research_discount` (0.8, category Blueprints) makes every Blueprints item bought in
-an earlier run cost 20% less while it counts as completed ([research.md](research.md)). At the cap
-Blueprint Archive takes 67 days (credits), Foundation Grant 334 (Lunar Cartography 1,500
-credits and 200 science; Foundation Grant 10,000 and 2,000). **Where they open.** The Projects panel, where a player sees them, opens
+an earlier run cost 20% less while it counts as completed ([research.md](research.md)).
+Placeholder costs (Matt, 130; each at most three resources): Lunar Cartography 1,000
+credits, 200 science and 500 regolith; Foundation Grant 4,000 credits, 500 science and 500
+titanium, for 2 Solar Panels, 2 Regolith Excavators and 1 Smelter at each run's start;
+Microwave Power Initiative 2,000 credits, 300 science and 1,000 titanium; AI Consciousness
+Act 2,000 credits, 1,000 circuits and 1,000 He-3; Universal Research Archive 1,000 credits,
+1,500 science and 300 circuits. At the caps Blueprint Archive takes 67 days (credits),
+Foundation Grant 134, Lunar Cartography 50 (regolith). **Where they open.** The Projects panel, where a player sees them, opens
 at A Voice's start (quest 1.5; the silent `a_voice_projects` event, a `quest_active`
 condition) with Blueprint Archive, Conditional Logic, Lunar Cartography and Foundation
 Grant (each `project_enabled`); a first retirement before it (the silent `first_retirement`
@@ -148,4 +157,5 @@ event, [events.md](events.md)) opens the panel with all of those but Lunar Carto
 - Candidate: a `quest_active` gate holds while the quest is active or after it is
   completed (the Deep Space Telescope stays fundable after 1.6 completes).
 - Candidate: AI Consciousness Act's `command_boredom` values replace the commands' own
-  boredom per execution rather than adding to it.
+  boredom per execution rather than adding to it: Cloud Compute's 0.15 is ×1.5 its own 0.1
+  (Matt, 130); Load Pads' 0.3 and Disrupt Speculators' 0.5 replace their 0.

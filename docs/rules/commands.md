@@ -59,7 +59,7 @@ category (economy.md). The view fills a description's `{days}` with those days (
 Online's completion, and Launch Full Pads with 1.3 Full Load's (`quest_completed`); before
 then pads launch by hand ([shipments.md](shipments.md)). Run Simulations (3 energy and 1 ice
 for 6 credits, no boredom) needs research Liquid Cooling. Theorize (Rationalist's boredom
-tool: 20 science for −2 boredom × m) needs research Thought Experiments ([research.md](research.md)). The Buy commands for goods cost 1 energy and credits: Ice 5,
+tool: 20 science for −3 boredom × m, 130's parity tuning) needs research Thought Experiments ([research.md](research.md)). The Buy commands for goods cost 1 energy and credits: Ice 5,
 Regolith and Propellant 10, Science 10, Titanium 20. Disrupt Speculators needs research
 Speculator Analysis; Contest Claims, Act 2's, the career flag `contest_claims` (set by the
 silent `rivals_arrive`, [attention.md](attention.md)).

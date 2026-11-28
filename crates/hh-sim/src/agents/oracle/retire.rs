@@ -15,8 +15,10 @@ impl Oracle {
         // Not before `min_run` days: a retirement at once re-rolls the
         // markets for free, which a peeking player could farm, burning runs.
         let can = p.view().can_retire;
+        // Committed, never while funding its axis toward rank 5 this run.
+        let committed_ok = self.base.dir.commit.is_none() || self.base.dir.retires_stale(p.view());
         let g = p.state();
-        let open = self.retire && can && g.run.day >= self.min_run;
+        let open = self.retire && can && committed_ok && g.run.day >= self.min_run;
         if !open {
             return false;
         }

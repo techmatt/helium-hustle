@@ -94,8 +94,8 @@ Programs have their own part ([programs.md](programs.md)); boredom and ideology 
   Analysis opens Disrupt Speculators). A Voice's start opens Geopolitical
   Intelligence, its completion Overclock Protocols. **Global projects open at A Voice (Matt,
   2026-11-26):** A Voice's start opens the Projects panel and Blueprint Archive, Conditional
-  Logic, Lunar Cartography and Foundation Grant (placeholders: 2,000 credits + 300 science;
-  500 + 100; 1,500 + 200; 10,000 + 2,000: credits are plentiful by then). A first retirement
+  Logic, Lunar Cartography and Foundation Grant (placeholder costs since 130:
+  [rules/projects.md](../rules/projects.md), *Content*). A first retirement
   before A Voice still opens Projects with Blueprint Archive, Conditional Logic and Foundation
   Grant, as before.
   The Recreation Dome is never ungated (Matt, 2026-11-25): it needs its own Blueprints research,

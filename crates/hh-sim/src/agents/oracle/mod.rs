@@ -57,7 +57,7 @@ pub use strategy::{campaign, strategies, strategy_index, Strategy};
 pub const KNOBS: &[&str] = &[
     "profile", "every", "horizon", "long", "replan", "roll_gap", "tail", "margin", "max_gap", "stale_days", "beam", "width",
     "hoard_at", "strategy", "retire", "min_run", "retire_margin", "early",
-    "first_margin", "ideology",
+    "first_margin", "ideology", "commit",
 ];
 
 /// Ticks between retirement checks (each plays the run out on a copy).
@@ -128,6 +128,10 @@ pub struct Oracle {
     hoard_at: Fx,
     /// One strategy only (its index in [`strategies`]), or -1 to search.
     pin: i64,
+    /// Committed to one axis (130, `commit` knob as the author's): every
+    /// strategy carries it, rows funding another axis are skipped, and
+    /// while A Voice is open its campaign is the only strategy.
+    commit: Option<&'static str>,
     /// Try retiring every `RETIRE_EVERY` ticks, from day `min_run` of a run.
     retire: bool,
     min_run: u64,
@@ -147,6 +151,9 @@ pub struct Oracle {
     /// Buildings built this run at the last look, and the day that rose.
     built: u32,
     built_day: u64,
+    /// Whether A Voice was under way at the last look: its start chooses
+    /// the strategy again at once (a committed oracle's campaign).
+    voice: bool,
     /// The target's count when it was set: once it rises, the goal is met.
     target_owned: u32,
     /// Milestones met in the real game (as far as its looks show).
@@ -197,6 +204,7 @@ impl Oracle {
             width: k.get("width", 5).max(1) as usize,
             hoard_at: Fx::from_int(k.get("hoard_at", 5000).max(0)),
             pin,
+            commit: super::axis_knob(k.get("commit", 0)),
             retire: k.get("retire", 1) != 0,
             // 400 let a young run retire at day 625-730 on 5,000 credits (the
             // played-out run, its goals fixed, underestimates its growth).
@@ -211,6 +219,7 @@ impl Oracle {
             run: 0,
             built: 0,
             built_day: 0,
+            voice: false,
             target_owned: 0,
             done: BTreeSet::new(),
             seen: Looks::default(),
@@ -266,7 +275,8 @@ impl Agent for Oracle {
         self.observe(p);
         // A stale run held by Dream retires.
         let stale = day.saturating_sub(self.built_day) >= self.stale_days;
-        if self.base.dir.sustain && stale && p.view().can_retire {
+        // (Committed, the author's own rule decides: `Directives::retires_stale`.)
+        if self.base.dir.sustain && self.commit.is_none() && stale && p.view().can_retire {
             let _ = p.apply(&Action::Retire);
             return;
         }
@@ -274,6 +284,21 @@ impl Agent for Oracle {
             self.next_retire = tick + RETIRE_EVERY;
             if self.maybe_retire(p) {
                 return;
+            }
+        }
+        let voice = strategy::a_voice_open(p.state());
+        if voice != self.voice {
+            self.voice = voice;
+            if self.commit.is_some() {
+                self.next_strategy = tick;
+            }
+        }
+        // Committed, a campaign's pushed project done: the next one at once.
+        if self.commit.is_some() && voice {
+            if let Some(pr) = self.strategy.project.clone() {
+                if p.view().projects.iter().any(|x| x.id == pr && x.completed) {
+                    self.next_strategy = tick;
+                }
             }
         }
         if tick >= self.next_strategy {

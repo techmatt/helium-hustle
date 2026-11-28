@@ -36,7 +36,7 @@ pub struct Weights {
 /// The profiles, by their `profile` knob: 0 milestones (the default), 1
 /// credits, 2 ideology, 3 builder, 4 quests (the milestones' weights, and
 /// while A Voice (1.5) is open, its campaign as the only strategy:
-/// [`super::strategy::campaign`]).
+/// [`super::strategy::campaign`], one per axis).
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Profile {
     Milestones,

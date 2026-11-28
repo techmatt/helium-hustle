@@ -121,6 +121,12 @@ pub trait Agent: Send {
     }
 }
 
+/// An axis knob's axis (`commit`, `axis`: 1 Nationalist, 2 Humanist, 3
+/// Rationalist, `hh_core::content::AXES` order; 0 or else none).
+pub fn axis_knob(n: i64) -> Option<&'static str> {
+    usize::try_from(n - 1).ok().and_then(|i| hh_core::content::AXES.get(i)).copied()
+}
+
 /// Knobs from a spec (`kind:key=value,...`), integers only.
 #[derive(Debug, Clone, Default)]
 pub struct Knobs(pub BTreeMap<String, i64>);

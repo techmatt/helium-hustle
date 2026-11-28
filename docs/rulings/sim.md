@@ -22,4 +22,12 @@ Part of Matt's standing rulings ([index](../rulings.md): what **locked** and **d
   oracle; its strategies are a fixed table; it takes `--milestones`. Its `Looks` and
   `milestones::Tracker` judge history milestones differently: the next oracle item moves it to
   `Tracker` semantics and re-pins.
+- **Ideology parity (Matt, 2026-11-27; 130, targets placeholders).** One committed player per
+  axis at each skill (funds its axis, uses its boredom tool, buys its tagged buildings, a
+  sensible retirement), read by `hh-sim axes`. Skilled (the oracle): run 1 finishes Blueprint
+  Archive and Lunar Cartography but ends under ~80% of the rank-5 score; run 2 reaches rank 5
+  on every axis, each axis's day within ±15% of the three-axis mean. Medium (the author, from
+  Blueprint Archive, Lunar Cartography and Foundation Grant done): rank 5 within one run.
+  Levers: `rank_base_score` for when, per-axis tool strength and nudges for parity, Fund
+  identical on every axis. *Default (130):* rollouts keep their foresight.
 - **Warning checks.** Surfaced, never gating; which are on: CLAUDE.md, *Warning checks*.

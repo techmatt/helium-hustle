@@ -9,6 +9,7 @@ use std::fmt::Write as _;
 
 pub mod agents;
 pub mod autopilot;
+pub mod axes;
 pub mod career;
 pub mod experiment;
 pub mod gates;
@@ -44,6 +45,9 @@ pub const USAGE: &str = "usage:
                                                    --at T: the state at career tick T instead, what walls a run in)
   hh-sim summarize GAMES.jsonl [--milestones F]    a read's games: each run, the milestones, the career at the end
   hh-sim agents                                    the ladder's rungs
+  hh-sim axes [--seeds N] [--first-seed S] [--skills skilled,medium] [--axes a,b] [--runs N] [--max-ticks N]
+              [--config F] [--set module.key=value]... [--threads T]
+                                                   the committed ideology players: run and day each first reaches rank 5
   hh-sim speed                                     native engine speed (ticks/s)
   hh-sim playlog LOG.jsonl [--json] [--milestones F] [--human-models F]   replay and measure a human's play log
   hh-sim vs-human LOG.jsonl [--agents a,b] [--humans a,b] [--ticks N] [--json] [--threads T] [--milestones F] [--human-models F] [--include-accelerated]
@@ -218,6 +222,9 @@ pub fn run(args: &[String]) -> Result<String, Fail> {
     }
     if cmd == "summarize" {
         return summarize_cmd(rest);
+    }
+    if cmd == "axes" {
+        return axes::run(rest);
     }
     let o = parse(rest)?;
     if cmd != "replay" && cmd != "objectives" && !o.rest.is_empty() {

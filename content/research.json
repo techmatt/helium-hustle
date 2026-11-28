@@ -88,6 +88,7 @@
     "description": "Unlocks the Dream command — reduces boredom at the cost of energy and Helium-3."
   },
   {"id": "thought_experiments", "name": "Thought Experiments", "category": "Self-Maintenance", "cost": "300", "requires": null, "effect": null, "visible_when": {"type": "flag", "flag": "retired"}, "reveal_when": {"type": "event_completed", "event": "research_lab_built"}, "description": "Unlocks the Theorize command: spend science to relieve boredom."},
+  {"id": "electrochemistry", "name": "Electrochemistry", "category": "Extraction", "cost": "1000", "requires": null, "effect": {"type": "career_flag", "flag": "electrochemistry"}, "visible_when": {"type": "building_count", "building": "solar_panel", "count": 8}, "reveal_when": {"type": "always"}, "description": "Chemistry for turning lunar propellant back into power. Unlocks the Chemical Energy Initiative project. Bought once for the whole career."},
   {
     "id": "stress_tolerance",
     "name": "Stress Tolerance",

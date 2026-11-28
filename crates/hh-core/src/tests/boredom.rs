@@ -74,7 +74,7 @@ fn the_dome_lifts_the_cap_and_relieves_daily_by_nationalist_rank_and_its_purchas
     set(&mut g, "credits", "1000");
     set(&mut g, "circuits", "100");
     r.apply(&mut g, &buy("recreation_dome")).unwrap();
-    assert_eq!(ideology::score(&g, "nationalist"), f("5"));
+    assert_eq!(ideology::score(&g, "nationalist"), f("2.5"));
 }
 
 #[test]
@@ -90,19 +90,19 @@ fn dream_and_theorize_relieve_by_their_axis_and_nudge_it() {
     g.run.ideology.insert("humanist".into(), f("100"));
     run(&r, &mut g, "dream");
     assert_eq!(g.amount("boredom"), f("97.8"), "2 × 1.1");
-    assert_eq!(ideology::score(&g, "humanist"), f("100.25"));
+    assert_eq!(ideology::score(&g, "humanist"), f("100.5"));
     g.run.ideology.insert("rationalist".into(), f("250"));
     run(&r, &mut g, "theorize");
-    assert_eq!(g.amount("boredom"), f("95.38"), "2 × 1.21");
+    assert_eq!(g.amount("boredom"), f("94.17"), "3 × 1.21");
     assert_eq!(g.amount("science"), f("80"));
-    assert_eq!(ideology::score(&g, "rationalist"), f("250.25"));
+    assert_eq!(ideology::score(&g, "rationalist"), f("250.5"));
     assert_eq!(g.run.boredom_sources.get("command:dream"), Some(&f("-2.2")));
-    assert_eq!(g.run.boredom_sources.get("command:theorize"), Some(&f("-2.42")));
+    assert_eq!(g.run.boredom_sources.get("command:theorize"), Some(&f("-3.63")));
     // The cards' signed figures.
     let v = r.view(&g);
     let cmd = |id: &str| v.commands.iter().find(|c| c.id == id).unwrap().boredom;
     assert_eq!(cmd("dream"), f("-2.2"));
-    assert_eq!(cmd("theorize"), f("-2.42"));
+    assert_eq!(cmd("theorize"), f("-3.63"));
     assert_eq!(cmd("cloud_compute"), f("0.1"));
 }
 

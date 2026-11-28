@@ -375,7 +375,7 @@ fn playtest_batch_1_reads_as_ruled() {
     r.advance(&mut g, 1);
     assert_eq!(r.view(&g).quest.unwrap().id, "qa_voice");
     // A Voice's start opens Projects and four global projects at their costs (Matt,
-    // 2026-11-26), and 1.c hangs beside A Voice.
+    // 2026-11-27, 130), and 1.c hangs beside A Voice.
     assert!(g.run.enabled_panels.contains("projects"));
     let v = r.view(&g);
     let open: Vec<_> = v.projects.iter().filter(|p| p.unlocked).map(|p| (p.id, p.costs["credits"], p.costs["science"])).collect();
@@ -383,9 +383,9 @@ fn playtest_batch_1_reads_as_ruled() {
         open,
         [
             ("blueprint_archive", f("2000"), f("300")),
-            ("foundation_grant", f("10000"), f("2000")),
-            ("lunar_cartography", f("1500"), f("200")),
-            ("conditional_logic", f("500"), f("100")),
+            ("foundation_grant", f("4000"), f("500")),
+            ("lunar_cartography", f("1000"), f("200")),
+            ("conditional_logic", f("1000"), f("100")),
         ]
     );
     let sides: Vec<_> = v.side_quests.iter().map(|s| (s.id, s.parent)).collect();
@@ -396,7 +396,8 @@ fn playtest_batch_1_reads_as_ruled() {
     assert!(g.career.flags.contains("research_lab"));
     let sides: Vec<_> = r.view(&g).side_quests.iter().map(|s| (s.id, s.parent)).collect();
     assert_eq!(sides, [("qfull_cluster", Some("qfull_load"))]);
-    // A retirement: in run 2 the four stay open from day 0, and Chemical Energy joins them.
+    // A retirement: in run 2 the four stay open from day 0 (Chemical Energy waits on
+    // Electrochemistry, 130).
     g.run.enabled_panels.insert("retirement".into());
     r.apply(&mut g, &Action::Retire).unwrap();
     assert_eq!(g.career.run_number, 2);
@@ -404,13 +405,15 @@ fn playtest_batch_1_reads_as_ruled() {
     assert_eq!(open(&g), ["blueprint_archive", "foundation_grant", "lunar_cartography", "conditional_logic"], "from day 0");
     assert!(g.run.enabled_panels.contains("projects"));
     r.advance(&mut g, 1);
+    assert_eq!(open(&g), ["blueprint_archive", "foundation_grant", "lunar_cartography", "conditional_logic"]);
+    g.career.flags.insert("electrochemistry".into());
     assert_eq!(open(&g), ["blueprint_archive", "foundation_grant", "lunar_cartography", "chemical_energy", "conditional_logic"]);
     // A retirement before A Voice still opens Projects with three of them.
     let mut g = r.new_game(2);
     g.career.retirements = 1;
     r.advance(&mut g, 1);
     let open: Vec<_> = r.view(&g).projects.iter().filter(|p| p.unlocked).map(|p| p.id).collect();
-    assert_eq!(open, ["blueprint_archive", "foundation_grant", "chemical_energy", "conditional_logic"]);
+    assert_eq!(open, ["blueprint_archive", "foundation_grant", "conditional_logic"]);
     assert!(g.run.enabled_panels.contains("projects") && r.view(&g).side_quests.is_empty());
     // Regolith Processing: +50% excavator output (2 a day -> 3).
     let mut g = r.new_game(1);

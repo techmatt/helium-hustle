@@ -1,0 +1,21 @@
+baseline (config 027e4dcebf7162a8), rank 5 at score 725.312500; runs: days (best score as % of rank 5, f forced)
+| Skill | Axis | Seed | Reached | Runs | Projects done by then | Wall s |
+|---|---|---|---|---|---|---|
+| skilled | nationalist | 3153 | run 2 day 1202 | 1504f (6% trade@1208 fund@1492 []), 1202 (100% trade@0 fund@486 [ba]) | blueprint_archive | 62 |
+| skilled | nationalist | 3154 | run 2 day 1360 | 1528f (68% trade@1123 fund@1133 [ba]), 1360 (100% trade@0 fund@1015 [ba lc]) | blueprint_archive, lunar_cartography | 110 |
+| skilled | nationalist | 3155 | run 2 day 1175 | 1467f (0% trade@1269 []), 1175 (100% trade@0 fund@454 [ba]) | blueprint_archive | 86 |
+| skilled | humanist | 3153 | run 2 day 1426 | 1543f (57% trade@1109 fund@1246 [ba]), 1426 (100% trade@0 fund@1078 [ba lc]) | blueprint_archive, lunar_cartography | 79 |
+| skilled | humanist | 3154 | run 2 day 1581 | 1469f (0% trade@1171 []), 1581 (100% trade@0 fund@429 [ba lc]) | blueprint_archive, lunar_cartography | 86 |
+| skilled | humanist | 3155 | run 2 day 1305 | 1481f (37% trade@1000 fund@1345 [ba]), 1305 (100% trade@0 fund@940 [ba lc]) | blueprint_archive, lunar_cartography | 81 |
+| skilled | rationalist | 3153 | run 3 day 1423 | 1560f (48% trade@1131 fund@1217 []), 2002f (66% trade@0 fund@884 [ba lc]), 1423 (100% trade@0 fund@929 [ba lc]) | blueprint_archive, lunar_cartography | 123 |
+| skilled | rationalist | 3154 | no | 1477f (12% trade@1192 fund@1443 []), 2022f (65% trade@0 fund@452 [ba lc]), 1274f (5% trade@0 fund@1272 [ba lc cl]) | - | 110 |
+| skilled | rationalist | 3155 | run 2 day 1362 | 1556f (55% trade@1137 fund@1147 []), 1362 (100% trade@0 fund@1000 [ba lc]) | blueprint_archive, lunar_cartography | 69 |
+| medium | nationalist | 3153 | run 2 day 1347 | 1289f (95% trade@617 fund@951 [ba fg lc]), 1347 (100% trade@0 fund@707 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 1 |
+| medium | nationalist | 3154 | run 1 day 985 | 985 (100% trade@554 fund@632 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | nationalist | 3155 | run 1 day 1171 | 1171 (100% trade@613 fund@818 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | humanist | 3153 | run 1 day 1027 | 1027 (100% trade@623 fund@674 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | humanist | 3154 | run 1 day 984 | 984 (100% trade@555 fund@629 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | humanist | 3155 | run 1 day 1111 | 1111 (100% trade@623 fund@758 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | rationalist | 3153 | run 1 day 1311 | 1311 (100% trade@629 fund@639 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | rationalist | 3154 | run 1 day 1155 | 1155 (100% trade@685 fund@695 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |
+| medium | rationalist | 3155 | run 1 day 1320 | 1320 (100% trade@631 fund@641 [ba fg lc]) | blueprint_archive, foundation_grant, lunar_cartography | 0 |

@@ -145,6 +145,10 @@ impl Scenario {
         for id in &self.start.projects {
             crate::modules::projects::mark_completed(g, id);
         }
+        // Their starting buildings, free extras as at a run's start (130).
+        for (b, n) in crate::modules::projects::starting_bonus(g) {
+            crate::modules::economy::grant_bonus(g, &b, n);
+        }
         crate::modules::projects::grant_starting_research(g);
         crate::modules::economy::refresh(g);
         let free = crate::modules::programs::free(g);

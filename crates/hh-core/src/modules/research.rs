@@ -57,11 +57,21 @@ pub fn grant_past_flags(g: &mut GameState) {
 }
 
 /// Sets the flag of each career-flag item whose `visible_when` holds now: a
-/// state brought up to date, or a scenario that starts past its quest.
+/// state brought up to date, or a scenario that starts past its quest. Only
+/// an item shown by the story's progress (quests, flags): one shown by this
+/// run's holdings (Electrochemistry at 8 Solar Panels) is bought, not given.
 pub fn grant_flags_due(g: &mut GameState) {
+    fn by_story(v: &Visibility) -> bool {
+        match v {
+            Visibility::QuestCompleted { .. } | Visibility::QuestActive { .. } | Visibility::Flag { .. } => true,
+            Visibility::AllOf { all } => all.iter().all(by_story),
+            Visibility::AnyOf { any } => any.iter().all(by_story),
+            _ => false,
+        }
+    }
     for item in &content().research {
         if let Some(ResearchEffect::CareerFlag { flag }) = &item.effect {
-            if shows(g, &item.visible_when) {
+            if by_story(&item.visible_when) && shows(g, &item.visible_when) {
                 g.career.flags.insert(flag.clone());
             }
         }
@@ -90,13 +100,9 @@ fn shows(g: &GameState, v: &Visibility) -> bool {
 /// Its price in science: `cost`, times a
 /// live research-discount project reward's multiplier (each whose category, if
 /// it names one, is the item's) if bought in an earlier run.
-pub fn price(r: &Rules, g: &GameState, item: &Research) -> Fx {
+pub fn price(_r: &Rules, g: &GameState, item: &Research) -> Fx {
     let mut c = item.cost;
     if g.career.researched.contains(&item.id) {
-        // The Rationalist major effect: research done in an earlier run is free.
-        if super::ideology::major(r, g, "rationalist") {
-            return Fx::ZERO;
-        }
         for reward in super::projects::live_rewards(g) {
             if let ProjectReward::ResearchDiscount { mult, category } = reward {
                 if category.as_ref().is_none_or(|cat| *cat == item.category) {

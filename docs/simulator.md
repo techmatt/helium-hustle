@@ -89,6 +89,17 @@ sub-objective counts) or **everything**. Steps: `configs/sim/milestones.json` an
 fresh career so natively. The draft later acts: the author's `agents/arc.rs`
 ([042](../experiments/results/042_draft_whole_arc/README.md)).
 
+### Ideology parity
+
+**`axes`** (130) plays the committed ideology players, one per axis at each skill: *skilled*,
+the oracle (`oracle:profile=4,commit=k`) from a new game; *medium*, the author
+(`author:commit=k`) from a new game with Blueprint Archive, Lunar Cartography and Foundation
+Grant completed. Each career stops when this run's rank on its axis first reaches 5 (A Voice)
+or after `--runs` runs; it prints the run and day, the projects done by then, and per run its
+days (`f` forced), best axis score as % of the rank-5 score, Trade's and Fund's days and the
+global projects done. `--seeds`, `--first-seed`, `--skills`, `--axes`, `--set`, `--threads`;
+a skilled career is 1-2 minutes on one thread. Its read: experiments/results/130_ideology_parity_sim/.
+
 ### Grid reads
 
 The grid options, specs, output, the career-log format, every measure, what a read costs and
@@ -109,9 +120,9 @@ baseline), 3010-3012 (011, sup.), 3013-3015 (011, the oracle's final read), 3016
 loadouts), 4-8 (036, development), 3024-3039 (036, sup.), 3040-3047 (036, hands-off against
 main), 3048-3055 (037, sup.), 3056-3063 (037, verbs: hands-off share), 3064-3071 (038,
 sup.), 3072-3079 (038, done steps), 3080-3087 (039, hands-off retire and fund lines),
-0 (041, tuning), 3088-3093 (041, autopilot; 042, development), 3094-3096 (042), 3097-3104 (044), 3105-3112 (046, paired), 3113-3118 (060, sup.), 3119-3124 (060, loadouts), 3125-3130 (061, hands-off loadout), 3131-3136 (062, hands-off retire line), 3137-3142 (065, step-cost players, fresh read), 3143-3146 (074, the author's run-1 opening).
+0 (041, tuning), 3088-3093 (041, autopilot; 042, development), 3094-3096 (042), 3097-3104 (044), 3105-3112 (046, paired), 3113-3118 (060, sup.), 3119-3124 (060, loadouts), 3125-3130 (061, hands-off loadout), 3131-3136 (062, hands-off retire line), 3137-3142 (065, step-cost players, fresh read), 3143-3146 (074, the author's run-1 opening), 3147-3149 (130, sup.), 3150-3152 (130, ideology parity final read).
 
-Next free: 3147
+Next free: 3156
 
 ## `run` and `replay`
 

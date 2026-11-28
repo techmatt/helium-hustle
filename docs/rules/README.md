@@ -1,6 +1,6 @@
 # Rules
 
-The rules as implemented, rules revision **44** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
+The rules as implemented, rules revision **45** (`RULES_REVISION` in `crates/hh-core/src/lib.rs`).
 History: [../rules-history.md](../rules-history.md).
 
 The game is the Godot build's **Arc 1** ported into `hh-core` (revision 2), with the
@@ -79,7 +79,7 @@ the page of the module that takes them (`crates/hh-core/src/action.rs` has them 
 ## Content
 
 `content/*.json`, embedded in `hh-core`: resources (16), buildings (20), commands (25),
-research (21), events (33: eighteen the quest chain, three side quests), projects (14),
+research (22), events (33: eighteen the quest chain, three side quests), projects (14),
 achievements (6), rivals (4), Earth techs (6, `earth_tech.json`), and two display-only
 files: the UI's nav tiles (`nav.json`, 18: when each panel's tile shows) and the acts
 (`acts.json`, 4: each act's name and the chain quest it opens with, [events.md](events.md)). Act 1's beats are draft from

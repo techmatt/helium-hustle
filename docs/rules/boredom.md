@@ -108,4 +108,4 @@ reaches 1000 on day 1670; the run Burnout fires in starts at day 200, so 310 by 
   the end (Godot's "advance day" last), forced retirement is checked after it, and the next
   run starts at once.
 - Candidate: the AI Consciousness Act's command boredom values replace the commands' own
-  (0.1 to 0.2 for Cloud Compute, for instance); the handoffs say only that it modifies them.
+  (0.1 to 0.15 for Cloud Compute, ×1.5, Matt 130); the handoffs say only that it modifies them.

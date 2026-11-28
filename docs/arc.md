@@ -47,7 +47,7 @@ research they reveal waits for each run's own firing):
 |---|---|---|
 | the first Research Lab | `research_lab_built` (flag `research_lab`) | each run: the Self-Maintenance and Extraction research (Regolith Processing, Liquid Cooling: opens Run Simulations) |
 | A Voice's start (1.5) | `a_voice_projects` (flag `a_voice`) | the Projects panel and the first global projects: Blueprint Archive, Conditional Logic (opens `if`), Lunar Cartography, Foundation Grant |
-| the first retirement | `first_retirement` (flag `retired`) | the Projects panel with Blueprint Archive, Conditional Logic and Foundation Grant if A Voice hasn't opened them, Chemical Energy, Daydreaming and the boredom research and Recreation Dome Blueprints (300 science; the Dome needs them) once each run's Lab is built, the Retirement panel (voluntary retirement) |
+| the first retirement | `first_retirement` (flag `retired`) | the Projects panel with Blueprint Archive, Conditional Logic and Foundation Grant if A Voice hasn't opened them, Daydreaming and the boredom research and Recreation Dome Blueprints (300 science; the Dome needs them) once each run's Lab is built, the Retirement panel (voluntary retirement) |
 | speculators' arrival | `speculators_arrive` (flag `speculators_seen`) | the Adversaries panel; each run: the Market Analysis research (Speculator Analysis opens Disrupt Speculators) |
 | rivals' arrival (Act 2) | `rivals_arrive` (flag `contest_claims`) | Contest Claims |
 
@@ -59,7 +59,7 @@ calendar.
 Placeholder choices (049), all for Matt to keep or replace:
 
 - **Major ranks (rank 5).** Nationalist: speculator bursts stop landing. Humanist: Dream costs
-  only its energy (no He-3). Rationalist: research bought in an earlier run is free. The ranks
+  only its energy (no He-3). Rationalist: none for now (130). The ranks
   between raise the axis's modifier `m` ([rules/ideology.md](rules/ideology.md)).
 - **Techniques.** Speculator disruption: *Disrupt Speculators*, open once Speculator Analysis
   is researched, takes 20 speculator Attention off per execution. Anti-rival (Act 2): *Contest

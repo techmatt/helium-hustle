@@ -22,7 +22,19 @@ often, so a rollout of the current goals is what will happen.
   (`strategies`, its rows documented there; `strategy=k` pins row k): the author's own,
   *trade* variants, trade + sustain, research or Foundation Grant, and trade + each axis
   funded. Each is played `long` ticks through retirements. The quests profile, while 1.5 A Voice is
-  under way, has one: its campaign (trade, Dream held, Humanist funded, then AI Consciousness).
+  under way, tries one campaign per axis (`campaign`: trade, Dream held, the axis funded, then
+  its rank-5 project) and keeps the best.
+- **Committed** (`commit=k`, 130; 1 Nationalist, 2 Humanist, 3 Rationalist, the author's
+  knob too): every strategy carries `Directives::commit` (only the axis's boredom tool:
+  Dream, Theorize, or Recreation Domes bought from half the cap; its tool's research, and
+  Basic/Advanced Blueprints then Geopolitical Intelligence, first, with no science to
+  projects while those wait; its tagged buildings
+  scored ×3/2), rows funding another axis are skipped, and while A Voice is under way its
+  campaign is the only strategy, pushing Blueprint Archive then Lunar Cartography while open.
+  Retirement: while A Voice is under way neither the prestige rule nor a stale run retires
+  it (boredom ends each run); otherwise as below. `hh-sim axes` plays these players
+  ([simulator.md](simulator.md)). Rollouts keep their foresight (130's choice: reseeding
+  rollouts' streams would not hide the run's already-scheduled bursts, so not cheap).
 - **Tactics** (every `every` ticks, and once its target is bought): one change each to the
   target (every unlocked building), the research (once the strategy's is done), the project
   (when the strategy names none) or hoarding (from `hoard_at` credits on hand); all screened
